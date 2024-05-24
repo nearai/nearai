@@ -8,7 +8,6 @@ First install jasnah-cli by running:
 git clone git@github.com:nearai/jasnah-cli.git
 cd jasnah-cli
 python3 -m pip install -e .
-pip install openai
 ```
 
 To install to a virtual environment, use the following command:
