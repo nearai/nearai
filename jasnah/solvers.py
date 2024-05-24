@@ -37,7 +37,7 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
         return type(self).__name__
 
     @abstractmethod
-    def compadible_datasets(self) -> List[str]:
+    def compatible_datasets(self) -> List[str]:
         ...
 
     @abstractmethod
