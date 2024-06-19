@@ -11,12 +11,14 @@ from fabric import ThreadingGroup as Group
 from tabulate import tabulate
 
 import jasnah
+from jasnah.agent import load_agent, run_interactive
 from jasnah.benchmark import BenchmarkExecutor, DatasetInfo
 from jasnah.completion import create_completion_fn
 from jasnah.config import CONFIG, DATA_FOLDER, update_config
 from jasnah.dataset import load_dataset
 from jasnah.db import db
-from jasnah.registry import Registry, dataset, model, registry
+from jasnah.environment import Environment
+from jasnah.registry import Registry, agent, dataset, model, registry
 from jasnah.server import ServerClient, run_server
 from jasnah.solvers import SolverStrategyRegistry
 from jasnah.supervisor import SupervisorClient, run_supervisor
@@ -300,16 +302,35 @@ class BenchmarkCli:
         be.run()
 
 
+class EnvironmentCli:
+    def setup(self, dataset: str, task_id: int):
+        """Setup environment with given task from the dataset."""
+        pass
+
+    def interactive(self, agent: str, path: str):
+        """Runs agent in the interactive current environment."""
+        agent = load_agent(agent)
+        env = Environment(path)
+        run_interactive(env, agent)
+
+    def run(self, agent: str):
+        """Runs agent in the current environment."""
+        agent = load_agent(agent)
+        agent.run()
+
+
 class CLI:
     def __init__(self):
         self.registry = RegistryCli(registry)
         self.datasets = RegistryCli(dataset)
         self.models = RegistryCli(model)
+        self.agents = RegistryCli(agent)
 
         self.supervisor = SupervisorCli()
         self.server = ServerCli()
         self.config = ConfigCli()
         self.benchmark = BenchmarkCli(self.datasets, self.models)
+        self.environment = EnvironmentCli()
 
     def submit(self, command: str, name: str, nodes: int = 1, cluster: str = "truthwatcher"):
         """Submit task"""

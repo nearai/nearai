@@ -34,8 +34,9 @@ def upload_file(s3_client, s3_path: str, local_path: Path):
 
 
 def download_file(s3_client, s3_path: str, local_path: Path):
-    if not os.path.exists(os.path.dirname(local_path)):
-        os.makedirs(os.path.dirname(local_path))
+    # if not os.path.exists(os.path.dirname(local_path)):
+    #     os.makedirs(os.path.dirname(local_path))
+    local_path.parent.absolute().mkdir(parents=True, exist_ok=True)
 
     meta_data = s3_client.head_object(Bucket=CONFIG.s3_bucket, Key=s3_path)
     total_length = int(meta_data.get("ContentLength", 0))
@@ -223,8 +224,8 @@ class Registry:
 
                     upload_file(s3_client, s3_path, Path(local_path))
 
-    def download(self, identifier: str):
-        entry = db.get_registry_entry_by_identifier(identifier)
+    def download(self, identifier: str, version: Optional[str] = None):
+        entry = db.get_registry_entry_by_identifier(identifier, version=version)
         assert entry is not None
 
         path = entry.path
@@ -246,4 +247,5 @@ class Registry:
 
 dataset = Registry(["dataset"])
 model = Registry(["model"])
+agent = Registry(["agent"])
 registry = Registry([])

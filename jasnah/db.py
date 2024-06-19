@@ -447,17 +447,23 @@ class DB:
             return DisplayRegistry.prepare_display_registry_entries_from_db(cursor.fetchall())
 
     @check_renamed_table
-    def get_registry_entry_by_path(self, path: str) -> Optional[RegistryEntry]:
+    def get_registry_entry_by_path(self, path: str, version = None) -> Optional[RegistryEntry]:
+        assert version != None, "Can not select version when path provided"
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT * FROM {REGISTRY_TABLE} WHERE path=%s LIMIT 1", (path,))
+            cursor.execute(f"SELECT * FROM {REGISTRY_TABLE} WHERE path=%s ORDER BY {REGISTRY_TABLE}.id DESC LIMIT 1", (path,))
             result = cursor.fetchone()
             if not result:
                 return None
             return RegistryEntry.from_db(result)
 
-    def get_registry_entry_by_name(self, name: str) -> Optional[RegistryEntry]:
+    def get_registry_entry_by_name(self, name: str, version: Optional[str] = None) -> Optional[RegistryEntry]:
+        """Retrieves restriy item by name and version if provided."""
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT * FROM {REGISTRY_TABLE} WHERE name=%s LIMIT 1", (name,))
+            if not version:
+                cursor.execute(f"SELECT * FROM {REGISTRY_TABLE} WHERE name=%s ORDER BY {REGISTRY_TABLE}.id DESC LIMIT 1", (name,))
+            else:
+                print("SELECT * FROM {REGISTRY_TABLE} WHERE name='%s' AND {REGISTRY_TABLE}.path LIKE '%%/v%s' ORDER BY {REGISTRY_TABLE}.id DESC LIMIT 1" % (name, version))
+                cursor.execute(f"SELECT * FROM {REGISTRY_TABLE} WHERE name=%s AND {REGISTRY_TABLE}.path LIKE '%%%s' ORDER BY {REGISTRY_TABLE}.id DESC LIMIT 1", (name, version))
             result = cursor.fetchone()
             if not result:
                 return None
@@ -472,14 +478,14 @@ class DB:
             return RegistryEntry.from_db(result)
 
     def get_registry_entry_by_identifier(
-        self, identifier: Union[str, int], fail_if_not_found=True
+        self, identifier: Union[str, int], version: Optional[str] = None, fail_if_not_found=True
     ) -> Optional[RegistryEntry]:
         try:
             identifier = int(identifier)
             entry = self.get_registry_entry_by_id(identifier)
         except ValueError:
             for get_fn in (self.get_registry_entry_by_name, self.get_registry_entry_by_path):
-                entry = get_fn(identifier)
+                entry = get_fn(identifier, version=version)
                 if entry:
                     break
 
@@ -609,6 +615,7 @@ def connect() -> "DB":
     )
 
 
+# TODO: Move this to a better place. Currently when not configured properly, the CLI will fail to connect to the database.
 try:
     db = connect()
 except Exception as e:
