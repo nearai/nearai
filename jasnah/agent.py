@@ -25,7 +25,7 @@ class Agent(object):
 
 
     def run(self, env: Environment):
-        pass
+        exec(self.code, globals(), {'env': env, 'agent': self})
 
 
 def load_agent(alias_or_name: str) -> Agent:
@@ -35,11 +35,17 @@ def load_agent(alias_or_name: str) -> Agent:
 
 def run_interactive(env: Environment, agent: Agent):
     """Run an interactive session with the given environment and agent."""
+    last_message_idx = 0
+    def print_messages(last_message_idx):
+        messages = env.list_messages()
+        for role, message in messages[last_message_idx:]:
+            print(f'[{role}]: {message}')
+        return len(messages)
+    last_message_idx = print_messages(last_message_idx)
     while True:
         new_message = input('> ')
         if new_message == 'exit': break
-        index = env.user_message(new_message)
+        env.add_message('user', new_message)
         agent.run(env)
-        for agent, message in env.list_messages(index + 1):
-            print(f'[{agent}]: {message}')
+        last_message_idx = print_messages(last_message_idx + 1)
         if env.is_done(): break

@@ -131,6 +131,16 @@ Removing tags must be done one by one:
 jasnah-cli registry remove_tag test/quine/v3 code
 ```
 
+### Agents
+
+#### Running environment interactively
+
+You can run agent (or a set of agents) inside a local environment that lives in a specific folder.
+
+```
+jasnah-cli environment interactive sample-agent ~/tmp/sample-agent/test1 
+```
+
 ### Library
 
 You can import `jasnah` as a library in your python code. The main features are:
