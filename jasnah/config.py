@@ -62,6 +62,9 @@ class Config:
     inference_url: str = "http://localhost:5000/v1/"
     inference_api_key: str = "n/a"
 
+    # Structure {"providers": {"<provider_name>": {"base_url": "<url>", "api_key": "<api_key>"}}, "models": {"<model_name>": "<provider_name>:<model_path>"}}
+    llm_config: Dict[str, Any] = field(default_factory=dict)
+
     def update_with(self, extra_config: Dict[str, Any], map_key: Callable[[str], str] = lambda x: x) -> None:
         keys = [f.name for f in fields(self)]
         for key in map(map_key, keys):

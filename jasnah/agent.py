@@ -23,7 +23,6 @@ class Agent(object):
         with open(os.path.join(path, AGENT_FILENAME)) as f:
             return Agent(parts[-2], parts[-1], f.read())
 
-
     def run(self, env: Environment):
         exec(self.code, globals(), {'env': env, 'agent': self})
 
@@ -38,8 +37,8 @@ def run_interactive(env: Environment, agent: Agent):
     last_message_idx = 0
     def print_messages(last_message_idx):
         messages = env.list_messages()
-        for role, message in messages[last_message_idx:]:
-            print(f'[{role}]: {message}')
+        for item in messages[last_message_idx:]:
+            print(f'[{item['role']}]: {item['content']}')
         return len(messages)
     last_message_idx = print_messages(last_message_idx)
     while True:

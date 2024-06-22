@@ -310,7 +310,7 @@ class EnvironmentCli:
     def interactive(self, agent: str, path: str):
         """Runs agent in the interactive current environment."""
         agent = load_agent(agent)
-        env = Environment(path)
+        env = Environment(path, CONFIG.llm_config)
         run_interactive(env, agent)
 
     def run(self, agent: str):
