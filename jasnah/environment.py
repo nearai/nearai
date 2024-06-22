@@ -17,8 +17,10 @@ class InferenceRouter(object):
 
     def completions(self, model, messages):
         """Takes a model `provider:model_name` and a list of messages and returns all completions."""
+        assert 'models' in self._config and model in self._config['models'], f'Model {model} not found in config.'
         provider_name, model_path = self._config['models'][model].split(':')
         if provider_name not in self._endpoints:
+            assert 'providers' in self._config and provider_name in self._config['providers'], f'Provider {provider_name} not found in config.'
             provider_config = self._config['providers'][provider_name]
             self._endpoints[provider_name] = openai.OpenAI(base_url=provider_config['base_url'], api_key=provider_config['api_key'])
         return self._endpoints[provider_name].chat.completions.create(model=model_path, messages=messages)
@@ -41,8 +43,19 @@ class Environment(object):
         with open(os.path.join(self._path, CHAT_FILENAME), 'r') as f:
             return [json.loads(message) for message in f.read().split(DELIMITER) if message]
 
+    def read_file(self, filename):
+        if not os.path.exists(os.path.join(self._path, filename)):
+            return ''
+        with open(os.path.join(self._path, filename), 'r') as f:
+            return f.read()
+        
+    def write_file(self, filename, content):
+        with open(os.path.join(self._path, filename), 'w') as f:
+            f.write(content)
+
     def exec_command(self, command):
-        output = subprocess.run(command, shell=True)
+        """Executes a command in the environment and logs the output."""
+        output = subprocess.run(command, shell=True, cwd=self._path)
         with open(os.path.join(self._path, TERMINAL_FILENAME), 'a') as f:
             f.write(json.dumps({'command': command, 'output': output}) + DELIMITER)
         return output

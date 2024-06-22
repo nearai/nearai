@@ -11,7 +11,7 @@ from fabric import ThreadingGroup as Group
 from tabulate import tabulate
 
 import jasnah
-from jasnah.agent import load_agent, run_interactive
+from jasnah.agent import load_agent
 from jasnah.benchmark import BenchmarkExecutor, DatasetInfo
 from jasnah.completion import create_completion_fn
 from jasnah.config import CONFIG, DATA_FOLDER, update_config
@@ -308,15 +308,21 @@ class EnvironmentCli:
         pass
 
     def interactive(self, agent: str, path: str):
-        """Runs agent in the interactive current environment."""
+        """Runs agent interactively with environment from given path."""
         agent = load_agent(agent)
         env = Environment(path, CONFIG.llm_config)
-        run_interactive(env, agent)
+        agent.run_interactive(env)
+
+    def task(self, agent: str, task: str, path: str):
+        """Runs agent non interactively with environment from given path."""
+        agent = load_agent(agent)
+        env = Environment(path, CONFIG.llm_config)
+        agent.run_task(env, task)
 
     def run(self, agent: str):
         """Runs agent in the current environment."""
         agent = load_agent(agent)
-        agent.run()
+        
 
 
 class CLI:

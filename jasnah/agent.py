@@ -17,7 +17,7 @@ class Agent(object):
     def from_disk(path: str) -> 'Agent':
         """Path must contain alias and version.
         
-        .../agents/<alias>/<version>/agent.json
+        .../agents/<alias>/<version>/agent.py
         """
         parts = path.split('/')
         with open(os.path.join(path, AGENT_FILENAME)) as f:
@@ -26,25 +26,33 @@ class Agent(object):
     def run(self, env: Environment):
         exec(self.code, globals(), {'env': env, 'agent': self})
 
+    def run_interactive(self, env: Environment):
+        """Run an interactive session with the given environment and agent."""
+        last_message_idx = 0
+        def print_messages(last_message_idx):
+            messages = env.list_messages()
+            for item in messages[last_message_idx:]:
+                print(f'[{item['role']}]: {item['content']}')
+            return len(messages)
+        last_message_idx = print_messages(last_message_idx)
+        while True:
+            new_message = input('> ')
+            if new_message == 'exit': break
+            env.add_message('user', new_message)
+            self.run(env)
+            last_message_idx = print_messages(last_message_idx + 1)
+            if env.is_done(): break
+
+    def run_task(self, env: Environment, task: str, max_iterations: int = 10):
+        """Runs a task with the given environment and agent."""
+        iteration = 0
+        env.add_message('user', task)
+        while iteration < max_iterations and not env.is_done():
+            iteration += 1
+            self.run(env)
+
+
 
 def load_agent(alias_or_name: str) -> Agent:
     path = agent.download(alias_or_name)
     return Agent.from_disk(path.as_posix())
-
-
-def run_interactive(env: Environment, agent: Agent):
-    """Run an interactive session with the given environment and agent."""
-    last_message_idx = 0
-    def print_messages(last_message_idx):
-        messages = env.list_messages()
-        for item in messages[last_message_idx:]:
-            print(f'[{item['role']}]: {item['content']}')
-        return len(messages)
-    last_message_idx = print_messages(last_message_idx)
-    while True:
-        new_message = input('> ')
-        if new_message == 'exit': break
-        env.add_message('user', new_message)
-        agent.run(env)
-        last_message_idx = print_messages(last_message_idx + 1)
-        if env.is_done(): break
