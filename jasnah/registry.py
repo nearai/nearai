@@ -34,8 +34,6 @@ def upload_file(s3_client, s3_path: str, local_path: Path):
 
 
 def download_file(s3_client, s3_path: str, local_path: Path):
-    # if not os.path.exists(os.path.dirname(local_path)):
-    #     os.makedirs(os.path.dirname(local_path))
     local_path.parent.absolute().mkdir(parents=True, exist_ok=True)
 
     meta_data = s3_client.head_object(Bucket=CONFIG.s3_bucket, Key=s3_path)

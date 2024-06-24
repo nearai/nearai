@@ -1,7 +1,9 @@
 import json
 import os
+
 from dataclasses import dataclass, field, fields
 from pathlib import Path
+from pydantic import BaseModel
 from typing import Any, Callable, Dict, List, Optional
 from typing import Any, Callable, Dict, List, Optional
 
@@ -43,6 +45,22 @@ def update_config(key: str, value: Any, local: bool = False) -> None:
     save_config_file(config, local)
 
 
+class LLMProviderConfig(BaseModel):
+    base_url: str
+    api_key: str
+
+
+class LLMConfig(BaseModel):
+    """LLM Config.
+    
+    Providers: {"<provider_name>": {"base_url": "<url>", "api_key": "<api_key>"}}
+    
+    Models: {"<model_name>": "<provider_name>:<model_path>"
+    """
+    providers: Dict[str, LLMProviderConfig]
+    models: Dict[str, str]
+
+
 @dataclass
 class Config:
     s3_bucket: str = "kholinar-registry"
@@ -62,8 +80,7 @@ class Config:
     inference_url: str = "http://localhost:5000/v1/"
     inference_api_key: str = "n/a"
 
-    # Structure {"providers": {"<provider_name>": {"base_url": "<url>", "api_key": "<api_key>"}}, "models": {"<model_name>": "<provider_name>:<model_path>"}}
-    llm_config: Dict[str, Any] = field(default_factory=dict)
+    llm_config: LLMConfig = None
 
     def update_with(self, extra_config: Dict[str, Any], map_key: Callable[[str], str] = lambda x: x) -> None:
         keys = [f.name for f in fields(self)]
