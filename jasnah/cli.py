@@ -307,21 +307,22 @@ class EnvironmentCli:
         """Setup environment with given task from the dataset."""
         pass
 
-    def interactive(self, agent: str, path: str):
+    def interactive(self, agents: str, path: str):
         """Runs agent interactively with environment from given path."""
-        agent = load_agent(agent)
-        env = Environment(path, CONFIG.llm_config)
-        agent.run_interactive(env)
+        _agents = [load_agent(agent) for agent in agents.split(',')]
+        env = Environment(path, _agents, CONFIG.llm_config)
+        env.run_interactive()
 
-    def task(self, agent: str, task: str, path: str):
+    def task(self, agents: str, task: str, path: str):
         """Runs agent non interactively with environment from given path."""
-        agent = load_agent(agent)
-        env = Environment(path, CONFIG.llm_config)
-        agent.run_task(env, task)
+        _agents = [load_agent(agent) for agent in agents.split(',')]
+        env = Environment(path, _agents, CONFIG.llm_config)
+        env.run_task(task)
 
-    def run(self, agent: str):
+    def run(self, agents: str):
         """Runs agent in the current environment."""
-        agent = load_agent(agent)
+        _agents = [load_agent(agent) for agent in agents.split(',')]
+        # TODO: Setup server that 
         
 
 

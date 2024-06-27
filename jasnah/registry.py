@@ -223,6 +223,11 @@ class Registry:
                     upload_file(s3_client, s3_path, Path(local_path))
 
     def download(self, identifier: str, version: Optional[str] = None):
+        # Try to work in offline mode by checking if identifier is a path first before fetching from database.
+        target = self.download_folder / identifier
+        if target.exists():
+            return target
+
         entry = db.get_registry_entry_by_identifier(identifier, version=version)
         assert entry is not None
 
