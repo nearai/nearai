@@ -17,7 +17,7 @@ class InferenceRouter(object):
         self._config = config
         self._endpoints = {}
 
-    def completions(self, model, messages):
+    def completions(self, model, messages, stream=False):
         """Takes a model `provider:model_name` and a list of messages and returns all completions."""
         assert 'models' in self._config and model in self._config['models'], f'Model {model} not found in config.'
         provider_name, model_path = self._config['models'][model].split(':')
@@ -25,7 +25,7 @@ class InferenceRouter(object):
             assert 'providers' in self._config and provider_name in self._config['providers'], f'Provider {provider_name} not found in config.'
             provider_config = self._config['providers'][provider_name]
             self._endpoints[provider_name] = openai.OpenAI(base_url=provider_config['base_url'], api_key=provider_config['api_key'] if provider_config['api_key'] else 'not-needed')
-        return self._endpoints[provider_name].chat.completions.create(model=model_path, messages=messages)
+        return self._endpoints[provider_name].chat.completions.create(model=model_path, messages=messages, stream=stream)
 
 
 class Environment(object):
@@ -34,8 +34,10 @@ class Environment(object):
         self._path = path
         self._agents = agents
         self._done = False
+        self._config = config
         self._inference = InferenceRouter(config)
         os.makedirs(self._path, exist_ok=True)
+        os.chdir(self._path)
         open(os.path.join(self._path, CHAT_FILENAME), 'a').close()
 
     def add_message(self, role: str, message: str):
@@ -45,6 +47,9 @@ class Environment(object):
     def list_messages(self):
         with open(os.path.join(self._path, CHAT_FILENAME), 'r') as f:
             return [json.loads(message) for message in f.read().split(DELIMITER) if message]
+
+    def list_files(self, path) -> List[str]:
+        os.path.listdir(os.path.join(self._path, path))
 
     def read_file(self, filename: str) -> str:
         if not os.path.exists(os.path.join(self._path, filename)):
@@ -58,14 +63,30 @@ class Environment(object):
 
     def exec_command(self, command: str) -> str:
         """Executes a command in the environment and logs the output."""
-        output = subprocess.run(command, shell=True, cwd=self._path)
-        with open(os.path.join(self._path, TERMINAL_FILENAME), 'a') as f:
-            f.write(json.dumps({'command': command, 'output': output}) + DELIMITER)
-        return output
+        if self._config.get('confirm_commands', True):
+            yes_no = input('> Do you want to run the following command? (Y/n): ' + command)
+            if yes_no != '' and yes_no.lower() != 'y':
+                return {'command': command, 'returncode': 999, 'stdout': '', 'stderr': 'declined by user'}
 
-    def completions(self, model, messages):
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        stdout = ''
+        for c in iter(lambda: process.stdout.read(1), b""):
+            print(c, end='')
+            stdout += c
+        # stdout = ''
+        # stderr = ''    
+        # with subprocess.Popen(command, stdout=subprocess.PIPE, universal_newlines=True) as process:
+        #     for line in process.stdout:
+        #         print(line)
+        # output = subprocess.run(command, shell=True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text=True)
+        result = {'command': command, 'stdout': stdout, 'stderr': process.stderr, 'returncode': process.returncode}
+        with open(os.path.join(self._path, TERMINAL_FILENAME), 'a') as f:
+            f.write(json.dumps(result) + DELIMITER)
+        return result
+
+    def completions(self, model, messages, stream=False):
         """Returns all completions for given messages using the given model."""
-        return self._inference.completions(model, messages)
+        return self._inference.completions(model, messages, stream=stream)
 
     def completion(self, model: str, messages) -> str:
         """Returns a completion for the given messages using the given model."""

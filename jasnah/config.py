@@ -82,6 +82,8 @@ class Config:
 
     llm_config: LLMConfig = None
 
+    confirm_commands: bool = True
+
     def update_with(self, extra_config: Dict[str, Any], map_key: Callable[[str], str] = lambda x: x) -> None:
         keys = [f.name for f in fields(self)]
         for key in map(map_key, keys):
