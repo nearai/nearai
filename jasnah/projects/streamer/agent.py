@@ -48,24 +48,27 @@ def run_agent(env, task):
         print()
         history += output
         command = output.split('#')[1].strip()
-        if command.startswith('run'):
-            command = command.split('run')[1]
-            result = env.exec_command(command)
-            if 'returncode' in result and result['returncode'] != 0:
-                history += f'\nCommand {command} failed with error: {result["stderr"]}'
-            else:
-                history += result["stdout"]
-        elif command.startswith('write'):
-            filename, content = command.split('write')[1].split('\n')
-            print(filename, content)
-            env.write_file(filename, content)
-            # history += f'Wrote file {filename} with content: {content}'
-        elif command.startswith('read'):
-            filename = command.split('read')[1]
-            content = env.read_file(filename)
-            history += f'\nRead file {filename} with content: {content}'
-        elif command.startswith('list'):
-            path = command.split('list')[1]
-            files = env.list_files(path)
-            history += f'\nListed files in path {path}: {files}'
+        try:
+            if command.startswith('run'):
+                command = command.split('run')[1]
+                result = env.exec_command(command)
+                if 'returncode' in result and result['returncode'] != 0:
+                    history += f'\nCommand {command} failed with error: {result["stderr"]}'
+                else:
+                    history += result["stdout"]
+            elif command.startswith('write'):
+                filename, content = command.split('write')[1].split('\n', maxsplit=1)
+                print(filename, content)
+                env.write_file(filename, content)
+                # history += f'Wrote file {filename} with content: {content}'
+            elif command.startswith('read'):
+                filename = command.split('read')[1]
+                content = env.read_file(filename)
+                history += f'\nRead file {filename} with content: {content}'
+            elif command.startswith('list'):
+                path = command.split('list')[1]
+                files = env.list_files(path)
+                history += f'\nListed files in path {path}: {files}'
+        except Exception as e:
+            history += f'\nError: {e}'
         input(f'Press Enter to continue... {len(history)}')
