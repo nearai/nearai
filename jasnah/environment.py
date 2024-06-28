@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 
 from typing import List, Optional
 
@@ -71,8 +72,8 @@ class Environment(object):
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
         stdout = ''
         for c in iter(lambda: process.stdout.read(1), b""):
-            print(c, end='')
-            stdout += c
+            sys.stdout.buffer.write(c)
+            stdout += c.decode("utf-8")
         # stdout = ''
         # stderr = ''    
         # with subprocess.Popen(command, stdout=subprocess.PIPE, universal_newlines=True) as process:
