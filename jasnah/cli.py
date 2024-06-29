@@ -319,13 +319,11 @@ class EnvironmentCli:
         env = Environment(path, _agents, CONFIG.llm_config)
         env.run_task(task)
 
-    def run(self, task: str, path: str):
+    def run(self, agents: str, task: str, path: str):
         """Runs agent in the current environment."""
-        # _agents = [load_agent(agent) for agent in agents.split(',')]
-        # TODO: Setup server that 
+        _agents = [load_agent(agent) for agent in agents.split(',')]
         env = Environment(path, [], CONFIG.llm_config)
-        from jasnah.projects.streamer.agent import run_agent
-        run_agent(env, task)
+        # TODO: Setup server that will allow to interact with agents and environment
 
 
 class CLI:
