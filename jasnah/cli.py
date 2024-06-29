@@ -323,6 +323,7 @@ class EnvironmentCli:
         """Runs agent in the current environment."""
         _agents = [load_agent(agent) for agent in agents.split(',')]
         env = Environment(path, [], CONFIG.llm_config)
+        env.exec_command("sleep 10")
         # TODO: Setup server that will allow to interact with agents and environment
 
 
