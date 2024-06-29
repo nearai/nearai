@@ -1,6 +1,9 @@
 import json
 import os
+import shutil
 import subprocess
+import tarfile
+import tempfile
 import threading
 from pathlib import Path
 from typing import Dict, List
@@ -120,15 +123,27 @@ class Environment(object):
     def mark_done(self):
         self._done = True
 
-    def save(self, registry):
+    def save(self):
         """Save Environment to Registry."""
-        # TODO
-        pass
+        with tempfile.NamedTemporaryFile( suffix='.tar.gz') as f:
+            with tarfile.open(fileobj=f, mode='w:gz') as tar:
+                tar.add(self._path, arcname='.')
+            f.flush()
+            f.seek(0)
+            snapshot = f.read()
+        return snapshot
 
-    def load(self, registry):
+    def load(self, snapshot: bytes):
         """Load Environment from Registry."""
-        # TODO
-        pass
+        shutil.rmtree(self._path, ignore_errors=True)
+
+        with tempfile.NamedTemporaryFile(suffix='.tar.gz') as f:
+            f.write(snapshot)
+            f.flush()
+            f.seek(0)
+
+            with tarfile.open(fileobj=f, mode='r:gz') as tar:
+                tar.extractall(self._path)
 
     def __str__(self):
         return f'Environment({self._path})'
