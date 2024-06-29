@@ -1,11 +1,12 @@
 import json
 import os
+import shutil
 import subprocess
-import sys
-import select
+import tarfile
+import tempfile
 import threading
-
-from typing import List, Optional, Dict
+from pathlib import Path
+from typing import Dict, List
 
 from litellm import completion as litellm_completion
 
@@ -28,12 +29,12 @@ class InferenceRouter(object):
             assert 'providers' in self._config and provider_name in self._config['providers'], f'Provider {provider_name} not found in config.'
             provider_config = self._config['providers'][provider_name]
             self._endpoints[provider_name] = lambda model, messages, stream: litellm_completion(
-                model, messages, stream=stream, 
+                model, messages, stream=stream,
                 # TODO: move this to config
                 custom_llm_provider='antropic' if 'antropic' in provider_config['base_url'] else 'openai',
                 input_cost_per_token=0,
                 output_cost_per_token=0,
-                base_url=provider_config['base_url'], 
+                base_url=provider_config['base_url'],
                 api_key=provider_config['api_key'] if provider_config['api_key'] else 'not-needed')
         return self._endpoints[provider_name](model=model_path, messages=messages, stream=stream)
 
@@ -50,12 +51,17 @@ class Environment(object):
         os.chdir(self._path)
         open(os.path.join(self._path, CHAT_FILENAME), 'a').close()
 
-    def add_message(self, role: str, message: str):
-        with open(os.path.join(self._path, CHAT_FILENAME), 'a') as f:
+    def add_message(self, role: str, message: str, filename: str=CHAT_FILENAME):
+        with open(os.path.join(self._path, filename), 'a') as f:
             f.write(json.dumps({'role': role, 'content': message}) + DELIMITER)
 
-    def list_messages(self):
-        with open(os.path.join(self._path, CHAT_FILENAME), 'r') as f:
+    def list_messages(self, filename: str=CHAT_FILENAME):
+        path = os.path.join(self._path, filename)
+
+        if not os.path.exists(path):
+            return []
+
+        with open(path, 'r') as f:
             return [json.loads(message) for message in f.read().split(DELIMITER) if message]
 
     def list_files(self, path) -> List[str]:
@@ -66,9 +72,11 @@ class Environment(object):
             return ''
         with open(os.path.join(self._path, filename), 'r') as f:
             return f.read()
-        
+
     def write_file(self, filename: str, content: str):
-        with open(os.path.join(self._path, filename), 'w') as f:
+        path = Path(self._path) / filename
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, 'w') as f:
             f.write(content)
 
     def exec_command(self, command: str) -> Dict[str, str]:
@@ -115,18 +123,64 @@ class Environment(object):
     def mark_done(self):
         self._done = True
 
-    def save(self, registry):
+    def save(self):
         """Save Environment to Registry."""
-        # TODO
-        pass
+        with tempfile.NamedTemporaryFile( suffix='.tar.gz') as f:
+            with tarfile.open(fileobj=f, mode='w:gz') as tar:
+                tar.add(self._path, arcname='.')
+            f.flush()
+            f.seek(0)
+            snapshot = f.read()
+        return snapshot
 
-    def load(self, registry):
+    def load(self, snapshot: bytes):
         """Load Environment from Registry."""
-        # TODO
-        pass
+        shutil.rmtree(self._path, ignore_errors=True)
+
+        with tempfile.NamedTemporaryFile(suffix='.tar.gz') as f:
+            f.write(snapshot)
+            f.flush()
+            f.seek(0)
+
+            with tarfile.open(fileobj=f, mode='r:gz') as tar:
+                tar.extractall(self._path)
 
     def __str__(self):
         return f'Environment({self._path})'
+
+    def add_user_interaction(self, text):
+        next_action_fn = os.path.join(self._path, '.next_action')
+
+        self.add_message('user', text)
+
+        with open(next_action_fn, 'w') as f:
+            f.write('agent')
+
+    def run_until_user(self):
+        """Assuming that user and agent take turns, runs until the next time the input from the user is required. Returns True if the agent was invoked at least once, False otherwise"""
+        next_action_fn = os.path.join(self._path, '.next_action')
+        if os.path.exists(next_action_fn):
+            with open(next_action_fn) as f:
+                next_action = f.read().strip(' \n')
+        else:
+            # By default the user starts the conversation.
+            next_action = 'user'
+
+        start_on_user = next_action == 'user'
+
+        messages = self.list_messages()
+        new_message = None if not messages else messages[-1]['content']
+
+        if not start_on_user:
+            self._agents[0].run(self, task=new_message)
+
+            start_on_user = False
+            with open(next_action_fn, 'w') as f:
+                f.write('user')
+
+            return True
+
+        return False
 
     def run_interactive(self):
         """Run an interactive session within the given environment."""
@@ -134,16 +188,19 @@ class Environment(object):
         def print_messages(last_message_idx):
             messages = self.list_messages()
             for item in messages[last_message_idx:]:
-                print(f"[{item['role']}]: {item['content']}")
+                print(f"[{item['role']}]: {item['content']}", flush=True)
             return len(messages)
+
         last_message_idx = print_messages(last_message_idx)
+
         while True:
+            if self.run_until_user():
+                last_message_idx = print_messages(last_message_idx)
+                if self.is_done(): break
+
             new_message = input('> ')
             if new_message == 'exit': break
-            self.add_message('user', new_message)
-            self._agents[0].run(self, task=new_message)
-            last_message_idx = print_messages(last_message_idx + 1)
-            if self.is_done(): break
+            self.add_user_interaction(new_message)
 
     def run_task(self, task: str, max_iterations: int = 10):
         """Runs a task within the given environment."""
