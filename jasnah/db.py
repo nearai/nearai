@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
 from datetime import datetime
+from functools import partial
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import backoff
@@ -605,6 +606,8 @@ class DB:
             print()
 
 
+
+
 def connect() -> "DB":
     return DB(
         host=CONFIG.db_host,
@@ -614,27 +617,35 @@ def connect() -> "DB":
         database=CONFIG.db_name,
     )
 
+class LazyObject:
+    def __init__(self, ctor, *args, **kwargs):
+        self._intialized = False
+        self._obj = None
+        self._ctor = partial(ctor, *args, **kwargs)
 
-# TODO: Move this to a better place. Currently when not configured properly, the CLI will fail to connect to the database.
-try:
-    db = connect()
-except Exception as e:
-    print("Could not connect to the database")
-    print(e)
-    db = None
+    def _init(self):
+        if self._intialized:
+            return
+        self._obj = self._ctor()
+        self._intialized = True
+
+    def __getattr__(self, name: str) -> Any:
+        self._init()
+        return getattr(self._obj, name)
+
+db: DB = LazyObject(connect)
 
 
 class CLI:
-    def create(self):
-        assert db is not None
-        db._create()
+    def ping(self):
+        db.log(origin='test', target='test', content={'content': 'this is a test'})
 
     def test(self):
         show_all = True
         total = 5
         tags = ("datasets",)
 
-        assert db is not None
+
         with db.connection.cursor() as cursor:
             show_all = 1 - int(show_all)
 
