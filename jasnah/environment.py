@@ -38,43 +38,6 @@ class InferenceRouter(object):
         return self._endpoints[provider_name](model=model_path, messages=messages, stream=stream)
 
 
-def run_interactive_command(command):
-    # Start the process and connect its output to sys.stdout/stderr
-    with subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) as process:
-        # Use threads or asynchronous IO to handle the process's output and errors
-        try:
-            # Pass the input from the user to the subprocess
-            while process.poll() is None:
-                # Read output line by line and print to the console
-                output = process.stdout.readline()
-                if output:
-                    print(output, end='')
-
-                # Check for errors as well
-                error_output = process.stderr.readline()
-                if error_output:
-                    print(error_output, end='', file=sys.stderr)
-
-        except KeyboardInterrupt:
-            # Handle user interrupt
-            print("Process interrupted by user")
-            process.kill()
-            process.wait()
-        except Exception as e:
-            # Handle other exceptions
-            print("An error occurred:", str(e))
-            process.kill()
-            process.wait()
-
-        # Check if the process is done and try to capture any remaining output
-        outs, errs = process.communicate()
-        if outs:
-            print(outs)
-        if errs:
-            print(errs, file=sys.stderr)
-        return (outs, errs, process.returncode)
-
-
 class Environment(object):
 
     def __init__(self, path: str, agents: List['Agent'], config):
