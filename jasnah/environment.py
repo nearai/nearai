@@ -2,11 +2,8 @@ import json
 import os
 import shutil
 import subprocess
-<<<<<<< HEAD
 import tarfile
 import tempfile
-=======
->>>>>>> main
 import threading
 from pathlib import Path
 from typing import Dict, List
