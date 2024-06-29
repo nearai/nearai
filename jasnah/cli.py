@@ -310,19 +310,19 @@ class EnvironmentCli:
     def interactive(self, agents: str, path: str):
         """Runs agent interactively with environment from given path."""
         _agents = [load_agent(agent) for agent in agents.split(',')]
-        env = Environment(path, _agents, CONFIG.llm_config)
+        env = Environment(path, _agents, CONFIG.llm_config, registry, CONFIG.get_user_name())
         env.run_interactive()
 
     def task(self, agents: str, task: str, path: str):
         """Runs agent non interactively with environment from given path."""
         _agents = [load_agent(agent) for agent in agents.split(',')]
-        env = Environment(path, _agents, CONFIG.llm_config)
+        env = Environment(path, _agents, CONFIG.llm_config, registry, CONFIG.get_user_name())
         env.run_task(task)
 
     def run(self, agents: str, task: str, path: str):
         """Runs agent in the current environment."""
         _agents = [load_agent(agent) for agent in agents.split(',')]
-        env = Environment(path, [], CONFIG.llm_config)
+        env = Environment(path, [], CONFIG.llm_config, registry, CONFIG.get_user_name())
         # TODO: Setup server that will allow to interact with agents and environment
 
 
