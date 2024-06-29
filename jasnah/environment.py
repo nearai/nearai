@@ -2,10 +2,12 @@ import json
 import os
 import subprocess
 import sys
+import select
+import threading
 
 from typing import List, Optional
 
-import openai
+from litellm import completion as litellm_completion
 
 DELIMITER = '\n'
 CHAT_FILENAME = 'chat.txt'
@@ -25,8 +27,52 @@ class InferenceRouter(object):
         if provider_name not in self._endpoints:
             assert 'providers' in self._config and provider_name in self._config['providers'], f'Provider {provider_name} not found in config.'
             provider_config = self._config['providers'][provider_name]
-            self._endpoints[provider_name] = openai.OpenAI(base_url=provider_config['base_url'], api_key=provider_config['api_key'] if provider_config['api_key'] else 'not-needed')
-        return self._endpoints[provider_name].chat.completions.create(model=model_path, messages=messages, stream=stream)
+            self._endpoints[provider_name] = lambda model, messages, stream: litellm_completion(
+                model, messages, stream=stream, 
+                # TODO: move this to config
+                custom_llm_provider='antropic' if 'antropic' in provider_config['base_url'] else 'openai',
+                input_cost_per_token=0,
+                output_cost_per_token=0,
+                base_url=provider_config['base_url'], 
+                api_key=provider_config['api_key'] if provider_config['api_key'] else 'not-needed')
+        return self._endpoints[provider_name](model=model_path, messages=messages, stream=stream)
+
+
+def run_interactive_command(command):
+    # Start the process and connect its output to sys.stdout/stderr
+    with subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) as process:
+        # Use threads or asynchronous IO to handle the process's output and errors
+        try:
+            # Pass the input from the user to the subprocess
+            while process.poll() is None:
+                # Read output line by line and print to the console
+                output = process.stdout.readline()
+                if output:
+                    print(output, end='')
+
+                # Check for errors as well
+                error_output = process.stderr.readline()
+                if error_output:
+                    print(error_output, end='', file=sys.stderr)
+
+        except KeyboardInterrupt:
+            # Handle user interrupt
+            print("Process interrupted by user")
+            process.kill()
+            process.wait()
+        except Exception as e:
+            # Handle other exceptions
+            print("An error occurred:", str(e))
+            process.kill()
+            process.wait()
+
+        # Check if the process is done and try to capture any remaining output
+        outs, errs = process.communicate()
+        if outs:
+            print(outs)
+        if errs:
+            print(errs, file=sys.stderr)
+        return (outs, errs, process.returncode)
 
 
 class Environment(object):
@@ -50,7 +96,7 @@ class Environment(object):
             return [json.loads(message) for message in f.read().split(DELIMITER) if message]
 
     def list_files(self, path) -> List[str]:
-        os.path.listdir(os.path.join(self._path, path))
+        return os.listdir(path)
 
     def read_file(self, filename: str) -> str:
         if not os.path.exists(os.path.join(self._path, filename)):
@@ -69,18 +115,15 @@ class Environment(object):
             if yes_no != '' and yes_no.lower() != 'y':
                 return {'command': command, 'returncode': 999, 'stdout': '', 'stderr': 'declined by user'}
 
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        process = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0, universal_newlines=True)
         stdout = ''
-        for c in iter(lambda: process.stdout.read(1), b""):
-            sys.stdout.buffer.write(c)
-            stdout += c.decode("utf-8")
-        # stdout = ''
-        # stderr = ''    
-        # with subprocess.Popen(command, stdout=subprocess.PIPE, universal_newlines=True) as process:
-        #     for line in process.stdout:
-        #         print(line)
-        # output = subprocess.run(command, shell=True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text=True)
-        result = {'command': command, 'stdout': stdout, 'stderr': process.stderr, 'returncode': process.returncode}
+        for line in iter(lambda: process.stdout.read(1), b''):
+            if process.poll() is not None:
+                break
+            print(line, end="")
+            stdout += line
+        process.stdout.close()
+        result = {'command': command, 'stdout': stdout, 'stderr': process.stderr.read(), 'returncode': process.returncode}
         with open(os.path.join(self._path, TERMINAL_FILENAME), 'a') as f:
             f.write(json.dumps(result) + DELIMITER)
         return result
