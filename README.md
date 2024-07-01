@@ -146,6 +146,10 @@ An environment run can be loaded by using the `--load_env` flag and passing it a
 
 To list environment identifiers use the command `jasnah-cli registry list --tags=environment`.
 
+A run can be named by passing a name to the record_run flag `--record_run="my special run"`.
+
+Environment runs can be loaded by passing the name of a previous run to  the --load_env flag like `--load_env="my special run"`.
+
 ```
 
 ### Library

@@ -4,6 +4,8 @@ import unittest
 from jasnah.agent import Agent
 from jasnah.environment import Environment
 from jasnah.config import CONFIG
+from jasnah.db import db
+
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 SAVED_REGISTRY_ID = 81  # this is a valid registry id of a previous test run containing an empty chat.txt
@@ -32,6 +34,20 @@ class TestEnvironment(unittest.TestCase):
         run_id = env._generate_run_id()
 
         assert env.save_to_registry("test", run_id, "unittest-save") is not None
+        generated_name = f'environment_run_test_{run_id}'
+        registry_entry = db.get_registry_entry_by_identifier(generated_name)
+        assert registry_entry is not None
+        assert registry_entry.details[0]['base_id'] == "unittest-save"
+
+    def test_save_as_name(self):
+        test_dir = TEST_DIR
+        path = f'{test_dir}/test-agents/test'
+        agent = Agent('test', path, 'test')
+        _agents = [agent]
+        env = Environment(path, _agents, CONFIG.llm_config)
+        run_id = env._generate_run_id()
+
+        assert env.save_to_registry("test", run_id, None, "unittest-base") is not None
 
     def test_load_by_registry_id(self):
         test_dir = TEST_DIR

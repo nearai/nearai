@@ -14,6 +14,7 @@ import psutil
 
 from jasnah.completion import InferenceRouter
 from jasnah.config import CONFIG
+from jasnah.db import db
 from jasnah.registry import registry
 
 DELIMITER = '\n'
@@ -134,7 +135,7 @@ class Environment(object):
             snapshot = f.read()
         return snapshot
 
-    def save_to_registry(self, run_type: str, run_id: str, base_id: Optional[str|int] = None):
+    def save_to_registry(self, run_type: str, run_id: str, base_id: Optional[str|int] = None, run_name: Optional[str] = None):
         """Save Environment to Registry."""
         author = self._user_name
         if not author:
@@ -143,6 +144,16 @@ class Environment(object):
             return
 
         agent_name = self._agents[0].name
+        generated_name = f"environment_run_{agent_name}_{run_id}"
+        if run_name:
+            if db.get_registry_entry_by_identifier(run_name, fail_if_not_found=False):
+                print(f"Warning: Run with name '{run_name}' already exists in registry. "
+                      f"Using generated name '{generated_name}' instead.")
+                name = generated_name
+            else:
+                name = run_name
+        else:
+            name = generated_name
 
         with tempfile.NamedTemporaryFile( suffix='.tar.gz') as f:
             with tarfile.open(fileobj=f, mode='w:gz') as tar:
@@ -154,7 +165,6 @@ class Environment(object):
 
             s3_path = f"environments/{run_id}"
             timestamp = datetime.datetime.now(datetime.UTC).isoformat()
-            name = f"environment_run_{agent_name}_{run_id}"
             description = f"Agent {run_type} run {agent_name} {run_id} {timestamp}"
             details={
                 "base_id": base_id,
@@ -175,7 +185,8 @@ class Environment(object):
                 show_entry=True,
                 tags=tags_l,
             )
-            print(f'Saved environment {registry_id} to registry. To load use flag `--load-env={registry_id}`. ')
+            print(f'Saved environment {registry_id} to registry. To load use flag `--load-env={registry_id}`. '
+                  f'or `--load-env={name}`')
             return snapshot
 
     def load_snapshot(self, snapshot: bytes):
@@ -222,7 +233,7 @@ class Environment(object):
             # By default the user starts the conversation.
             return 'user'
 
-    def run_interactive(self, record_run: bool = False, load_env: str=''):
+    def run_interactive(self, record_run: str = '', load_env: str=''):
         """Run an interactive session within the given environment."""
         run_id = self._generate_run_id()
         if load_env:
@@ -257,9 +268,10 @@ class Environment(object):
                 self.set_next_actor('agent')
 
         if record_run:
-            self.save_to_registry('interactive', run_id, base_id)
+            run_name = record_run if record_run and record_run is not "true" else None
+            self.save_to_registry('interactive', run_id, base_id, run_name)
 
-    def run_task(self, task: str, record_run: bool = False, load_env: str = '', max_iterations: int = 10,):
+    def run_task(self, task: str, record_run: str = '', load_env: str = '', max_iterations: int = 10,):
         """Runs a task within the given environment."""
         run_id = self._generate_run_id()
         if load_env:
@@ -276,4 +288,5 @@ class Environment(object):
             self._agents[0].run(self, task=task)
 
         if record_run:
-            self.save_to_registry('task', run_id, base_id)
+            run_name = record_run if record_run and record_run is not "true" else None
+            self.save_to_registry('task', run_id, base_id, run_name)
