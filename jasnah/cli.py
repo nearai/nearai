@@ -290,9 +290,9 @@ class BenchmarkCli:
         solver_strategy: SolverStrategy | None = SolverStrategyRegistry.get(solver_strategy, None)
         assert solver_strategy, f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
         solver_strategy = solver_strategy(dataset_ref=dataset, **solver_kwargs)
-        assert name in solver_strategy.compadible_datasets(), f"Solver strategy {solver_strategy} is not compatible with dataset {name}"
+        assert name in solver_strategy.compatible_datasets(), f"Solver strategy {solver_strategy} is not compatible with dataset {name}"
 
-        be = BenchmarkExecutor((name, subset, dataset), solver_strategy)
+        be = BenchmarkExecutor(DatasetInfo(name, subset, dataset), solver_strategy)
         be.run()
 
 

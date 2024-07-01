@@ -6,7 +6,7 @@ from typing import Optional, Union
 from datasets import Dataset, DatasetDict
 from tqdm import tqdm
 
-from .solvers import SolverStrategy
+from jasnah.solvers import SolverStrategy
 
 
 @dataclass
@@ -17,7 +17,7 @@ class DatasetInfo:
 
     def get_dataset(self) -> Dataset:
         if isinstance(self.dataset, DatasetDict):
-            assert self.subset is not None
+            assert self.subset is not None, f"Subset must be: {', '.join(self.dataset.keys())}"
             return self.dataset[self.subset]
         elif isinstance(self.dataset, Dataset):
             return self.dataset
