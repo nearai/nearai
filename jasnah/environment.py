@@ -67,6 +67,9 @@ class Environment(object):
     def list_files(self, path) -> List[str]:
         return os.listdir(path)
 
+    def get_path(self) -> str:
+        return self._path
+
     def read_file(self, filename: str) -> str:
         if not os.path.exists(os.path.join(self._path, filename)):
             return ''
@@ -149,39 +152,14 @@ class Environment(object):
     def __str__(self):
         return f'Environment({self._path})'
 
-    def add_user_interaction(self, text):
-        next_action_fn = os.path.join(self._path, '.next_action')
+    def run_agent(self, task):
+        self._agents[0].run(self, task=task)
 
-        self.add_message('user', text)
+    def set_next_actor(self, who):
+        next_action_fn = os.path.join(self._path, '.next_action')
 
         with open(next_action_fn, 'w') as f:
-            f.write('agent')
-
-    def run_until_user(self):
-        """Assuming that user and agent take turns, runs until the next time the input from the user is required. Returns True if the agent was invoked at least once, False otherwise"""
-        next_action_fn = os.path.join(self._path, '.next_action')
-        if os.path.exists(next_action_fn):
-            with open(next_action_fn) as f:
-                next_action = f.read().strip(' \n')
-        else:
-            # By default the user starts the conversation.
-            next_action = 'user'
-
-        start_on_user = next_action == 'user'
-
-        messages = self.list_messages()
-        new_message = None if not messages else messages[-1]['content']
-
-        if not start_on_user:
-            self._agents[0].run(self, task=new_message)
-
-            start_on_user = False
-            with open(next_action_fn, 'w') as f:
-                f.write('user')
-
-            return True
-
-        return False
+            f.write(who)
 
     def run_interactive(self):
         """Run an interactive session within the given environment."""
@@ -195,13 +173,31 @@ class Environment(object):
         last_message_idx = print_messages(last_message_idx)
 
         while True:
-            if self.run_until_user():
+            next_action_fn = os.path.join(self._path, '.next_action')
+            if os.path.exists(next_action_fn):
+                with open(next_action_fn) as f:
+                    next_action = f.read().strip(' \n')
+            else:
+                # By default the user starts the conversation.
+                next_action = 'user'
+
+            next_is_user = next_action == 'user'
+
+            if not next_is_user:
+                messages = self.list_messages()
+                new_message = None if not messages else messages[-1]['content']
+
+                self.run_agent(new_message)
+
                 last_message_idx = print_messages(last_message_idx)
                 if self.is_done(): break
 
-            new_message = input('> ')
-            if new_message == 'exit': break
-            self.add_user_interaction(new_message)
+            else:
+                new_message = input('> ')
+                if new_message == 'exit': break
+                self.add_message('user', new_message)
+
+                self.set_next_actor('agent')
 
     def run_task(self, task: str, max_iterations: int = 1):
         """Runs a task within the given environment."""
