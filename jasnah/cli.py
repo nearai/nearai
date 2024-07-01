@@ -20,7 +20,7 @@ from jasnah.db import db
 from jasnah.environment import Environment
 from jasnah.registry import Registry, agent, dataset, model, registry
 from jasnah.server import ServerClient, run_server
-from jasnah.solvers import SolverStrategyRegistry
+from jasnah.solvers import SolverStrategy, SolverStrategyRegistry
 from jasnah.supervisor import SupervisorClient, run_supervisor
 
 
@@ -284,21 +284,15 @@ class BenchmarkCli:
         self.datasets = datasets
         self.models = models
 
-    def run(self, dataset: str, model: str, solver_strategy: str, subset: Optional[str] = None):
-        name, subset, dataset_d = dataset, subset, load_dataset(dataset)
-        model_completion_fn = create_completion_fn(model)
+    def run(self, dataset: str,  solver_strategy: str, subset: str = None, **solver_kwargs):
+        name, subset, dataset = dataset, subset, load_dataset(dataset)
 
-        solver_strategy_cls = SolverStrategyRegistry.get(solver_strategy, None)
-        assert (
-            solver_strategy_cls is not None
-        ), f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
+        solver_strategy: SolverStrategy | None = SolverStrategyRegistry.get(solver_strategy, None)
+        assert solver_strategy, f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
+        solver_strategy = solver_strategy(dataset_ref=dataset, **solver_kwargs)
+        assert name in solver_strategy.compadible_datasets(), f"Solver strategy {solver_strategy} is not compatible with dataset {name}"
 
-        solver_strategy_ = solver_strategy_cls(model_completion_fn, dataset_ref=dataset_d)
-        assert (
-            name in solver_strategy_.compatible_datasets()
-        ), f"Solver strategy {solver_strategy_} is not compatible with dataset {name}"
-
-        be = BenchmarkExecutor(DatasetInfo(name, subset, dataset_d), solver_strategy_)
+        be = BenchmarkExecutor((name, subset, dataset), solver_strategy)
         be.run()
 
 
