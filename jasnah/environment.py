@@ -148,7 +148,6 @@ class Environment(object):
     def save_to_registry(self, run_type: str, run_id: str, base_id: Optional[int] = None):
         """Save Environment to Registry."""
         agent_name = self._agents[0].name
-        print(f'Saving environment to registry: {run_type} {agent_name} {run_id}')
 
         with tempfile.NamedTemporaryFile( suffix='.tar.gz') as f:
             with tarfile.open(fileobj=f, mode='w:gz') as tar:
@@ -172,7 +171,7 @@ class Environment(object):
                 "filename": tar_filename,
             },
             tags_l = ['environment']
-            self._registry.upload(
+            registry_id = self._registry.upload(
                 path=Path(tar_filename),
                 s3_path=s3_path,
                 author=author,
@@ -182,7 +181,7 @@ class Environment(object):
                 show_entry=True,
                 tags=tags_l,
             )
-            # todo print db identifier or other info for loading
+            print(f'Saved environment {registry_id} to registry. To load use flag `--load-env={registry_id}`. ')
             return snapshot
 
     def load_snapshot(self, snapshot: bytes):

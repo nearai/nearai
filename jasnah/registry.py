@@ -138,7 +138,7 @@ class Registry:
         if db.exists_in_registry(s3_path):
             raise ValueError(f"{s3_path} already exists in the registry")
 
-        db.add_to_registry(
+        registry_id = db.add_to_registry(
             s3_path=s3_path,
             name=name or "",
             author=author,
@@ -149,6 +149,7 @@ class Registry:
         )
 
         jasnah.log(target=f"Add to registry", name=name, author=author)
+        return registry_id
 
     def add_tags(self, *, identifier: Union[str, int], tags: List[str]):
         entry = db.get_registry_entry_by_identifier(identifier)
@@ -193,7 +194,7 @@ class Registry:
         if self.exists_in_s3(s3_path):
             raise ValueError(f"{prefix} already exists in S3")
 
-        self.add(
+        registry_id = self.add(
             s3_path=s3_path,
             name=name,
             author=author,
@@ -221,6 +222,7 @@ class Registry:
                     s3_path = os.path.join(prefix, relative_path)
 
                     upload_file(s3_client, s3_path, Path(local_path))
+        return registry_id
 
     def download(self, identifier: str|int, version: Optional[str] = None):
         # Try to work in offline mode by checking if identifier is a path first before fetching from database.

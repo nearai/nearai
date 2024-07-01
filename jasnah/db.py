@@ -401,6 +401,7 @@ class DB:
 
         for tag in tags:
             self.add_tag(registry_id=registry_id, tag=tag)
+        return registry_id
 
     @check_renamed_table
     def list_registry_entries(self, *, total: int, show_all: bool, tags: List[str]) -> List[DisplayRegistry]:
