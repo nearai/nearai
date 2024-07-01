@@ -8,7 +8,7 @@ import tempfile
 import threading
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import psutil
 
@@ -134,7 +134,7 @@ class Environment(object):
             snapshot = f.read()
         return snapshot
 
-    def save_to_registry(self, run_type: str, run_id: str, base_id: Optional[str|int] = None):
+    def save_to_registry(self, run_type: str, run_id: str, base_id: Optional[Union[str,int]] = None):
         """Save Environment to Registry."""
         author = self._user_name
         if not author:

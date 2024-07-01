@@ -224,7 +224,7 @@ class Registry:
                     upload_file(s3_client, s3_path, Path(local_path))
         return registry_id
 
-    def download(self, identifier: str|int, version: Optional[str] = None):
+    def download(self, identifier: Union[str,int], version: Optional[str] = None):
         # Try to work in offline mode by checking if identifier is a path first before fetching from database.
         if isinstance(identifier, str) and not identifier.isdigit():
             target = self.download_folder / identifier
