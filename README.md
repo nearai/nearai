@@ -141,6 +141,14 @@ You can run agent (or a set of agents) inside a local environment that lives in 
 jasnah-cli environment interactive sample-agent ~/tmp/sample-agent/test1 
 ```
 
+By default each environment run is saved to the registry. You can disable this by adding the flag `--record_run=False`.
+
+An environment run can be loaded by using the `--load_env` flag and passing it a registry identifier `--load_env=61`.
+
+To list environment identifiers use the command `jasnah-cli registry list --tags=environment`.
+
+```
+
 ### Library
 
 You can import `jasnah` as a library in your python code. The main features are:
