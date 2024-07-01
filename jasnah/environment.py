@@ -135,7 +135,8 @@ class Environment(object):
     def mark_done(self):
         self._done = True
 
-    def save(self):
+    def create_snapshot(self):
+        """Create an in memory snapshot"""
         with tempfile.NamedTemporaryFile( suffix='.tar.gz') as f:
             with tarfile.open(fileobj=f, mode='w:gz') as tar:
                 tar.add(self._path, arcname='.')
@@ -184,8 +185,8 @@ class Environment(object):
             # todo print db identifier or other info for loading
             return snapshot
 
-    def load(self, snapshot: bytes):
-        """Load Environment from Registry."""
+    def load_snapshot(self, snapshot: bytes):
+        """Load Environment from Snapshot."""
         shutil.rmtree(self._path, ignore_errors=True)
 
         with tempfile.NamedTemporaryFile(suffix='.tar.gz') as f:
