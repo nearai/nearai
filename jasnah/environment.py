@@ -75,6 +75,9 @@ class Environment(object):
     def list_files(self, path) -> List[str]:
         return os.listdir(path)
 
+    def get_path(self) -> str:
+        return self._path
+
     def read_file(self, filename: str) -> str:
         if not os.path.exists(os.path.join(self._path, filename)):
             return ''
@@ -101,6 +104,7 @@ class Environment(object):
             process.kill()
 
         timer = threading.Timer(2, on_timeout, (process, ))
+        timer.start()
         process.wait()
         timer.cancel()
 
@@ -205,6 +209,15 @@ class Environment(object):
     def __str__(self):
         return f'Environment({self._path})'
 
+    def run_agent(self, task):
+        self._agents[0].run(self, task=task)
+
+    def set_next_actor(self, who):
+        next_action_fn = os.path.join(self._path, '.next_action')
+
+        with open(next_action_fn, 'w') as f:
+            f.write(who)
+
     def run_interactive(self, record_run: Optional[bool] = True, load_env: Optional[int] = None):
         """Run an interactive session within the given environment."""
         run_id = self._generate_run_id()
@@ -220,39 +233,35 @@ class Environment(object):
                 print(f"[{item['role']}]: {item['content']}", flush=True)
             return len(messages)
 
-        next_action_fn = os.path.join(self._path, '.next_action')
-        if os.path.exists(next_action_fn):
-            with open(next_action_fn) as f:
-                next_action = f.read().strip(' \n')
-        else:
-            # By default the agent starts the conversation. To introduce itself.
-            next_action = 'agent'
-
-        start_on_user = next_action == 'user'
-
         last_message_idx = print_messages(last_message_idx)
-        messages = self.list_messages()
-        new_message = None if not messages else messages[-1]['content']
 
-        # Alternates between user and agent. In case we break the loop early
-        # we store in workspace/.next_action which one should start next between user and agent.
         while True:
-            if not start_on_user:
-                start_on_user = False
-                with open(next_action_fn, 'w') as f:
-                    f.write('agent')
+            next_action_fn = os.path.join(self._path, '.next_action')
+            if os.path.exists(next_action_fn):
+                with open(next_action_fn) as f:
+                    next_action = f.read().strip(' \n')
+            else:
+                # By default the user starts the conversation.
+                next_action = 'user'
 
-                # Agent introuce itself
-                self._agents[0].run(self, task=new_message)
+            next_is_user = next_action == 'user'
+
+            if not next_is_user:
+                messages = self.list_messages()
+                new_message = None if not messages else messages[-1]['content']
+
+                self.run_agent(new_message)
+
                 last_message_idx = print_messages(last_message_idx)
                 if self.is_done(): break
 
-            with open(next_action_fn, 'w') as f:
-                f.write('user')
+            else:
+                new_message = input('> ')
+                if new_message == 'exit': break
+                self.add_message('user', new_message)
 
-            new_message = input('> ')
-            if new_message == 'exit': break
-            self.add_message('user', new_message)
+                self.set_next_actor('agent')
+
         if record_run:
             self.save_to_registry('interactive', run_id, base_id)
 
