@@ -277,3 +277,7 @@ class Environment(object):
 
         if record_run:
             self.save_to_registry('task', run_id, base_id)
+
+    def inspect(self):
+        filename = Path(os.path.abspath(__file__)).parent / 'streamlit_inspect.py'
+        subprocess.call(['streamlit', 'run', filename, '--', self._path])
