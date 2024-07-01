@@ -8,6 +8,7 @@ import threading
 from pathlib import Path
 from typing import Dict, List
 
+import psutil
 from litellm import completion as litellm_completion
 
 DELIMITER = '\n'
@@ -91,16 +92,23 @@ class Environment(object):
 
         process = subprocess.Popen(command.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0, universal_newlines=True)
 
-        def on_timeout(process):
-            """Kill process on timeout and note as status_dict['timeout']=True"""
+        msg = ""
+
+        def kill_process_tree(p):
+            nonlocal msg
+            msg = "Killing process due to timeout"
+
+            process = psutil.Process(p.pid)
+            for proc in process.children(recursive=True):
+                proc.kill()
             process.kill()
 
-        timer = threading.Timer(2, on_timeout, (process, ))
+        timer = threading.Timer(2, kill_process_tree, (process, ))
         timer.start()
         process.wait()
         timer.cancel()
 
-        result = {'command': command, 'stdout': process.stdout.read(), 'stderr': process.stderr.read(), 'returncode': process.returncode}
+        result = {'command': command, 'stdout': process.stdout.read(), 'stderr': process.stderr.read(), 'returncode': process.returncode, 'msg': msg}
         with open(os.path.join(self._path, TERMINAL_FILENAME), 'a') as f:
             f.write(json.dumps(result) + DELIMITER)
         return result
