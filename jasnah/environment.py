@@ -145,7 +145,7 @@ class Environment(object):
             snapshot = f.read()
         return snapshot
 
-    def save_to_registry(self, run_type: str, run_id: str, base_id: Optional[int] = None):
+    def save_to_registry(self, run_type: str, run_id: str, base_id: Optional[str|int] = None):
         """Save Environment to Registry."""
         agent_name = self._agents[0].name
 
@@ -218,7 +218,7 @@ class Environment(object):
         with open(next_action_fn, 'w') as f:
             f.write(who)
 
-    def run_interactive(self, record_run: Optional[bool] = True, load_env: Optional[int] = None):
+    def run_interactive(self, record_run: str, load_env: str):
         """Run an interactive session within the given environment."""
         run_id = self._generate_run_id()
         if load_env:
@@ -265,7 +265,7 @@ class Environment(object):
         if record_run:
             self.save_to_registry('interactive', run_id, base_id)
 
-    def run_task(self, task: str, max_iterations: int = 10, record_run: Optional[bool] = True, load_env: Optional[int] = None):
+    def run_task(self, task: str, record_run: str, load_env: str, max_iterations: int = 10,):
         """Runs a task within the given environment."""
         run_id = self._generate_run_id()
         if load_env:
