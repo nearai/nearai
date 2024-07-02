@@ -304,6 +304,11 @@ class EnvironmentCli:
         """Setup environment with given task from the dataset."""
         pass
 
+    def inspect(self, path: str):
+        """Inspect environment from given path."""
+        env = Environment(path, [], CONFIG.llm_config)
+        env.inspect()
+
     def interactive(self, agents: str, path: str, record_run: str = "true", load_env: str = None):
         """Runs agent interactively with environment from given path."""
         _agents = [load_agent(agent) for agent in agents.split(',')]

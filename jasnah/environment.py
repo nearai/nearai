@@ -8,7 +8,7 @@ import tempfile
 import threading
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import psutil
 
@@ -42,6 +42,9 @@ class Environment(object):
     def add_message(self, role: str, message: str, filename: str=CHAT_FILENAME):
         with open(os.path.join(self._path, filename), 'a') as f:
             f.write(json.dumps({'role': role, 'content': message}) + DELIMITER)
+
+    def list_terminal_commands(self, filename: str=TERMINAL_FILENAME):
+        return self.list_messages(filename)
 
     def list_messages(self, filename: str=CHAT_FILENAME):
         path = os.path.join(self._path, filename)
@@ -135,7 +138,7 @@ class Environment(object):
             snapshot = f.read()
         return snapshot
 
-    def save_to_registry(self, run_type: str, run_id: str, base_id: Optional[str|int] = None, run_name: Optional[str] = None):
+    def save_to_registry(self, run_type: str, run_id: str, base_id: Optional[Union[str,int]] = None, run_name: Optional[str] = None):
         """Save Environment to Registry."""
         author = self._user_name
         if not author:
@@ -290,3 +293,7 @@ class Environment(object):
         if record_run:
             run_name = record_run if record_run and record_run is not "true" else None
             self.save_to_registry('task', run_id, base_id, run_name)
+
+    def inspect(self):
+        filename = Path(os.path.abspath(__file__)).parent / 'streamlit_inspect.py'
+        subprocess.call(['streamlit', 'run', filename, '--', self._path])
