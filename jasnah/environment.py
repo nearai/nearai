@@ -147,7 +147,7 @@ class Environment(object):
             model, messages, stream=stream, tools=tools, **kwargs
         )
         response_message = response.choices[0].message
-        if response_message.tool_calls:
+        if hasattr(response_message, "tool_calls") and response_message.tool_calls:
             messages.append(response_message)
             self.add_message(response_message.role, response_message.content)
             for tool_call in response_message.tool_calls:
