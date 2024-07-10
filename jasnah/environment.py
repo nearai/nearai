@@ -17,6 +17,7 @@ from jasnah.completion import InferenceRouter
 from jasnah.config import CONFIG
 from jasnah.db import db
 from jasnah.registry import registry
+from jasnah.tool_registry import ToolRegistry
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
@@ -31,6 +32,7 @@ class Environment(object):
         self._config = config
         self._inference = InferenceRouter(config)
         self._user_name = CONFIG.user_name
+        self._tools = ToolRegistry()
         os.makedirs(self._path, exist_ok=True)
         os.chdir(self._path)
         open(os.path.join(self._path, CHAT_FILENAME), "a").close()
@@ -39,9 +41,12 @@ class Environment(object):
     def _generate_run_id():
         return uuid.uuid4().hex
 
-    def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME):
+    def get_tool_registry(self):
+        return self._tools
+
+    def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME, **kwargs):
         with open(os.path.join(self._path, filename), "a") as f:
-            f.write(json.dumps({"role": role, "content": message}) + DELIMITER)
+            f.write(json.dumps({"role": role, "content": message, **kwargs}) + DELIMITER)
 
     def list_terminal_commands(self, filename: str = TERMINAL_FILENAME):
         return self.list_messages(filename)
@@ -136,9 +141,40 @@ class Environment(object):
         """Returns all completions for given messages using the given model."""
         return self._inference.completions(model, messages, stream=stream, **kwargs)
 
+    def completions_and_run_tools(self, model, messages, stream=False, tools=None, **kwargs):
+        """Returns all completions for given messages using the given model and runs tools."""
+        response = self._inference.completions(
+            model, messages, stream=stream, tools=tools, **kwargs
+        )
+        response_message = response.choices[0].message
+        if response_message.tool_calls:
+            messages.append(response_message)
+            self.add_message(response_message.role, response_message.content)
+            for tool_call in response_message.tool_calls:
+                function_name = tool_call.function.name
+                function_args = json.loads(tool_call.function.arguments)
+                function_response = self._tools.call_tool(function_name, **function_args)
+                tool_message = {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": function_response,
+                }
+
+                messages.append(tool_message)
+                self.add_message(tool_message["role"], tool_message["content"], tool_call_id=tool_call.id,
+                                 name=function_name)
+            return self.completions(model, messages, stream=stream, **kwargs)
+        else:
+            return response
+
     def completion(self, model: str, messages) -> str:
         """Returns a completion for the given messages using the given model."""
         return self.completions(model, messages).choices[0].message.content
+
+    def completion_and_run_tools(self, model: str, messages) -> str:
+        """Returns a completion for the given messages using the given model and runs tools."""
+        return self.completions_and_run_tools(model, messages).choices[0].message.content
 
     def call_agent(self, agent_path: str, task: str):
         """Calls agent with given task."""
