@@ -133,24 +133,25 @@ jasnah-cli registry remove_tag test/quine/v3 code
 ### Agents
 Agents are a python file in the local registry. Existing agents can be fetched with the download command `jasnah-cli agents download <AGENT_NAME>`.
 Local agent files that have not yet been uploaded can also be run.
+When uploading an agent, multiple versions can be stored by appending a version to the s3 path. The `--name` flag allows the latest agent to be fetched that matches that name.
 
 Examples
- * Downloading an agent `jasnah-cli agents download xela-agent-v2`
- * Uploading an agent `jasnah-cli agents upload ~/.jasnah/registry/agents/langgraph-dev/v1 agents/langgraph-dev/v1 "A minimal example";`
+ * Downloading an agent `jasnah-cli agents download xela-agent`
+ * Uploading an agent `jasnah-cli j agents upload --name langgraph-min-example ~/.jasnah/registry/agents/langgraph-min-example/v1 agents/langgraph-min-example/v1 "A minimal example";`
 
 #### Running environment interactively
 
 You can run an agent (or a set of agents) inside a local environment that lives in a specific folder.
 
-Agents can be run interactively. The environment_path should be a folder where the agent chat.txt and other files can be written, usually `~/tmp/test-agents/<AGENT_NAME>`.
+Agents can be run interactively. The environment_path should be a folder where the agent chat record (chat.txt) and other files can be written, usually `~/tmp/test-agents/<AGENT_NAME>`.
  * command `jasnah-cli environment interactive <AGENT> <ENVIRONMENT_PATH>`.
  * Example for a local agent `jasnah-cli environment interactive agent/my-agent/v1 ~/tmp/test-agents/my-agent-v1`.
- * Example for a downloaded agent `jasnah-cli environment interactive xela-agent-v2 ~/tmp/test-agents/xela-agent-v2`.
+ * Example for a downloaded agent `jasnah-cli environment interactive xela-agent ~/tmp/test-agents/xela-agent-v2`.
 
 #### Running environment task
 To run without user interaction pass the task input to the task
  * command `jasnah-cli environment task <AGENT> <INPUT> <ENVIRONMENT_PATH>`.
- * example `jasnah-cli environment task xela-agent-v2 "Build a command line chess engine" ~/tmp/test-agents/chess-engine`.
+ * example `jasnah-cli environment task xela-agent "Build a command line chess engine" ~/tmp/test-agents/chess-engine`.
 
 #### Saving and loading environment runs
 By default each environment run is saved to the registry. You can disable this by adding the flag `--record_run=False`.
