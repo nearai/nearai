@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 import json
 import os
 import shlex
@@ -7,7 +7,9 @@ import subprocess
 import tarfile
 import tempfile
 import threading
+import re
 import uuid
+import hashlib
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -25,7 +27,7 @@ TERMINAL_FILENAME = "terminal.txt"
 
 
 class Environment(object):
-    def __init__(self, path: str, agents: List["Agent"], config):
+    def __init__(self, path: str, agents: List["Agent"], config, create_files: bool = True):
         self._path = path
         self._agents = agents
         self._done = False
@@ -33,10 +35,11 @@ class Environment(object):
         self._inference = InferenceRouter(config)
         self._user_name = CONFIG.user_name
         self._tools = ToolRegistry()
-        os.makedirs(self._path, exist_ok=True)
-        os.chdir(self._path)
-        open(os.path.join(self._path, CHAT_FILENAME), "a").close()
         self.register_standard_tools()
+        if create_files:
+            os.makedirs(self._path, exist_ok=True)
+            open(os.path.join(self._path, CHAT_FILENAME), "a").close()
+        os.chdir(self._path)
 
     @staticmethod
     def _generate_run_id():
@@ -215,6 +218,7 @@ class Environment(object):
 
     def save_to_registry(
         self,
+        path: str,
         run_type: str,
         run_id: str,
         base_id: Optional[Union[str, int]] = None,
@@ -229,7 +233,7 @@ class Environment(object):
             )
             return
 
-        agent_name = self._agents[0].name
+        agent_name = self._agents[0].name if self._agents else "unknown"
         generated_name = f"environment_run_{agent_name}_{run_id}"
         if run_name:
             if db.get_registry_entry_by_identifier(run_name, fail_if_not_found=False):
@@ -245,14 +249,14 @@ class Environment(object):
 
         with tempfile.NamedTemporaryFile(suffix=".tar.gz") as f:
             with tarfile.open(fileobj=f, mode="w:gz") as tar:
-                tar.add(self._path, arcname=".")
+                tar.add(path, arcname=".")
             f.flush()
             f.seek(0)
             snapshot = f.read()
             tar_filename = f.name
 
             s3_path = f"environments/{run_id}"
-            timestamp = datetime.datetime.now(datetime.UTC).isoformat()
+            timestamp = datetime.now(timezone.utc).isoformat()
             description = f"Agent {run_type} run {agent_name} {run_id} {timestamp}"
             details = (
                 {
@@ -369,7 +373,7 @@ class Environment(object):
 
         if record_run:
             run_name = record_run if record_run and record_run != "true" else None
-            self.save_to_registry("interactive", run_id, base_id, run_name)
+            self.save_to_registry(self._path, "interactive", run_id, base_id, run_name)
 
     def run_task(
         self,
@@ -395,8 +399,90 @@ class Environment(object):
 
         if record_run:
             run_name = record_run if record_run and record_run != "true" else None
-            self.save_to_registry("task", run_id, base_id, run_name)
+            self.save_to_registry(self._path, "task", run_id, base_id, run_name)
 
     def inspect(self):
         filename = Path(os.path.abspath(__file__)).parent / "streamlit_inspect.py"
         subprocess.call(["streamlit", "run", filename, "--", self._path])
+
+    def contains_non_empty_chat_txt(self, directory):
+        chat_txt_path = os.path.join(directory, "chat.txt")
+        return os.path.isfile(chat_txt_path) and os.path.getsize(chat_txt_path) > 0
+
+    def save_folder(self, name: str = None):
+        path = self._path
+        temp_dir = None
+
+        def copy_relevant_folders(src, dest):
+            for item in os.listdir(src):
+                s = os.path.join(src, item)
+                d = os.path.join(dest, item)
+                if os.path.isdir(s):
+                    if self.contains_non_empty_chat_txt(s):
+                        shutil.copytree(s, d)
+                    else:
+                        os.makedirs(d, exist_ok=True)
+                        copy_relevant_folders(s, d)
+                        if not os.listdir(d):
+                            os.rmdir(d)
+
+        if not self.contains_non_empty_chat_txt(path):
+            temp_dir = tempfile.mkdtemp()
+            copy_relevant_folders(path, temp_dir)
+            path = temp_dir
+
+        try:
+            if not os.listdir(path):
+                raise ValueError(f"No files found in {path}")
+        
+            self.save_to_registry(path, "folders" if temp_dir else "folder", self.generate_folder_hash_id(path), None, name)
+        finally:
+            if temp_dir:
+                shutil.rmtree(temp_dir)
+
+    def save_from_history(self, lines, name: str = None):
+        # Parse lines and extract relevant information
+        pattern = r'^\s*(?:\d+\s+)?(\S+)\s+environment\s+interactive\s+(\S+)\s+(\S+)(.*?)$'
+        relevant_paths = {}
+        for line in lines:
+            match = re.match(pattern, line)
+            if match:
+                program_name, agents, path, other_args = match.groups()
+                path = path.strip('/')
+                if self.contains_non_empty_chat_txt(path):
+                    timestamp = os.path.getmtime(path)
+                    command = f"{program_name} environment interactive {agents} {path} {other_args}"
+                    relevant_paths[path] = {'command': command.strip()}
+
+        if not relevant_paths:
+            raise ValueError("No relevant paths with non-empty chat.txt files found in history")
+        
+        for path, info in relevant_paths.items():
+            print(path)
+            # Write start_command.log
+            with open(os.path.join(path, 'start_command.log'), 'w') as f:
+                f.write(info['command'])
+
+        # Create temporary directory and copy relevant folders
+        temp_dir = tempfile.mkdtemp()
+        try:
+            for path, info in relevant_paths.items():
+                dest = os.path.join(temp_dir, path.replace('/', '_').strip('_'))
+                shutil.copytree(path, dest)
+            self.save_to_registry(temp_dir, "folders", self.generate_folder_hash_id(temp_dir), None, name)
+
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def generate_folder_hash_id(self, path):
+        # Returns id similar to _generate_run_id(), but based on files and their contents in path, including subfolders
+        hash_obj = hashlib.md5()
+
+        for root, dirs, files in os.walk(path):
+            for file in sorted(files):
+                file_path = os.path.join(root, file)
+                with open(file_path, "rb") as f:
+                    while chunk := f.read(8192):
+                        hash_obj.update(chunk)
+
+        return hash_obj.hexdigest()

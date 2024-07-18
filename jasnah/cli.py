@@ -1,9 +1,9 @@
-import asyncio
 import json
 import os
 import runpy
 import sys
 import textwrap
+from collections import OrderedDict
 from dataclasses import asdict
 from pathlib import Path
 from subprocess import check_output, run
@@ -121,7 +121,9 @@ class RegistryCli:
     def __init__(self, registry: Registry):
         self._registry = registry
 
-    def add(self, s3_path: str, description: str, name: Optional[str] = None, tags: str = "", **details):
+    def add(
+        self, s3_path: str, description: str, name: Optional[str] = None, tags: str = "", **details
+    ):
         """Add an item to the registry that was previously uploaded to S3"""
         tags_l = parse_tags(tags)
         assert self._registry.exists_in_s3(s3_path), f"Item {s3_path} does not exist in S3"
@@ -294,17 +296,30 @@ class BenchmarkCli:
         dataset: str,
         solver_strategy: str,
         max_concurrent: int = -1,
+        force: bool = False,
         subset: str = None,
         **solver_kwargs,
     ):
+        """
+        Run benchmark on a dataset with a solver strategy.
+
+        It will cache the results in the database and subsequent runs will pull the results from the cache.
+        If force is set to True, it will run the benchmark again and update the cache.
+        """
+        benchmark_id = db.get_benchmark_id(dataset, solver_strategy, force, subset=subset, **solver_kwargs)
+
         name, subset, dataset = dataset, subset, load_dataset(dataset)
 
         solver_strategy: SolverStrategy | None = SolverStrategyRegistry.get(solver_strategy, None)
-        assert solver_strategy, f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
+        assert (
+            solver_strategy
+        ), f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
         solver_strategy = solver_strategy(dataset_ref=dataset, **solver_kwargs)
-        assert name in solver_strategy.compatible_datasets(), f"Solver strategy {solver_strategy} is not compatible with dataset {name}"
+        assert (
+            name in solver_strategy.compatible_datasets()
+        ), f"Solver strategy {solver_strategy} is not compatible with dataset {name}"
 
-        be = BenchmarkExecutor(DatasetInfo(name, subset, dataset), solver_strategy)
+        be = BenchmarkExecutor(DatasetInfo(name, subset, dataset), solver_strategy, benchmark_id=benchmark_id)
 
         max_concurrent = os.cpu_count() if max_concurrent < 0 else max_concurrent
         be.run(max_concurrent=max_concurrent)
@@ -317,8 +332,32 @@ class EnvironmentCli:
 
     def inspect(self, path: str):
         """Inspect environment from given path."""
-        env = Environment(path, [], CONFIG.llm_config)
+        env = Environment(path, [], CONFIG.llm_config, create_files=False)
         env.inspect()
+
+    def save_folder(self, path: str, name: str = None):
+        """Saves all subfolders with agent task runs (must contain non-empty chat.txt)"""
+        env = Environment(path, [], CONFIG.llm_config, create_files=False)
+        env.save_folder(name)
+
+    def save_from_history(self, name: str = None):
+        """Reads piped history, finds agent task runs, writes start_command.log files, and saves to registry. For detailed usage, run: jasnah-cli environment save_from_history --help
+
+        This command:
+        1. Finds agent task runs (must contain non-empty chat.txt)
+        2. Writes start_command.log files
+        3. Saves to registry
+
+        Only 'interactive' is supported.
+        Assumes format:
+        ' <line_number>  <program_name> environment interactive <comma_separated_agents> <path> <other_args>'
+        Run:
+        $ history | grep "environment interactive" | sed "s:~:$HOME:g" | jasnah-cli environment save_from_history environment_interactive_runs_from_lambda_00
+        """
+        env = Environment("/", [], CONFIG.llm_config, create_files=False)
+        # Read from stdin (piped input)
+        lines = sys.stdin.readlines()
+        env.save_from_history(lines, name)
 
     def interactive(self, agents: str, path: str, record_run: str = "true", load_env: str = None):
         """Runs agent interactively with environment from given path."""
@@ -359,7 +398,9 @@ class VllmCli:
         print(sys.argv)
 
         try:
-            runpy.run_module("vllm.entrypoints.openai.api_server", run_name="__main__", alter_sys=True)
+            runpy.run_module(
+                "vllm.entrypoints.openai.api_server", run_name="__main__", alter_sys=True
+            )
         finally:
             sys.argv = original_argv
 
@@ -398,7 +439,9 @@ class CLI:
                 print(f"Detected in-progress git operation: {op}")
                 return
 
-        repository_url = check_output(["git", "remote", "-v"]).decode().split("\n")[0].split("\t")[1].split()[0]
+        repository_url = (
+            check_output(["git", "remote", "-v"]).decode().split("\n")[0].split("\t")[1].split()[0]
+        )
         commit = check_output(["git", "rev-parse", "HEAD"]).decode().strip()
         diff = check_output(["git", "diff", "HEAD"]).decode()
 

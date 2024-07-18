@@ -141,9 +141,9 @@ class DDOTSV0Solver(SolverStrategy):
         print("Saving trajectories to", self._saved_trajectories)
 
     def compatible_datasets(self) -> List[str]:
-        return ["ddots_codeforces_small/v0"]
+        return ["ddots_codeforces_small/v0", "datasets/ddots_codeforces_medium_A_B/v0"]
 
-    def solve(self, datum: dict):
+    def solve(self, datum: dict) -> bool:
         problem_id = datum['problem_id']
         description = datum['description']
 

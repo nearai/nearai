@@ -1,0 +1,6 @@
+crate
+afterall
+savable
+jasnah
+nearai
+outloud

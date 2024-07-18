@@ -1,15 +1,5 @@
-import ast
-import re
 from abc import ABC, ABCMeta, abstractmethod
-from itertools import islice
-from typing import Any, Callable, Dict, List, Type, Union
-
-from datasets import Dataset, DatasetDict
-from jinja2 import Template
-from openai.types.chat import ChatCompletion
-from pydantic import BaseModel
-
-from jasnah.config import PROMPTS_FOLDER
+from typing import Any, Dict, List, Type, Union, Tuple, Any
 
 
 class SolverStrategyMeta(ABCMeta):
@@ -40,7 +30,7 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
     def compatible_datasets(self) -> List[str]: ...
 
     @abstractmethod
-    def solve(self, datum: dict) -> bool: ...
+    def solve(self, datum: dict) -> Union[bool, Tuple[bool, Any]]: ...
 
 
 SolverStrategyRegistry: Dict[str, Type[SolverStrategy]] = {}
@@ -48,3 +38,5 @@ SolverStrategyRegistry: Dict[str, Type[SolverStrategy]] = {}
 from jasnah.solvers.ddot_v0_solver import DDOTSV0Solver
 from jasnah.solvers.mbpp_solver import MBPPSolverStrategy
 from jasnah.solvers.mbpp_agent_solver import MBPPSolverAgent
+
+__all__ = ["SolverStrategyRegistry", "DDOTSV0Solver", "MBPPSolverStrategy", "MBPPSolverAgent"]
