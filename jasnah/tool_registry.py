@@ -62,6 +62,13 @@ class ToolRegistry:
             else:
                 json_type = param_type.__name__.lower()
 
+            json_type = {
+                "int": "integer",
+                "float": "number",
+                "str": "string",
+                "bool": "boolean"
+            }.get(json_type, json_type)
+
             # Add parameter to the definition
             parameters["properties"][param_name] = {
                 "description": param_description,
@@ -80,3 +87,11 @@ class ToolRegistry:
                 "parameters": parameters
             }
         }
+
+    def get_all_tool_definitions(self) -> list[Dict]:
+        definitions = []
+        for tool_name, tool in self.tools.items():
+            definition = self.get_tool_definition(tool_name)
+            if definition is not None:
+                definitions.append(definition)
+        return definitions
