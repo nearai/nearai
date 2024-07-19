@@ -38,5 +38,14 @@ SolverStrategyRegistry: Dict[str, Type[SolverStrategy]] = {}
 from jasnah.solvers.ddot_v0_solver import DDOTSV0Solver
 from jasnah.solvers.mbpp_solver import MBPPSolverStrategy
 from jasnah.solvers.mbpp_agent_solver import MBPPSolverAgent
+from jasnah.solvers.mmlu_solver import MMLUSolverStrategy
+from jasnah.solvers.hellaswag_solver import HellaswagSolverStrategy
 
-__all__ = ["SolverStrategyRegistry", "DDOTSV0Solver", "MBPPSolverStrategy", "MBPPSolverAgent"]
+__all__ = [
+    "SolverStrategyRegistry",
+    "DDOTSV0Solver",
+    "MBPPSolverStrategy",
+    "MBPPSolverAgent",
+    "MMLUSolverStrategy",
+    "HellaswagSolverStrategy",
+]

@@ -58,7 +58,9 @@ class BenchmarkExecutor:
                     result = completed_future.result()
                     if result:
                         correct += 1
-                    bar.set_description(f"Correct/Seen - {correct}/{total - remaining} - {correct/(total - remaining):.2%}")
+                    bar.set_description(
+                        f"Correct/Seen - {correct}/{total - remaining} - {correct/(total - remaining):.2%}"
+                    )
 
                     try:
                         next_task = next(tasks)

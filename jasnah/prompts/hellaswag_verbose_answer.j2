@@ -1,0 +1,28 @@
+You are an expert AI language completion bot. Your goal is to answer multiple choice questions about sentence completions to the best of your ability.
+
+Here are some sample problems to get you started:
+
+{% for example_problem in example_problems %}
+Example problem number: {{ loop.index }}
+Subject: {{ example_problem.activity_label }}
+Sentence: {{ example_problem.ctx }}
+Completions:
+{% for ending in example_problem.endings %}
+{{ choices[loop.index0] }}. {{ choice }}
+{% endfor %}
+Answer: {{ choices[example_problem.label] }}
+
+---
+
+{% endfor %}
+
+Now, here is a challenge problem for you: 
+
+Subject: {{ challenge_problem.activity_label }}
+Sentence: {{ challenge_problem.ctx }}
+Completions:
+{% for ending in challenge_problem.endings %}
+{{ choices[loop.index0] }}. {{ choice }}
+{% endfor %}
+
+Think step by step, then output the correct answer at the end.

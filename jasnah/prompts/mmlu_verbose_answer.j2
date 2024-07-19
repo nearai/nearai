@@ -1,0 +1,33 @@
+You are an expert AI question answer bot. Your goal is to answer multiple choice questions to the best of your ability.
+
+Here are some sample problems to get you started:
+
+{% for example_problem in example_problems %}
+Example problem number: {{ loop.index }}
+Subject: {{ example_problem.subject }}
+Question: {{ example_problem.question }}
+Choices:
+{% for choice in example_problem.choices %}
+{{ choices[loop.index0] }}. {{ choice }}
+{% endfor %}
+Answer: {{ choices[example_problem.answer] }}
+
+---
+{% endfor %}
+
+Now, here is a challenge problem for you: 
+
+Subject: {{ challenge_problem.subject }}
+Question: {{ challenge_problem.question }}
+Choices:
+{% for choice in challenge_problem.choices %}
+{{ choices[loop.index0] }}. {{ choice }}
+{% endfor %}
+
+What is the correct answer? 
+
+Please explain your rational for choosing that answer. 
+
+Think out loud as you work through the problem.
+
+After you have thought through the problem, output the correct answer and your explanation.
