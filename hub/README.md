@@ -2,7 +2,7 @@
 
 NEAR.AI Hub allows you to run complex inference based on your needs.
 
-It supports multiple providers and can be easily extended to support more. Supported inference providers: [Link](./api/v1/completions.py#L12)
+It supports multiple providers and can be easily extended to support more. Supported inference providers: [Link](./v1/completions.py#L12)
 
 ## Server
 
