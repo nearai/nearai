@@ -218,7 +218,7 @@ export function Chat() {
                 title="Model"
                 name="model"
                 defaultValue={
-                  "accounts/fireworks/models/mixtral-8x22b-instruct"
+                  "fireworks::accounts/fireworks/models/mixtral-8x22b-instruct"
                 }
                 choices={listModels.data ?? []}
               />
