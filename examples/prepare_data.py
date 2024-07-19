@@ -7,8 +7,8 @@ import tarfile
 
 from datasets import Dataset
 
-from jasnah.dataset import get_dataset
-from jasnah.registry import dataset
+from nearai.dataset import get_dataset
+from nearai.registry import dataset
 
 COLUMNS = [
     "nc_work_spec",

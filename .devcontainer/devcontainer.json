@@ -1,5 +1,5 @@
 {
-	"name": "jasnah_dev",
+	"name": "nearai_dev",
 	"dockerComposeFile": [
 		"../.devcontainer/compose.yml"
 	],
@@ -49,7 +49,7 @@
 			]
 		}
 	},
-	"service": "jasnah_dev",
+	"service": "nearai_dev",
 	"userEnvProbe": "loginInteractiveShell",
 	"workspaceFolder": "/workspace",
 	"features": {}

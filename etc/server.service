@@ -1,14 +1,14 @@
 [Unit]
-Description=Jasnah Server
+Description=NearAI Server
 After=network.target
 
 [Service]
 User=setup
 Type=simple
 Restart=no
-WorkingDirectory=/home/setup/.jasnah/jasnah-cli
-EnvironmentFile=/home/setup/.jasnah/jasnah-cli/etc/server.env
-ExecStart=/home/setup/.jasnah/jasnah-cli/etc/start_server.sh
+WorkingDirectory=/home/setup/.nearai/nearai
+EnvironmentFile=/home/setup/.nearai/nearai/etc/server.env
+ExecStart=/home/setup/.nearai/nearai/etc/start_server.sh
 LimitMEMLOCK=infinity
 LimitRSS=infinity
 

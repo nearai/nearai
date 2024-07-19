@@ -34,7 +34,7 @@ for question in questions:
     print("===================================")
 
     completion = client.chat.completions.create(
-        model="/home/setup/.jasnah/models/llama-3-8b-instruct/",
+        model="/home/setup/.nearai/models/llama-3-8b-instruct/",
         messages=[
             {
                 "role": "user",
