@@ -1,7 +1,7 @@
 import { Button } from "~/components/ui/button";
 import { PLAIN_MSG, RECIPIENT, NONCE } from "~/hooks/mutations";
 
-export function NearAccount() {
+export function NearLogin() {
 
   const requestSignature = () => {
     const fullUrl = window.location.href;
@@ -24,6 +24,7 @@ export function NearAccount() {
           onClick={() => {
             requestSignature()
           }}
+          className="w-full"
           type="button"
         >
           NEAR Log In

@@ -8,6 +8,7 @@ import { useState } from "react";
 import SuperJSON from "superjson";
 
 import { type AppRouter } from "~/server/api/root";
+import { CURRENT_AUTH } from "~/hooks/mutations";
 
 const createQueryClient = () => new QueryClient();
 
@@ -56,7 +57,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
             headers.set("x-trpc-source", "nextjs-react");
             headers.set(
               "Authorization",
-              localStorage.getItem("current_auth") ?? "",
+              localStorage.getItem(CURRENT_AUTH) ?? "",
             );
             return headers;
           },

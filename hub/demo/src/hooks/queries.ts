@@ -7,13 +7,9 @@ export function useListModels() {
   return useQuery({
     queryKey: ["listModels"],
     queryFn: () => {
-      console.log("listModels", listModels.data);
-
       const m = listModels.data?.data.map((m) => {
         return { label: m.id, value: m.id };
       });
-
-      console.log("models", m);
 
       return m;
     },

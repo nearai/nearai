@@ -18,10 +18,8 @@ export function useSendCompletionsRequest() {
 
   return useMutation({
     mutationFn: async (values: z.infer<typeof chatCompletionsModel>) => {
-      console.log("Storing in localStorage the conversation");
+      console.log("Storing in localStorage the conversation", values);
       localStorage.setItem(CONVERSATION_PATH, JSON.stringify(values));
-
-      const currAuth = localStorage.getItem(CURRENT_AUTH);
 
       return await chatMut.mutateAsync(values);
     },
