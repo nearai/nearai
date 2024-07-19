@@ -13,9 +13,9 @@ import time
 
 from datasets import Dataset
 
-from jasnah.dataset import get_dataset
-from jasnah.registry import dataset
-from jasnah.config import DATA_FOLDER
+from nearai.dataset import get_dataset
+from nearai.registry import dataset
+from nearai.config import DATA_FOLDER
 
 COLUMNS = [
     "filename",

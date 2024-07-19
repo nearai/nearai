@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "jasnah"
+name = "nearai"
 version = "0.1.0"
 description = ""
 authors = ["Marcelo Fornet <mfornet94@gmail.com>"]
@@ -44,7 +44,7 @@ pylint = "^2.15.5"
 mypy = "^1.10.0"
 
 [tool.poetry.scripts]
-jasnah-cli = "jasnah.cli:main"
+nearai = "nearai.cli:main"
 
 [build-system]
 requires = ["poetry-core"]

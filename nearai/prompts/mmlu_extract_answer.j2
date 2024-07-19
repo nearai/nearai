@@ -1,0 +1,18 @@
+Below is a question and your answer.
+
+--- start of question ---
+Subject: {{ challenge_problem.subject }}
+Question: {{ challenge_problem.question }}
+Choices:
+{% for choice in challenge_problem.choices %}
+ {{ choices[loop.index0] }}. {{ choice }}
+{% endfor %}
+--- end of question ---
+
+--- start of answer ---
+{{answer_text}}
+--- end of answer ---
+
+Only output one of the choices {{ choices }}.
+
+Output the choice representing your answer and nothing else.

@@ -22,6 +22,7 @@ import { useListModels } from "~/hooks/queries";
 import {authorizationModel, chatCompletionsModel, type messageModel} from "~/lib/models";
 import { Conversation } from "./bubble";
 import { NearLogin } from "./near";
+
 import { DropDownForm } from "./role";
 import { SliderFormField } from "./slider";
 
@@ -71,7 +72,7 @@ const useLocalStorage = (key) => {
 export function Chat() {
   const form = useZodForm(chatCompletionsModel);
   const chat = useSendCompletionsRequest();
-  const listModels = useListModels();
+  const listModels = useListModels(form.watch("provider"));
   const [conversation, setConversation] = useState<
     z.infer<typeof messageModel>[]
   >([]);
@@ -243,7 +244,7 @@ export function Chat() {
                 max={2048}
                 min={1}
                 step={1}
-                defaultValue={64}
+                defaultValue={128}
               />
             </div>
             <div>

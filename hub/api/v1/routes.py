@@ -1,8 +1,9 @@
+from typing import List, Dict, Any
 from pydantic import BaseModel
 from typing import Optional, Union, List, Dict
-from api.v1.sql import SqlClient
-from api.v1.completions import get_llm_ai, Message, handle_stream, Provider
-from api.v1.auth import get_current_user, AuthToken
+from hub.api.v1.sql import SqlClient
+from hub.api.v1.completions import get_llm_ai, Message, handle_stream, Provider
+from hub.api.v1.auth import get_current_user, AuthToken
 
 import logging
 import json
@@ -17,6 +18,14 @@ db = SqlClient()
 logger = logging.getLogger(__name__)
 security = HTTPBearer()
 
+PROVIDER_MODEL_SEP = "::"
+
+
+def get_provider_model(provider: Optional[str], model: str):
+    if PROVIDER_MODEL_SEP in model:
+        return model.split(PROVIDER_MODEL_SEP)
+    return provider, model
+
 
 class ResponseFormat(BaseModel):
     """The format of the response."""
@@ -28,9 +37,9 @@ class ResponseFormat(BaseModel):
 
 class LlmRequest(BaseModel):
     """Base class for LLM requests."""
-    model: str = "accounts/fireworks/models/mixtral-8x22b-instruct"
+    model: str = f"fireworks{PROVIDER_MODEL_SEP}accounts/fireworks/models/mixtral-8x22b-instruct"
     """The model to use for generation."""
-    provider: str = "fireworks"
+    provider: Optional[str] = None
     """The provider to use for generation."""
     max_tokens: Optional[int] = 1024
     """The maximum number of tokens to generate."""
@@ -62,13 +71,23 @@ class ChatCompletionsRequest(LlmRequest):
     messages: List[Message]
 
 
+# The request might come as provider::model
+# OpenAI API specs expects model name to be only the model name, not provider::model
+def convert_request(request: ChatCompletionsRequest | CompletionsRequest):
+    provider, model = get_provider_model(request.provider, request.model)
+    request.model = model
+    request.provider = provider
+    return request
+
+
 @v1_router.post("/completions")
-def completions(request: CompletionsRequest, auth: AuthToken = Depends(get_current_user)):
-    if not auth:
-        raise HTTPException(status_code=401, detail="Invalid token")
+def completions(request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(get_current_user)):
     logger.info(f"Received completions request: {request.model_dump()}")
 
-    llm = get_llm_ai(request.provider)
+    try:
+        llm = get_llm_ai(request.provider)
+    except NotImplementedError:
+        raise HTTPException(status_code=400, detail="Provider not supported")
 
     resp = llm.completions.create(
         **request.model_dump(exclude={"provider", "response_format"}))
@@ -90,10 +109,13 @@ def completions(request: CompletionsRequest, auth: AuthToken = Depends(get_curre
 
 
 @v1_router.post("/chat/completions")
-async def chat_completions(request: ChatCompletionsRequest, auth: AuthToken = Depends(get_current_user)):
+async def chat_completions(request: ChatCompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(get_current_user)):
     logger.info(f"Received chat completions request: {request.model_dump()}")
 
-    llm = get_llm_ai(request.provider)
+    try:
+        llm = get_llm_ai(request.provider)
+    except NotImplementedError:
+        raise HTTPException(status_code=400, detail="Provider not supported")
 
     resp = llm.chat.completions.create(
         **request.model_dump(exclude={"provider"}))
@@ -116,10 +138,22 @@ async def chat_completions(request: ChatCompletionsRequest, auth: AuthToken = De
 
 @v1_router.get("/models")
 async def get_models():
-    # TODO: merge all models from all providers.
+    all_models: List[Dict[str, Any]] = []
+
     for p in Provider:
         try:
-            m = get_llm_ai(p.value).models.list()
-            return JSONResponse(content=m.model_dump())
+            provider_models = get_llm_ai(p.value).models.list()
+            for model in provider_models:
+                model_dict = model.model_dump()
+                model_dict['id'] = f"{p.value}{PROVIDER_MODEL_SEP}{model_dict['id']}"
+                all_models.append(model_dict)
         except Exception as e:
             logger.error(f"Error getting models from provider {p.value}: {e}")
+
+    # Format the response to match OpenAI API structure
+    response = {
+        "object": "list",
+        "data": all_models
+    }
+
+    return JSONResponse(content=response)

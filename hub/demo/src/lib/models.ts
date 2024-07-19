@@ -32,14 +32,14 @@ export const chatResponseModel = z.object({
     z.object({
       finish_reason: z.string(),
       index: z.number(),
-      logprobs: z.nullable(z.unknown()),
+      logprobs: z.unknown().nullable(),
       message: messageModel,
     }),
   ),
   created: z.number(),
   model: z.string(),
   object: z.string(),
-  system_fingerprint: z.nullable(z.unknown()),
+  system_fingerprint: z.unknown().nullable(),
   usage: z.object({
     completion_tokens: z.number(),
     prompt_tokens: z.number(),
@@ -56,11 +56,11 @@ export const oneModelModel = z.object({
   created: z.number(),
   object: z.string(),
   owned_by: z.string(),
-  number_of_inference_nodes: z.optional(z.number()),
+  number_of_inference_nodes: z.number().nullable().optional(),
   supports_chat: z.boolean(),
   supports_image_input: z.boolean(),
   supports_tools: z.boolean(),
-  context_length: z.optional(z.number()),
+  context_length: z.number().nullable().optional(),
 });
 
 export const listModelsResponseModel = z.object({

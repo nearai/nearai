@@ -1,12 +1,12 @@
 services:
-  jasnah_dev:
+  nearai_dev:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile.gpu.dev
     network_mode: host
     volumes:
       - ..:/workspace:Z
-      - ~/.jasnah:/home/user/.jasnah
+      - ~/.nearai:/home/user/.nearai
       - ~/.cache:/home/user/.cache
     command: "sleep infinity"
     platform: linux/amd64
