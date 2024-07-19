@@ -14,7 +14,6 @@ from jasnah.config import CONFIG, DATA_FOLDER, ETC_FOLDER
 from jasnah.dataset import get_dataset
 from jasnah.model import get_model
 from jasnah.registry import registry
-from jasnah.server import ServerClient
 
 
 class FinetuneCli:
@@ -30,6 +29,8 @@ class FinetuneCli:
         epochs: int = 1,
     ):
         """Submit a finetuning job to the cluster"""
+        from jasnah.server import ServerClient
+
         client = ServerClient(CONFIG.server_url)
 
         result = client.submit(

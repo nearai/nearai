@@ -7,36 +7,50 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-fire = "^0.6.0"
-flask = "^3.0.3"
-boto3 = "^1.34.100"
-boto3-stubs = "^1.34.100"
-datasets = "^2.19.1"
-transformers = "^4.40.2"
-peft = "^0.10.0"
-torch = "^2.2.2"
-fabric = "^3.2.2"
-gunicorn = "^22.0.0"
-requests = "^2.31.0"
-pymysql = "^1.1.0"
-setuptools = "^69.5.1"
-backoff = "^2.2.1"
-tabulate = "^0.9.0"
-tqdm = "^4.66.4"
-pydantic = "^2.7.1"
-openai = "^1.30.1"
-jinja2 = "^3.1.4"
-litellm = "^1.41.0"
-tenacity = "^8.2.3"
-torchtune = { git = "https://github.com/pytorch/torchtune.git#58d58bce65836c23865e6a9aa683475631527d82" }
-torchao = { git = "https://github.com/pytorch/ao.git#a8956992191853b13f82ceb3e6929bed7691a3fa" }
-tensorboardX = "^2.6.2.2"
-vllm = "^0.5.0.post1"
-fastapi = "^0.111.0"
-fastapi-cli = "^0.0.4"
-python-dotenv = "^1.0.1"
-pydantic-core = "^2.18.4"
-base58 = "2.1.1"
+backoff = { version = "^2.2.1" }
+base58 = { version = "2.1.1", optional = true }
+boto3 = { version = "^1.34.100" }
+boto3-stubs = { version = "^1.34.100" }
+datasets = { version = "^2.19.1" }
+fabric = { version = "^3.2.2", optional = true }
+fastapi = { version = "^0.111.0", optional = true }
+fastapi-cli = { version = "^0.0.4", optional = true }
+fire = { version = "^0.6.0" }
+flask = { version = "^3.0.3", optional = true }
+gunicorn = { version = "^22.0.0", optional = true }
+jinja2 = { version = "^3.1.4" }
+litellm = { version = "^1.41.0" }
+openai = { version = "^1.30.1" }
+psutil = { version = "^5.9.5" }
+pydantic = { version = "^2.7.1", optional = true }
+pydantic-core = { version = "^2.18.4", optional = true }
+pymysql = { version = "^1.1.0" }
+python-dotenv = { version = "^1.0.1", optional = true }
+requests = { version = "^2.31.0", optional = true }
+setuptools = { version = "^69.5.1" }
+tabulate = { version = "^0.9.0" }
+tenacity = { version = "^8.2.3" }
+tensorboardX = { version = "^2.6.2.2" }
+torch = { version = "^2.2.2" }
+torchao = { git = "https://github.com/pytorch/ao.git#a8956992191853b13f82ceb3e6929bed7691a3fa", optional = true }
+torchtune = { git = "https://github.com/pytorch/torchtune.git#58d58bce65836c23865e6a9aa683475631527d82", optional = true }
+tqdm = { version = "^4.66.4" }
+vllm = { version = "^0.5.0.post1", optional = true }
+
+[tool.poetry.extras]
+# Experiment platform
+explatform = ["flask", "fabric", "gunicorn", "requests"]
+hub = [
+    "base58",
+    "fastapi",
+    "fastapi-cli",
+    "pydantic",
+    "pydantic-core",
+    "python-dotenv",
+    "requests",
+]
+torch = ["torch", "torchao", "torchtune"]
+vllm = ["vllm", "torch"]
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"

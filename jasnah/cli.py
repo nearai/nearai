@@ -3,7 +3,6 @@ import os
 import runpy
 import sys
 import textwrap
-from collections import OrderedDict
 from dataclasses import asdict
 from pathlib import Path
 from subprocess import check_output, run
@@ -11,7 +10,6 @@ from typing import List, Optional, Tuple, Union
 
 import fire
 import pkg_resources
-from fabric import ThreadingGroup as Group
 from tabulate import tabulate
 
 import jasnah
@@ -23,9 +21,7 @@ from jasnah.db import db
 from jasnah.environment import Environment
 from jasnah.finetune import FinetuneCli
 from jasnah.registry import Registry, agent, dataset, model, registry
-from jasnah.server import ServerClient, run_server
 from jasnah.solvers import SolverStrategy, SolverStrategyRegistry
-from jasnah.supervisor import SupervisorClient, run_supervisor
 from jasnah.tensorboard_feed import TensorboardCli
 
 
@@ -68,6 +64,8 @@ def install(hosts_description: List[Host], skip_install: str):
     Install supervisor on every host.
     Skip jasnah-cli installation on the dev machine (skip_install)
     """
+    from fabric import ThreadingGroup as Group
+
     hosts_str = [h.host for h in hosts_description]
     all_hosts = Group(*hosts_str)
     install_hosts = Group(*[h.host for h in hosts_description if h.host != skip_install])
@@ -121,9 +119,7 @@ class RegistryCli:
     def __init__(self, registry: Registry):
         self._registry = registry
 
-    def add(
-        self, s3_path: str, description: str, name: Optional[str] = None, tags: str = "", **details
-    ):
+    def add(self, s3_path: str, description: str, name: Optional[str] = None, tags: str = "", **details):
         """Add an item to the registry that was previously uploaded to S3"""
         tags_l = parse_tags(tags)
         assert self._registry.exists_in_s3(s3_path), f"Item {s3_path} does not exist in S3"
@@ -241,6 +237,8 @@ class SupervisorCli:
 
     def run(self):
         """Run supervisor app in debug mode"""
+        from jasnah.supervisor import run_supervisor
+
         run_supervisor()
 
 
@@ -251,6 +249,8 @@ class ServerCli:
         install(hosts_l, skip)
 
     def start(self, hosts: str):
+        from jasnah.supervisor import SupervisorClient
+
         parsed_hosts = parse_hosts(Path(hosts))
         update_config("supervisors", [h.endpoint for h in parsed_hosts])
 
@@ -269,6 +269,8 @@ class ServerCli:
 
     def run(self):
         """Run server app in debug mode"""
+        from jasnah.server import run_server
+
         run_server()
 
 
@@ -311,13 +313,9 @@ class BenchmarkCli:
         name, subset, dataset = dataset, subset, load_dataset(dataset)
 
         solver_strategy: SolverStrategy | None = SolverStrategyRegistry.get(solver_strategy, None)
-        assert (
-            solver_strategy
-        ), f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
+        assert solver_strategy, f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
         solver_strategy = solver_strategy(dataset_ref=dataset, **solver_kwargs)
-        assert (
-            name in solver_strategy.compatible_datasets()
-        ), f"Solver strategy {solver_strategy} is not compatible with dataset {name}"
+        assert name in solver_strategy.compatible_datasets(), f"Solver strategy {solver_strategy} is not compatible with dataset {name}"
 
         be = BenchmarkExecutor(DatasetInfo(name, subset, dataset), solver_strategy, benchmark_id=benchmark_id)
 
@@ -398,9 +396,7 @@ class VllmCli:
         print(sys.argv)
 
         try:
-            runpy.run_module(
-                "vllm.entrypoints.openai.api_server", run_name="__main__", alter_sys=True
-            )
+            runpy.run_module("vllm.entrypoints.openai.api_server", run_name="__main__", alter_sys=True)
         finally:
             sys.argv = original_argv
 
@@ -423,6 +419,8 @@ class CLI:
 
     def submit(self, command: str, name: str, nodes: int = 1, cluster: str = "truthwatcher"):
         """Submit task"""
+        from jasnah.server import ServerClient
+
         author = CONFIG.get_user_name()
 
         client = ServerClient(CONFIG.server_url)
@@ -439,9 +437,7 @@ class CLI:
                 print(f"Detected in-progress git operation: {op}")
                 return
 
-        repository_url = (
-            check_output(["git", "remote", "-v"]).decode().split("\n")[0].split("\t")[1].split()[0]
-        )
+        repository_url = check_output(["git", "remote", "-v"]).decode().split("\n")[0].split("\t")[1].split()[0]
         commit = check_output(["git", "rev-parse", "HEAD"]).decode().strip()
         diff = check_output(["git", "diff", "HEAD"]).decode()
 
@@ -475,6 +471,8 @@ class CLI:
 
     def status(self):
         """Show status of the cluster"""
+        from jasnah.server import ServerClient
+
         client = ServerClient(CONFIG.server_url)
         status = client.status()
 
