@@ -1,12 +1,12 @@
 import json
 import logging
 
-from typing import Any, Dict, List, Optional, Union
+from pydantic import BaseModel
+from typing import Any, Dict, List, Optional, Union, Iterable
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
-from pydantic import BaseModel
 
 from hub.api.v1.auth import AuthToken, get_current_user
 from hub.api.v1.completions import Message, Provider, get_llm_ai, handle_stream
@@ -77,8 +77,10 @@ class ChatCompletionsRequest(LlmRequest):
 class EmbeddingsRequest(BaseModel):
     """Request for embeddings."""
     input: str | List[str] | Iterable[int] | Iterable[Iterable[int]]
-    model: str = f"fireworks{PROVIDER_MODEL_SEP}nomic-ai/nomic-embed-text-v1.5"
-    provider: Optional[str] = None
+
+
+model: str = f"fireworks{PROVIDER_MODEL_SEP}nomic-ai/nomic-embed-text-v1.5"
+provider: Optional[str] = None
 
 
 # The request might come as provider::model
