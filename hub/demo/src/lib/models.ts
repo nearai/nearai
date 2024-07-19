@@ -6,6 +6,8 @@ export const authorizationModel = z.object({
   signature: z.string(),
   callback_url: z.string(),
   plainMsg: z.string(),
+  recipient: z.string(),
+  nonce: z.array(z.number()).length(32) // Array of 32 numbers
 });
 
 export const messageModel = z.object({

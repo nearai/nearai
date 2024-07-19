@@ -1,39 +1,33 @@
 import { Button } from "~/components/ui/button";
-import { useWalletSelector } from "~/context/WalletSelectorContext";
+import { PLAIN_MSG, RECIPIENT, NONCE } from "~/hooks/mutations";
 
 export function NearAccount() {
-  const { selector, modal, accountId } = useWalletSelector();
 
-  const handleSignOut = async () => {
-    const w = await selector.wallet();
-    await w.signOut();
-  };
+  const requestSignature = () => {
+    const fullUrl = window.location.href;
+    const urlObj = new URL(fullUrl);
+    const callbackUrl = `${urlObj.origin}${urlObj.pathname}`;
+
+    const urlParams = new URLSearchParams({
+      message: PLAIN_MSG,
+      recipient: RECIPIENT,
+      nonce: NONCE,
+      callbackUrl,
+    });
+
+    window.location.replace(`https://auth.near.ai/?${urlParams.toString()}`);
+  }
 
   return (
     <div>
-      {accountId && (
-        <Button
-          onClick={handleSignOut}
-          variant="outline"
-          className="text-wrap"
-          type="button"
-        >
-          Log out: {accountId}
-        </Button>
-      )}
-
-      {!accountId && (
         <Button
           onClick={() => {
-            console.log("selector", selector);
-
-            modal.show();
+            requestSignature()
           }}
           type="button"
         >
           NEAR Log In
         </Button>
-      )}
     </div>
   );
 }
