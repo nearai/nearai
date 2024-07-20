@@ -22,6 +22,7 @@ import { useListModels } from "~/hooks/queries";
 import {authorizationModel, chatCompletionsModel, type messageModel} from "~/lib/models";
 import { Conversation } from "./bubble";
 import { NearLogin } from "./near";
+import { useLocalStorage} from "./localstorage";
 
 import { DropDownForm } from "./role";
 import { SliderFormField } from "./slider";
@@ -37,37 +38,6 @@ const providers = [
   { label: "Hyperbolic", value: "hyperbolic" },
 ];
 
-const useLocalStorage = (key) => {
-  const [storedValue, setStoredValue] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(key);
-    }
-    return null;
-  });
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      if (typeof window !== 'undefined') {
-        setStoredValue(localStorage.getItem(key));
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [key]);
-
-  const setValue = (value) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(key, value);
-      setStoredValue(value);
-    }
-  };
-
-  return [storedValue, setValue];
-};
 
 export function Chat() {
   const form = useZodForm(chatCompletionsModel);
@@ -111,10 +81,10 @@ export function Chat() {
 
   useEffect(() => {
       if (authValue) {
-          setIsAuthenticated(true);
           if (authValue.startsWith('Bearer ')) {
             try {
               const authJson = JSON.parse(authValue.substring(7));
+              setIsAuthenticated(true);
               setAccountId(authJson.account_id);
             } catch (error) {
               throw new Error('Failed to parse Auth JSON: ' + error.message);
