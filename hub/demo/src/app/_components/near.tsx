@@ -7,7 +7,7 @@ export function NearLogin() {
       message: PLAIN_MSG,
       recipient: RECIPIENT,
       nonce: NONCE,
-      callback_url: CALLBACK_URL,
+      callbackUrl: CALLBACK_URL,
     });
 
     window.location.replace(`https://auth.near.ai/?${urlParams.toString()}`);
