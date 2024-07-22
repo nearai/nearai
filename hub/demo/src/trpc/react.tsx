@@ -8,7 +8,7 @@ import { useState } from "react";
 import SuperJSON from "superjson";
 
 import { type AppRouter } from "~/server/api/root";
-import { CURRENT_AUTH } from "~/hooks/mutations";
+import usePersistingStore from "~/store/store";
 
 const createQueryClient = () => new QueryClient();
 
@@ -40,6 +40,7 @@ export type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
+  const store = usePersistingStore();
 
   const [trpcClient] = useState(() =>
     api.createClient({
@@ -55,10 +56,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
           headers: () => {
             const headers = new Headers();
             headers.set("x-trpc-source", "nextjs-react");
-            headers.set(
-              "Authorization",
-              localStorage.getItem(CURRENT_AUTH) ?? "",
-            );
+            headers.set("Authorization", store.toBearer() ?? "");
             return headers;
           },
         }),

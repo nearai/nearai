@@ -35,6 +35,16 @@ export const routerRouter = createTRPCRouter({
         body: JSON.stringify(input),
       });
 
+      // check for errors
+      if (!response.ok) {
+        throw new Error(
+          "Failed to send chat completions, status: " +
+            response.status +
+            " " +
+            response.statusText,
+        );
+      }
+
       const resp: unknown = await response.json();
 
       return chatResponseModel.parse(resp);
