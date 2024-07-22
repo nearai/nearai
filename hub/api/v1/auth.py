@@ -2,7 +2,7 @@ import json
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
-from api.near.sign import verify_signed_message
+from hub.api.near.sign import verify_signed_message
 from typing import Optional, Union
 
 import logging
@@ -23,7 +23,8 @@ class AuthToken(BaseModel):
     """The callback URL."""
     recipient: Optional[str] = "ai.near"
     """Message Recipient"""
-    nonce: bytes = Field(default=bytes("1", "utf-8") * 32, min_length=32, max_length=32)
+    nonce: bytes = Field(default=bytes("1", "utf-8") *
+                         32, min_length=32, max_length=32)
     plainMsg: str
     """The plain message that was signed."""
 
