@@ -5,7 +5,7 @@ import os
 load_dotenv()
 
 client = OpenAI(
-    base_url="http://127.0.0.1:8081/api/v1",
+    base_url="http://127.0.0.1:8081/v1",
     api_key=os.getenv("ROUTER_API_KEY")
 )
 

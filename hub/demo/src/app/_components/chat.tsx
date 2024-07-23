@@ -12,7 +12,6 @@ import {
 } from "~/components/ui/form";
 import { Textarea } from "~/components/ui/textarea";
 import { useZodForm } from "~/hooks/form";
-import { useHandleRidirectFromWallet } from "~/hooks/misc";
 import {
   CONVERSATION_PATH,
   useSendCompletionsRequest,
@@ -20,7 +19,10 @@ import {
 import { useListModels } from "~/hooks/queries";
 import { chatCompletionsModel, type messageModel } from "~/lib/models";
 import { Conversation } from "./bubble";
-import { NearAccount } from "./near";
+import { NearLogin } from "./near";
+
+import { useHandleLogin } from "~/hooks/login";
+import usePersistingStore from "~/store/store";
 import { DropDownForm } from "./role";
 import { SliderFormField } from "./slider";
 
@@ -36,7 +38,7 @@ const providers = [
 ];
 
 export function Chat() {
-  useHandleRidirectFromWallet();
+  useHandleLogin();
 
   const form = useZodForm(chatCompletionsModel);
   const chat = useSendCompletionsRequest();
@@ -44,6 +46,7 @@ export function Chat() {
   const [conversation, setConversation] = useState<
     z.infer<typeof messageModel>[]
   >([]);
+  const store = usePersistingStore();
 
   async function onSubmit(values: z.infer<typeof chatCompletionsModel>) {
     values.messages = [...conversation, ...values.messages];
@@ -51,10 +54,9 @@ export function Chat() {
 
     values.messages.map((m) => console.log(m.content));
 
-    const resp = await chat.mutateAsync(values);
-    const respMsg = resp.choices[0]!.message;
+    const response = await chat.mutateAsync(values);
 
-    setConversation(() => [...values.messages, respMsg]);
+    setConversation(() => response.messages);
   }
 
   function clearConversation() {
@@ -65,8 +67,6 @@ export function Chat() {
   useEffect(() => {
     const currConv = localStorage.getItem(CONVERSATION_PATH);
     if (currConv) {
-      console.log("currConv", currConv);
-
       const conv: unknown = JSON.parse(currConv);
       const parsed = chatCompletionsModel.parse(conv);
       setConversation(parsed.messages);
@@ -79,14 +79,22 @@ export function Chat() {
         <div className="flex flex-row">
           <div className="flex w-[20%] flex-col justify-between p-4">
             <div>History</div>
-            <Button type="button" onClick={clearConversation}>
-              Clear Conversation
-            </Button>
+            {store.isAuthenticated() && (
+              <Button type="button" onClick={clearConversation}>
+                Clear Conversation
+              </Button>
+            )}
           </div>
 
           <div className="flex h-screen w-[80%] flex-col justify-between bg-gray-100">
             <div className="flex-grow overflow-y-auto p-6">
-              <Conversation messages={conversation} />
+              {!store.isAuthenticated() ? (
+                <div className={"pt-6 text-center"}>
+                  Login with NEAR to continue
+                </div>
+              ) : (
+                <Conversation messages={conversation} />
+              )}
             </div>
             <div className="space-y-2 bg-white p-4">
               <FormField
@@ -96,6 +104,7 @@ export function Chat() {
                   <FormItem>
                     <FormControl>
                       <Textarea
+                        readOnly={!store.isAuthenticated()}
                         placeholder="Type your message..."
                         className="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         {...field}
@@ -106,18 +115,23 @@ export function Chat() {
                 )}
               />
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={chat.isPending === true}
-              >
-                Send
-              </Button>
-              {JSON.stringify(form.formState.errors) !== "{}" && (
-                <div className="text-red-500">
-                  {JSON.stringify(form.formState.errors)}
-                </div>
+              {store.isAuthenticated() ? (
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={chat.isPending === true}
+                >
+                  Send as {store.auth?.account_id}
+                </Button>
+              ) : (
+                <NearLogin />
               )}
+              {store.isAuthenticated() &&
+                JSON.stringify(form.formState.errors) !== "{}" && (
+                  <div className="text-red-500">
+                    {JSON.stringify(form.formState.errors)}
+                  </div>
+                )}
             </div>
           </div>
           <div className="flex w-[20%] flex-col justify-between space-y-2 p-4">
@@ -134,7 +148,7 @@ export function Chat() {
                 title="Model"
                 name="model"
                 defaultValue={
-                  "accounts/fireworks/models/mixtral-8x22b-instruct"
+                  "fireworks::accounts/fireworks/models/mixtral-8x22b-instruct"
                 }
                 choices={listModels.data ?? []}
               />
@@ -160,11 +174,20 @@ export function Chat() {
                 max={2048}
                 min={1}
                 step={1}
-                defaultValue={64}
+                defaultValue={128}
               />
             </div>
             <div>
-              <NearAccount />
+              {store.isAuthenticated() && (
+                <Button
+                  onClick={() => {
+                    store.clearAuth();
+                  }}
+                  type="button"
+                >
+                  Sign Out
+                </Button>
+              )}
             </div>
           </div>
         </div>
