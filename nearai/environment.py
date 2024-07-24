@@ -19,6 +19,7 @@ from nearai.completion import InferenceRouter
 from nearai.config import CONFIG
 from nearai.db import db
 from nearai.registry import registry
+from nearai.tool_registry import ToolRegistry
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
@@ -33,6 +34,8 @@ class Environment(object):
         self._config = config
         self._inference = InferenceRouter(config)
         self._user_name = CONFIG.user_name
+        self._tools = ToolRegistry()
+        self.register_standard_tools()
         if create_files:
             os.makedirs(self._path, exist_ok=True)
             open(os.path.join(self._path, CHAT_FILENAME), "a").close()
@@ -42,9 +45,20 @@ class Environment(object):
     def _generate_run_id():
         return uuid.uuid4().hex
 
-    def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME):
+    def get_tool_registry(self):
+        return self._tools
+
+    def register_standard_tools(self):
+        reg = self.get_tool_registry()
+        reg.register_tool(self.exec_command)
+        reg.register_tool(self.read_file)
+        reg.register_tool(self.write_file)
+        reg.register_tool(self.request_user_input)
+        reg.register_tool(self.list_files)
+
+    def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME, **kwargs):
         with open(os.path.join(self._path, filename), "a") as f:
-            f.write(json.dumps({"role": role, "content": message}) + DELIMITER)
+            f.write(json.dumps({"role": role, "content": message, **kwargs}) + DELIMITER)
 
     def list_terminal_commands(self, filename: str = TERMINAL_FILENAME):
         return self.list_messages(filename)
@@ -59,12 +73,18 @@ class Environment(object):
             return [json.loads(message) for message in f.read().split(DELIMITER) if message]
 
     def list_files(self, path: str) -> List[str]:
+        """Lists files in the environment
+            path: The path to list files from.
+        """
         return os.listdir(os.path.join(self._path, path))
 
     def get_path(self) -> str:
         return self._path
 
     def read_file(self, filename: str) -> str:
+        """Read a file from the environment
+            filename: The name of the file to read.
+        """
         if not os.path.exists(os.path.join(self._path, filename)):
             return ""
         try:
@@ -74,13 +94,20 @@ class Environment(object):
             return f"failed to read file: {e}"
 
     def write_file(self, filename: str, content: str):
+        """Writes a file to the environment.
+            filename: The name of the file to write to
+            content: The content to write to the file.
+        """
         path = Path(self._path) / filename
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w") as f:
             f.write(content)
+        return f"Successfully wrote {len(content) if content else 0} characters to {filename}"
 
     def exec_command(self, command: str) -> Dict[str, str]:
-        """Executes a command in the environment and logs the output."""
+        """Executes a command in the environment and logs the output. The environment does not allow running interactive programs. It will run a program for 1 second then will interrupt it if it is still running or if it is waiting for user input.
+            command: The command to execute, like 'ls -l' or 'python3 tests.py'
+        """
         if self._config.get("confirm_commands", True):
             yes_no = input("> Do you want to run the following command? (Y/n): " + command)
             if yes_no != "" and yes_no.lower() != "y":
@@ -139,9 +166,31 @@ class Environment(object):
         """Returns all completions for given messages using the given model."""
         return self._inference.completions(model, messages, stream=stream, **kwargs)
 
+    def completions_and_run_tools(self, model, messages, stream=False, tools=None, **kwargs):
+        """Returns all completions for given messages using the given model and runs tools."""
+        response = self._inference.completions(
+            model, messages, stream=stream, tools=tools, **kwargs
+        )
+        response_message = response.choices[0].message
+        if hasattr(response_message, "tool_calls") and response_message.tool_calls:
+            for tool_call in response_message.tool_calls:
+                function_name = tool_call.function.name
+                function_args = json.loads(tool_call.function.arguments)
+                function_response = self._tools.call_tool(function_name, **function_args)
+
+                if function_response:
+                    function_response_json = json.dumps(function_response) if function_response else ""
+                    self.add_message("tool", function_response_json, tool_call_id=tool_call.id,
+                                     name=function_name)
+        return response
+
     def completion(self, model: str, messages) -> str:
         """Returns a completion for the given messages using the given model."""
         return self.completions(model, messages).choices[0].message.content
+
+    def completion_and_run_tools(self, model: str, messages, stream=False, tools=None, **kwargs) -> str:
+        """Returns a completion for the given messages using the given model and runs tools."""
+        return self.completions_and_run_tools(model, messages, stream, tools, **kwargs).choices[0].message.content
 
     def call_agent(self, agent_path: str, task: str):
         """Calls agent with given task."""
@@ -264,6 +313,10 @@ class Environment(object):
     def run_agent(self, task):
         self._agents[0].run(self, task=task)
 
+    def request_user_input(self):
+        """This must be called to request input from the user."""
+        self.set_next_actor("user")
+
     def set_next_actor(self, who):
         next_action_fn = os.path.join(self._path, ".next_action")
 
@@ -297,11 +350,13 @@ class Environment(object):
 
         last_message_idx = print_messages(last_message_idx)
 
+        iteration_count = 0
         while True:
             if self.get_next_actor() != "user":
                 messages = self.list_messages()
                 new_message = None if not messages else messages[-1]["content"]
 
+                iteration_count += 1
                 self.run_agent(new_message)
 
                 last_message_idx = print_messages(last_message_idx)
