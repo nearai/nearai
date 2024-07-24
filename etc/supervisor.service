@@ -1,14 +1,14 @@
 [Unit]
-Description=Jasnah Supervisor
+Description=NearAI Supervisor
 After=network.target
 
 [Service]
 User=setup
 Type=simple
 Restart=no
-WorkingDirectory=/home/setup/.jasnah/jasnah-cli
-EnvironmentFile=/home/setup/.jasnah/jasnah-cli/etc/supervisor.env
-ExecStart=/home/setup/.jasnah/jasnah-cli/etc/start_supervisor.sh
+WorkingDirectory=/home/setup/.nearai/nearai
+EnvironmentFile=/home/setup/.nearai/nearai/etc/supervisor.env
+ExecStart=/home/setup/.nearai/nearai/etc/start_supervisor.sh
 LimitMEMLOCK=infinity
 LimitRSS=infinity
 

@@ -1,5 +1,7 @@
 dist/
 .vscode/
 __pycache__/
-.jasnah/
-/jasnah/tests/test-agents/
+.nearai/
+/nearai/tests/test-agents/
+venv
+.env

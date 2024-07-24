@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "jasnah"
+name = "nearai"
 version = "0.1.0"
 description = ""
 authors = ["Marcelo Fornet <mfornet94@gmail.com>"]
@@ -28,10 +28,15 @@ openai = "^1.30.1"
 jinja2 = "^3.1.4"
 litellm = "^1.41.0"
 tenacity = "^8.2.3"
-torchtune = {git = "https://github.com/pytorch/torchtune.git#58d58bce65836c23865e6a9aa683475631527d82"}
-torchao = {git = "https://github.com/pytorch/ao.git#a8956992191853b13f82ceb3e6929bed7691a3fa"}
+torchtune = { git = "https://github.com/pytorch/torchtune.git#58d58bce65836c23865e6a9aa683475631527d82" }
+torchao = { git = "https://github.com/pytorch/ao.git#a8956992191853b13f82ceb3e6929bed7691a3fa" }
 tensorboardX = "^2.6.2.2"
 vllm = "^0.5.0.post1"
+fastapi = "^0.111.0"
+fastapi-cli = "^0.0.4"
+python-dotenv = "^1.0.1"
+pydantic-core = "^2.18.4"
+base58 = "2.1.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"
@@ -39,7 +44,7 @@ pylint = "^2.15.5"
 mypy = "^1.10.0"
 
 [tool.poetry.scripts]
-jasnah-cli = "jasnah.cli:main"
+nearai = "nearai.cli:main"
 
 [build-system]
 requires = ["poetry-core"]
