@@ -7,23 +7,22 @@
 	"customizations": {
 		"vscode": {
 			"settings": {
-				"editor.formatOnSave": false,
+				"editor.formatOnSave": true,
 				"git.ignoreMissingGitWarning": true,
 				"python.defaultInterpreterPath": "/workspace/.venv/bin/python",
-				"python.isort.args": [
-					"--profile",
-					"black"
-				],
 				"python.languageServer": "Default",
-				"pylint.path": ["/workspace/.venv/bin/pylint"],
-				"pylint.lintOnChange": false,
-				"black-formatter.path": ["/workspace/.venv/bin/black"],
-				"black-formatter.cwd": "${workspaceFolder}",
 				"[python]": {
 					"editor.tabSize": 4,
 					"editor.formatOnSave": true,
-					"editor.defaultFormatter": "ms-python.black-formatter",
+					"editor.defaultFormatter": "charliermarsh.ruff",
+					"editor.codeActionsOnSave": {
+						"source.fixAll.ruff": true,
+						"source.organizeImports.ruff": true
+					}
 				},
+				"ruff.path": ["/workspace/.venv/bin/ruff"],
+				"ruff.lint.run": "onSave",
+				"ruff.configuration": "/workspace/pyproject.toml",
 				"terminal.integrated.defaultProfile.linux": "zsh",
 				"terminal.integrated.profiles.linux": {
 					"zsh": {
@@ -33,19 +32,14 @@
 				"workbench.iconTheme": "vscode-icons"
 			},
 			"extensions": [
-				"ms-python.isort",
 				"ms-python.python",
 				"ms-python.vscode-pylance",
-				"ms-toolsai.jupyter-keymap",
-				"ms-toolsai.jupyter-renderers",
-				"ms-toolsai.jupyter",
 				"timonwong.shellcheck",
 				"vscode-icons-team.vscode-icons",
 				"wayou.vscode-todo-highlight",
 				"github.copilot",
 				"ms-python.mypy-type-checker",
-				"ms-python.pylint",
-				"ms-python.black-formatter"
+				"charliermarsh.ruff"
 			]
 		}
 	},

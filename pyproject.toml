@@ -39,9 +39,8 @@ pydantic-core = "^2.18.4"
 base58 = "2.1.1"
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.10.0"
-pylint = "^2.15.5"
 mypy = "^1.10.0"
+ruff = "^0.5.2"
 
 [tool.poetry.scripts]
 nearai = "nearai.cli:main"
@@ -49,6 +48,51 @@ nearai = "nearai.cli:main"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+exclude = [
+    ".git",
+    ".git-rewrite",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "venv",
+]
+extend-exclude = ["tests"]
+line-length = 120
+indent-width = 4
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "N",  # PEP8 naming conventions
+    "D"   # pydocstyle
+]
+ignore = [
+    "C901",  # too complex
+    "C408",  # dict() constructor
+    "C417",  # enforce list comprehension
+    "W191",  # indentation contains tabs
+    "D401",  # imperative mood
+    "D100",  # Missing docstring module
+    "D101",  # Missing docstring in public class
+    "D103",  # Missing docstring in public function
+    "D104",  # Missing docstring in public package
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
 
 [tool.mypy]
 disallow_any_unimported = false
@@ -73,7 +117,3 @@ warn_unused_configs = true
 [[tool.mypy.overrides]]
 module = ['datasets.*', 'fire.*']
 ignore_missing_imports = true
-
-[tool.black]
-line-length = 100
-target-version = ['py39']
