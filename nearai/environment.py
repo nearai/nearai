@@ -15,11 +15,11 @@ from typing import Dict, List, Optional, Union
 
 import psutil
 
-from jasnah.completion import InferenceRouter
-from jasnah.config import CONFIG
-from jasnah.db import db
-from jasnah.registry import registry
-from jasnah.tool_registry import ToolRegistry
+from nearai.completion import InferenceRouter
+from nearai.config import CONFIG
+from nearai.db import db
+from nearai.registry import registry
+from nearai.tool_registry import ToolRegistry
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
