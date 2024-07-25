@@ -32,10 +32,10 @@ export function Conversation(props: {
   if (!messages.length) {
     return (
       <div>
-        Welcome to Inference Router demo
+        Welcome to NearAI Hub demo
         <ul>
           <li>
-            Write a prompt in the below text area, and click Send to see the
+            Login with Near, write a prompt in the below text area, and click "Send" to see the
             chosen model response
           </li>
         </ul>

@@ -3,14 +3,14 @@ import os
 import tempfile
 from pathlib import Path
 
-import jasnah
-import jasnah.registry
+import nearai
+import nearai.registry
 
 
 def main():
-    timestamp = jasnah.timestamp()
+    timestamp = nearai.timestamp()
     assigned_supervisors = os.environ.get("ASSIGNED_SUPERVISORS", None)
-    me = jasnah.CONFIG.supervisor_id
+    me = nearai.CONFIG.supervisor_id
 
     with tempfile.TemporaryDirectory() as tmpdir:
         path = Path(tmpdir)
@@ -21,7 +21,7 @@ def main():
         with open(path / "data.txt", "w") as f:
             print("Hello, world!", file=f)
 
-        jasnah.registry.dataset.upload(
+        nearai.registry.dataset.upload(
             path=path,
             s3_path=f"test/auto_simple_task/{timestamp}",
             author="simple_task.py",

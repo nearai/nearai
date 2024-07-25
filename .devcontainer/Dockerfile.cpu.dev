@@ -31,7 +31,6 @@ RUN groupadd --gid $USER_GID $USER \
 
 USER ${USER}
 RUN python3 -m pip install --user poetry
-RUN python3 -m poetry config virtualenvs.in-project true
 
 ## Install oh my zsh
 # Uses "Spaceship" theme with some customization. Uses some bundled plugins and installs some more from github

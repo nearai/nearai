@@ -5,8 +5,8 @@ import { GeistSans } from "geist/font/sans";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata = {
-  title: "Inference Router",
-  description: "Inference Router demo",
+  title: "Near AI Hub Demo",
+  description: "Near AI Hub Demo",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
