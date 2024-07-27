@@ -47,6 +47,11 @@ class AuthToken(BaseModel):
 
 async def get_current_user(token: HTTPAuthorizationCredentials = Depends(bearer)):
     logging.debug(f"Received token: {token.credentials}")
+    if not token:
+        raise HTTPException(status_code=401, detail="Bearer token is missing")
+    if token.scheme.lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Invalid token scheme")
+    token.credentials = token.credentials.replace("Bearer ", "")
     auth = AuthToken.model_validate_json(token.credentials)
 
     is_valid = verify_signed_message(auth.account_id, auth.public_key, auth.signature, auth.plainMsg, auth.nonce,

@@ -4,6 +4,9 @@ from hub.api.v1.registry_routes import v1_router as registry_router
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi import Request, status
 
 # Configure logging
 logging.basicConfig(level=logging.INFO,
@@ -33,3 +36,10 @@ app.include_router(v1_router, prefix="/api/v1")
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    exc_str = f'{exc}'.replace('\n', ' ').replace('   ', ' ')
+    content = {'status_code': 422, 'message': exc_str, 'data': None}
+    return JSONResponse(content=content, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
