@@ -221,6 +221,7 @@ class ApiClient:
             body,
             request_auth=_request_auth
         )
+
         # body
         if body:
             body = self.sanitize_for_serialization(body)
