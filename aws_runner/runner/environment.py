@@ -246,16 +246,6 @@ class Environment(object):
             with tarfile.open(fileobj=f, mode="r:gz") as tar:
                 tar.extractall(self._path)
 
-    def load_from_registry(self, load_env):
-        print(f"Loading environment from {load_env} {type(load_env)} to {self._path}")
-        directory = self._client.registry.download(load_env)
-        files = os.listdir(directory)
-        tarfile_file = next(f for f in files if f.endswith(".tar.gz"))
-
-        with tarfile.open(directory / tarfile_file, "r") as tar:
-            tar.extractall(self._path)
-        return directory.name
-
     def __str__(self):
         return f"Environment({self._path})"
 
@@ -281,10 +271,7 @@ class Environment(object):
     def run_interactive(self, record_run: str = "", load_env: str = ""):
         """Run an interactive session within the given environment."""
         run_id = self._generate_run_id()
-        if load_env:
-            base_id = self.load_from_registry(load_env)
-        else:
-            base_id = None
+        base_id = load_env
         last_message_idx = 0
 
         def print_messages(last_message_idx):
@@ -327,10 +314,7 @@ class Environment(object):
     ):
         """Runs a task within the given environment."""
         run_id = self._generate_run_id()
-        if load_env:
-            base_id = self.load_from_registry(load_env)
-        else:
-            base_id = None
+        base_id = load_env
         iteration = 0
 
         if task:
