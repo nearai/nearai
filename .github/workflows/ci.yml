@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install poetry
+      run: pipx install poetry
+
+    - name: Install Codespell
+      run: pip install codespell
+
+    - name: Run Codespell
+      run: codespell --config .codespellrc
+
+    - name: check lock file for inconsistencies
+      run: poetry check --lock
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: Lint Check
+      run: ./scripts/lint_check.sh
+
+    - name: Format Check
+      run: ./scripts/format_check.sh
+
+    - name: Type Check
+      run: ./scripts/type_check.sh

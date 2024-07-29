@@ -27,7 +27,7 @@ def load_config_file(local: bool = False) -> Dict[str, Any]:
 
     with open(path) as f:
         config = json.load(f)
-    return config  # type: ignore
+    return config
 
 
 def save_config_file(config: Dict[str, Any], local: bool = False) -> None:
@@ -83,11 +83,11 @@ class Config:
     inference_url: str = "http://localhost:5000/v1/"
     inference_api_key: str = "n/a"
 
-    llm_config: LLMConfig = None
+    llm_config: Optional[LLMConfig] = None
 
     confirm_commands: bool = True
 
-    def update_with(self, extra_config: Dict[str, Any], map_key: Callable[[str], str] = lambda x: x) -> None:
+    def update_with(self, extra_config: Dict[str, Any], map_key: Callable[[str], str] = lambda x: x) -> None:  # noqa: D102
         keys = [f.name for f in fields(self)]
         for key in map(map_key, keys):
             value = extra_config.get(key, None)
@@ -96,10 +96,10 @@ class Config:
                 # This will skip empty values, even if they are set in the `extra_config`
                 setattr(self, key, extra_config[key])
 
-    def get(self, key: str, default=None):
+    def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:  # noqa: D102
         return getattr(self, key, default)
 
-    def get_user_name(self):
+    def get_user_name(self) -> str:  # noqa: D102
         if self.user_name is None:
             print("Please set user_name with `nearai config set user_name <name>`")
             exit(1)

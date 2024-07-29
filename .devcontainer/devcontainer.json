@@ -20,7 +20,9 @@
 						"source.organizeImports.ruff": true
 					}
 				},
-				"ruff.path": ["/workspace/.venv/bin/ruff"],
+				"ruff.path": [
+					"/workspace/.venv/bin/ruff"
+				],
 				"ruff.lint.run": "onSave",
 				"ruff.configuration": "/workspace/pyproject.toml",
 				"terminal.integrated.defaultProfile.linux": "zsh",
@@ -29,6 +31,7 @@
 						"path": "zsh"
 					}
 				},
+				"mypy-type-checker.cwd": "${workspaceFolder}",
 				"workbench.iconTheme": "vscode-icons"
 			},
 			"extensions": [

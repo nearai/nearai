@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 
 @app.route("/status")
-def status():
+def status() -> Dict[str, Any]:
     experiments = db.last_experiments(2)
     return {
         "status": "ok",
@@ -23,7 +23,7 @@ def status():
 
 
 @app.post("/submit")
-def submit():
+def submit() -> Dict[str, Any]:
     # TODO: Move to create_app method
     CONFIG.origin = "server"
 
@@ -43,7 +43,7 @@ def submit():
         name=name, author=author, repository=repository, commit=commit, diff=diff, command=command, num_nodes=num_nodes
     )
 
-    result = {}
+    result: Dict[str, Any] = {}
 
     supervisors = db.lock_supervisors(experiment_id=experiment_id, total=num_nodes, cluster=cluster)
 
@@ -71,20 +71,20 @@ def submit():
     return result
 
 
-def run_server():
+def run_server() -> None:
     app.run("0.0.0.0", 8100)
 
 
 class ServerClient:
-    def __init__(self, url):
+    def __init__(self, url: str) -> None:  # noqa: D107
         self.url = url
         self.conn = requests.Session()
 
-    def status(self):
+    def status(self) -> Dict[str, Any]:  # noqa: D102
         result = self.conn.get(self.url + "/status")
-        return result.json()
+        return dict(result.json())
 
-    def submit(
+    def submit(  # noqa: D102
         self,
         name: str,
         repository: str,
@@ -92,10 +92,9 @@ class ServerClient:
         command: str,
         author: str,
         diff: Optional[str] = None,
-        num_nodes=1,
-        cluster="truthwatcher",
-    ):
-
+        num_nodes: int = 1,
+        cluster: str = "truthwatcher",
+    ) -> Dict[str, Any]:
         result = self.conn.post(
             self.url + "/submit",
             json=dict(
@@ -109,4 +108,4 @@ class ServerClient:
                 cluster=cluster,
             ),
         )
-        return result.json()
+        return dict(result.json())

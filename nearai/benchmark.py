@@ -5,7 +5,7 @@ from functools import partial
 from itertools import islice
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
-from datasets import Dataset, DatasetDict
+from datasets import Dataset, DatasetDict  # type: ignore[attr-defined]
 from tqdm import tqdm
 
 from nearai.db import db
@@ -18,7 +18,7 @@ class DatasetInfo:
     subset: Optional[str]
     dataset: Union[Dataset, DatasetDict]
 
-    def get_dataset(self) -> Dataset:
+    def get_dataset(self) -> Dataset:  # noqa: D102
         if isinstance(self.dataset, DatasetDict):
             assert self.subset is not None, f"Subset must be: {', '.join(self.dataset.keys())}"
             return self.dataset[self.subset]
@@ -29,12 +29,12 @@ class DatasetInfo:
 
 
 class BenchmarkExecutor:
-    def __init__(self, dataset_info: DatasetInfo, solver_strategy: SolverStrategy, benchmark_id: int):
+    def __init__(self, dataset_info: DatasetInfo, solver_strategy: SolverStrategy, benchmark_id: int):  # noqa: D107
         self.dataset_info = dataset_info
         self.solver_strategy = solver_strategy
         self.benchmark_id = benchmark_id
 
-    def run(self, progress: bool = True, max_concurrent: int = 32) -> None:
+    def run(self, progress: bool = True, max_concurrent: int = 32) -> None:  # noqa: D102
         dataset = self.dataset_info.get_dataset()
 
         cache = db.get_benchmark_status(self.benchmark_id)
@@ -42,14 +42,18 @@ class BenchmarkExecutor:
         correct = 0
         remaining = len(dataset)
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            task_ctor = partial(solve_task, benchmark_id=self.benchmark_id, cache=cache, solve_fn=self.solver_strategy.solve)
+            task_ctor = partial(
+                solve_task, benchmark_id=self.benchmark_id, cache=cache, solve_fn=self.solver_strategy.solve
+            )
             tasks = iter(executor.submit(task_ctor, index=index, datum=datum) for index, datum in enumerate(dataset))
 
             total = len(dataset)
             bar = tqdm(total=total, disable=not progress)
             futures = list(islice(tasks, max_concurrent))
             while futures:
-                completed, ongoing_futures = concurrent.futures.wait(futures, return_when=concurrent.futures.FIRST_COMPLETED)
+                completed, ongoing_futures = concurrent.futures.wait(
+                    futures, return_when=concurrent.futures.FIRST_COMPLETED
+                )
                 futures = list(ongoing_futures)
                 for completed_future in completed:
                     bar.update(1)
@@ -71,7 +75,13 @@ class BenchmarkExecutor:
         print(f"Final score: {correct}/{total} - {correct/total:.2%}")
 
 
-def solve_task(benchmark_id: int, cache: Dict[int, bool], solve_fn: Callable[[Any], Union[bool, Tuple[bool, Any]]], index: int, datum: Any):
+def solve_task(
+    benchmark_id: int,
+    cache: Dict[int, bool],
+    solve_fn: Callable[[Any], Union[bool, Tuple[bool, Any]]],
+    index: int,
+    datum: Any,
+) -> Union[bool, Tuple[bool, Any]]:
     if index in cache:
         return cache[index]
 

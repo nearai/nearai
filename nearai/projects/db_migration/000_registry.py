@@ -1,7 +1,6 @@
-"""
-Move all elements from registry to registry_v2 using the new convention.
+"""Move all elements from registry to registry_v2 using the new convention.
 Instead of using the category column, use the tag system.
-"""
+"""  # noqa: D205
 
 import json
 from typing import List, Tuple
@@ -9,11 +8,10 @@ from typing import List, Tuple
 from nearai.db import RegistryEntry, db
 
 
-def migrate():
-
+def migrate() -> None:
     # Get all registry entries that are not hidden
     with db.connection.cursor() as cursor:
-        cursor.execute(f"SELECT * FROM registry WHERE show_entry=1")
+        cursor.execute("SELECT * FROM registry WHERE show_entry=1")
 
         entries: List[Tuple[RegistryEntry, str]] = []
         for row in cursor.fetchall():
@@ -44,7 +42,7 @@ def migrate():
         with db.connection.cursor() as cursor:
             details = entry.details or {}
             cursor.execute(
-                f"INSERT INTO registry_v2 (path, name, author, time, description, details, show_entry) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                "INSERT INTO registry_v2 (path, name, author, time, description, details, show_entry) VALUES (%s, %s, %s, %s, %s, %s, %s)",  # noqa: E501
                 (
                     entry.path,
                     entry.name,

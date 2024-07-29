@@ -1,14 +1,13 @@
 from pathlib import Path
 from typing import Union
 
-from datasets import Dataset, DatasetDict, load_from_disk
+from datasets import Dataset, DatasetDict, load_from_disk  # type: ignore[attr-defined]
 
 from nearai.registry import dataset
 
 
 def get_dataset(alias_or_name: str) -> Path:
-    """
-    Download the dataset from the registry and download it locally if it hasn't been downloaded yet.
+    """Download the dataset from the registry and download it locally if it hasn't been downloaded yet.
 
     :param name: The name of the dataset to download
     :return: The path to the downloaded dataset
