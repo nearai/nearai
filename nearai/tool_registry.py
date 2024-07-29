@@ -1,32 +1,33 @@
-from typing import Optional, Dict, Callable, get_type_hints, Literal, _GenericAlias
 import inspect
+from typing import Any, Callable, Dict, Literal, Optional, _GenericAlias, get_type_hints  # type: ignore
 
 
 class ToolRegistry:
-    def __init__(self):
-        self.tools = {}
+    def __init__(self) -> None:  # noqa: D107
+        self.tools: Dict[str, Callable] = {}
 
-    def register_tool(self, tool: Callable):
+    def register_tool(self, tool: Callable) -> None:  # noqa: D102
         self.tools[tool.__name__] = tool
 
-    def get_tool(self, name) -> Optional[Callable]:
+    def get_tool(self, name: str) -> Optional[Callable]:  # noqa: D102
         return self.tools.get(name)
 
-    def get_all_tools(self) -> Dict[str, Callable]:
+    def get_all_tools(self) -> Dict[str, Callable]:  # noqa: D102
         return self.tools
 
-    def call_tool(self, name, **kwargs):
+    def call_tool(self, name: str, **kwargs: Any) -> Any:  # noqa: D102
         tool = self.get_tool(name)
         if tool is None:
             raise ValueError(f"Tool '{name}' not found.")
         return tool(**kwargs)
 
-    def get_tool_definition(self, name) -> Optional[Dict]:
+    def get_tool_definition(self, name: str) -> Optional[Dict]:  # noqa: D102
         tool = self.get_tool(name)
         if tool is None:
             return None
 
-        docstring = tool.__doc__.strip().split('\n')
+        assert tool.__doc__ is not None, f"Docstring missing for tool '{name}'."
+        docstring = tool.__doc__.strip().split("\n")
 
         # The first line of the docstring is the function description
         function_description = docstring[0].strip()
@@ -38,11 +39,7 @@ class ToolRegistry:
         signature = inspect.signature(tool)
         type_hints = get_type_hints(tool)
 
-        parameters = {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
+        parameters: Dict[str, Any] = {"type": "object", "properties": {}, "required": []}
 
         # Iterate through function parameters
         for param in signature.parameters.values():
@@ -53,7 +50,7 @@ class ToolRegistry:
             # Find the parameter description in the docstring
             for line in param_descriptions:
                 if line.strip().startswith(param_name):
-                    param_description = line.strip().split(':', 1)[1].strip()
+                    param_description = line.strip().split(":", 1)[1].strip()
                     break
 
             # Convert type hint to JSON Schema type
@@ -62,18 +59,12 @@ class ToolRegistry:
             else:
                 json_type = param_type.__name__.lower()
 
-            json_type = {
-                "int": "integer",
-                "float": "number",
-                "str": "string",
-                "bool": "boolean"
-            }.get(json_type, json_type)
+            json_type = {"int": "integer", "float": "number", "str": "string", "bool": "boolean"}.get(
+                json_type, json_type
+            )
 
             # Add parameter to the definition
-            parameters["properties"][param_name] = {
-                "description": param_description,
-                "type": json_type
-            }
+            parameters["properties"][param_name] = {"description": param_description, "type": json_type}
 
             # Params without default values are required params
             if param.default == inspect.Parameter.empty:
@@ -81,16 +72,12 @@ class ToolRegistry:
 
         return {
             "type": "function",
-            "function": {
-                "name": tool.__name__,
-                "description": function_description,
-                "parameters": parameters
-            }
+            "function": {"name": tool.__name__, "description": function_description, "parameters": parameters},
         }
 
-    def get_all_tool_definitions(self) -> list[Dict]:
+    def get_all_tool_definitions(self) -> list[Dict]:  # noqa: D102
         definitions = []
-        for tool_name, tool in self.tools.items():
+        for tool_name, _tool in self.tools.items():
             definition = self.get_tool_definition(tool_name)
             if definition is not None:
                 definitions.append(definition)

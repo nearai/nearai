@@ -1,12 +1,13 @@
-from jinja2 import Template
-from openai.types.chat import ChatCompletion
-from pydantic import BaseModel
-from typing import List, Union
-from datasets import Dataset, DatasetDict
+from typing import List, Union, cast
 
-from nearai.solvers import SolverStrategy
-from nearai.config import CONFIG, PROMPTS_FOLDER
+from datasets import Dataset, DatasetDict  # type: ignore[attr-defined]
+from jinja2 import Template
+from litellm import Choices, ModelResponse
+from pydantic import BaseModel
+
 from nearai.completion import InferenceRouter
+from nearai.config import CONFIG, PROMPTS_FOLDER
+from nearai.solvers import SolverStrategy
 
 
 class MMLUDatum(BaseModel):
@@ -17,22 +18,21 @@ class MMLUDatum(BaseModel):
 
 
 class MMLUSolverStrategy(SolverStrategy):
-    """
-    Solver strategy for the MMLU dataset
-    """
+    """Solver strategy for the MMLU dataset."""
 
     SHOTS = 8
 
-    def __init__(self, dataset_ref: Union[Dataset, DatasetDict], model):
+    def __init__(self, dataset_ref: Union[Dataset, DatasetDict], model: str) -> None:  # noqa: D107
         super().__init__()
         self.dataset_ref = dataset_ref
+        assert CONFIG.llm_config is not None, "LLMConfig is not defined."
         self.completion_fn = InferenceRouter(CONFIG.llm_config).completions
         self.model = model
 
-    def compatible_datasets(self) -> List[str]:
+    def compatible_datasets(self) -> List[str]:  # noqa: D102
         return ["mmlu"]
 
-    def solve(self, datum: dict) -> bool:
+    def solve(self, datum: dict) -> bool:  # noqa: D102
         datum = MMLUDatum(**datum).model_dump()
 
         choices = ["A", "B", "C", "D"]
@@ -43,21 +43,23 @@ class MMLUSolverStrategy(SolverStrategy):
                 [self.dataset_ref["dev"][i] for i in example_problems_indices],
             )
         )
-        base_prompt = Template(
-            open(PROMPTS_FOLDER / "mmlu_verbose_answer.j2").read(), trim_blocks=True
-        ).render(
+        base_prompt = Template(open(PROMPTS_FOLDER / "mmlu_verbose_answer.j2").read(), trim_blocks=True).render(
             example_problems=example_problems,
             challenge_problem=datum,
             choices=choices,
         )
-        completion_response: ChatCompletion = self.completion_fn(  # type: ignore
-            self.model,
-            messages=[
-                {"role": "system", "content": base_prompt},
-            ],
-            temperature=0.2,
+
+        completion_response = cast(
+            ModelResponse,
+            self.completion_fn(
+                self.model,
+                messages=[
+                    {"role": "system", "content": base_prompt},
+                ],
+                temperature=0.2,
+            ),
         )
-        response = str(completion_response.choices[0].message.content)
+        response = str(cast(List[Choices], completion_response.choices)[0].message.content)
 
         ## Extract the answer from the response
         extract_answer_prompt = Template(
@@ -67,18 +69,21 @@ class MMLUSolverStrategy(SolverStrategy):
             answer_text=response,
             choices=choices,
         )
-        completion_response = self.completion_fn(  # type: ignore
-            self.model,
-            messages=[
-                {"role": "system", "content": extract_answer_prompt},
-            ],
-            temperature=0.0,
+        completion_response = cast(
+            ModelResponse,
+            self.completion_fn(
+                self.model,
+                messages=[
+                    {"role": "system", "content": extract_answer_prompt},
+                ],
+                temperature=0.0,
+            ),
         )
-        response = str(completion_response.choices[0].message.content)
+        response = str(cast(List[Choices], completion_response.choices)[0].message.content)
 
         try:
             answer = choices.index(response)
             return bool(answer == datum["answer"])
-        except:
+        except Exception:
             print("Failed to parse answer")
             return False

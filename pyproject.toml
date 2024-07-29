@@ -6,12 +6,11 @@ authors = ["Marcelo Fornet <mfornet94@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 fire = "^0.6.0"
 flask = "^3.0.3"
 boto3 = "^1.34.100"
-boto3-stubs = "^1.34.100"
-datasets = "^2.19.1"
+datasets = "^2.20.0"
 transformers = "^4.40.2"
 peft = "^0.10.0"
 torch = "^2.2.2"
@@ -28,18 +27,31 @@ openai = "^1.30.1"
 jinja2 = "^3.1.4"
 litellm = "^1.41.0"
 tenacity = "^8.2.3"
-torchtune = { git = "https://github.com/pytorch/torchtune.git#58d58bce65836c23865e6a9aa683475631527d82" }
-torchao = { git = "https://github.com/pytorch/ao.git#a8956992191853b13f82ceb3e6929bed7691a3fa" }
+torchtune = "^0.2.0"
+torchao = "^0.3.1"
 tensorboardX = "^2.6.2.2"
-vllm = "^0.5.0.post1"
+vllm = "^0.5.3"
 fastapi = "^0.111.0"
 fastapi-cli = "^0.0.4"
 python-dotenv = "^1.0.1"
 pydantic-core = "^2.18.4"
 base58 = "2.1.1"
+mypy-boto3 = "^1.34.147"
+mypy-boto3-s3 = "^1.34.138"
+boto3-stubs = "^1.34.147"
+pandas-stubs = "^2.2.2.240603"
+types-pyyaml = "^6.0.12.20240724"
+types-pygments = "^2.18.0.20240506"
+types-cffi = "^1.16.0.20240331"
+types-colorama = "^0.4.15.20240311"
+types-psutil = "^6.0.0.20240621"
+types-redis = "^4.6.0.20240425"
+types-regex = "^2024.5.15.20240519"
+types-ujson = "^5.10.0.20240515"
+types-setuptools = "^71.1.0.20240724"
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.10.0"
+mypy = "^1.11.0"
 ruff = "^0.5.2"
 
 [tool.poetry.scripts]
@@ -50,6 +62,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
+src = ["nearai"]
 exclude = [
     ".git",
     ".git-rewrite",
@@ -61,7 +74,7 @@ exclude = [
     "__pypackages__",
     "venv",
 ]
-extend-exclude = ["tests"]
+extend-exclude = ["tests", "projects", "examples"]
 line-length = 120
 indent-width = 4
 
@@ -77,6 +90,7 @@ select = [
     "D"   # pydocstyle
 ]
 ignore = [
+    "B008",  # do not perform calls in argument defaults
     "C901",  # too complex
     "C408",  # dict() constructor
     "C417",  # enforce list comprehension
@@ -95,25 +109,19 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.mypy]
-disallow_any_unimported = false
-disallow_any_expr = false
-disallow_any_decorated = false
-disallow_any_generics = false
-disallow_any_explicit = false
-disallow_subclassing_any = true
-disallow_untyped_calls = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_return_any = true
-warn_redundant_casts = true
-strict_equality = true
-warn_unused_configs = true
+strict = false
+exclude = [
+    "tests",
+    "venv",
+    ".venv",
+    ".vscode",
+    ".git",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".ruff_cache",
+    "__pypackages__",
+]
 
 [[tool.mypy.overrides]]
-module = ['datasets.*', 'fire.*']
+module = ['datasets.*', 'fire.*', 'tqdm.*', 'fabric.*', 'tabulate.*', 'requests.*', 'tensorboardX.*', 'pymysql.*', 'torchtune.*', 'torchao.*']
 ignore_missing_imports = true

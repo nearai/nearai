@@ -3,11 +3,10 @@ import os
 import runpy
 import sys
 import textwrap
-from collections import OrderedDict
 from dataclasses import asdict
 from pathlib import Path
 from subprocess import check_output, run
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import fire
 import pkg_resources
@@ -37,7 +36,7 @@ class Host:
     # Name of the cluster for this endpoint
     cluster: str
 
-    def __init__(self, host: str, cluster: str):
+    def __init__(self, host: str, cluster: str):  # noqa: D107
         self.host = host
         url = host.split("@")[1]
         self.endpoint = f"http://{url}:8000"
@@ -63,10 +62,10 @@ def parse_hosts(hosts_path: Path) -> List[Host]:
     return hosts
 
 
-def install(hosts_description: List[Host], skip_install: str):
-    """
-    Install supervisor on every host.
-    Skip nearai installation on the dev machine (skip_install)
+def install(hosts_description: List[Host], skip_install: str) -> None:
+    """Install supervisor on every host.
+
+    Skip nearai installation on the dev machine (skip_install).
     """
     hosts_str = [h.host for h in hosts_description]
     all_hosts = Group(*hosts_str)
@@ -78,7 +77,7 @@ def install(hosts_description: List[Host], skip_install: str):
         stdout = res.stdout.strip(" \n")
         print(f"Host: {host}, hostname: {stdout}")
 
-    def run_bash_script(name):
+    def run_bash_script(name: str) -> None:
         # Install setup_host.sh script
         script = nearai.etc(name)
         assert script.exists(), script
@@ -118,13 +117,11 @@ def parse_tags(tags: Union[str, Tuple[str, ...]]) -> List[str]:
 
 
 class RegistryCli:
-    def __init__(self, registry: Registry):
+    def __init__(self, registry: Registry):  # noqa: D107
         self._registry = registry
 
-    def add(
-        self, s3_path: str, description: str, name: Optional[str] = None, tags: str = "", **details
-    ):
-        """Add an item to the registry that was previously uploaded to S3"""
+    def add(self, s3_path: str, description: str, name: Optional[str] = None, tags: str = "", **details: Any) -> None:
+        """Add an item to the registry that was previously uploaded to S3."""
         tags_l = parse_tags(tags)
         assert self._registry.exists_in_s3(s3_path), f"Item {s3_path} does not exist in S3"
         self._registry.add(
@@ -137,16 +134,16 @@ class RegistryCli:
             details=details,
         )
 
-    def add_tags(self, identifier: int, tags: str):
-        """Add tags to an item in the registry"""
+    def add_tags(self, identifier: int, tags: str) -> None:
+        """Add tags to an item in the registry."""
         tags_l = parse_tags(tags)
         self._registry.add_tags(identifier=identifier, tags=tags_l)
 
-    def remove_tag(self, identifier: int, tag: str):
+    def remove_tag(self, identifier: int, tag: str) -> None:  # noqa: D102
         self._registry.remove_tag(identifier=identifier, tag=tag)
 
-    def list(self, total: int = 16, show_all: bool = False, verbose: bool = False, tags: str = ""):
-        """List available items"""
+    def list(self, total: int = 16, show_all: bool = False, verbose: bool = False, tags: str = "") -> None:
+        """List available items."""
         tags_l = parse_tags(tags)
 
         header = ["id", "name", "description", "tags"]
@@ -154,7 +151,7 @@ class RegistryCli:
         if verbose:
             header += ["author", "date", "path"]
 
-        table = [header]
+        table: list[list[Any]] = [header]
 
         for entry in self._registry.list(tags=tags_l, total=total, show_all=show_all):
             tags = ", ".join(entry.tags)
@@ -182,8 +179,8 @@ class RegistryCli:
         name: Optional[str] = None,
         details: Optional[dict] = None,
         show_entry: Optional[bool] = None,
-    ):
-        """Update item in the registry"""
+    ) -> None:
+        """Update item in the registry."""
         self._registry.update(
             identifier=identifier,
             author=author,
@@ -193,8 +190,8 @@ class RegistryCli:
             show_entry=show_entry,
         )
 
-    def info(self):
-        """Show information about an item"""
+    def info(self) -> None:
+        """Show information about an item."""
         raise NotImplementedError()
 
     def upload(
@@ -205,9 +202,9 @@ class RegistryCli:
         name: Optional[str] = None,
         show_entry: bool = True,
         tags: str = "",
-        **details,
-    ):
-        """Upload item to the registry"""
+        **details: Any,
+    ) -> None:
+        """Upload item to the registry."""
         tags_l = parse_tags(tags)
 
         author = CONFIG.get_user_name()
@@ -222,35 +219,35 @@ class RegistryCli:
             tags=tags_l,
         )
 
-    def download(self, name: str):
-        """Download item"""
+    def download(self, name: str) -> None:
+        """Download item."""
         self._registry.download(name)
 
 
 class SupervisorCli:
-    def install(self):
-        """Install supervisor service in current machine"""
+    def install(self) -> None:
+        """Install supervisor service in current machine."""
         file = nearai.etc("supervisor.service")
         target = Path("/etc/systemd/system/nearai_supervisor.service")
         run(["sudo", "cp", str(file), str(target)])
         run(["sudo", "systemctl", "daemon-reload"])
 
-    def start(self):
-        """Start installed supervisor service in current machine"""
+    def start(self) -> None:
+        """Start installed supervisor service in current machine."""
         run(["sudo", "systemctl", "restart", "nearai_supervisor"])
 
-    def run(self):
-        """Run supervisor app in debug mode"""
+    def run(self) -> None:
+        """Run supervisor app in debug mode."""
         run_supervisor()
 
 
 class ServerCli:
-    def install_supervisors(self, hosts: str, skip: str = ""):
-        """Install and start supervisor in every host machine"""
+    def install_supervisors(self, hosts: str, skip: str = "") -> None:
+        """Install and start supervisor in every host machine."""
         hosts_l = parse_hosts(Path(hosts))
         install(hosts_l, skip)
 
-    def start(self, hosts: str):
+    def start(self, hosts: str) -> None:  # noqa: D102
         parsed_hosts = parse_hosts(Path(hosts))
         update_config("supervisors", [h.endpoint for h in parsed_hosts])
 
@@ -267,27 +264,27 @@ class ServerCli:
         run(["sudo", "systemctl", "daemon-reload"])
         run(["sudo", "systemctl", "restart", "nearai_server"])
 
-    def run(self):
-        """Run server app in debug mode"""
+    def run(self) -> None:
+        """Run server app in debug mode."""
         run_server()
 
 
 class ConfigCli:
-    def set(self, key: str, value: str, local: bool = False):
-        """Add key-value pair to the config file"""
+    def set(self, key: str, value: str, local: bool = False) -> None:
+        """Add key-value pair to the config file."""
         update_config(key, value, local)
 
-    def get(self, key: str):
-        """Get value of a key in the config file"""
+    def get(self, key: str) -> None:
+        """Get value of a key in the config file."""
         print(CONFIG.get(key))
 
-    def show(self):
+    def show(self) -> None:  # noqa: D102
         for key, value in asdict(CONFIG).items():
             print(f"{key}: {value}")
 
 
 class BenchmarkCli:
-    def __init__(self, datasets: RegistryCli, models: RegistryCli):
+    def __init__(self, datasets: RegistryCli, models: RegistryCli):  # noqa: D107
         self.datasets = datasets
         self.models = models
 
@@ -297,11 +294,10 @@ class BenchmarkCli:
         solver_strategy: str,
         max_concurrent: int = -1,
         force: bool = False,
-        subset: str = None,
-        **solver_kwargs,
-    ):
-        """
-        Run benchmark on a dataset with a solver strategy.
+        subset: Optional[str] = None,
+        **solver_kwargs: Any,
+    ) -> None:
+        """Run benchmark on a dataset with a solver strategy.
 
         It will cache the results in the database and subsequent runs will pull the results from the cache.
         If force is set to True, it will run the benchmark again and update the cache.
@@ -310,38 +306,39 @@ class BenchmarkCli:
 
         name, subset, dataset = dataset, subset, load_dataset(dataset)
 
-        solver_strategy: SolverStrategy | None = SolverStrategyRegistry.get(solver_strategy, None)
+        solver_strategy_: SolverStrategy | None = SolverStrategyRegistry.get(solver_strategy, None)
         assert (
             solver_strategy
         ), f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
-        solver_strategy = solver_strategy(dataset_ref=dataset, **solver_kwargs)
+        solver_strategy_obj: SolverStrategy = solver_strategy_(dataset_ref=dataset, **solver_kwargs)  # type: ignore
         assert (
-            name in solver_strategy.compatible_datasets()
+            name in solver_strategy_obj.compatible_datasets()
         ), f"Solver strategy {solver_strategy} is not compatible with dataset {name}"
 
-        be = BenchmarkExecutor(DatasetInfo(name, subset, dataset), solver_strategy, benchmark_id=benchmark_id)
+        be = BenchmarkExecutor(DatasetInfo(name, subset, dataset), solver_strategy_obj, benchmark_id=benchmark_id)
 
-        max_concurrent = os.cpu_count() if max_concurrent < 0 else max_concurrent
+        cpu_count = os.cpu_count()
+        max_concurrent = (cpu_count if cpu_count is not None else 1) if max_concurrent < 0 else max_concurrent
         be.run(max_concurrent=max_concurrent)
 
 
 class EnvironmentCli:
-    def setup(self, dataset: str, task_id: int):
+    def setup(self, dataset: str, task_id: int) -> None:
         """Setup environment with given task from the dataset."""
         pass
 
-    def inspect(self, path: str):
+    def inspect(self, path: str) -> None:
         """Inspect environment from given path."""
-        env = Environment(path, [], CONFIG.llm_config, create_files=False)
+        env = Environment(path, [], CONFIG, create_files=False)
         env.inspect()
 
-    def save_folder(self, path: str, name: str = None):
-        """Saves all subfolders with agent task runs (must contain non-empty chat.txt)"""
-        env = Environment(path, [], CONFIG.llm_config, create_files=False)
+    def save_folder(self, path: str, name: Optional[str] = None) -> None:
+        """Saves all subfolders with agent task runs (must contain non-empty chat.txt)."""
+        env = Environment(path, [], CONFIG, create_files=False)
         env.save_folder(name)
 
-    def save_from_history(self, name: str = None):
-        """Reads piped history, finds agent task runs, writes start_command.log files, and saves to registry. For detailed usage, run: nearai environment save_from_history --help
+    def save_from_history(self, name: Optional[str] = None) -> None:
+        """Reads piped history, finds agent task runs, writes start_command.log files, and saves to registry. For detailed usage, run: nearai environment save_from_history --help.
 
         This command:
         1. Finds agent task runs (must contain non-empty chat.txt)
@@ -353,16 +350,16 @@ class EnvironmentCli:
         ' <line_number>  <program_name> environment interactive <comma_separated_agents> <path> <other_args>'
         Run:
         $ history | grep "environment interactive" | sed "s:~:$HOME:g" | nearai environment save_from_history environment_interactive_runs_from_lambda_00
-        """
-        env = Environment("/", [], CONFIG.llm_config, create_files=False)
+        """  # noqa: E501
+        env = Environment("/", [], CONFIG, create_files=False)
         # Read from stdin (piped input)
         lines = sys.stdin.readlines()
         env.save_from_history(lines, name)
 
-    def interactive(self, agents: str, path: str, record_run: str = "true", load_env: str = None):
+    def interactive(self, agents: str, path: str, record_run: str = "true", load_env: str = "") -> None:
         """Runs agent interactively with environment from given path."""
         _agents = [load_agent(agent) for agent in agents.split(",")]
-        env = Environment(path, _agents, CONFIG.llm_config)
+        env = Environment(path, _agents, CONFIG)
         env.run_interactive(record_run, load_env)
 
     def task(
@@ -372,23 +369,23 @@ class EnvironmentCli:
         path: str,
         max_iterations: int = 10,
         record_run: str = "true",
-        load_env: str = None,
-    ):
+        load_env: str = "",
+    ) -> None:
         """Runs agent non interactively with environment from given path."""
         _agents = [load_agent(agent) for agent in agents.split(",")]
-        env = Environment(path, _agents, CONFIG.llm_config)
+        env = Environment(path, _agents, CONFIG)
         env.run_task(task, record_run, load_env, max_iterations)
 
-    def run(self, agents: str, task: str, path: str):
+    def run(self, agents: str, task: str, path: str) -> None:
         """Runs agent in the current environment."""
         _agents = [load_agent(agent) for agent in agents.split(",")]
-        env = Environment(path, [], CONFIG.llm_config)
+        env = Environment(path, [], CONFIG)
         env.exec_command("sleep 10")
         # TODO: Setup server that will allow to interact with agents and environment
 
 
 class VllmCli:
-    def run(self, *args, **kwargs):
+    def run(self, *args: Any, **kwargs: Any) -> None:  # noqa: D102
         original_argv = sys.argv.copy()
         sys.argv = [
             sys.argv[0],
@@ -398,15 +395,13 @@ class VllmCli:
         print(sys.argv)
 
         try:
-            runpy.run_module(
-                "vllm.entrypoints.openai.api_server", run_name="__main__", alter_sys=True
-            )
+            runpy.run_module("vllm.entrypoints.openai.api_server", run_name="__main__", alter_sys=True)
         finally:
             sys.argv = original_argv
 
 
 class CLI:
-    def __init__(self):
+    def __init__(self) -> None:  # noqa: D107
         self.registry = RegistryCli(registry)
         self.datasets = RegistryCli(dataset)
         self.models = RegistryCli(model)
@@ -421,8 +416,8 @@ class CLI:
         self.tensorboard = TensorboardCli()
         self.vllm = VllmCli()
 
-    def submit(self, command: str, name: str, nodes: int = 1, cluster: str = "truthwatcher"):
-        """Submit task"""
+    def submit(self, command: str, name: str, nodes: int = 1, cluster: str = "truthwatcher") -> None:
+        """Submit task."""
         author = CONFIG.get_user_name()
 
         client = ServerClient(CONFIG.server_url)
@@ -439,29 +434,27 @@ class CLI:
                 print(f"Detected in-progress git operation: {op}")
                 return
 
-        repository_url = (
-            check_output(["git", "remote", "-v"]).decode().split("\n")[0].split("\t")[1].split()[0]
-        )
+        repository_url = check_output(["git", "remote", "-v"]).decode().split("\n")[0].split("\t")[1].split()[0]
         commit = check_output(["git", "rev-parse", "HEAD"]).decode().strip()
         diff = check_output(["git", "diff", "HEAD"]).decode()
 
-        result = client.submit(name, repository_url, commit, command, author, diff, nodes, cluster)
+        submission_result = client.submit(name, repository_url, commit, command, author, diff, nodes, cluster)
 
-        print("experiment id:", result["experiment"]["id"])
+        print("experiment id:", submission_result["experiment"]["id"])
 
-    def inference(self):
-        """Submit inference task"""
+    def inference(self) -> None:
+        """Submit inference task."""
         raise NotImplementedError()
 
-    def location(self):
+    def location(self) -> None:  # noqa: D102
         print(nearai.cli_path())
 
-    def version(self):
+    def version(self) -> None:  # noqa: D102
         # TODO: Show current commit or tag
         print(pkg_resources.get_distribution("nearai").version)
 
-    def update(self):
-        """Update nearai version"""
+    def update(self) -> None:
+        """Update nearai version."""
         path = DATA_FOLDER / "nearai"
 
         if path.absolute() != nearai.cli_path().absolute():
@@ -473,8 +466,8 @@ class CLI:
         if path.exists():
             run(["git", "pull"], cwd=path)
 
-    def status(self):
-        """Show status of the cluster"""
+    def status(self) -> None:
+        """Show status of the cluster."""
         client = ServerClient(CONFIG.server_url)
         status = client.status()
 
@@ -484,5 +477,5 @@ class CLI:
         print(json.dumps(status))
 
 
-def main():
+def main() -> None:
     fire.Fire(CLI)

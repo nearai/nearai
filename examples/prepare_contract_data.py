@@ -1,21 +1,19 @@
-"""
-Convert raw contracts dataset, into Dataset format.
+"""Convert raw contracts dataset, into Dataset format.
 Runs rust-code-analysis-cli to generate code metrics.
 """
 
-import zipfile
 import os
-import urllib.request
-import tarfile
-import subprocess
 import re
+import subprocess
+import tarfile
 import time
+import urllib.request
+import zipfile
 
 from datasets import Dataset
-
+from nearai.config import DATA_FOLDER
 from nearai.dataset import get_dataset
 from nearai.registry import dataset
-from nearai.config import DATA_FOLDER
 
 COLUMNS = [
     "filename",

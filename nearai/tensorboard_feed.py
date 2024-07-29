@@ -9,7 +9,7 @@ from nearai.db import db
 
 
 class TensorboardCli:
-    def start(self, logdir: str, limit: int = 100, timeout: int = 1):
+    def start(self, logdir: str, limit: int = 100, timeout: int = 1) -> None:  # noqa: D102
         experiments: Dict[str, tensorboardX.SummaryWriter] = {}
 
         logdir_path = Path(logdir)

@@ -6,7 +6,7 @@ from copy import deepcopy
 from pathlib import Path
 from random import randint
 from subprocess import run
-from typing import Optional
+from typing import Any, Optional, Tuple
 
 import nearai
 from nearai import timestamp
@@ -28,15 +28,16 @@ class FinetuneCli:
         job_id: Optional[str] = None,
         checkpoint: Optional[str] = None,
         epochs: int = 1,
-    ):
-        """Submit a finetuning job to the cluster"""
+    ) -> None:
+        """Submit a finetuning job to the cluster."""
         client = ServerClient(CONFIG.server_url)
 
+        assert CONFIG.user_name is not None, "Please set the user name in the config file."
         result = client.submit(
             "finetune-task",
             "https://github.com/nearai/nearai.git",
             "main",
-            f"nearai finetune start --model {model} --tokenizer {tokenizer} --dataset {dataset} --num_procs {num_procs} --num_nodes {num_nodes} --job_id {job_id} --checkpoint {checkpoint} --epochs {epochs}",
+            f"nearai finetune start --model {model} --tokenizer {tokenizer} --dataset {dataset} --num_procs {num_procs} --num_nodes {num_nodes} --job_id {job_id} --checkpoint {checkpoint} --epochs {epochs}",  # noqa: E501
             CONFIG.user_name,
             None,
             num_nodes,
@@ -44,7 +45,7 @@ class FinetuneCli:
 
         print(result)
 
-    def start(
+    def start(  # noqa: D417
         self,
         model: str,
         tokenizer: str,
@@ -56,12 +57,12 @@ class FinetuneCli:
         num_nodes: int = 1,
         job_id: Optional[str] = None,
         checkpoint: Optional[str] = None,
-        **dataset_kwargs,
-    ):
-        """Start a finetuning job on the current node
+        **dataset_kwargs: Any,
+    ) -> None:
+        """Start a finetuning job on the current node.
 
         Args:
-
+        ----
             model (str): Name of a model in the registry. Base model to finetune.
             tokenizer (str): Name of a tokenizer in the registry. Using tokenizer.model format.
             dataset (str): Name of a dataset in the registry.
@@ -70,7 +71,8 @@ class FinetuneCli:
             num_nodes (int): Number of nodes to use for training. Default is 1.
             checkpoint (str): Name of the model checkpoint to start from. Default is None.
             dataset_kwargs (Dict[str, Any]): Additional keyword arguments to pass to the dataset constructor.
-        """
+
+        """  # noqa: E501
         assert num_nodes >= 1
 
         # Prepare job id folder
@@ -90,7 +92,7 @@ class FinetuneCli:
         if not config_template_path.exists():
             raise FileNotFoundError(f"Config file not found: {config_template_path}")
 
-        CONFIG_TEMPLATE = config_template_path.read_text()
+        CONFIG_TEMPLATE = config_template_path.read_text()  # noqa: N806
 
         # Download model
         model_path = get_model(model)
@@ -158,6 +160,7 @@ class FinetuneCli:
         description = f"Fintuned {model} on {dataset} using {tokenizer} GPUs"
 
         if upload_checkpoint:
+            assert CONFIG.user_name is not None, "Please set the user name in the config file."
             registry.upload(
                 path=job_folder,
                 s3_path=f"checkpoints/finetune/{job_id}",
@@ -180,27 +183,26 @@ class FinetuneCli:
                 tags=["finetune"],
             )
 
-    def inspect(self, job_id: str):
+    def inspect(self, job_id: str) -> None:  # noqa: D102
         raise NotImplementedError()
 
 
-read_logs = defaultdict(int)
+read_logs: defaultdict[str, int] = defaultdict(int)
 BACKGROUND_PROCESS = True
 
 
-def parse_line(line):
-    """
-    Example of line to be parsed
+def parse_line(line: str) -> Tuple[int, dict[str, float]]:
+    """Example of line to be parsed.
 
     Step 33 | loss:1.5400923490524292 lr:9.9e-05 tokens_per_second_per_gpu:101.22285588141214
     """
-    step, metrics = map(str.strip, line.strip(" \n").split("|"))
-    step = int(step.split(" ")[-1])
-    metrics = {metric[0]: float(metric[1]) for metric in map(lambda metric: metric.split(":"), metrics.split(" "))}
+    step_raw, metrics_raw = map(str.strip, line.strip(" \n").split("|"))
+    step = int(step_raw.split(" ")[-1])
+    metrics = {metric[0]: float(metric[1]) for metric in map(lambda metric: metric.split(":"), metrics_raw.split(" "))}
     return step, metrics
 
 
-def find_new_logs(path: Path, experiment_id: str):
+def find_new_logs(path: Path, experiment_id: str) -> None:
     for file in os.listdir(path):
         file_path = os.path.join(path, file)
 
@@ -223,13 +225,13 @@ def find_new_logs(path: Path, experiment_id: str):
                     line = line.strip(" \n")
                     step, metrics = parse_line(line)
                     nearai.log(target="tensorboard", step=step, experiment_id=experiment_id, **metrics)
-                except:
+                except Exception:
                     continue
 
         read_logs[file] = num_lines
 
 
-def find_new_logs_background(path: Path, experiment_id: str):
+def find_new_logs_background(path: Path, experiment_id: str) -> None:
     while BACKGROUND_PROCESS:
         find_new_logs(path, experiment_id)
         time.sleep(1)

@@ -20,10 +20,20 @@
 						"source.organizeImports.ruff": true
 					}
 				},
-				"ruff.path": ["/workspace/.venv/bin/ruff"],
+				"ruff.path": [
+					"/workspace/.venv/bin/ruff"
+				],
 				"ruff.lint.run": "onSave",
 				"ruff.configuration": "/workspace/pyproject.toml",
 				"terminal.integrated.defaultProfile.linux": "zsh",
+				"mypy-type-checker.path": [
+					"/workspace/.venv/bin/mypy"
+				],
+				"mypy-type-checker.cwd": "${workspaceFolder}",
+				"mypy-type-checker.args": [
+					"--config-file",
+					"/workspace/pyproject.toml"
+				],
 				"terminal.integrated.profiles.linux": {
 					"zsh": {
 						"path": "zsh"

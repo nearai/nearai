@@ -1,12 +1,9 @@
-"""
-Convert raw school math dataset, into Dataset format.
-"""
+"""Convert raw school math dataset, into Dataset format."""
 
 import json
 import tarfile
 
 from datasets import Dataset
-
 from nearai.dataset import get_dataset
 from nearai.registry import dataset
 
@@ -39,7 +36,6 @@ def main():
             f.extractall(uncompressed)
 
     if not processed_dataset.exists():
-
         ds = {col: [] for col in COLUMNS}
         sources = []
 

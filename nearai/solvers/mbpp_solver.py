@@ -1,16 +1,16 @@
 import ast
 import re
 from itertools import islice
+from typing import List, Union, cast
 
+from datasets import Dataset, DatasetDict  # type: ignore[attr-defined]
 from jinja2 import Template
-from openai.types.chat import ChatCompletion
+from litellm import Choices, ModelResponse
 from pydantic import BaseModel
-from typing import List, Union
-from datasets import Dataset, DatasetDict
 
-from nearai.solvers import SolverStrategy
-from nearai.config import CONFIG, PROMPTS_FOLDER
 from nearai.completion import InferenceRouter
+from nearai.config import CONFIG, PROMPTS_FOLDER
+from nearai.solvers import SolverStrategy
 
 
 def get_function_name(code_str: str) -> str:
@@ -45,22 +45,21 @@ class MBPPDatum(BaseModel):
 
 
 class MBPPSolverStrategy(SolverStrategy):
-    """
-    Solver strategy for the MBPP dataset
-    """
+    """Solver strategy for the MBPP dataset."""
 
     SHOTS = 3
 
-    def __init__(self, dataset_ref: Union[Dataset, DatasetDict], model):
+    def __init__(self, dataset_ref: Union[Dataset, DatasetDict], model: str) -> None:  # noqa: D107
         super().__init__()
         self.dataset_ref = dataset_ref
+        assert CONFIG.llm_config is not None, "LLMConfig is not defined."
         self.completion_fn = InferenceRouter(CONFIG.llm_config).completions
         self.model = model
 
-    def compatible_datasets(self) -> List[str]:
+    def compatible_datasets(self) -> List[str]:  # noqa: D102
         return ["mbpp"]
 
-    def solve(self, datum: dict) -> bool:
+    def solve(self, datum: dict) -> bool:  # noqa: D102
         datum = MBPPDatum(**datum).model_dump()
 
         ## Allow LLM to think "out loud" for it's answer
@@ -71,28 +70,36 @@ class MBPPSolverStrategy(SolverStrategy):
             example_problems=example_problems,
             challenge_problem=datum,
         )
-        completion_response: ChatCompletion = self.completion_fn(  # type: ignore
-            self.model,
-            messages=[
-                {"role": "system", "content": base_prompt},
-            ],
-            temperature=0.0,
+        completion_response = cast(
+            ModelResponse,
+            self.completion_fn(
+                self.model,
+                messages=[
+                    {"role": "system", "content": base_prompt},
+                ],
+                temperature=0.0,
+            ),
         )
-        response = str(completion_response.choices[0].message.content)
+        response = str(cast(List[Choices], completion_response.choices)[0].message.content)
 
         ## Extract the answer from the response
-        extract_answer_prompt = Template(open(PROMPTS_FOLDER / "mbpp_extract_answer.j2").read(), trim_blocks=True).render(
+        extract_answer_prompt = Template(
+            open(PROMPTS_FOLDER / "mbpp_extract_answer.j2").read(), trim_blocks=True
+        ).render(
             function_name=function_name,
             answer_text=response,
         )
-        completion_response = self.completion_fn(  # type: ignore
-            self.model,
-            messages=[
-                {"role": "system", "content": extract_answer_prompt},
-            ],
-            temperature=0.0,
+        completion_response = cast(
+            ModelResponse,
+            self.completion_fn(
+                self.model,
+                messages=[
+                    {"role": "system", "content": extract_answer_prompt},
+                ],
+                temperature=0.0,
+            ),
         )
-        response = str(completion_response.choices[0].message.content)
+        response = str(cast(List[Choices], completion_response.choices)[0].message.content)
 
         ## Parse the python code
         python_code_blocks = parse_python_code_block(response) + parse_code_block(response)
@@ -108,5 +115,5 @@ class MBPPSolverStrategy(SolverStrategy):
                 test_code = code + "\n" + test
                 exec(test_code)
             return True
-        except:
+        except Exception:
             return False

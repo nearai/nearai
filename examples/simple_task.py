@@ -29,7 +29,7 @@ def main():
             name=None,
             details={"timestamp": timestamp},
             show_entry=False,
-            tags=['test']
+            tags=["test"],
         )
 
 
