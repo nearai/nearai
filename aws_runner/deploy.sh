@@ -7,5 +7,5 @@ docker push 543900120763.dkr.ecr.us-east-2.amazonaws.com/nearai-runner:latest
 aws lambda update-function-code --region us-east-2 \
            --function-name agent-runner-docker \
            --image-uri 543900120763.dkr.ecr.us-east-2.amazonaws.com/nearai-runner:latest
-aws lambda publish-version --region us-east-2 \
-    --function-name agent-runner-docker
+#aws lambda publish-version --region us-east-2 \
+#    --function-name agent-runner-docker
