@@ -1,15 +1,15 @@
 import json
+
 from botocore.exceptions import ClientError
 
 
 class LambdaWrapper:
-    def __init__(self, lambda_client, iam_resource):
+    def __init__(self, lambda_client):
+        """Initialize LambdaWrapper with a client for invoking lambdas."""
         self.lambda_client = lambda_client
-        self.iam_resource = iam_resource
 
     def invoke_function(self, function_name, function_params, get_log=False):
-        """
-        Invokes a Lambda function.
+        """Invokes a Lambda function.
 
         :param function_name: The name of the function to invoke.
         :param function_params: The parameters of the function as a dict. This dict
@@ -23,13 +23,13 @@ class LambdaWrapper:
                 FunctionName=function_name,
                 Payload=json.dumps(function_params),
                 LogType="Tail" if get_log else "None",
-                InvocationType="RequestResponse"
+                InvocationType="RequestResponse",
             )
             print("Invoked function %s.", function_name)
-            data = response['Payload'].read()
+            data = response["Payload"].read()
             print(data)
             if data:
-                data = data.decode('utf-8')
+                data = data.decode("utf-8")
                 return data
         except ClientError:
             print("Error invoking function %s.", function_name)

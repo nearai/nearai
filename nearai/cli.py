@@ -237,9 +237,10 @@ class SupervisorCli:
         """Start installed supervisor service in current machine."""
         run(["sudo", "systemctl", "restart", "nearai_supervisor"])
 
-    def run(self) ->None:
-        """Run supervisor app in debug mode"""
+    def run(self) -> None:
+        """Run supervisor app in debug mode."""
         from nearai.supervisor import run_supervisor
+
         run_supervisor()
 
 
@@ -269,8 +270,9 @@ class ServerCli:
         run(["sudo", "systemctl", "restart", "nearai_server"])
 
     def run(self) -> None:
-        """Run server app in debug mode"""
+        """Run server app in debug mode."""
         from nearai.server import run_server
+
         run_server()
 
 
@@ -390,16 +392,20 @@ class EnvironmentCli:
 
     # deprecated in favor of run_on_lambda_docker
     def run_on_lambda(self, agents: str, environment_id: str, auth: str, new_message: str = None):
-        wrapper = LambdaWrapper(boto3.client("lambda", region_name='us-east-2'), boto3.resource("iam"))
-        wrapper.invoke_function("agent_runner",
-                                {"agents": agents, "environment_id": environment_id,
-                                 "auth": auth, "new_message": new_message})
+        """Invoke an AWS lambda function to run agents on a given environment."""
+        wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
+        wrapper.invoke_function(
+            "agent_runner",
+            {"agents": agents, "environment_id": environment_id, "auth": auth, "new_message": new_message},
+        )
 
     def run_on_lambda_docker(self, agents: str, environment_id: str, auth: str, new_message: str = None):
-        wrapper = LambdaWrapper(boto3.client("lambda", region_name='us-east-2'), boto3.resource("iam"))
-        wrapper.invoke_function("agent-runner-docker",
-                                {"agents": agents, "environment_id": environment_id,
-                                 "auth": json.dumps(auth), "new_message": new_message})
+        """Invoke a Container based AWS lambda function to run agents on a given environment."""
+        wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
+        wrapper.invoke_function(
+            "agent-runner-docker",
+            {"agents": agents, "environment_id": environment_id, "auth": json.dumps(auth), "new_message": new_message},
+        )
 
 
 class VllmCli:
@@ -435,7 +441,7 @@ class CLI:
         self.vllm = VllmCli()
 
     def submit(self, command: str, name: str, nodes: int = 1, cluster: str = "truthwatcher") -> None:
-        """Submit task"""
+        """Submit task."""
         from nearai.server import ServerClient
 
         author = CONFIG.get_user_name()
@@ -487,7 +493,7 @@ class CLI:
             run(["git", "pull"], cwd=path)
 
     def status(self) -> None:
-        """Show status of the cluster"""
+        """Show status of the cluster."""
         from nearai.server import ServerClient
 
         client = ServerClient(CONFIG.server_url)
