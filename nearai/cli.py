@@ -391,7 +391,7 @@ class EnvironmentCli:
         # TODO: Setup server that will allow to interact with agents and environment
 
     # deprecated in favor of run_on_lambda_docker
-    def run_on_lambda(self, agents: str, environment_id: str, auth: str, new_message: str = None):
+    def run_on_lambda(self, agents: str, environment_id: str, auth: str, new_message: str = ""):
         """Invoke an AWS lambda function to run agents on a given environment."""
         wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
         wrapper.invoke_function(
@@ -399,7 +399,7 @@ class EnvironmentCli:
             {"agents": agents, "environment_id": environment_id, "auth": auth, "new_message": new_message},
         )
 
-    def run_on_lambda_docker(self, agents: str, environment_id: str, auth: str, new_message: str = None):
+    def run_on_lambda_docker(self, agents: str, environment_id: str, auth: str, new_message: str = ""):
         """Invoke a Container based AWS lambda function to run agents on a given environment."""
         wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
         wrapper.invoke_function(
