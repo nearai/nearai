@@ -10,6 +10,7 @@ services:
       - ~/.cache:/home/user/.cache
     command: "sleep infinity"
     platform: linux/amd64
+    shm_size: '2gb'
 
     ## Comment out to remove gpu devices
     deploy:

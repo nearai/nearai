@@ -1,6 +1,7 @@
 from datetime import datetime as dt
 from datetime import timezone
 from pathlib import Path
+from typing import Any
 
 from nearai.config import CONFIG
 from nearai.db import db
@@ -18,7 +19,7 @@ def etc(file: str) -> Path:
     return cli_path() / "etc" / file
 
 
-def get_origin():
+def get_origin() -> str:
     if CONFIG.origin:
         return CONFIG.origin
 
@@ -29,6 +30,6 @@ def get_origin():
     return CONFIG.origin
 
 
-def log(*, target: str, **content):
+def log(*, target: str, **content: Any) -> None:
     origin = get_origin()
     db.log(origin=origin, target=target, content=content)

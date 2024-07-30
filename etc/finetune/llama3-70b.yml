@@ -11,7 +11,7 @@
 
 # Tokenizer
 tokenizer:
-  _component_: torchtune.models.llama3.llama3_tokenizer
+  _component_: torchtune.models.llama3.Llama3Tokenizer
   path: {TOKENIZER}
 
 # Model Arguments

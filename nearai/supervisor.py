@@ -5,7 +5,7 @@ import threading
 from dataclasses import asdict
 from subprocess import run
 from threading import Lock
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from flask import Flask, request
@@ -24,15 +24,15 @@ SERVER_URL = CONFIG.server_url
 
 
 @app.route("/status")
-def status():
+def status() -> Dict[str, Any]:
     return {"status": "ok", "experiment": EXPERIMENT, "id": SUPERVISOR_ID}
 
 
-def repository_name(repository: str):
+def repository_name(repository: str) -> str:
     return repository.split("/")[-1]
 
 
-def run_experiment_inner(experiment: Experiment, supervisors: List[Supervisor]):
+def run_experiment_inner(experiment: Experiment, supervisors: List[Supervisor]) -> None:
     name = repository_name(experiment.repository)
     repository_path = REPOSITORIES / name
 
@@ -57,7 +57,7 @@ def run_experiment_inner(experiment: Experiment, supervisors: List[Supervisor]):
     run(command, cwd=repository_path, env=env)
 
 
-def run_experiment(experiment: Experiment):
+def run_experiment(experiment: Experiment) -> None:
     assert SUPERVISOR_ID is not None
     supervisors = db.get_assigned_supervisors(experiment.id)
 
@@ -83,7 +83,7 @@ def run_experiment(experiment: Experiment):
 
 
 @app.post("/init")
-def init():
+def init() -> Dict[str, Any]:
     assert SUPERVISOR_ID is not None
     # TODO: Move to create_app method
     CONFIG.origin = SUPERVISOR_ID
@@ -103,7 +103,7 @@ def init():
 
 
 @app.route("/update")
-def update():
+def update() -> Dict[str, Any]:
     assert SUPERVISOR_ID is not None
 
     # TODO: Move to create_app method
@@ -127,7 +127,6 @@ def update():
         LOCK.release()
 
     if experiment is None:
-
         db.set_supervisor_status(supervisor_id=SUPERVISOR_ID, status="available")
         return {"status": "ok", "info": "No assigned experiments"}
 
@@ -140,23 +139,23 @@ def update():
     }
 
 
-def run_supervisor():
+def run_supervisor() -> None:
     app.run("0.0.0.0", 8000)
 
 
 class SupervisorClient:
-    def __init__(self, url):
+    def __init__(self, url: str) -> None:  # noqa: D107
         self.url = url
         self.conn = requests.Session()
 
-    def init(self, cluster, endpoint):
+    def init(self, cluster: str, endpoint: str) -> Dict[str, Any]:  # noqa: D102
         result = self.conn.post(self.url + "/init", json={"cluster": cluster, "endpoint": endpoint})
-        return result.json()
+        return dict(result.json())
 
-    def status(self):
+    def status(self) -> Dict[str, Any]:  # noqa: D102
         result = self.conn.get(self.url + "/status")
-        return result.json()
+        return dict(result.json())
 
-    def update(self):
+    def update(self) -> Dict[str, Any]:  # noqa: D102
         result = self.conn.get(self.url + "/update")
-        return result.json()
+        return dict(result.json())

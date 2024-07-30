@@ -1,9 +1,8 @@
-import os.path
 from typing import Any, Dict, List, Mapping, Optional
 
-from datasets import load_from_disk
+from datasets import load_from_disk  # type: ignore
 from torch.utils.data import Dataset
-from torchtune.modules.tokenizers import Tokenizer
+from torchtune.modules.tokenizers import BaseTokenizer
 
 
 def truncate(
@@ -11,19 +10,20 @@ def truncate(
     max_seq_len: int,
     eos_id: Optional[Any] = None,
 ) -> List[Any]:
-    """
-    Truncate a list of tokens to a maximum length. If eos_id is provided, the last
-    token will be replaced with eos_id.
+    """Truncate a list of tokens to a maximum length. If eos_id is provided, the last token will be replaced with eos_id.
 
     Args:
+    ----
         tokens (List[Any]): list of tokens to truncate
         max_seq_len (int): maximum length of the list
         eos_id (Optional[Any]): token to replace the last token with. If None, the
             last token will not be replaced. Default is None.
 
     Returns:
+    -------
         List[Any]: truncated list of tokens
-    """
+
+    """  # noqa: E501
     tokens_truncated = tokens[:max_seq_len]
     if eos_id is not None and tokens_truncated[-1] != eos_id:
         tokens_truncated[-1] = eos_id
@@ -31,12 +31,11 @@ def truncate(
 
 
 class TextCompletionDataset(Dataset):
-    """
-    Freeform dataset for any unstructured text corpus. Quickly load any dataset
-    from Hugging Face or local disk and tokenize it for your model.
+    """Freeform dataset for any unstructured text corpus. Quickly load any dataset from Hugging Face or local disk and tokenize it for your model.
 
     Args:
-        tokenizer (Tokenizer): Tokenizer used to encode data. Tokenize must implement an ``encode`` and ``decode`` method.
+    ----
+        tokenizer (BaseTokenizer): Tokenizer used to encode data. Tokenize must implement an ``encode`` and ``decode`` method.
         source (str): path string of dataset, anything supported by Hugging Face's ``load_dataset``
             (https://huggingface.co/docs/datasets/en/package_reference/loading_methods#datasets.load_dataset.path)
         column (str): name of column in the sample that contains the text data. This is typically required
@@ -46,11 +45,12 @@ class TextCompletionDataset(Dataset):
             Default is None, disabling truncation. We recommend setting this to the highest you can fit in memory
             and is supported by the model. For example, llama2-7B supports up to 4096 for sequence length.
         **load_dataset_kwargs (Dict[str, Any]): additional keyword arguments to pass to ``load_dataset``.
-    """
 
-    def __init__(
+    """  # noqa: E501
+
+    def __init__(  # noqa: D107
         self,
-        tokenizer: Tokenizer,
+        tokenizer: BaseTokenizer,
         source: str,
         column: str = "text",
         split: Optional[str] = None,
@@ -64,10 +64,10 @@ class TextCompletionDataset(Dataset):
         self.max_seq_len = max_seq_len
         self._column = column
 
-    def __len__(self):
+    def __len__(self) -> int:  # noqa: D105
         return len(self._data)
 
-    def __getitem__(self, index: int) -> Dict[str, List[int]]:
+    def __getitem__(self, index: int) -> Dict[str, List[int]]:  # noqa: D105
         sample = self._data[index]
         return self._prepare_sample(sample)
 
@@ -86,7 +86,7 @@ class TextCompletionDataset(Dataset):
 
 
 def dataset(
-    tokenizer: Tokenizer,
+    tokenizer: BaseTokenizer,
     source: str,
     column: str = "text",
     split: str = "train",

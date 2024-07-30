@@ -1,11 +1,12 @@
-from pydantic import BaseModel
-from openai import OpenAI
-from dotenv import load_dotenv
 import json
-from typing import Callable
 from enum import Enum
-
 from os import getenv
+from typing import Callable
+
+from dotenv import load_dotenv
+from openai import OpenAI
+from pydantic import BaseModel
+
 load_dotenv()
 
 
@@ -24,7 +25,7 @@ def handle_stream(resp_stream, add_usage_callback: Callable):
         yield f"data: {c}\n\n"
 
     yield "data: [DONE]\n\n"
-    full_response_text = ''.join(response_chunks)
+    full_response_text = "".join(response_chunks)
 
     add_usage_callback(full_response_text)
 

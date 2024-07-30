@@ -16,18 +16,34 @@ class TestSignatureVerification(unittest.TestCase):
 
     def test_verify_signed_message(self):
         self.assertTrue(
-            verify_signed_message(self.account_id, self.public_key, self.signature, self.message, self.nonce,
-                                  self.recipient, self.callback_url))
+            verify_signed_message(
+                self.account_id,
+                self.public_key,
+                self.signature,
+                self.message,
+                self.nonce,
+                self.recipient,
+                self.callback_url,
+            )
+        )
 
         illegal_message = ""
         self.assertFalse(
-            verify_signed_message(self.account_id, self.public_key, self.signature, illegal_message, self.nonce,
-                                  self.recipient, self.callback_url))
+            verify_signed_message(
+                self.account_id,
+                self.public_key,
+                self.signature,
+                illegal_message,
+                self.nonce,
+                self.recipient,
+                self.callback_url,
+            )
+        )
 
     def test_validate_signature(self):
         payload = Payload(self.message, self.nonce, self.recipient, self.callback_url)
         self.assertTrue(validate_signature(self.public_key, self.signature, payload))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

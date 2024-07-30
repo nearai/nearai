@@ -1,4 +1,5 @@
 from random import randint
+
 from openai import OpenAI
 
 client = OpenAI(
