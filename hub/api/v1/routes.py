@@ -1,12 +1,12 @@
 import json
 import logging
 
-from pydantic import BaseModel
 from typing import Any, Dict, List, Optional, Union, Iterable
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
+from pydantic import BaseModel
 
 from hub.api.v1.auth import AuthToken, get_current_user
 from hub.api.v1.completions import Message, Provider, get_llm_ai, handle_stream
@@ -100,11 +100,9 @@ def completions(request: CompletionsRequest = Depends(convert_request), auth: Au
         assert request.provider is not None
         llm = get_llm_ai(request.provider)
     except NotImplementedError:
-        raise HTTPException(
-            status_code=400, detail="Provider not supported") from None
+        raise HTTPException(status_code=400, detail="Provider not supported") from None
 
-    resp = llm.completions.create(
-        **request.model_dump(exclude={"provider", "response_format"}))
+    resp = llm.completions.create(**request.model_dump(exclude={"provider", "response_format"}))
 
     if request.stream:
 
@@ -118,8 +116,7 @@ def completions(request: CompletionsRequest = Depends(convert_request), auth: Au
     else:
         c = json.dumps(resp.model_dump())
 
-        db.add_user_usage(auth.account_id, request.prompt, c,
-                          request.model, request.provider, "/completions")
+        db.add_user_usage(auth.account_id, request.prompt, c, request.model, request.provider, "/completions")
 
         return JSONResponse(content=json.loads(c))
 
@@ -134,11 +131,9 @@ async def chat_completions(
         assert request.provider is not None
         llm = get_llm_ai(request.provider)
     except NotImplementedError:
-        raise HTTPException(
-            status_code=400, detail="Provider not supported") from None
+        raise HTTPException(status_code=400, detail="Provider not supported") from None
 
-    resp = llm.chat.completions.create(
-        **request.model_dump(exclude={"provider"}))
+    resp = llm.chat.completions.create(**request.model_dump(exclude={"provider"}))
 
     if request.stream:
 
