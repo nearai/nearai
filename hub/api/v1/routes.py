@@ -74,7 +74,7 @@ class ChatCompletionsRequest(LlmRequest):
 class EmbeddingsRequest(BaseModel):
     """Request for embeddings."""
     input: str | List[str] | Iterable[int] | Iterable[Iterable[int]]
-    model: Optional[str] = f"fireworks{PROVIDER_MODEL_SEP}nomic-ai/nomic-embed-text-v1.5"
+    model: str = f"fireworks{PROVIDER_MODEL_SEP}nomic-ai/nomic-embed-text-v1.5"
     provider: Optional[str] = None
 
 
