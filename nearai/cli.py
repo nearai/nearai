@@ -236,8 +236,9 @@ class SupervisorCli:
         run(["sudo", "systemctl", "restart", "nearai_supervisor"])
 
     def run(self):
-        """Run supervisor app in debug mode"""
+        """Run supervisor app in debug mode."""
         from nearai.supervisor import run_supervisor
+
         run_supervisor()
 
 
@@ -249,6 +250,7 @@ class ServerCli:
 
     def start(self, hosts: str) -> None:  # noqa: D102
         from nearai.supervisor import SupervisorClient
+
         parsed_hosts = parse_hosts(Path(hosts))
         update_config("supervisors", [h.endpoint for h in parsed_hosts])
 
@@ -268,6 +270,7 @@ class ServerCli:
     def run(self) -> None:
         """Run server app in debug mode."""
         from nearai.server import run_server
+
         run_server()
 
 
@@ -421,6 +424,7 @@ class CLI:
     def submit(self, command: str, name: str, nodes: int = 1, cluster: str = "truthwatcher") -> None:
         """Submit task."""
         from nearai.server import ServerClient
+
         author = CONFIG.get_user_name()
 
         client = ServerClient(CONFIG.server_url)
@@ -472,6 +476,7 @@ class CLI:
     def status(self) -> None:
         """Show status of the cluster."""
         from nearai.server import ServerClient
+
         client = ServerClient(CONFIG.server_url)
         status = client.status()
 

@@ -30,6 +30,7 @@ class FinetuneCli:
     ) -> None:
         """Submit a finetuning job to the cluster."""
         from nearai.server import ServerClient
+
         client = ServerClient(CONFIG.server_url)
 
         assert CONFIG.user_name is not None, "Please set the user name in the config file."
