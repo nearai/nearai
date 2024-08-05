@@ -25,19 +25,9 @@ def get_agent(name: str, auth: AuthToken = Depends(get_current_user)):
     return file
 
 
-@v1_router.get("/environments/{id}",
-responses = {
-    200: {
-        "content": {
-            "application/gzip": {
-                "schema": {
-                    "type": "string",
-                    "format": "binary"
-                }
-            }
-        }
-    }
-}
+@v1_router.get(
+    "/environments/{id}",
+    responses={200: {"content": {"application/gzip": {"schema": {"type": "string", "format": "binary"}}}}},
 )
 def get_environment(id: str, auth: AuthToken = Depends(get_current_user)):
     env = registry.get_file(id)

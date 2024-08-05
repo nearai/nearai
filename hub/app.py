@@ -42,6 +42,6 @@ def health():
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    exc_str = f'{exc}'.replace('\n', ' ').replace('   ', ' ')
-    content = {'status_code': 422, 'message': exc_str, 'data': None}
+    exc_str = f"{exc}".replace("\n", " ").replace("   ", " ")
+    content = {"status_code": 422, "message": exc_str, "data": None}
     return JSONResponse(content=content, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)

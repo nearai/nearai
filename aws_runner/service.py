@@ -12,6 +12,7 @@ from partial_near_client import PartialNearClient
 PATH = "/tmp/agent-runner-docker/environment-runs"
 RUN_PATH = PATH + "/run"
 
+
 def handler(event, context):
     required_params = ["agents", "environment_id", "auth"]
     agents = event.get("agents")
@@ -34,17 +35,10 @@ def load_agent(client, agent):
 
 
 def run_with_environment(
-        agents: str,
-        auth,
-        environment_id: str = None,
-        new_message: str = None,
-        max_iterations: int = 10
-    ):
+    agents: str, auth, environment_id: str = None, new_message: str = None, max_iterations: int = 10
+):
     """Runs agent against environment fetched from id, optionally passing a new message to the environment."""
-    configuration = Configuration(
-        access_token=f"Bearer {json.dumps(auth)}",
-        host="https://api.near.ai"
-    )
+    configuration = Configuration(access_token=f"Bearer {json.dumps(auth)}", host="https://api.near.ai")
     client = ApiClient(configuration)
     near_client = PartialNearClient(client)
 

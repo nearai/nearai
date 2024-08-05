@@ -42,8 +42,16 @@ class AuthToken(BaseModel):
 
     # allow auth to be passed along to other services - needs review
     def json(self):
-        return json.dumps({"account_id": self.account_id, "public_key": self.public_key, "signature": self.signature,
-                           "callback_url": self.callback_url, "recipient": self.recipient, "plainMsg": self.plainMsg})
+        return json.dumps(
+            {
+                "account_id": self.account_id,
+                "public_key": self.public_key,
+                "signature": self.signature,
+                "callback_url": self.callback_url,
+                "recipient": self.recipient,
+                "plainMsg": self.plainMsg,
+            }
+        )
 
 
 async def get_auth(token: HTTPAuthorizationCredentials = Depends(bearer)):
@@ -58,7 +66,6 @@ async def get_auth(token: HTTPAuthorizationCredentials = Depends(bearer)):
     except Exception as e:
         logging.error(f"Error parsing token: {e}")
         raise HTTPException(status_code=401, detail="Invalid token") from None
-
 
 
 async def validate_signature(auth: AuthToken = Depends(get_auth)):

@@ -14,6 +14,7 @@ class MockRegistry:
 
 class PartialNearClient:
     """Mocks NearAI api registry methods, uses generated NearAI client for completion calls"""
+
     def __init__(self, client):
         self._client = client
 
@@ -24,7 +25,7 @@ class PartialNearClient:
             messages=messages,
             stream=stream,
             temperature=temperature,
-            **kwargs
+            **kwargs,
         )
         request = Request(actual_instance=chat_completions_request, anyof_schema_1_validator=chat_completions_request)
         api_response = api_instance.chat_completions_v1_chat_completions_post(request)
@@ -39,6 +40,6 @@ class PartialNearClient:
         api_instance = RegistryApi(self._client)
         return api_instance.get_environment_v1_registry_environments_id_get(env_id)
 
-    def save_environment(selfs):
+    def save_environment(self):
         print("save_environment is mocked")
         return None

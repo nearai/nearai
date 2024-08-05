@@ -20,8 +20,15 @@ TERMINAL_FILENAME = "terminal.txt"
 
 
 class Environment(object):
-    def __init__(self, path: str, agents: List["Agent"], auth, client,
-                 server_url: str = "https://api.near.ai", create_files: bool = True):
+    def __init__(
+        self,
+        path: str,
+        agents: List["Agent"],
+        auth,
+        client,
+        server_url: str = "https://api.near.ai",
+        create_files: bool = True,
+    ):
         self._path = path
         self._agents = agents
         self._done = False
