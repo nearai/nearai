@@ -42,6 +42,7 @@ class AuthToken(BaseModel):
 
     # allow auth to be passed along to other services - needs review
     def json(self):
+        """Deprecated. For use by tests. Return the JSON representation of the object."""
         return json.dumps(
             {
                 "account_id": self.account_id,

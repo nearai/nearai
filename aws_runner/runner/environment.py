@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+import hashlib
 import json
 import os
 import shlex
@@ -8,11 +8,13 @@ import tarfile
 import tempfile
 import threading
 import uuid
-import hashlib
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import psutil
+
+from runner.agent import Agent
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
@@ -20,7 +22,7 @@ TERMINAL_FILENAME = "terminal.txt"
 
 
 class Environment(object):
-    def __init__(
+    def __init__(  # noqa: D107
         self,
         path: str,
         agents: List["Agent"],
@@ -41,17 +43,17 @@ class Environment(object):
         os.chdir(self._path)
 
     @staticmethod
-    def _generate_run_id():
+    def _generate_run_id() -> str:
         return uuid.uuid4().hex
 
-    def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME):
+    def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME) -> None:  # noqa: D102
         with open(os.path.join(self._path, filename), "a") as f:
             f.write(json.dumps({"role": role, "content": message}) + DELIMITER)
 
-    def list_terminal_commands(self, filename: str = TERMINAL_FILENAME):
+    def list_terminal_commands(self, filename: str = TERMINAL_FILENAME) -> List[Any]:  # noqa: D102
         return self.list_messages(filename)
 
-    def list_messages(self, filename: str = CHAT_FILENAME):
+    def list_messages(self, filename: str = CHAT_FILENAME) -> List[Any]:  # noqa: D102
         path = os.path.join(self._path, filename)
 
         if not os.path.exists(path):
@@ -61,12 +63,20 @@ class Environment(object):
             return [json.loads(message) for message in f.read().split(DELIMITER) if message]
 
     def list_files(self, path: str) -> List[str]:
+        """Lists files in the environment.
+
+        path: The path to list files from.
+        """
         return os.listdir(os.path.join(self._path, path))
 
-    def get_path(self) -> str:
+    def get_path(self) -> str:  # noqa: D102
         return self._path
 
     def read_file(self, filename: str) -> str:
+        """Read a file from the environment.
+
+        filename: The name of the file to read.
+        """
         if not os.path.exists(os.path.join(self._path, filename)):
             return ""
         try:
@@ -75,15 +85,20 @@ class Environment(object):
         except Exception as e:
             return f"failed to read file: {e}"
 
-    def write_file(self, filename: str, content: str):
+    def write_file(self, filename: str, content: str) -> str:
+        """Writes a file to the environment.
+
+        filename: The name of the file to write to
+        content: The content to write to the file.
+        """
         path = Path(self._path) / filename
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w") as f:
             f.write(content)
+        return f"Successfully wrote {len(content) if content else 0} characters to {filename}"
 
     def exec_command(self, command: str) -> Dict[str, str]:
         """Executes a command in the environment and logs the output."""
-
         # todo: send a message back to ask the user to confirm the command
         # if self._config.get("confirm_commands", True):
         #     yes_no = input("> Do you want to run the following command? (Y/n): " + command)
@@ -114,7 +129,7 @@ class Environment(object):
 
         msg = ""
 
-        def kill_process_tree(p):
+        def kill_process_tree(p: Any) -> None:
             nonlocal msg
             msg = "Killing process due to timeout"
 
@@ -130,8 +145,8 @@ class Environment(object):
 
         result = {
             "command": command,
-            "stdout": process.stdout.read(),
-            "stderr": process.stderr.read(),
+            "stdout": process.stdout.read() if process.stdout and hasattr(process.stdout, "read") else "",
+            "stderr": process.stderr.read() if process.stderr and hasattr(process.stderr, "read") else "",
             "returncode": process.returncode,
             "msg": msg,
         }
@@ -139,16 +154,18 @@ class Environment(object):
             f.write(json.dumps(result) + DELIMITER)
         return result
 
-    def completions(self, model, messages, stream=False, **kwargs):
+    def completions(
+        self, model: str, messages: Iterable[Any], stream: bool = False, **kwargs: Any
+    ) -> Any:
         """Returns all completions for given messages using the given model."""
         return self._client.completions(model, messages, stream=stream, **kwargs)
 
-    def completion(self, model: str, messages) -> str:
+    def completion(self, model: str, messages: Iterable[Any]) -> str:
         """Returns a completion for the given messages using the given model."""
         result = self.completions(model, messages)
         return result["choices"][0]["message"]["content"]
 
-    def call_agent(self, agent_path: str, task: str):
+    def call_agent(self, agent_path: int, task: str) -> None:
         """Calls agent with given task."""
         self._agents[agent_path].run(self, task=task)
 
@@ -156,14 +173,14 @@ class Environment(object):
         """Returns list of agents available in environment."""
         return self._agents
 
-    def is_done(self):
+    def is_done(self) -> bool:  # noqa: D102
         return self._done
 
-    def mark_done(self):
+    def mark_done(self) -> None:  # noqa: D102
         self._done = True
 
-    def create_snapshot(self):
-        """Create an in memory snapshot"""
+    def create_snapshot(self) -> bytes:
+        """Create an in memory snapshot."""
         with tempfile.NamedTemporaryFile(suffix=".tar.gz") as f:
             with tarfile.open(fileobj=f, mode="w:gz") as tar:
                 tar.add(self._path, arcname=".")
@@ -179,7 +196,7 @@ class Environment(object):
         run_id: str,
         base_id: Optional[Union[str, int]] = None,
         run_name: Optional[str] = None,
-    ):
+    ) -> Optional[bytes]:
         """Save Environment to Registry."""
         author = self._user_name
         if not author:
@@ -187,7 +204,7 @@ class Environment(object):
                 "Warning: No author specified in config. Run not saved to registry."
                 " To set an author run `nearai config set user_name <YOUR_NAME>`"
             )
-            return
+            return None
 
         agent_name = self._agents[0].name if self._agents else "unknown"
         generated_name = f"environment_run_{agent_name}_{run_id}"
@@ -214,16 +231,14 @@ class Environment(object):
             s3_path = f"environments/{run_id}"
             timestamp = datetime.now(timezone.utc).isoformat()
             description = f"Agent {run_type} run {agent_name} {run_id} {timestamp}"
-            details = (
-                {
-                    "base_id": base_id,
-                    "timestamp": timestamp,
-                    "agents": [agent.name for agent in self._agents],
-                    "run_id": run_id,
-                    "run_type": run_type,
-                    "filename": tar_filename,
-                },
-            )
+            details = {
+                "base_id": base_id,
+                "timestamp": timestamp,
+                "agents": [agent.name for agent in self._agents],
+                "run_id": run_id,
+                "run_type": run_type,
+                "filename": tar_filename,
+            }
             tags_l = ["environment"]
             registry_id = self._client.registry.upload(
                 path=Path(tar_filename),
@@ -241,7 +256,7 @@ class Environment(object):
             )
             return snapshot
 
-    def load_snapshot(self, snapshot: bytes):
+    def load_snapshot(self, snapshot: bytes) -> None:
         """Load Environment from Snapshot."""
         shutil.rmtree(self._path, ignore_errors=True)
 
@@ -253,19 +268,19 @@ class Environment(object):
             with tarfile.open(fileobj=f, mode="r:gz") as tar:
                 tar.extractall(self._path)
 
-    def __str__(self):
+    def __str__(self) -> str:  # noqa: D105
         return f"Environment({self._path})"
 
-    def run_agent(self, task):
+    def run_agent(self, task: Optional[str]) -> None:  # noqa: D102
         self._agents[0].run(self, task=task)
 
-    def set_next_actor(self, who):
+    def set_next_actor(self, who: str) -> None:  # noqa: D102
         next_action_fn = os.path.join(self._path, ".next_action")
 
         with open(next_action_fn, "w") as f:
             f.write(who)
 
-    def get_next_actor(self):
+    def get_next_actor(self) -> str:  # noqa: D102
         next_action_fn = os.path.join(self._path, ".next_action")
 
         if os.path.exists(next_action_fn):
@@ -275,13 +290,13 @@ class Environment(object):
             # By default the user starts the conversation.
             return "user"
 
-    def run_interactive(self, record_run: str = "", load_env: str = ""):
+    def run_interactive(self, record_run: str = "", load_env: str = "") -> None:
         """Run an interactive session within the given environment."""
         run_id = self._generate_run_id()
         base_id = load_env
         last_message_idx = 0
 
-        def print_messages(last_message_idx):
+        def print_messages(last_message_idx: int) -> int:
             messages = self.list_messages()
             for item in messages[last_message_idx:]:
                 print(f"[{item['role']}]: {item['content']}", flush=True)
@@ -318,7 +333,7 @@ class Environment(object):
         record_run: str = "",
         load_env: str = "",
         max_iterations: int = 10,
-    ):
+    ) -> None:
         """Runs a task within the given environment."""
         run_id = self._generate_run_id()
         base_id = load_env
@@ -335,15 +350,15 @@ class Environment(object):
             run_name = record_run if record_run and record_run != "true" else None
             self.save_to_registry(self._path, "task", run_id, base_id, run_name)
 
-    def contains_non_empty_chat_txt(self, directory):
+    def contains_non_empty_chat_txt(self, directory: str) -> bool:  # noqa: D102
         chat_txt_path = os.path.join(directory, "chat.txt")
         return os.path.isfile(chat_txt_path) and os.path.getsize(chat_txt_path) > 0
 
-    def generate_folder_hash_id(self, path):
-        # Returns id similar to _generate_run_id(), but based on files and their contents in path, including subfolders
+    def generate_folder_hash_id(self, path: str) -> str:
+        """Returns id similar to _generate_run_id(), but based on files and their contents in path, including subfolders."""  # noqa: E501
         hash_obj = hashlib.md5()
 
-        for root, dirs, files in os.walk(path):
+        for root, _dirs, files in os.walk(path):
             for file in sorted(files):
                 file_path = os.path.join(root, file)
                 with open(file_path, "rb") as f:

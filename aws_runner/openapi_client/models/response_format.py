@@ -1,7 +1,6 @@
 # coding: utf-8
 
-"""
-NearAI API
+"""NearAI API.
 
 NearAI v1 endpoints for inference and fetching agents
 
@@ -12,20 +11,18 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
+
+import json
 import pprint
 import re  # noqa: F401
-import json
+from typing import Any, ClassVar, Dict, List, Optional, Set
 
 from pydantic import BaseModel, ConfigDict, StrictStr
-from typing import Any, ClassVar, Dict, List, Optional
-from typing import Optional, Set
 from typing_extensions import Self
 
 
 class ResponseFormat(BaseModel):
-    """
-    The format of the response.
-    """  # noqa: E501
+    """The format of the response."""  # noqa: E501
 
     type: StrictStr
     json_schema: Optional[Dict[str, Any]] = None
@@ -38,17 +35,17 @@ class ResponseFormat(BaseModel):
     )
 
     def to_str(self) -> str:
-        """Returns the string representation of the model using alias"""
+        """Returns the string representation of the model using alias."""
         return pprint.pformat(self.model_dump(by_alias=True))
 
     def to_json(self) -> str:
-        """Returns the JSON representation of the model using alias"""
+        """Returns the JSON representation of the model using alias."""
         # TODO: pydantic v2: use .model_dump_json(by_alias=True, exclude_unset=True) instead
         return json.dumps(self.to_dict())
 
     @classmethod
     def from_json(cls, json_str: str) -> Optional[Self]:
-        """Create an instance of ResponseFormat from a JSON string"""
+        """Create an instance of ResponseFormat from a JSON string."""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -61,7 +58,7 @@ class ResponseFormat(BaseModel):
           were set at model initialization. Other fields with value `None`
           are ignored.
         """
-        excluded_fields: Set[str] = set([])
+        excluded_fields: Set[str] = set()
 
         _dict = self.model_dump(
             by_alias=True,
@@ -77,7 +74,7 @@ class ResponseFormat(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
-        """Create an instance of ResponseFormat from a dict"""
+        """Create an instance of ResponseFormat from a dict."""
         if obj is None:
             return None
 

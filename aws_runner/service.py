@@ -5,9 +5,9 @@ import tarfile
 
 from openapi_client.api_client import ApiClient
 from openapi_client.configuration import Configuration
+from partial_near_client import PartialNearClient
 from runner.agent import Agent
 from runner.environment import Environment
-from partial_near_client import PartialNearClient
 
 PATH = "/tmp/agent-runner-docker/environment-runs"
 RUN_PATH = PATH + "/run"

@@ -1,7 +1,6 @@
 # coding: utf-8
 
-"""
-NearAI API
+"""NearAI API.
 
 NearAI v1 endpoints for inference and fetching agents
 

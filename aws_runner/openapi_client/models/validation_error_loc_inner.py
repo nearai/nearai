@@ -1,7 +1,6 @@
 # coding: utf-8
 
-"""
-NearAI API
+"""NearAI API.
 
 NearAI v1 endpoints for inference and fetching agents
 
@@ -12,23 +11,20 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
-from inspect import getfullargspec
+
 import json
 import pprint
 import re  # noqa: F401
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, ValidationError, field_validator
-from typing import Optional
-from typing import Union, Any, List, Set, TYPE_CHECKING, Optional, Dict
-from typing_extensions import Literal, Self
-from pydantic import Field
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Union
+
+from pydantic import BaseModel, StrictInt, StrictStr, ValidationError, field_validator
+from typing_extensions import Self
 
 VALIDATIONERRORLOCINNER_ANY_OF_SCHEMAS = ["int", "str"]
 
 
 class ValidationErrorLocInner(BaseModel):
-    """
-    ValidationErrorLocInner
-    """
+    """ValidationErrorLocInner."""
 
     # data type: str
     anyof_schema_1_validator: Optional[StrictStr] = None
@@ -56,7 +52,7 @@ class ValidationErrorLocInner(BaseModel):
             super().__init__(**kwargs)
 
     @field_validator("actual_instance")
-    def actual_instance_must_validate_anyof(cls, v):
+    def actual_instance_must_validate_anyof(self, v):
         instance = ValidationErrorLocInner.model_construct()
         error_messages = []
         # validate data type: str
@@ -86,7 +82,7 @@ class ValidationErrorLocInner(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Self:
-        """Returns the object represented by the json string"""
+        """Returns the object represented by the json string."""
         instance = cls.model_construct()
         error_messages = []
         # deserialize data into str
@@ -118,7 +114,7 @@ class ValidationErrorLocInner(BaseModel):
             return instance
 
     def to_json(self) -> str:
-        """Returns the JSON representation of the actual instance"""
+        """Returns the JSON representation of the actual instance."""
         if self.actual_instance is None:
             return "null"
 
@@ -128,7 +124,7 @@ class ValidationErrorLocInner(BaseModel):
             return json.dumps(self.actual_instance)
 
     def to_dict(self) -> Optional[Union[Dict[str, Any], int, str]]:
-        """Returns the dict representation of the actual instance"""
+        """Returns the dict representation of the actual instance."""
         if self.actual_instance is None:
             return None
 
@@ -138,5 +134,5 @@ class ValidationErrorLocInner(BaseModel):
             return self.actual_instance
 
     def to_str(self) -> str:
-        """Returns the string representation of the actual instance"""
+        """Returns the string representation of the actual instance."""
         return pprint.pformat(self.model_dump())

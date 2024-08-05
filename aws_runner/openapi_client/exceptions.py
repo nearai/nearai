@@ -1,7 +1,6 @@
 # coding: utf-8
 
-"""
-NearAI API
+"""NearAI API.
 
 NearAI v1 endpoints for inference and fetching agents
 
@@ -12,21 +11,24 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from typing import Any, Optional
+
 from typing_extensions import Self
 
 
 class OpenApiException(Exception):
-    """The base exception class for all OpenAPIExceptions"""
+    """The base exception class for all OpenAPIExceptions."""
 
 
 class ApiTypeError(OpenApiException, TypeError):
     def __init__(self, msg, path_to_item=None, valid_classes=None, key_type=None) -> None:
-        """Raises an exception for TypeErrors
+        """Raises an exception for TypeErrors.
 
         Args:
+        ----
             msg (str): the exception message
 
         Keyword Args:
+        ------------
             path_to_item (list): a list of keys an indices to get to the
                                  current_item
                                  None if unset
@@ -37,6 +39,7 @@ class ApiTypeError(OpenApiException, TypeError):
                              True if it is a key in a dict
                              False if our item is an item in a list
                              None if unset
+
         """
         self.path_to_item = path_to_item
         self.valid_classes = valid_classes
@@ -49,15 +52,16 @@ class ApiTypeError(OpenApiException, TypeError):
 
 class ApiValueError(OpenApiException, ValueError):
     def __init__(self, msg, path_to_item=None) -> None:
-        """
-        Args:
+        """Args:
+        ----
             msg (str): the exception message
 
         Keyword Args:
+        ------------
             path_to_item (list) the path to the exception in the
                 received_data dict. None if unset
-        """
 
+        """
         self.path_to_item = path_to_item
         full_msg = msg
         if path_to_item:
@@ -67,15 +71,17 @@ class ApiValueError(OpenApiException, ValueError):
 
 class ApiAttributeError(OpenApiException, AttributeError):
     def __init__(self, msg, path_to_item=None) -> None:
-        """
-        Raised when an attribute reference or assignment fails.
+        """Raised when an attribute reference or assignment fails.
 
         Args:
+        ----
             msg (str): the exception message
 
         Keyword Args:
+        ------------
             path_to_item (None/list) the path to the exception in the
                 received_data dict
+
         """
         self.path_to_item = path_to_item
         full_msg = msg
@@ -86,13 +92,15 @@ class ApiAttributeError(OpenApiException, AttributeError):
 
 class ApiKeyError(OpenApiException, KeyError):
     def __init__(self, msg, path_to_item=None) -> None:
-        """
-        Args:
+        """Args:
+        ----
             msg (str): the exception message
 
         Keyword Args:
+        ------------
             path_to_item (None/list) the path to the exception in the
                 received_data dict
+
         """
         self.path_to_item = path_to_item
         full_msg = msg
@@ -154,7 +162,7 @@ class ApiException(OpenApiException):
         raise ApiException(http_resp=http_resp, body=body, data=data)
 
     def __str__(self):
-        """Custom error messages for exception"""
+        """Custom error messages for exception."""
         error_message = "({0})\n" "Reason: {1}\n".format(self.status, self.reason)
         if self.headers:
             error_message += "HTTP response headers: {0}\n".format(self.headers)
@@ -186,7 +194,7 @@ class ServiceException(ApiException):
 
 
 def render_path(path_to_item):
-    """Returns a string representation of a path"""
+    """Returns a string representation of a path."""
     result = ""
     for pth in path_to_item:
         if isinstance(pth, int):

@@ -1,13 +1,13 @@
 import logging
-from hub.api.v1.registry_routes import v1_router as registry_router
-from hub.api.v1.agent_routes import v1_router as agent_router
-from dotenv import load_dotenv
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from fastapi import Request, status
 
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from hub.api.v1.agent_routes import v1_router as agent_router
+from hub.api.v1.registry_routes import v1_router as registry_router
 from hub.api.v1.routes import v1_router
 
 # Configure logging

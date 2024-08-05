@@ -1,7 +1,6 @@
 # coding: utf-8
 
-"""
-NearAI API
+"""NearAI API.
 
 NearAI v1 endpoints for inference and fetching agents
 
@@ -12,30 +11,26 @@ Do not edit the class manually.
 """  # noqa: E501
 
 import datetime
-from dateutil.parser import parse
-from enum import Enum
 import json
 import mimetypes
 import os
 import re
 import tempfile
-
+from enum import Enum
+from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import quote
-from typing import Tuple, Optional, List, Dict, Union
+
+from dateutil.parser import parse
 from pydantic import SecretStr
 
-from openapi_client.configuration import Configuration
-from openapi_client.api_response import ApiResponse, T as ApiResponseT
 import openapi_client.models
 from openapi_client import rest
+from openapi_client.api_response import ApiResponse
+from openapi_client.api_response import T as ApiResponseT
+from openapi_client.configuration import Configuration
 from openapi_client.exceptions import (
-    ApiValueError,
     ApiException,
-    BadRequestException,
-    UnauthorizedException,
-    ForbiddenException,
-    NotFoundException,
-    ServiceException,
+    ApiValueError,
 )
 
 RequestSerialized = Tuple[str, str, Dict[str, str], Optional[str], List[str]]
@@ -93,7 +88,7 @@ class ApiClient:
 
     @property
     def user_agent(self):
-        """User agent for this API client"""
+        """User agent for this API client."""
         return self.default_headers["User-Agent"]
 
     @user_agent.setter
@@ -163,9 +158,8 @@ class ApiClient:
                               request; this effectively ignores the authentication
                               in the spec for a single request.
         :return: tuple of form (path, http_method, query_params, header_params,
-            body, post_params, files)
+            body, post_params, files).
         """
-
         config = self.configuration
 
         # header parameters
@@ -229,9 +223,8 @@ class ApiClient:
         :param post_params dict: Request post form parameters,
             for `application/x-www-form-urlencoded`, `multipart/form-data`.
         :param _request_timeout: timeout setting for this request.
-        :return: RESTResponse
+        :return: RESTResponse.
         """
-
         try:
             # perform request and return response
             response_data = self.rest_client.request(
@@ -254,9 +247,8 @@ class ApiClient:
         """Deserializes response into an object.
         :param response_data: RESTResponse object to be deserialized.
         :param response_types_map: dict of response types.
-        :return: ApiResponse
+        :return: ApiResponse.
         """
-
         msg = "RESTResponse.read() must be called before passing it to response_deserialize()"
         assert response_data.data is not None, msg
 
@@ -334,7 +326,7 @@ class ApiClient:
             # and attributes which value is not None.
             # Convert attribute name to json key in
             # model definition for request.
-            if hasattr(obj, "to_dict") and callable(getattr(obj, "to_dict")):
+            if hasattr(obj, "to_dict") and callable(obj.to_dict):
                 obj_dict = obj.to_dict()
             else:
                 obj_dict = obj.__dict__
@@ -351,7 +343,6 @@ class ApiClient:
 
         :return: deserialized object.
         """
-
         # fetch data from response object
         if content_type is None:
             try:
@@ -497,7 +488,7 @@ class ApiClient:
             else:
                 raise ValueError("Unsupported file value")
             mimetype = mimetypes.guess_type(filename)[0] or "application/octet-stream"
-            params.append(tuple([k, tuple([filename, filedata, mimetype])]))
+            params.append((k, (filename, filedata, mimetype)))
         return params
 
     def select_header_accept(self, accepts: List[str]) -> Optional[str]:
@@ -557,7 +548,7 @@ class ApiClient:
                     self._apply_auth_params(headers, queries, resource_path, method, body, auth_setting)
 
     def _apply_auth_params(self, headers, queries, resource_path, method, body, auth_setting) -> None:
-        """Updates the request parameters based on a single auth_setting
+        """Updates the request parameters based on a single auth_setting.
 
         :param headers: Header parameters dict to be updated.
         :param queries: Query parameters tuple list to be updated.
@@ -578,7 +569,7 @@ class ApiClient:
             raise ApiValueError("Authentication token must be in `query` or `header`")
 
     def __deserialize_file(self, response):
-        """Deserializes body to file
+        """Deserializes body to file.
 
         Saves response body into a file in a temporary folder,
         using the filename from the `Content-Disposition` header if provided.
@@ -674,5 +665,4 @@ class ApiClient:
         :param klass: class literal.
         :return: model object.
         """
-
         return klass.from_dict(data)

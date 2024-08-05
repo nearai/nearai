@@ -1,7 +1,8 @@
-from hub.api.v1.auth import get_current_user, AuthToken
-from fastapi import APIRouter, HTTPException, Depends
-from nearai.registry import registry
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
+from nearai.registry import registry
+
+from hub.api.v1.auth import AuthToken, get_current_user
 
 v1_router = APIRouter(
     prefix="/registry",

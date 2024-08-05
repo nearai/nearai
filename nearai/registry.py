@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 import nearai
 from nearai.config import CONFIG, DATA_FOLDER
-from nearai.db import DisplayRegistry, db, RegistryEntry
+from nearai.db import DisplayRegistry, RegistryEntry, db
 
 
 def upload_file(s3_client: S3Client, s3_path: str, local_path: Path) -> None:

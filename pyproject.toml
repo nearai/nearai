@@ -93,6 +93,7 @@ exclude = [
     ".vscode",
     "__pypackages__",
     "venv",
+    "aws_runner/openapi_client"
 ]
 extend-exclude = ["tests", "projects", "examples"]
 line-length = 120
