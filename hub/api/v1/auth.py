@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from typing import Optional
@@ -39,16 +40,25 @@ class AuthToken(BaseModel):
             raise ValueError("Invalid nonce, must of length 32")
         return value
 
+    # allow auth to be passed along to other services - needs review
+    def json(self):
+        return json.dumps({"account_id": self.account_id, "public_key": self.public_key, "signature": self.signature,
+                           "callback_url": self.callback_url, "recipient": self.recipient, "plainMsg": self.plainMsg})
+
 
 async def get_auth(token: HTTPAuthorizationCredentials = Depends(bearer)):
     if token.credentials == "":
         raise HTTPException(status_code=401, detail="Invalid token")
+    if token.scheme.lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Invalid token scheme")
     try:
+        token.credentials = token.credentials.replace("Bearer ", "")
         logger.debug(f"Token: {token.credentials}")
         return AuthToken.model_validate_json(token.credentials)
     except Exception as e:
         logging.error(f"Error parsing token: {e}")
         raise HTTPException(status_code=401, detail="Invalid token") from None
+
 
 
 async def validate_signature(auth: AuthToken = Depends(get_auth)):

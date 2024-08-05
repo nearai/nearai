@@ -8,6 +8,7 @@ from pathlib import Path
 from subprocess import check_output, run
 from typing import Any, List, Optional, Tuple, Union
 
+import boto3
 import fire
 import pkg_resources
 from tabulate import tabulate
@@ -15,6 +16,7 @@ from tabulate import tabulate
 import nearai
 from nearai.agent import load_agent
 from nearai.benchmark import BenchmarkExecutor, DatasetInfo
+from nearai.clients.lambda_client import LambdaWrapper
 from nearai.config import CONFIG, DATA_FOLDER, update_config
 from nearai.dataset import load_dataset
 from nearai.db import db
@@ -387,6 +389,19 @@ class EnvironmentCli:
         env = Environment(path, [], CONFIG)
         env.exec_command("sleep 10")
         # TODO: Setup server that will allow to interact with agents and environment
+
+    # deprecated in favor of run_on_lambda_docker
+    def run_on_lambda(self, agents: str, environment_id: str, auth: str, new_message: str = None):
+        wrapper = LambdaWrapper(boto3.client("lambda", region_name='us-east-2'), boto3.resource("iam"))
+        wrapper.invoke_function("agent_runner",
+                                {"agents": agents, "environment_id": environment_id,
+                                 "auth": auth, "new_message": new_message})
+
+    def run_on_lambda_docker(self, agents: str, environment_id: str, auth: str, new_message: str = None):
+        wrapper = LambdaWrapper(boto3.client("lambda", region_name='us-east-2'), boto3.resource("iam"))
+        wrapper.invoke_function("agent-runner-docker",
+                                {"agents": agents, "environment_id": environment_id,
+                                 "auth": json.dumps(auth), "new_message": new_message})
 
 
 class VllmCli:

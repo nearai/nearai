@@ -1,6 +1,7 @@
 from hub.api.v1.auth import get_current_user, AuthToken
 from fastapi import APIRouter, HTTPException, Depends
 from nearai.registry import registry
+from fastapi.responses import Response
 
 v1_router = APIRouter(
     prefix="/registry",
@@ -22,3 +23,25 @@ def get_agent(name: str, auth: AuthToken = Depends(get_current_user)):
     if file is None:
         raise HTTPException(status_code=404, detail="Agent not found")
     return file
+
+
+@v1_router.get("/environments/{id}",
+responses = {
+    200: {
+        "content": {
+            "application/gzip": {
+                "schema": {
+                    "type": "string",
+                    "format": "binary"
+                }
+            }
+        }
+    }
+}
+)
+def get_environment(id: str, auth: AuthToken = Depends(get_current_user)):
+    env = registry.get_file(id)
+    if env is None:
+        raise HTTPException(status_code=404, detail="Environment not found")
+    headers = {"Content-Disposition": "attachment; filename=environment.tar.gz"}
+    return Response(env, headers=headers, media_type="application/gzip")
