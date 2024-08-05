@@ -16,22 +16,22 @@ class CreateThreadAndRunRequest(BaseModel):
     agent_id: Optional[str] = Field(
         None,
         description="The name or identifier of the agent to use to execute this run. Either `agent_id` or "
-                    "`assistant_id` must be provided.",
+        "`assistant_id` must be provided.",
     )
     assistant_id: Optional[str] = Field(
         None,
         description="An OpenAI compatibility alias for agent. The ID of the [assistant](/docs/api-reference/assistants)"
-                    " to use to execute this run.",
+        " to use to execute this run.",
     )
     environment_id: Optional[str] = Field(
         None,
         description="The ID of the environment to use to as a base for this run. If not provided, a new environment"
-                    " will be created.",
+        " will be created.",
     )
     thread: Optional[str] = Field(
         None,
         description="An OpenAI compatibility alias for environment. If no thread is provided, an empty thread"
-                    " will be created.",
+        " will be created.",
     )
     new_message: Optional[str] = Field(
         None,

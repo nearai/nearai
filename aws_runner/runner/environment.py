@@ -154,9 +154,7 @@ class Environment(object):
             f.write(json.dumps(result) + DELIMITER)
         return result
 
-    def completions(
-        self, model: str, messages: Iterable[Any], stream: bool = False, **kwargs: Any
-    ) -> Any:
+    def completions(self, model: str, messages: Iterable[Any], stream: bool = False, **kwargs: Any) -> Any:
         """Returns all completions for given messages using the given model."""
         return self._client.completions(model, messages, stream=stream, **kwargs)
 
