@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
+from nearai.agent import AGENT_FILENAME
 from nearai.registry import registry
 
 from hub.api.v1.auth import AuthToken, revokable_auth
@@ -20,7 +21,7 @@ def get_item(name: str, auth: AuthToken = Depends(revokable_auth)):
 
 @v1_router.get("/agents/{name}")
 def get_agent(name: str, auth: AuthToken = Depends(revokable_auth)):
-    file = registry.get_file(name, file="agent.py")
+    file = registry.get_file(name, file=AGENT_FILENAME)
     if file is None:
         raise HTTPException(status_code=404, detail="Agent not found")
     return file

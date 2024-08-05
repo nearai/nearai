@@ -268,7 +268,7 @@ class Registry:
 
         if file is None:
             # list files below the prefix
-            s3_path = "registry/" + entry.path
+            s3_path = CONFIG.s3_prefix + "/" + entry.path
             list = s3_client.list_objects_v2(Bucket=CONFIG.s3_bucket, Prefix=s3_path)
             if "Contents" not in list:
                 return None
