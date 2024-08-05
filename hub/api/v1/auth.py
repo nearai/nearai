@@ -44,9 +44,19 @@ class AuthToken(BaseModel):
             data['nonce'] = cls.validate_nonce(data['nonce'])
         return cls(**data)
 
+    # allow auth to be passed along to other services
+    def json(self):
+        return json.dumps({"account_id": self.account_id, "public_key": self.public_key, "signature": self.signature,
+                           "callback_url": self.callback_url, "recipient": self.recipient, "plainMsg": self.plainMsg})
+
 
 async def get_current_user(token: HTTPAuthorizationCredentials = Depends(bearer)):
     logging.debug(f"Received token: {token.credentials}")
+    if not token:
+        raise HTTPException(status_code=401, detail="Bearer token is missing")
+    if token.scheme.lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Invalid token scheme")
+    token.credentials = token.credentials.replace("Bearer ", "")
     auth = AuthToken.model_validate_json(token.credentials)
 
     is_valid = verify_signed_message(auth.account_id, auth.public_key, auth.signature, auth.plainMsg, auth.nonce,
