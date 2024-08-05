@@ -2,7 +2,7 @@ import os
 
 from typing import Optional
 
-from environment import Environment
+from runner.environment import Environment
 
 AGENT_FILENAME = "agent.py"
 

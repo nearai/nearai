@@ -28,7 +28,10 @@ class LambdaWrapper:
             print("Invoked function %s.", function_name)
             data = response['Payload'].read()
             print(data)
+            if data:
+                data = data.decode('utf-8')
+                return data
         except ClientError:
-            print("Couldn't invoke function %s.", function_name)
+            print("Error invoking function %s.", function_name)
             raise
-        return response
+        return ""

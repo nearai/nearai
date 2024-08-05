@@ -1,6 +1,7 @@
 import logging
 from hub.api.v1.routes import v1_router
 from hub.api.v1.registry_routes import v1_router as registry_router
+from hub.api.v1.agent_routes import v1_router as agent_router
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,6 +29,7 @@ app.add_middleware(
 
 app.include_router(v1_router, prefix="/v1")
 app.include_router(registry_router, prefix="/v1")
+app.include_router(agent_router, prefix="/v1")
 
 # Deprecated, will be removed shortly
 app.include_router(v1_router, prefix="/api/v1")
