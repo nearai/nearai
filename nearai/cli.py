@@ -386,6 +386,7 @@ class EnvironmentCli:
         env.exec_command("sleep 10")
         # TODO: Setup server that will allow to interact with agents and environment
 
+    # deprecated in favor of run_on_lambda_docker
     def run_on_lambda(self, agents: str, environment_id: str, auth: str, new_message: str = None):
         wrapper = LambdaWrapper(boto3.client("lambda", region_name='us-east-2'), boto3.resource("iam"))
         wrapper.invoke_function("agent_runner",

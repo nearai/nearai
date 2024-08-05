@@ -44,6 +44,11 @@ class AuthToken(BaseModel):
             data['nonce'] = cls.validate_nonce(data['nonce'])
         return cls(**data)
 
+    # allow auth to be passed along to other services
+    def json(self):
+        return json.dumps({"account_id": self.account_id, "public_key": self.public_key, "signature": self.signature,
+                           "callback_url": self.callback_url, "recipient": self.recipient, "plainMsg": self.plainMsg})
+
 
 async def get_current_user(token: HTTPAuthorizationCredentials = Depends(bearer)):
     logging.debug(f"Received token: {token.credentials}")
