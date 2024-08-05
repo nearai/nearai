@@ -99,17 +99,6 @@ class Environment(object):
 
     def exec_command(self, command: str) -> Dict[str, str]:
         """Executes a command in the environment and logs the output."""
-        # todo: send a message back to ask the user to confirm the command
-        # if self._config.get("confirm_commands", True):
-        #     yes_no = input("> Do you want to run the following command? (Y/n): " + command)
-        #     if yes_no != "" and yes_no.lower() != "y":
-        #         return {
-        #             "command": command,
-        #             "returncode": 999,
-        #             "stdout": "",
-        #             "stderr": "declined by user",
-        #         }
-
         try:
             process = subprocess.Popen(
                 shlex.split(command),
