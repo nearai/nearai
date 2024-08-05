@@ -5,13 +5,13 @@ import unittest
 
 from fastapi.testclient import TestClient
 from hub.app import app
-from hub.api.v1.auth import get_current_user
+from hub.api.v1.auth import revokable_auth
 
 
 class TestRegistryRoutes(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
-        app.dependency_overrides[get_current_user] = self.override_dependency
+        app.dependency_overrides[revokable_auth] = self.override_dependency
 
     @staticmethod
     async def override_dependency():

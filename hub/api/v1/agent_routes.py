@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from nearai.clients.lambda_client import LambdaWrapper
 from pydantic import BaseModel, Field
 
-from hub.api.v1.auth import AuthToken, get_current_user
+from hub.api.v1.auth import AuthToken, revokable_auth
 
 v1_router = APIRouter(
     tags=["agents, assistants"],
@@ -41,7 +41,7 @@ class CreateThreadAndRunRequest(BaseModel):
 
 @v1_router.post("/threads/runs", tags=["Agents", "Assistants"])
 @v1_router.post("/environment/runs", tags=["Agents", "Assistants"])
-def create_environment_and_run(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_current_user)) -> str:
+def create_environment_and_run(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokable_auth)) -> str:
     """Run an agent against an existing or a new environment.
 
     Returns the ID of the new environment resulting from the run.
@@ -53,7 +53,7 @@ def create_environment_and_run(body: CreateThreadAndRunRequest, auth: AuthToken 
     environment_id = body.environment_id or body.thread
     new_message = body.new_message
 
-    wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"), boto3.resource("iam"))
+    wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
     result = wrapper.invoke_function(
         "agent-runner-docker",
         {"agents": agents, "environment_id": environment_id, "auth": auth.json(), "new_message": new_message},

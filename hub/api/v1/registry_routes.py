@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from nearai.registry import registry
 
-from hub.api.v1.auth import AuthToken, get_current_user
+from hub.api.v1.auth import AuthToken, revokable_auth
 
 v1_router = APIRouter(
     prefix="/registry",
@@ -11,7 +11,7 @@ v1_router = APIRouter(
 
 
 @v1_router.get("/download/{name}")
-def get_item(name: str, auth: AuthToken = Depends(get_current_user)):
+def get_item(name: str, auth: AuthToken = Depends(revokable_auth)):
     file = registry.get_file(name)
     if file is None:
         raise HTTPException(status_code=404, detail="File not found")
@@ -19,7 +19,7 @@ def get_item(name: str, auth: AuthToken = Depends(get_current_user)):
 
 
 @v1_router.get("/agents/{name}")
-def get_agent(name: str, auth: AuthToken = Depends(get_current_user)):
+def get_agent(name: str, auth: AuthToken = Depends(revokable_auth)):
     file = registry.get_file(name, file="agent.py")
     if file is None:
         raise HTTPException(status_code=404, detail="Agent not found")
@@ -30,7 +30,7 @@ def get_agent(name: str, auth: AuthToken = Depends(get_current_user)):
     "/environments/{id}",
     responses={200: {"content": {"application/gzip": {"schema": {"type": "string", "format": "binary"}}}}},
 )
-def get_environment(id: str, auth: AuthToken = Depends(get_current_user)):
+def get_environment(id: str, auth: AuthToken = Depends(revokable_auth)):
     env = registry.get_file(id)
     if env is None:
         raise HTTPException(status_code=404, detail="Environment not found")
