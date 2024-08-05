@@ -1,6 +1,7 @@
 # coding: utf-8
 
-"""NearAI API.
+"""
+NearAI API
 
 NearAI v1 endpoints for inference and fetching agents
 
@@ -11,14 +12,14 @@ Do not edit the class manually.
 """  # noqa: E501
 
 import copy
-import http.client as httplib
 import logging
+from logging import FileHandler
 import multiprocessing
 import sys
-from logging import FileHandler
 from typing import Optional
-
 import urllib3
+
+import http.client as httplib
 
 JSON_SCHEMA_VALIDATION_KEYWORDS = {
     "multipleOf",
@@ -88,7 +89,7 @@ class Configuration:
         *,
         debug: Optional[bool] = None,
     ) -> None:
-        """Constructor."""
+        """Constructor"""
         self._base_path = "https://api.near.ai" if host is None else host
         """Default Base url
         """
@@ -295,7 +296,7 @@ class Configuration:
 
     @property
     def debug(self):
-        """Debug status.
+        """Debug status
 
         :param value: The debug status, True or False.
         :type: bool
@@ -304,7 +305,7 @@ class Configuration:
 
     @debug.setter
     def debug(self, value):
-        """Debug status.
+        """Debug status
 
         :param value: The debug status, True or False.
         :type: bool
@@ -406,7 +407,7 @@ class Configuration:
         )
 
     def get_host_settings(self):
-        """Gets an array of host settings.
+        """Gets an array of host settings
 
         :return: An array of host settings
         """
@@ -422,7 +423,7 @@ class Configuration:
         :param index: array index of the host settings
         :param variables: hash of variable and the corresponding value
         :param servers: an array of host settings or None
-        :return: URL based on host settings.
+        :return: URL based on host settings
         """
         if index is None:
             return self._base_path

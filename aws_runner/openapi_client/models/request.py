@@ -1,6 +1,7 @@
 # coding: utf-8
 
-"""NearAI API.
+"""
+NearAI API
 
 NearAI v1 endpoints for inference and fetching agents
 
@@ -11,23 +12,25 @@ Do not edit the class manually.
 """  # noqa: E501
 
 from __future__ import annotations
-
+from inspect import getfullargspec
 import json
 import pprint
 import re  # noqa: F401
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Union
-
-from pydantic import BaseModel, ValidationError, field_validator
-from typing_extensions import Self
-
+from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError, field_validator
+from typing import Optional
 from openapi_client.models.chat_completions_request import ChatCompletionsRequest
 from openapi_client.models.completions_request import CompletionsRequest
+from typing import Union, Any, List, Set, TYPE_CHECKING, Optional, Dict
+from typing_extensions import Literal, Self
+from pydantic import Field
 
 REQUEST_ANY_OF_SCHEMAS = ["ChatCompletionsRequest", "CompletionsRequest"]
 
 
 class Request(BaseModel):
-    """Request."""
+    """
+    Request
+    """
 
     # data type: ChatCompletionsRequest
     anyof_schema_1_validator: Optional[ChatCompletionsRequest] = None
@@ -55,8 +58,8 @@ class Request(BaseModel):
             super().__init__(**kwargs)
 
     @field_validator("actual_instance")
-    def actual_instance_must_validate_anyof(self, v):
-        Request.model_construct()
+    def actual_instance_must_validate_anyof(cls, v):
+        instance = Request.model_construct()
         error_messages = []
         # validate data type: ChatCompletionsRequest
         if not isinstance(v, ChatCompletionsRequest):
@@ -85,7 +88,7 @@ class Request(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Self:
-        """Returns the object represented by the json string."""
+        """Returns the object represented by the json string"""
         instance = cls.model_construct()
         error_messages = []
         # anyof_schema_1_validator: Optional[ChatCompletionsRequest] = None
@@ -111,7 +114,7 @@ class Request(BaseModel):
             return instance
 
     def to_json(self) -> str:
-        """Returns the JSON representation of the actual instance."""
+        """Returns the JSON representation of the actual instance"""
         if self.actual_instance is None:
             return "null"
 
@@ -121,7 +124,7 @@ class Request(BaseModel):
             return json.dumps(self.actual_instance)
 
     def to_dict(self) -> Optional[Union[Dict[str, Any], ChatCompletionsRequest, CompletionsRequest]]:
-        """Returns the dict representation of the actual instance."""
+        """Returns the dict representation of the actual instance"""
         if self.actual_instance is None:
             return None
 
@@ -131,5 +134,5 @@ class Request(BaseModel):
             return self.actual_instance
 
     def to_str(self) -> str:
-        """Returns the string representation of the actual instance."""
+        """Returns the string representation of the actual instance"""
         return pprint.pformat(self.model_dump())
