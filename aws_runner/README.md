@@ -1,9 +1,8 @@
 # NearAI AWS Runner
 A docker container that runs on AWS Lambda to run NearAI agents.
  * This is invoked by the NearAI Api server or NearAI cli.
- * The runner calls back to the NearAI Api server to for inference, 
-to fetch agent code (not implemented yet), 
-and to fetch and store environments (not implemented yet).
+ * The runner calls back to the NearAI Api server for inference, 
+to fetch agent code, and to fetch and store environments (store not implemented yet).
 
 
 ## Local testing
@@ -16,8 +15,8 @@ This will start the server on port 9000. To call the server you will need a sign
 curl "http://localhost:9000/2015-03-31/functions/function/invocations" \
 -d @- <<'EOF'
   {
-    "agents": "xela/v4", 
-    "environment_id":"Placeholder", 
+    "agents": "xela-agent", 
+    "environment_id":"environment_run_xela-tools-agent_541869e6753c41538c87cb6f681c6932", 
     "auth":"{\"account_id\":\"your_account.near\",
         \"public_key\":\"ed25519:F5DeKFoya9fl35hapvpXxwReoksgi9a677JkniDIFLAW\",
         \"signature\":\"SIGNATURE_FIELD_FROM_A_REAL_SIGNATURE\",

@@ -1,0 +1,621 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NearAI API",
+    "description": "NearAI v1 endpoints for inference and fetching agents",
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.near.ai"
+    }
+  ],
+  "paths": {
+    "/v1/completions": {
+      "post": {
+        "summary": "Completions",
+        "operationId": "completions_v1_completions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatCompletionsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CompletionsRequest"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/chat/completions": {
+      "post": {
+        "summary": "Chat Completions",
+        "operationId": "chat_completions_v1_chat_completions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatCompletionsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CompletionsRequest"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "summary": "Get Models",
+        "operationId": "get_models_v1_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/registry/download/{name}": {
+      "get": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Get Item",
+        "operationId": "get_item_v1_registry_download__name__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/registry/agents/{name}": {
+      "get": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Get Agent",
+        "operationId": "get_agent_v1_registry_agents__name__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/registry/environments/{id}": {
+      "get": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Get Environment",
+        "operationId": "get_environment_v1_registry_environments__id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/gzip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChatCompletionsRequest": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "default": "fireworks::accounts/fireworks/models/mixtral-8x22b-instruct"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens",
+            "default": 1024
+          },
+          "logprobs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logprobs"
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature",
+            "default": 1
+          },
+          "top_p": {
+            "type": "number",
+            "title": "Top P",
+            "default": 1
+          },
+          "frequency_penalty": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency Penalty",
+            "default": 0
+          },
+          "n": {
+            "type": "integer",
+            "title": "N",
+            "default": 1
+          },
+          "stop": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop"
+          },
+          "response_format": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseFormat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stream": {
+            "type": "boolean",
+            "title": "Stream",
+            "default": false
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "messages"
+        ],
+        "title": "ChatCompletionsRequest",
+        "description": "Request for chat completions."
+      },
+      "CompletionsRequest": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "default": "fireworks::accounts/fireworks/models/mixtral-8x22b-instruct"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens",
+            "default": 1024
+          },
+          "logprobs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logprobs"
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature",
+            "default": 1
+          },
+          "top_p": {
+            "type": "number",
+            "title": "Top P",
+            "default": 1
+          },
+          "frequency_penalty": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency Penalty",
+            "default": 0
+          },
+          "n": {
+            "type": "integer",
+            "title": "N",
+            "default": 1
+          },
+          "stop": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop"
+          },
+          "response_format": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseFormat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stream": {
+            "type": "boolean",
+            "title": "Stream",
+            "default": false
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt"
+        ],
+        "title": "CompletionsRequest",
+        "description": "Request for completions."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Message": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "Message"
+      },
+      "ResponseFormat": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "json_schema": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Json Schema"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "ResponseFormat",
+        "description": "The format of the response."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
