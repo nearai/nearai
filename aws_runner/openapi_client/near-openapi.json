@@ -131,6 +131,98 @@
         }
       }
     },
+    "/v1/nonce/revoke": {
+      "post": {
+        "summary": "Revoke Nonce",
+        "description": "Revoke a nonce for the account.",
+        "operationId": "revoke_nonce_v1_nonce_revoke_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeNonce"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/nonce/revoke/all": {
+      "post": {
+        "summary": "Revoke All Nonces",
+        "description": "Revoke all nonces for the account.",
+        "operationId": "revoke_all_nonces_v1_nonce_revoke_all_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/nonce/list": {
+      "get": {
+        "summary": "List Nonces",
+        "description": "List all nonces for the account.",
+        "operationId": "list_nonces_v1_nonce_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/registry/download/{name}": {
       "get": {
         "tags": [
@@ -252,6 +344,11 @@
           "200": {
             "description": "Successful Response",
             "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              },
               "application/gzip": {
                 "schema": {
                   "type": "string",
@@ -271,6 +368,408 @@
             }
           }
         }
+      }
+    },
+    "/v1/registry/environments": {
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Save Environment",
+        "description": "Save environment to registry.\n:param env_id: An uuid for the run\n:param file: A tar.gz file containing the environment files\n:param name: An optional name for the run\n:param description: An optional description for the run\n:param details: An optional dictionary of details for the run such as:\nbase_id (the environment env_id before the latest changes),\ntimestamp,\nagents (which agents were made available to the run),\nrun_type\n:param tags:\n:param auth: This endpoint requires authentication\n:return: The registry_id of the saved environment",
+        "operationId": "save_environment_v1_registry_environments_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "env_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Name"
+            }
+          },
+          {
+            "name": "description",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Description"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_save_environment_v1_registry_environments_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/environment/runs": {
+      "post": {
+        "tags": [
+          "agents, assistants",
+          "Agents",
+          "Assistants"
+        ],
+        "summary": "Create Environment And Run",
+        "description": "Run an agent against an existing or a new environment.\n\nReturns the ID of the new environment resulting from the run.",
+        "operationId": "create_environment_and_run_v1_environment_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateThreadAndRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Create Environment And Run V1 Environment Runs Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/threads/runs": {
+      "post": {
+        "tags": [
+          "agents, assistants",
+          "Agents",
+          "Assistants"
+        ],
+        "summary": "Create Environment And Run",
+        "description": "Run an agent against an existing or a new environment.\n\nReturns the ID of the new environment resulting from the run.",
+        "operationId": "create_environment_and_run_v1_threads_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateThreadAndRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Create Environment And Run V1 Threads Runs Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/completions": {
+      "post": {
+        "summary": "Completions",
+        "operationId": "completions_api_v1_completions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatCompletionsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CompletionsRequest"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/chat/completions": {
+      "post": {
+        "summary": "Chat Completions",
+        "operationId": "chat_completions_api_v1_chat_completions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatCompletionsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CompletionsRequest"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/models": {
+      "get": {
+        "summary": "Get Models",
+        "operationId": "get_models_api_v1_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/nonce/revoke": {
+      "post": {
+        "summary": "Revoke Nonce",
+        "description": "Revoke a nonce for the account.",
+        "operationId": "revoke_nonce_api_v1_nonce_revoke_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeNonce"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/nonce/revoke/all": {
+      "post": {
+        "summary": "Revoke All Nonces",
+        "description": "Revoke all nonces for the account.",
+        "operationId": "revoke_all_nonces_api_v1_nonce_revoke_all_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/nonce/list": {
+      "get": {
+        "summary": "List Nonces",
+        "description": "List all nonces for the account.",
+        "operationId": "list_nonces_api_v1_nonce_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/health": {
@@ -294,6 +793,45 @@
   },
   "components": {
     "schemas": {
+      "Body_save_environment_v1_registry_environments_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_save_environment_v1_registry_environments_post"
+      },
       "ChatCompletionsRequest": {
         "properties": {
           "model": {
@@ -521,6 +1059,72 @@
         "title": "CompletionsRequest",
         "description": "Request for completions."
       },
+      "CreateThreadAndRunRequest": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id",
+            "description": "The name or identifier of the agent to use to execute this run. Either `agent_id` or `assistant_id` must be provided."
+          },
+          "assistant_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Id",
+            "description": "An OpenAI compatibility alias for agent. The ID of the [assistant](/docs/api-reference/assistants) to use to execute this run."
+          },
+          "environment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment Id",
+            "description": "The ID of the environment to use to as a base for this run. If not provided, a new environment will be created."
+          },
+          "thread": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thread",
+            "description": "An OpenAI compatibility alias for environment. If no thread is provided, an empty thread will be created."
+          },
+          "new_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Message",
+            "description": "A message to pass to the environment before running the agents."
+          }
+        },
+        "type": "object",
+        "title": "CreateThreadAndRunRequest"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -576,6 +1180,20 @@
         ],
         "title": "ResponseFormat",
         "description": "The format of the response."
+      },
+      "RevokeNonce": {
+        "properties": {
+          "nonce": {
+            "type": "string",
+            "format": "binary",
+            "title": "Nonce"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nonce"
+        ],
+        "title": "RevokeNonce"
       },
       "ValidationError": {
         "properties": {
