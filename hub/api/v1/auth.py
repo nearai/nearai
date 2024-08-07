@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from typing import Optional
@@ -39,20 +38,6 @@ class AuthToken(BaseModel):
         if len(value) != 32:
             raise ValueError("Invalid nonce, must of length 32")
         return value
-
-    # allow auth to be passed along to other services - needs review
-    def json(self):
-        """Deprecated. For use by tests. Return the JSON representation of the object."""
-        return json.dumps(
-            {
-                "account_id": self.account_id,
-                "public_key": self.public_key,
-                "signature": self.signature,
-                "callback_url": self.callback_url,
-                "recipient": self.recipient,
-                "plainMsg": self.plainMsg,
-            }
-        )
 
 
 async def get_auth(token: HTTPAuthorizationCredentials = Depends(bearer)):

@@ -56,6 +56,6 @@ def create_environment_and_run(body: CreateThreadAndRunRequest, auth: AuthToken 
     wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
     result = wrapper.invoke_function(
         "agent-runner-docker",
-        {"agents": agents, "environment_id": environment_id, "auth": auth.json(), "new_message": new_message},
+        {"agents": agents, "environment_id": environment_id, "auth": auth.model_dump(), "new_message": new_message},
     )
     return result

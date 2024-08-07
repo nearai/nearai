@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 
 import boto3
 from mypy_boto3_s3.client import S3Client
@@ -179,7 +179,8 @@ class Registry:
     def upload(  # noqa: D102
         self,
         *,
-        path: Path,
+        path: Optional[Path] = None,
+        file_obj: Optional[Any] = None,
         s3_path: str,
         author: str,
         description: Optional[str],
@@ -188,7 +189,9 @@ class Registry:
         show_entry: bool,
         tags: List[str],
     ) -> int:
-        assert path.exists(), "Path does not exist"
+        assert path or file_obj, "Either path or file_obj must be provided"
+        if path:
+            assert path.exists(), "Path does not exist"
 
         prefix = os.path.join(CONFIG.s3_prefix, s3_path)
 
@@ -209,20 +212,25 @@ class Registry:
 
         s3_client = boto3.client("s3")
 
-        if path.is_file():
-            upload_file(s3_client, os.path.join(prefix, path.name), path)
+        if path:
+            if path.is_file():
+                upload_file(s3_client, os.path.join(prefix, path.name), path)
 
-        elif path.is_dir():
-            for root, _, files in os.walk(path):
-                for filename in files:
-                    # Construct full local path
-                    local_path = os.path.join(root, filename)
+            elif path.is_dir():
+                for root, _, files in os.walk(path):
+                    for filename in files:
+                        # Construct full local path
+                        local_path = os.path.join(root, filename)
 
-                    # Construct relative path for S3
-                    relative_path = os.path.relpath(local_path, path)
-                    s3_path = os.path.join(prefix, relative_path)
+                        # Construct relative path for S3
+                        relative_path = os.path.relpath(local_path, path)
+                        s3_path = os.path.join(prefix, relative_path)
 
-                    upload_file(s3_client, s3_path, Path(local_path))
+                        upload_file(s3_client, s3_path, Path(local_path))
+        elif file_obj:
+            with file_obj.file as f:
+                s3_client.upload_fileobj(f, CONFIG.s3_bucket, os.path.join(prefix, file_obj.filename))
+
         return registry_id
 
     def download(self, identifier: Union[str, int], version: Optional[str] = None) -> Path:  # noqa: D102

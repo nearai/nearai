@@ -2,10 +2,11 @@ import os
 import shutil
 import tarfile
 import unittest
+import uuid
 
 from fastapi.testclient import TestClient
 from hub.app import app
-from hub.api.v1.auth import revokable_auth
+from hub.api.v1.auth import revokable_auth, AuthToken
 
 
 class TestRegistryRoutes(unittest.TestCase):
@@ -15,7 +16,8 @@ class TestRegistryRoutes(unittest.TestCase):
 
     @staticmethod
     async def override_dependency():
-        return {"account_id": "unittest.near"}
+        return AuthToken(account_id="unittest.near", public_key="unittest",
+                         signature="unittest", callback_url="unittest", plainMsg="unittest")
 
     def test_fetch_agent(self):
         response = self.client.get("/v1/registry/agents/xela-agent")
@@ -40,6 +42,26 @@ class TestRegistryRoutes(unittest.TestCase):
                 tar.extractall("/tmp/near-ai-unittest/output")
         finally:
             shutil.rmtree("/tmp/near-ai-unittest")
+
+    def test_save_environment(self):
+        with open("data/test.tar.gz", "rb") as file:
+            response = self.client.post(
+                "/v1/registry/environments",
+                files={"file": ("test.tar.gz", file, "application/gzip")},
+                params={
+                    "env_id": uuid.uuid4().hex,
+                    "name": "test-env",
+                    "description": "test-env",
+                    "details": '{"test": "test"}',
+                    "tags": '["test"]',
+                }
+            )
+
+        assert response.status_code == 200
+        response_data = response.json()
+        assert response_data["info"] == "Environment saved successfully"
+        assert response_data["registry_id"] is not None
+
 
 if __name__ == '__main__':
     unittest.main()
