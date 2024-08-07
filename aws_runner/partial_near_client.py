@@ -1,3 +1,5 @@
+from typing import List
+
 from openapi_client.api.default_api import DefaultApi
 from openapi_client.api.registry_api import RegistryApi
 from openapi_client.models.chat_completions_request import ChatCompletionsRequest
@@ -44,7 +46,14 @@ class PartialNearClient:
         api_instance = RegistryApi(self._client)
         return api_instance.get_environment_v1_registry_environments_id_get(env_id)
 
-    def save_environment(self):
-        """Mocked: Saves an environment to NearAI registry."""
-        print("save_environment is mocked")
-        return None
+    def save_environment(self, env_id: str, file: bytes, name: str, description: str, details: dict, tags: List[str]):
+        """Saves an environment to NearAI registry."""
+        api_instance = RegistryApi(self._client)
+
+        try:
+            api_response = api_instance.save_environment_v1_registry_environments_post(
+                env_id, file, name=name, description=description, details=None, tags=None
+            )
+            return api_response["registry_id"]
+        except Exception as e:
+            print("Exception when calling save_environment: %s\n" % e)

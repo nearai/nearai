@@ -26,7 +26,6 @@ class Environment(object):
         self,
         path: str,
         agents: List["Agent"],
-        auth,
         client,
         server_url: str = "https://api.near.ai",
         create_files: bool = True,
@@ -36,7 +35,6 @@ class Environment(object):
         self._done = False
         self._server_url = server_url
         self._client = client
-        self._user_name = auth["account_id"]
         if create_files:
             os.makedirs(self._path, exist_ok=True)
             open(os.path.join(self._path, CHAT_FILENAME), "a").close()
@@ -182,30 +180,11 @@ class Environment(object):
         run_type: str,
         run_id: str,
         base_id: Optional[Union[str, int]] = None,
-        run_name: Optional[str] = None,
     ) -> Optional[bytes]:
         """Save Environment to Registry."""
-        author = self._user_name
-        if not author:
-            print(
-                "Warning: No author specified in config. Run not saved to registry."
-                " To set an author run `nearai config set user_name <YOUR_NAME>`"
-            )
-            return None
-
         agent_name = self._agents[0].name if self._agents else "unknown"
         generated_name = f"environment_run_{agent_name}_{run_id}"
-        if run_name:
-            if self._client.get_registry_entry_by_identifier(run_name, fail_if_not_found=False):
-                print(
-                    f"Warning: Run with name '{run_name}' already exists in registry. "
-                    f"Using generated name '{generated_name}' instead."
-                )
-                name = generated_name
-            else:
-                name = run_name
-        else:
-            name = generated_name
+        name = generated_name
 
         with tempfile.NamedTemporaryFile(suffix=".tar.gz") as f:
             with tarfile.open(fileobj=f, mode="w:gz") as tar:
@@ -215,7 +194,6 @@ class Environment(object):
             snapshot = f.read()
             tar_filename = f.name
 
-            s3_path = f"environments/{run_id}"
             timestamp = datetime.now(timezone.utc).isoformat()
             description = f"Agent {run_type} run {agent_name} {run_id} {timestamp}"
             details = {
@@ -227,14 +205,12 @@ class Environment(object):
                 "filename": tar_filename,
             }
             tags_l = ["environment"]
-            registry_id = self._client.registry.upload(
-                path=Path(tar_filename),
-                s3_path=s3_path,
-                author=author,
-                description=description,
+            registry_id = self._client.save_environment(
+                env_id=run_id,
+                file=snapshot,
                 name=name,
+                description=description,
                 details=details,
-                show_entry=True,
                 tags=tags_l,
             )
             print(
@@ -311,8 +287,7 @@ class Environment(object):
                 self.set_next_actor("agent")
 
         if record_run:
-            run_name = record_run if record_run and record_run != "true" else None
-            self.save_to_registry(self._path, "interactive", run_id, base_id, run_name)
+            self.save_to_registry(self._path, "interactive", run_id, base_id)
 
     def run_task(
         self,
@@ -334,8 +309,7 @@ class Environment(object):
             self._agents[0].run(self, task=task)
 
         if record_run:
-            run_name = record_run if record_run and record_run != "true" else None
-            self.save_to_registry(self._path, "task", run_id, base_id, run_name)
+            self.save_to_registry(self._path, "task", run_id, base_id)
 
     def contains_non_empty_chat_txt(self, directory: str) -> bool:  # noqa: D102
         chat_txt_path = os.path.join(directory, "chat.txt")

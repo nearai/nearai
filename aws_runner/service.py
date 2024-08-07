@@ -54,5 +54,5 @@ def run_with_environment(
         with tarfile.open(f"{PATH}/environment.tar.gz", mode="r:gz") as tar:
             tar.extractall(RUN_PATH)
 
-    env = Environment(RUN_PATH, loaded_agents, auth, near_client)
-    env.run_task(new_message, False, environment_id, max_iterations)
+    env = Environment(RUN_PATH, loaded_agents, near_client)
+    env.run_task(new_message, True, environment_id, max_iterations)
