@@ -77,7 +77,6 @@ def validate_nonce(value: Union[str, bytes, list[int]]):
     now = int(time.time() * 1000)
 
     if nonce_int > now:
-        # TODO(https://github.com/nearai/nearai/issues/106): Revoke nonces that are in the future.
         raise ValueError("Nonce is in the future")
     if now - nonce_int > 10 * 365 * 24 * 60 * 60 * 1000:
         """If the timestamp is older than 10 years, it is considered invalid. Forcing apps to use unique nonces."""
