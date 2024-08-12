@@ -23,7 +23,7 @@ def handler(event, context):
         missing = list(filter(lambda x: event.get(x) is (None or ""), required_params))
         return f"Missing required parameters: {missing}"
 
-    auth_object = json.loads(auth)
+    auth_object = auth if isinstance(auth, dict) else json.loads(auth)
     run_with_environment(agents, auth_object, environment_id, new_message, 2)  # fewer iterations for testing
 
     return f"Ran {agents} agent(s) with generated near client and environment {environment_id}"
@@ -35,7 +35,7 @@ def load_agent(client, agent):
 
 
 def run_with_environment(
-    agents: str, auth, environment_id: str = None, new_message: str = None, max_iterations: int = 10
+    agents: str, auth: dict, environment_id: str = None, new_message: str = None, max_iterations: int = 10
 ):
     """Runs agent against environment fetched from id, optionally passing a new message to the environment."""
     configuration = Configuration(access_token=f"Bearer {json.dumps(auth)}", host="https://api.near.ai")

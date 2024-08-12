@@ -18,6 +18,11 @@ class LambdaWrapper:
                         the response.
         :return: The response from the function invocation.
         """
+
+        # convert function_params.auth.nonce from bytes into text
+        if function_params.get("auth") and function_params["auth"].get("nonce"):
+            function_params["auth"]["nonce"] = function_params["auth"]["nonce"].decode("utf-8")
+
         try:
             response = self.lambda_client.invoke(
                 FunctionName=function_name,
