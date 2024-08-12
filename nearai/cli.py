@@ -281,7 +281,7 @@ class HubCLI:
 
         """
         hub_query = kwargs.get("query")
-        hub_endpoint = kwargs.get("endpoint", "http://127.0.0.1:8081/api/v1/chat/completions")
+        hub_endpoint = kwargs.get("endpoint", "http://127.0.0.1:8081/v1/chat/completions")
         hub_model = kwargs.get("model", "accounts/fireworks/models/llama-v3-70b-instruct")
         hub_provider = kwargs.get("provider", "fireworks")
         hub_info = kwargs.get("info", False)

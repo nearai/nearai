@@ -3,7 +3,7 @@ from random import randint
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://ai.nearspace.info/chat/api/v1",
+    base_url="http://api.near.ai/v1",
     api_key="token-abc123",
 )
 

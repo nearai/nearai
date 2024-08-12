@@ -1,1 +1,1418 @@
-{"openapi":"3.1.0","info":{"title":"FastAPI","version":"0.1.0"},"paths":{"/v1/completions":{"post":{"summary":"Completions","operationId":"completions_v1_completions_post","requestBody":{"content":{"application/json":{"schema":{"anyOf":[{"$ref":"#/components/schemas/ChatCompletionsRequest"},{"$ref":"#/components/schemas/CompletionsRequest"}],"title":"Request"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/v1/chat/completions":{"post":{"summary":"Chat Completions","operationId":"chat_completions_v1_chat_completions_post","requestBody":{"content":{"application/json":{"schema":{"anyOf":[{"$ref":"#/components/schemas/ChatCompletionsRequest"},{"$ref":"#/components/schemas/CompletionsRequest"}],"title":"Request"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/v1/models":{"get":{"summary":"Get Models","operationId":"get_models_v1_models_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/v1/nonce/revoke":{"post":{"summary":"Revoke Nonce","description":"Revoke a nonce for the account.","operationId":"revoke_nonce_v1_nonce_revoke_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/RevokeNonce"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/v1/nonce/revoke/all":{"post":{"summary":"Revoke All Nonces","description":"Revoke all nonces for the account.","operationId":"revoke_all_nonces_v1_nonce_revoke_all_post","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}},"security":[{"HTTPBearer":[]}]}},"/v1/nonce/list":{"get":{"summary":"List Nonces","description":"List all nonces for the account.","operationId":"list_nonces_v1_nonce_list_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}},"security":[{"HTTPBearer":[]}]}},"/v1/registry/upload_file":{"post":{"tags":["registry"],"summary":"Upload File","operationId":"upload_file_v1_registry_upload_file_post","requestBody":{"content":{"multipart/form-data":{"schema":{"$ref":"#/components/schemas/Body_upload_file_v1_registry_upload_file_post"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/v1/registry/download_file":{"post":{"tags":["registry"],"summary":"Download File","operationId":"download_file_v1_registry_download_file_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/Body_download_file_v1_registry_download_file_post"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/v1/registry/upload_metadata":{"post":{"tags":["registry"],"summary":"Upload Metadata","operationId":"upload_metadata_v1_registry_upload_metadata_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/Body_upload_metadata_v1_registry_upload_metadata_post"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/v1/registry/download_metadata":{"post":{"tags":["registry"],"summary":"Download Metadata","operationId":"download_metadata_v1_registry_download_metadata_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/Body_download_metadata_v1_registry_download_metadata_post"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/EntryMetadata"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/v1/registry/list_files":{"post":{"tags":["registry"],"summary":"List Files","description":"List all files that belong to a entry.","operationId":"list_files_v1_registry_list_files_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/Body_list_files_v1_registry_list_files_post"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"type":"string"},"type":"array","title":"Response List Files V1 Registry List Files Post"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/v1/registry/list_entries":{"post":{"tags":["registry"],"summary":"List Entries","operationId":"list_entries_v1_registry_list_entries_post","parameters":[{"name":"category","in":"query","required":false,"schema":{"type":"string","default":"","title":"Category"}},{"name":"tags","in":"query","required":false,"schema":{"type":"string","default":"","title":"Tags"}},{"name":"total","in":"query","required":false,"schema":{"type":"integer","default":32,"title":"Total"}},{"name":"show_hidden","in":"query","required":false,"schema":{"type":"boolean","default":false,"title":"Show Hidden"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/EntryLocation"},"title":"Response List Entries V1 Registry List Entries Post"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/v1/environment/runs":{"post":{"tags":["agents, assistants","Agents","Assistants"],"summary":"Create Environment And Run","description":"Run an agent against an existing or a new environment.\n\nReturns the ID of the new environment resulting from the run.","operationId":"create_environment_and_run_v1_environment_runs_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CreateThreadAndRunRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"string","title":"Response Create Environment And Run V1 Environment Runs Post"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/v1/threads/runs":{"post":{"tags":["agents, assistants","Agents","Assistants"],"summary":"Create Environment And Run","description":"Run an agent against an existing or a new environment.\n\nReturns the ID of the new environment resulting from the run.","operationId":"create_environment_and_run_v1_threads_runs_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CreateThreadAndRunRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"type":"string","title":"Response Create Environment And Run V1 Threads Runs Post"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/completions":{"post":{"summary":"Completions","operationId":"completions_api_v1_completions_post","requestBody":{"content":{"application/json":{"schema":{"anyOf":[{"$ref":"#/components/schemas/ChatCompletionsRequest"},{"$ref":"#/components/schemas/CompletionsRequest"}],"title":"Request"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/chat/completions":{"post":{"summary":"Chat Completions","operationId":"chat_completions_api_v1_chat_completions_post","requestBody":{"content":{"application/json":{"schema":{"anyOf":[{"$ref":"#/components/schemas/ChatCompletionsRequest"},{"$ref":"#/components/schemas/CompletionsRequest"}],"title":"Request"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/models":{"get":{"summary":"Get Models","operationId":"get_models_api_v1_models_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/api/v1/nonce/revoke":{"post":{"summary":"Revoke Nonce","description":"Revoke a nonce for the account.","operationId":"revoke_nonce_api_v1_nonce_revoke_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/RevokeNonce"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/nonce/revoke/all":{"post":{"summary":"Revoke All Nonces","description":"Revoke all nonces for the account.","operationId":"revoke_all_nonces_api_v1_nonce_revoke_all_post","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/nonce/list":{"get":{"summary":"List Nonces","description":"List all nonces for the account.","operationId":"list_nonces_api_v1_nonce_list_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}},"security":[{"HTTPBearer":[]}]}},"/health":{"get":{"summary":"Health","operationId":"health_health_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}}},"components":{"schemas":{"Body_download_file_v1_registry_download_file_post":{"properties":{"path":{"type":"string","title":"Path"},"entry_location":{"$ref":"#/components/schemas/EntryLocation"}},"type":"object","required":["path","entry_location"],"title":"Body_download_file_v1_registry_download_file_post"},"Body_download_metadata_v1_registry_download_metadata_post":{"properties":{"entry_location":{"$ref":"#/components/schemas/EntryLocation"}},"type":"object","required":["entry_location"],"title":"Body_download_metadata_v1_registry_download_metadata_post"},"Body_list_files_v1_registry_list_files_post":{"properties":{"entry_location":{"$ref":"#/components/schemas/EntryLocation"}},"type":"object","required":["entry_location"],"title":"Body_list_files_v1_registry_list_files_post"},"Body_upload_file_v1_registry_upload_file_post":{"properties":{"path":{"type":"string","title":"Path"},"file":{"type":"string","format":"binary","title":"File"},"namespace":{"type":"string","title":"Namespace"},"name":{"type":"string","title":"Name"},"version":{"type":"string","title":"Version"}},"type":"object","required":["path","file","namespace","name","version"],"title":"Body_upload_file_v1_registry_upload_file_post"},"Body_upload_metadata_v1_registry_upload_metadata_post":{"properties":{"metadata":{"$ref":"#/components/schemas/EntryMetadataInput"},"entry_location":{"$ref":"#/components/schemas/EntryLocation"}},"type":"object","required":["metadata","entry_location"],"title":"Body_upload_metadata_v1_registry_upload_metadata_post"},"ChatCompletionsRequest":{"properties":{"model":{"type":"string","title":"Model","default":"fireworks::accounts/fireworks/models/mixtral-8x22b-instruct"},"provider":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Provider"},"max_tokens":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Max Tokens","default":1024},"logprobs":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Logprobs"},"temperature":{"type":"number","title":"Temperature","default":1.0},"top_p":{"type":"number","title":"Top P","default":1.0},"frequency_penalty":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Frequency Penalty","default":0.0},"n":{"type":"integer","title":"N","default":1},"stop":{"anyOf":[{"type":"string"},{"items":{"type":"string"},"type":"array"},{"type":"null"}],"title":"Stop"},"response_format":{"anyOf":[{"$ref":"#/components/schemas/ResponseFormat"},{"type":"null"}]},"stream":{"type":"boolean","title":"Stream","default":false},"messages":{"items":{"$ref":"#/components/schemas/Message"},"type":"array","title":"Messages"}},"type":"object","required":["messages"],"title":"ChatCompletionsRequest","description":"Request for chat completions."},"CompletionsRequest":{"properties":{"model":{"type":"string","title":"Model","default":"fireworks::accounts/fireworks/models/mixtral-8x22b-instruct"},"provider":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Provider"},"max_tokens":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Max Tokens","default":1024},"logprobs":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Logprobs"},"temperature":{"type":"number","title":"Temperature","default":1.0},"top_p":{"type":"number","title":"Top P","default":1.0},"frequency_penalty":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Frequency Penalty","default":0.0},"n":{"type":"integer","title":"N","default":1},"stop":{"anyOf":[{"type":"string"},{"items":{"type":"string"},"type":"array"},{"type":"null"}],"title":"Stop"},"response_format":{"anyOf":[{"$ref":"#/components/schemas/ResponseFormat"},{"type":"null"}]},"stream":{"type":"boolean","title":"Stream","default":false},"prompt":{"type":"string","title":"Prompt"}},"type":"object","required":["prompt"],"title":"CompletionsRequest","description":"Request for completions."},"CreateThreadAndRunRequest":{"properties":{"agent_id":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Agent Id","description":"The name or identifier of the agent to use to execute this run. Either `agent_id` or `assistant_id` must be provided."},"assistant_id":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Assistant Id","description":"An OpenAI compatibility alias for agent. The ID of the [assistant](/docs/api-reference/assistants) to use to execute this run."},"environment_id":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Environment Id","description":"The ID of the environment to use to as a base for this run. If not provided, a new environment will be created."},"thread":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Thread","description":"An OpenAI compatibility alias for environment. If no thread is provided, an empty thread will be created."},"new_message":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"New Message","description":"A message to pass to the environment before running the agents."}},"type":"object","title":"CreateThreadAndRunRequest"},"EntryLocation":{"properties":{"namespace":{"type":"string","title":"Namespace"},"name":{"type":"string","title":"Name"},"version":{"type":"string","title":"Version"}},"type":"object","required":["namespace","name","version"],"title":"EntryLocation"},"EntryMetadata":{"properties":{"category":{"type":"string","title":"Category"},"description":{"type":"string","title":"Description"},"tags":{"items":{"type":"string"},"type":"array","title":"Tags"},"details":{"type":"object","title":"Details"},"show_entry":{"type":"boolean","title":"Show Entry"},"name":{"type":"string","title":"Name"},"version":{"type":"string","title":"Version"}},"type":"object","required":["category","description","tags","details","show_entry","name","version"],"title":"EntryMetadata"},"EntryMetadataInput":{"properties":{"category":{"type":"string","title":"Category"},"description":{"type":"string","title":"Description"},"tags":{"items":{"type":"string"},"type":"array","title":"Tags"},"details":{"type":"object","title":"Details"},"show_entry":{"type":"boolean","title":"Show Entry"}},"type":"object","required":["category","description","tags","details","show_entry"],"title":"EntryMetadataInput"},"HTTPValidationError":{"properties":{"detail":{"items":{"$ref":"#/components/schemas/ValidationError"},"type":"array","title":"Detail"}},"type":"object","title":"HTTPValidationError"},"Message":{"properties":{"role":{"type":"string","title":"Role"},"content":{"type":"string","title":"Content"}},"type":"object","required":["role","content"],"title":"Message"},"ResponseFormat":{"properties":{"type":{"type":"string","title":"Type"},"json_schema":{"anyOf":[{"type":"object"},{"type":"null"}],"title":"Json Schema"}},"type":"object","required":["type"],"title":"ResponseFormat","description":"The format of the response."},"RevokeNonce":{"properties":{"nonce":{"type":"string","format":"binary","title":"Nonce"}},"type":"object","required":["nonce"],"title":"RevokeNonce"},"ValidationError":{"properties":{"loc":{"items":{"anyOf":[{"type":"string"},{"type":"integer"}]},"type":"array","title":"Location"},"msg":{"type":"string","title":"Message"},"type":{"type":"string","title":"Error Type"}},"type":"object","required":["loc","msg","type"],"title":"ValidationError"}},"securitySchemes":{"HTTPBearer":{"type":"http","scheme":"bearer"}}}}
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "FastAPI",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/completions": {
+      "post": {
+        "summary": "Completions",
+        "operationId": "completions_v1_completions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatCompletionsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CompletionsRequest"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/chat/completions": {
+      "post": {
+        "summary": "Chat Completions",
+        "operationId": "chat_completions_v1_chat_completions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatCompletionsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CompletionsRequest"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "summary": "Get Models",
+        "operationId": "get_models_v1_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/nonce/revoke": {
+      "post": {
+        "summary": "Revoke Nonce",
+        "description": "Revoke a nonce for the account.",
+        "operationId": "revoke_nonce_v1_nonce_revoke_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeNonce"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/nonce/revoke/all": {
+      "post": {
+        "summary": "Revoke All Nonces",
+        "description": "Revoke all nonces for the account.",
+        "operationId": "revoke_all_nonces_v1_nonce_revoke_all_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/nonce/list": {
+      "get": {
+        "summary": "List Nonces",
+        "description": "List all nonces for the account.",
+        "operationId": "list_nonces_v1_nonce_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/registry/upload_file": {
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Upload File",
+        "operationId": "upload_file_v1_registry_upload_file_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_file_v1_registry_upload_file_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/registry/download_file": {
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Download File",
+        "operationId": "download_file_v1_registry_download_file_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_download_file_v1_registry_download_file_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/registry/upload_metadata": {
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Upload Metadata",
+        "operationId": "upload_metadata_v1_registry_upload_metadata_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_metadata_v1_registry_upload_metadata_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/registry/download_metadata": {
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "Download Metadata",
+        "operationId": "download_metadata_v1_registry_download_metadata_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_download_metadata_v1_registry_download_metadata_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryMetadata"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/registry/list_files": {
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "List Files",
+        "description": "List all files that belong to a entry.",
+        "operationId": "list_files_v1_registry_list_files_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_list_files_v1_registry_list_files_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response List Files V1 Registry List Files Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/registry/list_entries": {
+      "post": {
+        "tags": [
+          "registry"
+        ],
+        "summary": "List Entries",
+        "operationId": "list_entries_v1_registry_list_entries_post",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Category"
+            }
+          },
+          {
+            "name": "tags",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Tags"
+            }
+          },
+          {
+            "name": "total",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 32,
+              "title": "Total"
+            }
+          },
+          {
+            "name": "show_hidden",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Show Hidden"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EntryLocation"
+                  },
+                  "title": "Response List Entries V1 Registry List Entries Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/environment/runs": {
+      "post": {
+        "tags": [
+          "agents, assistants",
+          "Agents",
+          "Assistants"
+        ],
+        "summary": "Create Environment And Run",
+        "description": "Run an agent against an existing or a new environment.\n\nReturns the ID of the new environment resulting from the run.",
+        "operationId": "create_environment_and_run_v1_environment_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateThreadAndRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Create Environment And Run V1 Environment Runs Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/threads/runs": {
+      "post": {
+        "tags": [
+          "agents, assistants",
+          "Agents",
+          "Assistants"
+        ],
+        "summary": "Create Environment And Run",
+        "description": "Run an agent against an existing or a new environment.\n\nReturns the ID of the new environment resulting from the run.",
+        "operationId": "create_environment_and_run_v1_threads_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateThreadAndRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Create Environment And Run V1 Threads Runs Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/completions": {
+      "post": {
+        "summary": "Completions",
+        "operationId": "completions_api_v1_completions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatCompletionsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CompletionsRequest"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/chat/completions": {
+      "post": {
+        "summary": "Chat Completions",
+        "operationId": "chat_completions_api_v1_chat_completions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatCompletionsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CompletionsRequest"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "summary": "Get Models",
+        "operationId": "get_models_api_v1_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/nonce/revoke": {
+      "post": {
+        "summary": "Revoke Nonce",
+        "description": "Revoke a nonce for the account.",
+        "operationId": "revoke_nonce_api_v1_nonce_revoke_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeNonce"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/nonce/revoke/all": {
+      "post": {
+        "summary": "Revoke All Nonces",
+        "description": "Revoke all nonces for the account.",
+        "operationId": "revoke_all_nonces_api_v1_nonce_revoke_all_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/nonce/list": {
+      "get": {
+        "summary": "List Nonces",
+        "description": "List all nonces for the account.",
+        "operationId": "list_nonces_api_v1_nonce_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_download_file_v1_registry_download_file_post": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "entry_location": {
+            "$ref": "#/components/schemas/EntryLocation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "entry_location"
+        ],
+        "title": "Body_download_file_v1_registry_download_file_post"
+      },
+      "Body_download_metadata_v1_registry_download_metadata_post": {
+        "properties": {
+          "entry_location": {
+            "$ref": "#/components/schemas/EntryLocation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entry_location"
+        ],
+        "title": "Body_download_metadata_v1_registry_download_metadata_post"
+      },
+      "Body_list_files_v1_registry_list_files_post": {
+        "properties": {
+          "entry_location": {
+            "$ref": "#/components/schemas/EntryLocation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entry_location"
+        ],
+        "title": "Body_list_files_v1_registry_list_files_post"
+      },
+      "Body_upload_file_v1_registry_upload_file_post": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          },
+          "namespace": {
+            "type": "string",
+            "title": "Namespace"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "file",
+          "namespace",
+          "name",
+          "version"
+        ],
+        "title": "Body_upload_file_v1_registry_upload_file_post"
+      },
+      "Body_upload_metadata_v1_registry_upload_metadata_post": {
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/EntryMetadataInput"
+          },
+          "entry_location": {
+            "$ref": "#/components/schemas/EntryLocation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metadata",
+          "entry_location"
+        ],
+        "title": "Body_upload_metadata_v1_registry_upload_metadata_post"
+      },
+      "ChatCompletionsRequest": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "default": "fireworks::accounts/fireworks/models/mixtral-8x22b-instruct"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens",
+            "default": 1024
+          },
+          "logprobs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logprobs"
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature",
+            "default": 1.0
+          },
+          "top_p": {
+            "type": "number",
+            "title": "Top P",
+            "default": 1.0
+          },
+          "frequency_penalty": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency Penalty",
+            "default": 0.0
+          },
+          "n": {
+            "type": "integer",
+            "title": "N",
+            "default": 1
+          },
+          "stop": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop"
+          },
+          "response_format": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseFormat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stream": {
+            "type": "boolean",
+            "title": "Stream",
+            "default": false
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "messages"
+        ],
+        "title": "ChatCompletionsRequest",
+        "description": "Request for chat completions."
+      },
+      "CompletionsRequest": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "default": "fireworks::accounts/fireworks/models/mixtral-8x22b-instruct"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens",
+            "default": 1024
+          },
+          "logprobs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logprobs"
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature",
+            "default": 1.0
+          },
+          "top_p": {
+            "type": "number",
+            "title": "Top P",
+            "default": 1.0
+          },
+          "frequency_penalty": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency Penalty",
+            "default": 0.0
+          },
+          "n": {
+            "type": "integer",
+            "title": "N",
+            "default": 1
+          },
+          "stop": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop"
+          },
+          "response_format": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseFormat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stream": {
+            "type": "boolean",
+            "title": "Stream",
+            "default": false
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt"
+        ],
+        "title": "CompletionsRequest",
+        "description": "Request for completions."
+      },
+      "CreateThreadAndRunRequest": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id",
+            "description": "The name or identifier of the agent to use to execute this run. Either `agent_id` or `assistant_id` must be provided."
+          },
+          "assistant_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Id",
+            "description": "An OpenAI compatibility alias for agent. The ID of the [assistant](/docs/api-reference/assistants) to use to execute this run."
+          },
+          "environment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment Id",
+            "description": "The ID of the environment to use to as a base for this run. If not provided, a new environment will be created."
+          },
+          "thread": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thread",
+            "description": "An OpenAI compatibility alias for environment. If no thread is provided, an empty thread will be created."
+          },
+          "new_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Message",
+            "description": "A message to pass to the environment before running the agents."
+          }
+        },
+        "type": "object",
+        "title": "CreateThreadAndRunRequest"
+      },
+      "EntryLocation": {
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "title": "Namespace"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "namespace",
+          "name",
+          "version"
+        ],
+        "title": "EntryLocation"
+      },
+      "EntryMetadata": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "details": {
+            "type": "object",
+            "title": "Details"
+          },
+          "show_entry": {
+            "type": "boolean",
+            "title": "Show Entry"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "description",
+          "tags",
+          "details",
+          "show_entry",
+          "name",
+          "version"
+        ],
+        "title": "EntryMetadata"
+      },
+      "EntryMetadataInput": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "details": {
+            "type": "object",
+            "title": "Details"
+          },
+          "show_entry": {
+            "type": "boolean",
+            "title": "Show Entry"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "description",
+          "tags",
+          "details",
+          "show_entry"
+        ],
+        "title": "EntryMetadataInput"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Message": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "Message"
+      },
+      "ResponseFormat": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "json_schema": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Json Schema"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "ResponseFormat",
+        "description": "The format of the response."
+      },
+      "RevokeNonce": {
+        "properties": {
+          "nonce": {
+            "type": "string",
+            "format": "binary",
+            "title": "Nonce"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nonce"
+        ],
+        "title": "RevokeNonce"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
