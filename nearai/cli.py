@@ -2,105 +2,30 @@ import json
 import os
 import runpy
 import sys
-import textwrap
 from dataclasses import asdict
 from pathlib import Path
-from subprocess import check_output, run
-from typing import Any, List, Optional, Tuple, Union
+from subprocess import run
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import boto3
 import fire
 import pkg_resources
-from tabulate import tabulate
+from openapi_client import EntryLocation, EntryMetadataInput
 
 import nearai
+import nearai.login as nearai_login
 from nearai.agent import load_agent
 from nearai.benchmark import BenchmarkExecutor, DatasetInfo
 from nearai.clients.lambda_client import LambdaWrapper
 from nearai.config import CONFIG, DATA_FOLDER, update_config
 from nearai.dataset import load_dataset
-from nearai.db import db
 from nearai.environment import Environment
 from nearai.finetune import FinetuneCli
-from nearai.registry import Registry, agent, dataset, model, registry
+from nearai.hub import hub
+from nearai.lib import _check_metadata, parse_location
+from nearai.registry import registry
 from nearai.solvers import SolverStrategy, SolverStrategyRegistry
 from nearai.tensorboard_feed import TensorboardCli
-
-
-class Host:
-    # SSH destination
-    host: str
-    # URL of the supervisor API
-    endpoint: str
-    # Name of the cluster for this endpoint
-    cluster: str
-
-    def __init__(self, host: str, cluster: str):  # noqa: D107
-        self.host = host
-        url = host.split("@")[1]
-        self.endpoint = f"http://{url}:8000"
-        self.cluster = cluster
-
-
-def parse_hosts(hosts_path: Path) -> List[Host]:
-    hostnames = set()
-    hosts = []
-    with open(hosts_path) as f:
-        for line in f:
-            p = line.find("#")
-            if p != -1:
-                line = line[:p]
-            line = line.strip(" \n")
-            if not line:
-                continue
-            host, cluster = line.split()
-            hostnames.add(host)
-            hosts.append(Host(host, cluster))
-
-    assert len(hostnames) == len(hosts), "Duplicate hosts"
-    return hosts
-
-
-def install(hosts_description: List[Host], skip_install: str) -> None:
-    """Install supervisor on every host.
-
-    Skip nearai installation on the dev machine (skip_install).
-    """
-    from fabric import ThreadingGroup as Group
-
-    hosts_str = [h.host for h in hosts_description]
-    all_hosts = Group(*hosts_str)
-    install_hosts = Group(*[h.host for h in hosts_description if h.host != skip_install])
-
-    # Check we have connection to every host
-    result = all_hosts.run("hostname", hide=True, warn=False)
-    for host, res in sorted(result.items()):
-        stdout = res.stdout.strip(" \n")
-        print(f"Host: {host}, hostname: {stdout}")
-
-    def run_bash_script(name: str) -> None:
-        # Install setup_host.sh script
-        script = nearai.etc(name)
-        assert script.exists(), script
-        install_hosts.put(script, f"/tmp/{name}")
-        install_hosts.run(f"bash /tmp/{name}", warn=False)
-
-    run_bash_script("install_cli.sh")
-
-    nearai_path = "/home/setup/.local/bin/nearai"
-
-    for conn in all_hosts:
-        conn.run(f"{nearai_path} config set supervisor_id {conn.host}")
-
-    all_hosts.run(f"{nearai_path} config set db_user {CONFIG.db_user}")
-    all_hosts.run(f"{nearai_path} config set db_password {CONFIG.db_password}")
-
-    result = all_hosts.run(f"{nearai_path} config get supervisor_id")
-    for host, res in sorted(result.items()):
-        stdout = res.stdout.strip(" \n")
-        print(f"Host: {host}, supervisor_id: {stdout}")
-
-    run_bash_script("setup_supervisor.sh")
 
 
 def parse_tags(tags: Union[str, Tuple[str, ...]]) -> List[str]:
@@ -118,162 +43,90 @@ def parse_tags(tags: Union[str, Tuple[str, ...]]) -> List[str]:
 
 
 class RegistryCli:
-    def __init__(self, registry: Registry):  # noqa: D107
-        self._registry = registry
-
-    def add(self, s3_path: str, description: str, name: Optional[str] = None, tags: str = "", **details: Any) -> None:
-        """Add an item to the registry that was previously uploaded to S3."""
-        tags_l = parse_tags(tags)
-        assert self._registry.exists_in_s3(s3_path), f"Item {s3_path} does not exist in S3"
-        self._registry.add(
-            s3_path=s3_path,
-            author=CONFIG.get_user_name(),
-            description=description,
-            name=name,
-            show_entry=True,
-            tags=tags_l,
-            details=details,
-        )
-
-    def add_tags(self, identifier: int, tags: str) -> None:
-        """Add tags to an item in the registry."""
-        tags_l = parse_tags(tags)
-        self._registry.add_tags(identifier=identifier, tags=tags_l)
-
-    def remove_tag(self, identifier: int, tag: str) -> None:  # noqa: D102
-        self._registry.remove_tag(identifier=identifier, tag=tag)
-
-    def list(self, total: int = 16, show_all: bool = False, verbose: bool = False, tags: str = "") -> None:
-        """List available items."""
-        tags_l = parse_tags(tags)
-
-        header = ["id", "name", "description", "tags"]
-
-        if verbose:
-            header += ["author", "date", "path"]
-
-        table: list[list[Any]] = [header]
-
-        for entry in self._registry.list(tags=tags_l, total=total, show_all=show_all):
-            tags = ", ".join(entry.tags)
-
-            row = [
-                entry.id,
-                (entry.name or entry.path) if not verbose else entry.name,
-                textwrap.fill(entry.description or "", width=50),
-                textwrap.fill(tags, width=20),
-            ]
-
-            if verbose:
-                row += [entry.author, entry.time.strftime("%Y-%m-%d"), entry.path]
-
-            table.append(row)
-
-        print(tabulate(table, headers="firstrow", tablefmt="simple_grid"))
-
-    def update(
-        self,
-        identifier: int,
-        *,
-        author: Optional[str] = None,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        details: Optional[dict] = None,
-        show_entry: Optional[bool] = None,
-    ) -> None:
-        """Update item in the registry."""
-        self._registry.update(
-            identifier=identifier,
-            author=author,
-            description=description,
-            name=name,
-            details=details,
-            show_entry=show_entry,
-        )
-
-    def info(self) -> None:
+    def info(self, entry: str) -> None:
         """Show information about an item."""
-        raise NotImplementedError()
+        entry_location = parse_location(entry)
+        metadata = registry.info(entry_location)
 
-    def upload(
+        if metadata is None:
+            print(f"Entry {entry} not found.")
+            return
+
+        print(metadata.model_dump_json(indent=2))
+
+    def metadata_template(self, local_path: str = "."):
+        """Create a metadata template."""
+        path = Path(local_path)
+
+        metadata_path = path / "metadata.json"
+
+        with open(metadata_path, "w") as f:
+            json.dump(
+                {
+                    "name": "foobar",
+                    "version": "0.0.1",
+                    "description": "Template metadata",
+                    "category": "model",
+                    "tags": ["foo", "bar"],
+                    "details": {},
+                    "show_entry": True,
+                },
+                f,
+                indent=2,
+            )
+
+    def list(
         self,
-        path: str,
-        s3_path: str,
-        description: str,
-        name: Optional[str] = None,
-        show_entry: bool = True,
+        category: str = "",
         tags: str = "",
-        **details: Any,
+        total: int = 32,
+        show_all: bool = False,
     ) -> None:
-        """Upload item to the registry."""
+        """List available items."""
+        # Make sure tags is a comma-separated list of tags
         tags_l = parse_tags(tags)
+        tags = ",".join(tags_l)
 
-        author = CONFIG.get_user_name()
-        self._registry.upload(
-            path=Path(path),
-            s3_path=s3_path,
-            author=author,
-            description=description,
-            name=name,
-            details=details,
-            show_entry=show_entry,
-            tags=tags_l,
+        entries = registry.list(category, tags, total, show_all)
+
+        for entry in entries:
+            print(entry)
+
+    def update(self, local_path: str = ".") -> None:
+        """Update metadata of a registry item."""
+        path = Path(local_path)
+
+        if CONFIG.auth is None:
+            print("Please login with `nearai login`")
+            exit(1)
+
+        metadata_path = path / "metadata.json"
+        _check_metadata(metadata_path)
+
+        with open(metadata_path) as f:
+            metadata: Dict[str, Any] = json.load(f)
+
+        namespace = CONFIG.auth.account_id
+
+        entry_location = EntryLocation.model_validate(
+            dict(
+                namespace=namespace,
+                name=metadata.pop("name"),
+                version=metadata.pop("version"),
+            )
         )
 
-    def download(self, name: str) -> None:
+        entry_metadata = EntryMetadataInput.model_validate(metadata)
+        result = registry.update(entry_location, entry_metadata)
+        print(json.dumps(result, indent=2))
+
+    def upload(self, local_path: str = ".") -> None:
+        """Upload item to the registry."""
+        registry.upload(Path(local_path).absolute(), show_progress=True)
+
+    def download(self, entry_location: str, force: bool = False) -> None:
         """Download item."""
-        self._registry.download(name)
-
-
-class SupervisorCli:
-    def install(self) -> None:
-        """Install supervisor service in current machine."""
-        file = nearai.etc("supervisor.service")
-        target = Path("/etc/systemd/system/nearai_supervisor.service")
-        run(["sudo", "cp", str(file), str(target)])
-        run(["sudo", "systemctl", "daemon-reload"])
-
-    def start(self) -> None:
-        """Start installed supervisor service in current machine."""
-        run(["sudo", "systemctl", "restart", "nearai_supervisor"])
-
-    def run(self):
-        """Run supervisor app in debug mode."""
-        from nearai.supervisor import run_supervisor
-
-        run_supervisor()
-
-
-class ServerCli:
-    def install_supervisors(self, hosts: str, skip: str = "") -> None:
-        """Install and start supervisor in every host machine."""
-        hosts_l = parse_hosts(Path(hosts))
-        install(hosts_l, skip)
-
-    def start(self, hosts: str) -> None:  # noqa: D102
-        from nearai.supervisor import SupervisorClient
-
-        parsed_hosts = parse_hosts(Path(hosts))
-        update_config("supervisors", [h.endpoint for h in parsed_hosts])
-
-        db.set_all_supervisors_unavailable()
-
-        for host in parsed_hosts:
-            client = SupervisorClient(host.endpoint)
-            client.init(host.cluster, host.endpoint)
-
-        file = nearai.etc("server.service")
-        target = Path("/etc/systemd/system/nearai_server.service")
-
-        run(["sudo", "cp", str(file), str(target)])
-        run(["sudo", "systemctl", "daemon-reload"])
-        run(["sudo", "systemctl", "restart", "nearai_server"])
-
-    def run(self) -> None:
-        """Run server app in debug mode."""
-        from nearai.server import run_server
-
-        run_server()
+        registry.download(entry_location, force=force, show_progress=True)
 
 
 class ConfigCli:
@@ -291,10 +144,6 @@ class ConfigCli:
 
 
 class BenchmarkCli:
-    def __init__(self, datasets: RegistryCli, models: RegistryCli):  # noqa: D107
-        self.datasets = datasets
-        self.models = models
-
     def run(
         self,
         dataset: str,
@@ -309,7 +158,9 @@ class BenchmarkCli:
         It will cache the results in the database and subsequent runs will pull the results from the cache.
         If force is set to True, it will run the benchmark again and update the cache.
         """
-        benchmark_id = db.get_benchmark_id(dataset, solver_strategy, force, subset=subset, **solver_kwargs)
+        # TODO(db-api): Expose an interface to cache the result of the benchmarks
+        # benchmark_id = db.get_benchmark_id(dataset, solver_strategy, force, subset=subset, **solver_kwargs)
+        benchmark_id = -1
 
         name, subset, dataset = dataset, subset, load_dataset(dataset)
 
@@ -415,49 +266,98 @@ class VllmCli:
             sys.argv = original_argv
 
 
+class HubCLI:
+    def chat(self, **kwargs):
+        """Chat with model from NearAI hub.
+
+        Args:
+        ----
+            query (str): User's query to model
+            endpoint (str): NearAI HUB's url
+            model (str): Name of a model
+            provider (str): Name of a provider
+            info (bool): Display system info
+            kwargs (Dict[str, Any]): All cli keyword arguments
+
+        """
+        hub_query = kwargs.get("query")
+        hub_endpoint = kwargs.get("endpoint", "http://127.0.0.1:8081/v1/chat/completions")
+        hub_model = kwargs.get("model", "accounts/fireworks/models/llama-v3-70b-instruct")
+        hub_provider = kwargs.get("provider", "fireworks")
+        hub_info = kwargs.get("info", False)
+
+        if not hub_query:
+            return print("Error: 'query' is required for the `hub chat` command.")
+
+        hub(hub_query, hub_endpoint, hub_model, hub_provider, hub_info)
+
+
+class LoginCLI:
+    def __call__(self, **kwargs):
+        """Login with NEAR Mainnet account.
+
+        Args:
+        ----
+            remote (bool): Remote login allows signing message with NEAR Account on a remote machine
+            auth_url (str): Url to the auth portal
+            accountId (str): AccountId in .near-credentials folder to signMessage
+            privateKey (str): Private Key to sign a message
+            kwargs (Dict[str, Any]): All cli keyword arguments
+
+        """
+        remote = kwargs.get("remote", False)
+        account_id = kwargs.get("accountId", None)
+        private_key = kwargs.get("privateKey", None)
+
+        if not remote and account_id and private_key:
+            nearai_login.generate_and_save_signature(account_id, private_key)
+        elif not remote and account_id:
+            nearai_login.login_with_file_credentials(account_id)
+        else:
+            auth_url = kwargs.get("auth_url", "https://auth.near.ai")
+            nearai_login.login_with_near_auth(remote, auth_url)
+
+    def status(self):
+        """Load NEAR account authorization data."""
+        nearai_login.print_login_status()
+
+    def save(self, **kwargs):
+        """Save NEAR account authorization data.
+
+        Args:
+        ----
+            accountId (str): Near Account
+            signature (str): Signature
+            publicKey (str): Public Key used to sign
+            callbackUrl (str): Callback Url
+            nonce (str): nonce
+            kwargs (Dict[str, Any]): All cli keyword arguments
+
+        """
+        account_id = kwargs.get("accountId")
+        signature = kwargs.get("signature")
+        public_key = kwargs.get("publicKey")
+        callback_url = kwargs.get("callbackUrl")
+        nonce = kwargs.get("nonce")
+
+        if account_id and signature and public_key and callback_url and nonce:
+            nearai_login.update_auth_config(account_id, signature, public_key, callback_url, nonce)
+        else:
+            print("Missing data")
+
+
 class CLI:
     def __init__(self) -> None:  # noqa: D107
-        self.registry = RegistryCli(registry)
-        self.datasets = RegistryCli(dataset)
-        self.models = RegistryCli(model)
-        self.agents = RegistryCli(agent)
+        self.registry = RegistryCli()
+        self.login = LoginCLI()
+        self.hub = HubCLI()
 
-        self.supervisor = SupervisorCli()
-        self.server = ServerCli()
         self.config = ConfigCli()
-        self.benchmark = BenchmarkCli(self.datasets, self.models)
+        self.benchmark = BenchmarkCli()
         self.environment = EnvironmentCli()
         self.finetune = FinetuneCli()
         self.tensorboard = TensorboardCli()
         self.vllm = VllmCli()
-
-    def submit(self, command: str, name: str, nodes: int = 1, cluster: str = "truthwatcher") -> None:
-        """Submit task."""
-        from nearai.server import ServerClient
-
-        author = CONFIG.get_user_name()
-
-        client = ServerClient(CONFIG.server_url)
-
-        # Check we can connect to the server
-        client.status()
-
-        # Detect in-progress git action
-        # https://adamj.eu/tech/2023/05/29/git-detect-in-progress-operation/
-        operation = ["CHERRY_PICK_HEAD", "MERGE_HEAD", "REBASE_HEAD", "REVERT_HEAD"]
-        for op in operation:
-            result = run(["git", "rev-parse", "--verify", op], capture_output=True)
-            if result.returncode == 0:
-                print(f"Detected in-progress git operation: {op}")
-                return
-
-        repository_url = check_output(["git", "remote", "-v"]).decode().split("\n")[0].split("\t")[1].split()[0]
-        commit = check_output(["git", "rev-parse", "HEAD"]).decode().strip()
-        diff = check_output(["git", "diff", "HEAD"]).decode()
-
-        submission_result = client.submit(name, repository_url, commit, command, author, diff, nodes, cluster)
-
-        print("experiment id:", submission_result["experiment"]["id"])
 
     def inference(self) -> None:
         """Submit inference task."""
@@ -483,18 +383,7 @@ class CLI:
         if path.exists():
             run(["git", "pull"], cwd=path)
 
-    def status(self) -> None:
-        """Show status of the cluster."""
-        from nearai.server import ServerClient
-
-        client = ServerClient(CONFIG.server_url)
-        status = client.status()
-
-        for experiment in status.get("last_experiments", []):
-            experiment["diff_len"] = len(experiment.pop("diff", ""))
-
-        print(json.dumps(status))
-
 
 def main() -> None:
+    # TODO: Check for latest version and prompt to update.
     fire.Fire(CLI)

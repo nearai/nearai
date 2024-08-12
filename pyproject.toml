@@ -34,6 +34,7 @@ pynacl = { version = "^1.5.0", optional = true }
 python-dotenv = { version = "^1.0.1", optional = true }
 requests = { version = "^2.31.0", optional = true }
 setuptools = { version = "^69.5.1" }
+sqlmodel = { version = "^0.0.21", optional = true }
 tabulate = { version = "^0.9.0" }
 tenacity = { version = "^8.2.3" }
 tensorboardX = { version = "^2.6.2.2" }
@@ -59,13 +60,14 @@ explatform = ["flask", "fabric", "gunicorn", "requests"]
 hub = [
     "base58",
     "cryptography",
-    "fastapi",
     "fastapi-cli",
-    "pydantic",
+    "fastapi",
     "pydantic-core",
+    "pydantic",
     "pynacl",
     "python-dotenv",
     "requests",
+    "sqlmodel",
 ]
 torch = ["torch", "torchao", "torchtune"]
 vllm = ["vllm", "torch"]
@@ -93,7 +95,7 @@ exclude = [
     ".vscode",
     "__pypackages__",
     "venv",
-    "aws_runner/openapi_client"
+    "openapi_client",
 ]
 extend-exclude = ["tests", "projects", "examples"]
 line-length = 120

@@ -24,7 +24,7 @@ class UserNonce(BaseModel):
     account_id: str
     message: str
     recipient: str
-    callback_url: str
+    callback_url: Optional[str]
 
     nonce_status: NonceStatus
     first_seen_at: datetime

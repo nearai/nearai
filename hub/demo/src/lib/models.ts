@@ -5,7 +5,7 @@ export const authorizationModel = z.object({
   public_key: z.string(),
   signature: z.string(),
   callback_url: z.string(),
-  plainMsg: z.string(),
+  message: z.string(),
   recipient: z.string(),
   nonce: z.string().regex(/^\d{32}$/), // String containing exactly 32 digits
 });

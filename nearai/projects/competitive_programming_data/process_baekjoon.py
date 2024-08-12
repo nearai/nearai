@@ -1,13 +1,14 @@
 import json
 from typing import Any, Dict, Iterable, List
 
-from datasets import Dataset # type: ignore
+from datasets import Dataset
 from nearai.dataset import get_dataset
 from nearai.registry import registry
 from openai.types.chat import ChatCompletionMessageParam
 from torchtune.data import Message
 from torchtune.models.llama3 import llama3_tokenizer
 from tqdm import tqdm
+from nearai.lib import parse_location
 
 
 def prepare_system_prompt(item: Dict[str, Any]) -> str:
@@ -64,7 +65,8 @@ if __name__ == "__main__":
         "ntokens_llama3": [],
     }
 
-    tokenizer_path = registry.download("tokenizers/llama-3") / "tokenizer.model"
+    # TODO: Upload llama-3 tokenizer to the registry
+    tokenizer_path = registry.download("TODO/tokenizers/llama-3") / "tokenizer.model"
     tokenizer = llama3_tokenizer(tokenizer_path)
 
     max_len = 0

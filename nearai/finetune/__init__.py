@@ -8,6 +8,8 @@ from random import randint
 from subprocess import run
 from typing import Any, Optional, Tuple
 
+from openapi_client import EntryMetadata
+
 import nearai
 from nearai import timestamp
 from nearai.config import CONFIG, DATA_FOLDER, ETC_FOLDER
@@ -17,43 +19,13 @@ from nearai.registry import registry
 
 
 class FinetuneCli:
-    def submit(
-        self,
-        model: str,
-        tokenizer: str,
-        dataset: str,
-        num_procs: int,
-        num_nodes: int = 1,
-        job_id: Optional[str] = None,
-        checkpoint: Optional[str] = None,
-        epochs: int = 1,
-    ) -> None:
-        """Submit a finetuning job to the cluster."""
-        from nearai.server import ServerClient
-
-        client = ServerClient(CONFIG.server_url)
-
-        assert CONFIG.user_name is not None, "Please set the user name in the config file."
-        result = client.submit(
-            "finetune-task",
-            "https://github.com/nearai/nearai.git",
-            "main",
-            f"nearai finetune start --model {model} --tokenizer {tokenizer} --dataset {dataset} --num_procs {num_procs} --num_nodes {num_nodes} --job_id {job_id} --checkpoint {checkpoint} --epochs {epochs}",  # noqa: E501
-            CONFIG.user_name,
-            None,
-            num_nodes,
-        )
-
-        print(result)
-
-    def start(  # noqa: D417
+    def start(
         self,
         model: str,
         tokenizer: str,
         dataset: str,
         num_procs: int,
         format: str,
-        dataset_component: str = "nearai.finetune.text_completion_dataset",
         upload_checkpoint: bool = True,
         num_nodes: int = 1,
         job_id: Optional[str] = None,
@@ -64,14 +36,16 @@ class FinetuneCli:
 
         Args:
         ----
-            model (str): Name of a model in the registry. Base model to finetune.
-            tokenizer (str): Name of a tokenizer in the registry. Using tokenizer.model format.
-            dataset (str): Name of a dataset in the registry.
-            num_procs (int): Number of GPUs to use for training
-            format (str): Name of the configuration file to use. For example llama3-70b, llama3-8b. Valid options are in etc/finetune.
-            num_nodes (int): Number of nodes to use for training. Default is 1.
-            checkpoint (str): Name of the model checkpoint to start from. Default is None.
-            dataset_kwargs (Dict[str, Any]): Additional keyword arguments to pass to the dataset constructor.
+            model: Name of a model in the registry. Base model to finetune.
+            tokenizer: Name of a tokenizer in the registry. Using tokenizer.model format.
+            dataset: Name of a dataset in the registry.
+            num_procs: Number of GPUs to use for training
+            format: Name of the configuration file to use. For example llama3-70b, llama3-8b. Valid options are in etc/finetune.
+            upload_checkpoint: Whether to upload the checkpoint to the registry. Default is True.
+            num_nodes: Number of nodes to use for training. Default is 1.
+            job_id: Unique identifier for the job. Default is None.
+            checkpoint: Name of the model checkpoint to start from. Default is None.
+            dataset_kwargs: Additional keyword arguments to pass to the dataset constructor.
 
         """  # noqa: E501
         assert num_nodes >= 1
@@ -158,30 +132,32 @@ class FinetuneCli:
         global BACKGROUND_PROCESS
         BACKGROUND_PROCESS = False
 
-        description = f"Fintuned {model} on {dataset} using {tokenizer} GPUs"
-
         if upload_checkpoint:
             assert CONFIG.user_name is not None, "Please set the user name in the config file."
+
             registry.upload(
-                path=job_folder,
-                s3_path=f"checkpoints/finetune/{job_id}",
-                author=CONFIG.user_name,
-                description=description,
-                name=job_id,
-                details=dict(
-                    model=model,
-                    tokenizer=tokenizer,
-                    dataset=dataset,
-                    num_procs=num_procs,
-                    format=format,
-                    num_nodes=num_nodes,
-                    checkpoint=checkpoint,
-                    **dataset_kwargs,
+                job_folder,
+                EntryMetadata.from_dict(
+                    {
+                        "name": f"finetune-{job_id}",
+                        "version": "0.0.1",
+                        "description": f"Finetuned checkpoint from base mode {model} using dataset {dataset}",
+                        "category": "finetune",
+                        "tags": ["finetune", f"base-model-{model}", f"base-dataset-{dataset}"],
+                        "details": dict(
+                            model=model,
+                            tokenizer=tokenizer,
+                            dataset=dataset,
+                            num_procs=num_procs,
+                            format=format,
+                            num_nodes=num_nodes,
+                            checkpoint=checkpoint,
+                            **dataset_kwargs,
+                        ),
+                        "show_entry": True,
+                    }
                 ),
-                # By default the entry is not shown when using nearai registry list
-                # but the entry is still accessible.
-                show_entry=False,
-                tags=["finetune"],
+                show_progress=True,
             )
 
     def inspect(self, job_id: str) -> None:  # noqa: D102

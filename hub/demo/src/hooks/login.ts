@@ -20,7 +20,7 @@ export function useHandleLogin() {
         public_key: hashParams.publicKey,
         signature: hashParams.signature,
         callback_url: CALLBACK_URL,
-        plainMsg: MESSAGE,
+        message: MESSAGE,
         recipient: RECIPIENT,
         nonce: store.current_nonce,
       });
