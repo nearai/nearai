@@ -15,6 +15,7 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 import psutil
 
 from runner.agent import Agent
+from runner.tool_registry import ToolRegistry
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
@@ -35,6 +36,8 @@ class Environment(object):
         self._done = False
         self._server_url = server_url
         self._client = client
+        self._tools = ToolRegistry()
+        self.register_standard_tools()
         if create_files:
             os.makedirs(self._path, exist_ok=True)
             open(os.path.join(self._path, CHAT_FILENAME), "a").close()
@@ -44,9 +47,20 @@ class Environment(object):
     def _generate_run_id() -> str:
         return uuid.uuid4().hex
 
-    def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME) -> None:  # noqa: D102
+    def get_tool_registry(self) -> ToolRegistry:  # noqa: D102
+        return self._tools
+
+    def register_standard_tools(self) -> None:  # noqa: D102
+        reg = self.get_tool_registry()
+        reg.register_tool(self.exec_command)
+        reg.register_tool(self.read_file)
+        reg.register_tool(self.write_file)
+        reg.register_tool(self.request_user_input)
+        reg.register_tool(self.list_files)
+
+    def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME, **kwargs: Any) -> None:  # noqa: D102
         with open(os.path.join(self._path, filename), "a") as f:
-            f.write(json.dumps({"role": role, "content": message}) + DELIMITER)
+            f.write(json.dumps({"role": role, "content": message, **kwargs}) + DELIMITER)
 
     def list_terminal_commands(self, filename: str = TERMINAL_FILENAME) -> List[Any]:  # noqa: D102
         return self.list_messages(filename)
@@ -145,10 +159,50 @@ class Environment(object):
         """Returns all completions for given messages using the given model."""
         return self._client.completions(model, messages, stream=stream, **kwargs)
 
+    def completions_and_run_tools(
+            self,
+            model: str,
+            messages: Iterable[Any],
+            tools: Optional[List] = None,
+            **kwargs: Any,
+    ) -> Any:
+        """Returns all completions for given messages using the given model and runs tools."""
+        stream = kwargs.get("stream", False)
+        response = self._client.completions(
+            model, messages, stream=stream, tools=tools, **kwargs
+        )
+        response_message = response.choices[0].message
+        if hasattr(response_message, "tool_calls") and response_message.tool_calls:
+            for tool_call in response_message.tool_calls:
+                function_name = tool_call.function.name
+                assert function_name, "Tool call must have a function name"
+                function_args = json.loads(tool_call.function.arguments)
+                function_response = self._tools.call_tool(function_name, **function_args)
+
+                if function_response:
+                    function_response_json = json.dumps(function_response) if function_response else ""
+                    self.add_message("tool", function_response_json, tool_call_id=tool_call.id, name=function_name)
+        return response
+
     def completion(self, model: str, messages: Iterable[Any]) -> str:
         """Returns a completion for the given messages using the given model."""
         result = self.completions(model, messages)
-        return result["choices"][0]["message"]["content"]
+        response_message = result["choices"][0]["message"]["content"]
+        assert response_message, "No completions returned"
+        return response_message
+
+    def completion_and_run_tools(
+            self,
+            model: str,
+            messages: Iterable[Any],
+            tools: Optional[List] = None,
+            **kwargs: Any,
+    ) -> str:
+        """Returns a completion for the given messages using the given model and runs tools."""
+        completion_tools_response = self.completions_and_run_tools(model, messages, tools, **kwargs)
+        response_message = completion_tools_response["choices"][0]["message"]["content"]
+        assert response_message, "No completions returned"
+        return response_message
 
     def call_agent(self, agent_path: int, task: str) -> None:
         """Calls agent with given task."""
@@ -237,6 +291,10 @@ class Environment(object):
     def run_agent(self, task: Optional[str]) -> None:  # noqa: D102
         self._agents[0].run(self, task=task)
 
+    def request_user_input(self) -> None:
+        """Must be called to request input from the user."""
+        self.set_next_actor("user")
+
     def set_next_actor(self, who: str) -> None:  # noqa: D102
         next_action_fn = os.path.join(self._path, ".next_action")
 
@@ -267,11 +325,13 @@ class Environment(object):
 
         last_message_idx = print_messages(last_message_idx)
 
+        iteration_count = 0
         while True:
             if self.get_next_actor() != "user":
                 messages = self.list_messages()
                 new_message = None if not messages else messages[-1]["content"]
 
+                iteration_count += 1
                 self.run_agent(new_message)
 
                 last_message_idx = print_messages(last_message_idx)
