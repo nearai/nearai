@@ -16,7 +16,7 @@ export const REVOKE_MESSAGE = "Are you sure? Revoking a nonce";
 export const REVOKE_ALL_MESSAGE = "Are you sure? Revoking all nonces";
 
 export function useSendCompletionsRequest() {
-  const chatMut = api.router.chat.useMutation();
+  const chatMut = api.hub.chat.useMutation();
 
   return useMutation({
     mutationFn: async (values: z.infer<typeof chatCompletionsModel>) => {

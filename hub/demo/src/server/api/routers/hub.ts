@@ -17,7 +17,7 @@ import { z } from "zod";
 
 const fetchWithZod = createZodFetcher();
 
-export const routerRouter = createTRPCRouter({
+export const hubRouter = createTRPCRouter({
   listModels: publicProcedure.query(async () => {
     const u = env.ROUTER_URL + "/models";
 
@@ -111,4 +111,17 @@ export const routerRouter = createTRPCRouter({
         throw e;
       }
     }),
+
+  listDataset: protectedProcedure.query(async ({ ctx }) => {
+    const u = env.ROUTER_URL + "/v1/registry/list_entries";
+
+    const resp = await fetchWithZod(listNoncesModel, u, {
+      headers: {
+        Authorization: ctx.Authorization!,
+      },
+    });
+    console.log(resp);
+
+    return resp;
+  }),
 });

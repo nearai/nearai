@@ -4,7 +4,7 @@ import { api } from "~/trpc/react";
 const PROVIDER_MODEL_SEP = "::";
 
 export function useListModels(provider: string) {
-  const listModels = api.router.listModels.useQuery();
+  const listModels = api.hub.listModels.useQuery();
 
   return useQuery({
     queryKey: ["listModels", provider],

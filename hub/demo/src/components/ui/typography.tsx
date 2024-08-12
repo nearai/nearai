@@ -26,3 +26,22 @@ export function Two({
     </h2>
   );
 }
+
+export function Three({
+  children,
+  classname,
+}: {
+  children: React.ReactNode;
+  classname?: string;
+}) {
+  return (
+    <h3
+      className={cn(
+        "mt-10 pb-2 text-2xl font-semibold tracking-tight transition-colors first:mt-0",
+        classname,
+      )}
+    >
+      {children}
+    </h3>
+  );
+}
