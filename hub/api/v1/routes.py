@@ -80,10 +80,8 @@ class EmbeddingsRequest(BaseModel):
     """Request for embeddings."""
 
     input: str | List[str] | Iterable[int] | Iterable[Iterable[int]]
-
-
-model: str = f"fireworks{PROVIDER_MODEL_SEP}nomic-ai/nomic-embed-text-v1.5"
-provider: Optional[str] = None
+    model: str = f"fireworks{PROVIDER_MODEL_SEP}nomic-ai/nomic-embed-text-v1.5"
+    provider: Optional[str] = None
 
 
 # The request might come as provider::model
@@ -92,6 +90,8 @@ def convert_request(request: ChatCompletionsRequest | CompletionsRequest | Embed
     provider, model = get_provider_model(request.provider, request.model)
     request.model = model
     request.provider = provider
+    if request.model is None or request.provider is None:
+        raise HTTPException(status_code=400, detail="Invalid model or provider")
     return request
 
 
@@ -190,20 +190,19 @@ async def get_models():
 
 
 @v1_router.post("/embeddings")
-async def embeddings(
-    request: EmbeddingsRequest = Depends(convert_request), auth: AuthToken = Depends(get_current_user)
-):
+async def embeddings(request: EmbeddingsRequest = Depends(convert_request), auth: AuthToken = Depends(revokable_auth)):
     logger.info(f"Received embeddings request: {request.model_dump()}")
 
     try:
+        assert request.provider is not None
         llm = get_llm_ai(request.provider)
     except NotImplementedError:
-        raise HTTPException(status_code=400, detail="Provider not supported")
+        raise HTTPException(status_code=400, detail="Provider not supported") from None
 
-    resp = llm.embeddings.create(**request.model_dump(exclude={"provider"}))
+    resp = await llm.embeddings.create(**request.model_dump(exclude={"provider"}))
 
     c = json.dumps(resp.model_dump())
-    db.add_user_usage(auth.account_id, request.input, c, request.model, request.provider, "/embeddings")
+    db.add_user_usage(auth.account_id, str(request.input), c, request.model, request.provider, "/embeddings")
 
     return JSONResponse(content=json.loads(c))
 
