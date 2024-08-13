@@ -1,23 +1,22 @@
 import { Button } from "~/components/ui/button";
-import { CALLBACK_URL, NONCE, PLAIN_MSG, RECIPIENT } from "~/hooks/mutations";
+import { CALLBACK_URL, MESSAGE, RECIPIENT } from "~/hooks/mutations";
+import { generateNonce, redirectToAuthNearLink } from "~/lib/auth";
+import usePersistingStore from "~/store/store";
 
 export function NearLogin() {
-  const requestSignature = () => {
-    const urlParams = new URLSearchParams({
-      message: PLAIN_MSG,
-      recipient: RECIPIENT,
-      nonce: NONCE,
-      callbackUrl: CALLBACK_URL,
-    });
+  const store = usePersistingStore();
 
-    window.location.replace(`https://auth.near.ai/?${urlParams.toString()}`);
+  const requestSignature = async () => {
+    const nonce = generateNonce();
+    store.setCurrentNonce(nonce);
+    redirectToAuthNearLink(MESSAGE, RECIPIENT, nonce, CALLBACK_URL);
   };
 
   return (
     <div>
       <Button
-        onClick={() => {
-          requestSignature();
+        onClick={async () => {
+          await requestSignature();
         }}
         className="w-full"
         type="button"

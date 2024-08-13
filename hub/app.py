@@ -1,9 +1,14 @@
 import logging
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
+from hub.api.v1.agent_routes import v1_router as agent_router
+from hub.api.v1.exceptions import TokenValidationError
+from hub.api.v1.registry import v1_router as registry_router
 from hub.api.v1.routes import v1_router
 
 # Configure logging
@@ -24,11 +29,27 @@ app.add_middleware(
 )
 
 app.include_router(v1_router, prefix="/v1")
-
-# Deprecated, will be removed shortly
-app.include_router(v1_router, prefix="/api/v1")
+app.include_router(registry_router, prefix="/v1")
+app.include_router(agent_router, prefix="/v1")
 
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.exception_handler(TokenValidationError)
+async def token_validation_exception_handler(request: Request, exc: TokenValidationError):
+    exc_lines = exc.detail.split("\n")
+    exc_str = f"{exc_lines[0]}: {exc_lines[1]}.{exc_lines[2]}".replace("  ", " ") if len(exc_lines) > 2 else ""
+    logger.info(f"Received invalid Auth Token. {exc_str}")
+    # 400 Bad Request if auth request was invalid
+    content = {"status_code": 400, "message": exc_str, "data": None}
+    return JSONResponse(content=content, status_code=status.HTTP_400_BAD_REQUEST)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    exc_str = f"{exc}".replace("\n", " ").replace("   ", " ")
+    content = {"status_code": 422, "message": exc_str, "data": None}
+    return JSONResponse(content=content, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)

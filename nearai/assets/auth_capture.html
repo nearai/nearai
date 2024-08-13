@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>NEAR Account Authorization</title>
+    <link rel='stylesheet' href='https://use.typekit.net/pqx2pko.css?ver=5.3' type='text/css' media='all' />
+    <script>
+        window.onload = function() {
+            const fragment = window.location.hash.substring(1);
+            if (fragment) {
+                window.location.replace(`/auth?${fragment}`);
+            }
+            else {
+                document.getElementById("error").style.display = "block";
+            }
+        };
+    </script>
+</head>
+<body>
+<div id="error" style="display:none">Something went wrong</div>
+</body>
+</html>

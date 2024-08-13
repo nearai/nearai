@@ -1,14 +1,14 @@
 import json
 import logging
-
-from typing import Any, Dict, List, Optional, Union, Iterable
+import time
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
-from hub.api.v1.auth import AuthToken, get_current_user
+from hub.api.v1.auth import AuthToken, revokable_auth, validate_signature
 from hub.api.v1.completions import Message, Provider, get_llm_ai, handle_stream
 from hub.api.v1.sql import SqlClient
 
@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 security = HTTPBearer()
 
 PROVIDER_MODEL_SEP = "::"
+REVOKE_MESSAGE = "Are you sure? Revoking a nonce"
+REVOKE_ALL_MESSAGE = "Are you sure? Revoking all nonces"
 
 
 def get_provider_model(provider: Optional[str], model: str):
@@ -76,6 +78,7 @@ class ChatCompletionsRequest(LlmRequest):
 
 class EmbeddingsRequest(BaseModel):
     """Request for embeddings."""
+
     input: str | List[str] | Iterable[int] | Iterable[Iterable[int]]
 
 
@@ -93,7 +96,9 @@ def convert_request(request: ChatCompletionsRequest | CompletionsRequest | Embed
 
 
 @v1_router.post("/completions")
-def completions(request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(get_current_user)):
+async def completions(
+    request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(revokable_auth)
+):
     logger.info(f"Received completions request: {request.model_dump()}")
 
     try:
@@ -102,7 +107,7 @@ def completions(request: CompletionsRequest = Depends(convert_request), auth: Au
     except NotImplementedError:
         raise HTTPException(status_code=400, detail="Provider not supported") from None
 
-    resp = llm.completions.create(**request.model_dump(exclude={"provider", "response_format"}))
+    resp = await llm.completions.create(**request.model_dump(exclude={"provider", "response_format"}))
 
     if request.stream:
 
@@ -123,7 +128,7 @@ def completions(request: CompletionsRequest = Depends(convert_request), auth: Au
 
 @v1_router.post("/chat/completions")
 async def chat_completions(
-    request: ChatCompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(get_current_user)
+    request: ChatCompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(revokable_auth)
 ):
     logger.info(f"Received chat completions request: {request.model_dump()}")
 
@@ -133,7 +138,7 @@ async def chat_completions(
     except NotImplementedError:
         raise HTTPException(status_code=400, detail="Provider not supported") from None
 
-    resp = llm.chat.completions.create(**request.model_dump(exclude={"provider"}))
+    resp = await llm.chat.completions.create(**request.model_dump(exclude={"provider"}))
 
     if request.stream:
 
@@ -185,7 +190,9 @@ async def get_models():
 
 
 @v1_router.post("/embeddings")
-async def embeddings(request: EmbeddingsRequest = Depends(convert_request), auth: AuthToken = Depends(get_current_user)):
+async def embeddings(
+    request: EmbeddingsRequest = Depends(convert_request), auth: AuthToken = Depends(get_current_user)
+):
     logger.info(f"Received embeddings request: {request.model_dump()}")
 
     try:
@@ -193,11 +200,64 @@ async def embeddings(request: EmbeddingsRequest = Depends(convert_request), auth
     except NotImplementedError:
         raise HTTPException(status_code=400, detail="Provider not supported")
 
-    resp = llm.embeddings.create(
-        **request.model_dump(exclude={"provider"}))
+    resp = llm.embeddings.create(**request.model_dump(exclude={"provider"}))
 
     c = json.dumps(resp.model_dump())
-    db.add_user_usage(
-        auth.account_id, request.input, c, request.model, request.provider, "/embeddings")
+    db.add_user_usage(auth.account_id, request.input, c, request.model, request.provider, "/embeddings")
 
     return JSONResponse(content=json.loads(c))
+
+
+class RevokeNonce(BaseModel):
+    nonce: bytes
+    """The nonce to revoke."""
+
+    @field_validator("nonce")
+    @classmethod
+    def validate_and_convert_nonce(cls, value: str):  # noqa: D102
+        if len(value) != 32:
+            raise ValueError("Invalid nonce, must of length 32")
+        return value
+
+
+@v1_router.post("/nonce/revoke")
+async def revoke_nonce(nonce: RevokeNonce, auth: AuthToken = Depends(validate_signature)):
+    """Revoke a nonce for the account."""
+    logger.info(f"Received request to revoke nonce {nonce} for account {auth.account_id}")
+    if auth.message != REVOKE_MESSAGE:
+        raise HTTPException(status_code=401, detail="Invalid nonce revoke message")
+
+    await verify_revoke_nonce(auth)
+
+    db.revoke_nonce(auth.account_id, nonce.nonce)
+    return JSONResponse(content={"message": f"Nonce {nonce} revoked"})
+
+
+@v1_router.post("/nonce/revoke/all")
+async def revoke_all_nonces(auth: AuthToken = Depends(validate_signature)):
+    """Revoke all nonces for the account."""
+    logger.info(f"Received request to revoke all nonces for account {auth.account_id}")
+    if auth.message != REVOKE_ALL_MESSAGE:
+        raise HTTPException(status_code=401, detail="Invalid nonce revoke message")
+
+    await verify_revoke_nonce(auth)
+
+    db.revoke_all_nonces(auth.account_id)
+    return JSONResponse(content={"message": "All nonces revoked"})
+
+
+@v1_router.get("/nonce/list")
+async def list_nonces(auth: AuthToken = Depends(revokable_auth)):
+    """List all nonces for the account."""
+    nonces = db.get_account_nonces(auth.account_id)
+    res = nonces.model_dump_json()
+    logger.info(f"Listing nonces for account {auth.account_id}: {res}")
+    return JSONResponse(content=json.loads(res))
+
+
+async def verify_revoke_nonce(auth):
+    """If signature is too old, request will be rejected."""
+    ts = int(auth.nonce)
+    now = int(time.time() * 1000)
+    if now - ts > 5 * 60 * 1000:
+        raise HTTPException(status_code=401, detail="Invalid nonce")

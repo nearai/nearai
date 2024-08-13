@@ -1,6 +1,7 @@
 import base64
 import hashlib
-from typing import Any, Optional
+import time
+from typing import Any, List, Optional, Union
 
 import base58
 import nacl.signing
@@ -8,8 +9,84 @@ import requests
 
 from hub.api.near.serializer import BinarySerializer
 
+ED_PREFIX = "ed25519:"  # noqa: N806
+
+
+class Payload:
+    def __init__(  # noqa: D107
+        self, message: str, nonce: Union[bytes, str, List[int]], recipient: str, callback_url: Optional[str] = None
+    ):
+        self.tag = 2147484061
+        self.message = message
+        self.nonce = validate_nonce(nonce)
+        self.recipient = recipient
+        self.callbackUrl = callback_url
+
+
+PAYLOAD_SCHEMA: list[list[Any]] = [
+    [
+        Payload,
+        {
+            "kind": "struct",
+            "fields": [
+                ["tag", "u32"],
+                ["message", "string"],
+                ["nonce", [32]],
+                ["recipient", "string"],
+                [
+                    "callbackUrl",
+                    {
+                        "kind": "option",
+                        "type": "string",
+                    },
+                ],
+            ],
+        },
+    ]
+]
+
+
+def convert_nonce(value: Union[str, bytes, list[int]]):
+    """Converts a given value to a 32-byte nonce."""
+    if isinstance(value, bytes):
+        if len(value) > 32:
+            raise ValueError("Invalid nonce length")
+        if len(value) < 32:
+            value = value.rjust(32, b"0")
+        return value
+    elif isinstance(value, str):
+        nonce_bytes = value.encode("utf-8")
+        if len(nonce_bytes) > 32:
+            raise ValueError("Invalid nonce length")
+        if len(nonce_bytes) < 32:
+            nonce_bytes = nonce_bytes.rjust(32, b"0")
+        return nonce_bytes
+    elif isinstance(value, list):
+        if len(value) != 32:
+            raise ValueError("Invalid nonce length")
+        return bytes(value)
+    else:
+        raise ValueError("Invalid nonce format")
+
+
+def validate_nonce(value: Union[str, bytes, list[int]]):
+    """Ensures that the nonce is a valid timestamp."""
+    nonce = convert_nonce(value)
+    nonce_int = int(nonce.decode("utf-8"))
+
+    now = int(time.time() * 1000)
+
+    if nonce_int > now:
+        raise ValueError("Nonce is in the future")
+    if now - nonce_int > 10 * 365 * 24 * 60 * 60 * 1000:
+        """If the timestamp is older than 10 years, it is considered invalid. Forcing apps to use unique nonces."""
+        raise ValueError("Nonce is too old")
+
+    return nonce
+
 
 def verify_signed_message(account_id, public_key, signature, message, nonce, recipient, callback_url):
+    """Verifies a signed message and ensures the public key belongs to the specified account."""
     is_valid = validate_signature(public_key, signature, Payload(message, nonce, recipient, callback_url))
 
     if not is_valid and callback_url is not None:
@@ -23,13 +100,17 @@ def verify_signed_message(account_id, public_key, signature, message, nonce, rec
 
 
 def verify_access_key_owner(public_key, account_id):
+    """Verifies if a given public key belongs to a specified account ID using FastNEAR API."""
     try:
         url = f"https://api.fastnear.com/v0/public_key/{public_key}"
         response = requests.get(url)
         response.raise_for_status()
         content = response.json()
         account_ids = content.get("account_ids", [])
-        return account_id in account_ids
+        key_owner_verified = account_id in account_ids
+        if not key_owner_verified:
+            print("Key's owner verification failed. Only NEAR Mainnet accounts are supported.")
+        return key_owner_verified
     except requests.exceptions.HTTPError as http_err:
         print(f"HTTP error occurred: {http_err}")
     except Exception as err:
@@ -38,40 +119,37 @@ def verify_access_key_owner(public_key, account_id):
     return False
 
 
-class Payload:
-    def __init__(self, message: str, nonce: bytes, recipient: str, callback_url: Optional[str] = None):  # noqa: D107
-        self.tag = 2147484061  # constant from https://github.com/near/NEPs/blob/master/neps/nep-0413.md#example
-        self.message = message
-        self.nonce = nonce
-        self.recipient = recipient
-        self.callbackUrl = callback_url
+def create_signature(private_key: str, payload: Payload) -> tuple[str, str]:
+    """Creates a cryptographic signature for a given payload using a specified private key."""
+    borsh_payload = BinarySerializer(dict(PAYLOAD_SCHEMA)).serialize(payload)
+
+    to_sign = hashlib.sha256(borsh_payload).digest()
+
+    # Extract and decode the private key
+    private_key_base58 = private_key[len(ED_PREFIX) :]
+    private_key_bytes = base58.b58decode(private_key_base58)
+
+    if len(private_key_bytes) != 64:
+        raise ValueError("The private key must be exactly 64 bytes long")
+
+    # Use only the first 32 bytes as the seed
+    private_key_seed = private_key_bytes[:32]
+
+    signing_key = nacl.signing.SigningKey(private_key_seed)
+    public_key = signing_key.verify_key
+
+    signed = signing_key.sign(to_sign)
+    signature = base64.b64encode(signed.signature).decode("utf-8")
+
+    public_key_base58 = base58.b58encode(public_key.encode()).decode("utf-8")
+    full_public_key = ED_PREFIX + public_key_base58
+
+    return signature, full_public_key
 
 
 def validate_signature(public_key: str, signature: str, payload: Payload):
-    payload_schema: list[list[Any]] = [
-        [
-            Payload,
-            {
-                "kind": "struct",
-                "fields": [
-                    ["tag", "u32"],
-                    ["message", "string"],
-                    ["nonce", [32]],
-                    ["recipient", "string"],
-                    [
-                        "callbackUrl",
-                        {
-                            "kind": "option",
-                            "type": "string",
-                        },
-                    ],
-                ],
-            },
-        ]
-    ]
-    ED_PREFIX = "ed25519:"  # noqa: N806
-
-    borsh_payload = BinarySerializer(dict(payload_schema)).serialize(payload)
+    """Validates a cryptographic signature for a given payload using a specified public key."""
+    borsh_payload = BinarySerializer(dict(PAYLOAD_SCHEMA)).serialize(payload)
     to_sign = hashlib.sha256(borsh_payload).digest()
     real_signature = base64.b64decode(signature)
 

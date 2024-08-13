@@ -9,12 +9,12 @@ docker-apply-migrations:
 	cd ./migrations && \
 	for f in $$(ls *.sql | sort); do \
 		echo "Applying $$f"; \
-		docker exec -i mysql mysql -u$(DATABASE_USER) -p$(DATABASE_PASSWORD) -h$(DATABASE_HOST) < $$f || exit 1; \
+		docker exec -i mysql mysql -u$(DATABASE_USER) -p$(DATABASE_PASSWORD) -h$(DATABASE_HOST) < $$f; \
 	done
 
 apply-migrations:
 	cd ./migrations && \
 	for f in $$(ls *.sql | sort); do \
 		echo "Applying $$f"; \
-		mysql -u$(DATABASE_USER) -p$(DATABASE_PASSWORD) -h$(DATABASE_HOST) < $$f || exit 1; \
+		mysql -u$(DATABASE_USER) -p$(DATABASE_PASSWORD) -h$(DATABASE_HOST) < $$f; \
 	done

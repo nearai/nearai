@@ -11,16 +11,18 @@ import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from shutil import rmtree
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 import psutil
 from litellm import Choices, CustomStreamWrapper, ModelResponse
 from openai.types.chat import ChatCompletionMessageParam
+from openapi_client import EntryMetadata
 
 from nearai.agent import Agent
 from nearai.completion import InferenceRouter
 from nearai.config import Config
-from nearai.db import db
+from nearai.lib import plain_location
 from nearai.registry import registry
 from nearai.tool_registry import ToolRegistry
 
@@ -276,19 +278,11 @@ class Environment(object):
 
         agent_name = self._agents[0].name if self._agents else "unknown"
         generated_name = f"environment_run_{agent_name}_{run_id}"
-        if run_name:
-            if db.get_registry_entry_by_identifier(run_name, fail_if_not_found=False):
-                print(
-                    f"Warning: Run with name '{run_name}' already exists in registry. "
-                    f"Using generated name '{generated_name}' instead."
-                )
-                name = generated_name
-            else:
-                name = run_name
-        else:
-            name = generated_name
+        name = run_name or generated_name
 
-        with tempfile.NamedTemporaryFile(suffix=".tar.gz") as f:
+        tempdir = Path(tempfile.mkdtemp())
+
+        with open(tempdir / "environment.tar.gz", "r+b") as f:
             with tarfile.open(fileobj=f, mode="w:gz") as tar:
                 tar.add(path, arcname=".")
             f.flush()
@@ -296,33 +290,38 @@ class Environment(object):
             snapshot = f.read()
             tar_filename = f.name
 
-            s3_path = f"environments/{run_id}"
             timestamp = datetime.now(timezone.utc).isoformat()
-            description = f"Agent {run_type} run {agent_name} {run_id} {timestamp}"
-            details = {
-                "base_id": base_id,
-                "timestamp": timestamp,
-                "agents": [agent.name for agent in self._agents],
-                "run_id": run_id,
-                "run_type": run_type,
-                "filename": tar_filename,
-            }
-            tags_l = ["environment"]
-            registry_id = registry.upload(
-                path=Path(tar_filename),
-                s3_path=s3_path,
-                author=author,
-                description=description,
-                name=name,
-                details=details,
-                show_entry=True,
-                tags=tags_l,
+
+            entry_location = registry.upload(
+                tempdir,
+                EntryMetadata.from_dict(
+                    {
+                        "name": name,
+                        "version": "0.0.1",
+                        "description": f"Agent {run_type} run {agent_name}",
+                        "category": "environment",
+                        "tags": ["environment"],
+                        "details": {
+                            "base_id": base_id,
+                            "timestamp": timestamp,
+                            "agents": [agent.name for agent in self._agents],
+                            "run_id": run_id,
+                            "run_type": run_type,
+                            "filename": tar_filename,
+                        },
+                        "show_entry": True,
+                    }
+                ),
+                show_progress=True,
             )
-            print(
-                f"Saved environment {registry_id} to registry. To load use flag `--load-env={registry_id}`. "
-                f"or `--load-env={name}`"
-            )
-            return snapshot
+
+            location_str = plain_location(entry_location)
+
+            print(f"Saved environment {entry_location} to registry. To load use flag `--load-env={location_str}`.")
+
+        rmtree(tempdir)
+
+        return snapshot
 
     def load_snapshot(self, snapshot: bytes) -> None:
         """Load Environment from Snapshot."""
@@ -336,9 +335,12 @@ class Environment(object):
             with tarfile.open(fileobj=f, mode="r:gz") as tar:
                 tar.extractall(self._path)
 
-    def load_from_registry(self, load_env: Union[str, int]) -> str:  # noqa: D102
-        print(f"Loading environment from {load_env} {type(load_env)} to {self._path}")
+    def load_from_registry(self, load_env: str) -> str:  # noqa: D102
+        print(f"Loading environment from {load_env} to {self._path}")
+
         directory = registry.download(load_env)
+        assert directory is not None, "Failed to download environment"
+
         files = os.listdir(directory)
         tarfile_file = next(f for f in files if f.endswith(".tar.gz"))
 

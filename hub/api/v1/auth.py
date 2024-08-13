@@ -1,15 +1,18 @@
 import json
 import logging
-from typing import Optional, Union
+from typing import Optional
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, field_validator
 
-from hub.api.near.sign import verify_signed_message
+from hub.api.near.sign import validate_nonce, verify_signed_message
+from hub.api.v1.exceptions import TokenValidationError
+from hub.api.v1.sql import SqlClient
 
 bearer = HTTPBearer()
 logger = logging.getLogger(__name__)
+db = SqlClient()
 
 
 class AuthToken(BaseModel):
@@ -23,40 +26,76 @@ class AuthToken(BaseModel):
     """The signature."""
     callback_url: Optional[str] = None
     """The callback URL."""
-    recipient: Optional[str] = "ai.near"
+    recipient: str = "ai.near"
     """Message Recipient"""
-    nonce: bytes = Field(default=bytes("1", "utf-8") * 32, min_length=32, max_length=32)
-    plain_msg: str
+    nonce: bytes
+    """Nonce of the signed message, it must be 32 bytes long."""
+    message: str  # noqa: N815
     """The plain message that was signed."""
 
+    @field_validator("nonce")
     @classmethod
-    def validate_nonce(cls, value: Union[str, list[int]]):  # noqa: D102
-        if isinstance(value, str):
-            return bytes.fromhex(value)
-        elif isinstance(value, list):
-            return bytes(value)
-        else:
-            raise ValueError("Invalid nonce format")
+    def validate_and_convert_nonce(cls, value: str):  # noqa: D102
+        return validate_nonce(value)
 
-    @classmethod
-    def alt_model_validate_json(cls, json_str: str) -> "AuthToken":  # noqa: D102
-        data = json.loads(json_str)
-        if "nonce" in data:
-            data["nonce"] = cls.validate_nonce(data["nonce"])
-        return cls(**data)
+    # allow auth to be passed along to other services - needs review
+    def json(self):
+        """Deprecated. For use by tests. Return the JSON representation of the object."""
+        return json.dumps(
+            {
+                "account_id": self.account_id,
+                "public_key": self.public_key,
+                "signature": self.signature,
+                "callback_url": self.callback_url,
+                "recipient": self.recipient,
+                "message": self.message,
+            }
+        )
 
 
-async def get_current_user(token: HTTPAuthorizationCredentials = Depends(bearer)):
-    logging.debug(f"Received token: {token.credentials}")
-    auth = AuthToken.alt_model_validate_json(token.credentials)
+async def get_auth(token: HTTPAuthorizationCredentials = Depends(bearer)):
+    if token.credentials == "":
+        raise HTTPException(status_code=401, detail="Invalid token")
+    if token.scheme.lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Invalid token scheme")
+    try:
+        token.credentials = token.credentials.replace("Bearer ", "")
+        logger.debug(f"Token: {token.credentials}")
+        return AuthToken.model_validate_json(token.credentials)
+    except Exception as e:
+        raise TokenValidationError(detail=str(e)) from None
 
+
+async def validate_signature(auth: AuthToken = Depends(get_auth)):
+    logging.debug(f"account_id {auth.account_id}: verifying signature")
     is_valid = verify_signed_message(
-        auth.account_id, auth.public_key, auth.signature, auth.plain_msg, auth.nonce, auth.recipient, auth.callback_url
+        auth.account_id,
+        auth.public_key,
+        auth.signature,
+        auth.message,
+        auth.nonce,
+        auth.recipient,
+        auth.callback_url,
     )
     if not is_valid:
         logging.error(f"account_id {auth.account_id}: signature verification failed")
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid signature")
 
     logging.debug(f"account_id {auth.account_id}: signature verified")
+
+    return auth
+
+
+async def revokable_auth(auth: AuthToken = Depends(validate_signature)):
+    logger.debug(f"Validating auth token: {auth}")
+
+    user_nonce = db.get_account_nonce(auth.account_id, auth.nonce)
+
+    if user_nonce and user_nonce.is_revoked():
+        logging.error(f"account_id {auth.account_id}: nonce is revoked")
+        raise HTTPException(status_code=401, detail="Revoked nonce")
+
+    if not user_nonce:
+        db.store_nonce(auth.account_id, auth.nonce, auth.message, auth.recipient, auth.callback_url)
 
     return auth

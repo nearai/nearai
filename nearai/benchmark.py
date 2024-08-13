@@ -1,5 +1,4 @@
 import concurrent.futures
-import json
 from dataclasses import dataclass
 from functools import partial
 from itertools import islice
@@ -8,7 +7,6 @@ from typing import Any, Callable, Dict, Optional, Tuple, Union
 from datasets import Dataset, DatasetDict  # type: ignore[attr-defined]
 from tqdm import tqdm
 
-from nearai.db import db
 from nearai.solvers import SolverStrategy
 
 
@@ -37,7 +35,9 @@ class BenchmarkExecutor:
     def run(self, progress: bool = True, max_concurrent: int = 32) -> None:  # noqa: D102
         dataset = self.dataset_info.get_dataset()
 
-        cache = db.get_benchmark_status(self.benchmark_id)
+        # TODO(db-api): Fetch the cache from the API
+        # cache = db.get_benchmark_status(self.benchmark_id)
+        cache: Dict[int, bool] = {}
 
         correct = 0
         remaining = len(dataset)
@@ -86,11 +86,12 @@ def solve_task(
         return cache[index]
 
     result = solve_fn(datum)
-    info = ""
+    _info = ""
 
     if isinstance(result, tuple):
-        result, info = result
+        result, _info = result
 
-    db.update_benchmark_result(benchmark_id, index, result, json.dumps(info))
+    # TODO(db-api): Upload the result of the task to the database via the API.
+    # db.update_benchmark_result(benchmark_id, index, result, json.dumps(info))
 
     return result

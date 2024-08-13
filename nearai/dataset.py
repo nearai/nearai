@@ -3,16 +3,16 @@ from typing import Union
 
 from datasets import Dataset, DatasetDict, load_from_disk  # type: ignore[attr-defined]
 
-from nearai.registry import dataset
+from nearai.registry import registry
 
 
-def get_dataset(alias_or_name: str) -> Path:
+def get_dataset(name: str) -> Path:
     """Download the dataset from the registry and download it locally if it hasn't been downloaded yet.
 
-    :param name: The name of the dataset to download
+    :param name: The name of the entry to download the dataset. The format should be namespace/name/version.
     :return: The path to the downloaded dataset
     """
-    return dataset.download(alias_or_name)
+    return registry.download(name)
 
 
 def load_dataset(alias_or_name: str) -> Union[Dataset, DatasetDict]:

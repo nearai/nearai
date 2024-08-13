@@ -3,13 +3,19 @@ import {
   chatCompletionsModel,
   chatResponseModel,
   listModelsResponseModel,
+  listNoncesModel,
+  revokeNonceModel,
 } from "~/lib/models";
+import { createZodFetcher } from "zod-fetch";
 
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
+import { z } from "zod";
+
+const fetchWithZod = createZodFetcher();
 
 export const routerRouter = createTRPCRouter({
   listModels: publicProcedure.query(async () => {
@@ -48,5 +54,61 @@ export const routerRouter = createTRPCRouter({
       const resp: unknown = await response.json();
 
       return chatResponseModel.parse(resp);
+    }),
+
+  listNonces: protectedProcedure.query(async ({ ctx }) => {
+    const u = env.ROUTER_URL + "/nonce/list";
+
+    const resp = await fetchWithZod(listNoncesModel, u, {
+      headers: {
+        Authorization: ctx.Authorization!,
+      },
+    });
+    console.log(resp);
+
+    return resp;
+  }),
+
+  revokeNonce: protectedProcedure
+    .input(revokeNonceModel)
+    .mutation(async ({ input }) => {
+      const u = env.ROUTER_URL + "/nonce/revoke";
+
+      try {
+        // We can't use regular auth since we need to use the signed revoke message.
+        const resp = await fetch(u, {
+          headers: {
+            Authorization: input.auth,
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify({ nonce: input.nonce }),
+        });
+        return resp;
+      } catch (e) {
+        console.log(e);
+        throw e;
+      }
+    }),
+
+  revokeAllNonces: protectedProcedure
+    .input(z.object({ auth: z.string() }))
+    .mutation(async ({ input }) => {
+      const u = env.ROUTER_URL + "/nonce/revoke/all";
+
+      try {
+        // We can't use regular auth since we need to use the signed revoke message.
+        const resp = await fetch(u, {
+          headers: {
+            Authorization: input.auth,
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        });
+        return resp;
+      } catch (e) {
+        console.log(e);
+        throw e;
+      }
     }),
 });

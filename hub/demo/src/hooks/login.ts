@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { parseHashParams, stringToUint8Array } from "~/hooks/misc";
+import { parseHashParams } from "~/hooks/misc";
 import { authorizationModel } from "~/lib/models";
-import { CALLBACK_URL, NONCE, PLAIN_MSG, RECIPIENT } from "./mutations";
+import { CALLBACK_URL, MESSAGE, RECIPIENT } from "./mutations";
 import usePersistingStore from "~/store/store";
 
 /**
@@ -13,15 +13,16 @@ export function useHandleLogin() {
 
   return useEffect(() => {
     const hashParams = parseHashParams(location.hash);
+
     if (hashParams.signature) {
       const auth = authorizationModel.parse({
         account_id: hashParams.accountId,
         public_key: hashParams.publicKey,
         signature: hashParams.signature,
         callback_url: CALLBACK_URL,
-        plainMsg: PLAIN_MSG,
+        message: MESSAGE,
         recipient: RECIPIENT,
-        nonce: [...stringToUint8Array(NONCE)],
+        nonce: store.current_nonce,
       });
       store.setAuthValueRaw(`Bearer ${JSON.stringify(auth)}`);
 
@@ -32,5 +33,5 @@ export function useHandleLogin() {
         window.location.pathname + window.location.search,
       );
     }
-  }, [store]);
+  }, [store.current_nonce, store]);
 }

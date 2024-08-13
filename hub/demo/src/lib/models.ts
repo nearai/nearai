@@ -5,9 +5,9 @@ export const authorizationModel = z.object({
   public_key: z.string(),
   signature: z.string(),
   callback_url: z.string(),
-  plainMsg: z.string(),
+  message: z.string(),
   recipient: z.string(),
-  nonce: z.array(z.number()).length(32) // Array of 32 numbers
+  nonce: z.string().regex(/^\d{32}$/), // String containing exactly 32 digits
 });
 
 export const messageModel = z.object({
@@ -66,4 +66,25 @@ export const oneModelModel = z.object({
 export const listModelsResponseModel = z.object({
   data: z.array(oneModelModel),
   object: z.string(),
+});
+
+export const challengeResponseModel = z.object({
+  challenge: z.string(),
+});
+
+export const nonceModel = z.object({
+  nonce: z.string(),
+  account_id: z.string(),
+  message: z.string(),
+  recipient: z.string(),
+  callback_url: z.string(),
+  nonce_status: z.enum(["active", "revoked"]),
+  first_seen_at: z.string(),
+});
+
+export const listNoncesModel = z.array(nonceModel);
+
+export const revokeNonceModel = z.object({
+  nonce: z.string().regex(/^\d{32}$/),
+  auth: z.string(),
 });

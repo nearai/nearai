@@ -56,7 +56,9 @@ def get_chat_messages(directory: str) -> List[Tuple[Any, Any]]:
 # Combo box to select directory
 selected_directory = st.sidebar.selectbox("Select a folder", list(directories.keys()))
 
+
 # Get the path of the selected directory
+assert isinstance(selected_directory, str)
 directory_path = directories[selected_directory]
 
 # Get list of files in the selected directory (flat view)

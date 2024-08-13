@@ -1,9 +1,9 @@
 import json
 import os
-from dataclasses import dataclass, field, fields
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 
+from openapi_client import ApiClient, Configuration
 from pydantic import BaseModel
 
 DATA_FOLDER = Path.home() / ".nearai"
@@ -62,44 +62,50 @@ class LLMConfig(BaseModel):
     models: Dict[str, str]
 
 
-@dataclass
-class Config:
-    # TODO(#49): move to configuration
-    s3_bucket: str = "kholinar-registry"
-    s3_prefix: str = "registry"
-    supervisors: List[str] = field(default_factory=list)
-    db_user: Optional[str] = None
-    db_password: Optional[str] = None
-    db_host: str = "35.87.119.37"
-    db_port: int = 3306
-    # TODO(#49): move to configuration, rename
-    db_name: str = "jasnah"
-    server_url: str = "http://ai.nearspace.info/cluster"
+class AuthData(BaseModel):
+    account_id: str
+    signature: str
+    public_key: str
+    callback_url: str
+    nonce: str
+    recipient: str
+    message: str
+
+
+class Config(BaseModel):
     origin: Optional[str] = None
     user_name: Optional[str] = None
     user_email: Optional[str] = None
-    supervisor_id: Optional[str] = None
-
+    api_url: Optional[str] = None
     inference_url: str = "http://localhost:5000/v1/"
     inference_api_key: str = "n/a"
-
     llm_config: Optional[LLMConfig] = None
-
     confirm_commands: bool = True
+    auth: Optional[AuthData] = None
 
-    def update_with(self, extra_config: Dict[str, Any], map_key: Callable[[str], str] = lambda x: x) -> None:  # noqa: D102
-        keys = [f.name for f in fields(self)]
-        for key in map(map_key, keys):
+    def update_with(self, extra_config: Dict[str, Any], map_key: Callable[[str], str] = lambda x: x) -> "Config":
+        """Update the config with the given dictionary."""
+        dict_repr = self.model_dump()
+        keys = list(map(map_key, dict_repr.keys()))
+
+        for key in keys:
             value = extra_config.get(key, None)
 
             if value:
                 # This will skip empty values, even if they are set in the `extra_config`
-                setattr(self, key, extra_config[key])
+                dict_repr[key] = value
 
-    def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:  # noqa: D102
+        return Config.model_validate(dict_repr)
+
+    def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
+        """Get the value of a key in the config if it exists."""
         return getattr(self, key, default)
 
-    def get_user_name(self) -> str:  # noqa: D102
+    def get_user_name(self) -> str:
+        """Get the user name from the config.
+
+        Prompt the user to set the user name if it is not set.
+        """
         if self.user_name is None:
             print("Please set user_name with `nearai config set user_name <name>`")
             exit(1)
@@ -109,8 +115,20 @@ class Config:
 # Load default configs
 CONFIG = Config()
 # Update config from global config file
-CONFIG.update_with(load_config_file(local=False))
+CONFIG = CONFIG.update_with(load_config_file(local=False))
 # Update config from local config file
-CONFIG.update_with(load_config_file(local=True))
+CONFIG = CONFIG.update_with(load_config_file(local=True))
 # Update config from environment variables
-CONFIG.update_with(dict(os.environ), map_key=str.upper)
+CONFIG = CONFIG.update_with(dict(os.environ), map_key=str.upper)
+
+
+def setup_api_client():
+    kwargs = {"host": CONFIG.api_url}
+    if CONFIG.auth is not None:
+        kwargs["access_token"] = f"Bearer {CONFIG.auth.model_dump_json()}"
+    configuration = Configuration(**kwargs)
+    client = ApiClient(configuration)
+    ApiClient.set_default(client)
+
+
+setup_api_client()

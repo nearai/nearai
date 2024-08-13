@@ -1,259 +1,223 @@
-import os
+import json
 from pathlib import Path
-from typing import List, Optional, Union
+from shutil import copyfileobj
+from typing import Any, Dict, List, Optional, Union
 
-import boto3
-from mypy_boto3_s3.client import S3Client
+from openapi_client import EntryLocation, EntryMetadata, EntryMetadataInput
+from openapi_client.api.registry_api import (
+    BodyDownloadFileV1RegistryDownloadFilePost,
+    BodyDownloadMetadataV1RegistryDownloadMetadataPost,
+    BodyListFilesV1RegistryListFilesPost,
+    BodyUploadMetadataV1RegistryUploadMetadataPost,
+    RegistryApi,
+)
+from openapi_client.exceptions import BadRequestException, NotFoundException
 from tqdm import tqdm
 
-import nearai
+# Note: We should import nearai.config on this file to make sure the method setup_api_client is called at least once
+#       before creating RegistryApi object. This is because setup_api_client sets the default configuration for the
+#       API client that is used by Registry API.
 from nearai.config import CONFIG, DATA_FOLDER
-from nearai.db import DisplayRegistry, db
-
-
-def upload_file(s3_client: S3Client, s3_path: str, local_path: Path) -> None:
-    assert local_path.is_file()
-    assert local_path.exists()
-
-    statinfo = os.stat(local_path)
-    total_length = statinfo.st_size
-
-    with tqdm(
-        total=total_length,
-        desc=f"upload: {local_path}",
-        bar_format="{percentage:.1f}%|{bar:25} | {rate_fmt} | {desc}",
-        unit="B",
-        unit_scale=True,
-        unit_divisor=1024,
-    ) as pbar:
-        s3_client.upload_file(
-            str(local_path),
-            CONFIG.s3_bucket,
-            s3_path,
-            Callback=pbar.update,
-        )
-
-
-def download_file(s3_client: S3Client, s3_path: str, local_path: Path) -> None:
-    local_path.parent.absolute().mkdir(parents=True, exist_ok=True)
-
-    meta_data = s3_client.head_object(Bucket=CONFIG.s3_bucket, Key=s3_path)
-    total_length = int(meta_data.get("ContentLength", 0))
-    with tqdm(
-        total=total_length,
-        desc=f"source: s3://{CONFIG.s3_bucket}/{s3_path}",
-        bar_format="{percentage:.1f}%|{bar:25} | {rate_fmt} | {desc}",
-        unit="B",
-        unit_scale=True,
-        unit_divisor=1024,
-    ) as pbar:
-        with open(local_path, "wb") as f:
-            s3_client.download_fileobj(CONFIG.s3_bucket, s3_path, f, Callback=pbar.update)
-
-
-def download_directory(s3_prefix: str, local_directory: Path) -> None:
-    if not s3_prefix.endswith("/"):
-        s3_prefix += "/"
-
-    s3_client: S3Client = boto3.client("s3")
-    paginator = s3_client.get_paginator("list_objects_v2")
-
-    found_file = False
-
-    for page in paginator.paginate(Bucket=CONFIG.s3_bucket, Prefix=s3_prefix):
-        if "Contents" not in page:
-            continue
-
-        for s3_object in page["Contents"]:
-            s3_key = s3_object["Key"]
-            relative_path = os.path.relpath(s3_key, s3_prefix)
-            local_path = local_directory / relative_path
-
-            # Skip directories, S3 keys ending with '/' are folders
-            if not s3_key.endswith("/"):
-                download_file(s3_client, s3_key, local_path)
-                found_file = True
-
-    assert found_file, f"No files found in {s3_prefix}"
-
-
-def exists_directory_in_s3(s3_path: str) -> bool:
-    s3_client = boto3.client("s3")
-    response = s3_client.list_objects(Bucket=CONFIG.s3_bucket, Prefix=s3_path, Delimiter="/", MaxKeys=1)
-    return "Contents" in response or "CommonPrefixes" in response
+from nearai.lib import _check_metadata, parse_location
 
 
 class Registry:
-    def __init__(self, tags: List[str]):  # noqa: D107
-        self.tags = tags
+    def __init__(self):
+        """Create Registry object to interact with the registry programmatically."""
         self.download_folder = DATA_FOLDER / "registry"
+        self.api = RegistryApi()
 
         if not self.download_folder.exists():
             self.download_folder.mkdir(parents=True, exist_ok=True)
 
-    def _all_tags(self, tags: List[str]) -> List[str]:
-        return list(set(self.tags + tags))
-
-    def update(  # noqa: D102
-        self,
-        identifier: Union[str, int],
-        *,
-        author: Optional[str] = None,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        details: Optional[dict] = None,
-        show_entry: Optional[bool] = None,
-    ) -> None:
-        entry = db.get_registry_entry_by_identifier(identifier)
-        assert entry is not None
-
-        db.update_registry_entry(
-            id=entry.id, author=author, description=description, name=name, details=details, show_entry=show_entry
+    def update(self, entry_location: EntryLocation, metadata: EntryMetadataInput) -> Dict[str, Any]:
+        """Update metadata of a entry in the registry."""
+        result = self.api.upload_metadata_v1_registry_upload_metadata_post(
+            BodyUploadMetadataV1RegistryUploadMetadataPost(metadata=metadata, entry_location=entry_location)
         )
-
-        update = dict(
-            author=author,
-            description=description,
-            name=name,
-            details=details,
-            show_entry=show_entry,
-        )
-        update = {k: v for k, v in update.items() if v is not None}
-        nearai.log(target="Update in registry", id=id, **update)
-
-    def exists_in_s3(self, name: str) -> bool:  # noqa: D102
-        prefix = os.path.join(CONFIG.s3_prefix, name)
-        return exists_directory_in_s3(prefix)
-
-    def add(  # noqa: D102
-        self,
-        *,
-        s3_path: str,
-        name: Optional[str],
-        author: str,
-        description: Optional[str],
-        details: Optional[dict],
-        show_entry: bool,
-        tags: List[str],
-    ) -> int:
-        if db.exists_in_registry(s3_path):
-            raise ValueError(f"{s3_path} already exists in the registry")
-
-        registry_id = db.add_to_registry(
-            s3_path=s3_path,
-            name=name or "",
-            author=author,
-            description=description,
-            details=details,
-            show_entry=show_entry,
-            tags=self._all_tags(tags),
-        )
-
-        nearai.log(target="Add to registry", name=name, author=author)
-        return int(registry_id)
-
-    def add_tags(self, *, identifier: Union[str, int], tags: List[str]) -> None:  # noqa: D102
-        entry = db.get_registry_entry_by_identifier(identifier)
-        assert entry is not None
-
-        current_tags = db.get_tags(entry.id)
-
-        all_tags = list(set(current_tags + tags))
-        if len(all_tags) != len(current_tags) + len(tags):
-            raise ValueError(f"Some tags are already present. New tags: {tags} Current tags: {current_tags}")
-
-        for tag in tags:
-            db.add_tag(registry_id=entry.id, tag=tag)
-
-    def remove_tag(self, *, identifier: Union[str, int], tag: str) -> None:  # noqa: D102
-        entry = db.get_registry_entry_by_identifier(identifier)
-        assert entry is not None
-
-        current_tags = db.get_tags(entry.id)
-
-        if tag not in current_tags:
-            raise ValueError(f"Tag {tag} is not present in {identifier}")
-
-        db.remove_tag(registry_id=entry.id, tag=tag)
-
-    def upload(  # noqa: D102
-        self,
-        *,
-        path: Path,
-        s3_path: str,
-        author: str,
-        description: Optional[str],
-        name: Optional[str],
-        details: Optional[dict],
-        show_entry: bool,
-        tags: List[str],
-    ) -> int:
-        assert path.exists(), "Path does not exist"
-
-        prefix = os.path.join(CONFIG.s3_prefix, s3_path)
-
-        if self.exists_in_s3(s3_path):
-            raise ValueError(f"{prefix} already exists in S3")
-
-        registry_id = self.add(
-            s3_path=s3_path,
-            name=name,
-            author=author,
-            description=description,
-            details=details,
-            show_entry=show_entry,
-            tags=tags,
-        )
-
-        nearai.log(target="Upload to S3", path=s3_path, author=author)
-
-        s3_client = boto3.client("s3")
-
-        if path.is_file():
-            upload_file(s3_client, os.path.join(prefix, path.name), path)
-
-        elif path.is_dir():
-            for root, _, files in os.walk(path):
-                for filename in files:
-                    # Construct full local path
-                    local_path = os.path.join(root, filename)
-
-                    # Construct relative path for S3
-                    relative_path = os.path.relpath(local_path, path)
-                    s3_path = os.path.join(prefix, relative_path)
-
-                    upload_file(s3_client, s3_path, Path(local_path))
-        return registry_id
-
-    def download(self, identifier: Union[str, int], version: Optional[str] = None) -> Path:  # noqa: D102
-        # Try to work in offline mode by checking if identifier is a path first before fetching from database.
-        if isinstance(identifier, str) and not identifier.isdigit():
-            target = self.download_folder / identifier
-            if target.exists():
-                return target
-
-        entry = db.get_registry_entry_by_identifier(identifier, version=version)
-        assert entry is not None
-
-        path = entry.path
-        target = self.download_folder / entry.path
-
-        if not target.exists():
-            prefix = os.path.join(CONFIG.s3_prefix, path)
-            source = f"s3://{CONFIG.s3_bucket}/{prefix}"
-            print(f"Downloading {path} from {source} to {target}")
-            nearai.log(target="Download from S3", name=identifier)
-            download_directory(prefix, target)
-
-        return target
-
-    def list(self, *, tags: List[str], total: int, show_all: bool) -> List[DisplayRegistry]:  # noqa: D102
-        tags = self._all_tags(tags)
-        result: List[DisplayRegistry] = db.list_registry_entries(total=total, show_all=show_all, tags=tags)
         return result
 
+    def info(self, entry_location: EntryLocation) -> Optional[EntryMetadata]:
+        """Get metadata of a entry in the registry."""
+        try:
+            return self.api.download_metadata_v1_registry_download_metadata_post(
+                BodyDownloadMetadataV1RegistryDownloadMetadataPost.from_dict(dict(entry_location=entry_location))
+            )
+        except NotFoundException:
+            return None
 
-dataset = Registry(["dataset"])
-model = Registry(["model"])
-agent = Registry(["agent"])
-registry = Registry([])
+    def upload_file(self, entry_location: EntryLocation, local_path: Path, path: Path) -> bool:
+        """Upload a file to the registry."""
+        with open(local_path, "rb") as file:
+            data = file.read()
+
+            try:
+                self.api.upload_file_v1_registry_upload_file_post(
+                    path=str(path),
+                    file=data,
+                    namespace=entry_location.namespace,
+                    name=entry_location.name,
+                    version=entry_location.version,
+                )
+                return True
+            except BadRequestException as e:
+                if isinstance(e.body, str) and "already exists" in e.body:
+                    return False
+
+                raise e
+
+    def download_file(self, entry_location: EntryLocation, path: Path, local_path: Path):
+        """Download a file from the registry."""
+        result = self.api.download_file_v1_registry_download_file_post_without_preload_content(
+            BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
+                dict(
+                    entry_location=entry_location,
+                    path=str(path),
+                )
+            )
+        )
+
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(local_path, "wb") as f:
+            copyfileobj(result, f)
+
+    def download(
+        self,
+        entry_location: Union[str, EntryLocation],
+        force: bool = False,
+        show_progress: bool = False,
+    ) -> Path:
+        """Download entry from the registry locally."""
+        if isinstance(entry_location, str):
+            entry_location = parse_location(entry_location)
+
+        files = registry.list_files(entry_location)
+
+        download_path = (
+            DATA_FOLDER / "registry" / entry_location.namespace / entry_location.name / entry_location.version
+        )
+
+        if download_path.exists():
+            if not force:
+                print(f"Entry {entry_location} already exists at {download_path}. Use --force to overwrite the entry.")
+                return download_path
+
+        download_path.mkdir(parents=True, exist_ok=True)
+
+        metadata = registry.info(entry_location)
+
+        if metadata is None:
+            raise ValueError(f"Entry {entry_location} not found.")
+
+        metadata_path = download_path / "metadata.json"
+        with open(metadata_path, "w") as f:
+            f.write(metadata.model_dump_json(indent=2))
+
+        for file in (pbar := tqdm(files, disable=not show_progress)):
+            pbar.set_description(file)
+            registry.download_file(entry_location, file, download_path / file)
+
+        return download_path
+
+    def upload(
+        self,
+        local_path: Path,
+        metadata: Optional[EntryMetadata] = None,
+        show_progress: bool = False,
+    ) -> EntryLocation:
+        """Upload entry to the registry.
+
+        If metadata is provided it will overwrite the metadata in the directory,
+        otherwise it will use the metadata.json found on the root of the directory.
+        """
+        path = Path(local_path).absolute()
+
+        if CONFIG.auth is None:
+            print("Please login with `nearai login`")
+            exit(1)
+
+        metadata_path = path / "metadata.json"
+
+        if metadata is not None:
+            with open(metadata_path, "w") as f:
+                f.write(metadata.model_dump_json(indent=2))
+
+        _check_metadata(metadata_path)
+
+        with open(metadata_path) as f:
+            plain_metadata: Dict[str, Any] = json.load(f)
+
+        namespace = CONFIG.auth.account_id
+
+        entry_location = EntryLocation.model_validate(
+            dict(
+                namespace=namespace,
+                name=plain_metadata.pop("name"),
+                version=plain_metadata.pop("version"),
+            )
+        )
+
+        entry_metadata = EntryMetadataInput.model_validate(plain_metadata)
+        registry.update(entry_location, entry_metadata)
+
+        all_files = []
+        total_size = 0
+
+        # Traverse all files in the directory `path`
+        for file in path.rglob("*"):
+            if not file.is_file():
+                continue
+
+            relative = file.relative_to(path)
+
+            # Don't upload metadata file.
+            if file == metadata_path:
+                continue
+
+            # Don't upload backup files.
+            if file.name.endswith("~"):
+                continue
+
+            # Don't upload configuration files.
+            if relative.parts[0] == ".nearai":
+                continue
+
+            size = file.stat().st_size
+            total_size += size
+
+            all_files.append((file, relative, size))
+
+        pbar = tqdm(total=total_size, unit="B", unit_scale=True, disable=not show_progress)
+        for file, relative, size in all_files:
+            registry.upload_file(entry_location, file, relative)
+            pbar.update(size)
+
+        return entry_location
+
+    def list_files(self, entry_location: EntryLocation) -> List[str]:
+        """List files in from an entry in the registry.
+
+        Return the relative paths to all files with respect to the root of the entry.
+        """
+        return self.api.list_files_v1_registry_list_files_post(
+            BodyListFilesV1RegistryListFilesPost.from_dict(dict(entry_location=entry_location))
+        )
+
+    def list(
+        self,
+        category: str,
+        tags: str,
+        total: int,
+        show_hidden: bool,
+    ) -> List[EntryLocation]:
+        """List and filter entries in the registry."""
+        return self.api.list_entries_v1_registry_list_entries_post(
+            category=category,
+            tags=tags,
+            total=total,
+            show_hidden=show_hidden,
+        )
+
+
+registry = Registry()
