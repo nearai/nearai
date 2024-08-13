@@ -5,3 +5,5 @@ __pycache__/
 /nearai/tests/test-agents/
 venv
 .env
+site/
+.cache/
