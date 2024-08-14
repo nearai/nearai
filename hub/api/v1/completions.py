@@ -4,7 +4,7 @@ from os import getenv
 from typing import Callable
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import AsyncOpenAI
 from pydantic import BaseModel
 
 load_dotenv()
@@ -30,11 +30,11 @@ def handle_stream(resp_stream, add_usage_callback: Callable):
     add_usage_callback(full_response_text)
 
 
-def get_llm_ai(provider: str) -> OpenAI:
+def get_llm_ai(provider: str) -> AsyncOpenAI:
     if provider == "hyperbolic":
-        return OpenAI(base_url="https://api.hyperbolic.xyz/v1", api_key=getenv("HYPERBOLIC_API_KEY"))
+        return AsyncOpenAI(base_url="https://api.hyperbolic.xyz/v1", api_key=getenv("HYPERBOLIC_API_KEY"))
     elif provider == "fireworks":
-        return OpenAI(base_url="https://api.fireworks.ai/inference/v1", api_key=getenv("FIREWORKS_API_KEY"))
+        return AsyncOpenAI(base_url="https://api.fireworks.ai/inference/v1", api_key=getenv("FIREWORKS_API_KEY"))
     else:
         raise NotImplementedError
 

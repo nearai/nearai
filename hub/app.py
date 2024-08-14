@@ -32,9 +32,6 @@ app.include_router(v1_router, prefix="/v1")
 app.include_router(registry_router, prefix="/v1")
 app.include_router(agent_router, prefix="/v1")
 
-# Deprecated, will be removed shortly
-app.include_router(v1_router, prefix="/api/v1")
-
 
 @app.get("/health")
 def health():

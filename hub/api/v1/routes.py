@@ -86,7 +86,9 @@ def convert_request(request: ChatCompletionsRequest | CompletionsRequest):
 
 
 @v1_router.post("/completions")
-def completions(request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(revokable_auth)):
+async def completions(
+    request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(revokable_auth)
+):
     logger.info(f"Received completions request: {request.model_dump()}")
 
     try:
@@ -95,7 +97,7 @@ def completions(request: CompletionsRequest = Depends(convert_request), auth: Au
     except NotImplementedError:
         raise HTTPException(status_code=400, detail="Provider not supported") from None
 
-    resp = llm.completions.create(**request.model_dump(exclude={"provider", "response_format"}))
+    resp = await llm.completions.create(**request.model_dump(exclude={"provider", "response_format"}))
 
     if request.stream:
 
@@ -126,7 +128,7 @@ async def chat_completions(
     except NotImplementedError:
         raise HTTPException(status_code=400, detail="Provider not supported") from None
 
-    resp = llm.chat.completions.create(**request.model_dump(exclude={"provider"}))
+    resp = await llm.chat.completions.create(**request.model_dump(exclude={"provider"}))
 
     if request.stream:
 
