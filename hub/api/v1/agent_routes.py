@@ -2,14 +2,12 @@ from typing import Optional
 
 import boto3
 from fastapi import APIRouter, Body, Depends, HTTPException, Response
-
-from hub.api.v1.models import RegistryEntry
-from hub.api.v1.registry import get, S3_BUCKET
-
 from nearai.clients.lambda_client import LambdaWrapper
 from pydantic import BaseModel, Field
 
 from hub.api.v1.auth import AuthToken, revokable_auth
+from hub.api.v1.models import RegistryEntry
+from hub.api.v1.registry import S3_BUCKET, get
 
 s3 = boto3.client("s3")
 
@@ -52,6 +50,7 @@ class CreateThreadAndRunRequest(BaseModel):
         description="Whether to record the run in the registry.",
     )
 
+
 @v1_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
 @v1_router.post("/environment/runs", tags=["Agents", "Assistants"])
 def create_environment_and_run(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokable_auth)) -> str:
@@ -73,8 +72,13 @@ def create_environment_and_run(body: CreateThreadAndRunRequest, auth: AuthToken 
     wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
     result = wrapper.invoke_function(
         "agent-runner-docker",
-        {"agents": agents, "environment_id": environment_id, "auth": auth.model_dump(),
-         "new_message": new_message, "params": params},
+        {
+            "agents": agents,
+            "environment_id": environment_id,
+            "auth": auth.model_dump(),
+            "new_message": new_message,
+            "params": params,
+        },
     )
     return result
 
@@ -83,10 +87,7 @@ def create_environment_and_run(body: CreateThreadAndRunRequest, auth: AuthToken 
     "/download_environment",
     responses={200: {"content": {"application/gzip": {"schema": {"type": "string", "format": "binary"}}}}},
 )
-def download_environment(
-        entry: RegistryEntry = Depends(get),
-        path: str = Body()
-):
+def download_environment(entry: RegistryEntry = Depends(get), path: str = Body()):
     assert isinstance(S3_BUCKET, str)
     file = s3.get_object(Bucket=S3_BUCKET, Key=entry.get_key(path))
     headers = {"Content-Disposition": "attachment; filename=environment.tar.gz"}

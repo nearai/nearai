@@ -1,15 +1,16 @@
 import re
 from typing import List
 
-from openapi_client import BodyDownloadFileV1RegistryDownloadFilePost
-from openapi_client import BodyDownloadEnvironmentV1DownloadEnvironmentPost
-from openapi_client import BodyUploadMetadataV1RegistryUploadMetadataPost
+from openapi_client import (
+    BodyDownloadEnvironmentV1DownloadEnvironmentPost,
+    BodyDownloadFileV1RegistryDownloadFilePost,
+    BodyUploadMetadataV1RegistryUploadMetadataPost,
+)
+from openapi_client.api.agents_assistants_api import AgentsAssistantsApi
 from openapi_client.api.default_api import DefaultApi
 from openapi_client.api.registry_api import RegistryApi
-from openapi_client.api.agents_assistants_api import AgentsAssistantsApi
 from openapi_client.models.chat_completions_request import ChatCompletionsRequest
 from openapi_client.models.request import Request
-
 from runner.agent import AGENT_FILENAME
 from runner.environment import ENVIRONMENT_FILENAME
 
@@ -42,7 +43,9 @@ class PartialNearClient:
         match = self.entry_location_pattern.match(entry_location)
 
         if match is None:
-            raise ValueError(f"Invalid entry format: {entry_location}. Should have the format <namespace>/<name>/<version>")
+            raise ValueError(
+                f"Invalid entry format: {entry_location}. Should have the format <namespace>/<name>/<version>"
+            )
 
         return {
             "namespace": match.group("namespace"),
@@ -79,7 +82,7 @@ class PartialNearClient:
                     path=ENVIRONMENT_FILENAME,
                 )
             ),
-            _headers={"Accept": "application/gzip"}
+            _headers={"Accept": "application/gzip"},
         )
         return result
 
@@ -95,11 +98,7 @@ class PartialNearClient:
             "tags": tags,
             "show_entry": True,
         }
-        entry_location = {
-            "namespace": author,
-            "name": name,
-            "version": "0"
-        }
+        entry_location = {"namespace": author, "name": name, "version": "0"}
         api_instance.upload_metadata_v1_registry_upload_metadata_post(
             BodyUploadMetadataV1RegistryUploadMetadataPost(metadata=metadata, entry_location=entry_location)
         )

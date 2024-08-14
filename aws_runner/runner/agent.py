@@ -2,6 +2,7 @@ from typing import Any, Optional
 
 AGENT_FILENAME = "agent.py"
 
+
 class Agent(object):
     def __init__(self, name: str, path: str, code: str):  # noqa: D107
         self.name = name

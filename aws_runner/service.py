@@ -8,7 +8,7 @@ from openapi_client.api_client import ApiClient
 from openapi_client.configuration import Configuration
 from partial_near_client import PartialNearClient
 from runner.agent import Agent
-from runner.environment import Environment, ENVIRONMENT_FILENAME
+from runner.environment import ENVIRONMENT_FILENAME, Environment
 
 PATH = "/tmp/agent-runner-docker/environment-runs"
 RUN_PATH = PATH + "/run"
@@ -32,10 +32,13 @@ def handler(event, context):
     max_iterations = int(params.get("max_iterations", 2))
     record_run = bool(params.get("record_run", True))
 
-    new_environment_registry_id = run_with_environment(agents, auth_object, environment_id, new_message, max_iterations, record_run)
+    new_environment_registry_id = run_with_environment(
+        agents, auth_object, environment_id, new_message, max_iterations, record_run
+    )
     if not new_environment_registry_id:
         return f"Run not recorded. Ran {agents} agent(s) with generated near client and environment {environment_id}"
     return new_environment_registry_id
+
 
 def load_agent(client, agent):
     agent_code = client.get_agent(agent)
@@ -43,8 +46,12 @@ def load_agent(client, agent):
 
 
 def run_with_environment(
-    agents: str, auth: dict, environment_id: str = None, new_message: str = None,
-        max_iterations: int = 10, record_run: bool = True
+    agents: str,
+    auth: dict,
+    environment_id: str = None,
+    new_message: str = None,
+    max_iterations: int = 10,
+    record_run: bool = True,
 ) -> Optional[str]:
     """Runs agent against environment fetched from id, optionally passing a new message to the environment."""
     configuration = Configuration(access_token=f"Bearer {json.dumps(auth)}", host="https://api.near.ai")

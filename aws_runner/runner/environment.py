@@ -22,6 +22,7 @@ CHAT_FILENAME = "chat.txt"
 TERMINAL_FILENAME = "terminal.txt"
 ENVIRONMENT_FILENAME = "environment.tar.gz"
 
+
 class Environment(object):
     def __init__(  # noqa: D107
         self,
@@ -160,17 +161,15 @@ class Environment(object):
         return self._client.completions(model, messages, stream=stream, **kwargs)
 
     def completions_and_run_tools(
-            self,
-            model: str,
-            messages: Iterable[Any],
-            tools: Optional[List] = None,
-            **kwargs: Any,
+        self,
+        model: str,
+        messages: Iterable[Any],
+        tools: Optional[List] = None,
+        **kwargs: Any,
     ) -> Any:
         """Returns all completions for given messages using the given model and runs tools."""
         stream = kwargs.get("stream", False)
-        response = self._client.completions(
-            model, messages, stream=stream, tools=tools, **kwargs
-        )
+        response = self._client.completions(model, messages, stream=stream, tools=tools, **kwargs)
         response_message = response.choices[0].message
         if hasattr(response_message, "tool_calls") and response_message.tool_calls:
             for tool_call in response_message.tool_calls:
@@ -192,11 +191,11 @@ class Environment(object):
         return response_message
 
     def completion_and_run_tools(
-            self,
-            model: str,
-            messages: Iterable[Any],
-            tools: Optional[List] = None,
-            **kwargs: Any,
+        self,
+        model: str,
+        messages: Iterable[Any],
+        tools: Optional[List] = None,
+        **kwargs: Any,
     ) -> str:
         """Returns a completion for the given messages using the given model and runs tools."""
         completion_tools_response = self.completions_and_run_tools(model, messages, tools, **kwargs)
