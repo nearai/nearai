@@ -113,7 +113,7 @@ export const hubRouter = createTRPCRouter({
       }
     }),
 
-  listDataset: protectedProcedure
+  listRegistry: protectedProcedure
     .input(z.object({ category: z.string() }))
     .query(async ({ input, ctx }) => {
       const u =

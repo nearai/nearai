@@ -11,10 +11,18 @@ import {
 import { api } from "~/trpc/react";
 
 export default function RegistryTable({ category }: { category: string }) {
-  const listDataset = api.hub.listDataset.useQuery({ category: category });
+  const listRegistry = api.hub.listRegistry.useQuery({ category: category });
 
-  if (listDataset.data === undefined) {
+  if (listRegistry.isLoading) {
     return <div>Loading...</div>;
+  }
+
+  if (listRegistry.error) {
+    return <div>Error: {listRegistry.error.message}</div>;
+  }
+
+  if (listRegistry.data?.length === 0) {
+    return <div>No data</div>;
   }
 
   return (
@@ -28,7 +36,7 @@ export default function RegistryTable({ category }: { category: string }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {listDataset.data.map((dataset) => (
+          {listRegistry.data?.map((dataset) => (
             <TableRow key={dataset.name + dataset.namespace + dataset.version}>
               <TableCell className="font-medium">{dataset.name}</TableCell>
               <TableCell>{dataset.namespace}</TableCell>
