@@ -23,22 +23,22 @@ export function Navigation() {
         />
         <NavigationItem
           name="Models"
-          link="model"
+          link="models"
           icon={<FileBox className="mr-2 h-4 w-4" />}
         />
         <NavigationItem
           name="Datasets"
-          link="dataset"
+          link="datasets"
           icon={<Database className="mr-2 h-4 w-4" />}
         />
         <NavigationItem
           name="Benchmarks"
-          link="benchmark"
+          link="benchmarks"
           icon={<BookOpenCheck className="mr-2 h-4 w-4" />}
         />
         <NavigationItem
           name="Agents"
-          link="agent"
+          link="agents"
           icon={<Bot className="mr-2 h-4 w-4" />}
         />
         <NavigationItem
