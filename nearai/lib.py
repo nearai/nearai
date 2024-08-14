@@ -4,7 +4,7 @@ from datetime import timezone
 from pathlib import Path
 from typing import Any
 
-from openapi_client import EntryLocation
+from openapi_client.models.entry_location import EntryLocation
 
 from nearai.config import CONFIG
 

@@ -77,15 +77,6 @@ export function Chat() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div className="flex flex-row">
-          <div className="flex w-[20%] flex-col justify-between p-4">
-            <div>History</div>
-            {store.isAuthenticated() && (
-              <Button type="button" onClick={clearConversation}>
-                Clear Conversation
-              </Button>
-            )}
-          </div>
-
           <div className="flex h-screen w-[80%] flex-col justify-between bg-gray-100">
             <div className="flex-grow overflow-y-auto p-6">
               {!store.isAuthenticated() ? (
@@ -177,7 +168,17 @@ export function Chat() {
                 defaultValue={128}
               />
             </div>
-            <div>
+
+            <div className="flex flex-col gap-2">
+              {store.isAuthenticated() && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={clearConversation}
+                >
+                  Clear Conversation
+                </Button>
+              )}
               {store.isAuthenticated() && (
                 <Button
                   onClick={() => {

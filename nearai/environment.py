@@ -15,7 +15,8 @@ from shutil import rmtree
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 import psutil
-from litellm import Choices, CustomStreamWrapper, ModelResponse
+from litellm.types.utils import Choices, ModelResponse
+from litellm.utils import CustomStreamWrapper
 from openai.types.chat import ChatCompletionMessageParam
 from openapi_client import EntryMetadata
 

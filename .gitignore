@@ -6,5 +6,6 @@ __pycache__/
 venv
 .env
 /aws_runner/openapi_client/
+.mise*
 site/
 .cache/

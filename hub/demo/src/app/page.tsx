@@ -5,10 +5,8 @@ import HydrationZustand from "./_components/hydration";
 
 export default function Home() {
   return (
-    <main>
-      <HydrationZustand>
-        <Chat />
-      </HydrationZustand>
-    </main>
+    <HydrationZustand>
+      <Chat />
+    </HydrationZustand>
   );
 }

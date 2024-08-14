@@ -2,7 +2,7 @@
 name = "nearai"
 version = "0.1.0"
 description = ""
-authors = ["Marcelo Fornet <mfornet94@gmail.com>"]
+authors = ["Support <support@near.ai>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]

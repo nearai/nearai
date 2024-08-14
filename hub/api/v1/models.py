@@ -4,7 +4,7 @@ from os import getenv
 from typing import Dict, Iterator, Optional
 
 from dotenv import load_dotenv
-from sqlmodel import JSON, Column, Field, Session, SQLModel, UniqueConstraint, create_engine
+from sqlmodel import JSON, Column, Field, Session, SQLModel, create_engine
 
 load_dotenv()
 
@@ -19,7 +19,7 @@ DB_NAME = getenv("DATABASE_NAME")
 class RegistryEntry(SQLModel, table=True):
     """Entry stored in the registry."""
 
-    __table_args__ = (UniqueConstraint("namespace", "name", "version", name="unique_entry"),)
+    __tablename__ = "registry_entry"
 
     id: int = Field(default=None, primary_key=True)
     namespace: str = Field(nullable=False)
@@ -51,11 +51,14 @@ class RegistryEntry(SQLModel, table=True):
 class Tags(SQLModel, table=True):
     """Many-to-many table between registry entries and tags."""
 
-    registry_id: int = Field(foreign_key="registryentry.id", primary_key=True)
+    __tablename__ = "entry_tags"
+
+    registry_id: int = Field(primary_key=True)
     tag: str = Field(primary_key=True)
 
 
 engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}")
+
 
 SQLModel.metadata.create_all(engine)
 

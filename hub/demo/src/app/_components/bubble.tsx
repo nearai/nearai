@@ -35,8 +35,8 @@ export function Conversation(props: {
         Welcome to NearAI Hub demo
         <ul>
           <li>
-            Login with Near, write a prompt in the below text area, and click "Send" to see the
-            chosen model response
+            Login with Near, write a prompt in the below text area, and click
+            &quot;Send&quot; to see the chosen model response
           </li>
         </ul>
       </div>

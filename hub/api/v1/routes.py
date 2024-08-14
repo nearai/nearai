@@ -175,8 +175,8 @@ async def get_models():
 
     for p in Provider:
         try:
-            provider_models = get_llm_ai(p.value).models.list()
-            for model in provider_models:
+            provider_models = await get_llm_ai(p.value).models.list()
+            for model in provider_models.data:
                 model_dict = model.model_dump()
                 model_dict["id"] = f"{p.value}{PROVIDER_MODEL_SEP}{model_dict['id']}"
                 all_models.append(model_dict)

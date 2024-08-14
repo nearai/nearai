@@ -24,9 +24,9 @@ import { authorizationModel } from "~/lib/models";
 import { api } from "~/trpc/react";
 
 export default function ListNonces() {
-  const nonces = api.router.listNonces.useQuery();
-  const revokeNonceMut = api.router.revokeNonce.useMutation();
-  const revokeAllNoncesMut = api.router.revokeAllNonces.useMutation();
+  const nonces = api.hub.listNonces.useQuery();
+  const revokeNonceMut = api.hub.revokeNonce.useMutation();
+  const revokeAllNoncesMut = api.hub.revokeAllNonces.useMutation();
 
   const startRevokeNonce = (revokeNonce?: string) => {
     const nonce = generateNonce();
@@ -135,7 +135,7 @@ export default function ListNonces() {
               <TableCell>{nonce.account_id}</TableCell>
               <TableCell>{nonce.message}</TableCell>
               <TableCell>{nonce.recipient}</TableCell>
-              <TableCell>{nonce.callback_url}</TableCell>
+              <TableCell className="break-all">{nonce.callback_url}</TableCell>
               <TableCell>{nonce.nonce_status}</TableCell>
               <TableCell>{nonce.first_seen_at}</TableCell>
               <TableCell className="text-right">

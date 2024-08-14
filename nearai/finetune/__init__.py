@@ -13,7 +13,6 @@ from openapi_client import EntryMetadata
 import nearai
 from nearai import timestamp
 from nearai.config import CONFIG, DATA_FOLDER, ETC_FOLDER
-from nearai.dataset import get_dataset
 from nearai.model import get_model
 from nearai.registry import registry
 
@@ -48,6 +47,8 @@ class FinetuneCli:
             dataset_kwargs: Additional keyword arguments to pass to the dataset constructor.
 
         """  # noqa: E501
+        from nearai.dataset import get_dataset
+
         assert num_nodes >= 1
 
         # Prepare job id folder

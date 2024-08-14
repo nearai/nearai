@@ -5,8 +5,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
 
-import tensorboardX
-
 
 @dataclass
 class Log:
@@ -24,6 +22,8 @@ def get_logs(*args, **kwargs) -> List[Log]:
 
 class TensorboardCli:
     def start(self, logdir: str, limit: int = 100, timeout: int = 1) -> None:  # noqa: D102
+        import tensorboardX
+
         experiments: Dict[str, tensorboardX.SummaryWriter] = {}
 
         logdir_path = Path(logdir)

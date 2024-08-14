@@ -88,3 +88,10 @@ export const revokeNonceModel = z.object({
   nonce: z.string().regex(/^\d{32}$/),
   auth: z.string(),
 });
+
+export const registryEntry = z.object({
+  namespace: z.string(),
+  name: z.string(),
+  version: z.string(),
+});
+export const listRegistry = z.array(registryEntry);
