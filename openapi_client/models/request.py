@@ -21,11 +21,12 @@ from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError, f
 from typing import Optional
 from openapi_client.models.chat_completions_request import ChatCompletionsRequest
 from openapi_client.models.completions_request import CompletionsRequest
+from openapi_client.models.embeddings_request import EmbeddingsRequest
 from typing import Union, Any, List, Set, TYPE_CHECKING, Optional, Dict
 from typing_extensions import Literal, Self
 from pydantic import Field
 
-REQUEST_ANY_OF_SCHEMAS = ["ChatCompletionsRequest", "CompletionsRequest"]
+REQUEST_ANY_OF_SCHEMAS = ["ChatCompletionsRequest", "CompletionsRequest", "EmbeddingsRequest"]
 
 class Request(BaseModel):
     """
@@ -36,11 +37,13 @@ class Request(BaseModel):
     anyof_schema_1_validator: Optional[ChatCompletionsRequest] = None
     # data type: CompletionsRequest
     anyof_schema_2_validator: Optional[CompletionsRequest] = None
+    # data type: EmbeddingsRequest
+    anyof_schema_3_validator: Optional[EmbeddingsRequest] = None
     if TYPE_CHECKING:
-        actual_instance: Optional[Union[ChatCompletionsRequest, CompletionsRequest]] = None
+        actual_instance: Optional[Union[ChatCompletionsRequest, CompletionsRequest, EmbeddingsRequest]] = None
     else:
         actual_instance: Any = None
-    any_of_schemas: Set[str] = { "ChatCompletionsRequest", "CompletionsRequest" }
+    any_of_schemas: Set[str] = { "ChatCompletionsRequest", "CompletionsRequest", "EmbeddingsRequest" }
 
     model_config = {
         "validate_assignment": True,
@@ -73,9 +76,15 @@ class Request(BaseModel):
         else:
             return v
 
+        # validate data type: EmbeddingsRequest
+        if not isinstance(v, EmbeddingsRequest):
+            error_messages.append(f"Error! Input type `{type(v)}` is not `EmbeddingsRequest`")
+        else:
+            return v
+
         if error_messages:
             # no match
-            raise ValueError("No match found when setting the actual_instance in Request with anyOf schemas: ChatCompletionsRequest, CompletionsRequest. Details: " + ", ".join(error_messages))
+            raise ValueError("No match found when setting the actual_instance in Request with anyOf schemas: ChatCompletionsRequest, CompletionsRequest, EmbeddingsRequest. Details: " + ", ".join(error_messages))
         else:
             return v
 
@@ -100,10 +109,16 @@ class Request(BaseModel):
             return instance
         except (ValidationError, ValueError) as e:
              error_messages.append(str(e))
+        # anyof_schema_3_validator: Optional[EmbeddingsRequest] = None
+        try:
+            instance.actual_instance = EmbeddingsRequest.from_json(json_str)
+            return instance
+        except (ValidationError, ValueError) as e:
+             error_messages.append(str(e))
 
         if error_messages:
             # no match
-            raise ValueError("No match found when deserializing the JSON string into Request with anyOf schemas: ChatCompletionsRequest, CompletionsRequest. Details: " + ", ".join(error_messages))
+            raise ValueError("No match found when deserializing the JSON string into Request with anyOf schemas: ChatCompletionsRequest, CompletionsRequest, EmbeddingsRequest. Details: " + ", ".join(error_messages))
         else:
             return instance
 
@@ -117,7 +132,7 @@ class Request(BaseModel):
         else:
             return json.dumps(self.actual_instance)
 
-    def to_dict(self) -> Optional[Union[Dict[str, Any], ChatCompletionsRequest, CompletionsRequest]]:
+    def to_dict(self) -> Optional[Union[Dict[str, Any], ChatCompletionsRequest, CompletionsRequest, EmbeddingsRequest]]:
         """Returns the dict representation of the actual instance"""
         if self.actual_instance is None:
             return None

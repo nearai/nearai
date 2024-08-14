@@ -20,7 +20,7 @@ from runner.tool_registry import ToolRegistry
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
 TERMINAL_FILENAME = "terminal.txt"
-
+ENVIRONMENT_FILENAME = "environment.tar.gz"
 
 class Environment(object):
     def __init__(  # noqa: D107
@@ -234,10 +234,14 @@ class Environment(object):
         run_type: str,
         run_id: str,
         base_id: Optional[Union[str, int]] = None,
-    ) -> Optional[bytes]:
-        """Save Environment to Registry."""
-        agent_name = self._agents[0].name if self._agents else "unknown"
-        generated_name = f"environment_run_{agent_name}_{run_id}"
+    ) -> str:
+        """Save Environment to Registry.
+
+        :return: The name of the saved environment.
+        """
+        full_agent_name = self._agents[0].name if self._agents else "unknown"
+        safe_agent_name = full_agent_name.replace("/", "_")
+        generated_name = f"environment_run_{safe_agent_name}_{run_id}"
         name = generated_name
 
         with tempfile.NamedTemporaryFile(suffix=".tar.gz") as f:
@@ -249,7 +253,7 @@ class Environment(object):
             tar_filename = f.name
 
             timestamp = datetime.now(timezone.utc).isoformat()
-            description = f"Agent {run_type} run {agent_name} {run_id} {timestamp}"
+            description = f"Agent {run_type} run {safe_agent_name} {run_id} {timestamp}"
             details = {
                 "base_id": base_id,
                 "timestamp": timestamp,
@@ -260,7 +264,6 @@ class Environment(object):
             }
             tags_l = ["environment"]
             registry_id = self._client.save_environment(
-                env_id=run_id,
                 file=snapshot,
                 name=name,
                 description=description,
@@ -271,7 +274,7 @@ class Environment(object):
                 f"Saved environment {registry_id} to registry. To load use flag `--load-env={registry_id}`. "
                 f"or `--load-env={name}`"
             )
-            return snapshot
+            return registry_id
 
     def load_snapshot(self, snapshot: bytes) -> None:
         """Load Environment from Snapshot."""
@@ -352,10 +355,10 @@ class Environment(object):
     def run_task(
         self,
         task: str,
-        record_run: str = "",
+        record_run: bool = True,
         load_env: str = "",
         max_iterations: int = 10,
-    ) -> None:
+    ) -> Optional[str]:
         """Runs a task within the given environment."""
         run_id = self._generate_run_id()
         base_id = load_env
@@ -369,7 +372,8 @@ class Environment(object):
             self._agents[0].run(self, task=task)
 
         if record_run:
-            self.save_to_registry(self._path, "task", run_id, base_id)
+            return self.save_to_registry(self._path, "task", run_id, base_id)
+        return None
 
     def contains_non_empty_chat_txt(self, directory: str) -> bool:  # noqa: D102
         chat_txt_path = os.path.join(directory, "chat.txt")

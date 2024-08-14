@@ -1,11 +1,17 @@
 from typing import Optional
 
 import boto3
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Response
+
+from hub.api.v1.models import RegistryEntry
+from hub.api.v1.registry import get, S3_BUCKET
+
 from nearai.clients.lambda_client import LambdaWrapper
 from pydantic import BaseModel, Field
 
 from hub.api.v1.auth import AuthToken, revokable_auth
+
+s3 = boto3.client("s3")
 
 v1_router = APIRouter(
     tags=["agents, assistants"],
@@ -37,9 +43,16 @@ class CreateThreadAndRunRequest(BaseModel):
         None,
         description="A message to pass to the environment before running the agents.",
     )
+    max_iterations: Optional[int] = Field(
+        10,
+        description="Allow an agent to run for up to this number of iterations.",
+    )
+    record_run: Optional[bool] = Field(
+        True,
+        description="Whether to record the run in the registry.",
+    )
 
-
-@v1_router.post("/threads/runs", tags=["Agents", "Assistants"])
+@v1_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
 @v1_router.post("/environment/runs", tags=["Agents", "Assistants"])
 def create_environment_and_run(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokable_auth)) -> str:
     """Run an agent against an existing or a new environment.
@@ -52,10 +65,29 @@ def create_environment_and_run(body: CreateThreadAndRunRequest, auth: AuthToken 
     agents = body.agent_id or body.assistant_id
     environment_id = body.environment_id or body.thread
     new_message = body.new_message
+    params = {
+        "max_iterations": body.max_iterations,
+        "record_run": body.record_run,
+    }
 
     wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
     result = wrapper.invoke_function(
         "agent-runner-docker",
-        {"agents": agents, "environment_id": environment_id, "auth": auth.model_dump(), "new_message": new_message},
+        {"agents": agents, "environment_id": environment_id, "auth": auth.model_dump(),
+         "new_message": new_message, "params": params},
     )
     return result
+
+
+@v1_router.post(
+    "/download_environment",
+    responses={200: {"content": {"application/gzip": {"schema": {"type": "string", "format": "binary"}}}}},
+)
+def download_environment(
+        entry: RegistryEntry = Depends(get),
+        path: str = Body()
+):
+    assert isinstance(S3_BUCKET, str)
+    file = s3.get_object(Bucket=S3_BUCKET, Key=entry.get_key(path))
+    headers = {"Content-Disposition": "attachment; filename=environment.tar.gz"}
+    return Response(file["Body"].read(), headers=headers, media_type="application/gzip")

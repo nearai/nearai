@@ -1,25 +1,26 @@
+import re
 from typing import List
 
+from openapi_client import BodyDownloadFileV1RegistryDownloadFilePost
+from openapi_client import BodyDownloadEnvironmentV1DownloadEnvironmentPost
+from openapi_client import BodyUploadMetadataV1RegistryUploadMetadataPost
 from openapi_client.api.default_api import DefaultApi
 from openapi_client.api.registry_api import RegistryApi
+from openapi_client.api.agents_assistants_api import AgentsAssistantsApi
 from openapi_client.models.chat_completions_request import ChatCompletionsRequest
 from openapi_client.models.request import Request
 
-
-class MockRegistry:
-    def __init__(self):  # noqa: D107
-        self.entries = {}
-
-    def upload(self, **kwargs):
-        """Mocked: Uploads an entry to the registry."""
-        return "mock_registry_id"
+from runner.agent import AGENT_FILENAME
+from runner.environment import ENVIRONMENT_FILENAME
 
 
 class PartialNearClient:
-    """Mocks NearAI api registry methods, uses generated NearAI client for completion calls."""
+    """Wrap NearAI api registry methods, uses generated NearAI client."""
 
-    def __init__(self, client):  # noqa: D107
+    def __init__(self, client, auth: dict):  # noqa: D107
         self._client = client
+        self.entry_location_pattern = re.compile("^(?P<namespace>[^/]+)/(?P<name>[^/]+)/(?P<version>[^/]+)$")
+        self.auth = auth
 
     def completions(self, model, messages, stream=False, temperature=None, **kwargs):
         """Calls NearAI Api to return all completions for given messages using the given model."""
@@ -36,24 +37,78 @@ class PartialNearClient:
 
         return api_response
 
-    def get_agent(self, identifier, fail_if_not_found=True):
-        """Fetches an agent from NearAI registry."""
+    def parse_location(self, entry_location: str) -> dict:
+        """Create a EntryLocation from a string in the format namespace/name/version."""
+        match = self.entry_location_pattern.match(entry_location)
+
+        if match is None:
+            raise ValueError(f"Invalid entry format: {entry_location}. Should have the format <namespace>/<name>/<version>")
+
+        return {
+            "namespace": match.group("namespace"),
+            "name": match.group("name"),
+            "version": match.group("version"),
+        }
+
+    def get_file_from_registry(self, entry_location: dict, path: str):
+        """Fetches a file from NearAI registry."""
         api_instance = RegistryApi(self._client)
-        return api_instance.get_agent_v1_registry_agents_name_get(identifier)
+        result = api_instance.download_file_v1_registry_download_file_post(
+            BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
+                dict(
+                    entry_location=entry_location,
+                    path=path,
+                )
+            )
+        )
+        return result
+
+    def get_agent(self, identifier):
+        """Fetches an agent from NearAI registry."""
+        entry_location = self.parse_location(identifier)
+        return self.get_file_from_registry(entry_location, AGENT_FILENAME)
 
     def get_environment(self, env_id):
         """Fetches an environment from NearAI registry."""
-        api_instance = RegistryApi(self._client)
-        return api_instance.get_environment_v1_registry_environments_id_get(env_id)
+        entry_location = self.parse_location(env_id)
+        api_instance = AgentsAssistantsApi(self._client)
+        result = api_instance.download_environment_v1_download_environment_post(
+            BodyDownloadEnvironmentV1DownloadEnvironmentPost.from_dict(
+                dict(
+                    entry_location=entry_location,
+                    path=ENVIRONMENT_FILENAME,
+                )
+            ),
+            _headers={"Accept": "application/gzip"}
+        )
+        return result
 
-    def save_environment(self, env_id: str, file: bytes, name: str, description: str, details: dict, tags: List[str]):
+    def save_environment(self, file: bytes, name: str, description: str, details: dict, tags: List[str]) -> str:
         """Saves an environment to NearAI registry."""
         api_instance = RegistryApi(self._client)
 
-        try:
-            api_response = api_instance.save_environment_v1_registry_environments_post(
-                env_id, file, name=name, description=description, details=None, tags=None
-            )
-            return api_response["registry_id"]
-        except Exception as e:
-            print("Exception when calling save_environment: %s\n" % e)
+        author = self.auth.get("account_id")
+        metadata = {
+            "category": "environment",
+            "description": description,
+            "details": details,
+            "tags": tags,
+            "show_entry": True,
+        }
+        entry_location = {
+            "namespace": author,
+            "name": name,
+            "version": "0"
+        }
+        api_instance.upload_metadata_v1_registry_upload_metadata_post(
+            BodyUploadMetadataV1RegistryUploadMetadataPost(metadata=metadata, entry_location=entry_location)
+        )
+
+        api_instance.upload_file_v1_registry_upload_file_post(
+            path=ENVIRONMENT_FILENAME,
+            file=file,
+            namespace=entry_location["namespace"],
+            name=entry_location["name"],
+            version=entry_location["version"],
+        )
+        return f"{author}/{name}/0"

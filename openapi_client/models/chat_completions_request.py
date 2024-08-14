@@ -33,8 +33,8 @@ class ChatCompletionsRequest(BaseModel):
     provider: Optional[StrictStr] = None
     max_tokens: Optional[StrictInt] = None
     logprobs: Optional[StrictInt] = None
-    temperature: Optional[Union[StrictFloat, StrictInt]] = 1.0
-    top_p: Optional[Union[StrictFloat, StrictInt]] = 1.0
+    temperature: Optional[Union[StrictFloat, StrictInt]] = 1
+    top_p: Optional[Union[StrictFloat, StrictInt]] = 1
     frequency_penalty: Optional[Union[StrictFloat, StrictInt]] = None
     n: Optional[StrictInt] = 1
     stop: Optional[Stop] = None
@@ -141,8 +141,8 @@ class ChatCompletionsRequest(BaseModel):
             "provider": obj.get("provider"),
             "max_tokens": obj.get("max_tokens"),
             "logprobs": obj.get("logprobs"),
-            "temperature": obj.get("temperature") if obj.get("temperature") is not None else 1.0,
-            "top_p": obj.get("top_p") if obj.get("top_p") is not None else 1.0,
+            "temperature": obj.get("temperature") if obj.get("temperature") is not None else 1,
+            "top_p": obj.get("top_p") if obj.get("top_p") is not None else 1,
             "frequency_penalty": obj.get("frequency_penalty"),
             "n": obj.get("n") if obj.get("n") is not None else 1,
             "stop": Stop.from_dict(obj["stop"]) if obj.get("stop") is not None else None,

@@ -14,6 +14,7 @@
 
 
 # import models into model package
+from openapi_client.models.body_download_environment_v1_download_environment_post import BodyDownloadEnvironmentV1DownloadEnvironmentPost
 from openapi_client.models.body_download_file_v1_registry_download_file_post import BodyDownloadFileV1RegistryDownloadFilePost
 from openapi_client.models.body_download_metadata_v1_registry_download_metadata_post import BodyDownloadMetadataV1RegistryDownloadMetadataPost
 from openapi_client.models.body_list_files_v1_registry_list_files_post import BodyListFilesV1RegistryListFilesPost
@@ -21,10 +22,12 @@ from openapi_client.models.body_upload_metadata_v1_registry_upload_metadata_post
 from openapi_client.models.chat_completions_request import ChatCompletionsRequest
 from openapi_client.models.completions_request import CompletionsRequest
 from openapi_client.models.create_thread_and_run_request import CreateThreadAndRunRequest
+from openapi_client.models.embeddings_request import EmbeddingsRequest
 from openapi_client.models.entry_location import EntryLocation
 from openapi_client.models.entry_metadata import EntryMetadata
 from openapi_client.models.entry_metadata_input import EntryMetadataInput
 from openapi_client.models.http_validation_error import HTTPValidationError
+from openapi_client.models.input import Input
 from openapi_client.models.message import Message
 from openapi_client.models.request import Request
 from openapi_client.models.response_format import ResponseFormat

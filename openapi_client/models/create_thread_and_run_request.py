@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictStr
+from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 from typing import Optional, Set
 from typing_extensions import Self
@@ -31,7 +31,9 @@ class CreateThreadAndRunRequest(BaseModel):
     environment_id: Optional[StrictStr] = None
     thread: Optional[StrictStr] = None
     new_message: Optional[StrictStr] = None
-    __properties: ClassVar[List[str]] = ["agent_id", "assistant_id", "environment_id", "thread", "new_message"]
+    max_iterations: Optional[StrictInt] = None
+    record_run: Optional[StrictBool] = None
+    __properties: ClassVar[List[str]] = ["agent_id", "assistant_id", "environment_id", "thread", "new_message", "max_iterations", "record_run"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -97,6 +99,16 @@ class CreateThreadAndRunRequest(BaseModel):
         if self.new_message is None and "new_message" in self.model_fields_set:
             _dict['new_message'] = None
 
+        # set to None if max_iterations (nullable) is None
+        # and model_fields_set contains the field
+        if self.max_iterations is None and "max_iterations" in self.model_fields_set:
+            _dict['max_iterations'] = None
+
+        # set to None if record_run (nullable) is None
+        # and model_fields_set contains the field
+        if self.record_run is None and "record_run" in self.model_fields_set:
+            _dict['record_run'] = None
+
         return _dict
 
     @classmethod
@@ -113,7 +125,9 @@ class CreateThreadAndRunRequest(BaseModel):
             "assistant_id": obj.get("assistant_id"),
             "environment_id": obj.get("environment_id"),
             "thread": obj.get("thread"),
-            "new_message": obj.get("new_message")
+            "new_message": obj.get("new_message"),
+            "max_iterations": obj.get("max_iterations"),
+            "record_run": obj.get("record_run")
         })
         return _obj
 
