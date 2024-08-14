@@ -9,3 +9,4 @@ openapi-generator-cli generate -i near-openapi.json -g python -o /tmp/nearai_api
 
 rm -rf ../openapi_client/
 cp -r /tmp/nearai_api_client/openapi_client/ ../openapi_client/
+cp -r ../openapi_client/ ../aws_runner/openapi_client/
