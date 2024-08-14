@@ -135,7 +135,7 @@ export default function ListNonces() {
               <TableCell>{nonce.account_id}</TableCell>
               <TableCell>{nonce.message}</TableCell>
               <TableCell>{nonce.recipient}</TableCell>
-              <TableCell>{nonce.callback_url}</TableCell>
+              <TableCell className="break-all">{nonce.callback_url}</TableCell>
               <TableCell>{nonce.nonce_status}</TableCell>
               <TableCell>{nonce.first_seen_at}</TableCell>
               <TableCell className="text-right">
