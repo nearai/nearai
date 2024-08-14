@@ -1,4 +1,11 @@
-import { BookOpenCheck, Bot, Database, FileBox, Settings } from "lucide-react";
+import {
+  BookOpenCheck,
+  Bot,
+  Database,
+  FileBox,
+  MessageCircle,
+  Settings,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Three } from "~/components/ui/typography";
@@ -12,22 +19,27 @@ export function Navigation() {
         <NavigationItem
           name="Chat"
           link=""
-          icon={<Bot className="mr-2 h-4 w-4" />}
+          icon={<MessageCircle className="mr-2 h-4 w-4" />}
         />
         <NavigationItem
           name="Models"
-          link="models"
+          link="model"
           icon={<FileBox className="mr-2 h-4 w-4" />}
         />
         <NavigationItem
           name="Datasets"
-          link="data"
+          link="dataset"
           icon={<Database className="mr-2 h-4 w-4" />}
-        />{" "}
+        />
         <NavigationItem
           name="Benchmarks"
           link="benchmark"
           icon={<BookOpenCheck className="mr-2 h-4 w-4" />}
+        />
+        <NavigationItem
+          name="Agents"
+          link="agent"
+          icon={<Bot className="mr-2 h-4 w-4" />}
         />
         <NavigationItem
           name="Settings"

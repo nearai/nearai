@@ -4,8 +4,8 @@ import RegistryTable from "../dataset/table";
 export default function Data() {
   return (
     <div className="flex flex-col gap-2 px-24 py-4">
-      <One>Benchmarks</One>
-      <RegistryTable category="benchmark" />
+      <One>Models</One>
+      <RegistryTable category="model" />
     </div>
   );
 }
