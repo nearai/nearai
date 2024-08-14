@@ -55,31 +55,29 @@ const invoices = [
   },
 ];
 
-export default function DatasetTable() {
-  const listDataset = api.hub.listDataset.useQuery();
+export default function RegistryTable({ category }: { category: string }) {
+  const listDataset = api.hub.listDataset.useQuery({ category: category });
+
+  if (listDataset.data === undefined) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="rounded border">
       <Table>
         <TableHeader className="bg-gray-50">
           <TableRow>
-            <TableHead>Dataset</TableHead>
-            <TableHead>Data Quality</TableHead>
-            <TableHead>Creator</TableHead>
-            <TableHead>Data Source</TableHead>
-            <TableHead>Updated</TableHead>
-            <TableHead>Used By</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Namespace</TableHead>
+            <TableHead>Version</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {invoices.map((invoice) => (
-            <TableRow key={invoice.invoice}>
-              <TableCell className="font-medium">{invoice.invoice}</TableCell>
-              <TableCell>{invoice.paymentStatus}</TableCell>
-              <TableCell>{invoice.paymentMethod}</TableCell>
-              <TableCell>{invoice.paymentMethod}</TableCell>
-              <TableCell>{invoice.paymentMethod}</TableCell>
-              <TableCell>{invoice.totalAmount}</TableCell>
+          {listDataset.data.map((dataset) => (
+            <TableRow key={dataset.name + dataset.namespace + dataset.version}>
+              <TableCell className="font-medium">{dataset.name}</TableCell>
+              <TableCell>{dataset.namespace}</TableCell>
+              <TableCell>{dataset.version}</TableCell>
             </TableRow>
           ))}
         </TableBody>

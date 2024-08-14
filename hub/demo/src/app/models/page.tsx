@@ -1,9 +1,11 @@
-import ListModels from "./models";
+import { One } from "~/components/ui/typography";
+import RegistryTable from "../data/table";
 
-export default function Models() {
+export default function Data() {
   return (
-    <div>
-      <ListModels />
+    <div className="flex flex-col gap-2 px-24 py-4">
+      <One>Models</One>
+      <RegistryTable category="model" />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import {
   chatResponseModel,
   listModelsResponseModel,
   listNoncesModel,
+  listRegistry,
   revokeNonceModel,
 } from "~/lib/models";
 import { createZodFetcher } from "zod-fetch";
@@ -112,16 +113,20 @@ export const hubRouter = createTRPCRouter({
       }
     }),
 
-  listDataset: protectedProcedure.query(async ({ ctx }) => {
-    const u = env.ROUTER_URL + "/v1/registry/list_entries";
+  listDataset: protectedProcedure
+    .input(z.object({ category: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const u =
+        env.ROUTER_URL + "/registry/list_entries?category=" + input.category;
 
-    const resp = await fetchWithZod(listNoncesModel, u, {
-      headers: {
-        Authorization: ctx.Authorization!,
-      },
-    });
-    console.log(resp);
+      const resp = await fetchWithZod(listRegistry, u, {
+        method: "POST",
+        headers: {
+          Authorization: ctx.Authorization!,
+        },
+      });
+      console.log(resp);
 
-    return resp;
-  }),
+      return resp;
+    }),
 });
