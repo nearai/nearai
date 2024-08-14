@@ -1,11 +1,11 @@
-import { Bot, Database, FileBox, Settings } from "lucide-react";
+import { BookOpenCheck, Bot, Database, FileBox, Settings } from "lucide-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Three } from "~/components/ui/typography";
 
 export function Navigation() {
   return (
-    <div className="flex min-h-[100vh] min-w-[20%] flex-col gap-3 border-r-2 px-4">
+    <div className="flex min-h-[100vh] min-w-[20%] flex-col gap-3 border-r-2 px-4 py-4">
       <Three>AI Hub</Three>
       <div className="flex flex-col gap-3">
         {/* <NavigationItem name="Home" link="" /> */}
@@ -20,9 +20,14 @@ export function Navigation() {
           icon={<FileBox className="mr-2 h-4 w-4" />}
         />
         <NavigationItem
-          name="Data"
+          name="Datasets"
           link="data"
           icon={<Database className="mr-2 h-4 w-4" />}
+        />{" "}
+        <NavigationItem
+          name="Benchmarks"
+          link="benchmark"
+          icon={<BookOpenCheck className="mr-2 h-4 w-4" />}
         />
         <NavigationItem
           name="Settings"
