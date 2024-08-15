@@ -113,17 +113,14 @@ export const hubRouter = createTRPCRouter({
       }
     }),
 
-  listRegistry: protectedProcedure
+  listRegistry: publicProcedure
     .input(z.object({ category: z.string() }))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input }) => {
       const u =
         env.ROUTER_URL + "/registry/list_entries?category=" + input.category;
 
       const resp = await fetchWithZod(listRegistry, u, {
         method: "POST",
-        headers: {
-          Authorization: ctx.Authorization!,
-        },
       });
       console.log(resp);
 

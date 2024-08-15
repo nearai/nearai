@@ -179,16 +179,6 @@ export function Chat() {
                   Clear Conversation
                 </Button>
               )}
-              {store.isAuthenticated() && (
-                <Button
-                  onClick={() => {
-                    store.clearAuth();
-                  }}
-                  type="button"
-                >
-                  Sign Out
-                </Button>
-              )}
             </div>
           </div>
         </div>
