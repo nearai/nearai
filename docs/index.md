@@ -230,4 +230,4 @@ Source code in: [demo](/hub/demo/)
 
 You can import `nearai` as a library in your python code. The main features are:
 
-- Download/upload models and datasets from the registry. See [examples/prepare_data.py](examples/prepare_data.py).
+- Download/upload models and datasets from the registry. See [examples/prepare_data.py](https://github.com/nearai/nearai/blob/main/examples/prepare_data.py).
