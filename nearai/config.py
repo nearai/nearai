@@ -95,7 +95,7 @@ class Config(BaseModel):
     origin: Optional[str] = None
     user_name: Optional[str] = None
     user_email: Optional[str] = None
-    api_url: Optional[str] = None
+    api_url: Optional[str] = "https://api.near.ai"
     inference_url: str = "http://localhost:5000/v1/"
     inference_api_key: str = "n/a"
     nearai_hub: Optional[NearAiHubConfig] = NearAiHubConfig()

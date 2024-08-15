@@ -31,25 +31,16 @@ python3 -m pip install -e .
 nearai version
 ```
 
-## Setup basic configuration
-
-To setup configuration with a remote `nearai` database, run:
+To perform write operations you will need to log in with your Near account.
 
 ```
-nearai config set db_user <DB_USERNAME>
-nearai config set db_password <DB_PASSWORD>
-nearai config set user_name <YOUR_NAME>
+nearai login
 ```
 
-The user name will be used to identify the author of the experiments.
-This configuration can be manually edited at `~/.nearai/config.json`, or per project at `.nearai/config.json` (relative to the current directory).
+## Usage
 
-To use the registry (for downloading and uploading models and datasets) you need to setup access to S3. Do it by installing [aws-cli](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html) and configuring it:
+To learn how to use NearAI, please read the [documentation](https://docs.near.ai/).
 
-```
-export AWS_ACCESS_KEY_ID=<..>
-export AWS_SECRET_ACCESS_KEY="<..>"
-```
 
 ## Update
 
@@ -63,10 +54,6 @@ git pull # Pull the latest changes
 python3 -m pip install -e .
 ```
 
-## Usage
-
-To learn how to use NearAI, please read the [documentation](docs.near.ai/).
-
 ## Contributing
 
-To contribute to NearAI, please read the [contributing guide](docs.near.ai/contributing/).
+To contribute to NearAI, please read the [contributing guide](https://docs.near.ai/contributing/).
