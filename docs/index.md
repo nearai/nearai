@@ -55,7 +55,7 @@ The registry is a place to store models, datasets, agents, and environments (mor
     The registry is backed by an S3 bucket with metadata stored in a database.
 
 To upload an item to the registry, you need a directory containing a metadata.json file. The metadata.json file describes
-the item and all the other files in the directory make up the item. For an agent that is one `agent.py` file, for a 
+the item, and all the other files in the directory make up the item. For an agent that is one `agent.py` file, for a 
 dataset it may be hundreds of files.
 
 The metadata_template command will create a template for you to fill in.
