@@ -49,40 +49,46 @@ nearai benchmark run mbpp MBPPSolverStrategy \
 
 ## Registry
 
-The registry is a place to store models, datasets, agents, and environments (more to come). You can upload and download items from the registry using the `nearai registry` command.
+The registry is a place to store models, datasets, agents, and environments (more types to come). You can upload and download items from the registry using the `nearai registry` command.
 
 !!! note "About the registry"
     The registry is backed by an S3 bucket with metadata stored in a database.
 
+To upload an item to the registry, you need a directory containing a metadata.json file. The metadata.json file describes
+the item and all the other files in the directory make up the item. For an agent that is one `agent.py` file, for a 
+dataset it may be hundreds of files.
+
+The metadata_template command will create a template for you to fill in.
+```
+nearai registry metadata_template <ITEM_LOCAL_DIRECTORY_PATH>
+```
+Fill in name, version, category and any other fields for which you have values. 
+The current categories are: `model`, `dataset`, `agent`, `environment`.
+
+```json
+{
+  "category": "agent",
+  "description": "An example agent",
+  "tags": [
+    "python"
+  ],
+  "details": {},
+  "show_entry": true,
+  "name": "example-agent",
+  "version": "1"
+}
+```
+
 Upload an element to the registry using:
 
 ```shell
-nearai registry upload <ITEM_LOCAL_PATH> <ITEM_S3_PATH> <DESCRIPTION> [--name <NAME>] [--tags <TAGS>]
+nearai registry upload <ITEM_LOCAL_DIRECTORY_PATH>
 ```
 
-- The local path could be either to a file or a folder.
-- The S3 path should be a non-existent folder in the registry.
-- Tags is a comma separated list of tags to add to the item. This allows filtering relevant items.
-
-There are two shortcuts to upload models and datasets. The following commands behave in the same way as `registry upload` but it adds by default the tags `model` and `dataset` respectively.
-
-```shell
-nearai models upload <ITEM_LOCAL_PATH> <ITEM_S3_PATH> <DESCRIPTION> [--name <NAME>] [--tags <TAGS>]
-nearai datasets upload <ITEM_LOCAL_PATH> <ITEM_S3_PATH> <DESCRIPTION> [--name <NAME>] [--tags <TAGS>]
-```
-
-We recommend as a good practice to use as s3_path `<namespace>/<name>/<version>`, but it is not mandatory.
-
-To upload an item to the registry with name quine.py and tags `quine` and `python` is the command:
+Check the item is available by listing all elements in the registry of that category:
 
 ```
-nearai registry upload ~/quine.py test/quine/v3 "Test registry upload" quine.py --tags quine,python
-```
-
-To check the item is available by listing all elements in the registry:
-
-```
-nearai registry list
+nearai registry list --category agent
 ```
 
 Show only items with the tag `quine` and `python`:
@@ -91,25 +97,25 @@ Show only items with the tag `quine` and `python`:
 nearai registry list --tags quine,python
 ```
 
-Download this element locally. To download you can refer to the item either by name or by s3_path. Trying to download an item that was previously downloaded is a no-op.
+Download this element locally. To download refer to the item by <author>/<name>/<version>. Trying to download an item that was previously downloaded is a no-op.
 
 ```
-nearai registry download quine.py
+nearai registry download zavodil.near/hello-world-agent/1
 ```
 
 !!! tip 
     If you start downloading and item, and cancel the download midway, you should delete the folder at `~/.nearai/registry/` to trigger a new download.
 
-Add one or more tags to an item using:
-
+Update the metadata of an item with the registry update command
 ```
-nearai registry add_tags test/quine/v3 code,multiple,tags
+nearai registry update <ITEM_LOCAL_DIRECTORY_PATH>
 ```
-
-Removing tags must be done one by one:
-
+View info about an item with the registry info command
+```shell
+nearai registry info <ITEM_FULL_NAME>
 ```
-nearai registry remove_tag test/quine/v3 code
+```shell
+nearai registry info zavodil.near/hello-world-agent/1
 ```
 
 ## Agents
