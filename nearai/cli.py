@@ -259,13 +259,38 @@ class EnvironmentCli:
         env.exec_command("sleep 10")
         # TODO: Setup server that will allow to interact with agents and environment
 
-    def run_on_aws_lambda(self, agents: str, environment_id: str, auth: str, new_message: str = ""):
+    def run_remote(
+        self,
+        agents: str,
+        new_message: str = "",
+        environment_id: str = "",
+        provider: str = "aws_lambda",
+        params: object = None,
+    ) -> None:
         """Invoke a Container based AWS lambda function to run agents on a given environment."""
+        if not CONFIG.auth:
+            print("Please login with `nearai login`")
+            return
+        if provider != "aws_lambda":
+            print(f"Provider {provider} is not supported.")
+            return
+        if not params:
+            params = {"max_iterations": 2}
         wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
-        wrapper.invoke_function(
-            "agent-runner-docker",
-            {"agents": agents, "environment_id": environment_id, "auth": json.dumps(auth), "new_message": new_message},
-        )
+        try:
+            new_environment = wrapper.invoke_function(
+                "agent-runner-docker",
+                {
+                    "agents": agents,
+                    "environment_id": environment_id,
+                    "auth": CONFIG.auth.model_dump(),
+                    "new_message": new_message,
+                    "params": params,
+                },
+            )
+            print(f"Agent run finished. New environment is {new_environment}")
+        except Exception as e:
+            print(f"Error running agent remotely: {e}")
 
 
 class VllmCli:

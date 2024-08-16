@@ -1,7 +1,5 @@
 import json
 
-from botocore.exceptions import ClientError
-
 
 class LambdaWrapper:
     def __init__(self, lambda_client):
@@ -20,22 +18,19 @@ class LambdaWrapper:
         """
         # convert function_params.auth.nonce from bytes into text
         if function_params.get("auth") and function_params["auth"].get("nonce"):
-            function_params["auth"]["nonce"] = function_params["auth"]["nonce"].decode("utf-8")
+            if isinstance(function_params["auth"]["nonce"], bytes):
+                function_params["auth"]["nonce"] = function_params["auth"]["nonce"].decode("utf-8")
 
-        try:
-            response = self.lambda_client.invoke(
-                FunctionName=function_name,
-                Payload=json.dumps(function_params),
-                LogType="Tail" if get_log else "None",
-                InvocationType="RequestResponse",
-            )
-            print("Invoked function %s.", function_name)
-            data = response["Payload"].read()
-            print(data)
-            if data:
-                data = data.decode("utf-8")
-                return data
-        except ClientError:
-            print("Error invoking function %s.", function_name)
-            raise
-        return ""
+        response = self.lambda_client.invoke(
+            FunctionName=function_name,
+            Payload=json.dumps(function_params),
+            LogType="Tail" if get_log else "None",
+            InvocationType="RequestResponse",
+        )
+        print("Remotely running agent", function_params["agents"])
+        data = response["Payload"].read()
+        if data:
+            data = data.decode("utf-8")
+            return data
+        else:
+            raise ValueError("No data returned from Lambda function")
