@@ -14,38 +14,40 @@ The NearAI project is a toolkit to help build, measure, and deploy AI systems fo
 
 NearAI consists of:
 
-1. A CLI tool to interact with the NearAI registry, download agents, run them in environments, and more.
-2. A library with access to the same tools as the CLI, but to be used programmatically.
-3. `nearai` hub, a place to share agents, environments, and datasets.
+1. [app.near.ai](https://app.near.ai) a place to share agents, environments, and datasets; powered by the NearAI API.
+2. A CLI tool to interact with the NearAI registry, download agents, run them in environments, and more.
+3. A library with access to the same tools as the CLI, but to be used programmatically.
 
-This intro is split into two parts:
+This intro is split into three parts:
 
-1. [CLI Usage Guide](#cli-usage-guide)
-2. [Web Usage Guide](#web-usage-guide)
+1. [Web Usage Guide](#web-usage-guide)
+2. [CLI Usage Guide](#cli-usage-guide)
 3. [Library Usage Guide](#library-usage-guide)
 
+# Web Usage Guide
+
+https://app.near.ai allows you to use NEAR AI Hub directly from your browser. It currently offers a subset of the features available from the full Hub API.
+
+Features:
+
+- NEAR AI Login
+    - Login with your NEAR account using your favourite wallet provider.
+- Inference using the provider of your choice
+    - Chose between the best open source models.
+- Read the [registry](#registry):
+    - Datasets - https://app.near.ai/datasets
+    - Benchmarks - https://app.near.ai/benchmarks
+    - Models - https://app.near.ai/models
+    - Agents - https://app.near.ai/agents
+- View and manage your NEAR AI access keys.
+
+    - https://app.near.ai/settings
+
+Source code in: [demo](/hub/demo/)
+
+For the api specification see [openapi.json](https://api.near.ai/openapi.json)
+
 # CLI Usage Guide
-
-## Benchmarking
-
-`nearai` includes a benchmarking tool to compare different agents and solvers on sets of reference evals (like [`mpbb`](https://paperswithcode.com/dataset/mbpp)).
-
-???+ note "Requirements for benchmarking with `nearai`"
-    To create a benchmark, you need two things:
-
-    1. A dataset in your `nearai` dataset registry.
-    2. A solver for the dataset implemented in the `nearai` library for said dataset.
-
-    If you have a dataset and a solver, you can run a benchmark.
-
-To run a benchmark, you can use the `nearai benchmark` command. For example, to run the `mpbb` benchmark on the `llama-v3-70b-instruct`, you can use:
-
-```bash
-nearai benchmark run mbpp MBPPSolverStrategy \
-    --model llama-v3-70b-instruct \
-    --subset=train \
-    --max_concurrent=1
-```
 
 ## Registry
 
@@ -128,62 +130,28 @@ nearai registry info zavodil.near/hello-world-agent/1
 ```
 
 ## Agents
+See the [Agents](agents.md) documentation and How to guide
 
-Agents are a python file in the local registry. Existing agents can be fetched with the download command:
+## Benchmarking
 
+`nearai` includes a benchmarking tool to compare different agents and solvers on sets of reference evals (like [`mpbb`](https://paperswithcode.com/dataset/mbpp)).
+
+???+ note "Requirements for benchmarking with `nearai`"
+To create a benchmark, you need two things:
+
+    1. A dataset in your `nearai` dataset registry.
+    2. A solver for the dataset implemented in the `nearai` library for said dataset.
+
+    If you have a dataset and a solver, you can run a benchmark.
+
+To run a benchmark, you can use the `nearai benchmark` command. For example, to run the `mpbb` benchmark on the `llama-v3-70b-instruct`, you can use:
+
+```bash
+nearai benchmark run mbpp MBPPSolverStrategy \
+    --model llama-v3-70b-instruct \
+    --subset=train \
+    --max_concurrent=1
 ```
-nearai agents download <AGENT_NAME>
-```
-
-Local agent files that have not yet been uploaded can also be run.
-
-When uploading an agent, multiple versions can be stored by appending a version to the s3 path. The `--name` flag allows the latest agent to be fetched that matches that name.
-
-To upload an agent:
-
-```
-nearai agents upload --name langgraph-min-example ~/.nearai/registry/agents/langgraph-min-example/v1 agents/langgraph-min-example/v1 "A minimal example"
-```
-
-## Running environment interactively
-
-You can run an agent (or a set of agents) inside a local environment that lives in a specific folder.
-
-Agents can be run interactively. The environment_path should be a folder where the agent chat record (chat.txt) and other files can be written, usually `~/tmp/test-agents/<AGENT_NAME>`.
-
-Environments can be run like so:
-
-```
-nearai environment interactive <AGENT> <ENVIRONMENT_PATH>
-```
-
-Example calling a local agent:
-
-```
-nearai environment interactive agent/my-agent/v1 ~/tmp/test-agents/my-agent-v1/env0
-```
-
-Example calling a downloaded agent:
-
-```
-nearai environment interactive xela-agent ~/tmp/test-agents/xela-agent-v2/env0
-```
-
-## Running environment task
-To run without user interaction pass the task input to the task
- * command `nearai environment task <AGENT> <INPUT> <ENVIRONMENT_PATH>`.
- * example `nearai environment task xela-agent "Build a command line chess engine" ~/tmp/test-agents/chess-engine/env0`.
-
-## Saving and loading environment runs
-By default each environment run is saved to the registry. You can disable this by adding the flag `--record_run=False`.
-
-An environment run can be loaded by using the `--load_env` flag and passing it a registry identifier `--load_env=61`.
-
-To list environment identifiers use the command `nearai registry list --tags=environment`.
-
-A run can be named by passing a name to the record_run flag `--record_run="my special run"`.
-
-Environment runs can be loaded by passing the name of a previous run to the --load_env flag like `--load_env="my special run"`.
 
 ## Fine tuning
 
@@ -214,29 +182,10 @@ The current commit will be used for running the command so make sure it is alrea
 
 On each node the environment variable `ASSIGNED_SUPERVISORS` will be available with a comma separated list of supervisors that are running the experiment. The current supervisor can be accessed via `nearai.CONFIG.supervisor_id`. See [examples/prepare_data.py](examples/prepare_data.py) for an example.
 
-# Web Usage Guide
-
-https://app.near.ai allows you to use NEAR AI Hub directly from your broweser. It currently offers a subset of the features available from the Hub.
-
-Features:
-
-- NEAR AI Login
-  - Login with your NEAR account using your favourite wallet provider.
-- Inference using the provider of your choice
-  - Chose between the best open source models.
-- Read the [registry](#registry):
-  - Datasets - https://app.near.ai/datasets
-  - Benchmarks - https://app.near.ai/benchmarks
-  - Models - https://app.near.ai/models
-  - Agents - https://app.near.ai/agents
-- View and manage your NEAR AI access keys.
-
-  - https://app.near.ai/settings
-
-Source code in: [demo](/hub/demo/)
 
 # Library Usage Guide
 
 You can import `nearai` as a library in your python code. The main features are:
 
 - Download/upload models and datasets from the registry. See [examples/prepare_data.py](https://github.com/nearai/nearai/blob/main/examples/prepare_data.py).
+- A python client for the api [openapi_client](/openapi_client/).

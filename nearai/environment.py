@@ -274,10 +274,7 @@ class Environment(object):
         """Save Environment to Registry."""
         author = self._user_name
         if not author:
-            print(
-                "Warning: No author specified in config. Run not saved to registry."
-                " To set an author run `nearai config set user_name <YOUR_NAME>`"
-            )
+            print("Warning: You are not logged in, run not saved to registry." " To log in run `nearai login`")
             return None
 
         agent_name = self._agents[0].name if self._agents else "unknown"
