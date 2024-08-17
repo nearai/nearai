@@ -26,7 +26,7 @@ Table of contents:
  * Create a new folder for your agent, inside your local registry `mkdir -p ~/.nearai/registry/example_agent`
  * Create a metadata.json file for your agent `nearai registry metadata_template ~/.nearai/registry/example_agent` and edit it.
  * Create an `agent.py` file in that folder
- * Write your agent, in agent.py, using the environment api described below.
+ * Write your agent, in agent.py, using the [environment api](#the-environment-api) described below.
  * Use your agent locally using the cli and passing it a folder to write output to.
 ```shell
 nearai environment interactive AGENT EXECUTION_FOLDER --local
