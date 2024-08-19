@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 backoff = { version = "^2.2.1" }
-base58 = { version = "2.1.1", optional = true }
+base58 = { version = "2.1.1" }
 boto3 = { version = "^1.34.100" }
 boto3-stubs = { version = "^1.34.147" }
 cryptography = { version = "^43.0.0" }
@@ -27,12 +27,12 @@ openai = { version = "^1.30.1" }
 pandas-stubs = { version = "^2.2.2.240603" }
 peft = "^0.10.0"
 psutil = { version = "^5.9.5" }
-pydantic = { version = "^2.7.1", optional = true }
-pydantic-core = { version = "^2.18.4", optional = true }
+pydantic = { version = "^2.7.1" }
+pydantic-core = { version = "^2.18.4" }
 pymysql = { version = "^1.1.0" }
-pynacl = { version = "^1.5.0", optional = true }
+pynacl = { version = "^1.5.0" }
 python-dotenv = { version = "^1.0.1", optional = true }
-requests = { version = "^2.31.0", optional = true }
+requests = { version = "^2.31.0" }
 setuptools = { version = "^69.5.1" }
 sqlmodel = { version = "^0.0.21", optional = true }
 tabulate = { version = "^0.9.0" }
@@ -59,15 +59,10 @@ alembic = "^1.13.2"
 # Experiment platform
 explatform = ["flask", "fabric", "gunicorn", "requests"]
 hub = [
-    "base58",
     "cryptography",
     "fastapi-cli",
     "fastapi",
-    "pydantic-core",
-    "pydantic",
-    "pynacl",
     "python-dotenv",
-    "requests",
     "sqlmodel",
 ]
 torch = ["torch", "torchao", "torchtune"]
