@@ -71,4 +71,4 @@ def run_with_environment(
             tar.extractall(RUN_PATH)
 
     env = Environment(RUN_PATH, loaded_agents, near_client)
-    return env.run_task(new_message, record_run, environment_id, max_iterations)
+    return env.run(new_message, record_run, environment_id, max_iterations)

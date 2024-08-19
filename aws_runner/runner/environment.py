@@ -252,7 +252,7 @@ class Environment(object):
             tar_filename = f.name
 
             timestamp = datetime.now(timezone.utc).isoformat()
-            description = f"Agent {run_type} run {safe_agent_name} {run_id} {timestamp}"
+            description = f"Agent {run_type} {safe_agent_name} {run_id} {timestamp}"
             details = {
                 "base_id": base_id,
                 "timestamp": timestamp,
@@ -313,65 +313,29 @@ class Environment(object):
             # By default the user starts the conversation.
             return "user"
 
-    def run_interactive(self, record_run: str = "", load_env: str = "") -> None:
-        """Run an interactive session within the given environment."""
-        run_id = self._generate_run_id()
-        base_id = load_env
-        last_message_idx = 0
-
-        def print_messages(last_message_idx: int) -> int:
-            messages = self.list_messages()
-            for item in messages[last_message_idx:]:
-                print(f"[{item['role']}]: {item['content']}", flush=True)
-            return len(messages)
-
-        last_message_idx = print_messages(last_message_idx)
-
-        iteration_count = 0
-        while True:
-            if self.get_next_actor() != "user":
-                messages = self.list_messages()
-                new_message = None if not messages else messages[-1]["content"]
-
-                iteration_count += 1
-                self.run_agent(new_message)
-
-                last_message_idx = print_messages(last_message_idx)
-                if self.is_done():
-                    break
-
-            else:
-                new_message = input("> ")
-                if new_message == "exit":
-                    break
-                self.add_message("user", new_message)
-
-                self.set_next_actor("agent")
-
-        if record_run:
-            self.save_to_registry(self._path, "interactive", run_id, base_id)
-
-    def run_task(
+    def run(
         self,
-        task: str,
+        new_message: str,
         record_run: bool = True,
         load_env: str = "",
         max_iterations: int = 10,
     ) -> Optional[str]:
-        """Runs a task within the given environment."""
+        """Runs agent(s) against a new or previously created environment."""
         run_id = self._generate_run_id()
         base_id = load_env
         iteration = 0
 
-        if task:
-            self.add_message("user", task)
+        self.set_next_actor("agent")
 
-        while iteration < max_iterations and not self.is_done():
+        if new_message:
+            self.add_message("user", new_message)
+
+        while iteration < max_iterations and not self.is_done() and self.get_next_actor() != "user":
             iteration += 1
-            self._agents[0].run(self, task=task)
+            self._agents[0].run(self, task=new_message)
 
         if record_run:
-            return self.save_to_registry(self._path, "task", run_id, base_id)
+            return self.save_to_registry(self._path, "remote run", run_id, base_id)
         return None
 
     def contains_non_empty_chat_txt(self, directory: str) -> bool:  # noqa: D102
