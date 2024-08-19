@@ -23,7 +23,7 @@ export const chatCompletionsModel = z.object({
   messages: z.array(messageModel),
   model: z.string(),
   provider: z.string(),
-  // TODO: add more fields here
+  stop: z.array(z.string()).default([]),
 });
 
 export const chatResponseModel = z.object({
