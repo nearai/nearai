@@ -53,6 +53,7 @@ export function Chat() {
     console.log("values", values);
 
     values.messages.map((m) => console.log(m.content));
+    values.stop = ["[INST]"];
 
     const response = await chat.mutateAsync(values);
 

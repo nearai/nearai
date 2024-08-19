@@ -20,7 +20,7 @@ export function Navigation() {
 
   return (
     <HydrationZustand>
-      <div className="flex min-h-[100vh] min-w-[20%] flex-col justify-between gap-3 border-r-2 px-4 py-4">
+      <div className="flex h-screen w-64 flex-col justify-between gap-3 overflow-y-auto border-r-2 px-4 py-4">
         <div>
           <Three>AI Hub</Three>
           <div className="flex flex-col justify-between">

@@ -18,11 +18,10 @@ NearAI consists of:
 2. A CLI tool to interact with the NearAI registry, download agents, run them in environments, and more.
 3. A library with access to the same tools as the CLI, but to be used programmatically.
 
-This intro is split into three parts:
+This intro is split into two parts:
 
 1. [Web Usage Guide](#web-usage-guide)
 2. [CLI Usage Guide](#cli-usage-guide)
-3. [Library Usage Guide](#library-usage-guide)
 
 # Web Usage Guide
 
@@ -182,10 +181,3 @@ The current commit will be used for running the command so make sure it is alrea
 
 On each node the environment variable `ASSIGNED_SUPERVISORS` will be available with a comma separated list of supervisors that are running the experiment. The current supervisor can be accessed via `nearai.CONFIG.supervisor_id`. See [examples/prepare_data.py](examples/prepare_data.py) for an example.
 
-
-# Library Usage Guide
-
-You can import `nearai` as a library in your python code. The main features are:
-
-- Download/upload models and datasets from the registry. See [examples/prepare_data.py](https://github.com/nearai/nearai/blob/main/examples/prepare_data.py).
-- A python client for the api [openapi_client](/openapi_client/).

@@ -20,11 +20,9 @@ export default function RootLayout({
     <html lang="en" className={`${GeistSans.variable}`}>
       <body>
         <TRPCReactProvider>
-          <main>
-            <div className="flex h-full w-full">
-              <Navigation />
-              <div className="flex-grow">{children}</div>
-            </div>
+          <main className="flex h-screen overflow-hidden">
+            <Navigation />
+            <div className="flex-grow overflow-y-auto">{children}</div>
           </main>
         </TRPCReactProvider>
       </body>
