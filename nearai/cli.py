@@ -179,11 +179,7 @@ class BenchmarkCli:
         be.run(max_concurrent=max_concurrent)
 
 
-class EnvironmentCli:
-    def setup(self, dataset: str, task_id: int) -> None:
-        """Setup environment with given task from the dataset."""
-        pass
-
+class AgentCli:
     def inspect(self, path: str) -> None:
         """Inspect environment from given path."""
         from nearai.environment import Environment
@@ -199,7 +195,7 @@ class EnvironmentCli:
         env.save_folder(name)
 
     def save_from_history(self, name: Optional[str] = None) -> None:
-        """Reads piped history, finds agent task runs, writes start_command.log files, and saves to registry. For detailed usage, run: nearai environment save_from_history --help.
+        """Reads piped history, finds agent task runs, writes start_command.log files, and saves to registry. For detailed usage, run: nearai agent save_from_history --help.
 
         This command:
         1. Finds agent task runs (must contain non-empty chat.txt)
@@ -208,9 +204,9 @@ class EnvironmentCli:
 
         Only 'interactive' is supported.
         Assumes format:
-        ' <line_number>  <program_name> environment interactive <comma_separated_agents> <path> <other_args>'
+        ' <line_number>  <program_name> agent interactive <comma_separated_agents> <path> <other_args>'
         Run:
-        $ history | grep "environment interactive" | sed "s:~:$HOME:g" | nearai environment save_from_history environment_interactive_runs_from_lambda_00
+        $ history | grep "agent interactive" | sed "s:~:$HOME:g" | nearai agent save_from_history environment_interactive_runs_from_lambda_00
         """  # noqa: E501
         from nearai.environment import Environment
 
@@ -249,15 +245,6 @@ class EnvironmentCli:
         _agents = [load_agent(agent) for agent in agents.split(",")]
         env = Environment(path, _agents, CONFIG)
         env.run_task(task, record_run, load_env, max_iterations)
-
-    def run(self, agents: str, task: str, path: str) -> None:
-        """Runs agent in the current environment."""
-        from nearai.environment import Environment
-
-        _agents = [load_agent(agent) for agent in agents.split(",")]
-        env = Environment(path, [], CONFIG)
-        env.exec_command("sleep 10")
-        # TODO: Setup server that will allow to interact with agents and environment
 
     def run_remote(
         self,
@@ -395,7 +382,7 @@ class CLI:
 
         self.config = ConfigCli()
         self.benchmark = BenchmarkCli()
-        self.environment = EnvironmentCli()
+        self.agent = AgentCli()
         self.finetune = FinetuneCli()
         self.tensorboard = TensorboardCli()
         self.vllm = VllmCli()

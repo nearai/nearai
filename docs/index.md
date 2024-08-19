@@ -42,7 +42,7 @@ Features:
 
     - https://app.near.ai/settings
 
-Source code in: [demo](/hub/demo/)
+Source code in: [demo](https://github.com/nearai/nearai/hub/demo/)
 
 For the api specification see [openapi.json](https://api.near.ai/openapi.json)
 

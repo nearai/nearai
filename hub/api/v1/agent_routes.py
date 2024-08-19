@@ -39,7 +39,7 @@ class CreateThreadAndRunRequest(BaseModel):
     )
     new_message: Optional[str] = Field(
         None,
-        description="A message to pass to the environment before running the agents.",
+        description="A message to add to the environment chat.txt before running the agents.",
     )
     max_iterations: Optional[int] = Field(
         10,
@@ -52,8 +52,8 @@ class CreateThreadAndRunRequest(BaseModel):
 
 
 @v1_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
-@v1_router.post("/environment/runs", tags=["Agents", "Assistants"])
-def create_environment_and_run(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokable_auth)) -> str:
+@v1_router.post("/agent/runs", tags=["Agents", "Assistants"])
+def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokable_auth)) -> str:
     """Run an agent against an existing or a new environment.
 
     Returns the ID of the new environment resulting from the run.

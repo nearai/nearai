@@ -13,10 +13,10 @@ from other systems such as a scheduler or indexer.
  * Write your agent, in agent.py, using the [environment api](#the-environment-api) described below.
  * Use your agent locally using the cli and passing it a folder to write output to.
 ```shell
-nearai environment interactive AGENT EXECUTION_FOLDER --local
+nearai agent interactive AGENT EXECUTION_FOLDER --local
 ```
 ```shell
-nearai environment interactive example_agent /tmp/example_agent_run_1 --local
+nearai agent interactive example_agent /tmp/example_agent_run_1 --local
 ```
 
 ## Example agent.py
@@ -45,19 +45,19 @@ nearai registry download flatirons.near/xela-agent/5
 Agents can be run interactively. The environment_path should be a folder where the agent chat record (chat.txt) and 
 other files can be written, usually `~/tmp/test-agents/<AGENT_NAME>-run-X`.
 
-* command `nearai environment interactive AGENT ENVIRONMENT_PATH`
+* command `nearai agent interactive AGENT ENVIRONMENT_PATH`
 * example 
 ```shell
-nearai environment interactive flatirons.near/xela-agent/5 /tmp/test-agents/xela-agent-run-1
+nearai agent interactive flatirons.near/xela-agent/5 /tmp/test-agents/xela-agent-run-1
 ```
 
 ### Running an agent as a task
 To run without user interaction pass the task input to the task
 
-* command `nearai environment task <AGENT> <INPUT> <ENVIRONMENT_PATH>`
+* command `nearai agent task <AGENT> <INPUT> <ENVIRONMENT_PATH>`
 * example 
 ```shell
-nearai environment task flatirons.near/xela-agent/5 "Build a command line chess engine" ~/tmp/test-agents/xela-agent/chess-engine
+nearai agent task flatirons.near/xela-agent/5 "Build a command line chess engine" ~/tmp/test-agents/xela-agent/chess-engine
 ```
 
 
@@ -137,19 +137,19 @@ response = env.completions_and_run_tools("llama-v3p1-405b-instruct", messages, t
  * Upload the agent `nearai registry upload ~/.nearai/registry/example_agent`
 
 ## Running an agent remotely through the CLI
-Agents can be run through the CLI using the `nearai environment run_remote` command.
+Agents can be run through the CLI using the `nearai agent run_remote` command.
 A new message can be passed with the new_message argument. A starting environment (state) can be passed with the environment_id argument.
 ```shell
-  nearai environment run_remote flatirons.near/example-travel-agent/1 \
+  nearai agent run_remote flatirons.near/example-travel-agent/1 \
   new_message="I would like to travel to Paris" \
   environment_id="flatirons.near/environment_run_example-travel-agent_541869e6753c41538c87cb6f681c6932/0""
  ```
 
 ## Running an agent through the API
-Agents can be run through the `/environments/runs` endpoint. You will need to pass a signed message to authenticate.
+Agents can be run through the `/agent/runs` endpoint. You will need to pass a signed message to authenticate.
 
 ```shell
-curl "https://api.near.ai/v1/environment/runs" \
+curl "https://api.near.ai/v1/agent/runs" \
       -X POST \
       --header 'Content-Type: application/json' \
       --header 'Authorization: Bearer {"account_id":"flatirons.near","public_key":"ed25519:F5DeKFoyF1CQ6wG6jYaXxwQeoksgi8a677JkniDBGBTB","signature":"kfiH7AStKrBaMXzwpE50yQ2TRTxksID9tNVEdazxtegEu6rwH6x575smcAJPAUfTtlT2l7xwXtapQkxd+vFUAg==","callback_url":"http://localhost:3000/","message":"Welcome to NEAR AI Hub!","recipient":"ai.near","nonce":"00000000000000000005722050769950"}' \
