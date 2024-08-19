@@ -5,24 +5,8 @@ authentication, inference, data stores, tools, apis, smart contract calls, reput
 Agents run in response to messages, usually from a user or another agent. Messages can also be sent to an agent 
 from other systems such as a scheduler or indexer.
 
-Table of contents:
-- [How to build and run a python agent on NearAI](#how-to-build-and-run-a-python-agent-on-nearai)
-- [Example agent](#example-agent)
-- [Running an existing agent from the registry](#running-an-existing-agent-from-the-registry)
-    - [Running an agent interactively](#running-an-agent-interactively)
-    - [Running an agent as a task](#running-an-agent-as-a-task)
-- [The environment api](#the-environment-api)
-    - [Additional environment tools](#additional-environment-tools)
-    - [Tool registry](#tool-registry)
-- [Uploading an agent](#uploading-an-agent)
-- [Running an agent remotely through the CLI](#running-an-agent-remotely-through-the-cli)
-- [Running an agent through the API](#running-an-agent-through-the-api)
-    - [Signed messages](#signed-messages)
-- [Saving and loading environment runs](#saving-and-loading-environment-runs)
-
-
 ## How to build and run a python agent on NearAI
- * [Install](/README.md#setup) the NearAI CLI
+ * [Install](https://github.com/nearai/nearai/#setup) the NearAI CLI
  * Create a new folder for your agent, inside your local registry `mkdir -p ~/.nearai/registry/example_agent`
  * Create a metadata.json file for your agent `nearai registry metadata_template ~/.nearai/registry/example_agent` and edit it.
  * Create an `agent.py` file in that folder
@@ -35,7 +19,7 @@ nearai environment interactive AGENT EXECUTION_FOLDER --local
 nearai environment interactive example_agent /tmp/example_agent_run_1 --local
 ```
 
-## Example agent
+## Example agent.py
 ```python
 # In local interactive mode, the first user input is collected before the agent runs.
 prompt = {"role": "system", "content": "You are a travel agent that helps users plan trips."}
@@ -69,6 +53,7 @@ nearai environment interactive flatirons.near/xela-agent/5 /tmp/test-agents/xela
 
 ### Running an agent as a task
 To run without user interaction pass the task input to the task
+
 * command `nearai environment task <AGENT> <INPUT> <ENVIRONMENT_PATH>`
 * example 
 ```shell
@@ -78,13 +63,14 @@ nearai environment task flatirons.near/xela-agent/5 "Build a command line chess 
 
 ## The environment api
 Your agent will receive an `env` object that has the following methods:
+
  * `request_user_input`: tell the agent that it is the user's turn, stop iterating.
  * `completion`: request inference completions from a provider and model.
   Model format is `PROVIDER::MODEL`. By default the provider is Fireworks and the model is llama-v3-70b-instruct.
 
  * `list_messages` - returns the list of messages in the conversation. 
 You have full control to add and remove messages from this list.
-* `add_message` - adds a message to the conversation. Arguments are role and content.
+ * `add_message` - adds a message to the conversation. Arguments are role and content.
    ```python
    env.add_message("user", "Hello, I would like to travel to Paris")
    ```
@@ -95,6 +81,7 @@ You have full control to add and remove messages from this list.
 
 ### Additional environment tools
 There are several variations for completions:
+
  * `completions`: returns the full llm response for more control
  * `completion_and_run_tools`: Allows tools to be passed and processes any returned tool_calls by running the tool
  * `completions_and_run_tools`: Both tool calls and returns the full llm response.
@@ -102,6 +89,7 @@ There are several variations for completions:
 
 For working with files and running commands the following functions are also available on `env`. You may call these
 directly or use them through the tool_registry and passing them to a completions method.
+
  * `list_terminal_commands` - list the history of terminal commands
  * `list_files` - list the files in the current directory
  * `get_path` - get the path of the current directory
@@ -144,6 +132,7 @@ response = env.completions_and_run_tools("llama-v3p1-405b-instruct", messages, t
   "version": "5"
 }
 ```
+
  * You must be logged in to upload, `nearai login`
  * Upload the agent `nearai registry upload ~/.nearai/registry/example_agent`
 
@@ -178,7 +167,7 @@ NearAI authentication is through a Signed Message: a payload signed by a Near Ac
 
 If you need one for manual testing, you can `nearai login` then copy the auth section from your `~/.nearai/config.json`.
 
-To add signed message login to an application, see the code in hub demo [near.tsx](/hub/demo/src/app/_components/near.tsx).
+To add signed message login to an application, see the code in hub demo [near.tsx](https://github.com/nearai/nearai/blob/main/hub/demo/src/app/_components/near.tsx).
 
 ## Saving and loading environment runs
 When you are logged in, by default, each environment run is saved to the registry. You can disable this by adding the cli flag `--record_run=False`.
