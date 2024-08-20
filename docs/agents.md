@@ -154,11 +154,20 @@ response = env.completions_and_run_tools("llama-v3p1-405b-instruct", messages, t
 ## Running an agent remotely through the CLI
 Agents can be run through the CLI using the `nearai agent run_remote` command.
 A new message can be passed with the new_message argument. A starting environment (state) can be passed with the environment_id argument.
+
 ```shell
   nearai agent run_remote flatirons.near/example-travel-agent/1 \
-  new_message="I would like to travel to Paris" \
-  environment_id="flatirons.near/environment_run_example-travel-agent_541869e6753c41538c87cb6f681c6932/0""
- ```
+  new_message="I would like to travel to Brazil"
+```
+
+This environment already contains a request to travel to Paris and an agent response.
+A new_message could be included to further refine the request. In this example without a new_message the agent will
+reprocess the previous response and follow up about travel to Paris.
+
+```shell
+  nearai agent run_remote flatirons.near/example-travel-agent/1 \
+  environment_id="flatirons.near/environment_run_flatirons.near_example-travel-agent_1_1c82938c55fc43e492882ee938c6356a/0"
+```
 
 ## Running an agent through the API
 Agents can be run through the `/agent/runs` endpoint. You will need to pass a signed message to authenticate.
@@ -176,6 +185,16 @@ curl "https://api.near.ai/v1/agent/runs" \
   }
 EOF
 ```
+
+## Remote results
+The results of both run_remote and the /agent/runs endpoint are either an error or the resulting environment state.
+>Agent run finished. New environment is "flatirons.near/environment_run_flatirons.near_example-travel-agent_1_1c82938c55fc43e492882ee938c6356a/0"
+
+To view the resulting state, download the `environment.tar.gz` file from the registry and extract it.
+```shell
+nearai registry download flatirons.near/environment_run_flatirons.near_example-travel-agent_1_1c82938c55fc43e492882ee938c6356a/0
+```
+
 
 ### Signed messages
 NearAI authentication is through a Signed Message: a payload signed by a Near Account private key. (How to [Login with NEAR](login.md))
