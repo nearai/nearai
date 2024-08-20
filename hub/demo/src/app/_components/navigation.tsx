@@ -75,7 +75,8 @@ export function Navigation() {
 
           <Link
             className="self-center text-xs underline"
-            href="/terms-and-conditions"
+            href="/terms-and-conditions.pdf"
+            target="_blank"
           >
             Terms & Conditions
           </Link>

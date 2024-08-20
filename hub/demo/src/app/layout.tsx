@@ -1,5 +1,4 @@
 import "~/styles/globals.css";
-import "~/styles/terms-and-conditions.scss";
 
 import { GeistSans } from "geist/font/sans";
 
