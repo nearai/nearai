@@ -7,6 +7,7 @@ import subprocess
 import tarfile
 import tempfile
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,12 +32,14 @@ class Environment(object):
         client,
         server_url: str = "https://api.near.ai",
         create_files: bool = True,
+        metric_function=None,
     ):
         self._path = path
         self._agents = agents
         self._done = False
         self._server_url = server_url
         self._client = client
+        self._metric_function = metric_function
         self._tools = ToolRegistry()
         self.register_standard_tools()
         if create_files:
@@ -238,6 +241,7 @@ class Environment(object):
 
         :return: The name of the saved environment.
         """
+        save_start_time = time.time()
         full_agent_name = self._agents[0].name if self._agents else "unknown"
         safe_agent_name = full_agent_name.replace("/", "_")
         generated_name = f"environment_run_{safe_agent_name}_{run_id}"
@@ -262,6 +266,7 @@ class Environment(object):
                 "filename": tar_filename,
             }
             tags_l = ["environment"]
+            request_start_time = time.time()
             registry_id = self._client.save_environment(
                 file=snapshot,
                 name=name,
@@ -269,10 +274,16 @@ class Environment(object):
                 details=details,
                 tags=tags_l,
             )
+            request_stop_time = time.time()
+            if self._metric_function:
+                self._metric_function("SaveEnvironmentToRegistry_Duration", request_stop_time - request_start_time)
             print(
                 f"Saved environment {registry_id} to registry. To load use flag `--load-env={registry_id}`. "
                 f"or `--load-env={name}`"
             )
+            save_stop_time = time.time()
+            if self._metric_function:
+                self._metric_function("SaveEnvironment_Duration", save_stop_time - save_start_time)
             return registry_id
 
     def load_snapshot(self, snapshot: bytes) -> None:
