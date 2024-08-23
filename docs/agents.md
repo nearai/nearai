@@ -1,35 +1,31 @@
 # Agents
-Agents are programs of varying complexity that can combine capabilities from across NearAI: 
-authentication, inference, data stores, tools, apis, smart contract calls, reputation, compliance, proofs, and more.
 
-Agents run in response to messages, usually from a user or another agent. Messages can also be sent to an agent 
-from other systems such as a scheduler or indexer.
-
-## How to build and run a python agent on NearAI
- * [Install](https://github.com/nearai/nearai/#setup) the NearAI CLI.
- * Create a new folder for your agent; we recommend placing it inside your local registry `mkdir -p ~/.nearai/registry/example_agent`. 
- * Create a metadata.json file for your agent `nearai registry metadata_template ~/.nearai/registry/example_agent` and edit it.
- * Create an `agent.py` file in that folder.
- * Write your agent, in agent.py, using the [environment API](#the-environment-api) described below.
- * Use your agent locally using the cli and passing it a folder to write output to. The execution folder is optional; by default, the initial agent's folder may be used instead.
- * If you use a folder other than the local registry, provide the full path to the agent instead of just the agent name.
+<b>Quickest start</b>, this script runs the Quickstart commands below.
 ```shell
-nearai agent interactive AGENT [EXECUTION_FOLDER] --local
+docs/agent_quickstart.sh
 ```
+
+## QUICKSTART: build and run a python agent on NearAI
+1. [Install](https://github.com/nearai/nearai/#setup) the NearAI CLI.
+
+2. Create a new folder for your agent; 
+
+    we recommend placing it inside your local registry `mkdir -p ~/.nearai/registry/example_agent`. 
+
+3. Create a metadata.json file for your agent
+
+   `nearai registry metadata_template ~/.nearai/registry/example_agent` and edit it.
+
+4. Create an `agent.py` file in that folder.
+     * Write your agent, in agent.py, using the [environment API](#the-environment-api) described below.
+     * Or paste in the [example agent.py](#example-agentpy) below.
+
+5. Run your agent locally using the cli and passing it a folder to write output to. 
 ```shell
 nearai agent interactive example_agent /tmp/example_agent_run_1 --local
 ```
-```shell
-nearai agent interactive example_agent --local
-```
 
-## Agent Operation and Features:
-* `interactive` mode runs the agent in an infinite loop until it is forcibly exited with a code, stopped by the user with "Ctrl+C," or terminated by typing "exit" in the chat.
-* The agent can save temporary files to track the progress of a task from the user in case the dialogue execution is interrupted. By default, the entire message history is stored in a file named `chat.txt`. The agent can add messages there by using `env.add_message()`. Learn more about [the environment API](#the-environment-api).
-* During its operation, the agent creates a file named `.next_agent`, which stores the role of the next participant expected in the dialogue (either `user` or `agent`) during the next iteration of the loop. The agent can control this value using `env.set_next_actor()`.
-* The agent can use local imports from the home folder or its subfolders. It is executed from a temporary folder within a temporary environment.
-
-## Example agent.py
+### Example agent.py
 ```python
 # In local interactive mode, the first user input is collected before the agent runs.
 prompt = {"role": "system", "content": "You are a travel agent that helps users plan trips."}
@@ -37,6 +33,33 @@ result = env.completion('llama-v3-70b-instruct', [prompt] + env.list_messages())
 env.add_message("agent", result)
 env.request_user_input()
 ```
+
+## About Agents
+Agents are programs of varying complexity that can combine capabilities from across NearAI:
+authentication, inference, data stores, tools, apis, smart contract calls, reputation, compliance, proofs, and more.
+
+Agents run in response to messages, usually from a user or another agent. Messages can also be sent to an agent
+from other systems such as a scheduler or indexer.
+
+
+## Agent Operation and Features:
+* `interactive` mode runs the agent in an infinite loop until: it is terminated by typing "exit" in the chat; is forcibly exited with a code; or stopped by the user with "Ctrl+C".
+* The execution folder is optional; by default, the initial agent's folder may be used instead.
+* If you use a folder other than the local registry, provide the full path to the agent instead of just the agent name.
+
+Command: 
+```
+nearai agent interactive AGENT [EXECUTION_FOLDER] --local
+```
+Example:
+```shell
+nearai agent interactive example_agent --local
+```
+
+* The agent can save temporary files to track the progress of a task from the user in case the dialogue execution is interrupted. By default, the entire message history is stored in a file named `chat.txt`. The agent can add messages there by using `env.add_message()`. Learn more about [the environment API](#the-environment-api).
+* During its operation, the agent creates a file named `.next_agent`, which stores the role of the next participant expected in the dialogue (either `user` or `agent`) during the next iteration of the loop. The agent can control this value using `env.set_next_actor()`.
+* The agent can use local imports from the home folder or its subfolders. It is executed from a temporary folder within a temporary environment.
+
 
 
 ## Running an existing agent from the registry

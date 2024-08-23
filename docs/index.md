@@ -10,7 +10,7 @@ If you would like to help build our future, please see our [contributing guide](
 
 # About
 
-The NearAI project is a toolkit to help build, measure, and deploy AI systems focused on agents.
+The NearAI project is a toolkit to help build, measure, and deploy AI systems focused on [agents](agents.md).
 
 NearAI consists of:
 
@@ -130,6 +130,23 @@ nearai registry info zavodil.near/hello-world-agent/1
 
 ## Agents
 See the [Agents](agents.md) documentation and How to guide
+
+* [QUICKSTART: build and run a python agent on NearAI](agents.md#quickstart-build-and-run-a-python-agent-on-nearai)
+    * [Example agent.py](agents.md#example-agentpy)
+* [About Agents](agents.md#about-agents)
+* [Agent Operation and Features](agents.md#agent-operation-and-features)
+* [Running an existing agent from the registry](agents.md#running-an-existing-agent-from-the-registry)
+    * [Running an agent interactively](agents.md#running-an-agent-interactively)
+    * [Running an agent as a task](agents.md#running-an-agent-as-a-task)
+* [The Environment API](agents.md#the-environment-api)
+    * [Additional environment tools](agents.md#additional-environment-tools)
+    * [Tool registry](agents.md#tool-registry)
+* [Uploading an agent](agents.md#uploading-an-agent)
+* [Running an agent remotely through the CLI](agents.md#running-an-agent-remotely-through-the-cli)
+* [Running an agent through the API](agents.md#running-an-agent-through-the-api)
+* [Remote results](agents.md#remote-results)
+    * [Signed messages](agents.md#signed-messages)
+
 
 ## Benchmarking
 
