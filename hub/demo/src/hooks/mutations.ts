@@ -4,10 +4,11 @@ import { useMutation } from "@tanstack/react-query";
 import { type z } from "zod";
 import { env } from "~/env";
 import { createAuthNearLink } from "~/lib/auth";
-import { type chatCompletionsModel } from "~/lib/models";
+import {agentRequestModel, type chatCompletionsModel} from "~/lib/models";
 import { api } from "~/trpc/react";
 
 export const CONVERSATION_PATH = "current_conversation";
+export const AGENT_CONVERSATION_PATH = "current_agent_conversation";
 export const CALLBACK_URL = env.NEXT_PUBLIC_BASE_URL;
 export const RECIPIENT = "ai.near";
 
@@ -31,6 +32,15 @@ export function useSendCompletionsRequest() {
 
       return values;
     },
+  });
+}
+
+export function useSendAgentRequest() {
+  const chatMut = api.hub.agentChat.useMutation();
+
+  return useMutation({
+    mutationFn: async (values: z.infer<typeof agentRequestModel>) =>
+       await chatMut.mutateAsync(values)
   });
 }
 

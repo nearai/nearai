@@ -32,6 +32,11 @@ export function Navigation() {
                 icon={<MessageCircle className="mr-2 h-4 w-4" />}
               />
               <NavigationItem
+                  name="Agent Chat"
+                  link="achat"
+                  icon={<MessageCircle className="mr-2 h-4 w-4" />}
+              />
+              <NavigationItem
                 name="Models"
                 link="models"
                 icon={<FileBox className="mr-2 h-4 w-4" />}
