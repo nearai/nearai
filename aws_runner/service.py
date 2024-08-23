@@ -3,6 +3,7 @@ import json
 import os
 import tarfile
 import time
+from subprocess import call
 from typing import Optional
 
 import boto3
@@ -11,8 +12,6 @@ from openapi_client.configuration import Configuration
 from partial_near_client import PartialNearClient
 from runner.agent import Agent
 from runner.environment import ENVIRONMENT_FILENAME, Environment
-from subprocess import call
-
 
 cloudwatch = boto3.client("cloudwatch", region_name="us-east-2")
 
@@ -46,7 +45,7 @@ def handler(event, context):
     if not new_environment_registry_id:
         return f"Run not recorded. Ran {agents} agent(s) with generated near client and environment {environment_id}"
 
-    call('rm -rf /tmp/..?* /tmp/.[!.]* /tmp/*', shell=True)
+    call("rm -rf /tmp/..?* /tmp/.[!.]* /tmp/*", shell=True)
     stop_time = time.perf_counter()
     write_metric("TotalRunnerDuration", stop_time - start_time)
     return new_environment_registry_id
