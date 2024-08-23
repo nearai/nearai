@@ -1,11 +1,52 @@
-import { One } from "~/components/ui/typography";
-import RegistryTable from "../datasets/table";
+'use client';
 
-export default function Data() {
+import { Section } from '~/components/lib/Section';
+import { Table } from '~/components/lib/Table';
+import { Text } from '~/components/lib/Text';
+import { api } from '~/trpc/react';
+
+export default function Models() {
+  const list = api.hub.listRegistry.useQuery({ category: 'model' });
+
   return (
-    <div className="flex flex-col gap-2 px-24 py-4">
-      <One>Models</One>
-      <RegistryTable category="model" />
-    </div>
+    <Section>
+      <Text as="h1" size="text-2xl">
+        Models{' '}
+        {list.data && (
+          <Text as="span" size="text-2xl" color="sand10" weight={400}>
+            ({list.data.length})
+          </Text>
+        )}
+      </Text>
+
+      <Table.Root>
+        <Table.Head>
+          <Table.Row>
+            <Table.HeadCell>Model</Table.HeadCell>
+            <Table.HeadCell>Creator</Table.HeadCell>
+            <Table.HeadCell>Version</Table.HeadCell>
+            <Table.HeadCell></Table.HeadCell>
+          </Table.Row>
+        </Table.Head>
+
+        <Table.Body>
+          {!list.data && <Table.PlaceholderRows />}
+
+          {list.data?.map((item, index) => (
+            <Table.Row key={index}>
+              <Table.Cell>
+                <Text size="text-s">{item.name}</Text>
+              </Table.Cell>
+              <Table.Cell>
+                <Text size="text-s">{item.namespace}</Text>
+              </Table.Cell>
+              <Table.Cell>
+                <Text size="text-s">{item.version}</Text>
+              </Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table.Root>
+    </Section>
   );
 }

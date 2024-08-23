@@ -1,4 +1,7 @@
-import { env } from "~/env";
+import { z } from 'zod';
+import { createZodFetcher } from 'zod-fetch';
+
+import { env } from '~/env';
 import {
   chatCompletionsModel,
   chatResponseModel,
@@ -6,21 +9,18 @@ import {
   listNoncesModel,
   listRegistry,
   revokeNonceModel,
-} from "~/lib/models";
-import { createZodFetcher } from "zod-fetch";
-
+} from '~/lib/models';
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
-} from "~/server/api/trpc";
-import { z } from "zod";
+} from '~/server/api/trpc';
 
 const fetchWithZod = createZodFetcher();
 
 export const hubRouter = createTRPCRouter({
   listModels: publicProcedure.query(async () => {
-    const u = env.ROUTER_URL + "/models";
+    const u = env.ROUTER_URL + '/models';
 
     const response = await fetch(u);
     const resp: unknown = await response.json();
@@ -31,12 +31,12 @@ export const hubRouter = createTRPCRouter({
   chat: protectedProcedure
     .input(chatCompletionsModel)
     .mutation(async ({ ctx, input }) => {
-      const u = env.ROUTER_URL + "/chat/completions";
+      const u = env.ROUTER_URL + '/chat/completions';
 
       const response = await fetch(u, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: ctx.Authorization!,
         },
         body: JSON.stringify(input),
@@ -45,9 +45,9 @@ export const hubRouter = createTRPCRouter({
       // check for errors
       if (!response.ok) {
         throw new Error(
-          "Failed to send chat completions, status: " +
+          'Failed to send chat completions, status: ' +
             response.status +
-            " " +
+            ' ' +
             response.statusText,
         );
       }
@@ -58,14 +58,13 @@ export const hubRouter = createTRPCRouter({
     }),
 
   listNonces: protectedProcedure.query(async ({ ctx }) => {
-    const u = env.ROUTER_URL + "/nonce/list";
+    const u = env.ROUTER_URL + '/nonce/list';
 
     const resp = await fetchWithZod(listNoncesModel, u, {
       headers: {
         Authorization: ctx.Authorization!,
       },
     });
-    console.log(resp);
 
     return resp;
   }),
@@ -73,21 +72,21 @@ export const hubRouter = createTRPCRouter({
   revokeNonce: protectedProcedure
     .input(revokeNonceModel)
     .mutation(async ({ input }) => {
-      const u = env.ROUTER_URL + "/nonce/revoke";
+      const u = env.ROUTER_URL + '/nonce/revoke';
 
       try {
         // We can't use regular auth since we need to use the signed revoke message.
         const resp = await fetch(u, {
           headers: {
             Authorization: input.auth,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
-          method: "POST",
+          method: 'POST',
           body: JSON.stringify({ nonce: input.nonce }),
         });
         return resp;
       } catch (e) {
-        console.log(e);
+        console.error(e);
         throw e;
       }
     }),
@@ -95,20 +94,20 @@ export const hubRouter = createTRPCRouter({
   revokeAllNonces: protectedProcedure
     .input(z.object({ auth: z.string() }))
     .mutation(async ({ input }) => {
-      const u = env.ROUTER_URL + "/nonce/revoke/all";
+      const u = env.ROUTER_URL + '/nonce/revoke/all';
 
       try {
         // We can't use regular auth since we need to use the signed revoke message.
         const resp = await fetch(u, {
           headers: {
             Authorization: input.auth,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
-          method: "POST",
+          method: 'POST',
         });
         return resp;
       } catch (e) {
-        console.log(e);
+        console.error(e);
         throw e;
       }
     }),
@@ -117,12 +116,11 @@ export const hubRouter = createTRPCRouter({
     .input(z.object({ category: z.string() }))
     .query(async ({ input }) => {
       const u =
-        env.ROUTER_URL + "/registry/list_entries?category=" + input.category;
+        env.ROUTER_URL + '/registry/list_entries?category=' + input.category;
 
       const resp = await fetchWithZod(listRegistry, u, {
-        method: "POST",
+        method: 'POST',
       });
-      console.log(resp);
 
       return resp;
     }),

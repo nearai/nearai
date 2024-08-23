@@ -1,0 +1,7 @@
+.chatThread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-l);
+  flex-grow: 1;
+  justify-content: flex-end;
+}

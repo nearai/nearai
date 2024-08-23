@@ -1,0 +1,19 @@
+.iconCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 100%;
+  border: 1px solid currentColor;
+
+  i {
+    color: currentColor;
+    font-size: 32px;
+  }
+
+  svg {
+    width: 32px;
+    height: 32px;
+  }
+}

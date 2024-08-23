@@ -1,0 +1,7 @@
+**/.eslintrc.js
+**/*.md
+**/package.json
+**/tsconfig.json
+pnpm-workspace.yaml
+pnpm-lock.yaml
+turbo.json

@@ -1,0 +1,39 @@
+@import '~/styles/variables';
+
+.wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-3xl);
+
+  @media (max-width: $tabletBreakpointMaxWidth) {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--gap-xl);
+  }
+}
+
+.image {
+  max-width: 600px;
+  border-radius: 8px;
+  overflow: hidden;
+
+  img {
+    display: block;
+    width: 100%;
+  }
+
+  [data-image-side='right'] & {
+    order: 2;
+  }
+
+  @media (max-width: $tabletBreakpointMaxWidth) {
+    max-width: 100%;
+    order: unset !important;
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-l);
+}

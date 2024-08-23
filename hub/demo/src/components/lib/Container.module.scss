@@ -1,0 +1,17 @@
+.container {
+  width: 100%;
+  margin: 0 auto;
+
+  &[data-size='xs'] {
+    max-width: var(--container-width-xs);
+  }
+  &[data-size='s'] {
+    max-width: var(--container-width-s);
+  }
+  &[data-size='m'] {
+    max-width: var(--container-width-m);
+  }
+  &[data-size='l'] {
+    max-width: var(--container-width-l);
+  }
+}

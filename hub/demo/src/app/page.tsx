@@ -1,12 +1,14 @@
-"use client";
+'use client';
 
-import { Chat } from "./_components/chat";
-import HydrationZustand from "./_components/hydration";
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
-  return (
-    <HydrationZustand>
-      <Chat />
-    </HydrationZustand>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    void router.replace('/inference');
+  }, [router]);
+
+  return null;
 }

@@ -1,15 +1,12 @@
-import "~/styles/globals.css";
+import '~/styles/globals.scss';
 
-import { GeistSans } from "geist/font/sans";
+import { Footer } from '~/components/Footer';
+import { Navigation } from '~/components/Navigation';
+import { SignInHandler } from '~/components/SignInHandler';
+import { ZustandHydration } from '~/components/ZustandHydration';
+import { TRPCReactProvider } from '~/trpc/react';
 
-import { TRPCReactProvider } from "~/trpc/react";
-import { Navigation } from "./_components/navigation";
-
-export const metadata = {
-  title: "AI Hub",
-  description: "NEAR AI Hub",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
-};
+import s from './layout.module.scss';
 
 export default function RootLayout({
   children,
@@ -17,13 +14,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${GeistSans.variable}`}>
+    <html lang="en">
+      <head>
+        <title>AI Hub</title>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, minimum-scale=1"
+        />
+        <meta name="description" content="NEAR AI Hub" />
+        <link rel="icon" href="/favicon.ico" />
+      </head>
+
       <body>
+        <SignInHandler />
+        <ZustandHydration />
+
         <TRPCReactProvider>
-          <main className="flex h-screen overflow-hidden">
+          <div className={s.wrapper}>
             <Navigation />
-            <div className="flex-grow overflow-y-auto">{children}</div>
-          </main>
+            <main className={s.main}>{children}</main>
+            <Footer />
+          </div>
         </TRPCReactProvider>
       </body>
     </html>
