@@ -11,6 +11,8 @@ from openapi_client.configuration import Configuration
 from partial_near_client import PartialNearClient
 from runner.agent import Agent
 from runner.environment import ENVIRONMENT_FILENAME, Environment
+from subprocess import call
+
 
 cloudwatch = boto3.client("cloudwatch", region_name="us-east-2")
 
@@ -20,7 +22,7 @@ FUNCTION_NAME = os.environ["AWS_LAMBDA_FUNCTION_NAME"]
 
 
 def handler(event, context):
-    start_time = time.time()
+    start_time = time.perf_counter()
     required_params = ["agents", "auth"]
     agents = event.get("agents")
     auth = event.get("auth")
@@ -43,7 +45,9 @@ def handler(event, context):
     )
     if not new_environment_registry_id:
         return f"Run not recorded. Ran {agents} agent(s) with generated near client and environment {environment_id}"
-    stop_time = time.time()
+
+    call('rm -rf /tmp/..?* /tmp/.[!.]* /tmp/*', shell=True)
+    stop_time = time.perf_counter()
     write_metric("TotalRunnerDuration", stop_time - start_time)
     return new_environment_registry_id
 
@@ -65,9 +69,9 @@ def write_metric(metric_name, value, unit="Milliseconds"):
 
 
 def load_agent(client, agent):
-    start_time = time.time()
+    start_time = time.perf_counter()
     agent_code = client.get_agent(agent)
-    stop_time = time.time()
+    stop_time = time.perf_counter()
     write_metric("GetAgentFromRegistry_Duration", stop_time - start_time)
     return Agent(agent, RUN_PATH, agent_code)
 
@@ -88,9 +92,9 @@ def run_with_environment(
     loaded_agents = [load_agent(near_client, agent) for agent in agents.split(",")]
 
     if environment_id:
-        start_time = time.time()
+        start_time = time.perf_counter()
         loaded_env = near_client.get_environment(environment_id)
-        stop_time = time.time()
+        stop_time = time.perf_counter()
         write_metric("GetEnvironmentFromRegistry_Duration", stop_time - start_time)
         file = loaded_env
         os.makedirs(PATH, exist_ok=True)
@@ -101,8 +105,8 @@ def run_with_environment(
             tar.extractall(RUN_PATH)
 
     env = Environment(RUN_PATH, loaded_agents, near_client, metric_function=write_metric)
-    start_time = time.time()
+    start_time = time.perf_counter()
     run_result = env.run(new_message, record_run, environment_id, max_iterations)
-    stop_time = time.time()
+    stop_time = time.perf_counter()
     write_metric("ExecuteAgentDuration", stop_time - start_time)
     return run_result
