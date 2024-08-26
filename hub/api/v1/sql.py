@@ -1,8 +1,9 @@
+import json
 import logging
 from datetime import datetime
 from enum import Enum
 from os import getenv
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import pymysql
 import pymysql.cursors
@@ -36,6 +37,27 @@ class UserNonce(BaseModel):
 
 class UserNonces(RootModel):
     root: List[UserNonce]
+
+
+class VectorStore(BaseModel):
+    id: int
+    account_id: str
+    name: str
+    file_ids: List[str]
+    expires_after: Dict[str, Any]
+    chunking_strategy: Dict[str, Any]
+    metadata: Optional[Dict[str, str]] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class VectorStoreFile(BaseModel):
+    id: int
+    account_id: str
+    file_path: str
+    purpose: str
+    created_at: datetime
+    updated_at: datetime
 
 
 class SqlClient:
@@ -112,3 +134,71 @@ class SqlClient:
         query = f"UPDATE nonces SET nonce_status = 'revoked' WHERE account_id = '{account_id}'"
         self.db.cursor().execute(query)
         self.db.commit()
+
+    def create_vector_store(
+        self,
+        account_id: str,
+        name: str,
+        file_ids: List[str],
+        expires_after: Optional[Dict[str, Any]] = None,
+        chunking_strategy: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+    ) -> int:
+        query = """
+        INSERT INTO vector_stores (account_id, name, file_ids, expires_after, chunking_strategy, metadata)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        print(expires_after)
+        print(f"DB query: {query} params: {account_id, name, file_ids, expires_after, chunking_strategy, metadata}")
+        cursor = self.db.cursor()
+        try:
+            cursor.execute(
+                query,
+                (
+                    account_id,
+                    name,
+                    json.dumps(file_ids if file_ids else []),
+                    json.dumps(expires_after if expires_after else {}),
+                    json.dumps(chunking_strategy if chunking_strategy else {}),
+                    json.dumps(metadata if metadata else {}),
+                ),
+            )
+            vector_store_id = cursor.lastrowid
+            self.db.commit()
+            return vector_store_id
+        except TypeError as e:
+            if "dict can not be used as parameter" in str(e):
+                raise ValueError(
+                    "Invalid data type in parameters. Ensure all dictionary values are JSON serializable."
+                ) from e
+            raise
+
+    def get_vector_store(self, account_id: str, vector_store_id: int) -> Optional[VectorStore]:  # noqa: D102
+        query = f"SELECT * FROM vector_stores WHERE id = {vector_store_id} AND account_id = '{account_id}'"
+        logger.info(f"Querying vector store: {query}")
+
+        result = self.__fetch_one(query)
+        if not result:
+            return None
+
+        result["file_ids"] = json.loads(result["file_ids"])
+        result["expires_after"] = json.loads(result["expires_after"])
+        result["chunking_strategy"] = json.loads(result["chunking_strategy"])
+        result["metadata"] = json.loads(result["metadata"]) if result["metadata"] else None
+        return VectorStore(**result)
+
+    def create_file(self, account_id: str, file_path: str, purpose: str) -> int:
+        query = """
+        INSERT INTO vector_store_files (account_id, file_path, purpose)
+        VALUES (%s, %s, %s)
+        """
+        cursor = self.db.cursor()
+        cursor.execute(query, (account_id, file_path, purpose))
+        file_id = cursor.lastrowid
+        self.db.commit()
+        return file_id
+
+    def get_file_details(self, file_id: int, account_id: str) -> Optional[VectorStoreFile]:
+        query = f"SELECT * FROM vector_store_files WHERE id = {file_id} AND account_id = '{account_id}'"
+        result = self.__fetch_one(query)
+        return VectorStoreFile(**result) if result else None

@@ -11,6 +11,7 @@ from hub.api.v1.benchmark import v1_router as benchmark_router
 from hub.api.v1.exceptions import TokenValidationError
 from hub.api.v1.registry import v1_router as registry_router
 from hub.api.v1.routes import v1_router
+from hub.api.v1.vector_stores import files_router, vector_stores_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -33,6 +34,8 @@ app.include_router(v1_router, prefix="/v1")
 app.include_router(registry_router, prefix="/v1")
 app.include_router(agent_router, prefix="/v1")
 app.include_router(benchmark_router, prefix="/v1")
+app.include_router(vector_stores_router, prefix="/v1")
+app.include_router(files_router, prefix="/v1")
 
 
 @app.get("/health")
