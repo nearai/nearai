@@ -1,0 +1,10 @@
+.layout {
+  display: flex;
+  align-items: stretch;
+  flex-grow: 1;
+}
+
+.content {
+  padding: var(--gap-l);
+  flex-grow: 1;
+}

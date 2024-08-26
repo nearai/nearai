@@ -1,0 +1,232 @@
+@import '~/styles/variables';
+
+.root {
+  --table-border-radius: 6px;
+  --table-half-padding: var(--gap-s);
+  --table-default-outline: 0px solid var(--violet4);
+  --table-focus-outline: 4px solid var(--violet4);
+
+  width: 100%;
+  padding: 0 var(--table-half-padding) var(--table-half-padding);
+  border-radius: var(--table-border-radius);
+  background: var(--white);
+  box-shadow: var(--shadow-card-with-outline);
+
+  @media (max-width: $tabletBreakpointMaxWidth) {
+    overflow: auto;
+  }
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  text-align: left;
+}
+
+.head {
+  width: 100%;
+  z-index: 105;
+  position: relative;
+
+  td,
+  th {
+    &::after {
+      content: '';
+      display: block;
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 1px;
+      background: var(--sand6);
+    }
+
+    &:first-child {
+      &::after {
+        left: var(--table-half-padding);
+      }
+    }
+
+    &:last-child {
+      &::after {
+        right: var(--table-half-padding);
+      }
+    }
+  }
+
+  tr:first-child td,
+  tr:first-child th {
+    padding-top: calc(var(--table-half-padding) * 2);
+  }
+
+  tr:last-child td,
+  tr:last-child th {
+    padding-bottom: calc(var(--table-half-padding) * 2);
+    &::after {
+      bottom: var(--table-half-padding);
+    }
+  }
+
+  &[data-sticky='true'] {
+    position: sticky;
+    top: var(--header-height);
+
+    @media (max-width: $tabletBreakpointMaxWidth) {
+      position: static;
+    }
+  }
+}
+
+.foot {
+  width: 100%;
+  z-index: 100;
+  position: relative;
+  backdrop-filter: blur(6px);
+
+  td,
+  th {
+    background: var(--white) !important;
+  }
+
+  tr:first-child td,
+  tr:first-child th {
+    padding-top: calc(var(--table-half-padding) * 2);
+  }
+
+  &[data-sticky='true'] {
+    position: sticky;
+    bottom: 0;
+
+    td,
+    th {
+      border-top-left-radius: 0 !important;
+      border-top-right-radius: 0 !important;
+      background: linear-gradient(
+        to top,
+        var(--white) 50%,
+        transparent
+      ) !important;
+
+      &:empty {
+        display: none;
+      }
+    }
+
+    @media (max-width: $tabletBreakpointMaxWidth) {
+      position: static;
+    }
+  }
+}
+
+.body {
+  width: 100%;
+
+  .row {
+    &:hover {
+      td {
+        background: var(--sand3);
+      }
+    }
+  }
+}
+
+.row {
+  width: 100%;
+  transition: all var(--transition-speed);
+
+  &[data-clickable='true'] {
+    cursor: pointer;
+    outline-offset: -4px;
+    outline: var(--table-default-outline);
+
+    &:focus-visible {
+      outline: var(--table-focus-outline);
+    }
+  }
+}
+
+.headCell {
+  position: relative;
+  padding: var(--table-half-padding);
+  font: var(--text-xs);
+  color: var(--sand10);
+  vertical-align: bottom;
+  white-space: nowrap;
+  text-transform: uppercase;
+  background: linear-gradient(var(--white) 85%, transparent);
+  transition: all var(--transition-speed);
+
+  &[data-clickable='true'] {
+    cursor: pointer;
+    outline: none;
+
+    &:hover {
+      color: var(--violet8) !important;
+    }
+
+    &:focus-visible,
+    &:focus-within {
+      color: var(--violet8) !important;
+
+      &::after {
+        background: var(--violet4);
+      }
+    }
+  }
+}
+
+.headCustomCell {
+  position: relative;
+  padding: var(--table-half-padding);
+  padding-bottom: calc(var(--table-half-padding) * 2) !important;
+  background: var(--white);
+}
+
+.cell {
+  padding: var(--table-half-padding);
+  vertical-align: middle;
+  transition: all var(--transition-speed);
+  font: var(--text-s);
+
+  &:first-child {
+    border-top-left-radius: var(--table-border-radius);
+    border-bottom-left-radius: var(--table-border-radius);
+  }
+
+  &:last-child {
+    border-top-right-radius: var(--table-border-radius);
+    border-bottom-right-radius: var(--table-border-radius);
+  }
+
+  &[data-clickable='true'] {
+    cursor: pointer;
+    outline-offset: -4px;
+    outline: var(--table-default-outline);
+
+    &:hover {
+      background: var(--sand4) !important;
+    }
+
+    &:focus-visible,
+    &:focus-within {
+      outline: var(--table-focus-outline);
+    }
+  }
+
+  &[aria-disabled='true'] {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  &[data-link='true'] {
+    padding: 0;
+  }
+}
+
+.cellAnchor {
+  display: block;
+  padding: var(--table-half-padding);
+  color: currentColor;
+  text-decoration: none;
+  outline: none;
+}

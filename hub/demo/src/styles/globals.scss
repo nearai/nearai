@@ -1,0 +1,33 @@
+@import './/reset';
+@import './/theme';
+
+@font-face {
+  font-family: 'Mona Sans';
+  src:
+    url('/fonts/Mona-Sans.woff2') format('woff2 supports variations'),
+    url('/fonts/Mona-Sans.woff2') format('woff2-variations');
+  font-weight: 200 900;
+  font-stretch: 75% 125%;
+}
+
+@font-face {
+  font-family: 'FK Grotesk';
+  src:
+    url('https://discovery-domain.org/fonts/FKGrotesk.woff2')
+      format('woff2 supports variations'),
+    url('https://discovery-domain.org/fonts/FKGrotesk.woff2')
+      format('woff2-variations');
+  font-weight: 200 900;
+  font-stretch: 75% 125%;
+}
+
+body,
+html {
+  -webkit-font-smoothing: antialiased;
+  color: var(--sand12);
+  font: var(--text-base);
+}
+
+a {
+  text-decoration: none;
+}

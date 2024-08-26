@@ -1,5 +1,20 @@
-import { parseHashParams } from "~/hooks/misc";
-import { authorizationModel } from "./models";
+import { env } from '~/env';
+import { parseHashParams } from '~/hooks/misc';
+import { useAuthStore } from '~/stores/auth';
+
+export const CALLBACK_URL = env.NEXT_PUBLIC_BASE_URL;
+export const RECIPIENT = 'ai.near';
+export const MESSAGE = 'Welcome to NEAR AI Hub!';
+export const REVOKE_MESSAGE = 'Are you sure? Revoking a nonce';
+export const REVOKE_ALL_MESSAGE = 'Are you sure? Revoking all nonces';
+
+export function signInWithNear() {
+  const nonce = generateNonce();
+  useAuthStore.setState({
+    currentNonce: nonce,
+  });
+  redirectToAuthNearLink(MESSAGE, RECIPIENT, nonce, location.href);
+}
 
 export function createAuthNearLink(
   message: string,
@@ -33,7 +48,7 @@ export function redirectToAuthNearLink(
  */
 export function generateNonce() {
   const nonce = Date.now().toString();
-  return nonce.padStart(32, "0");
+  return nonce.padStart(32, '0');
 }
 
 export function extractSignatureFromHashParams() {

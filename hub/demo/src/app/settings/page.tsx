@@ -1,13 +1,27 @@
-"use client";
+'use client';
 
-import { One } from "~/components/ui/typography";
-import ListNonces from "./nonces";
+import { Gear } from '@phosphor-icons/react';
+
+import { Flex } from '~/components/lib/Flex';
+import { Section } from '~/components/lib/Section';
+import { SvgIcon } from '~/components/lib/SvgIcon';
+import { Text } from '~/components/lib/Text';
+
+import { NonceList } from './NonceList';
 
 export default function Settings() {
   return (
-    <div className="flex flex-col gap-4 px-24 py-4">
-      <One>Settings</One>
-      <ListNonces />
-    </div>
+    <>
+      <Section background="sand2">
+        <Flex align="center" gap="m">
+          <SvgIcon icon={<Gear weight="thin" />} size="l" />
+          <Text as="h1">Settings</Text>
+        </Flex>
+      </Section>
+
+      <Section>
+        <NonceList />
+      </Section>
+    </>
   );
 }

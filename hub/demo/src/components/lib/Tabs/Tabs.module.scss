@@ -1,0 +1,108 @@
+.root {
+  --tabs-font: var(--text-s);
+  --tabs-color-border: rgba(255, 255, 255, 0);
+  --tabs-color-icon: var(--sand10);
+  --tabs-color-text: var(--sand11);
+  --tabs-size-icon: 18px;
+  --tabs-height: 48px;
+  --tabs-padding-x: 0;
+  --tabs-list-gap: 32px;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-m);
+  width: 100%;
+
+  &[data-size='small'] {
+    --tabs-font: var(--text-xs);
+    --tabs-size-icon: 16px;
+    --tabs-height: 37px;
+    --tabs-padding-x: 12px;
+  }
+
+  &[data-size='large'] {
+    --tabs-font: var(--text-base);
+    --tabs-size-icon: 20px;
+    --tabs-height: 52px;
+    --tabs-padding-x: 18px;
+  }
+}
+
+.list {
+  display: flex;
+  width: 100%;
+  gap: var(--tabs-list-gap);
+  overflow: auto;
+  scroll-behavior: smooth;
+  box-shadow: inset 0 -2px 0 var(--sand4);
+}
+
+.trigger {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--tabs-height);
+  border-bottom: 2px solid var(--tabs-color-border);
+  padding: 0 var(--tabs-padding-x);
+  white-space: nowrap;
+  font: var(--tabs-font);
+  font-weight: 600;
+  color: var(--tabs-color-text);
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--transition-speed);
+
+  &:hover {
+    --tabs-color-icon: var(--sand12);
+    --tabs-color-border: var(--sand7);
+    --tabs-color-text: var(--sand12);
+  }
+
+  &[data-state='active'] {
+    --tabs-color-icon: var(--violet10);
+    --tabs-color-border: var(--violet9);
+    --tabs-color-text: var(--violet11);
+  }
+
+  &:focus-visible {
+    --tabs-color-icon: var(--sand12);
+    --tabs-color-border: var(--sand12);
+    --tabs-color-text: var(--sand12);
+  }
+
+  &:disabled {
+    --tabs-color-icon: var(--sand8);
+    --tabs-color-border: rgba(255, 255, 255, 0);
+    --tabs-color-text: var(--sand8);
+    pointer-events: none;
+  }
+}
+
+.icon {
+  flex-shrink: 0;
+  width: var(--tabs-size-icon);
+  height: var(--tabs-size-icon);
+  color: var(--tabs-color-icon);
+  transition: all var(--transition-speed);
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+    stroke: currentColor;
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-m);
+  outline: none;
+
+  &[data-state='inactive'] {
+    display: none;
+  }
+}

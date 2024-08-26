@@ -1,0 +1,87 @@
+@import '~/styles/variables';
+
+.root {
+  display: flex;
+  align-items: stretch;
+  flex-grow: 1;
+  min-height: var(--section-fill-height);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-l);
+  padding: var(--gap-l);
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.sidebar {
+  position: sticky;
+  z-index: 250;
+  top: var(--header-height);
+  height: var(--section-fill-height);
+  max-width: 100%;
+
+  @media (max-width: $tabletBreakpointMaxWidth) {
+    position: fixed;
+    right: 0;
+    box-shadow: 0 0 3rem rgba(0, 0, 0, 0.2);
+    width: 0vw;
+    opacity: 0;
+    transition:
+      width 300ms,
+      opacity 300ms;
+
+    &[data-open-small-screens='true'] {
+      display: flex;
+      width: 100vw;
+      opacity: 1;
+    }
+  }
+}
+
+.content {
+  width: 360px;
+  flex-shrink: 0;
+  background: var(--sand2);
+  overflow: auto;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  height: 100%;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (max-width: $tabletBreakpointMaxWidth) {
+    width: 100vw;
+    padding-top: 0 !important;
+  }
+}
+
+.contentInner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-l);
+  padding: var(--gap-l);
+  width: 100%;
+  min-height: 100%;
+  position: relative;
+
+  @media (max-width: $tabletBreakpointMaxWidth) {
+    min-height: calc(100% + 1px);
+  }
+}
+
+.closeButton {
+  position: absolute;
+  top: var(--gap-m);
+  right: var(--gap-m);
+
+  @media (min-width: $tabletBreakpointMaxWidth) {
+    display: none;
+  }
+}

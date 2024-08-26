@@ -6,11 +6,12 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { initTRPC, TRPCError } from "@trpc/server";
-import { headers } from "next/headers";
-import superjson from "superjson";
-import { ZodError } from "zod";
-import { authorizationModel } from "~/lib/models";
+import { initTRPC, TRPCError } from '@trpc/server';
+import { headers } from 'next/headers';
+import superjson from 'superjson';
+import { ZodError } from 'zod';
+
+import { authorizationModel } from '~/lib/models';
 
 /**
  * 1. CONTEXT
@@ -25,8 +26,8 @@ import { authorizationModel } from "~/lib/models";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const h = headers().has("Authorization")
-    ? { Authorization: headers().get("Authorization") }
+  const h = headers().has('Authorization')
+    ? { Authorization: headers().get('Authorization') }
     : undefined;
 
   return {
@@ -88,11 +89,11 @@ export const publicProcedure = t.procedure;
 
 /** Reusable middleware that enforces users are logged in before running the procedure. */
 const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
-  if (!ctx.Authorization?.includes("Bearer")) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
+  if (!ctx.Authorization?.includes('Bearer')) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
-  const auth: unknown = JSON.parse(ctx.Authorization.replace("Bearer ", ""));
+  const auth: unknown = JSON.parse(ctx.Authorization.replace('Bearer ', ''));
   const sig = authorizationModel.parse(auth);
 
   return next({

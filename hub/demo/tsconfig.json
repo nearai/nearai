@@ -12,6 +12,8 @@
     /* Strictness */
     "strict": true,
     "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "checkJs": true,
 
     /* Bundled projects */

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const authorizationModel = z.object({
   account_id: z.string(),
@@ -11,8 +11,8 @@ export const authorizationModel = z.object({
 });
 
 export const messageModel = z.object({
-  role: z.enum(["user", "assistant", "system"]),
-  content: z.string(),
+  role: z.enum(['user', 'assistant', 'system']),
+  content: z.string().min(1),
 });
 
 export const chatCompletionsModel = z.object({
@@ -78,7 +78,7 @@ export const nonceModel = z.object({
   message: z.string(),
   recipient: z.string(),
   callback_url: z.string(),
-  nonce_status: z.enum(["active", "revoked"]),
+  nonce_status: z.enum(['active', 'revoked']),
   first_seen_at: z.string(),
 });
 

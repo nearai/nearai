@@ -1,0 +1,94 @@
+.wrapper {
+  position: relative;
+  width: 100%;
+  z-index: 1000;
+  display: flex;
+
+  &[data-open='true'] {
+    z-index: 1005;
+  }
+}
+
+.innerWrapper {
+  position: relative;
+  flex-grow: 1;
+}
+
+.dropdown {
+  display: none;
+  position: absolute;
+  z-index: 1000;
+  top: 100%;
+  margin-top: 1px;
+  left: 0;
+  right: 0;
+  background-color: var(--sand1);
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 6px;
+  box-shadow: var(--shadow-card-with-outline);
+  border: 1px solid var(--sand4);
+  border-top: none;
+  padding: var(--gap-xs);
+  max-height: 40svh;
+  overflow: auto;
+  transform-origin: center top;
+  animation: fadeIn var(--transition-speed);
+  // scroll-behavior: smooth; // This breaks downshift auto scroll focus for some reason
+
+  .wrapper[data-open='true']:has(input:focus) & {
+    display: block;
+    // The extra "input:focus" selector logic prevents a quick flash on close when the "filteredItems" adjust
+  }
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+      transform: scale(1, 0.5);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1, 1);
+    }
+  }
+}
+
+.dropdownItem {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  position: relative;
+  border-radius: 4px;
+  font: var(--text-s);
+  color: var(--sand12);
+  background-color: var(--sand1);
+  transition: all var(--transition-speed);
+
+  &[data-highlighted='true'] {
+    background-color: var(--sand3);
+  }
+
+  &:active {
+    background-color: var(--sand4);
+  }
+}
+
+.content {
+  padding: var(--gap-m);
+}
+
+.toggleButton {
+  all: unset;
+  box-sizing: border-box;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  color: var(--sand10);
+  cursor: pointer;
+  transition: all var(--transition-speed);
+
+  [data-open='true'] & {
+    transform: rotate(180deg);
+  }
+}
