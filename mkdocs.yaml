@@ -130,6 +130,7 @@ nav:
     - Welcome To NearAI Docs: 'index.md'
     - Agents: 'agents.md'
     - Building and running a benchmark: 'benchmarking.md'
+    - Inference (OpenAI compatible): 'inference.md'
     - API Reference: 'api.md'
     - Login with NEAR: 'login.md'
     - Contributing: 'contributing.md'
