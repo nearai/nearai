@@ -2,7 +2,7 @@
 
 NEAR.AI provides an OpenAI-compatible API for inference, allowing you to easily integrate powerful language models into your applications. This guide covers the basic endpoints and how to use them.
 
-Other examples available here: [examples](../hub/examples)
+Other examples available here: [examples](https://github.com/nearai/nearai/hub/examples)
 
 ## Getting Started
 
@@ -31,58 +31,59 @@ Other examples available here: [examples](../hub/examples)
    ```
 
 2. Set up authentication:
+
    - Log in to NEAR AI using the CLI: `nearai login`
    - The auth object will be saved in `~/.nearai/config.json`
 
 3. Import the required libraries and set up the client
 
-    ```python
-    import openai
-    import json
-    import os
-    import nearai
+   ```python
+   import openai
+   import json
+   import os
+   import nearai
 
-    hub_url = "https://api.near.ai/v1"
+   hub_url = "https://api.near.ai/v1"
 
-    # Login to NEAR AI Hub using nearai CLI.
-    # Read the auth object from ~/.nearai/config.json
-    auth = nearai.config.load_config_file()["auth"]
-    signature = json.dumps(auth)
+   # Login to NEAR AI Hub using nearai CLI.
+   # Read the auth object from ~/.nearai/config.json
+   auth = nearai.config.load_config_file()["auth"]
+   signature = json.dumps(auth)
 
-    client = openai.OpenAI(base_url=hub_url, api_key=signature)
-    ```
+   client = openai.OpenAI(base_url=hub_url, api_key=signature)
+   ```
 
 ## List Models
 
 To list available models, use the `models.list()` method:
 
-  ```python
-  models = client.models.list()
-  print(models)
-  ```
+```python
+models = client.models.list()
+print(models)
+```
 
 Different providers have different models. The format is `provider::account/model_name/model_version`. To get all unique providers, do:
 
-  ```python
-  providers = set([model.id.split("::")[0] for model in models])
-  print(providers)
-  ```
+```python
+providers = set([model.id.split("::")[0] for model in models])
+print(providers)
+```
 
 ## Create a Chat Completion
 
 To create a chat completion, use the `chat.completions.create()` method. Here's an example:
 
-  ```python
-  completion = client.chat.completions.create(
-    model="fireworks::accounts/fireworks/models/llama-v3-8b-instruct-hf",
-    messages=[
-      {"role": "system", "content": "You are a helpful assistant."},
-      {"role": "user", "content": "Hello, how are you?"}
-    ]
-  )
+```python
+completion = client.chat.completions.create(
+  model="fireworks::accounts/fireworks/models/llama-v3-8b-instruct-hf",
+  messages=[
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello, how are you?"}
+  ]
+)
 
-  print(completion.choices[0].message.content)
-  ```
+print(completion.choices[0].message.content)
+```
 
 This will send a request to the specified model with the given messages and return the model's response. The response can be accessed through the `choices` array in the returned object.
 
