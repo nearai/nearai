@@ -4,6 +4,9 @@ import { Section } from '~/components/lib/Section';
 import { Table } from '~/components/lib/Table';
 import { Text } from '~/components/lib/Text';
 import { api } from '~/trpc/react';
+import { Tooltip } from '~/components/lib/Tooltip';
+import { Button } from '~/components/lib/Button';
+import { Play } from '@phosphor-icons/react';
 
 export default function Agents() {
   const list = api.hub.listRegistry.useQuery({ category: 'agent' });
@@ -25,7 +28,7 @@ export default function Agents() {
             <Table.HeadCell>Agent</Table.HeadCell>
             <Table.HeadCell>Creator</Table.HeadCell>
             <Table.HeadCell>Version</Table.HeadCell>
-            <Table.HeadCell></Table.HeadCell>
+            <Table.HeadCell>Actions</Table.HeadCell>
           </Table.Row>
         </Table.Head>
 
@@ -42,6 +45,17 @@ export default function Agents() {
               </Table.Cell>
               <Table.Cell>
                 <Text size="text-s">{item.version}</Text>
+              </Table.Cell>
+              <Table.Cell style={{ width: '1px' }}>
+                <Tooltip asChild content="Run Agent">
+                  <Button
+                    label="Run"
+                    icon={<Play weight="duotone" />}
+                    size="small"
+                    fill="ghost"
+                    href={`/agent/${item.namespace}/${item.name}/${item.version}/run`}
+                  />
+                </Tooltip>
               </Table.Cell>
             </Table.Row>
           ))}
