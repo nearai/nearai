@@ -13,6 +13,7 @@
     "ts:check": "tsc --noEmit --incremental"
   },
   "dependencies": {
+    "@gera2ld/tarjs": "^0.3.1",
     "@hookform/resolvers": "^3.6.0",
     "@phosphor-icons/react": "^2.1.5",
     "@radix-ui/react-accordion": "^1.1.2",

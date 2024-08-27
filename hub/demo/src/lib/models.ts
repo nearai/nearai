@@ -95,3 +95,10 @@ export const registryEntry = z.object({
   version: z.string(),
 });
 export const listRegistry = z.array(registryEntry);
+
+export const agentRequestModel = z.object({
+  agent_id: z.string(),
+  new_message: z.string(),
+  environment_id: z.string().nullable().optional(),
+  max_iterations: z.number(),
+});
