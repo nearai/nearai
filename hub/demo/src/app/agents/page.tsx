@@ -29,7 +29,7 @@ export default function AgentsListPage() {
             <Table.HeadCell>Agent</Table.HeadCell>
             <Table.HeadCell>Creator</Table.HeadCell>
             <Table.HeadCell>Version</Table.HeadCell>
-            <Table.HeadCell></Table.HeadCell>
+            <Table.HeadCell>Actions</Table.HeadCell>
           </Table.Row>
         </Table.Head>
 
