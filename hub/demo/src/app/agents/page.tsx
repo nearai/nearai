@@ -28,7 +28,7 @@ export default function Agents() {
             <Table.HeadCell>Agent</Table.HeadCell>
             <Table.HeadCell>Creator</Table.HeadCell>
             <Table.HeadCell>Version</Table.HeadCell>
-            <Table.HeadCell>Actions</Table.HeadCell>
+            <Table.HeadCell></Table.HeadCell>
           </Table.Row>
         </Table.Head>
 
@@ -37,7 +37,9 @@ export default function Agents() {
 
           {list.data?.map((item, index) => (
             <Table.Row key={index}>
-              <Table.Cell>
+              <Table.Cell
+                href={`/agents/${item.namespace}/${item.name}/${item.version}`}
+              >
                 <Text size="text-s">{item.name}</Text>
               </Table.Cell>
               <Table.Cell>

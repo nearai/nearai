@@ -1,12 +1,7 @@
 'use client';
 
 import { ArrowRight, Gear } from '@phosphor-icons/react';
-import {
-  type KeyboardEventHandler,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type KeyboardEventHandler, useEffect, useRef, useState } from 'react';
 import { Controller } from 'react-hook-form';
 import { type z } from 'zod';
 
@@ -28,7 +23,6 @@ import { Sidebar } from '~/components/lib/Sidebar';
 import { Slider } from '~/components/lib/Slider';
 import { Text } from '~/components/lib/Text';
 import { SignInPrompt } from '~/components/SignInPrompt';
-import s from '~/components/inference/ChatInference.module.scss';
 import { ChatThread } from '~/components/inference/ChatThread';
 import { useParams } from 'next/navigation';
 import { Card } from '~/components/lib/Card';
@@ -36,7 +30,7 @@ import { Dialog } from '~/components/lib/Dialog';
 
 const LOCAL_STORAGE_KEY = 'agent_inference_conversation';
 
-export const RunAgent = () => {
+export default function RunAgentPage() {
   const { category, accountId, name, version } = useParams();
   const formRef = useRef<HTMLFormElement | null>(null);
   const form = useZodForm(agentRequestModel, {
@@ -114,11 +108,7 @@ export const RunAgent = () => {
   }
 
   return (
-    <Form
-      onSubmit={form.handleSubmit(onSubmit)}
-      className={s.layout}
-      ref={formRef}
-    >
+    <Form onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
       <Sidebar.Root>
         <Sidebar.Main>
           {isAuthenticated ? (
@@ -227,4 +217,4 @@ export const RunAgent = () => {
       </Sidebar.Root>
     </Form>
   );
-};
+}
