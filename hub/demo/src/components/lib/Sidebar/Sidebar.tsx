@@ -1,7 +1,7 @@
 'use client';
 
 import { X } from '@phosphor-icons/react';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode } from 'react';
 
 import { Button } from '../Button';
 import s from './Sidebar.module.scss';

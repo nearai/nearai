@@ -6,7 +6,6 @@ import { Controller } from 'react-hook-form';
 import { type z } from 'zod';
 
 import { ChatThread } from '~/components/inference/ChatThread';
-import { Badge } from '~/components/lib/Badge';
 import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
 import { Button } from '~/components/lib/Button';
 import { Card } from '~/components/lib/Card';
@@ -21,7 +20,7 @@ import { Slider } from '~/components/lib/Slider';
 import { Text } from '~/components/lib/Text';
 import { SignInPrompt } from '~/components/SignInPrompt';
 import { useZodForm } from '~/hooks/form';
-import { useCurrentResource, useResourceParams } from '~/hooks/resources';
+import { useResourceParams } from '~/hooks/resources';
 import {
   agentRequestModel,
   chatCompletionsModel,
@@ -36,7 +35,6 @@ const LOCAL_STORAGE_KEY = 'agent_inference_conversation';
 
 export default function RunAgentPage() {
   const { accountId, name, version } = useResourceParams();
-  const { currentResource } = useCurrentResource('agent');
   const formRef = useRef<HTMLFormElement | null>(null);
   const form = useZodForm(agentRequestModel, {
     defaultValues: { agent_id: `${accountId}/${name}/${version}` },
