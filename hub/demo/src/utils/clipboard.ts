@@ -9,8 +9,9 @@ export async function copyTextToClipboard(
 
     openToast({
       type: 'success',
-      title: 'Copied',
+      title: 'Copied To Clipboard',
       description,
+      duration: 1000,
     });
   } catch (error) {
     console.error(error);

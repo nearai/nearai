@@ -1,37 +1,41 @@
 'use client';
 
-import { ArrowRight, Gear } from '@phosphor-icons/react';
+import { ArrowRight, Copy, Gear, Info } from '@phosphor-icons/react';
 import { type KeyboardEventHandler, useEffect, useRef, useState } from 'react';
 import { Controller } from 'react-hook-form';
 import { type z } from 'zod';
 
-import { useZodForm } from '~/hooks/form';
-import {
-  chatCompletionsModel,
-  type messageModel,
-  agentRequestModel,
-} from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
-
+import { ChatThread } from '~/components/inference/ChatThread';
 import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
 import { Button } from '~/components/lib/Button';
+import { Card } from '~/components/lib/Card';
+import { Dialog } from '~/components/lib/Dialog';
+import { Dropdown } from '~/components/lib/Dropdown';
 import { Flex } from '~/components/lib/Flex';
 import { Form } from '~/components/lib/Form';
+import { HR } from '~/components/lib/HorizontalRule';
 import { InputTextarea } from '~/components/lib/InputTextarea';
 import { Sidebar } from '~/components/lib/Sidebar';
 import { Slider } from '~/components/lib/Slider';
 import { Text } from '~/components/lib/Text';
 import { SignInPrompt } from '~/components/SignInPrompt';
-import { ChatThread } from '~/components/inference/ChatThread';
-import { useParams } from 'next/navigation';
-import { Card } from '~/components/lib/Card';
-import { Dialog } from '~/components/lib/Dialog';
+import { useZodForm } from '~/hooks/form';
+import { useCurrentResource, useResourceParams } from '~/hooks/resources';
+import {
+  agentRequestModel,
+  chatCompletionsModel,
+  type messageModel,
+} from '~/lib/models';
+import { useAuthStore } from '~/stores/auth';
+import { api } from '~/trpc/react';
+import { copyTextToClipboard } from '~/utils/clipboard';
+import { formatBytes } from '~/utils/number';
 
 const LOCAL_STORAGE_KEY = 'agent_inference_conversation';
 
 export default function RunAgentPage() {
-  const { category, accountId, name, version } = useParams();
+  const { accountId, name, version } = useResourceParams();
+  const { currentResource } = useCurrentResource('agent');
   const formRef = useRef<HTMLFormElement | null>(null);
   const form = useZodForm(agentRequestModel, {
     defaultValues: { agent_id: `${accountId}/${name}/${version}` },
@@ -99,18 +103,14 @@ export default function RunAgentPage() {
     }
   }, [isAuthenticated, form]);
 
-  if (category !== 'agent') {
-    return (
-      <div>
-        <h1>Only Agent is supported by this run component</h1>
-      </div>
-    );
-  }
+  console.log(currentResource);
 
   return (
     <Form onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
       <Sidebar.Root>
         <Sidebar.Main>
+          {/* TODO: Agent name header / back to details */}
+
           {isAuthenticated ? (
             <ChatThread messages={conversation} />
           ) : (
@@ -156,23 +156,64 @@ export default function RunAgentPage() {
           openForSmallScreens={parametersOpenForSmallScreens}
           setOpenForSmallScreens={setParametersOpenForSmallScreens}
         >
-          <Text size="text-l">Output</Text>
-          {previousEnvironmentName && (
-            <Text size="text-xs">
-              <b>Environment</b> {previousEnvironmentName}
+          <Flex align="center" gap="m">
+            <Text size="text-l" style={{ marginRight: 'auto' }}>
+              Output
             </Text>
-          )}
+
+            <Dropdown.Root>
+              <Dropdown.Trigger asChild>
+                <Button
+                  label="Output Info"
+                  icon={<Info weight="duotone" />}
+                  size="small"
+                  fill="outline"
+                />
+              </Dropdown.Trigger>
+
+              <Dropdown.Content style={{ maxWidth: '30rem' }}>
+                <Dropdown.Section>
+                  <Dropdown.SectionContent>
+                    <Flex direction="column" gap="s">
+                      <Text size="text-xs" weight={600}>
+                        Environment
+                      </Text>
+
+                      <Text size="text-xs">
+                        {previousEnvironmentName ??
+                          'No environment has been generated yet.'}
+                      </Text>
+                    </Flex>
+                  </Dropdown.SectionContent>
+                </Dropdown.Section>
+              </Dropdown.Content>
+            </Dropdown.Root>
+          </Flex>
+
           <Flex direction="column" gap="xs">
             {chatMutation.data ? (
               chatMutation.data.fileStructure.map((fileInfo) => (
                 <Card
+                  padding="s"
+                  gap="s"
                   key={fileInfo.name}
                   onClick={() => {
-                    console.log(fileInfo.name);
                     setOpenedFileName(fileInfo.name);
                   }}
                 >
-                  {fileInfo.name} {fileInfo.size} bytes
+                  <Flex align="center" gap="s">
+                    <Text
+                      size="text-s"
+                      color="violet8"
+                      weight={500}
+                      clampLines={1}
+                      style={{ marginRight: 'auto' }}
+                    >
+                      {fileInfo.name}
+                    </Text>
+
+                    <Text size="text-xs">{formatBytes(fileInfo.size)}</Text>
+                  </Flex>
                 </Card>
               ))
             ) : (
@@ -180,12 +221,7 @@ export default function RunAgentPage() {
             )}
           </Flex>
 
-          <Dialog.Root
-            open={openedFileName !== null}
-            onOpenChange={() => setOpenedFileName(null)}
-          >
-            <Dialog.Content title={openedFileName}>{openedFile}</Dialog.Content>
-          </Dialog.Root>
+          <HR />
 
           <Text size="text-l">Parameters</Text>
 
@@ -215,6 +251,29 @@ export default function RunAgentPage() {
           </Flex>
         </Sidebar.Sidebar>
       </Sidebar.Root>
+
+      <Dialog.Root
+        open={openedFileName !== null}
+        onOpenChange={() => setOpenedFileName(null)}
+      >
+        <Dialog.Content
+          title={openedFileName}
+          header={
+            <Button
+              label="Copy file to clipboard"
+              icon={<Copy />}
+              size="small"
+              fill="outline"
+              onClick={() => openedFile && copyTextToClipboard(openedFile)}
+              style={{ marginLeft: 'auto' }}
+            />
+          }
+        >
+          <Text size="text-s" color="sand12" style={{ whiteSpace: 'pre-wrap' }}>
+            {openedFile}
+          </Text>
+        </Dialog.Content>
+      </Dialog.Root>
     </Form>
   );
 }

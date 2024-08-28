@@ -9,7 +9,7 @@ import { Text } from '~/components/lib/Text';
 
 import { NonceList } from './NonceList';
 
-export default function Settings() {
+export default function SettingsPage() {
   return (
     <>
       <Section background="sand2">

@@ -91,18 +91,17 @@
     &[data-fill='ghost'],
     &[data-fill='outline'] {
       --button-color-background: rgba(0, 0, 0, 0);
-      --button-color-border: var(--sand12);
+      --button-color-border: var(--sand6);
       --button-color-text: var(--sand12);
       --button-color-icon: var(--sand10);
       &:hover {
-        --button-color-background: var(--sand12);
-        --button-color-text: var(--white);
+        --button-color-border: var(--sand9);
       }
       &:focus-visible {
         --button-color-border: var(--violet8);
       }
       &:active {
-        --button-color-background: var(--sand8);
+        --button-color-background: var(--sand4);
       }
     }
     &[data-fill='ghost'] {
@@ -171,7 +170,7 @@
       --button-color-background: var(--sand1);
       --button-color-border: var(--sand6);
       --button-color-text: var(--green11);
-      --button-color-icon: var(--green10);
+      --button-color-icon: var(--green8);
       &:hover {
         --button-color-border: var(--green9);
       }

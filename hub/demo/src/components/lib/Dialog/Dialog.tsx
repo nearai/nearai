@@ -6,6 +6,8 @@ import type { ComponentProps, ReactNode } from 'react';
 import { forwardRef } from 'react';
 
 import { Button } from '../Button';
+import { Flex } from '../Flex';
+import { Text } from '../Text';
 import s from './Dialog.module.scss';
 
 export const Root = Primitive.Root;
@@ -13,12 +15,13 @@ export const Trigger = Primitive.Trigger;
 export const Title = Primitive.Title;
 
 type ContentProps = Omit<ComponentProps<typeof Primitive.Content>, 'title'> & {
+  header?: ReactNode;
   size?: 's' | 'm' | 'l';
-  title?: ReactNode;
+  title?: string | null;
 };
 
 export const Content = forwardRef<HTMLDivElement, ContentProps>(
-  ({ children, size = 'm', title, ...props }, ref) => {
+  ({ children, header, size = 'm', title, ...props }, ref) => {
     return (
       <Primitive.Portal>
         <Primitive.Overlay className={s.overlay}>
@@ -34,19 +37,29 @@ export const Content = forwardRef<HTMLDivElement, ContentProps>(
             */
               event.stopPropagation();
             }}
+            aria-describedby=""
           >
             <div className={s.header}>
-              {title && (
-                <Primitive.Title className={s.title}>{title}</Primitive.Title>
-              )}
+              <Flex
+                align="center"
+                gap="m"
+                style={{ marginRight: 'auto', flexGrow: 1 }}
+              >
+                {title && (
+                  <Primitive.Title asChild>
+                    <Text size="text-l">{title}</Text>
+                  </Primitive.Title>
+                )}
+
+                {header}
+              </Flex>
 
               <Primitive.Close asChild>
                 <Button
-                  className={s.close}
                   label="Close"
                   size="small"
                   variant="secondary"
-                  fill="ghost"
+                  fill="outline"
                   icon={<X weight="bold" />}
                 />
               </Primitive.Close>

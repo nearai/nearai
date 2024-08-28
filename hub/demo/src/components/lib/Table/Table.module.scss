@@ -7,6 +7,7 @@
   --table-focus-outline: 4px solid var(--violet4);
 
   width: 100%;
+  min-width: min-content;
   padding: 0 var(--table-half-padding) var(--table-half-padding);
   border-radius: var(--table-border-radius);
   background: var(--white);

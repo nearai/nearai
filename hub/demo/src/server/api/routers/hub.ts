@@ -1,3 +1,4 @@
+import { TarReader } from '@gera2ld/tarjs';
 import { z } from 'zod';
 import { createZodFetcher } from 'zod-fetch';
 
@@ -9,6 +10,7 @@ import {
   listModelsResponseModel,
   listNoncesModel,
   listRegistry,
+  type messageModel,
   revokeNonceModel,
 } from '~/lib/models';
 import {
@@ -16,7 +18,6 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '~/server/api/trpc';
-import { TarReader } from '@gera2ld/tarjs';
 
 const fetchWithZod = createZodFetcher();
 
@@ -26,6 +27,15 @@ export interface FileStructure {
   size: number;
   headerOffset: number;
 }
+
+export const registryCategory = z.enum([
+  'agent',
+  'benchmark',
+  'category',
+  'dataset',
+  'model',
+]);
+export type RegistryCategory = z.infer<typeof registryCategory>;
 
 export const hubRouter = createTRPCRouter({
   listModels: publicProcedure.query(async () => {
@@ -122,10 +132,16 @@ export const hubRouter = createTRPCRouter({
     }),
 
   listRegistry: publicProcedure
-    .input(z.object({ category: z.string() }))
+    .input(
+      z.object({
+        category: registryCategory,
+      }),
+    )
     .query(async ({ input }) => {
+      const limit = 1000;
       const u =
-        env.ROUTER_URL + '/registry/list_entries?category=' + input.category;
+        env.ROUTER_URL +
+        `/registry/list_entries?category=${input.category}&total=${limit}`;
 
       const resp = await fetchWithZod(listRegistry, u, {
         method: 'POST',
@@ -167,7 +183,8 @@ export const hubRouter = createTRPCRouter({
 
       const u2 = `${env.ROUTER_URL}/registry/download_file`;
       const [namespace, name, version] = environmentName.split('/');
-      return await fetch(u2, {
+
+      const resp = await fetch(u2, {
         method: 'POST',
         headers: {
           Accept: 'binary/octet-stream',
@@ -181,59 +198,59 @@ export const hubRouter = createTRPCRouter({
           },
           path: 'environment.tar.gz',
         }),
-      })
-        .then(async (resp) => {
-          if (!resp.ok) {
-            console.error(
-              'Requested Environment is: ',
-              `${namespace}/${name}/${version}`,
-            );
-            throw new Error(
-              'Failed to download environment, status: ' +
-                resp.status +
-                ' ' +
-                resp.statusText,
-            );
-          }
-          if (!resp.body) {
-            throw new Error('Response body is null');
-          }
-          return resp.body.pipeThrough(new DecompressionStream('gzip'));
-        })
-        .then((decompressedStream) => new Response(decompressedStream).blob())
-        .then((blob) => TarReader.load(blob))
-        .then((tarReader) => {
-          const rawChat = tarReader.getTextFile('./chat.txt');
-          const parsedChat = rawChat
-            .split('\n')
-            .filter((message) => message)
-            .map((message) => {
-              console.log(message);
-              return JSON.parse(message);
-            });
+      });
 
-          const fileStructure: FileStructure[] = [];
-          const files: Record<string, string> = {};
-          const environment = {
-            environmentName: environmentName,
-            fileStructure,
-            files,
-            chat: parsedChat,
-          };
-          for (const fileInfo of tarReader.fileInfos) {
-            // @ts-ignore // actual file type differs from TarFileType enum
-            if (fileInfo.type === 48) {
-              // files are coming through as 48
-              const originalFileName = fileInfo.name;
-              const fileName = originalFileName.replace(/^\.\//, '');
-              if (fileName !== 'chat.txt' && fileName !== '.next_action') {
-                fileInfo.name = fileName;
-                environment.fileStructure.push(fileInfo);
-                environment.files[fileName] = tarReader.getTextFile(fileName);
-              }
-            }
-          }
-          return environment;
+      if (!resp.ok) {
+        console.error(
+          'Requested Environment is: ',
+          `${namespace}/${name}/${version}`,
+        );
+        throw new Error(
+          'Failed to download environment, status: ' +
+            resp.status +
+            ' ' +
+            resp.statusText,
+        );
+      }
+      if (!resp.body) {
+        throw new Error('Response body is null');
+      }
+
+      const stream = resp.body.pipeThrough(new DecompressionStream('gzip'));
+      const blob = await new Response(stream).blob();
+      const tarReader = await TarReader.load(blob);
+
+      const chat = tarReader
+        .getTextFile('./chat.txt')
+        .split('\n')
+        .filter((message) => message)
+        .map((message) => {
+          return JSON.parse(message) as z.infer<typeof messageModel>;
         });
+
+      const fileStructure: FileStructure[] = [];
+      const files: Record<string, string> = {};
+      const environment = {
+        environmentName: environmentName,
+        fileStructure,
+        files,
+        chat,
+      };
+
+      for (const fileInfo of tarReader.fileInfos) {
+        if ((fileInfo.type as number) === 48) {
+          // Actual file type differs from TarFileType enum. Files are coming through as 48.
+
+          const fileName = fileInfo.name.replace(/^\.\//, '');
+
+          if (fileName !== 'chat.txt' && fileName !== '.next_action') {
+            fileInfo.name = fileName;
+            environment.fileStructure.push(fileInfo);
+            environment.files[fileName] = tarReader.getTextFile(fileName);
+          }
+        }
+      }
+
+      return environment;
     }),
 });

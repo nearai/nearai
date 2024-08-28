@@ -1,11 +1,11 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { Section } from '~/components/lib/Section';
 import { Text } from '~/components/lib/Text';
+import { useResourceParams } from '~/hooks/resources';
 
-export default function RegistryItem() {
-  const { name } = useParams();
+export default function AgentDetailsPage() {
+  const { name } = useResourceParams();
 
   return (
     <Section>

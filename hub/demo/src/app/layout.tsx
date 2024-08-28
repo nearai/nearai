@@ -1,6 +1,7 @@
 import '~/styles/globals.scss';
 
 import { Footer } from '~/components/Footer';
+import { Toaster } from '~/components/lib/Toast';
 import { Navigation } from '~/components/Navigation';
 import { SignInHandler } from '~/components/SignInHandler';
 import { ZustandHydration } from '~/components/ZustandHydration';
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body>
         <SignInHandler />
         <ZustandHydration />
+        <Toaster />
 
         <TRPCReactProvider>
           <div className={s.wrapper}>

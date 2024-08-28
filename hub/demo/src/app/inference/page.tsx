@@ -11,12 +11,7 @@ import {
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { type z } from 'zod';
 
-import { useZodForm } from '~/hooks/form';
-import { useListModels } from '~/hooks/queries';
-import { chatCompletionsModel, type messageModel } from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
-
+import { ChatThread } from '~/components/inference/ChatThread';
 import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
 import { Button } from '~/components/lib/Button';
 import { Combobox, type ComboboxItem } from '~/components/lib/Combobox';
@@ -27,7 +22,11 @@ import { Sidebar } from '~/components/lib/Sidebar';
 import { Slider } from '~/components/lib/Slider';
 import { Text } from '~/components/lib/Text';
 import { SignInPrompt } from '~/components/SignInPrompt';
-import { ChatThread } from '~/components/inference/ChatThread';
+import { useZodForm } from '~/hooks/form';
+import { useListModels } from '~/hooks/queries';
+import { chatCompletionsModel, type messageModel } from '~/lib/models';
+import { useAuthStore } from '~/stores/auth';
+import { api } from '~/trpc/react';
 
 const LOCAL_STORAGE_KEY = 'inference_conversation';
 

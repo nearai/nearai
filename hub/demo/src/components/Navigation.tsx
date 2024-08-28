@@ -142,12 +142,12 @@ export const Navigation = () => {
 
               <Dropdown.Section>
                 <Dropdown.Item href="/settings">
-                  <SvgIcon icon={<Gear weight="duotone" />} />
+                  <SvgIcon icon={<Gear />} />
                   Settings
                 </Dropdown.Item>
 
                 <Dropdown.Item onSelect={() => store.clearAuth()}>
-                  <SvgIcon icon={<X weight="regular" />} />
+                  <SvgIcon icon={<X />} />
                   Sign Out
                 </Dropdown.Item>
               </Dropdown.Section>

@@ -1,14 +1,15 @@
 'use client';
 
+import { Play } from '@phosphor-icons/react';
+
+import { Button } from '~/components/lib/Button';
 import { Section } from '~/components/lib/Section';
 import { Table } from '~/components/lib/Table';
 import { Text } from '~/components/lib/Text';
-import { api } from '~/trpc/react';
 import { Tooltip } from '~/components/lib/Tooltip';
-import { Button } from '~/components/lib/Button';
-import { Play } from '@phosphor-icons/react';
+import { api } from '~/trpc/react';
 
-export default function Agents() {
+export default function AgentsListPage() {
   const list = api.hub.listRegistry.useQuery({ category: 'agent' });
 
   return (
@@ -40,7 +41,9 @@ export default function Agents() {
               <Table.Cell
                 href={`/agents/${item.namespace}/${item.name}/${item.version}`}
               >
-                <Text size="text-s">{item.name}</Text>
+                <Text size="text-s" weight={500} color="violet8">
+                  {item.name}
+                </Text>
               </Table.Cell>
               <Table.Cell>
                 <Text size="text-s">{item.namespace}</Text>

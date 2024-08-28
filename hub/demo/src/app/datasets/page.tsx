@@ -5,7 +5,7 @@ import { Table } from '~/components/lib/Table';
 import { Text } from '~/components/lib/Text';
 import { api } from '~/trpc/react';
 
-export default function Datasets() {
+export default function DatasetsListPage() {
   const list = api.hub.listRegistry.useQuery({ category: 'dataset' });
 
   return (

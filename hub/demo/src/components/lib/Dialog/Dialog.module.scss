@@ -72,23 +72,20 @@
   z-index: 1000;
   background: var(--white);
   box-shadow: 0 0 var(--gap-m) var(--gap-xs) var(--white);
+  min-width: 0;
+
+  > * {
+    text-align: left;
+  }
+
+  * {
+    min-width: 0;
+  }
 
   @media (max-width: $phoneBreakpointMaxWidth) {
     margin-top: 0;
     padding: var(--gap-m);
   }
-}
-
-.title {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-m);
-  font: var(--text-l);
-  font-weight: 600;
-}
-
-.close {
-  margin-left: auto;
 }
 
 .body {

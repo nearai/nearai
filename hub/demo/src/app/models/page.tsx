@@ -5,7 +5,7 @@ import { Table } from '~/components/lib/Table';
 import { Text } from '~/components/lib/Text';
 import { api } from '~/trpc/react';
 
-export default function Models() {
+export default function ModelsListPage() {
   const list = api.hub.listRegistry.useQuery({ category: 'model' });
 
   return (

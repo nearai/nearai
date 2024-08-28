@@ -13,10 +13,22 @@
   outline: none;
   transition: all var(--transition-speed);
 
+  &[data-padding='s'] {
+    padding: var(--gap-s);
+  }
+  &[data-padding='m'] {
+    padding: var(--gap-m);
+  }
   &[data-padding='l'] {
     padding: var(--gap-l);
   }
 
+  &[data-gap='s'] {
+    gap: var(--gap-s);
+  }
+  &[data-gap='m'] {
+    gap: var(--gap-m);
+  }
   &[data-gap='l'] {
     gap: var(--gap-l);
   }
@@ -26,7 +38,7 @@
     cursor: pointer;
 
     &:hover {
-      box-shadow: 0px 1px 10px 5px rgba(0, 0, 0, 0.2);
+      box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.075);
 
       &[data-background='black'],
       &[data-background='sand12'] {
