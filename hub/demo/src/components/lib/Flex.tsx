@@ -25,19 +25,27 @@ type Props = {
 export const Flex = ({
   as = 'div',
   className = '',
-  // phone,
   style,
-  // tablet,
+
+  align,
+  direction,
+  gap,
+  justify,
+  phone,
+  tablet,
+
   ...props
 }: Props) => {
   const Element = as;
 
+  const breakpointProps = { align, direction, gap, justify, phone, tablet };
+
   const variables = {
-    ...breakpointPropToCss(props, 'align', 'flex-align'),
-    ...breakpointPropToCss(props, 'direction', 'flex-direction'),
-    ...breakpointPropToCss(props, 'gap', 'flex-gap', true),
-    ...breakpointPropToCss(props, 'justify', 'flex-justify'),
-    ...breakpointPropToCss(props, 'wrap', 'flex-wrap'),
+    ...breakpointPropToCss(breakpointProps, 'align', 'flex-align'),
+    ...breakpointPropToCss(breakpointProps, 'direction', 'flex-direction'),
+    ...breakpointPropToCss(breakpointProps, 'gap', 'flex-gap', true),
+    ...breakpointPropToCss(breakpointProps, 'justify', 'flex-justify'),
+    ...breakpointPropToCss(breakpointProps, 'wrap', 'flex-wrap'),
   };
 
   return (

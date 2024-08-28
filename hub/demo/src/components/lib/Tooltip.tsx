@@ -33,6 +33,7 @@ export const Tooltip = ({
       <Primitive.Root
         delayDuration={delayDuration}
         open={disabled ? false : undefined}
+        disableHoverableContent
         {...root}
       >
         <Primitive.Trigger

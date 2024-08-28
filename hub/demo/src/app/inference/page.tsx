@@ -127,7 +127,7 @@ export default function InferencePage() {
   }, [isAuthenticated, form]);
 
   return (
-    <Form onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
+    <Form stretch onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
       <Sidebar.Root>
         <Sidebar.Main>
           {isAuthenticated ? (

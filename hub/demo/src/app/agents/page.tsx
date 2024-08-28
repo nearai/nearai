@@ -57,8 +57,8 @@ export default function AgentsListPage() {
                     label="Run"
                     icon={<Play weight="duotone" />}
                     size="small"
-                    fill="ghost"
-                    href={`/agent/${item.namespace}/${item.name}/${item.version}/run`}
+                    fill="outline"
+                    href={`/agents/${item.namespace}/${item.name}/${item.version}/run`}
                   />
                 </Tooltip>
               </Table.Cell>

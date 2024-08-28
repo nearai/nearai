@@ -1,3 +1,5 @@
+@import '~/styles/mixins';
+
 .root {
   --tabs-font: var(--text-s);
   --tabs-color-border: rgba(255, 255, 255, 0);
@@ -34,7 +36,9 @@
   gap: var(--tabs-list-gap);
   overflow: auto;
   scroll-behavior: smooth;
-  box-shadow: inset 0 -2px 0 var(--sand4);
+  box-shadow: inset 0 -2px 0 var(--sand5);
+
+  @include hideScrollbar();
 }
 
 .trigger {
@@ -56,7 +60,7 @@
 
   &:hover {
     --tabs-color-icon: var(--sand12);
-    --tabs-color-border: var(--sand7);
+    --tabs-color-border: var(--sand8);
     --tabs-color-text: var(--sand12);
   }
 

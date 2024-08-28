@@ -135,13 +135,14 @@ export const hubRouter = createTRPCRouter({
     .input(
       z.object({
         category: registryCategory,
+        limit: z.number().default(10_000),
+        showLatestVersion: z.boolean().default(true),
       }),
     )
     .query(async ({ input }) => {
-      const limit = 1000;
       const u =
         env.ROUTER_URL +
-        `/registry/list_entries?category=${input.category}&total=${limit}`;
+        `/registry/list_entries?category=${input.category}&total=${input.limit}&show_latest_version=${input.showLatestVersion}`;
 
       const resp = await fetchWithZod(listRegistry, u, {
         method: 'POST',

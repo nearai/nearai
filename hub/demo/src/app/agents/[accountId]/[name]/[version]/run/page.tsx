@@ -6,6 +6,7 @@ import { Controller } from 'react-hook-form';
 import { type z } from 'zod';
 
 import { ChatThread } from '~/components/inference/ChatThread';
+import { Badge } from '~/components/lib/Badge';
 import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
 import { Button } from '~/components/lib/Button';
 import { Card } from '~/components/lib/Card';
@@ -103,14 +104,10 @@ export default function RunAgentPage() {
     }
   }, [isAuthenticated, form]);
 
-  console.log(currentResource);
-
   return (
-    <Form onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
+    <Form stretch onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
       <Sidebar.Root>
         <Sidebar.Main>
-          {/* TODO: Agent name header / back to details */}
-
           {isAuthenticated ? (
             <ChatThread messages={conversation} />
           ) : (
@@ -175,12 +172,27 @@ export default function RunAgentPage() {
                 <Dropdown.Section>
                   <Dropdown.SectionContent>
                     <Flex direction="column" gap="s">
-                      <Text size="text-xs" weight={600}>
-                        Environment
-                      </Text>
+                      <Flex align="center" gap="m">
+                        <Text size="text-xs" weight={600}>
+                          Environment
+                        </Text>
+
+                        <Button
+                          label="Copy environment to clipboard"
+                          icon={<Copy />}
+                          size="small"
+                          fill="ghost"
+                          onClick={() =>
+                            previousEnvironmentName &&
+                            copyTextToClipboard(previousEnvironmentName)
+                          }
+                          style={{ marginLeft: 'auto' }}
+                          disabled={!previousEnvironmentName}
+                        />
+                      </Flex>
 
                       <Text size="text-xs">
-                        {previousEnvironmentName ??
+                        {previousEnvironmentName ||
                           'No environment has been generated yet.'}
                       </Text>
                     </Flex>

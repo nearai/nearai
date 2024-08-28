@@ -1,5 +1,7 @@
 import '~/styles/globals.scss';
 
+import { type ReactNode } from 'react';
+
 import { Footer } from '~/components/Footer';
 import { Toaster } from '~/components/lib/Toast';
 import { Navigation } from '~/components/Navigation';
@@ -9,11 +11,7 @@ import { TRPCReactProvider } from '~/trpc/react';
 
 import s from './layout.module.scss';
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>

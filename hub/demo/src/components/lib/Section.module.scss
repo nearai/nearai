@@ -2,7 +2,7 @@
   --section-padding-x: var(--gap-l);
   --section-padding-y: var(--gap-l);
   padding: var(--section-padding-y) var(--section-padding-x);
-  border-bottom: 1px solid var(--sand6);
+  border-bottom: 1px solid var(--sand4);
   background: var(--section-background-color);
 
   &[data-padding='hero'] {
@@ -37,5 +37,16 @@
   }
   &[data-grow='screen-height'] {
     min-height: var(--section-fill-height);
+  }
+
+  &[data-tabs='true'] {
+    padding-bottom: 0 !important;
+
+    [role='tablist'] {
+      margin-inline: calc(var(--section-padding-x) * -1);
+      padding-inline: var(--section-padding-x);
+      width: unset;
+      flex-grow: 1;
+    }
   }
 }

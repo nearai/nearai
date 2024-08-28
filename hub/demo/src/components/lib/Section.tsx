@@ -16,17 +16,19 @@ export type SectionProps = {
   grow?: 'available' | 'screen-height';
   padding?: 'standard' | 'hero' | 'none';
   style?: CSSProperties;
+  tabs?: boolean;
 };
 
 export const Section = ({
   background,
-  bleed, // No container or padding
+  bleed, // No container
   children,
   className = '',
   gap = 'l',
   grow,
   padding,
   style,
+  tabs,
   ...props
 }: SectionProps) => {
   const variables = {
@@ -38,7 +40,8 @@ export const Section = ({
       className={`${s.section} ${className}`}
       data-background={background}
       data-grow={grow}
-      data-padding={bleed ? 'none' : padding}
+      data-padding={padding}
+      data-tabs={tabs}
       style={{
         ...style,
         ...variables,
@@ -46,7 +49,9 @@ export const Section = ({
       {...props}
     >
       {bleed ? (
-        children
+        <Flex direction="column" gap={gap}>
+          {children}
+        </Flex>
       ) : (
         <Container>
           <Flex direction="column" gap={gap}>

@@ -1,10 +1,10 @@
 @import '~/styles/variables';
+@import '~/styles/mixins';
 
 .root {
   display: flex;
   align-items: stretch;
   flex-grow: 1;
-  min-height: var(--section-fill-height);
 }
 
 .main {
@@ -20,8 +20,11 @@
   position: sticky;
   z-index: 250;
   top: var(--header-height);
-  height: var(--section-fill-height);
+  height: 100%;
   max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
 
   @media (max-width: $tabletBreakpointMaxWidth) {
     position: fixed;
@@ -50,11 +53,7 @@
   overscroll-behavior: contain;
   height: 100%;
 
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
+  @include hideScrollbar();
 
   @media (max-width: $tabletBreakpointMaxWidth) {
     width: 100vw;

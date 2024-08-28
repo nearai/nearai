@@ -1,0 +1,9 @@
+.form {
+  &[data-stretch='true'] {
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    flex-grow: 1;
+    direction: column;
+  }
+}

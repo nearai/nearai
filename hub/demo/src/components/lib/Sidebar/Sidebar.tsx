@@ -17,37 +17,37 @@ export const Sidebar = ({
   openForSmallScreens,
   setOpenForSmallScreens,
 }: Props) => {
-  const [footerOffset, setFooterOffset] = useState(0);
-  const [animateFooterOffset, setAnimateFooterOffset] = useState(false);
+  // const [footerOffset, setFooterOffset] = useState(0);
+  // const [animateFooterOffset, setAnimateFooterOffset] = useState(false);
 
-  useEffect(() => {
-    function onScroll() {
-      const rect = document.getElementById('footer')!.getBoundingClientRect();
-      const offset = Math.max(window.innerHeight - rect.top, 0);
-      setFooterOffset(offset);
-    }
+  // useEffect(() => {
+  //   function onScroll() {
+  //     const rect = document.getElementById('footer')!.getBoundingClientRect();
+  //     const offset = Math.max(window.innerHeight - rect.top, 0);
+  //     setFooterOffset(offset);
+  //   }
 
-    onScroll();
+  //   onScroll();
 
-    setTimeout(() => {
-      setAnimateFooterOffset(true);
-    }, 250);
+  //   setTimeout(() => {
+  //     setAnimateFooterOffset(true);
+  //   }, 250);
 
-    window.addEventListener('scroll', onScroll);
+  //   window.addEventListener('scroll', onScroll);
 
-    () => {
-      window.removeEventListener('scroll', onScroll);
-    };
-  });
+  //   () => {
+  //     window.removeEventListener('scroll', onScroll);
+  //   };
+  // });
 
   return (
     <div className={s.sidebar} data-open-small-screens={openForSmallScreens}>
       <div
         className={s.content}
-        style={{
-          paddingTop: `${footerOffset}px`,
-          transition: animateFooterOffset ? 'padding 200ms' : undefined,
-        }}
+        // style={{
+        //   paddingTop: `${footerOffset}px`,
+        //   transition: animateFooterOffset ? 'padding 200ms' : undefined,
+        // }}
       >
         <div className={s.contentInner}>
           <Button

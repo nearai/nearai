@@ -90,9 +90,14 @@ export const revokeNonceModel = z.object({
 });
 
 export const registryEntry = z.object({
+  id: z.number(),
+  category: z.string(),
   namespace: z.string(),
   name: z.string(),
   version: z.string(),
+  description: z.string(),
+  tags: z.string().array(),
+  details: z.record(z.string(), z.unknown()), // TODO: Figure out standard metadata properties
 });
 export const listRegistry = z.array(registryEntry);
 

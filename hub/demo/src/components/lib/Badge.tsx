@@ -8,6 +8,7 @@ import s from './Badge.module.scss';
 type Variant = 'neutral' | 'primary' | 'warning' | 'success' | 'alert';
 
 type Props = Omit<ComponentPropsWithRef<'span'>, 'children'> & {
+  button?: boolean;
   count?: boolean;
   iconLeft?: ReactElement;
   label: ReactNode;
@@ -18,6 +19,7 @@ type Props = Omit<ComponentPropsWithRef<'span'>, 'children'> & {
 export const Badge = forwardRef<HTMLSpanElement, Props>(
   (
     {
+      button,
       className = '',
       count,
       label,
@@ -28,13 +30,15 @@ export const Badge = forwardRef<HTMLSpanElement, Props>(
     },
     ref,
   ) => {
+    const isButton = button ?? !!props.onClick;
+
     return (
       <span
         className={`${s.badge} ${className}`}
         data-count={count}
         data-variant={variant}
-        role={props.onClick ? 'button' : undefined}
-        tabIndex={props.tabIndex ?? props.onClick ? 0 : undefined}
+        role={isButton ? 'button' : undefined}
+        tabIndex={props.tabIndex ?? isButton ? 0 : undefined}
         ref={ref}
         {...props}
       >

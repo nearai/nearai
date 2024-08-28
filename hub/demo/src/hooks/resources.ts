@@ -15,15 +15,19 @@ export function useResourceParams() {
 
 export function useCurrentResource(category: RegistryCategory) {
   const { accountId, name, version } = useParams();
-  const list = api.hub.listRegistry.useQuery({ category });
-  const currentResource = list.data?.find(
-    (item) =>
-      item.namespace === accountId &&
-      item.name === name &&
-      item.version === version,
+  const list = api.hub.listRegistry.useQuery({
+    category,
+    showLatestVersion: false,
+  });
+  const currentVersions = list.data?.filter(
+    (item) => item.namespace === accountId && item.name === name,
+  );
+  const currentResource = currentVersions?.find(
+    (item) => item.version === version,
   );
 
   return {
     currentResource,
+    currentVersions,
   };
 }

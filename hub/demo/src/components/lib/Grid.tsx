@@ -20,12 +20,27 @@ type Props = {
   justify?: CSSProperties['justifyContent'];
 }>;
 
-export const Grid = ({ children, className = '', style, ...props }: Props) => {
+export const Grid = ({
+  children,
+  className = '',
+  style,
+
+  align,
+  columns,
+  gap,
+  justify,
+  phone,
+  tablet,
+
+  ...props
+}: Props) => {
+  const breakpointProps = { align, columns, gap, justify, phone, tablet };
+
   const variables = {
-    ...breakpointPropToCss(props, 'align', 'grid-align'),
-    ...breakpointPropToCss(props, 'columns', 'grid-columns'),
-    ...breakpointPropToCss(props, 'gap', 'grid-gap', true),
-    ...breakpointPropToCss(props, 'justify', 'grid-justify'),
+    ...breakpointPropToCss(breakpointProps, 'align', 'grid-align'),
+    ...breakpointPropToCss(breakpointProps, 'columns', 'grid-columns'),
+    ...breakpointPropToCss(breakpointProps, 'gap', 'grid-gap', true),
+    ...breakpointPropToCss(breakpointProps, 'justify', 'grid-justify'),
   };
 
   return (
