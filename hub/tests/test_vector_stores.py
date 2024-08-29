@@ -53,6 +53,35 @@ class TestVectorStoresRoutes(unittest.TestCase):
         )
         print(response)
         
+        client.beta.vector_stores.files.create(
+            file_id=response.id,
+            purpose="batch",
+        )
+        
+    def test_attach_file_to_vector_store(self):
+        client = self.create_openai_client()
+        vs = client.beta.vector_stores.create(
+            name="test_retrieve_vector_store",
+        )
+        
+        print(f"Vector store response: {vs}")
+        
+        f = client.files.create(
+            file=open("test.txt", "rb"),
+            purpose="assistants",
+        )
+        
+        print(f"File response: {f}")
+        resp = client.beta.vector_stores.files.create(
+          vector_store_id=vs.id,
+          file_id=f.id,
+        )
+        
+        print(f"File attached to vector store: {resp}")
+        
+        
+        
+        
 
 
 if __name__ == '__main__':
