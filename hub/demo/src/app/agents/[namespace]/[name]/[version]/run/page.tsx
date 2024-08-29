@@ -65,7 +65,7 @@ export default function RunAgentPage() {
     },
   );
 
-  const [environmentName, setPreviousEnvironmentName] = useState<string>('');
+  const [environmentName, setEnvironmentName] = useState<string>('');
   const [conversation, setConversation] = useState<
     z.infer<typeof messageModel>[]
   >([]);
@@ -89,7 +89,7 @@ export default function RunAgentPage() {
     const data = environmentQuery?.data;
 
     if (data && !environmentName) {
-      setPreviousEnvironmentName(data.environmentId);
+      setEnvironmentName(data.environmentId);
 
       chatMutation.trpc.path;
 
@@ -106,7 +106,7 @@ export default function RunAgentPage() {
 
     try {
       const response = await chatMutation.mutateAsync(values);
-      setPreviousEnvironmentName(() => response.environmentId);
+      setEnvironmentName(() => response.environmentId);
       setFileStructure(() => response.fileStructure);
       setFiles(() => response.files);
       setConversation(response.conversation);
