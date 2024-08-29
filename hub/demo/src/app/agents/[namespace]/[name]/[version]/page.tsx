@@ -7,9 +7,9 @@ import { Text } from '~/components/lib/Text';
 import { useCurrentResource } from '~/hooks/resources';
 
 export default function AgentDetailsPage() {
-  const { currentResource, currentVersions } = useCurrentResource('agent');
+  const { currentResource } = useCurrentResource('agent');
 
-  if (!currentResource || !currentVersions) return null;
+  if (!currentResource) return null;
 
   return (
     <>

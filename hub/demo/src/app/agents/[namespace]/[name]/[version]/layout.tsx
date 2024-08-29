@@ -32,10 +32,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     activeTab = 'source';
   }
 
-  if (!currentResource || !currentVersions) {
-    return <PlaceholderSection />;
-  }
-
   return (
     <>
       <Section background="white" bleed gap="m" tabs>
@@ -55,7 +51,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   <Text size="text-xs">Versions</Text>
                 </Dropdown.SectionContent>
 
-                {currentVersions.map((item) => (
+                {currentVersions?.map((item) => (
                   <Dropdown.Item
                     href={`${baseUrl}/${item.version}`}
                     key={item.version}
@@ -87,6 +83,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </Tabs.List>
         </Tabs.Root>
       </Section>
+
+      {!currentResource && <PlaceholderSection />}
 
       {children}
     </>

@@ -26,7 +26,7 @@ import { Slider } from '~/components/lib/Slider';
 import { Text } from '~/components/lib/Text';
 import { SignInPrompt } from '~/components/SignInPrompt';
 import { useZodForm } from '~/hooks/form';
-import { useResourceParams } from '~/hooks/resources';
+import { useCurrentResource, useResourceParams } from '~/hooks/resources';
 import {
   agentRequestModel,
   chatCompletionsModel,
@@ -39,23 +39,32 @@ import { handleClientError } from '~/utils/error';
 import { formatBytes } from '~/utils/number';
 import { useSearchParams } from 'next/dist/client/components/navigation';
 import { FileStructure } from '~/server/api/routers/hub';
+import { PlaceholderSection } from '~/components/lib/Placeholder';
 
 const LOCAL_STORAGE_KEY = 'agent_inference_conversation';
 
 export default function RunAgentPage() {
+  const { currentResource } = useCurrentResource('agent');
+  const store = useAuthStore();
+  const isAuthenticated = store.isAuthenticated();
   const { namespace, name, version } = useResourceParams();
   const searchParams = useSearchParams();
   const environmentId = searchParams.get('environmentId');
-  const formRef = useRef<HTMLFormElement | null>(null);
+  const chatMutation = api.hub.agentChat.useMutation();
+
   const form = useZodForm(agentRequestModel, {
     defaultValues: { agent_id: `${namespace}/${name}/${version}` },
   });
-  const environmentQuery = environmentId
-    ? api.hub.loadEnvironment.useQuery({
-        environmentId: environmentId as string,
-      })
-    : null;
-  const chatMutation = api.hub.agentChat.useMutation();
+
+  const environmentQuery = api.hub.loadEnvironment.useQuery(
+    {
+      environmentId: environmentId as string,
+    },
+    {
+      enabled: !!environmentId,
+    },
+  );
+
   const [environmentName, setPreviousEnvironmentName] = useState<string>('');
   const [conversation, setConversation] = useState<
     z.infer<typeof messageModel>[]
@@ -63,15 +72,14 @@ export default function RunAgentPage() {
   const [fileStructure, setFileStructure] = useState<FileStructure[]>([]);
   const [files, setFiles] = useState<Record<string, string>>({});
   const [openedFileName, setOpenedFileName] = useState<string | null>(null);
-  const store = useAuthStore();
-  const isAuthenticated = store.isAuthenticated();
-
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
+  const formRef = useRef<HTMLFormElement | null>(null);
+
   const openedFile = openedFileName && files && files[openedFileName];
 
   const shareLink = useMemo(() => {
-    if (environmentName && namespace && name && version) {
+    if (environmentName) {
       const urlEncodedEnv = encodeURIComponent(environmentName);
       return `${window.location.origin}/agents/${namespace}/${name}/${version}/run?environmentId=${urlEncodedEnv}`;
     }
@@ -142,6 +150,12 @@ export default function RunAgentPage() {
       form.setFocus('new_message');
     }
   }, [isAuthenticated, form]);
+
+  if (!currentResource) return null;
+
+  if (environmentQuery.isLoading) {
+    return <PlaceholderSection />;
+  }
 
   return (
     <Form stretch onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
