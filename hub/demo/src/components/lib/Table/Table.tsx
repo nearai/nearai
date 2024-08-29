@@ -6,52 +6,43 @@ import type {
   ComponentPropsWithRef,
   HTMLAttributeAnchorTarget,
   KeyboardEventHandler,
+  MouseEventHandler,
   ReactNode,
 } from 'react';
-import { forwardRef } from 'react';
+import { createContext, forwardRef, useContext } from 'react';
 
 import { Flex } from '../Flex';
 import { Placeholder } from '../Placeholder';
 import { SvgIcon } from '../SvgIcon';
+import { type SortableTable } from './hooks';
 import s from './Table.module.scss';
 
-type RootProps = ComponentPropsWithRef<'table'>;
+type RootProps = {
+  children: ReactNode;
+  className?: string;
+  sort?: SortableTable;
+  setSort?: (value: SortableTable) => unknown;
+};
+
+const TableContext = createContext<RootProps | undefined>(undefined);
+
+export const Root = forwardRef<HTMLTableElement, RootProps>((props, ref) => {
+  return (
+    <TableContext.Provider value={props}>
+      <div className={`${s.root} ${props.className}`}>
+        <table className={s.table} ref={ref}>
+          {props.children}
+        </table>
+      </div>
+    </TableContext.Provider>
+  );
+});
+Root.displayName = 'Root';
 
 type HeadProps = ComponentPropsWithRef<'thead'> & {
   header?: ReactNode;
   sticky?: boolean;
 };
-
-type BodyProps = ComponentPropsWithRef<'tbody'>;
-
-type FootProps = ComponentPropsWithRef<'tfoot'> & {
-  sticky?: boolean;
-};
-
-type RowProps = ComponentPropsWithRef<'tr'>;
-
-type HeadCellProps = ComponentPropsWithRef<'th'> & {
-  sort?: 'ascending' | 'descending';
-};
-
-type CellProps = ComponentPropsWithRef<'td'> & {
-  disabled?: boolean;
-  href?: string;
-  target?: HTMLAttributeAnchorTarget;
-};
-
-export const Root = forwardRef<HTMLTableElement, RootProps>(
-  ({ children, ...props }, ref) => {
-    return (
-      <div className={s.root}>
-        <table className={s.table} ref={ref} {...props}>
-          {children}
-        </table>
-      </div>
-    );
-  },
-);
-Root.displayName = 'Root';
 
 export const Head = forwardRef<HTMLTableSectionElement, HeadProps>(
   ({ children, header, sticky = true, ...props }, ref) => {
@@ -72,12 +63,18 @@ export const Head = forwardRef<HTMLTableSectionElement, HeadProps>(
 );
 Head.displayName = 'Head';
 
+type BodyProps = ComponentPropsWithRef<'tbody'>;
+
 export const Body = forwardRef<HTMLTableSectionElement, BodyProps>(
   (props, ref) => {
     return <tbody className={s.body} ref={ref} {...props} />;
   },
 );
 Body.displayName = 'Body';
+
+type FootProps = ComponentPropsWithRef<'tfoot'> & {
+  sticky?: boolean;
+};
 
 export const Foot = forwardRef<HTMLTableSectionElement, FootProps>(
   ({ sticky = true, ...props }, ref) => {
@@ -87,6 +84,8 @@ export const Foot = forwardRef<HTMLTableSectionElement, FootProps>(
   },
 );
 Foot.displayName = 'Foot';
+
+type RowProps = ComponentPropsWithRef<'tr'>;
 
 export const Row = forwardRef<HTMLTableRowElement, RowProps>((props, ref) => {
   const clickable = !!props.onClick;
@@ -118,13 +117,29 @@ export const Row = forwardRef<HTMLTableRowElement, RowProps>((props, ref) => {
 });
 Row.displayName = 'Row';
 
+type HeadCellProps = ComponentPropsWithRef<'th'> &
+  (
+    | {
+        column?: string;
+        sortable?: never;
+      }
+    | {
+        column: string;
+        sortable: boolean;
+      }
+  );
+
 export const HeadCell = forwardRef<HTMLTableCellElement, HeadCellProps>(
-  ({ children, sort, ...props }, ref) => {
-    const clickable = !!props.onClick;
+  ({ children, column, sortable, ...props }, ref) => {
+    const { sort, setSort } = useContext(TableContext)!;
+    const clickable = !!props.onClick || sortable;
     const role = clickable ? 'button' : undefined;
     const tabIndex = clickable ? 0 : undefined;
+    const columnHasActiveSort = sort?.column === column;
 
     const onKeyDown: KeyboardEventHandler<HTMLTableCellElement> = (event) => {
+      if (props.onKeyDown) props.onKeyDown(event);
+
       if (event.key === 'Enter') {
         event.preventDefault();
         event.stopPropagation();
@@ -132,7 +147,24 @@ export const HeadCell = forwardRef<HTMLTableCellElement, HeadCellProps>(
           new Event('click', { bubbles: true, cancelable: true }),
         );
       }
-      if (props.onKeyDown) props.onKeyDown(event);
+    };
+
+    const onClick: MouseEventHandler<HTMLTableCellElement> = (event) => {
+      if (props.onClick) props.onClick(event);
+
+      if (!sortable || !column || !sort || !setSort) return;
+
+      if (columnHasActiveSort && sort.order === 'ASCENDING') {
+        setSort({
+          column,
+          order: 'DESCENDING',
+        });
+      } else {
+        setSort({
+          column,
+          order: 'ASCENDING',
+        });
+      }
     };
 
     return (
@@ -144,14 +176,30 @@ export const HeadCell = forwardRef<HTMLTableCellElement, HeadCellProps>(
         ref={ref}
         {...props}
         onKeyDown={onKeyDown}
+        onClick={onClick}
       >
         <Flex align="center" as="span" gap="s">
           {children}
-          {sort === 'descending' && (
-            <SvgIcon icon={<CaretCircleDown weight="bold" />} size="xs" />
-          )}
-          {sort === 'ascending' && (
-            <SvgIcon icon={<CaretCircleUp weight="bold" />} size="xs" />
+
+          {columnHasActiveSort ? (
+            <>
+              {sort?.order === 'DESCENDING' && (
+                <SvgIcon
+                  icon={<CaretCircleDown weight="duotone" />}
+                  size="xs"
+                  color="violet8"
+                />
+              )}
+              {sort?.order === 'ASCENDING' && (
+                <SvgIcon
+                  icon={<CaretCircleUp weight="duotone" />}
+                  size="xs"
+                  color="violet8"
+                />
+              )}
+            </>
+          ) : (
+            <>{sortable && <SvgIcon icon={<CaretCircleDown />} size="xs" />}</>
           )}
         </Flex>
       </th>
@@ -159,6 +207,12 @@ export const HeadCell = forwardRef<HTMLTableCellElement, HeadCellProps>(
   },
 );
 HeadCell.displayName = 'HeadCell';
+
+type CellProps = ComponentPropsWithRef<'td'> & {
+  disabled?: boolean;
+  href?: string;
+  target?: HTMLAttributeAnchorTarget;
+};
 
 export const Cell = forwardRef<HTMLTableCellElement, CellProps>(
   ({ children, disabled, href, target, ...props }, ref) => {

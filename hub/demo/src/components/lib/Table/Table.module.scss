@@ -14,6 +14,7 @@
   box-shadow: var(--shadow-card-with-outline);
 
   @media (max-width: $tabletBreakpointMaxWidth) {
+    min-width: 0;
     overflow: auto;
   }
 }
@@ -165,8 +166,7 @@
       color: var(--violet8) !important;
     }
 
-    &:focus-visible,
-    &:focus-within {
+    &:focus-visible {
       color: var(--violet8) !important;
 
       &::after {

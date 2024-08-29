@@ -166,39 +166,6 @@ Just like regular table cells, you can pass an `onClick()` prop to a `HeadCell` 
 </Table.Head>
 ```
 
-## Sortable Header Cells
-
-You can combine the `onClick()` and `sort` props on a `HeadCell` to implement UI for toggling sort order by column. You can implement the actual sorting logic on either the client or API side depending on your needs. The `sort` prop simply renders an arrow icon indicating the current sort direction to the user (as well as indicating that it can be interacted with).
-
-```tsx
-import { useState } from 'react';
-
-type SortType = 'DATE_ASC' | 'DATE_DES' | 'NAME_ASC' | 'NAME_DES';
-
-...
-
-const [sort, setSort] = useState<SortType>('DATE_DES');
-// Apply client side or server side (API) sorting based on "sort" value...
-
-...
-
-<Table.Head>
-  <Table.Row>
-    <Table.HeadCell
-      sort={sort === 'DATE_DES' ? 'descending' : 'ascending'}
-      onClick={() => setSort(sort === 'DATE_DES' ? 'DATE_ASC' : 'DATE_DES')}
-    >
-      Date
-    </Table.HeadCell>
-    <Table.HeadCell
-      sort={sort === 'NAME_DES' ? 'descending' : 'ascending'}
-      onClick={() => setSort(sort === 'NAME_DES' ? 'NAME_ASC' : 'NAME_DES')}>
-      Name
-    </Table.HeadCell>
-  </Table.Row>
-</Table.Head>
-```
-
 ## Cell Link (Anchor)
 
 The `clickable` examples above work great for `<button>` interactions. However, if you're needing to link the user to a different route, that should be accomplished with an `<a>` tag. You can achieve this using the `href` and `target` props on `Table.Cell`:
@@ -300,4 +267,45 @@ When data is loading for your table, you can use the `PlaceholderRows` component
   {!myTableData && <Table.PlaceholderRows />}
   ...
 </Table.Body>
+```
+
+## Sorting
+
+We can enable more advanced use cases by using the `useTable()` hook. In the below example, the `Agent` and `Creator` header cells will be sortable due to passing the `column` and `sortable` props. The `Version` header cell is an example of a column that wouldn't be sortable.
+
+```tsx
+import { useTable } from '~/components/lib/Table/hooks';
+import { api } from '~/trpc/react';
+
+...
+
+const list = api.hub.listRegistry.useQuery({ category: 'agent' });
+const { sorted, ...tableProps } = useTable({
+  data: list.data,
+  sortColumn: 'name',
+});
+
+...
+
+<Table.Root {...tableProps}>
+  <Table.Head>
+    <Table.Row>
+      <Table.HeadCell column="name" sortable>
+        Agent
+      </Table.HeadCell>
+      <Table.HeadCell column="namespace" sortable>
+        Creator
+      </Table.HeadCell>
+      <Table.HeadCell>Version</Table.HeadCell>
+    </Table.Row>
+  </Table.Head>
+
+  <Table.Body>
+    {!list.data && <Table.PlaceholderRows />}
+
+    {sorted.map((item, index) => (
+      <Table.Row key={index}>...</Table.Row>
+    ))}
+  </Table.Body>
+</Table.Root>
 ```

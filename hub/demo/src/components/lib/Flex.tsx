@@ -33,12 +33,21 @@ export const Flex = ({
   justify,
   phone,
   tablet,
+  wrap,
 
   ...props
 }: Props) => {
   const Element = as;
 
-  const breakpointProps = { align, direction, gap, justify, phone, tablet };
+  const breakpointProps = {
+    align,
+    direction,
+    gap,
+    justify,
+    phone,
+    tablet,
+    wrap,
+  };
 
   const variables = {
     ...breakpointPropToCss(breakpointProps, 'align', 'flex-align'),
