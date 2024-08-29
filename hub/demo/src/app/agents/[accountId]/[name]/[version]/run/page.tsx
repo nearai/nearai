@@ -1,7 +1,13 @@
 'use client';
 
-import { ArrowRight, Copy, Gear, Info } from '@phosphor-icons/react';
-import { type KeyboardEventHandler, useEffect, useRef, useState } from 'react';
+import { ArrowRight, Copy, Gear, Info, Share } from '@phosphor-icons/react';
+import {
+  type KeyboardEventHandler,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Controller } from 'react-hook-form';
 import { type z } from 'zod';
 
@@ -30,28 +36,57 @@ import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
 import { formatBytes } from '~/utils/number';
+import { useSearchParams } from 'next/dist/client/components/navigation';
+import { FileStructure } from '~/server/api/routers/hub';
 
 const LOCAL_STORAGE_KEY = 'agent_inference_conversation';
 
 export default function RunAgentPage() {
   const { accountId, name, version } = useResourceParams();
+  const searchParams = useSearchParams();
+  const environment_id = searchParams.get('environment_id');
   const formRef = useRef<HTMLFormElement | null>(null);
   const form = useZodForm(agentRequestModel, {
     defaultValues: { agent_id: `${accountId}/${name}/${version}` },
   });
+  const environmentQuery = environment_id
+    ? api.hub.loadEnvironment.useQuery({
+        environment_id: environment_id as string,
+      })
+    : null;
   const chatMutation = api.hub.agentChat.useMutation();
   const [previousEnvironmentName, setPreviousEnvironmentName] =
     useState<string>('');
   const [conversation, setConversation] = useState<
     z.infer<typeof messageModel>[]
   >([]);
+  const [fileStructure, setFileStructure] = useState<FileStructure[]>([]);
+  const [files, setFiles] = useState<Record<string, string>>({});
   const [openedFileName, setOpenedFileName] = useState<string | null>(null);
   const store = useAuthStore();
   const isAuthenticated = store.isAuthenticated();
 
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
-  const openedFile = openedFileName && chatMutation.data?.files[openedFileName];
+  const openedFile = openedFileName && files && files[openedFileName];
+
+  const shareLink = useMemo(() => {
+    if (previousEnvironmentName && accountId && name && version) {
+      const urlEncodedEnv = encodeURIComponent(previousEnvironmentName);
+      return `${window.location.origin}/agents/${accountId}/${name}/${version}/run?environment_id=${urlEncodedEnv}`;
+    }
+    return 'No environment to share';
+  }, [previousEnvironmentName, accountId, name, version]);
+
+  useEffect(() => {
+    const response = environmentQuery?.data;
+    if (response && !previousEnvironmentName) {
+      setPreviousEnvironmentName(() => response.environment_id);
+      setFileStructure(() => response.fileStructure);
+      setFiles(() => response.files);
+      setConversation(() => response.conversation);
+    }
+  }, [environmentQuery]);
 
   async function onSubmit(values: z.infer<typeof agentRequestModel>) {
     if (previousEnvironmentName) {
@@ -59,10 +94,10 @@ export default function RunAgentPage() {
     }
 
     const response = await chatMutation.mutateAsync(values);
-    setPreviousEnvironmentName(() => response.environmentName);
-
-    const parsedChat = response.chat;
-    setConversation(parsedChat);
+    setPreviousEnvironmentName(() => response.environment_id);
+    setFileStructure(() => response.fileStructure);
+    setFiles(() => response.files);
+    setConversation(response.conversation);
 
     form.setValue('new_message', '');
     form.setFocus('new_message');
@@ -176,13 +211,12 @@ export default function RunAgentPage() {
                         </Text>
 
                         <Button
-                          label="Copy environment to clipboard"
-                          icon={<Copy />}
+                          label="Share"
+                          icon={<Share />}
                           size="small"
                           fill="ghost"
                           onClick={() =>
-                            previousEnvironmentName &&
-                            copyTextToClipboard(previousEnvironmentName)
+                            shareLink && copyTextToClipboard(shareLink)
                           }
                           style={{ marginLeft: 'auto' }}
                           disabled={!previousEnvironmentName}
@@ -191,7 +225,7 @@ export default function RunAgentPage() {
 
                       <Text size="text-xs">
                         {previousEnvironmentName ||
-                          'No environment has been generated yet.'}
+                          'No output environment has been generated yet.'}
                       </Text>
                     </Flex>
                   </Dropdown.SectionContent>
@@ -201,8 +235,8 @@ export default function RunAgentPage() {
           </Flex>
 
           <Flex direction="column" gap="xs">
-            {chatMutation.data ? (
-              chatMutation.data.fileStructure.map((fileInfo) => (
+            {fileStructure ? (
+              fileStructure.map((fileInfo) => (
                 <Card
                   padding="s"
                   gap="s"
