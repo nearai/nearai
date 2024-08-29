@@ -1,0 +1,8 @@
+.md-typeset h1:first-of-type {
+    margin-top: 0;
+    margin-bottom: 0.25em;
+}
+.md-typeset h1 {
+    margin-top: 1.5em;
+    margin-bottom: 0.25em;
+}

@@ -1,6 +1,7 @@
 # Near AI
 
-See the [Near AI website](https://near.ai) for more information about how we will achieve _Open Source and User-owned AGI._.
+See the [Near AI website](https://near.ai) for more on how we will achieve _Open Source and User-owned AGI._.
+
 
 # ⚠️ Warning: Alpha software
 
@@ -11,6 +12,8 @@ If you would like to help build our future, please see our [contributing guide](
 # About
 
 The NearAI project is a toolkit to help build, measure, and deploy AI systems focused on [agents](agents.md).
+<iframe width="240" height="120" src="https://www.youtube.com/embed/q2nhgj9q2PU" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="240" height="120" src="https://www.youtube.com/embed/fqPRXxj3AoI" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 NearAI consists of:
 

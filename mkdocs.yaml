@@ -125,6 +125,7 @@ extra_javascript:
 
 extra_css:
   - https://unpkg.com/katex@0/dist/katex.min.css
+  - docs.css
 nav:
   - Getting Started: 
     - Welcome To NearAI Docs: 'index.md'
