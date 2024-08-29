@@ -11,38 +11,32 @@ from pydantic import BaseModel
 from hub.api.v1.auth import AuthToken, revokable_auth
 from hub.api.v1.sql import SqlClient
 from hub.background.task_queue import set_background_tasks
-from hub.tasks.embedding_generation import generate_embeddings_for_vector_store
+from hub.tasks.embedding_generation import generate_embedding, generate_embeddings_for_vector_store
 
-vector_stores_router = APIRouter(
-    tags=["Vector Stores"],
-)
-files_router = APIRouter(
-    tags=["Files"],
-)
+vector_stores_router = APIRouter(tags=["Vector Stores"])
+files_router = APIRouter(tags=["Files"])
 
 logger = logging.getLogger(__name__)
 
-"""
-OpenAI approach:
-1. Create vector store
-2. Upload file, returns file_id
-3. Attach to vector store by file_id
-4. Use vector store in assistants
-"""
-
 
 class ChunkingStrategy(BaseModel):
+    """Defines the chunking strategy for vector stores."""
+
     pass
 
 
 class ExpiresAfter(BaseModel):
+    """Defines the expiration policy for vector stores."""
+
     anchor: Literal["last_active_at"]
-    """The expiration time for the vector store."""
+    """The anchor point for expiration calculation."""
     days: int
-    """The expiration time for the vector store."""
+    """The number of days after which the vector store expires."""
 
 
 class CreateVectorStoreRequest(BaseModel):
+    """Request model for creating a new vector store."""
+
     chunking_strategy: Optional[ChunkingStrategy] = None
     """The chunking strategy to use for the vector store."""
     expires_after: Optional[ExpiresAfter] = None
@@ -55,48 +49,51 @@ class CreateVectorStoreRequest(BaseModel):
     """The name of the vector store."""
 
 
-vector_stores_router = APIRouter(
-    tags=["Vector Stores"],
-)
-
-
 @vector_stores_router.post("/vector_stores", response_model=VectorStore)
 async def create_vector_store(
     request: CreateVectorStoreRequest, background_tasks: BackgroundTasks, auth: AuthToken = Depends(revokable_auth)
 ):
+    """Create a new vector store.
+
+    Args:
+    ----
+        request (CreateVectorStoreRequest): The request containing vector store details.
+        background_tasks (BackgroundTasks): FastAPI background tasks.
+        auth (AuthToken): The authentication token.
+
+    Returns:
+    -------
+        VectorStore: The created vector store object.
+
+    Raises:
+    ------
+        HTTPException: If the vector store creation fails.
+
+    """
     set_background_tasks(background_tasks)
+    logger.info(f"Creating vector store: {request.name}")
 
-    logger.info(f"Received request to create vector store: {request}")
-
-    # Create SQL client
     sql_client = SqlClient()
-
-    # Add vector store to the database
     vector_store_id = sql_client.create_vector_store(
         account_id=auth.account_id,
-        name=request.name or "Unnamed Vector Store",
+        name=request.name,
         file_ids=request.file_ids or [],
         expires_after=request.expires_after.model_dump() if request.expires_after else None,
         chunking_strategy=request.chunking_strategy.model_dump() if request.chunking_strategy else None,
         metadata=request.metadata,
     )
 
-    # Retrieve the created vector store from the database
     vector_store = sql_client.get_vector_store(vector_store_id=vector_store_id)
-    logger.info(f"Retrieved vector store: {vector_store}")
-
     if not vector_store:
+        logger.error(f"Failed to retrieve created vector store: {vector_store_id}")
         raise HTTPException(status_code=404, detail="Vector store not found")
 
-    # Calculate the total bytes (this is a placeholder, you might want to implement a proper calculation)
     total_bytes = sum(len(file_id) for file_id in vector_store.file_ids)
-
     expires_at = None
-    if vector_store.expires_after and vector_store.expires_after["days"]:
+    if vector_store.expires_after and vector_store.expires_after.get("days"):
         expires_at = vector_store.created_at.timestamp() + vector_store.expires_after["days"] * 24 * 60 * 60
 
-    # queue_task(generate_embeddings_for_vector_store, vector_store_id)
-
+    logger.info(f"Vector store created successfully: {vector_store_id}")
     return VectorStore(
         id=str(vector_store.id),
         object="vector_store",
@@ -120,7 +117,18 @@ async def create_vector_store(
 
 @vector_stores_router.get("/vector_stores")
 async def list_vector_stores(auth: AuthToken = Depends(revokable_auth)):
-    """Returns a list of vector stores."""
+    """List all vector stores for the authenticated account.
+
+    Args:
+    ----
+        auth (AuthToken): The authentication token.
+
+    Returns:
+    -------
+        List[VectorStore]: A list of vector stores.
+
+    """
+    logger.info(f"Listing vector stores for account: {auth.account_id}")
     sql_client = SqlClient()
     vector_stores = sql_client.get_vector_stores(account_id=auth.account_id)
     return vector_stores
@@ -128,26 +136,35 @@ async def list_vector_stores(auth: AuthToken = Depends(revokable_auth)):
 
 @vector_stores_router.get("/vector_stores/{vector_store_id}")
 async def get_vector_store(vector_store_id: str, auth: AuthToken = Depends(revokable_auth)):
-    """Retrieves a specific vector store."""
-    logger.info(f"Received request to get vector store with ID: {vector_store_id}")
+    """Retrieve a specific vector store.
 
-    # Create SQL client
+    Args:
+    ----
+        vector_store_id (str): The ID of the vector store to retrieve.
+        auth (AuthToken): The authentication token.
+
+    Returns:
+    -------
+        VectorStore: The requested vector store.
+
+    Raises:
+    ------
+        HTTPException: If the vector store is not found.
+
+    """
+    logger.info(f"Retrieving vector store: {vector_store_id}")
     sql_client = SqlClient()
-
-    # Retrieve the vector store from the database
     vector_store = sql_client.get_vector_store_by_account(account_id=auth.account_id, vector_store_id=vector_store_id)
-    logger.info(f"Retrieved vector store: {vector_store}")
 
     if not vector_store:
+        logger.warning(f"Vector store not found: {vector_store_id}")
         raise HTTPException(status_code=404, detail="Vector store not found")
 
-    # Calculate the total bytes (this is a placeholder, you might want to implement a proper calculation)
     total_bytes = sum(len(file_id) for file_id in vector_store.file_ids)
-
     expires_at = None
-    if vector_store.expires_after and vector_store.expires_after["days"]:
+    if vector_store.expires_after and vector_store.expires_after.get("days"):
         expires_at = vector_store.created_at.timestamp() + vector_store.expires_after["days"] * 24 * 60 * 60
-    # Prepare the response
+
     return VectorStore(
         id=str(vector_store.id),
         object="vector_store",
@@ -171,19 +188,31 @@ async def get_vector_store(vector_store_id: str, auth: AuthToken = Depends(revok
 
 @vector_stores_router.patch("/vector_stores/{vector_store_id}")
 async def update_vector_store():
-    """Modifies a vector store."""
+    """Update a vector store. (Not implemented).
+
+    This endpoint is a placeholder for future implementation.
+    """
+    logger.info("Update vector store endpoint called")
     pass
 
 
 @vector_stores_router.delete("/vector_stores/{vector_store_id}")
 async def delete_vector_store():
-    """Delete a vector store."""
+    """Delete a vector store. (Not implemented).
+
+    This endpoint is a placeholder for future implementation.
+    """
+    logger.info("Delete vector store endpoint called")
     pass
 
 
 class FileUploadRequest(BaseModel):
+    """Request model for file upload."""
+
     file: FileTypes
+    """The file to be uploaded."""
     purpose: Literal["assistants", "batch", "fine-tune", "vision"]
+    """The purpose of the file upload."""
 
     class Config:
         arbitrary_types_allowed = True
@@ -195,33 +224,47 @@ async def upload_file(
     purpose: Literal["assistants", "batch", "fine-tune", "vision"] = Form(...),
     auth: AuthToken = Depends(revokable_auth),
 ) -> FileObject:
-    """Upload a file to the vector store."""
-    logger.info(f"Received file upload request from user: {auth.account_id}")
+    """Upload a file to the system.
 
-    # Validate purpose
+    Args:
+    ----
+        file (UploadFile): The file to be uploaded.
+        purpose (str): The purpose of the file upload.
+        auth (AuthToken): The authentication token.
+
+    Returns:
+    -------
+        FileObject: The uploaded file object.
+
+    Raises:
+    ------
+        HTTPException: If the purpose is invalid or file upload fails.
+
+    """
+    logger.info(f"File upload request received for user: {auth.account_id}")
+
     valid_purposes = ["assistants", "batch", "fine-tune", "vision"]
     if purpose not in valid_purposes:
+        logger.warning(f"Invalid purpose provided: {purpose}")
         raise HTTPException(status_code=400, detail=f"Invalid purpose. Must be one of: {', '.join(valid_purposes)}")
 
-    # Store the file temporarily
     import tempfile
 
-    # Create a temporary file
     with tempfile.NamedTemporaryFile(delete=False, mode="wb") as temp_file:
-        logger.info("Creating temporary file for upload")
-        # Write the content of the uploaded file to the temporary file
         content = await file.read()
         temp_file.write(content)
-
         temp_file_path = temp_file.name
-        logger.info(f"Temporary file created at: {temp_file_path}")
+        logger.debug(f"Temporary file created: {temp_file_path}")
 
     sql_client = SqlClient()
     file_id = sql_client.create_file(account_id=auth.account_id, file_path=temp_file_path, purpose=purpose)
     file_details = sql_client.get_file_details_by_account(file_id=file_id, account_id=auth.account_id)
+
     if not file_details:
+        logger.error(f"File details not found for file_id: {file_id}")
         raise HTTPException(status_code=404, detail="File details not found")
 
+    logger.info(f"File uploaded successfully: {file_id}")
     return FileObject(
         id=str(file_id),
         bytes=file.size or 0,
@@ -234,55 +277,50 @@ async def upload_file(
     )
 
 
-# @vector_stores_router.post("/vector_stores/{vector_store_id}/generate_embeddings")
-# async def trigger_embedding_generation(
-#     vector_store_id: str, background_tasks: BackgroundTasks, auth: AuthToken = Depends(revokable_auth)
-# ):
-#     logger.info(f"Received request to trigger embedding generation for vector store: {vector_store_id}")
-#     set_background_tasks(background_tasks)
-
-#     sql_client = SqlClient()
-#     vector_store = sql_client.get_vector_store_by_account(vector_store_id=vector_store_id, account_id=auth.account_id)
-
-#     if not vector_store:
-#         raise HTTPException(status_code=404, detail="Vector store not found")
-
-#     queue_task(generate_embeddings_for_vector_store, vector_store_id)
-
-#     return {"message": "Embedding generation queued", "vector_store_id": vector_store_id}
-
-
 class VectorStoreFileCreate(BaseModel):
+    """Request model for creating a vector store file."""
+
     file_id: str
+    """File ID returned from upload file endpoint."""
 
 
 @vector_stores_router.post("/vector_stores/{vector_store_id}/files")
 async def create_vector_store_file(
     vector_store_id: str, file_data: VectorStoreFileCreate, auth: AuthToken = Depends(revokable_auth)
 ):
-    """Creates a vector store file from an existing file."""
-    logger.info(f"Received request to attach file to vector store: {vector_store_id}")
+    """Attach a file to an existing vector store.
+
+    Args:
+    ----
+        vector_store_id (str): The ID of the vector store.
+        file_data (VectorStoreFileCreate): The file data to attach.
+        auth (AuthToken): The authentication token.
+
+    Returns:
+    -------
+        VectorStore: The updated vector store object.
+
+    Raises:
+    ------
+        HTTPException: If the vector store is not found or file attachment fails.
+
+    """
+    logger.info(f"Attaching file to vector store: {vector_store_id}")
 
     sql_client = SqlClient()
-
-    # Verify the vector store exists and belongs to the user
     vector_store = sql_client.get_vector_store_by_account(vector_store_id=vector_store_id, account_id=auth.account_id)
     if not vector_store:
+        logger.warning(f"Vector store not found: {vector_store_id}")
         raise HTTPException(status_code=404, detail="Vector store not found")
 
-    print(f"Vector store before update call: {vector_store}")
     file_ids = vector_store.file_ids + [file_data.file_id]
-    # Attach file to the vector store
     updated_vector_store = sql_client.update_files_in_vector_store(
         vector_store_id=vector_store_id, file_ids=file_ids, account_id=auth.account_id
     )
 
-    print(f"Updated vector store: {updated_vector_store}")
-
     if not updated_vector_store:
         raise HTTPException(status_code=500, detail="Failed to attach file to vector store")
 
-    # Calculate the total bytes (placeholder implementation)
     total_bytes = sum(len(file_id) for file_id in updated_vector_store.file_ids)
 
     expires_at = None
@@ -292,7 +330,6 @@ async def create_vector_store_file(
         )
 
     logger.info(f"Generating embeddings for vector store: {vector_store_id}")
-    # queue_task(generate_embeddings_for_vector_store, vector_store_id)
     await generate_embeddings_for_vector_store(vector_store_id)
 
     return VectorStore(
@@ -316,3 +353,48 @@ async def create_vector_store_file(
         else None,
         expires_at=expires_at,
     )
+
+
+class QueryVectorStoreRequest(BaseModel):
+    """Request model for querying a vector store."""
+
+    query: str
+    """Text to run similarity search on."""
+
+
+@vector_stores_router.post("/vector_stores/{vector_store_id}/search")
+async def query_vector_store(
+    vector_store_id: str, request: QueryVectorStoreRequest, auth: AuthToken = Depends(revokable_auth)
+):
+    """Perform a similarity search on the specified vector store.
+
+    Args:
+    ----
+        vector_store_id (str): The ID of the vector store to search.
+        request (QueryVectorStoreRequest): The request containing the query text.
+        auth (AuthToken): The authentication token for the request.
+
+    Returns:
+    -------
+        List[Dict]: A list of search results, each containing the document content and metadata.
+
+    Raises:
+    ------
+        HTTPException: If the vector store is not found or if there's an error during the search.
+
+    """
+    sql = SqlClient()
+    try:
+        vector_store = sql.get_vector_store_by_account(vector_store_id, auth.account_id)
+        if not vector_store:
+            logger.warning(f"Vector store not found: {vector_store_id}")
+            raise HTTPException(status_code=404, detail="Vector store not found")
+
+        emb = await generate_embedding(request.query, query=True)
+        results = sql.similarity_search(vector_store_id, emb)
+
+        logger.info(f"Similarity search completed for vector store: {vector_store_id}")
+        return results
+    except Exception as e:
+        logger.error(f"Error querying vector store: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to query vector store") from None

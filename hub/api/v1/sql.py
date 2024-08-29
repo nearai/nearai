@@ -61,6 +61,12 @@ class VectorStoreFile(BaseModel):
     updated_at: datetime
 
 
+class SimilaritySearch(BaseModel):
+    file_id: str
+    chunk_text: str
+    distance: float
+
+
 class SqlClient:
     def __init__(self):  # noqa: D107
         self.db = pymysql.connect(
@@ -71,13 +77,13 @@ class SqlClient:
             autocommit=True,
         )
 
-    def __fetch_all(self, query: str):
+    def __fetch_all(self, query: str, args: object = None):
         """Fetches all matching rows from the database.
 
         Returns a list of dictionaries, the dicts can be used by Pydantic models.
         """
         cursor = self.db.cursor(pymysql.cursors.DictCursor)
-        cursor.execute(query)
+        cursor.execute(query, args)
         return cursor.fetchall()
 
     def __fetch_one(self, query: str):
@@ -213,7 +219,7 @@ class SqlClient:
     def create_file(self, account_id: str, file_path: str, purpose: str) -> str:
         """Adds file details in the vector store."""
         # Generate a unique file_id with the required format
-        file_id = f"file-{uuid.uuid4().hex[:24]}"  # This generates a string like "file-abc123"
+        file_id = f"file_{uuid.uuid4().hex[:24]}"  # This generates a string like "file-abc123"
 
         query = """
         INSERT INTO vector_store_files (id, account_id, file_path, purpose)
@@ -289,3 +295,19 @@ class SqlClient:
         cursor = self.db.cursor()
         cursor.execute(query, (embedding_model, embedding_dimensions, vector_store_id))
         self.db.commit()
+
+    def similarity_search(
+        self, vector_store_id: str, query_embedding: List[float], limit: int = 10
+    ) -> List[SimilaritySearch]:
+        query = """
+        SELECT vse.file_id, vse.chunk_text, vse.embedding <-> %s AS distance
+        FROM vector_store_embeddings vse
+        WHERE vse.vector_store_id = %s
+        ORDER BY distance DESC
+        LIMIT %s
+        """
+        query_embedding_json = json.dumps(query_embedding)
+        results = [
+            SimilaritySearch(**res) for res in self.__fetch_all(query, (query_embedding_json, vector_store_id, limit))
+        ]
+        return results

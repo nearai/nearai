@@ -63,21 +63,23 @@ class TestVectorStoresRoutes(unittest.TestCase):
         vs = client.beta.vector_stores.create(
             name="test_retrieve_vector_store",
         )
-        
         print(f"Vector store response: {vs}")
         
         f = client.files.create(
             file=open("test.txt", "rb"),
             purpose="assistants",
         )
-        
         print(f"File response: {f}")
+        
         resp = client.beta.vector_stores.files.create(
           vector_store_id=vs.id,
           file_id=f.id,
         )
-        
         print(f"File attached to vector store: {resp}")
+        
+        resp = self.client.post(f"/v1/vector_stores/{vs.id}/search", json={"query": "How to list my vector stores?"})
+        print(f"Search response: {resp.json()}")
+        
         
         
         

@@ -24,11 +24,8 @@ async def generate_embeddings_for_vector_store(vector_store_id: str):
         logger.error(f"Vector store with id {vector_store_id} not found")
         raise ValueError(f"Vector store with id {vector_store_id} not found")
 
-    logger.info(f"Queueing embedding generation tasks for {len(vector_store.file_ids)} files")
-    tasks = []
-    for file_id in vector_store.file_ids:
-        logger.debug(f"Queueing embedding generation for file: {file_id}")
-        tasks.append(generate_embeddings_for_file(file_id, vector_store_id))
+    logger.debug(f"Queueing embedding generation tasks for {len(vector_store.file_ids)} files")
+    tasks = [generate_embeddings_for_file(file_id, vector_store_id) for file_id in vector_store.file_ids]
 
     await asyncio.gather(*tasks)
 
@@ -47,22 +44,17 @@ async def generate_embeddings_for_file(file_id: str, vector_store_id: str):
         content = file.read()
 
     chunks = create_chunks(content)
-    logger.info(f"Created {len(chunks)} chunks for file: {file_id}")
+    logger.debug(f"Created {len(chunks)} chunks for file: {file_id}")
 
-    embedding_tasks = []
-    for i, chunk in enumerate(chunks):
-        task = generate_embedding(chunk)
-        embedding_tasks.append(task)
-        logger.debug(f"Queued embedding generation for chunk {i+1}/{len(chunks)} of file: {file_id}")
+    embedding_tasks = [generate_embedding(chunk) for chunk in chunks]
 
     embeddings = await asyncio.gather(*embedding_tasks)
-    logger.info(f"Generated {len(embeddings)} embeddings for file: {file_id}")
+    logger.debug(f"Generated {len(embeddings)} embeddings for file: {file_id}")
 
     # Store embeddings in the database
     for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
         embedding_id = f"vfe_{uuid.uuid4().hex[:24]}"
-        logger.info(f"Storing embedding: {embedding_id} for file: {file_id}")
-        print(chunk, embedding)
+        logger.debug(f"Storing embedding: {embedding_id} for file: {file_id}")
         try:
             sql_client.store_embedding(
                 id=embedding_id,
@@ -74,8 +66,6 @@ async def generate_embeddings_for_file(file_id: str, vector_store_id: str):
             )
         except Exception as e:
             logger.error(f"Failed to store embedding: {embedding_id} for file: {file_id}, error: {e}")
-
-        logger.info(f"Stored embedding: {embedding_id} for file: {file_id}")
 
     # Update file status
     sql_client.update_file_embedding_status(file_id, "completed")
