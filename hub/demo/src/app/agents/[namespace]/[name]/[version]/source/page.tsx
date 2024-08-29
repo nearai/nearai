@@ -12,7 +12,7 @@ export default function AgentSourcePage() {
   return (
     <>
       <Section>
-        <Text>Viewable source code coming soon!</Text>
+        <Text weight={500}>Feature coming soon!</Text>
       </Section>
     </>
   );

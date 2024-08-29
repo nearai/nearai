@@ -29,15 +29,16 @@ import {
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
+import { handleClientError } from '~/utils/error';
 import { formatBytes } from '~/utils/number';
 
 const LOCAL_STORAGE_KEY = 'agent_inference_conversation';
 
 export default function RunAgentPage() {
-  const { accountId, name, version } = useResourceParams();
+  const { namespace, name, version } = useResourceParams();
   const formRef = useRef<HTMLFormElement | null>(null);
   const form = useZodForm(agentRequestModel, {
-    defaultValues: { agent_id: `${accountId}/${name}/${version}` },
+    defaultValues: { agent_id: `${namespace}/${name}/${version}` },
   });
   const chatMutation = api.hub.agentChat.useMutation();
   const [previousEnvironmentName, setPreviousEnvironmentName] =
@@ -58,14 +59,18 @@ export default function RunAgentPage() {
       values.environment_id = previousEnvironmentName;
     }
 
-    const response = await chatMutation.mutateAsync(values);
-    setPreviousEnvironmentName(() => response.environmentName);
+    try {
+      const response = await chatMutation.mutateAsync(values);
+      setPreviousEnvironmentName(() => response.environmentName);
 
-    const parsedChat = response.chat;
-    setConversation(parsedChat);
+      const parsedChat = response.chat;
+      setConversation(parsedChat);
 
-    form.setValue('new_message', '');
-    form.setFocus('new_message');
+      form.setValue('new_message', '');
+      form.setFocus('new_message');
+    } catch (error) {
+      handleClientError({ error, title: 'Failed to communicate with agent' });
+    }
   }
 
   const onKeyDownContent: KeyboardEventHandler<HTMLTextAreaElement> = (

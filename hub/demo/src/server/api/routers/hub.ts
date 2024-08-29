@@ -136,15 +136,27 @@ export const hubRouter = createTRPCRouter({
       z.object({
         category: registryCategory,
         limit: z.number().default(10_000),
+        namespace: z.string().optional(),
         showLatestVersion: z.boolean().default(true),
+        tags: z.string().array().optional(),
       }),
     )
     .query(async ({ input }) => {
-      const u =
-        env.ROUTER_URL +
-        `/registry/list_entries?category=${input.category}&total=${input.limit}&show_latest_version=${input.showLatestVersion}`;
+      const url = new URL(`${env.ROUTER_URL}/registry/list_entries`);
 
-      const resp = await fetchWithZod(listRegistry, u, {
+      url.searchParams.append('category', input.category);
+      url.searchParams.append('total', `${input.limit}`);
+      url.searchParams.append(
+        'show_latest_version',
+        `${input.showLatestVersion}`,
+      );
+
+      if (input.namespace)
+        url.searchParams.append('namespace', input.namespace);
+
+      if (input.tags) url.searchParams.append('tags', input.tags.join(','));
+
+      const resp = await fetchWithZod(listRegistry, url.toString(), {
         method: 'POST',
       });
 

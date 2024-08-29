@@ -21,9 +21,9 @@ import { useCurrentResource, useResourceParams } from '~/hooks/resources';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const pathSegments = usePathname().split('/');
-  const { name, accountId, version } = useResourceParams();
+  const { namespace, name, version } = useResourceParams();
   const { currentResource, currentVersions } = useCurrentResource('agent');
-  const baseUrl = `/agents/${accountId}/${name}`;
+  const baseUrl = `/agents/${namespace}/${name}`;
   let activeTab: 'overview' | 'run' | 'source' = 'overview';
 
   if (pathSegments.at(-1) === 'run') {
@@ -41,7 +41,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <Section background="white" bleed gap="m" tabs>
         <Flex align="center" gap="m">
           <Text as="h1" size="text-l">
-            {accountId} / {name}
+            {namespace} / {name}
           </Text>
 
           <Dropdown.Root>

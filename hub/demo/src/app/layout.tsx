@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <div className={s.wrapper}>
             <Navigation />
             <main className={s.main}>{children}</main>
-            <Footer />
+            <Footer conditional />
           </div>
         </TRPCReactProvider>
       </body>

@@ -5,6 +5,7 @@ import { type ReactNode } from 'react';
 
 import { Button } from '../Button';
 import s from './Sidebar.module.scss';
+import { Footer } from '~/components/Footer';
 
 type Props = {
   children: ReactNode;
@@ -17,44 +18,15 @@ export const Sidebar = ({
   openForSmallScreens,
   setOpenForSmallScreens,
 }: Props) => {
-  // const [footerOffset, setFooterOffset] = useState(0);
-  // const [animateFooterOffset, setAnimateFooterOffset] = useState(false);
-
-  // useEffect(() => {
-  //   function onScroll() {
-  //     const rect = document.getElementById('footer')!.getBoundingClientRect();
-  //     const offset = Math.max(window.innerHeight - rect.top, 0);
-  //     setFooterOffset(offset);
-  //   }
-
-  //   onScroll();
-
-  //   setTimeout(() => {
-  //     setAnimateFooterOffset(true);
-  //   }, 250);
-
-  //   window.addEventListener('scroll', onScroll);
-
-  //   () => {
-  //     window.removeEventListener('scroll', onScroll);
-  //   };
-  // });
-
   return (
     <div className={s.sidebar} data-open-small-screens={openForSmallScreens}>
-      <div
-        className={s.content}
-        // style={{
-        //   paddingTop: `${footerOffset}px`,
-        //   transition: animateFooterOffset ? 'padding 200ms' : undefined,
-        // }}
-      >
-        <div className={s.contentInner}>
+      <div className={s.sidebarContent}>
+        <div className={s.sidebarContentInner}>
           <Button
             label="Close"
             icon={<X weight="bold" />}
             onClick={() => setOpenForSmallScreens(false)}
-            className={s.closeButton}
+            className={s.sidebarCloseButton}
             size="small"
             fill="ghost"
           />
@@ -70,6 +42,11 @@ export const Root = (props: { children: ReactNode }) => {
   return <div className={s.root} {...props} />;
 };
 
-export const Main = (props: { children: ReactNode }) => {
-  return <div className={s.main} {...props} />;
+export const Main = ({ children }: { children: ReactNode }) => {
+  return (
+    <div className={s.main}>
+      {children}
+      <Footer />
+    </div>
+  );
 };

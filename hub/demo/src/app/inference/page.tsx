@@ -27,6 +27,7 @@ import { useListModels } from '~/hooks/queries';
 import { chatCompletionsModel, type messageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
+import { handleClientError } from '~/utils/error';
 
 const LOCAL_STORAGE_KEY = 'inference_conversation';
 
@@ -71,14 +72,18 @@ export default function InferencePage() {
     values.messages = [...conversation, ...values.messages];
     values.stop = ['[INST]'];
 
-    const response = await chatMutation.mutateAsync(values);
+    try {
+      const response = await chatMutation.mutateAsync(values);
 
-    values.messages = [...values.messages, response.choices[0]!.message];
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(values));
-    setConversation(values.messages);
+      values.messages = [...values.messages, response.choices[0]!.message];
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(values));
+      setConversation(values.messages);
 
-    form.setValue('messages.0.content', '');
-    form.setFocus('messages.0.content');
+      form.setValue('messages.0.content', '');
+      form.setFocus('messages.0.content');
+    } catch (error) {
+      handleClientError({ error, title: 'Failed to communicate with model' });
+    }
   };
 
   const onKeyDownContent: KeyboardEventHandler<HTMLTextAreaElement> = (
