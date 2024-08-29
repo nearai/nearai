@@ -3,9 +3,10 @@
 import { X } from '@phosphor-icons/react';
 import { type ReactNode } from 'react';
 
+import { Footer } from '~/components/Footer';
+
 import { Button } from '../Button';
 import s from './Sidebar.module.scss';
-import { Footer } from '~/components/Footer';
 
 type Props = {
   children: ReactNode;

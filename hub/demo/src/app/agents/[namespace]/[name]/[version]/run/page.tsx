@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowRight, Copy, Gear, Info, ShareFat } from '@phosphor-icons/react';
+import { useSearchParams } from 'next/dist/client/components/navigation';
 import {
   type KeyboardEventHandler,
   useEffect,
@@ -21,6 +22,7 @@ import { Flex } from '~/components/lib/Flex';
 import { Form } from '~/components/lib/Form';
 import { HR } from '~/components/lib/HorizontalRule';
 import { InputTextarea } from '~/components/lib/InputTextarea';
+import { PlaceholderSection } from '~/components/lib/Placeholder';
 import { Sidebar } from '~/components/lib/Sidebar';
 import { Slider } from '~/components/lib/Slider';
 import { Text } from '~/components/lib/Text';
@@ -32,14 +34,12 @@ import {
   chatCompletionsModel,
   type messageModel,
 } from '~/lib/models';
+import { type FileStructure } from '~/server/api/routers/hub';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
 import { handleClientError } from '~/utils/error';
 import { formatBytes } from '~/utils/number';
-import { useSearchParams } from 'next/dist/client/components/navigation';
-import { FileStructure } from '~/server/api/routers/hub';
-import { PlaceholderSection } from '~/components/lib/Placeholder';
 
 const LOCAL_STORAGE_KEY = 'agent_inference_conversation';
 
@@ -58,7 +58,7 @@ export default function RunAgentPage() {
 
   const environmentQuery = api.hub.loadEnvironment.useQuery(
     {
-      environmentId: environmentId as string,
+      environmentId: environmentId!,
     },
     {
       enabled: !!environmentId,
@@ -76,7 +76,7 @@ export default function RunAgentPage() {
     useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  const openedFile = openedFileName && files && files[openedFileName];
+  const openedFile = openedFileName && files?.[openedFileName];
 
   const shareLink = useMemo(() => {
     if (environmentName) {
@@ -86,17 +86,18 @@ export default function RunAgentPage() {
   }, [environmentName, namespace, name, version]);
 
   useEffect(() => {
-    const response = environmentQuery?.data;
-    if (response && !environmentName) {
-      setPreviousEnvironmentName(() => response.environmentId);
+    const data = environmentQuery?.data;
+
+    if (data && !environmentName) {
+      setPreviousEnvironmentName(data.environmentId);
 
       chatMutation.trpc.path;
 
-      setFileStructure(() => response.fileStructure);
-      setFiles(() => response.files);
-      setConversation(() => response.conversation);
+      setFileStructure(() => data.fileStructure);
+      setFiles(() => data.files);
+      setConversation(() => data.conversation);
     }
-  }, [environmentQuery]);
+  }, [chatMutation.trpc.path, environmentName, environmentQuery.data]);
 
   async function onSubmit(values: z.infer<typeof agentRequestModel>) {
     if (environmentName) {

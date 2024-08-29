@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 
 import s from './Footer.module.scss';
 import { Flex } from './lib/Flex';
 import { Text } from './lib/Text';
-import { useEffect } from 'react';
 
 type Props = {
   conditional?: boolean;

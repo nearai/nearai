@@ -12,6 +12,7 @@ const config = {
     'plugin:@typescript-eslint/stylistic-type-checked',
   ],
   rules: {
+    '@typescript-eslint/no-unnecessary-type-assertion': 'off',
     '@typescript-eslint/array-type': 'off',
     '@typescript-eslint/consistent-type-definitions': 'off',
     '@typescript-eslint/consistent-type-imports': [

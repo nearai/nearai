@@ -10,7 +10,7 @@ import {
   listModelsResponseModel,
   listNoncesModel,
   listRegistry,
-  messageModel,
+  type messageModel,
   revokeNonceModel,
 } from '~/lib/models';
 import {
