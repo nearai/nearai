@@ -10,7 +10,7 @@ import {
   listModelsResponseModel,
   listNoncesModel,
   listRegistry,
-  type messageModel,
+  messageModel,
   revokeNonceModel,
 } from '~/lib/models';
 import {
@@ -36,6 +36,79 @@ export const registryCategory = z.enum([
   'model',
 ]);
 export type RegistryCategory = z.infer<typeof registryCategory>;
+
+async function downloadEnvironment(environmentId: string) {
+  const u = `${env.ROUTER_URL}/registry/download_file`;
+  const [namespace, name, version] = environmentId.split('/');
+
+  const resp = await fetch(u, {
+    method: 'POST',
+    headers: {
+      Accept: 'binary/octet-stream',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      entry_location: {
+        namespace,
+        name,
+        version,
+      },
+      path: 'environment.tar.gz',
+    }),
+  });
+
+  if (!resp.ok) {
+    console.error(
+      'Requested Environment is: ',
+      `${namespace}/${name}/${version}`,
+    );
+    throw new Error(
+      'Failed to download environment, status: ' +
+        resp.status +
+        ' ' +
+        resp.statusText,
+    );
+  }
+  if (!resp.body) {
+    throw new Error('Response body is null');
+  }
+
+  const stream = resp.body.pipeThrough(new DecompressionStream('gzip'));
+  const blob = await new Response(stream).blob();
+  const tarReader = await TarReader.load(blob);
+
+  const conversation = tarReader
+    .getTextFile('./chat.txt')
+    .split('\n')
+    .filter((message) => message)
+    .map((message) => {
+      return JSON.parse(message) as z.infer<typeof messageModel>;
+    });
+
+  const fileStructure: FileStructure[] = [];
+  const files: Record<string, string> = {};
+  const environment = {
+    environmentId,
+    fileStructure,
+    files,
+    conversation,
+  };
+
+  for (const fileInfo of tarReader.fileInfos) {
+    if ((fileInfo.type as number) === 48) {
+      // Files are actually coming through as 48
+      const originalFileName = fileInfo.name;
+      const fileName = originalFileName.replace(/^\.\//, '');
+      if (fileName !== 'chat.txt' && fileName !== '.next_action') {
+        fileInfo.name = fileName;
+        environment.fileStructure.push(fileInfo);
+        environment.files[fileName] = tarReader.getTextFile(fileName);
+      }
+    }
+  }
+
+  return environment;
+}
 
 export const hubRouter = createTRPCRouter({
   listModels: publicProcedure.query(async () => {
@@ -163,6 +236,12 @@ export const hubRouter = createTRPCRouter({
       return resp;
     }),
 
+  loadEnvironment: protectedProcedure
+    .input(z.object({ environmentId: z.string() }))
+    .query(async ({ input }) => {
+      return await downloadEnvironment(input.environmentId);
+    }),
+
   agentChat: protectedProcedure
     .input(agentRequestModel)
     .mutation(async ({ ctx, input }) => {
@@ -192,78 +271,8 @@ export const hubRouter = createTRPCRouter({
         throw new Error('Failed to run agent, response: ' + responseText);
       }
 
-      const environmentName = responseText.replace(/\\/g, '').replace(/"/g, '');
-
-      const u2 = `${env.ROUTER_URL}/registry/download_file`;
-      const [namespace, name, version] = environmentName.split('/');
-
-      const resp = await fetch(u2, {
-        method: 'POST',
-        headers: {
-          Accept: 'binary/octet-stream',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          entry_location: {
-            namespace,
-            name,
-            version,
-          },
-          path: 'environment.tar.gz',
-        }),
-      });
-
-      if (!resp.ok) {
-        console.error(
-          'Requested Environment is: ',
-          `${namespace}/${name}/${version}`,
-        );
-        throw new Error(
-          'Failed to download environment, status: ' +
-            resp.status +
-            ' ' +
-            resp.statusText,
-        );
-      }
-      if (!resp.body) {
-        throw new Error('Response body is null');
-      }
-
-      const stream = resp.body.pipeThrough(new DecompressionStream('gzip'));
-      const blob = await new Response(stream).blob();
-      const tarReader = await TarReader.load(blob);
-
-      const chat = tarReader
-        .getTextFile('./chat.txt')
-        .split('\n')
-        .filter((message) => message)
-        .map((message) => {
-          return JSON.parse(message) as z.infer<typeof messageModel>;
-        });
-
-      const fileStructure: FileStructure[] = [];
-      const files: Record<string, string> = {};
-      const environment = {
-        environmentName: environmentName,
-        fileStructure,
-        files,
-        chat,
-      };
-
-      for (const fileInfo of tarReader.fileInfos) {
-        if ((fileInfo.type as number) === 48) {
-          // Actual file type differs from TarFileType enum. Files are coming through as 48.
-
-          const fileName = fileInfo.name.replace(/^\.\//, '');
-
-          if (fileName !== 'chat.txt' && fileName !== '.next_action') {
-            fileInfo.name = fileName;
-            environment.fileStructure.push(fileInfo);
-            environment.files[fileName] = tarReader.getTextFile(fileName);
-          }
-        }
-      }
-
-      return environment;
+      return downloadEnvironment(
+        responseText.replace(/\\/g, '').replace(/"/g, ''),
+      );
     }),
 });
