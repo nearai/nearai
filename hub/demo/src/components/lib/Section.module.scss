@@ -20,7 +20,11 @@
   }
 
   &[data-background='primary-gradient'] {
-    background: linear-gradient(to bottom right, var(--violet-5), var(--cyan-3));
+    background: linear-gradient(
+      to bottom right,
+      var(--violet-5),
+      var(--cyan-3)
+    );
   }
 
   &[data-grow] {
