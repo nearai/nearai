@@ -19,18 +19,7 @@ export function signInWithNear() {
     currentNonce: nonce,
   });
 
-  setTimeout(() => {
-    /*
-      This delay is needed to ensure useAuthStore.setState() resolves updating 
-      local storage before redirecting away.
-    */
-    redirectToAuthNearLink(
-      MESSAGE,
-      RECIPIENT,
-      nonce,
-      returnSignInCallbackUrl(),
-    );
-  }, 50);
+  redirectToAuthNearLink(MESSAGE, RECIPIENT, nonce, returnSignInCallbackUrl());
 }
 
 export function returnSignInCallbackUrl() {
