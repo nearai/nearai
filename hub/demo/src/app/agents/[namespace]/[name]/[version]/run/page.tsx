@@ -280,7 +280,7 @@ export default function RunAgentPage() {
 
           <Controller
             control={form.control}
-            defaultValue={5}
+            defaultValue={1}
             name="max_iterations"
             render={({ field }) => (
               <Slider
