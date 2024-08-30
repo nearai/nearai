@@ -6,5 +6,5 @@ import { Horse } from '@phosphor-icons/react';
 
 ...
 
-<SvgIcon icon={<Horse weight="duotone" />} color="red10" size="xl" />;
+<SvgIcon icon={<Horse weight="duotone" />} color="red-10" size="xl" />;
 ```

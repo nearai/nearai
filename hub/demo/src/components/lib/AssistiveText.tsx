@@ -20,10 +20,10 @@ export const AssistiveText = ({ message, variant, id }: Props) => {
       <Flex gap="xs" align="center">
         <SvgIcon
           icon={<WarningCircle weight="bold" />}
-          color="red8"
+          color="red-8"
           size="xs"
         />
-        <Text color="red11" size="text-xs" id={id}>
+        <Text color="red-11" size="text-xs" id={id}>
           {message}
         </Text>
       </Flex>
@@ -33,17 +33,17 @@ export const AssistiveText = ({ message, variant, id }: Props) => {
       <Flex gap="xs" align="center">
         <SvgIcon
           icon={<CheckCircle weight="bold" />}
-          color="green8"
+          color="green-8"
           size="xs"
         />
-        <Text color="green11" size="text-xs" id={id}>
+        <Text color="green-11" size="text-xs" id={id}>
           {message}
         </Text>
       </Flex>
     );
   } else {
     return (
-      <Text color="sand11" size="text-xs" id={id}>
+      <Text color="sand-11" size="text-xs" id={id}>
         {message}
       </Text>
     );

@@ -2,7 +2,7 @@
 .subContent {
   min-width: 10rem;
   max-width: 100vw;
-  background-color: var(--sand1);
+  background-color: var(--sand-1);
   border-radius: 6px;
   padding: 4px;
   box-shadow: var(--shadow-card-with-outline);
@@ -86,7 +86,7 @@
   align-items: center;
   gap: 8px;
   position: relative;
-  color: var(--sand12);
+  color: var(--sand-12);
   border-radius: 4px;
   padding: 8px 12px;
   user-select: none;
@@ -96,7 +96,7 @@
   transition: all var(--transition-speed);
 
   [data-icon][data-color='current'] {
-    color: var(--sand10) !important;
+    color: var(--sand-10) !important;
   }
 
   &[data-disabled] {
@@ -106,15 +106,15 @@
 
   &[data-highlighted],
   &[data-state='open'] {
-    background-color: var(--sand3);
+    background-color: var(--sand-3);
 
     [data-icon] {
-      color: var(--violet10) !important;
+      color: var(--violet-10) !important;
     }
   }
 
   &:active {
-    background-color: var(--sand4);
+    background-color: var(--sand-4);
   }
 }
 
@@ -138,7 +138,7 @@
 .section {
   display: block;
   padding: 4px;
-  border-bottom: 1px solid var(--sand4);
+  border-bottom: 1px solid var(--sand-4);
 
   &:last-child {
     border-bottom: none;
@@ -150,8 +150,8 @@
 }
 
 .arrowBorder {
-  fill: var(--blackA4);
-  stroke: var(--blackA4);
+  fill: var(--black-a4);
+  stroke: var(--black-a4);
   margin-top: 1px;
 
   [data-side='left'] & {
@@ -163,5 +163,5 @@
 }
 
 .arrowFill {
-  fill: var(--white);
+  fill: var(--sand-0);
 }

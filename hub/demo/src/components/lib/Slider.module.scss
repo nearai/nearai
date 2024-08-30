@@ -8,11 +8,11 @@
   display: block;
   font: var(--text-xs);
   font-weight: 600;
-  color: var(--sand12);
+  color: var(--sand-12);
 }
 
 .value {
-  color: var(--sand11);
+  color: var(--sand-11);
 }
 
 .root {
@@ -30,28 +30,28 @@
   flex-grow: 1;
   border-radius: 9999px;
   height: 8px;
-  background-color: var(--sand6);
+  background-color: var(--sand-6);
 }
 
 .range {
   position: absolute;
   border-radius: 9999px;
   height: 100%;
-  background-color: var(--sand12);
+  background-color: var(--sand-12);
 }
 
 .thumb {
   display: block;
   width: 1rem;
   height: 1rem;
-  background-color: var(--white);
-  box-shadow: 0 0 0 2px var(--sand12);
+  background-color: var(--sand-0);
+  box-shadow: 0 0 0 2px var(--sand-12);
   border-radius: 100%;
   cursor: grab;
   transition: var(--transitions);
 
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--violet8);
+    box-shadow: 0 0 0 2px var(--violet-8);
   }
 }

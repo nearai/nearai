@@ -257,7 +257,7 @@ export default function RunAgentPage() {
                   <Flex align="center" gap="s">
                     <Text
                       size="text-s"
-                      color="violet8"
+                      color="violet-8"
                       weight={500}
                       clampLines={1}
                       style={{ marginRight: 'auto' }}
@@ -322,7 +322,7 @@ export default function RunAgentPage() {
             />
           }
         >
-          <Text size="text-s" color="sand12" style={{ whiteSpace: 'pre-wrap' }}>
+          <Text size="text-s" color="sand-12" style={{ whiteSpace: 'pre-wrap' }}>
             {openedFile}
           </Text>
         </Dialog.Content>

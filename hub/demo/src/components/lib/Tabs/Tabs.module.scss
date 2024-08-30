@@ -3,8 +3,8 @@
 .root {
   --tabs-font: var(--text-s);
   --tabs-color-border: rgba(255, 255, 255, 0);
-  --tabs-color-icon: var(--sand10);
-  --tabs-color-text: var(--sand11);
+  --tabs-color-icon: var(--sand-10);
+  --tabs-color-text: var(--sand-11);
   --tabs-size-icon: 18px;
   --tabs-height: 48px;
   --tabs-padding-x: 0;
@@ -36,7 +36,7 @@
   gap: var(--tabs-list-gap);
   overflow: auto;
   scroll-behavior: smooth;
-  box-shadow: inset 0 -2px 0 var(--sand5);
+  box-shadow: inset 0 -2px 0 var(--sand-5);
 
   @include hideScrollbar();
 }
@@ -59,27 +59,27 @@
   transition: all var(--transition-speed);
 
   &:hover {
-    --tabs-color-icon: var(--sand12);
-    --tabs-color-border: var(--sand8);
-    --tabs-color-text: var(--sand12);
+    --tabs-color-icon: var(--sand-12);
+    --tabs-color-border: var(--sand-8);
+    --tabs-color-text: var(--sand-12);
   }
 
   &[data-state='active'] {
-    --tabs-color-icon: var(--violet10);
-    --tabs-color-border: var(--violet9);
-    --tabs-color-text: var(--violet11);
+    --tabs-color-icon: var(--violet-10);
+    --tabs-color-border: var(--violet-9);
+    --tabs-color-text: var(--violet-11);
   }
 
   &:focus-visible {
-    --tabs-color-icon: var(--sand12);
-    --tabs-color-border: var(--sand12);
-    --tabs-color-text: var(--sand12);
+    --tabs-color-icon: var(--sand-12);
+    --tabs-color-border: var(--sand-12);
+    --tabs-color-text: var(--sand-12);
   }
 
   &:disabled {
-    --tabs-color-icon: var(--sand8);
+    --tabs-color-icon: var(--sand-8);
     --tabs-color-border: rgba(255, 255, 255, 0);
-    --tabs-color-text: var(--sand8);
+    --tabs-color-text: var(--sand-8);
     pointer-events: none;
   }
 }

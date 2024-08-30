@@ -1,9 +1,9 @@
 .wrapper {
   --input-icon-size: 1rem;
-  --input-color-background: var(--sand1);
-  --input-color-border: var(--sand6);
-  --input-color-text: var(--sand12);
-  --input-color-icon: var(--sand10);
+  --input-color-background: var(--sand-1);
+  --input-color-border: var(--sand-6);
+  --input-color-text: var(--sand-12);
+  --input-color-icon: var(--sand-10);
 
   position: relative;
   flex-shrink: 0;
@@ -24,7 +24,7 @@
   display: block;
   font: var(--text-xs);
   font-weight: 600;
-  color: var(--sand12);
+  color: var(--sand-12);
 }
 
 .inputWrapper {
@@ -44,8 +44,8 @@
     box-shadow var(--transition-speed);
 
   &:hover {
-    --input-color-border: var(--sand7);
-    --input-color-background: var(--sand2);
+    --input-color-border: var(--sand-7);
+    --input-color-background: var(--sand-2);
   }
 
   [data-type='search'] & {
@@ -72,41 +72,41 @@
   }
 
   [data-variant='error'] & {
-    --input-color-background: var(--red1);
-    --input-color-border: var(--red9);
+    --input-color-background: var(--red-1);
+    --input-color-border: var(--red-9);
     .icon {
-      --input-color-icon: var(--red9);
+      --input-color-icon: var(--red-9);
     }
     .input {
-      --input-color-icon: var(--red12);
+      --input-color-icon: var(--red-12);
     }
     &:hover {
-      --input-color-background: var(--red2);
-      --input-color-border: var(--red8);
+      --input-color-background: var(--red-2);
+      --input-color-border: var(--red-8);
     }
   }
 
   [data-variant='success'] & {
-    --input-color-background: var(--green1);
-    --input-color-border: var(--green9);
+    --input-color-background: var(--green-1);
+    --input-color-border: var(--green-9);
     .icon {
-      --input-color-icon: var(--green8);
+      --input-color-icon: var(--green-8);
     }
     .input {
-      --input-color-icon: var(--green12);
+      --input-color-icon: var(--green-12);
     }
     &:hover {
-      --input-color-background: var(--green2);
-      --input-color-border: var(--green8);
+      --input-color-background: var(--green-2);
+      --input-color-border: var(--green-8);
     }
   }
 
   [data-disabled='true'] & {
     pointer-events: none;
-    --input-color-background: var(--sand3);
-    --input-color-border: var(--sand3);
+    --input-color-background: var(--sand-3);
+    --input-color-border: var(--sand-3);
     .icon {
-      --input-color-icon: var(--sand8);
+      --input-color-icon: var(--sand-8);
     }
   }
 
@@ -120,15 +120,15 @@
   }
 
   &:focus-within {
-    --input-color-border: var(--violet8) !important;
-    --input-color-background: var(--white) !important;
+    --input-color-border: var(--violet-8) !important;
+    --input-color-background: var(--sand-0) !important;
     outline: none;
-    box-shadow: 0 0 0 4px var(--violet4);
+    box-shadow: 0 0 0 4px var(--violet-4);
     .icon {
-      --input-color-icon: var(--violet7);
+      --input-color-icon: var(--violet-7);
     }
     .input {
-      --input-color-icon: var(--violet12);
+      --input-color-icon: var(--violet-12);
     }
   }
 }
@@ -144,7 +144,7 @@
   height: 40px;
   line-height: 40px;
   padding: 0;
-  color: var(--sand12);
+  color: var(--sand-12);
   font: var(--text-base);
   font-size: 16px; // Make sure we always use 16px to prevent iOS auto-zoom
   outline: none !important;
@@ -154,7 +154,7 @@
     opacity var(--transition-speed);
 
   &::placeholder {
-    color: var(--sand10);
+    color: var(--sand-10);
     font: var(--text-base);
     font-size: 16px; // Make sure we always use 16px to prevent iOS auto-zoom
     opacity: 1;
@@ -162,10 +162,10 @@
 
   [data-disabled='true'] & {
     opacity: 1;
-    color: var(--sand9);
+    color: var(--sand-9);
 
     &::placeholder {
-      color: var(--sand9);
+      color: var(--sand-9);
     }
   }
 

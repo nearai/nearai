@@ -4,11 +4,11 @@
 
 .item {
   border-radius: 6px;
-  box-shadow: 0 0 0 0px var(--violet5);
+  box-shadow: 0 0 0 0px var(--violet-5);
   transition: all var(--transition-speed);
 
   &:focus-within {
-    box-shadow: 0 0 0 4px var(--violet5);
+    box-shadow: 0 0 0 4px var(--violet-5);
   }
 }
 
@@ -25,13 +25,13 @@
   gap: 1rem;
   font: var(--text-s);
   font-weight: 600;
-  color: var(--sand12);
+  color: var(--sand-12);
   padding: var(--gap-m);
   cursor: pointer;
   transition: all var(--transition-speed);
 
   &:hover {
-    color: var(--violet8);
+    color: var(--violet-8);
   }
 }
 

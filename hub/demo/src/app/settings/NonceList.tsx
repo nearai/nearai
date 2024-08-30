@@ -134,7 +134,7 @@ export const NonceList = () => {
           {nonces.data?.map((nonce) => (
             <Table.Row key={nonce.nonce}>
               <Table.Cell>
-                <Text size="text-xs" color="sand12" clampLines={1}>
+                <Text size="text-xs" color="sand-12" clampLines={1}>
                   {nonce.nonce}
                 </Text>
               </Table.Cell>
@@ -181,7 +181,7 @@ export const NonceList = () => {
                         onSelect={() => startRevokeNonce(nonce.nonce)}
                         disabled={nonce.nonce_status === 'revoked'}
                       >
-                        <SvgIcon color="red8" icon={<Prohibit />} />
+                        <SvgIcon color="red-8" icon={<Prohibit />} />
                         {nonce.nonce_status === 'revoked'
                           ? 'Nonce Revoked'
                           : 'Revoke Nonce'}

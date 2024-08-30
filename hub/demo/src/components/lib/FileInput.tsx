@@ -161,7 +161,7 @@ export const FileInput = forwardRef<HTMLInputElement, Props>(
                   )}
 
                   <div className={s.filename}>
-                    <SvgIcon icon={<Paperclip />} size="xs" color="sand10" />
+                    <SvgIcon icon={<Paperclip />} size="xs" color="sand-10" />
                     <Text size="text-xs">{file.name}</Text>
                   </div>
                 </div>
@@ -170,8 +170,8 @@ export const FileInput = forwardRef<HTMLInputElement, Props>(
           )}
 
           <div className={s.cta}>
-            <SvgIcon icon={<FileArrowUp />} color="violet8" />
-            <Text size="text-s" color="sand12">
+            <SvgIcon icon={<FileArrowUp />} color="violet-8" />
+            <Text size="text-s" color="sand-12">
               Select or drag & drop {multiple ? 'files' : 'file'}
             </Text>
           </div>

@@ -20,7 +20,7 @@ export const Card = forwardRef<HTMLDivElement, Props>(
     {
       animateIn,
       background = 'white',
-      border = 'sand5',
+      border = 'sand-5',
       className = '',
       gap,
       padding,

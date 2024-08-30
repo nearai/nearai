@@ -6,7 +6,7 @@
 
   &:focus-within .input {
     border-style: solid;
-    border-color: var(--violet8);
+    border-color: var(--violet-8);
   }
 }
 
@@ -14,7 +14,7 @@
   display: block;
   font: var(--text-xs);
   font-weight: 600;
-  color: var(--sand12);
+  color: var(--sand-12);
 }
 
 .nativeInput {
@@ -31,8 +31,8 @@
   gap: var(--gap-m);
   padding: var(--gap-m);
   border-radius: 6px;
-  background-color: var(--white);
-  border: 2px dashed var(--sand6);
+  background-color: var(--sand-0);
+  border: 2px dashed var(--sand-6);
   outline: none;
   transition: all var(--transition-speed);
   cursor: pointer;
@@ -43,16 +43,16 @@
   }
 
   [data-dragging='true'] & {
-    border-color: var(--violet8);
+    border-color: var(--violet-8);
   }
 
   [data-error='true'] & {
-    border-color: var(--red9);
+    border-color: var(--red-9);
   }
 
   &:hover {
     border-style: solid;
-    background: var(--sand2);
+    background: var(--sand-2);
   }
 }
 
@@ -68,7 +68,7 @@
   flex-direction: column;
   gap: var(--gap-xs);
   padding-bottom: var(--gap-m);
-  border-bottom: 1px solid var(--sand6);
+  border-bottom: 1px solid var(--sand-6);
 
   img {
     display: block;

@@ -3,14 +3,14 @@
 .root {
   --table-border-radius: 6px;
   --table-half-padding: var(--gap-s);
-  --table-default-outline: 0px solid var(--violet4);
-  --table-focus-outline: 4px solid var(--violet4);
+  --table-default-outline: 0px solid var(--violet-4);
+  --table-focus-outline: 4px solid var(--violet-4);
 
   width: 100%;
   min-width: min-content;
   padding: 0 var(--table-half-padding) var(--table-half-padding);
   border-radius: var(--table-border-radius);
-  background: var(--white);
+  background: var(--sand-0);
   box-shadow: var(--shadow-card-with-outline);
 
   @media (max-width: $tabletBreakpointMaxWidth) {
@@ -40,7 +40,7 @@
       right: 0;
       bottom: 0;
       height: 1px;
-      background: var(--sand6);
+      background: var(--sand-6);
     }
 
     &:first-child {
@@ -87,7 +87,7 @@
 
   td,
   th {
-    background: var(--white) !important;
+    background: var(--sand-0) !important;
   }
 
   tr:first-child td,
@@ -105,7 +105,7 @@
       border-top-right-radius: 0 !important;
       background: linear-gradient(
         to top,
-        var(--white) 50%,
+        var(--sand-0) 50%,
         transparent
       ) !important;
 
@@ -126,7 +126,7 @@
   .row {
     &:hover {
       td {
-        background: var(--sand3);
+        background: var(--sand-3);
       }
     }
   }
@@ -151,11 +151,11 @@
   position: relative;
   padding: var(--table-half-padding);
   font: var(--text-xs);
-  color: var(--sand10);
+  color: var(--sand-10);
   vertical-align: bottom;
   white-space: nowrap;
   text-transform: uppercase;
-  background: linear-gradient(var(--white) 85%, transparent);
+  background: linear-gradient(var(--sand-0) 85%, transparent);
   transition: all var(--transition-speed);
 
   &[data-clickable='true'] {
@@ -163,14 +163,14 @@
     outline: none;
 
     &:hover {
-      color: var(--violet8) !important;
+      color: var(--violet-8) !important;
     }
 
     &:focus-visible {
-      color: var(--violet8) !important;
+      color: var(--violet-8) !important;
 
       &::after {
-        background: var(--violet4);
+        background: var(--violet-4);
       }
     }
   }
@@ -180,7 +180,7 @@
   position: relative;
   padding: var(--table-half-padding);
   padding-bottom: calc(var(--table-half-padding) * 2) !important;
-  background: var(--white);
+  background: var(--sand-0);
 }
 
 .cell {
@@ -205,7 +205,7 @@
     outline: var(--table-default-outline);
 
     &:hover {
-      background: var(--sand4) !important;
+      background: var(--sand-4) !important;
     }
 
     &:focus-visible,

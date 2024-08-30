@@ -4,11 +4,11 @@
   top: 0;
   width: 100%;
   height: var(--header-height);
-  background: var(--white);
+  background: var(--sand-0);
   display: flex;
   align-items: stretch;
   padding: 0 var(--gap-m);
-  box-shadow: 0 1px 0 var(--sand4);
+  box-shadow: 0 1px 0 var(--sand-4);
 }
 
 .logo {
@@ -16,7 +16,7 @@
   align-items: center;
   text-decoration: none;
   font: var(--text-l);
-  color: var(--sand12);
+  color: var(--sand-12);
   transition: var(--transitions);
   outline: none;
   white-space: nowrap;
@@ -24,7 +24,7 @@
 
   &:hover,
   &:focus-visible {
-    color: var(--violet8);
+    color: var(--violet-8);
   }
 }
 
@@ -34,7 +34,7 @@
   font: var(--text-s);
   font-weight: 600;
   text-decoration: none;
-  color: var(--sand12);
+  color: var(--sand-12);
   transition: var(--transitions);
   border-radius: 100px;
   height: 32px;
@@ -43,11 +43,11 @@
 
   &:hover,
   &:focus-visible {
-    color: var(--violet8);
+    color: var(--violet-8);
   }
 
   &[data-active='true'] {
-    background: var(--sand4);
+    background: var(--sand-4);
   }
 }
 

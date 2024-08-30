@@ -1,5 +1,6 @@
 import '~/styles/globals.scss';
 
+import { ThemeProvider } from 'next-themes';
 import { type ReactNode } from 'react';
 
 import { Footer } from '~/components/Footer';
@@ -10,9 +11,14 @@ import { TRPCReactProvider } from '~/trpc/react';
 
 import s from './layout.module.scss';
 
+/*
+  The suppressHydrationWarning on <html> is required by <ThemeProvider>:
+  https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
+*/
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <title>AI Hub</title>
         <meta
@@ -24,16 +30,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
 
       <body>
-        <ZustandHydration />
-        <Toaster />
+        <ThemeProvider attribute="class">
+          <TRPCReactProvider>
+            <ZustandHydration />
+            <Toaster />
 
-        <TRPCReactProvider>
-          <div className={s.wrapper}>
-            <Navigation />
-            <main className={s.main}>{children}</main>
-            <Footer conditional />
-          </div>
-        </TRPCReactProvider>
+            <div className={s.wrapper}>
+              <Navigation />
+              <main className={s.main}>{children}</main>
+              <Footer conditional />
+            </div>
+          </TRPCReactProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

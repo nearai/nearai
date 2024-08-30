@@ -16,7 +16,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <Section background="sand2">
+      <Section background="sand-2">
         <Flex align="center" gap="m">
           <SvgIcon icon={<Gear weight="thin" />} size="l" />
           <Text as="h1">Settings</Text>

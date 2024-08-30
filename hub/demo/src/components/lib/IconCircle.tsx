@@ -9,7 +9,7 @@ type Props = {
   icon: ReactNode;
 };
 
-export const IconCircle = ({ color = 'sand11', icon }: Props) => {
+export const IconCircle = ({ color = 'sand-11', icon }: Props) => {
   return (
     <div
       className={s.iconCircle}

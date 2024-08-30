@@ -46,12 +46,12 @@ export const ChatThread = ({ messages }: Props) => {
       {messages.map((message, index) => (
         <Fragment key={index}>
           {message.role === 'user' ? (
-            <Card animateIn background="sand2" style={{ alignSelf: 'end' }}>
-              <Text color="sand11">{message.content}</Text>
+            <Card animateIn background="sand-2" style={{ alignSelf: 'end' }}>
+              <Text color="sand-11">{message.content}</Text>
             </Card>
           ) : (
             <Card animateIn>
-              <Text size="text-s" color="sand12">
+              <Text size="text-s" color="sand-12">
                 {message.content}
               </Text>
 

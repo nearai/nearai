@@ -259,12 +259,12 @@ export const Combobox = forwardRef<HTMLInputElement, Props>(
                       {combobox.selectedItem?.value === item.value ? (
                         <SvgIcon
                           icon={<CheckCircle weight="duotone" />}
-                          color="green8"
+                          color="green-8"
                         />
                       ) : (
                         <SvgIcon
                           icon={<Circle weight="duotone" />}
-                          color="sand10"
+                          color="sand-10"
                         />
                       )}
 

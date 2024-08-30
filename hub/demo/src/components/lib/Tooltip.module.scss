@@ -4,8 +4,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--sand12);
-  background-color: var(--white);
+  color: var(--sand-12);
+  background-color: var(--sand-0);
   z-index: 1000;
   max-width: 30rem;
   font-size: 0.8rem;
@@ -13,7 +13,7 @@
   word-break: break-word;
   font-family: sans-serif;
   box-shadow:
-    0 0 0 1px var(--blackA4),
+    0 0 0 1px var(--black-a4),
     0 1px 2px 0 rgba(0, 0, 0, 0.06);
   user-select: none;
   animation-duration: var(--transition-speed);
@@ -42,8 +42,8 @@
 }
 
 .arrowBorder {
-  fill: var(--blackA4);
-  stroke: var(--blackA4);
+  fill: var(--black-a4);
+  stroke: var(--black-a4);
   margin-top: 1px;
 
   [data-side='left'] & {
@@ -55,5 +55,5 @@
 }
 
 .arrowFill {
-  fill: var(--white);
+  fill: var(--sand-0);
 }

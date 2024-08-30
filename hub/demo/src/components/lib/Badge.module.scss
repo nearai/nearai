@@ -1,8 +1,8 @@
 .badge {
-  --badge-color-background: var(--white);
-  --badge-color-text: var(--sand12);
-  --badge-color-border: var(--sand6);
-  --badge-color-icon: var(--sand10);
+  --badge-color-background: var(--sand-0);
+  --badge-color-text: var(--sand-12);
+  --badge-color-border: var(--sand-6);
+  --badge-color-icon: var(--sand-10);
 
   display: inline-flex;
   align-items: center;
@@ -30,7 +30,7 @@
       box-shadow: 0px 1px 3px 3px rgba(0, 0, 0, 0.1);
     }
     &:focus-visible {
-      box-shadow: 0 0 0 2px var(--violet4);
+      box-shadow: 0 0 0 2px var(--violet-4);
     }
   }
 
@@ -40,28 +40,28 @@
   }
 
   &[data-variant='primary'] {
-    --badge-color-background: var(--violet4);
-    --badge-color-text: var(--violet12);
-    --badge-color-border: var(--violet7);
-    --badge-color-icon: var(--violet10);
+    --badge-color-background: var(--violet-4);
+    --badge-color-text: var(--violet-12);
+    --badge-color-border: var(--violet-7);
+    --badge-color-icon: var(--violet-10);
   }
   &[data-variant='success'] {
-    --badge-color-background: var(--green4);
-    --badge-color-text: var(--green12);
-    --badge-color-border: var(--green8);
-    --badge-color-icon: var(--green8);
+    --badge-color-background: var(--green-4);
+    --badge-color-text: var(--green-12);
+    --badge-color-border: var(--green-8);
+    --badge-color-icon: var(--green-8);
   }
   &[data-variant='alert'] {
-    --badge-color-background: var(--red4);
-    --badge-color-text: var(--red12);
-    --badge-color-border: var(--red7);
-    --badge-color-icon: var(--red10);
+    --badge-color-background: var(--red-4);
+    --badge-color-text: var(--red-12);
+    --badge-color-border: var(--red-7);
+    --badge-color-icon: var(--red-10);
   }
   &[data-variant='warning'] {
-    --badge-color-background: var(--amber4);
-    --badge-color-text: var(--amber12);
-    --badge-color-border: var(--amber7);
-    --badge-color-icon: var(--amber10);
+    --badge-color-background: var(--amber-4);
+    --badge-color-text: var(--amber-12);
+    --badge-color-border: var(--amber-7);
+    --badge-color-icon: var(--amber-10);
   }
 }
 

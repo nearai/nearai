@@ -6,8 +6,8 @@
   --switch-track-height: 16px;
   --switch-thumb-width: 24px;
   --switch-thumb-height: 24px;
-  --switch-color-border: var(--sand7);
-  --switch-color-icon: var(--sand10);
+  --switch-color-border: var(--sand-7);
+  --switch-color-icon: var(--sand-10);
   --switch-size-icon: 16px;
 
   width: var(--switch-track-width);
@@ -15,7 +15,7 @@
   padding-right: calc(var(--switch-track-width) - var(--switch-thumb-width));
   padding-left: 0;
   flex-shrink: 0;
-  background: var(--sand5);
+  background: var(--sand-5);
   border: none;
   box-shadow: inset 0 0 0 1px var(--switch-color-border);
   border-radius: 100px;
@@ -35,16 +35,16 @@
   &:focus-visible {
     .thumb {
       box-shadow:
-        inset 0 0 0 1px var(--violet9),
+        inset 0 0 0 1px var(--violet-9),
         0px 1px 2px 0px rgba(0, 0, 0, 0.1),
-        0 0 0 2px var(--violet4);
+        0 0 0 2px var(--violet-4);
     }
   }
 
   &:hover {
     .thumb {
-      --switch-color-border: var(--sand8);
-      background: var(--sand2);
+      --switch-color-border: var(--sand-8);
+      background: var(--sand-2);
     }
   }
 
@@ -56,9 +56,9 @@
   }
 
   &[data-state='checked'] {
-    --switch-color-border: var(--green8);
-    --switch-color-icon: var(--green8);
-    background: var(--green9);
+    --switch-color-border: var(--green-8);
+    --switch-color-icon: var(--green-8);
+    background: var(--green-9);
     padding-left: calc(var(--switch-track-width) - var(--switch-thumb-width));
     padding-right: 0;
     transition-delay: var(--switch-speed-delay), 0s, 0s, 0s, 0s;
@@ -66,15 +66,15 @@
       var(--transition-speed), var(--transition-speed), var(--transition-speed);
 
     .thumb {
-      --switch-color-border: var(--green8);
-      background: var(--green1);
+      --switch-color-border: var(--green-8);
+      background: var(--green-1);
       transform-origin: right center;
     }
 
     &:hover {
       .thumb {
-        --switch-color-border: var(--green11);
-        background: var(--green3);
+        --switch-color-border: var(--green-11);
+        background: var(--green-3);
       }
     }
 
@@ -108,7 +108,7 @@
   margin-top: calc(
     (var(--switch-track-height) - var(--switch-thumb-height) - 1px) / 2
   );
-  background: var(--sand1);
+  background: var(--sand-1);
   border-radius: 100px;
   box-shadow:
     inset 0 0 0 1px var(--switch-color-border),

@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--gap-m);
-  background-color: var(--blackA10);
+  background-color: var(--black-a10);
   animation: overlayShow var(--transition-speed);
 
   @keyframes overlayShow {
@@ -30,7 +30,7 @@
   position: relative;
   width: 100%;
   max-height: 100%;
-  background-color: var(--white);
+  background-color: var(--sand-0);
   border-radius: 6px;
   box-shadow: var(--shadow-card-with-outline);
   overflow: auto;
@@ -70,8 +70,8 @@
   gap: var(--gap-m);
   padding: var(--gap-m) var(--gap-l);
   z-index: 1000;
-  background: var(--white);
-  box-shadow: 0 0 var(--gap-m) var(--gap-xs) var(--white);
+  background: var(--sand-0);
+  box-shadow: 0 0 var(--gap-m) var(--gap-xs) var(--sand-0);
   min-width: 0;
 
   > * {

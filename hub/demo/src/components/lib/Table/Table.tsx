@@ -187,14 +187,14 @@ export const HeadCell = forwardRef<HTMLTableCellElement, HeadCellProps>(
                 <SvgIcon
                   icon={<CaretCircleDown weight="duotone" />}
                   size="xs"
-                  color="violet8"
+                  color="violet-8"
                 />
               )}
               {sort?.order === 'ASCENDING' && (
                 <SvgIcon
                   icon={<CaretCircleUp weight="duotone" />}
                   size="xs"
-                  color="violet8"
+                  color="violet-8"
                 />
               )}
             </>

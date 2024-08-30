@@ -15,7 +15,7 @@
   flex-shrink: 0;
   border-radius: 100px;
   border: 1px solid;
-  box-shadow: 0 0 0 0px var(--violet4);
+  box-shadow: 0 0 0 0px var(--violet-4);
   cursor: pointer;
   transition: all var(--transition-speed);
   text-decoration: none !important;
@@ -31,7 +31,7 @@
   line-height: 1;
 
   &:focus-visible {
-    box-shadow: 0 0 0 4px var(--violet4);
+    box-shadow: 0 0 0 4px var(--violet-4);
   }
 
   &[data-icon='true'] {
@@ -56,19 +56,19 @@
   &[data-variant='primary'] {
     &[data-fill='ghost'],
     &[data-fill='outline'] {
-      --button-color-background: var(--sand1);
-      --button-color-border: var(--sand6);
-      --button-color-text: var(--violet8);
-      --button-color-icon: var(--violet9);
+      --button-color-background: var(--sand-1);
+      --button-color-border: var(--sand-6);
+      --button-color-text: var(--violet-8);
+      --button-color-icon: var(--violet-9);
       &:hover {
-        --button-color-border: var(--violet6);
+        --button-color-border: var(--violet-6);
       }
       &:focus-visible {
-        --button-color-border: var(--violet9);
+        --button-color-border: var(--violet-9);
       }
       &:active {
-        --button-color-background: var(--violet2);
-        --button-color-border: var(--violet7);
+        --button-color-background: var(--violet-2);
+        --button-color-border: var(--violet-7);
       }
     }
     &[data-fill='ghost'] {
@@ -76,10 +76,10 @@
       --button-color-border: rgba(0, 0, 0, 0);
     }
     &[data-fill='solid'] {
-      --button-color-background: var(--sand12);
-      --button-color-border: var(--sand12);
-      --button-color-text: var(--sand1);
-      --button-color-icon: var(--sand9);
+      --button-color-background: var(--sand-12);
+      --button-color-border: var(--sand-12);
+      --button-color-text: var(--sand-1);
+      --button-color-icon: var(--sand-9);
       &:hover {
         --button-color-background: var(--black);
         --button-color-border: var(--black);
@@ -91,17 +91,17 @@
     &[data-fill='ghost'],
     &[data-fill='outline'] {
       --button-color-background: rgba(0, 0, 0, 0);
-      --button-color-border: var(--sand6);
-      --button-color-text: var(--sand12);
-      --button-color-icon: var(--sand10);
+      --button-color-border: var(--sand-6);
+      --button-color-text: var(--sand-12);
+      --button-color-icon: var(--sand-10);
       &:hover {
-        --button-color-border: var(--sand9);
+        --button-color-border: var(--sand-9);
       }
       &:focus-visible {
-        --button-color-border: var(--violet8);
+        --button-color-border: var(--violet-8);
       }
       &:active {
-        --button-color-background: var(--sand4);
+        --button-color-background: var(--sand-4);
       }
     }
     &[data-fill='ghost'] {
@@ -109,18 +109,18 @@
       --button-color-border: rgba(0, 0, 0, 0);
     }
     &[data-fill='solid'] {
-      --button-color-background: var(--sand3);
-      --button-color-border: var(--sand6);
-      --button-color-text: var(--sand12);
-      --button-color-icon: var(--sand11);
+      --button-color-background: var(--sand-3);
+      --button-color-border: var(--sand-6);
+      --button-color-text: var(--sand-12);
+      --button-color-icon: var(--sand-11);
       &:hover {
-        --button-color-background: var(--sand4);
+        --button-color-background: var(--sand-4);
       }
       &:focus-visible {
-        --button-color-border: var(--violet8);
+        --button-color-border: var(--violet-8);
       }
       &:active {
-        --button-color-background: var(--sand5);
+        --button-color-background: var(--sand-5);
       }
     }
   }
@@ -128,19 +128,19 @@
   &[data-variant='destructive'] {
     &[data-fill='ghost'],
     &[data-fill='outline'] {
-      --button-color-background: var(--sand1);
-      --button-color-border: var(--sand6);
-      --button-color-text: var(--red8);
-      --button-color-icon: var(--red9);
+      --button-color-background: var(--sand-1);
+      --button-color-border: var(--sand-6);
+      --button-color-text: var(--red-8);
+      --button-color-icon: var(--red-9);
       &:hover {
-        --button-color-border: var(--red6);
+        --button-color-border: var(--red-6);
       }
       &:focus-visible {
-        --button-color-border: var(--violet8);
+        --button-color-border: var(--violet-8);
       }
       &:active {
-        --button-color-background: var(--red2);
-        --button-color-border: var(--red7);
+        --button-color-background: var(--red-2);
+        --button-color-border: var(--red-7);
       }
     }
     &[data-fill='ghost'] {
@@ -148,18 +148,18 @@
       --button-color-border: rgba(0, 0, 0, 0);
     }
     &[data-fill='solid'] {
-      --button-color-background: var(--red9);
-      --button-color-border: var(--red8);
-      --button-color-text: var(--red12);
-      --button-color-icon: var(--red11);
+      --button-color-background: var(--red-9);
+      --button-color-border: var(--red-8);
+      --button-color-text: var(--red-12);
+      --button-color-icon: var(--red-11);
       &:hover {
-        --button-color-background: var(--red10);
+        --button-color-background: var(--red-10);
       }
       &:focus-visible {
-        --button-color-border: var(--red11);
+        --button-color-border: var(--red-11);
       }
       &:active {
-        --button-color-background: var(--red8);
+        --button-color-background: var(--red-8);
       }
     }
   }
@@ -167,19 +167,19 @@
   &[data-variant='affirmative'] {
     &[data-fill='ghost'],
     &[data-fill='outline'] {
-      --button-color-background: var(--sand1);
-      --button-color-border: var(--sand6);
-      --button-color-text: var(--green11);
-      --button-color-icon: var(--green8);
+      --button-color-background: var(--sand-1);
+      --button-color-border: var(--sand-6);
+      --button-color-text: var(--green-11);
+      --button-color-icon: var(--green-8);
       &:hover {
-        --button-color-border: var(--green9);
+        --button-color-border: var(--green-9);
       }
       &:focus-visible {
-        --button-color-border: var(--violet8);
+        --button-color-border: var(--violet-8);
       }
       &:active {
-        --button-color-background: var(--green2);
-        --button-color-border: var(--green8);
+        --button-color-background: var(--green-2);
+        --button-color-border: var(--green-8);
       }
     }
     &[data-fill='ghost'] {
@@ -187,31 +187,31 @@
       --button-color-border: rgba(0, 0, 0, 0);
     }
     &[data-fill='solid'] {
-      --button-color-background: var(--green9);
-      --button-color-border: var(--green8);
-      --button-color-text: var(--green12);
-      --button-color-icon: var(--green11);
+      --button-color-background: var(--green-9);
+      --button-color-border: var(--green-8);
+      --button-color-text: var(--green-12);
+      --button-color-icon: var(--green-11);
       &:hover {
-        --button-color-background: var(--green10);
+        --button-color-background: var(--green-10);
       }
       &:focus-visible {
-        --button-color-border: var(--green11);
+        --button-color-border: var(--green-11);
       }
       &:active {
-        --button-color-background: var(--green8);
+        --button-color-background: var(--green-8);
       }
     }
   }
 
   &:disabled {
     opacity: 1;
-    background: var(--sand3);
-    border-color: var(--sand3);
-    color: var(--sand8);
+    background: var(--sand-3);
+    border-color: var(--sand-3);
+    color: var(--sand-8);
     pointer-events: none;
 
     .icon {
-      color: var(--sand8) !important;
+      color: var(--sand-8) !important;
     }
   }
 

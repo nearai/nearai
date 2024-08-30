@@ -49,7 +49,7 @@ export const ResourceList = ({ category, title }: Props) => {
         <Text as="h1" size="text-2xl">
           {title}{' '}
           {listQuery.data && (
-            <Text as="span" size="text-2xl" color="sand10" weight={400}>
+            <Text as="span" size="text-2xl" color="sand-10" weight={400}>
               ({listQuery.data.length})
             </Text>
           )}
@@ -89,13 +89,13 @@ export const ResourceList = ({ category, title }: Props) => {
                   href={`/agents/${item.namespace}/${item.name}/${item.version}`}
                   style={{ width: '20rem' }}
                 >
-                  <Text size="text-s" weight={500} color="violet8">
+                  <Text size="text-s" weight={500} color="violet-8">
                     {item.name}
                   </Text>
                 </Table.Cell>
               ) : (
                 <Table.Cell style={{ width: '20rem' }}>
-                  <Text size="text-s" weight={500} color="sand12">
+                  <Text size="text-s" weight={500} color="sand-12">
                     {item.name}
                   </Text>
                 </Table.Cell>

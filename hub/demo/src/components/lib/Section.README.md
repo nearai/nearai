@@ -18,7 +18,7 @@ import { Section } from '~/components/lib/Section';
 ```tsx
 <Section
   style={{
-    background: 'linear-gradient(to right, var(--violet9), var(--cyan10))',
+    background: 'linear-gradient(to right, var(--violet-9), var(--cyan-10))',
     border: 'none',
   }}
 >
@@ -33,7 +33,7 @@ import { Section } from '~/components/lib/Section';
 Sometimes you might need a section to vertically grow to fill up the screen height. You can do that with `grow="screen-height"`. If you want to center your content, you can use a nested `<Flex>` container with `margin: auto`:
 
 ```tsx
-<Section grow="screen-height" style={{ background: 'var(--cyan4)' }}>
+<Section grow="screen-height" style={{ background: 'var(--cyan-4)' }}>
   <Flex gap="m" stack style={{ margin: 'auto' }}>
     <Text as="h1">My Header</Text>
     <Text>I am centered on the page!</Text>
@@ -49,7 +49,7 @@ For smaller pages that might not have much content, you can use the alternative 
 
 ```tsx
 <>
-  <Section grow="available" style={{ background: 'var(--cyan4)' }}>
+  <Section grow="available" style={{ background: 'var(--cyan-4)' }}>
     <Flex gap="m" stack style={{ margin: 'auto' }}>
       <Text as="h1">My Header</Text>
       <Text>

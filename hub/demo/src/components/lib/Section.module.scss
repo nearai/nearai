@@ -2,7 +2,7 @@
   --section-padding-x: var(--gap-l);
   --section-padding-y: var(--gap-l);
   padding: var(--section-padding-y) var(--section-padding-x);
-  border-bottom: 1px solid var(--sand4);
+  border-bottom: 1px solid var(--sand-4);
   background: var(--section-background-color);
 
   &[data-padding='hero'] {
@@ -20,7 +20,7 @@
   }
 
   &[data-background='primary-gradient'] {
-    background: linear-gradient(to bottom right, var(--violet4), var(--cyan3));
+    background: linear-gradient(to bottom right, var(--violet-4), var(--cyan-3));
   }
 
   &[data-grow] {
