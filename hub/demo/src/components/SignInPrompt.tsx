@@ -7,8 +7,8 @@ import { signInWithNear } from '~/lib/auth';
 import { Button } from './lib/Button';
 import { Container } from './lib/Container';
 import { Flex } from './lib/Flex';
-import { Text } from './lib/Text';
 import { Section } from './lib/Section';
+import { Text } from './lib/Text';
 
 export const SignInPrompt = () => {
   return (

@@ -7,9 +7,9 @@ import { Section } from '~/components/lib/Section';
 import { SvgIcon } from '~/components/lib/SvgIcon';
 import { Text } from '~/components/lib/Text';
 import { SignInPromptSection } from '~/components/SignInPrompt';
+import { useAuthStore } from '~/stores/auth';
 
 import { NonceList } from './NonceList';
-import { useAuthStore } from '~/stores/auth';
 
 export default function SettingsPage() {
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);

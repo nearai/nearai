@@ -1,6 +1,6 @@
 import { env } from '~/env';
-import { parseHashParams } from '~/utils/url';
 import { useAuthStore } from '~/stores/auth';
+import { parseHashParams } from '~/utils/url';
 
 export const SIGN_IN_CALLBACK_URL =
   env.NEXT_PUBLIC_BASE_URL + 'sign-in/callback';

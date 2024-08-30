@@ -28,7 +28,7 @@ export const ZustandHydration = () => {
       }
     };
 
-    rehydrate();
+    void rehydrate();
   }, []);
 
   return null;
