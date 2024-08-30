@@ -63,7 +63,7 @@ export const Navigation = () => {
   const store = useAuthStore();
   const path = usePathname();
   const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
     setMounted(true);
@@ -92,7 +92,7 @@ export const Navigation = () => {
 
       <Flex align="center" gap="m" style={{ marginLeft: 'auto' }}>
         <Flex align="center" gap="xs">
-          {mounted && theme === 'dark' ? (
+          {mounted && resolvedTheme === 'dark' ? (
             <Tooltip asChild content="Switch to light mode">
               <Button
                 label="Switch to light mode"
