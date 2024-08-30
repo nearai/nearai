@@ -181,7 +181,7 @@ export const NonceList = () => {
                         onSelect={() => startRevokeNonce(nonce.nonce)}
                         disabled={nonce.nonce_status === 'revoked'}
                       >
-                        <SvgIcon color="red-8" icon={<Prohibit />} />
+                        <SvgIcon color="red-9" icon={<Prohibit />} />
                         {nonce.nonce_status === 'revoked'
                           ? 'Nonce Revoked'
                           : 'Revoke Nonce'}

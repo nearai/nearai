@@ -27,7 +27,7 @@ import { Button, Dropdown, SvgIcon } from '~/components/lib/Dropdown';
       </Dropdown.Item>
 
       <Dropdown.Item>
-        <SvgIcon icon={<Pizza weight="fill" />} color="red-8" />
+        <SvgIcon icon={<Pizza weight="fill" />} color="red-9" />
         Custom Icon Color
       </Dropdown.Item>
     </Dropdown.Section>

@@ -27,7 +27,7 @@
   border-radius: 6px;
 
   &[data-type='error'] {
-    --toast-color-icon: var(--red-8);
+    --toast-color-icon: var(--red-9);
   }
   &[data-type='success'] {
     --toast-color-icon: var(--green-9);
