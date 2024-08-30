@@ -7,8 +7,8 @@ import {
   extractSignatureFromHashParams,
   MESSAGE,
   RECIPIENT,
+  returnSignInCallbackUrl,
   returnUrlToRestoreAfterSignIn,
-  SIGN_IN_CALLBACK_URL,
 } from '~/lib/auth';
 import { authorizationModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
@@ -29,7 +29,7 @@ export default function SignInCallbackPage() {
         account_id: hashParams.accountId,
         public_key: hashParams.publicKey,
         signature: hashParams.signature,
-        callback_url: SIGN_IN_CALLBACK_URL,
+        callback_url: returnSignInCallbackUrl(),
         message: MESSAGE,
         recipient: RECIPIENT,
         nonce: currentNonce,

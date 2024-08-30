@@ -1,9 +1,6 @@
-import { env } from '~/env';
 import { useAuthStore } from '~/stores/auth';
 import { parseHashParams } from '~/utils/url';
 
-export const SIGN_IN_CALLBACK_URL =
-  env.NEXT_PUBLIC_BASE_URL + 'sign-in/callback';
 export const RECIPIENT = 'ai.near';
 export const MESSAGE = 'Welcome to NEAR AI Hub!';
 export const REVOKE_MESSAGE = 'Are you sure? Revoking a nonce';
@@ -27,8 +24,17 @@ export function signInWithNear() {
       This delay is needed to ensure useAuthStore.setState() resolves updating 
       local storage before redirecting away.
     */
-    redirectToAuthNearLink(MESSAGE, RECIPIENT, nonce, SIGN_IN_CALLBACK_URL);
+    redirectToAuthNearLink(
+      MESSAGE,
+      RECIPIENT,
+      nonce,
+      returnSignInCallbackUrl(),
+    );
   }, 50);
+}
+
+export function returnSignInCallbackUrl() {
+  return location.origin + '/sign-in/callback';
 }
 
 export function returnUrlToRestoreAfterSignIn() {

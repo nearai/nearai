@@ -9,7 +9,6 @@ import { SvgIcon } from '~/components/lib/SvgIcon';
 import { Table } from '~/components/lib/Table';
 import { Text } from '~/components/lib/Text';
 import { Timestamp } from '~/components/lib/Timestamp';
-import { env } from '~/env';
 import { RECIPIENT, REVOKE_ALL_MESSAGE, REVOKE_MESSAGE } from '~/lib/auth';
 import {
   extractSignatureFromHashParams,
@@ -27,7 +26,7 @@ export const NonceList = () => {
   const startRevokeNonce = (revokeNonce?: string) => {
     const nonce = generateNonce();
 
-    let callbackUrl = env.NEXT_PUBLIC_BASE_URL + '/settings?nonce=' + nonce;
+    let callbackUrl = location.origin + '/settings?nonce=' + nonce;
     if (revokeNonce) {
       callbackUrl += '&revoke_nonce=' + revokeNonce;
       redirectToAuthNearLink(REVOKE_MESSAGE, RECIPIENT, nonce, callbackUrl);
@@ -41,14 +40,14 @@ export const NonceList = () => {
     const hashParams = extractSignatureFromHashParams();
     if (!hashParams) return;
 
-    // cleanup url, remove hash params
-    const cleanUrl = window.location.pathname + window.location.search;
-    window.history.replaceState(null, '', cleanUrl);
-
     // in url params, not hash params
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     const revokeNonce = params.get('revoke_nonce');
     const signingNonce = params.get('nonce');
+
+    // cleanup url, remove hash params
+    const cleanUrl = location.pathname + location.search;
+    window.history.replaceState(null, '', cleanUrl);
 
     if (!signingNonce) return;
 
@@ -61,7 +60,7 @@ export const NonceList = () => {
       account_id: hashParams.accountId,
       public_key: hashParams.publicKey,
       signature: hashParams.signature,
-      callback_url: env.NEXT_PUBLIC_BASE_URL + cleanUrl,
+      callback_url: location.origin + location.pathname + location.search,
       message: message,
       recipient: RECIPIENT,
       nonce: signingNonce,
