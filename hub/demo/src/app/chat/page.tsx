@@ -72,14 +72,24 @@ export default function InferencePage() {
     values.stop = ['[INST]'];
 
     try {
+      const message = values.messages[0]!;
+
+      setConversation((current) => [
+        ...current,
+        {
+          content: message.content,
+          role: message.role,
+        },
+      ]);
+
+      form.setValue('messages.0.content', '');
+      form.setFocus('messages.0.content');
+
       const response = await chatMutation.mutateAsync(values);
 
       values.messages = [...values.messages, response.choices[0]!.message];
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(values));
       setConversation(values.messages);
-
-      form.setValue('messages.0.content', '');
-      form.setFocus('messages.0.content');
     } catch (error) {
       handleClientError({ error, title: 'Failed to communicate with model' });
     }
@@ -111,11 +121,13 @@ export default function InferencePage() {
   }, [form, provider, models]);
 
   useEffect(() => {
-    const currConv = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (currConv) {
+    const previousConversationRaw = localStorage.getItem(LOCAL_STORAGE_KEY);
+
+    if (previousConversationRaw) {
       try {
-        const conv: unknown = JSON.parse(currConv);
-        const parsed = chatCompletionsModel.parse(conv);
+        const parsed = chatCompletionsModel.parse(
+          JSON.parse(previousConversationRaw),
+        );
         setConversation(parsed.messages);
       } catch (error) {
         console.error(error);
