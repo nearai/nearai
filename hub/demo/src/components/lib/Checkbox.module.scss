@@ -9,13 +9,13 @@
   background: var(--sand-0);
   border-radius: 0.3rem;
   border: 1px solid var(--sand-7);
-  box-shadow: 0 0 0 0px var(--violet-4);
+  box-shadow: 0 0 0 0px var(--violet-5);
   overflow: hidden;
   transition: all var(--transition-speed);
 
   &:has(:focus-visible) {
-    border-color: var(--violet-9);
-    box-shadow: 0 0 0 2px var(--violet-4);
+    border-color: var(--violet-10);
+    box-shadow: 0 0 0 2px var(--violet-5);
   }
 
   &:hover {
@@ -23,7 +23,7 @@
   }
 
   &:has(input:checked) {
-    background: var(--violet-9);
+    background: var(--violet-10);
     border-color: var(--violet-11);
 
     &:hover {

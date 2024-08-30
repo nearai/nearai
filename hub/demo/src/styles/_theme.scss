@@ -13,8 +13,7 @@
 
 :root {
   --shadow-card: 0px 4px 8px 0px rgba(0, 0, 0, 0.06);
-  --shadow-card-with-outline: 0px 0px 0px 1px rgba(0, 0, 0, 0.06),
-    var(--shadow-card);
+  --shadow-card-with-outline: 0px 0px 0px 1px var(--sand-4), var(--shadow-card);
 
   --transition-speed: 200ms;
   --transitions: color var(--transition-speed),
@@ -61,18 +60,18 @@
 
   --sand-0: #fff;
 
-  --green-1: #f8fffb;
-  --green-2: #f1fdf5;
-  --green-3: #dafbe7;
-  --green-4: #c3f8d8;
-  --green-5: #a9f1c7;
-  --green-6: #8ae7b4;
-  --green-7: #5dd99a;
-  --green-8: #00c676;
-  --green-9: #00da86;
-  --green-10: #00ce7d;
-  --green-11: #008047;
-  --green-12: #004427;
+  --green-1: #f9fffb;
+  --green-2: #f3fcf6;
+  --green-3: #e2f9ea;
+  --green-4: #cff4dd;
+  --green-5: #b8edcd;
+  --green-6: #9ae4b9;
+  --green-7: #6ed69f;
+  --green-8: #00c37a;
+  --green-9: #0dce84;
+  --green-10: #00c279;
+  --green-11: #008349;
+  --green-12: #073f26;
   --green-brand: #00ec97;
 
   --violet-1: #fdfdff;
@@ -110,7 +109,7 @@
   }
 
   &.dark {
-    --sand-0: #000;
+    --sand-0: #0b0b0a;
 
     --green-1: #0b130f;
     --green-2: #111b15;

@@ -1,7 +1,7 @@
 .wrapper {
   --input-icon-size: 1rem;
   --input-color-background: var(--sand-1);
-  --input-color-border: var(--sand-6);
+  --input-color-border: var(--sand-8);
   --input-color-text: var(--sand-12);
   --input-color-icon: var(--sand-10);
 
@@ -44,7 +44,7 @@
     box-shadow var(--transition-speed);
 
   &:hover {
-    --input-color-border: var(--sand-7);
+    --input-color-border: var(--sand-9);
     --input-color-background: var(--sand-2);
   }
 
@@ -90,14 +90,14 @@
     --input-color-background: var(--green-1);
     --input-color-border: var(--green-9);
     .icon {
-      --input-color-icon: var(--green-8);
+      --input-color-icon: var(--green-9);
     }
     .input {
       --input-color-icon: var(--green-12);
     }
     &:hover {
       --input-color-background: var(--green-2);
-      --input-color-border: var(--green-8);
+      --input-color-border: var(--green-9);
     }
   }
 
@@ -120,12 +120,12 @@
   }
 
   &:focus-within {
-    --input-color-border: var(--violet-8) !important;
+    --input-color-border: var(--violet-9) !important;
     --input-color-background: var(--sand-0) !important;
     outline: none;
-    box-shadow: 0 0 0 4px var(--violet-4);
+    box-shadow: 0 0 0 4px var(--violet-5);
     .icon {
-      --input-color-icon: var(--violet-7);
+      --input-color-icon: var(--violet-9);
     }
     .input {
       --input-color-icon: var(--violet-12);

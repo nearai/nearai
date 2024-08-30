@@ -30,7 +30,7 @@
       box-shadow: 0px 1px 3px 3px rgba(0, 0, 0, 0.1);
     }
     &:focus-visible {
-      box-shadow: 0 0 0 2px var(--violet-4);
+      box-shadow: 0 0 0 2px var(--violet-5);
     }
   }
 
@@ -40,7 +40,7 @@
   }
 
   &[data-variant='primary'] {
-    --badge-color-background: var(--violet-4);
+    --badge-color-background: var(--violet-5);
     --badge-color-text: var(--violet-12);
     --badge-color-border: var(--violet-7);
     --badge-color-icon: var(--violet-10);
@@ -48,8 +48,8 @@
   &[data-variant='success'] {
     --badge-color-background: var(--green-4);
     --badge-color-text: var(--green-12);
-    --badge-color-border: var(--green-8);
-    --badge-color-icon: var(--green-8);
+    --badge-color-border: var(--green-9);
+    --badge-color-icon: var(--green-9);
   }
   &[data-variant='alert'] {
     --badge-color-background: var(--red-4);

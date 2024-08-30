@@ -18,7 +18,7 @@ import { Section } from '~/components/lib/Section';
 ```tsx
 <Section
   style={{
-    background: 'linear-gradient(to right, var(--violet-9), var(--cyan-10))',
+    background: 'linear-gradient(to right, var(--violet-10), var(--cyan-10))',
     border: 'none',
   }}
 >

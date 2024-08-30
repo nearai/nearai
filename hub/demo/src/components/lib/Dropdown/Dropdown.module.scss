@@ -5,7 +5,8 @@
   background-color: var(--sand-1);
   border-radius: 6px;
   padding: 4px;
-  box-shadow: var(--shadow-card-with-outline);
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--sand-4);
   animation-duration: var(--transition-speed);
   z-index: 2000;
   will-change: transform, opacity;
@@ -138,7 +139,7 @@
 .section {
   display: block;
   padding: 4px;
-  border-bottom: 1px solid var(--sand-4);
+  border-bottom: 1px solid var(--sand-3);
 
   &:last-child {
     border-bottom: none;
@@ -150,8 +151,8 @@
 }
 
 .arrowBorder {
-  fill: var(--black-a4);
-  stroke: var(--black-a4);
+  fill: var(--sand-4);
+  stroke: var(--sand-4);
   margin-top: 1px;
 
   [data-side='left'] & {
@@ -163,5 +164,5 @@
 }
 
 .arrowFill {
-  fill: var(--sand-0);
+  fill: var(--sand-1);
 }

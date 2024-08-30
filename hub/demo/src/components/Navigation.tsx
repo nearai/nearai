@@ -91,38 +91,40 @@ export const Navigation = () => {
       </BreakpointDisplay>
 
       <Flex align="center" gap="m" style={{ marginLeft: 'auto' }}>
-        {mounted && theme === 'dark' ? (
-          <Tooltip asChild content="Switch to light mode">
-            <Button
-              label="Switch to light mode"
-              size="small"
-              icon={<Moon weight="duotone" />}
-              fill="outline"
-              onClick={() => setTheme('light')}
-            />
-          </Tooltip>
-        ) : (
-          <Tooltip asChild content="Switch to dark mode">
-            <Button
-              label="Switch to dark mode"
-              size="small"
-              icon={<Sun weight="duotone" />}
-              fill="outline"
-              onClick={() => setTheme('dark')}
-            />
-          </Tooltip>
-        )}
+        <Flex align="center" gap="xs">
+          {mounted && theme === 'dark' ? (
+            <Tooltip asChild content="Switch to light mode">
+              <Button
+                label="Switch to light mode"
+                size="small"
+                icon={<Moon weight="duotone" />}
+                fill="ghost"
+                onClick={() => setTheme('light')}
+              />
+            </Tooltip>
+          ) : (
+            <Tooltip asChild content="Switch to dark mode">
+              <Button
+                label="Switch to dark mode"
+                size="small"
+                icon={<Sun weight="duotone" />}
+                fill="ghost"
+                onClick={() => setTheme('dark')}
+              />
+            </Tooltip>
+          )}
 
-        <Tooltip asChild content="View Documentation">
-          <Button
-            label="View Documentation"
-            size="small"
-            icon={<BookOpenText weight="duotone" />}
-            fill="outline"
-            href="https://docs.near.ai"
-            target="_blank"
-          />
-        </Tooltip>
+          <Tooltip asChild content="View Documentation">
+            <Button
+              label="View Documentation"
+              size="small"
+              icon={<BookOpenText weight="duotone" />}
+              fill="ghost"
+              href="https://docs.near.ai"
+              target="_blank"
+            />
+          </Tooltip>
+        </Flex>
 
         <BreakpointDisplay show="smaller-than-desktop" className={s.breakpoint}>
           <Dropdown.Root>
@@ -131,6 +133,7 @@ export const Navigation = () => {
                 label="Navigation"
                 size="small"
                 fill="outline"
+                variant="secondary"
                 icon={<List weight="bold" />}
               />
             </Dropdown.Trigger>

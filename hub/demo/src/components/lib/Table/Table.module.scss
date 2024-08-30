@@ -3,8 +3,8 @@
 .root {
   --table-border-radius: 6px;
   --table-half-padding: var(--gap-s);
-  --table-default-outline: 0px solid var(--violet-4);
-  --table-focus-outline: 4px solid var(--violet-4);
+  --table-default-outline: 0px solid var(--violet-5);
+  --table-focus-outline: 4px solid var(--violet-5);
 
   width: 100%;
   min-width: min-content;
@@ -40,7 +40,7 @@
       right: 0;
       bottom: 0;
       height: 1px;
-      background: var(--sand-6);
+      background: var(--sand-4);
     }
 
     &:first-child {
@@ -163,14 +163,14 @@
     outline: none;
 
     &:hover {
-      color: var(--violet-8) !important;
+      color: var(--violet-9) !important;
     }
 
     &:focus-visible {
-      color: var(--violet-8) !important;
+      color: var(--violet-9) !important;
 
       &::after {
-        background: var(--violet-4);
+        background: var(--violet-5);
       }
     }
   }

@@ -15,7 +15,7 @@
   flex-shrink: 0;
   border-radius: 100px;
   border: 1px solid;
-  box-shadow: 0 0 0 0px var(--violet-4);
+  box-shadow: 0 0 0 0px var(--violet-5);
   cursor: pointer;
   transition: all var(--transition-speed);
   text-decoration: none !important;
@@ -31,7 +31,8 @@
   line-height: 1;
 
   &:focus-visible {
-    box-shadow: 0 0 0 4px var(--violet-4);
+    box-shadow: 0 0 0 4px var(--violet-5);
+    --button-color-border: var(--violet-9) !important;
   }
 
   &[data-icon='true'] {
@@ -58,17 +59,13 @@
     &[data-fill='outline'] {
       --button-color-background: var(--sand-1);
       --button-color-border: var(--sand-6);
-      --button-color-text: var(--violet-8);
-      --button-color-icon: var(--violet-9);
+      --button-color-text: var(--violet-10);
+      --button-color-icon: var(--violet-10);
       &:hover {
-        --button-color-border: var(--violet-6);
-      }
-      &:focus-visible {
-        --button-color-border: var(--violet-9);
+        --button-color-border: var(--violet-10);
       }
       &:active {
         --button-color-background: var(--violet-2);
-        --button-color-border: var(--violet-7);
       }
     }
     &[data-fill='ghost'] {
@@ -78,11 +75,10 @@
     &[data-fill='solid'] {
       --button-color-background: var(--sand-12);
       --button-color-border: var(--sand-12);
-      --button-color-text: var(--sand-1);
-      --button-color-icon: var(--sand-9);
+      --button-color-text: var(--sand-0);
+      --button-color-icon: var(--sand-2);
       &:hover {
-        --button-color-background: var(--black);
-        --button-color-border: var(--black);
+        --button-color-background: var(--sand-11);
       }
     }
   }
@@ -93,15 +89,12 @@
       --button-color-background: rgba(0, 0, 0, 0);
       --button-color-border: var(--sand-6);
       --button-color-text: var(--sand-12);
-      --button-color-icon: var(--sand-10);
+      --button-color-icon: var(--sand-12);
       &:hover {
-        --button-color-border: var(--sand-9);
-      }
-      &:focus-visible {
-        --button-color-border: var(--violet-8);
+        --button-color-border: var(--sand-12);
       }
       &:active {
-        --button-color-background: var(--sand-4);
+        --button-color-background: var(--sand-3);
       }
     }
     &[data-fill='ghost'] {
@@ -116,9 +109,6 @@
       &:hover {
         --button-color-background: var(--sand-4);
       }
-      &:focus-visible {
-        --button-color-border: var(--violet-8);
-      }
       &:active {
         --button-color-background: var(--sand-5);
       }
@@ -130,17 +120,13 @@
     &[data-fill='outline'] {
       --button-color-background: var(--sand-1);
       --button-color-border: var(--sand-6);
-      --button-color-text: var(--red-8);
+      --button-color-text: var(--red-9);
       --button-color-icon: var(--red-9);
       &:hover {
-        --button-color-border: var(--red-6);
-      }
-      &:focus-visible {
-        --button-color-border: var(--violet-8);
+        --button-color-border: var(--red-9);
       }
       &:active {
         --button-color-background: var(--red-2);
-        --button-color-border: var(--red-7);
       }
     }
     &[data-fill='ghost'] {
@@ -148,18 +134,15 @@
       --button-color-border: rgba(0, 0, 0, 0);
     }
     &[data-fill='solid'] {
-      --button-color-background: var(--red-9);
-      --button-color-border: var(--red-8);
+      --button-color-background: var(--red-7);
+      --button-color-border: var(--red-9);
       --button-color-text: var(--red-12);
       --button-color-icon: var(--red-11);
       &:hover {
-        --button-color-background: var(--red-10);
-      }
-      &:focus-visible {
-        --button-color-border: var(--red-11);
+        --button-color-background: var(--red-6);
       }
       &:active {
-        --button-color-background: var(--red-8);
+        --button-color-background: var(--red-9);
       }
     }
   }
@@ -169,17 +152,14 @@
     &[data-fill='outline'] {
       --button-color-background: var(--sand-1);
       --button-color-border: var(--sand-6);
-      --button-color-text: var(--green-11);
-      --button-color-icon: var(--green-8);
+      --button-color-text: var(--green-9);
+      --button-color-icon: var(--green-9);
       &:hover {
         --button-color-border: var(--green-9);
       }
-      &:focus-visible {
-        --button-color-border: var(--violet-8);
-      }
+
       &:active {
-        --button-color-background: var(--green-2);
-        --button-color-border: var(--green-8);
+        --button-color-background: var(--green-3);
       }
     }
     &[data-fill='ghost'] {
@@ -187,18 +167,15 @@
       --button-color-border: rgba(0, 0, 0, 0);
     }
     &[data-fill='solid'] {
-      --button-color-background: var(--green-9);
-      --button-color-border: var(--green-8);
+      --button-color-background: var(--green-7);
+      --button-color-border: var(--green-9);
       --button-color-text: var(--green-12);
       --button-color-icon: var(--green-11);
       &:hover {
-        --button-color-background: var(--green-10);
-      }
-      &:focus-visible {
-        --button-color-border: var(--green-11);
+        --button-color-background: var(--green-6);
       }
       &:active {
-        --button-color-background: var(--green-8);
+        --button-color-background: var(--green-9);
       }
     }
   }

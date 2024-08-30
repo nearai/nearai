@@ -25,10 +25,11 @@
   background-color: var(--sand-1);
   border-bottom-right-radius: 6px;
   border-bottom-left-radius: 6px;
-  box-shadow: var(--shadow-card-with-outline);
-  border: 1px solid var(--sand-4);
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--sand-8);
   border-top: none;
   padding: var(--gap-xs);
+  word-break: break-word;
   max-height: 40svh;
   overflow: auto;
   transform-origin: center top;

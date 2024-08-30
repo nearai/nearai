@@ -6,7 +6,7 @@
 
   &:focus-within .input {
     border-style: solid;
-    border-color: var(--violet-8);
+    border-color: var(--violet-9);
   }
 }
 
@@ -32,7 +32,7 @@
   padding: var(--gap-m);
   border-radius: 6px;
   background-color: var(--sand-0);
-  border: 2px dashed var(--sand-6);
+  border: 2px dashed var(--sand-4);
   outline: none;
   transition: all var(--transition-speed);
   cursor: pointer;
@@ -43,7 +43,7 @@
   }
 
   [data-dragging='true'] & {
-    border-color: var(--violet-8);
+    border-color: var(--violet-9);
   }
 
   [data-error='true'] & {
@@ -68,7 +68,7 @@
   flex-direction: column;
   gap: var(--gap-xs);
   padding-bottom: var(--gap-m);
-  border-bottom: 1px solid var(--sand-6);
+  border-bottom: 1px solid var(--sand-4);
 
   img {
     display: block;

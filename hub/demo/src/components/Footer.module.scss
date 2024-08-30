@@ -2,4 +2,8 @@
   flex-shrink: 0;
   padding: var(--gap-m);
   border-top: 1px solid var(--sand-4);
+
+  &[data-hide='true'] {
+    display: none;
+  }
 }

@@ -33,7 +33,7 @@ export const AssistiveText = ({ message, variant, id }: Props) => {
       <Flex gap="xs" align="center">
         <SvgIcon
           icon={<CheckCircle weight="bold" />}
-          color="green-8"
+          color="green-9"
           size="xs"
         />
         <Text color="green-11" size="text-xs" id={id}>

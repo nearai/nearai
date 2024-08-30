@@ -15,7 +15,7 @@
 }
 
 .root {
-  --toast-color-icon: var(--violet-8);
+  --toast-color-icon: var(--violet-9);
 
   display: grid;
   grid-template-columns: max-content 1fr max-content;
@@ -30,7 +30,7 @@
     --toast-color-icon: var(--red-8);
   }
   &[data-type='success'] {
-    --toast-color-icon: var(--green-8);
+    --toast-color-icon: var(--green-9);
   }
 
   &[data-state='open'] {

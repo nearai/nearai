@@ -5,16 +5,15 @@
   align-items: center;
   gap: 0.5rem;
   color: var(--sand-12);
-  background-color: var(--sand-0);
+  background-color: var(--sand-1);
   z-index: 1000;
   max-width: 30rem;
   font-size: 0.8rem;
   line-height: 1.5;
   word-break: break-word;
   font-family: sans-serif;
-  box-shadow:
-    0 0 0 1px var(--black-a4),
-    0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--sand-4);
   user-select: none;
   animation-duration: var(--transition-speed);
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
@@ -42,8 +41,8 @@
 }
 
 .arrowBorder {
-  fill: var(--black-a4);
-  stroke: var(--black-a4);
+  fill: var(--sand-4);
+  stroke: var(--sand-4);
   margin-top: 1px;
 
   [data-side='left'] & {
@@ -55,5 +54,5 @@
 }
 
 .arrowFill {
-  fill: var(--sand-0);
+  fill: var(--sand-1);
 }
