@@ -14,6 +14,7 @@ DB_HOST = getenv("DATABASE_HOST")
 DB_USER = getenv("DATABASE_USER")
 DB_PASSWORD = getenv("DATABASE_PASSWORD")
 DB_NAME = getenv("DATABASE_NAME")
+STORAGE_TYPE = getenv("STORAGE_TYPE", "file")
 
 
 class RegistryEntry(SQLModel, table=True):
@@ -84,3 +85,35 @@ engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_N
 def get_session() -> Iterator[Session]:
     with Session(engine) as session:
         yield session
+
+
+# Constants for file URI prefixes
+FILE_URI_PREFIX = "file::"
+S3_URI_PREFIX = "s3::"
+
+
+SUPPORTED_MIME_TYPES = {
+    "text/x-c": [".c"],
+    "text/x-c++": [".cpp"],
+    "text/css": [".css"],
+    "text/csv": [".csv"],
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+    "text/html": [".html"],
+    "text/x-java": [".java"],
+    "text/javascript": [".js"],
+    "application/json": [".json"],
+    "text/markdown": [".md"],
+    "application/pdf": [".pdf"],
+    "text/x-php": [".php"],
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
+    "text/x-python": [".py"],
+    "text/x-script.python": [".py"],
+    "text/x-ruby": [".rb"],
+    "text/x-tex": [".tex"],
+    "application/typescript": [".ts"],
+    "text/plain": [".txt"],
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+    "text/xml": [".xml"],
+}
+
+SUPPORTED_TEXT_ENCODINGS = ["utf-8", "utf-16", "ascii"]

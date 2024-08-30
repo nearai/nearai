@@ -1,6 +1,11 @@
 import logging
+import mimetypes
+import os
 from typing import Dict, List, Literal, Optional
 
+import boto3
+import chardet
+from botocore.exceptions import ClientError
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from openai.types.beta.vector_store import ExpiresAfter as OpenAIExpiresAfter
 from openai.types.beta.vector_store import FileCounts, VectorStore
@@ -9,6 +14,14 @@ from openai.types.file_object import FileObject
 from pydantic import BaseModel
 
 from hub.api.v1.auth import AuthToken, revokable_auth
+from hub.api.v1.models import (
+    FILE_URI_PREFIX,
+    S3_BUCKET,
+    S3_URI_PREFIX,
+    STORAGE_TYPE,
+    SUPPORTED_MIME_TYPES,
+    SUPPORTED_TEXT_ENCODINGS,
+)
 from hub.api.v1.sql import SqlClient
 from hub.background.task_queue import set_background_tasks
 from hub.tasks.embedding_generation import generate_embedding, generate_embeddings_for_vector_store
@@ -17,6 +30,8 @@ vector_stores_router = APIRouter(tags=["Vector Stores"])
 files_router = APIRouter(tags=["Files"])
 
 logger = logging.getLogger(__name__)
+
+s3_client = boto3.client("s3")
 
 
 class ChunkingStrategy(BaseModel):
@@ -218,6 +233,45 @@ class FileUploadRequest(BaseModel):
         arbitrary_types_allowed = True
 
 
+async def upload_file_to_storage(content: bytes, object_key: str) -> str:
+    """Upload file content to either S3 or local file system based on STORAGE_TYPE.
+
+    Args:
+    ----
+        content (bytes): The file content to upload.
+        object_key (str): The key/path for the file.
+
+    Returns:
+    -------
+        str: The URI of the uploaded file.
+
+    Raises:
+    ------
+        HTTPException: If the file upload fails.
+
+    """
+    if STORAGE_TYPE == "s3":
+        try:
+            if not S3_BUCKET:
+                raise ValueError("S3_BUCKET is not set")
+            s3_client.put_object(Bucket=S3_BUCKET, Key=object_key, Body=content)
+            return f"{S3_URI_PREFIX}{S3_BUCKET}/{object_key}"
+        except ClientError as e:
+            logger.error(f"Failed to upload file to S3: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to upload file") from e
+    elif STORAGE_TYPE == "file":
+        try:
+            os.makedirs(os.path.dirname(object_key), exist_ok=True)
+            with open(object_key, "wb") as f:
+                f.write(content)
+            return f"{FILE_URI_PREFIX}{os.path.abspath(object_key)}"
+        except IOError as e:
+            logger.error(f"Failed to write file to local storage: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to upload file") from e
+    else:
+        raise ValueError(f"Unsupported storage type: {STORAGE_TYPE}")
+
+
 @files_router.post("/files")
 async def upload_file(
     file: UploadFile = File(...),
@@ -238,7 +292,7 @@ async def upload_file(
 
     Raises:
     ------
-        HTTPException: If the purpose is invalid or file upload fails.
+        HTTPException: If the purpose is invalid, file type is not supported, or file upload fails.
 
     """
     logger.info(f"File upload request received for user: {auth.account_id}")
@@ -248,16 +302,49 @@ async def upload_file(
         logger.warning(f"Invalid purpose provided: {purpose}")
         raise HTTPException(status_code=400, detail=f"Invalid purpose. Must be one of: {', '.join(valid_purposes)}")
 
-    import tempfile
+    if not file.content_type or not file.filename:
+        logger.warning("File upload attempted without a filename or content type")
+        raise HTTPException(status_code=400, detail="File must have a name and content type")
 
-    with tempfile.NamedTemporaryFile(delete=False, mode="wb") as temp_file:
-        content = await file.read()
-        temp_file.write(content)
-        temp_file_path = temp_file.name
-        logger.debug(f"Temporary file created: {temp_file_path}")
+    # Check file type
+    content_type = file.content_type
+    if content_type not in SUPPORTED_MIME_TYPES:
+        logger.warning(f"Unsupported file type: {content_type}")
+        raise HTTPException(status_code=400, detail="Unsupported file type")
+
+    # Verify file extension
+    file_extension = mimetypes.guess_extension(content_type)
+    if file_extension not in SUPPORTED_MIME_TYPES[content_type]:
+        logger.warning(f"Invalid file extension: {file_extension}")
+        raise HTTPException(status_code=400, detail="Invalid file extension") from None
+
+    # Read file content
+    content = await file.read()
+
+    # Check encoding for text files
+    if content_type.startswith("text/"):
+        detected_encoding = chardet.detect(content).get("encoding")
+        if not detected_encoding or detected_encoding.lower() not in SUPPORTED_TEXT_ENCODINGS:
+            logger.warning(f"Unsupported text encoding: {detected_encoding}")
+            raise HTTPException(status_code=400, detail="Unsupported text encoding. Must be utf-8, utf-16, or ascii")
+
+    # Generate a unique object key
+    object_key = f"hub/vector-store-files/{auth.account_id}/{file.filename}"
+
+    # Upload file to storage
+    file_uri = await upload_file_to_storage(content, object_key)
 
     sql_client = SqlClient()
-    file_id = sql_client.create_file(account_id=auth.account_id, file_path=temp_file_path, purpose=purpose)
+    file_id = sql_client.create_file(
+        account_id=auth.account_id,
+        file_uri=file_uri,
+        purpose=purpose,
+        filename=file.filename,
+        content_type=file.content_type,
+        file_size=len(content),
+        encoding=detected_encoding if content_type.startswith("text/") else None,
+    )
+
     file_details = sql_client.get_file_details_by_account(file_id=file_id, account_id=auth.account_id)
 
     if not file_details:
@@ -267,7 +354,7 @@ async def upload_file(
     logger.info(f"File uploaded successfully: {file_id}")
     return FileObject(
         id=str(file_id),
-        bytes=file.size or 0,
+        bytes=len(content),
         created_at=int(file_details.created_at.timestamp()),
         filename=file.filename or "",
         object="file",

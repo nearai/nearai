@@ -55,8 +55,12 @@ class VectorStore(BaseModel):
 class VectorStoreFile(BaseModel):
     id: str
     account_id: str
-    file_path: str
+    file_uri: str
     purpose: str
+    filename: str
+    content_type: str
+    file_size: int
+    encoding: Optional[str]
     created_at: datetime
     updated_at: datetime
 
@@ -216,17 +220,26 @@ class SqlClient:
         query = f"SELECT * FROM vector_stores WHERE account_id = '{account_id}'"
         return [VectorStore(**x) for x in self.__fetch_all(query)]
 
-    def create_file(self, account_id: str, file_path: str, purpose: str) -> str:
+    def create_file(
+        self,
+        account_id: str,
+        file_uri: str,
+        purpose: str,
+        filename: str,
+        content_type: str,
+        file_size: int,
+        encoding: Optional[str] = None,
+    ) -> str:
         """Adds file details in the vector store."""
         # Generate a unique file_id with the required format
         file_id = f"file_{uuid.uuid4().hex[:24]}"  # This generates a string like "file-abc123"
 
         query = """
-        INSERT INTO vector_store_files (id, account_id, file_path, purpose)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO vector_store_files (id, account_id, file_uri, purpose, filename, content_type, file_size, encoding)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """
         cursor = self.db.cursor()
-        cursor.execute(query, (file_id, account_id, file_path, purpose))
+        cursor.execute(query, (file_id, account_id, file_uri, purpose, filename, content_type, file_size, encoding))
         self.db.commit()
         return file_id
 

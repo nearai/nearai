@@ -48,7 +48,7 @@ class TestVectorStoresRoutes(unittest.TestCase):
     def test_openai_upload_file(self):
         client = self.create_openai_client()
         response = client.files.create(
-            file=open("test.txt", "rb"),
+            file=open("test2.py", "rb"),
             purpose="batch",
         )
         print(response)
@@ -66,7 +66,7 @@ class TestVectorStoresRoutes(unittest.TestCase):
         print(f"Vector store response: {vs}")
         
         f = client.files.create(
-            file=open("test.txt", "rb"),
+            file=open("test2.py", "rb"),
             purpose="assistants",
         )
         print(f"File response: {f}")
@@ -81,10 +81,6 @@ class TestVectorStoresRoutes(unittest.TestCase):
         print(f"Search response: {resp.json()}")
         
         
-        
-        
-        
-
 
 if __name__ == '__main__':
     unittest.main()

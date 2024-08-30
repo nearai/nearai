@@ -23,8 +23,12 @@ def upgrade() -> None:
         "vector_store_files",
         sa.Column("id", sa.String(64), primary_key=True),
         sa.Column("account_id", sa.String(64), nullable=False),
-        sa.Column("file_path", sa.String(255), nullable=False),
+        sa.Column("file_uri", sa.String(255), nullable=False),
         sa.Column("purpose", sa.String(50), nullable=False),
+        sa.Column("filename", sa.String(255), nullable=False),
+        sa.Column("content_type", sa.String(100), nullable=False),
+        sa.Column("file_size", sa.Integer, nullable=False),
+        sa.Column("encoding", sa.String(20), nullable=True),
         sa.Column("created_at", sa.TIMESTAMP, nullable=False, server_default=sa.func.current_timestamp()),
         sa.Column(
             "updated_at",

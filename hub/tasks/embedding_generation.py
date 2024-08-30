@@ -6,7 +6,8 @@ from typing import List
 
 import openai
 
-from hub.api.v1.sql import SqlClient
+from hub.api.v1.models import FILE_URI_PREFIX, S3_URI_PREFIX
+from hub.api.v1.sql import SqlClient, VectorStoreFile
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +41,7 @@ async def generate_embeddings_for_file(file_id: str, vector_store_id: str):
         logger.error(f"File with id {file_id} not found")
         raise ValueError(f"File with id {file_id} not found")
 
-    with open(file_details.file_path, "r", encoding="utf-8") as file:
-        content = file.read()
+    content = await get_file_content(file_details)
 
     chunks = create_chunks(content)
     logger.debug(f"Created {len(chunks)} chunks for file: {file_id}")
@@ -108,39 +108,37 @@ def recursive_split(text: str, chunk_size: int, chunk_overlap: int) -> List[str]
             splits = list(text)
 
         chunks: List[str] = []
-        current_chunk: List[str] = []
+        current_chunk = ""
         current_length = 0
 
         for split in splits:
-            split_length = len(split)
+            split_with_sep = split + separator
+            split_length = len(split_with_sep)
 
-            if current_length + split_length + len(separator) > chunk_size:
+            if current_length + split_length > chunk_size:
                 if current_chunk:
-                    chunks.append(separator.join(current_chunk))
-                    current_chunk = []
-                    current_length = 0
+                    chunks.append(current_chunk.strip())
 
-                if split_length > chunk_size:
-                    sub_chunks = recursive_split(split, chunk_size, chunk_overlap)
-                    chunks.extend(sub_chunks)
-                else:
-                    current_chunk = [split]
-                    current_length = split_length
+                # Start new chunk with overlap
+                overlap_start = max(0, len(current_chunk) - chunk_overlap)
+                current_chunk = current_chunk[overlap_start:] + split_with_sep
+                current_length = len(current_chunk)
             else:
-                current_chunk.append(split)
-                current_length += split_length + len(separator)
+                current_chunk += split_with_sep
+                current_length += split_length
 
         if current_chunk:
-            chunks.append(separator.join(current_chunk))
+            chunks.append(current_chunk.strip())
 
-        # Apply overlap
-        overlapped_chunks = []
-        for i, chunk in enumerate(chunks):
-            start = 0 if i == 0 else -chunk_overlap
-            end = None if i == len(chunks) - 1 else len(chunk) + chunk_overlap
-            overlapped_chunks.append(chunk[start:end])
+        # Ensure last chunk has proper overlap with second-to-last chunk
+        if len(chunks) > 1:
+            last_chunk = chunks[-1]
+            second_last_chunk = chunks[-2]
+            overlap = second_last_chunk[-chunk_overlap:]
+            if not last_chunk.startswith(overlap):
+                chunks[-1] = overlap + last_chunk
 
-        return overlapped_chunks
+        return chunks
 
     # If we reach here, it means we couldn't split the text
     return [text]
@@ -171,3 +169,29 @@ async def generate_embedding(text: str, query: bool = False):
     prefix = "search_query: " if query else "search_document: "
     response = await client.embeddings.create(input=prefix + text, model="nomic-ai/nomic-embed-text-v1.5")
     return response.data[0].embedding  # Return only the embedding vector
+
+
+async def get_file_content(file_details: VectorStoreFile) -> str:
+    """Get the content of the file from the file URI.
+
+    Supports:
+    - Local files (file::)
+    - S3 files (s3::)
+    """
+    encoding = file_details.encoding or "utf-8"
+
+    if file_details.file_uri.startswith(FILE_URI_PREFIX):
+        with open(file_details.file_uri[len(FILE_URI_PREFIX) :], "r", encoding=encoding) as file:
+            return file.read()
+    elif file_details.file_uri.startswith(S3_URI_PREFIX):
+        import boto3
+
+        s3_client = boto3.client("s3")
+        parts = file_details.file_uri[len(S3_URI_PREFIX):].split("/", 1)
+        if len(parts) != 2:
+            raise ValueError(f"Invalid S3 URI format: {file_details.file_uri}")
+        bucket_name, key = parts
+        response = s3_client.get_object(Bucket=bucket_name, Key=key)
+        return response["Body"].read().decode(encoding)
+    else:
+        raise ValueError(f"Unsupported file URI: {file_details.file_uri}")
