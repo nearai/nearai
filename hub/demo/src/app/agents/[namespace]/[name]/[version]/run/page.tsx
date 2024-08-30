@@ -93,11 +93,13 @@ export default function RunAgentPage() {
   }, [chatMutation.trpc.path, environmentName, environmentQuery.data]);
 
   async function onSubmit(values: z.infer<typeof agentRequestModel>) {
-    if (environmentName) {
-      values.environment_id = environmentName;
-    }
-
     try {
+      if (!values.new_message.trim()) return;
+
+      if (environmentName) {
+        values.environment_id = environmentName;
+      }
+
       setConversation((current) => [
         ...current,
         {

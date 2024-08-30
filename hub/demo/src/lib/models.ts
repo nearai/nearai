@@ -12,7 +12,7 @@ export const authorizationModel = z.object({
 
 export const messageModel = z.object({
   role: z.enum(['user', 'assistant', 'system']),
-  content: z.string().min(1),
+  content: z.string(),
 });
 
 export const chatCompletionsModel = z.object({

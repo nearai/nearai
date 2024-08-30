@@ -34,6 +34,7 @@ export function signInWithNear() {
 export function returnUrlToRestoreAfterSignIn() {
   // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
   const url = localStorage.getItem(SIGN_IN_RESTORE_URL_KEY) || '/';
+  if (url === '/sign-in/callback') return '/';
   return url;
 }
 

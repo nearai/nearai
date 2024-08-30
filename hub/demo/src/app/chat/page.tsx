@@ -68,11 +68,12 @@ export default function InferencePage() {
   const onSubmit: SubmitHandler<z.infer<typeof chatCompletionsModel>> = async (
     values,
   ) => {
-    values.messages = [...conversation, ...values.messages];
-    values.stop = ['[INST]'];
-
     try {
-      const message = values.messages[0]!;
+      const message = values.messages.at(-1)!;
+      if (!message.content.trim()) return;
+
+      values.messages = [...conversation, ...values.messages];
+      values.stop = ['[INST]'];
 
       setConversation((current) => [
         ...current,
@@ -87,7 +88,11 @@ export default function InferencePage() {
 
       const response = await chatMutation.mutateAsync(values);
 
-      values.messages = [...values.messages, response.choices[0]!.message];
+      values.messages = [
+        ...values.messages,
+        ...response.choices.map((choice) => choice.message),
+      ];
+
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(values));
       setConversation(values.messages);
     } catch (error) {
