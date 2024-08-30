@@ -12,7 +12,7 @@ export const ZustandHydration = () => {
       await useAuthStore.persist.rehydrate();
 
       /*
-        Make sure `isAuthenticated` stays synced with `auth` incase 
+        Make sure `isAuthenticated` stays synced with `auth` in case 
         an edge case or bug causes them to deviate:
       */
 
