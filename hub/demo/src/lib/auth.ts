@@ -12,14 +12,23 @@ const SIGN_IN_RESTORE_URL_KEY = 'signInRestoreUrl';
 
 export function signInWithNear() {
   const nonce = generateNonce();
+
   localStorage.setItem(
     SIGN_IN_RESTORE_URL_KEY,
     `${location.pathname}${location.search}`,
   );
+
   useAuthStore.setState({
     currentNonce: nonce,
   });
-  redirectToAuthNearLink(MESSAGE, RECIPIENT, nonce, SIGN_IN_CALLBACK_URL);
+
+  setTimeout(() => {
+    /*
+      This delay is needed to ensure useAuthStore.setState() resolves updating 
+      local storage before redirecting away.
+    */
+    redirectToAuthNearLink(MESSAGE, RECIPIENT, nonce, SIGN_IN_CALLBACK_URL);
+  }, 50);
 }
 
 export function returnUrlToRestoreAfterSignIn() {

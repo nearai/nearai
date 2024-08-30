@@ -21,29 +21,27 @@ export default function SignInCallbackPage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
     const hashParams = extractSignatureFromHashParams();
+    if (!hashParams || !currentNonce) return;
 
-    if (hashParams && currentNonce) {
-      try {
-        const auth = authorizationModel.parse({
-          account_id: hashParams.accountId,
-          public_key: hashParams.publicKey,
-          signature: hashParams.signature,
-          callback_url: SIGN_IN_CALLBACK_URL,
-          message: MESSAGE,
-          recipient: RECIPIENT,
-          nonce: currentNonce,
-        });
+    try {
+      const auth = authorizationModel.parse({
+        account_id: hashParams.accountId,
+        public_key: hashParams.publicKey,
+        signature: hashParams.signature,
+        callback_url: SIGN_IN_CALLBACK_URL,
+        message: MESSAGE,
+        recipient: RECIPIENT,
+        nonce: currentNonce,
+      });
 
-        setAuthRaw(`Bearer ${JSON.stringify(auth)}`);
+      setAuthRaw(`Bearer ${JSON.stringify(auth)}`);
 
-        const url = returnUrlToRestoreAfterSignIn();
-        router.replace(url);
-      } catch (error) {
-        console.error(error);
-        clearAuth();
-      }
+      const url = returnUrlToRestoreAfterSignIn();
+      router.replace(url);
+    } catch (error) {
+      console.error(error);
+      clearAuth();
     }
   }, [currentNonce, clearAuth, router, setAuthRaw]);
 
