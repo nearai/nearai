@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from enum import Enum
 from os import getenv
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import pymysql
 import pymysql.cursors
@@ -63,6 +63,7 @@ class VectorStoreFile(BaseModel):
     encoding: Optional[str]
     created_at: datetime
     updated_at: datetime
+    embedding_status: Optional[Literal["in_progress", "completed"]]
 
 
 class SimilaritySearch(BaseModel):
@@ -229,17 +230,22 @@ class SqlClient:
         content_type: str,
         file_size: int,
         encoding: Optional[str] = None,
+        embedding_status: Optional[Literal["in_progress", "completed"]] = None,
     ) -> str:
         """Adds file details in the vector store."""
         # Generate a unique file_id with the required format
         file_id = f"file_{uuid.uuid4().hex[:24]}"  # This generates a string like "file-abc123"
 
         query = """
-        INSERT INTO vector_store_files (id, account_id, file_uri, purpose, filename, content_type, file_size, encoding)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO vector_store_files (id, account_id, file_uri, purpose, filename, content_type, file_size, encoding, embedding_status)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
+
         cursor = self.db.cursor()
-        cursor.execute(query, (file_id, account_id, file_uri, purpose, filename, content_type, file_size, encoding))
+        cursor.execute(
+            query,
+            (file_id, account_id, file_uri, purpose, filename, content_type, file_size, encoding, embedding_status),
+        )
         self.db.commit()
         return file_id
 
@@ -316,7 +322,7 @@ class SqlClient:
         SELECT vse.file_id, vse.chunk_text, vse.embedding <-> %s AS distance
         FROM vector_store_embeddings vse
         WHERE vse.vector_store_id = %s
-        ORDER BY distance DESC
+        ORDER BY distance
         LIMIT %s
         """
         query_embedding_json = json.dumps(query_embedding)

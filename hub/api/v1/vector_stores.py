@@ -23,8 +23,10 @@ from hub.api.v1.models import (
     SUPPORTED_TEXT_ENCODINGS,
 )
 from hub.api.v1.sql import SqlClient
-from hub.background.task_queue import set_background_tasks
-from hub.tasks.embedding_generation import generate_embedding, generate_embeddings_for_vector_store
+from hub.tasks.embedding_generation import (
+    generate_embedding,
+    generate_embeddings_for_file,
+)
 
 vector_stores_router = APIRouter(tags=["Vector Stores"])
 files_router = APIRouter(tags=["Files"])
@@ -85,7 +87,6 @@ async def create_vector_store(
         HTTPException: If the vector store creation fails.
 
     """
-    set_background_tasks(background_tasks)
     logger.info(f"Creating vector store: {request.name}")
 
     sql_client = SqlClient()
@@ -175,10 +176,21 @@ async def get_vector_store(vector_store_id: str, auth: AuthToken = Depends(revok
         logger.warning(f"Vector store not found: {vector_store_id}")
         raise HTTPException(status_code=404, detail="Vector store not found")
 
-    total_bytes = sum(len(file_id) for file_id in vector_store.file_ids)
     expires_at = None
     if vector_store.expires_after and vector_store.expires_after.get("days"):
         expires_at = vector_store.created_at.timestamp() + vector_store.expires_after["days"] * 24 * 60 * 60
+
+    in_progress_files = 0
+    completed_files = 0
+    total_bytes = 0
+    for file_id in vector_store.file_ids:
+        file_details = sql_client.get_file_details(file_id)
+        if file_details:
+            if file_details.embedding_status == "in_progress":
+                in_progress_files += 1
+            elif file_details.embedding_status == "completed":
+                completed_files += 1
+            total_bytes += file_details.file_size
 
     return VectorStore(
         id=str(vector_store.id),
@@ -186,8 +198,8 @@ async def get_vector_store(vector_store_id: str, auth: AuthToken = Depends(revok
         created_at=int(vector_store.created_at.timestamp()),
         name=vector_store.name,
         file_counts=FileCounts(
-            in_progress=0,
-            completed=len(vector_store.file_ids),
+            in_progress=in_progress_files,
+            completed=completed_files,
             failed=0,
             cancelled=0,
             total=len(vector_store.file_ids),
@@ -373,23 +385,35 @@ class VectorStoreFileCreate(BaseModel):
 
 @vector_stores_router.post("/vector_stores/{vector_store_id}/files")
 async def create_vector_store_file(
-    vector_store_id: str, file_data: VectorStoreFileCreate, auth: AuthToken = Depends(revokable_auth)
+    vector_store_id: str,
+    file_data: VectorStoreFileCreate,
+    background_tasks: BackgroundTasks,
+    auth: AuthToken = Depends(revokable_auth),
 ):
-    """Attach a file to an existing vector store.
+    """Attach a file to an existing vector store and initiate embedding generation.
 
     Args:
     ----
-        vector_store_id (str): The ID of the vector store.
-        file_data (VectorStoreFileCreate): The file data to attach.
-        auth (AuthToken): The authentication token.
+        vector_store_id (str): The ID of the vector store to attach the file to.
+        file_data (VectorStoreFileCreate): The file data containing the file_id to attach.
+        background_tasks (BackgroundTasks): FastAPI background tasks for asynchronous processing.
+        auth (AuthToken): The authentication token for the current user.
 
     Returns:
     -------
-        VectorStore: The updated vector store object.
+        VectorStore: The updated vector store object with the newly attached file.
 
     Raises:
     ------
-        HTTPException: If the vector store is not found or file attachment fails.
+        HTTPException:
+            - 404 if the vector store is not found.
+            - 500 if file attachment fails or if there's an error updating the vector store.
+
+    Notes:
+    -----
+        - This function updates the vector store by adding the new file_id to its list of files.
+        - It queues a background task to generate embeddings for the newly attached file.
+        - The vector store's status is set to "in_progress" as embedding generation begins.
 
     """
     logger.info(f"Attaching file to vector store: {vector_store_id}")
@@ -408,7 +432,17 @@ async def create_vector_store_file(
     if not updated_vector_store:
         raise HTTPException(status_code=500, detail="Failed to attach file to vector store")
 
-    total_bytes = sum(len(file_id) for file_id in updated_vector_store.file_ids)
+    total_bytes = 0
+    in_progress_files = 0
+    completed_files = 0
+    for file_id in updated_vector_store.file_ids:
+        file_details = sql_client.get_file_details(file_id)
+        if file_details:
+            total_bytes += file_details.file_size
+            if file_details.embedding_status == "in_progress":
+                in_progress_files += 1
+            elif file_details.embedding_status == "completed":
+                completed_files += 1
 
     expires_at = None
     if updated_vector_store.expires_after and updated_vector_store.expires_after.get("days"):
@@ -416,8 +450,9 @@ async def create_vector_store_file(
             updated_vector_store.created_at.timestamp() + updated_vector_store.expires_after["days"] * 24 * 60 * 60
         )
 
-    logger.info(f"Generating embeddings for vector store: {vector_store_id}")
-    await generate_embeddings_for_vector_store(vector_store_id)
+    logger.info(f"Queueing embedding generation for file in vector store: {vector_store_id}")
+    background_tasks.add_task(generate_embeddings_for_file, file_data.file_id, vector_store_id)
+    logger.info(f"Embedding generation queued for file: {file_data.file_id}")
 
     return VectorStore(
         id=str(updated_vector_store.id),
@@ -425,8 +460,8 @@ async def create_vector_store_file(
         created_at=int(updated_vector_store.created_at.timestamp()),
         name=updated_vector_store.name,
         file_counts=FileCounts(
-            in_progress=0,
-            completed=len(updated_vector_store.file_ids),
+            in_progress=in_progress_files,
+            completed=completed_files,
             failed=0,
             cancelled=0,
             total=len(updated_vector_store.file_ids),
