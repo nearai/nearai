@@ -9,12 +9,8 @@ import { SvgIcon } from '~/components/lib/SvgIcon';
 import { Table } from '~/components/lib/Table';
 import { Text } from '~/components/lib/Text';
 import { Timestamp } from '~/components/lib/Timestamp';
-import {
-  CALLBACK_URL,
-  RECIPIENT,
-  REVOKE_ALL_MESSAGE,
-  REVOKE_MESSAGE,
-} from '~/lib/auth';
+import { env } from '~/env';
+import { RECIPIENT, REVOKE_ALL_MESSAGE, REVOKE_MESSAGE } from '~/lib/auth';
 import {
   extractSignatureFromHashParams,
   generateNonce,
@@ -31,7 +27,7 @@ export const NonceList = () => {
   const startRevokeNonce = (revokeNonce?: string) => {
     const nonce = generateNonce();
 
-    let callbackUrl = CALLBACK_URL + '/settings?nonce=' + nonce;
+    let callbackUrl = env.NEXT_PUBLIC_BASE_URL + '/settings?nonce=' + nonce;
     if (revokeNonce) {
       callbackUrl += '&revoke_nonce=' + revokeNonce;
       redirectToAuthNearLink(REVOKE_MESSAGE, RECIPIENT, nonce, callbackUrl);
@@ -65,7 +61,7 @@ export const NonceList = () => {
       account_id: hashParams.accountId,
       public_key: hashParams.publicKey,
       signature: hashParams.signature,
-      callback_url: CALLBACK_URL + cleanUrl,
+      callback_url: env.NEXT_PUBLIC_BASE_URL + cleanUrl,
       message: message,
       recipient: RECIPIENT,
       nonce: signingNonce,

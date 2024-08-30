@@ -9,7 +9,7 @@ type AuthStore = {
   currentNonce: string | null;
 
   clearAuth: () => void;
-  isAuthenticated: () => boolean;
+  isAuthenticated: boolean;
   setAuth: (auth: z.infer<typeof authorizationModel>) => void;
   setAuthRaw: (value: string) => void;
   setCurrentNonce: (nonce: string) => void;
@@ -19,17 +19,14 @@ type AuthStore = {
 const createStore: StateCreator<AuthStore> = (set, get) => ({
   auth: null,
   currentNonce: null,
-
-  isAuthenticated: () => {
-    return !!get().auth;
-  },
+  isAuthenticated: false,
 
   clearAuth: () => {
-    set({ auth: null, currentNonce: null });
+    set({ auth: null, currentNonce: null, isAuthenticated: false });
   },
 
   setAuth: (auth: z.infer<typeof authorizationModel>) => {
-    set({ auth });
+    set({ auth, isAuthenticated: true });
   },
 
   setAuthRaw: (value: string) => {
@@ -37,7 +34,7 @@ const createStore: StateCreator<AuthStore> = (set, get) => ({
       value = value.substring('Bearer '.length);
     }
     const auth = authorizationModel.parse(JSON.parse(value));
-    set({ auth });
+    set({ auth, isAuthenticated: true });
   },
 
   setCurrentNonce: (currentNonce: string) => {

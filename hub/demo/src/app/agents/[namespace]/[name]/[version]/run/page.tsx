@@ -45,8 +45,7 @@ const LOCAL_STORAGE_KEY = 'agent_inference_conversation';
 
 export default function RunAgentPage() {
   const { currentResource } = useCurrentResource('agent');
-  const store = useAuthStore();
-  const isAuthenticated = store.isAuthenticated();
+  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const { namespace, name, version } = useResourceParams();
   const searchParams = useSearchParams();
   const environmentId = searchParams.get('environmentId');

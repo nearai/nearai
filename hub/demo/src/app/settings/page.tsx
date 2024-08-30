@@ -6,10 +6,14 @@ import { Flex } from '~/components/lib/Flex';
 import { Section } from '~/components/lib/Section';
 import { SvgIcon } from '~/components/lib/SvgIcon';
 import { Text } from '~/components/lib/Text';
+import { SignInPromptSection } from '~/components/SignInPrompt';
 
 import { NonceList } from './NonceList';
+import { useAuthStore } from '~/stores/auth';
 
 export default function SettingsPage() {
+  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+
   return (
     <>
       <Section background="sand2">
@@ -19,9 +23,13 @@ export default function SettingsPage() {
         </Flex>
       </Section>
 
-      <Section>
-        <NonceList />
-      </Section>
+      {isAuthenticated ? (
+        <Section>
+          <NonceList />
+        </Section>
+      ) : (
+        <SignInPromptSection />
+      )}
     </>
   );
 }

@@ -51,8 +51,7 @@ export default function InferencePage() {
   const [conversation, setConversation] = useState<
     z.infer<typeof messageModel>[]
   >([]);
-  const store = useAuthStore();
-  const isAuthenticated = store.isAuthenticated();
+  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
 
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);

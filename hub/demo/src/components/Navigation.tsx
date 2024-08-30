@@ -31,7 +31,7 @@ const navItems = [
   {
     label: 'Agents',
     path: '/agents',
-    icon: <ChatCircleDots />,
+    icon: <Lightbulb />,
   },
   {
     label: 'Models',
@@ -44,14 +44,14 @@ const navItems = [
     icon: <Database />,
   },
   {
-    label: 'Inference',
-    path: '/inference',
-    icon: <Lightbulb />,
-  },
-  {
     label: 'Benchmarks',
     path: '/benchmarks',
     icon: <ChartBar />,
+  },
+  {
+    label: 'Chat',
+    path: '/chat',
+    icon: <ChatCircleDots />,
   },
 ];
 
@@ -116,7 +116,7 @@ export const Navigation = () => {
           </Dropdown.Root>
         </BreakpointDisplay>
 
-        {store.isAuthenticated() ? (
+        {store.isAuthenticated ? (
           <Dropdown.Root>
             <Dropdown.Trigger asChild>
               <Button

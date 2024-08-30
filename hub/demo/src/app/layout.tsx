@@ -5,7 +5,6 @@ import { type ReactNode } from 'react';
 import { Footer } from '~/components/Footer';
 import { Toaster } from '~/components/lib/Toast';
 import { Navigation } from '~/components/Navigation';
-import { SignInHandler } from '~/components/SignInHandler';
 import { ZustandHydration } from '~/components/ZustandHydration';
 import { TRPCReactProvider } from '~/trpc/react';
 
@@ -25,7 +24,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
 
       <body>
-        <SignInHandler />
         <ZustandHydration />
         <Toaster />
 
