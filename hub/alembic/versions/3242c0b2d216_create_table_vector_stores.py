@@ -1,7 +1,7 @@
 """create_table_vector_stores.
 
 Revision ID: 3242c0b2d216
-Revises: 0c1df68a1460
+Revises: dbeaf5dc234c
 Create Date: 2024-08-22 10:29:50.522409
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "3242c0b2d216"
-down_revision: Union[str, None] = "0c1df68a1460"
+down_revision: Union[str, None] = "dbeaf5dc234c"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
