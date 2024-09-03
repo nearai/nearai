@@ -1,9 +1,9 @@
 import { type CSSProperties } from 'react';
 
 import { Card } from './Card';
+import { Flex } from './Flex';
 import s from './Placeholder.module.scss';
 import { Section, type SectionProps } from './Section';
-import { Flex } from './Flex';
 
 type Props = {
   style?: CSSProperties;

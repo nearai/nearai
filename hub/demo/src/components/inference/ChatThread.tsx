@@ -10,11 +10,11 @@ import { copyTextToClipboard } from '~/utils/clipboard';
 
 import { Button } from '../lib/Button';
 import { Card } from '../lib/Card';
+import { Code, filePathToCodeLanguage } from '../lib/Code';
 import { Flex } from '../lib/Flex';
 import { Text } from '../lib/Text';
 import { Tooltip } from '../lib/Tooltip';
 import s from './ChatThread.module.scss';
-import { Code, filePathToCodeLanguage } from '../lib/Code';
 
 type Props = {
   messages: z.infer<typeof messageModel>[];
@@ -49,8 +49,7 @@ export const ChatThread = ({ messages }: Props) => {
     const lastLine = previousMessage.content.split('\n').pop()?.trim();
     if (!lastLine) return;
 
-    if (lastLine.indexOf('WRITE ') === 0)
-      return filePathToCodeLanguage(lastLine);
+    if (lastLine.startsWith('WRITE ')) return filePathToCodeLanguage(lastLine);
   }
 
   return (
