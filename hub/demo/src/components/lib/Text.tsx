@@ -25,6 +25,7 @@ type Props = {
   className?: string;
   color?: ThemeColor;
   decoration?: CSSProperties['textDecoration'];
+  forceWordBreak?: boolean;
   id?: string;
   size?: ThemeFontSize;
   sizePhone?: ThemeFontSize;
@@ -41,6 +42,7 @@ export const Text = ({
   className = '',
   color,
   decoration,
+  forceWordBreak,
   size,
   style,
   weight,
@@ -65,6 +67,7 @@ export const Text = ({
         fontWeight: weight,
         WebkitLineClamp: clampLines,
         whiteSpace: noWrap ? 'nowrap' : undefined,
+        wordBreak: forceWordBreak ? 'break-word' : undefined,
         ...style,
       }}
       {...props}

@@ -134,7 +134,7 @@ export const NonceList = () => {
           {nonces.data?.map((nonce) => (
             <Table.Row key={nonce.nonce}>
               <Table.Cell>
-                <Text size="text-xs" color="sand-12" clampLines={1}>
+                <Text size="text-xs" color="sand-12">
                   {nonce.nonce}
                 </Text>
               </Table.Cell>
