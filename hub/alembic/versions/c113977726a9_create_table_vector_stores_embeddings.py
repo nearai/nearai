@@ -20,10 +20,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 class VECTOR(UserDefinedType):
-    def __init__(self, length):
+    def __init__(self, length):  # noqa: D107
         self.length = length
 
-    def get_col_spec(self):
+    def get_col_spec(self):  # noqa: D102
         return f"VECTOR({self.length})"
 
 
