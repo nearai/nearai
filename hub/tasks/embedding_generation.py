@@ -16,13 +16,19 @@ from hub.api.v1.sql import SqlClient, VectorStoreFile
 logger = logging.getLogger(__name__)
 
 # Constants for chunking strategy
-CHARS_PER_TOKEN = 4  # Approximate average number of characters per token
+CHARS_PER_TOKEN = 4
 TOKEN_LIMIT = 800
 CHUNK_SIZE = TOKEN_LIMIT * CHARS_PER_TOKEN
 CHUNK_OVERLAP = CHUNK_SIZE // 4
 
+# File extensions
+OFFICE_EXTENSIONS = [".docx", ".pptx", ".xlsx"]
+
+# Embedding model
+EMBEDDING_MODEL = "nomic-ai/nomic-embed-text-v1.5"
+
 """
-Chunking strategy explanation:
+Chunking strategy:
 - CHARS_PER_TOKEN: Approximate average number of characters per token.
 - TOKEN_LIMIT: Approximate token limit for the embedding model.
 - CHUNK_SIZE: Set to TOKEN_LIMIT * CHARS_PER_TOKEN to create chunks that fit within the model's token limit.
@@ -36,9 +42,6 @@ These values may need adjustment based on the specific requirements of the embed
 
 async def generate_embeddings_for_vector_store(vector_store_id: str):
     """Generate embeddings for all files in a vector store.
-
-    This function retrieves the vector store details, queues embedding generation tasks for each file,
-    and waits for all tasks to complete.
 
     Args:
     ----
@@ -57,19 +60,14 @@ async def generate_embeddings_for_vector_store(vector_store_id: str):
         logger.error(f"Vector store with id {vector_store_id} not found")
         raise ValueError(f"Vector store with id {vector_store_id} not found")
 
-    logger.debug(f"Queueing embedding generation tasks for {len(vector_store.file_ids)} files")
     tasks = [generate_embeddings_for_file(file_id, vector_store_id) for file_id in vector_store.file_ids]
-
     await asyncio.gather(*tasks)
 
-    logger.info(f"Finished embedding generation tasks for vector store: {vector_store_id}")
+    logger.info(f"Finished embedding generation for vector store: {vector_store_id}")
 
 
 async def generate_embeddings_for_file(file_id: str, vector_store_id: str):
     """Generate embeddings for a specific file and store them in the vector store.
-
-    This function retrieves the file content, splits it into chunks, generates embeddings
-    for each chunk, and stores the embeddings in the database.
 
     Args:
     ----
@@ -84,29 +82,20 @@ async def generate_embeddings_for_file(file_id: str, vector_store_id: str):
     logger.info(f"Starting embedding generation for file: {file_id}")
 
     sql_client = SqlClient()
-
     file_details = sql_client.get_file_details(file_id)
     if not file_details:
         logger.error(f"File with id {file_id} not found")
         raise ValueError(f"File with id {file_id} not found")
 
-    logger.info(f"Retrieved file details for file: {file_id}")
     content = await get_file_content(file_details)
-    logger.info(f"Retrieved content for file: {file_id}")
-
     chunks = create_chunks(content)
-    logger.info(f"Created {len(chunks)} chunks for file: {file_id}")
-    logger.debug(f"Chunk sizes: {[len(chunk) for chunk in chunks]}")
+    logger.debug(f"Created {len(chunks)} chunks for file: {file_id}")
 
     embedding_tasks = [generate_embedding(chunk) for chunk in chunks]
-
     embeddings = await asyncio.gather(*embedding_tasks)
-    logger.info(f"Generated {len(embeddings)} embeddings for file: {file_id}")
 
-    # Store embeddings in the database
     for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
         embedding_id = f"vfe_{uuid.uuid4().hex[:24]}"
-        logger.info(f"Storing embedding: {embedding_id} for file: {file_id}")
         try:
             sql_client.store_embedding(
                 id=embedding_id,
@@ -119,16 +108,11 @@ async def generate_embeddings_for_file(file_id: str, vector_store_id: str):
         except Exception as e:
             logger.error(f"Failed to store embedding: {embedding_id} for file: {file_id}, error: {e}")
 
-    # Update file status
     sql_client.update_file_embedding_status(file_id, "completed")
-    logger.info(f"Updated embedding status to 'completed' for file: {file_id}")
 
-    # Update vector store embedding info
     if embeddings:
-        embedding_model = "nomic-ai/nomic-embed-text-v1.5"  # This should be dynamically set based on the model used
         embedding_dimensions = len(embeddings[0])
-        sql_client.update_vector_store_embedding_info(vector_store_id, embedding_model, embedding_dimensions)
-        logger.info(f"Updated vector store embedding info for vector store: {vector_store_id}")
+        sql_client.update_vector_store_embedding_info(vector_store_id, EMBEDDING_MODEL, embedding_dimensions)
 
     logger.info(f"Finished embedding generation for file: {file_id}")
 
@@ -209,10 +193,6 @@ def recursive_split(text: str, chunk_size: int, chunk_overlap: int) -> List[str]
 async def generate_embedding(text: str, query: bool = False):
     """Generate an embedding for the given text using the Nomic AI model.
 
-    This function prefixes the input with either 'search_query: ' or 'search_document: '
-    depending on whether the text is a query or a document. This helps the model
-    understand the context and generate more appropriate embeddings.
-
     Args:
     ----
         text (str): The text to generate an embedding for.
@@ -227,13 +207,9 @@ async def generate_embedding(text: str, query: bool = False):
     client = openai.AsyncOpenAI(
         base_url="https://api.fireworks.ai/inference/v1", api_key=os.getenv("FIREWORKS_API_KEY")
     )
-    logger.debug(f"Generating embedding for text: {text[:32]}...")
     prefix = "search_query: " if query else "search_document: "
-    response = await client.embeddings.create(input=prefix + text, model="nomic-ai/nomic-embed-text-v1.5")
-    return response.data[0].embedding  # Return only the embedding vector
-
-
-OFFICE_EXTENSIONS = [".docx", ".pptx", ".xlsx"]
+    response = await client.embeddings.create(input=prefix + text, model=EMBEDDING_MODEL)
+    return response.data[0].embedding
 
 
 async def get_file_content(file_details: VectorStoreFile) -> str:

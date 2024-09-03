@@ -241,7 +241,7 @@ class FileUploadRequest(BaseModel):
     purpose: Literal["assistants", "batch", "fine-tune", "vision"]
     """The purpose of the file upload."""
 
-    class Config:
+    class Config:  # noqa: D106
         arbitrary_types_allowed = True
 
 
@@ -290,92 +290,147 @@ async def upload_file(
     purpose: Literal["assistants", "batch", "fine-tune", "vision"] = Form(...),
     auth: AuthToken = Depends(revokable_auth),
 ) -> FileObject:
-    """Upload a file to the system.
+    """Upload a file to the system and create a corresponding database record.
+
+    This function handles file uploads, determines the content type, checks for
+    supported file types and encodings, and stores the file in the configured
+    storage system.
 
     Args:
     ----
         file (UploadFile): The file to be uploaded.
-        purpose (str): The purpose of the file upload.
-        auth (AuthToken): The authentication token.
+        purpose (str): The purpose of the file upload. Must be one of:
+                       "assistants", "batch", "fine-tune", "vision".
+        auth (AuthToken): The authentication token for the current user.
 
     Returns:
     -------
-        FileObject: The uploaded file object.
+        FileObject: An object containing details of the uploaded file.
 
     Raises:
     ------
-        HTTPException: If the purpose is invalid, file type is not supported, or file upload fails.
+        HTTPException:
+            - 400 if the purpose is invalid, file type is not supported,
+              or file encoding is not supported.
+            - 404 if the file details are not found after creation.
+            - 500 if there's an error during file upload or database operations.
 
     """
     logger.info(
-        f"File upload request received for user: {auth.account_id}, file: {file.filename}, type: {file.content_type} purpose: {purpose}"
+        f"File upload request received for user: {auth.account_id}, "
+        f"file: {file.filename}, type: {file.content_type}, purpose: {purpose}"
     )
 
+    # Validate purpose
     valid_purposes = ["assistants", "batch", "fine-tune", "vision"]
     if purpose not in valid_purposes:
-        logger.warning(f"Invalid purpose provided: {purpose}")
         raise HTTPException(status_code=400, detail=f"Invalid purpose. Must be one of: {', '.join(valid_purposes)}")
 
-    if not file.content_type or not file.filename:
-        logger.warning("File upload attempted without a filename or content type")
-        raise HTTPException(status_code=400, detail="File must have a name and content type")
-
-    # Check file type
-    content_type = file.content_type
-    if content_type not in SUPPORTED_MIME_TYPES:
-        logger.warning(f"Unsupported file type: {content_type}")
-        raise HTTPException(status_code=400, detail="Unsupported file type")
-
-    # Verify file extension
-    file_extension = mimetypes.guess_extension(content_type)
-    if file_extension not in SUPPORTED_MIME_TYPES[content_type]:
-        logger.warning(f"Invalid file extension: {file_extension}")
-        raise HTTPException(status_code=400, detail="Invalid file extension") from None
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="File must have a name")
 
     # Read file content
     content = await file.read()
+    file_size = len(content)
+
+    # Determine file type and extension
+    file_extension = os.path.splitext(file.filename)[1].lower()
+    content_type = determine_content_type(file)
+
+    # Validate file type and extension
+    if content_type not in SUPPORTED_MIME_TYPES:
+        raise HTTPException(status_code=400, detail="Unsupported file type")
+    if file_extension not in SUPPORTED_MIME_TYPES[content_type]:
+        raise HTTPException(status_code=400, detail="Invalid file extension for the given content type")
 
     # Check encoding for text files
-    if content_type.startswith("text/"):
-        detected_encoding = chardet.detect(content).get("encoding")
-        if not detected_encoding or detected_encoding.lower() not in SUPPORTED_TEXT_ENCODINGS:
-            logger.warning(f"Unsupported text encoding: {detected_encoding}")
-            raise HTTPException(status_code=400, detail="Unsupported text encoding. Must be utf-8, utf-16, or ascii")
+    detected_encoding = check_text_encoding(content) if content_type.startswith("text/") else None
 
-    # Generate a unique object key
+    # Generate a unique object key and upload to storage
     object_key = f"hub/vector-store-files/{auth.account_id}/{file.filename}"
+    try:
+        file_uri = await upload_file_to_storage(content, object_key)
+    except Exception as e:
+        logger.error(f"Failed to upload file to storage: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to upload file to storage") from e
 
-    # Upload file to storage
-    file_uri = await upload_file_to_storage(content, object_key)
-
+    # Create file record in database
     sql_client = SqlClient()
-    file_id = sql_client.create_file(
-        account_id=auth.account_id,
-        file_uri=file_uri,
-        purpose=purpose,
-        filename=file.filename,
-        content_type=content_type,
-        file_size=len(content),
-        encoding=detected_encoding if content_type.startswith("text/") else None,
-    )
-
-    file_details = sql_client.get_file_details_by_account(file_id=file_id, account_id=auth.account_id)
+    try:
+        file_id = sql_client.create_file(
+            account_id=auth.account_id,
+            file_uri=file_uri,
+            purpose=purpose,
+            filename=file.filename,
+            content_type=content_type,
+            file_size=file_size,
+            encoding=detected_encoding,
+        )
+        file_details = sql_client.get_file_details_by_account(file_id=file_id, account_id=auth.account_id)
+    except Exception as e:
+        logger.error(f"Database operation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create file record") from e
 
     if not file_details:
-        logger.error(f"File details not found for file_id: {file_id}")
         raise HTTPException(status_code=404, detail="File details not found")
 
     logger.info(f"File uploaded successfully: {file_id}")
     return FileObject(
         id=str(file_id),
-        bytes=len(content),
+        bytes=file_size,
         created_at=int(file_details.created_at.timestamp()),
-        filename=file.filename or "",
+        filename=file.filename,
         object="file",
         purpose=purpose,
         status="uploaded",
-        status_details="TBD",
+        status_details="File successfully uploaded and recorded",
     )
+
+
+def determine_content_type(file: UploadFile) -> str:
+    """Determine the content type of the uploaded file.
+
+    Args:
+    ----
+        file (UploadFile): The uploaded file object.
+
+    Returns:
+    -------
+        str: The determined content type.
+
+    """
+    filename = file.filename or ""
+    content_type = file.content_type or mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    if content_type == "application/octet-stream":
+        file_extension = os.path.splitext(filename)[1].lower()
+        for mime_type, extensions in SUPPORTED_MIME_TYPES.items():
+            if file_extension in extensions:
+                return mime_type
+    return content_type
+
+
+def check_text_encoding(content: bytes) -> Optional[str]:
+    """Check the encoding of text content.
+
+    Args:
+    ----
+        content (bytes): The content to check.
+
+    Returns:
+    -------
+        Optional[str]: The detected encoding if supported, None otherwise.
+
+    Raises:
+    ------
+        HTTPException: If the encoding is not supported.
+
+    """
+    detected_encoding = chardet.detect(content).get("encoding")
+    if not detected_encoding or detected_encoding.lower() not in SUPPORTED_TEXT_ENCODINGS:
+        raise HTTPException(
+            status_code=400, detail=f"Unsupported text encoding. Must be one of: {', '.join(SUPPORTED_TEXT_ENCODINGS)}"
+        )
+    return detected_encoding
 
 
 class VectorStoreFileCreate(BaseModel):
