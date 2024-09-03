@@ -156,6 +156,26 @@ class SqlClient:
         chunking_strategy: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, str]] = None,
     ) -> str:
+        """Create a new vector store.
+
+        Args:
+        ----
+            account_id (str): The ID of the account creating the vector store.
+            name (str): The name of the vector store.
+            file_ids (List[str]): List of file IDs associated with the vector store.
+            expires_after (Optional[Dict[str, Any]], optional): Expiration settings. Defaults to None.
+            chunking_strategy (Optional[Dict[str, Any]], optional): Chunking strategy settings. Defaults to None.
+            metadata (Optional[Dict[str, str]], optional): Additional metadata. Defaults to None.
+
+        Returns:
+        -------
+            str: The ID of the created vector store.
+
+        Raises:
+        ------
+            ValueError: If any dictionary values are not JSON serializable.
+
+        """
         vs_id = f"vs_{uuid.uuid4().hex[:24]}"
 
         query = """
@@ -232,14 +252,31 @@ class SqlClient:
         encoding: Optional[str] = None,
         embedding_status: Optional[Literal["in_progress", "completed"]] = None,
     ) -> str:
-        """Adds file details in the vector store."""
-        # Generate a unique file_id with the required format
-        file_id = f"file_{uuid.uuid4().hex[:24]}"  # This generates a string like "file-abc123"
+        """Add file details to the vector store.
+
+        Args:
+        ----
+            account_id (str): The ID of the account associated with the file.
+            file_uri (str): The URI of the file.
+            purpose (str): The purpose of the file.
+            filename (str): The name of the file.
+            content_type (str): The content type of the file.
+            file_size (int): The size of the file in bytes.
+            encoding (Optional[str], optional): The encoding of the file. Defaults to None.
+            embedding_status (Optional[Literal["in_progress", "completed"]], optional): The status of the embedding
+            process. Defaults to None.
+
+        Returns:
+        -------
+            str: The generated file ID.
+
+        """
+        file_id = f"file_{uuid.uuid4().hex[:24]}"
 
         query = """
         INSERT INTO vector_store_files (id, account_id, file_uri, purpose, filename, content_type, file_size, encoding, embedding_status)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
+        """  # noqa: E501
 
         cursor = self.db.cursor()
         cursor.execute(
@@ -250,6 +287,18 @@ class SqlClient:
         return file_id
 
     def get_file_details_by_account(self, file_id: str, account_id: str) -> Optional[VectorStoreFile]:
+        """Get file details for a specific file and account.
+
+        Args:
+        ----
+            file_id (str): The ID of the file.
+            account_id (str): The ID of the account.
+
+        Returns:
+        -------
+            Optional[VectorStoreFile]: The file details if found, None otherwise.
+
+        """
         query = "SELECT * FROM vector_store_files WHERE id = %s AND account_id = %s"
         cursor = self.db.cursor(pymysql.cursors.DictCursor)
         cursor.execute(query, (file_id, account_id))
@@ -257,6 +306,17 @@ class SqlClient:
         return VectorStoreFile(**result) if result else None
 
     def get_file_details(self, file_id: str) -> Optional[VectorStoreFile]:
+        """Get file details for a specific file.
+
+        Args:
+        ----
+            file_id (str): The ID of the file.
+
+        Returns:
+        -------
+            Optional[VectorStoreFile]: The file details if found, None otherwise.
+
+        """
         query = "SELECT * FROM vector_store_files WHERE id = %s"
         cursor = self.db.cursor(pymysql.cursors.DictCursor)
         cursor.execute(query, (file_id,))
@@ -266,6 +326,19 @@ class SqlClient:
     def update_files_in_vector_store(
         self, vector_store_id: str, file_ids: List[str], account_id: str
     ) -> Optional[VectorStore]:
+        """Update the files associated with a vector store.
+
+        Args:
+        ----
+            vector_store_id (str): The ID of the vector store.
+            file_ids (List[str]): The updated list of file IDs.
+            account_id (str): The ID of the account.
+
+        Returns:
+        -------
+            Optional[VectorStore]: The updated vector store if successful, None otherwise.
+
+        """
         query = "UPDATE vector_stores SET file_ids = %s WHERE id = %s AND account_id = %s"
         cursor = self.db.cursor()
         cursor.execute(query, (json.dumps(file_ids), vector_store_id, account_id))
@@ -275,6 +348,18 @@ class SqlClient:
     def store_embedding(
         self, id: str, vector_store_id: str, file_id: str, chunk_index: int, chunk_text: str, embedding: List[float]
     ):
+        """Store an embedding for a chunk of text.
+
+        Args:
+        ----
+            id (str): The ID of the embedding.
+            vector_store_id (str): The ID of the vector store.
+            file_id (str): The ID of the file.
+            chunk_index (int): The index of the chunk.
+            chunk_text (str): The text of the chunk.
+            embedding (List[float]): The embedding vector.
+
+        """
         query = """
         INSERT INTO vector_store_embeddings
         (id, vector_store_id, file_id, chunk_index, chunk_text, embedding)
@@ -285,6 +370,14 @@ class SqlClient:
         self.db.commit()
 
     def update_file_embedding_status(self, file_id: str, status: str):
+        """Update the embedding status of a file.
+
+        Args:
+        ----
+            file_id (str): The ID of the file.
+            status (str): The new embedding status.
+
+        """
         query = """
         UPDATE vector_store_files
         SET embedding_status = %s
@@ -295,6 +388,17 @@ class SqlClient:
         self.db.commit()
 
     def get_vector_store_id_for_file(self, file_id: str) -> Optional[str]:
+        """Get the vector store ID associated with a file.
+
+        Args:
+        ----
+            file_id (str): The ID of the file.
+
+        Returns:
+        -------
+            Optional[str]: The vector store ID if found, None otherwise.
+
+        """
         query = """
         SELECT vector_store_id
         FROM vector_store_files
@@ -306,6 +410,15 @@ class SqlClient:
         return result["vector_store_id"] if result else None
 
     def update_vector_store_embedding_info(self, vector_store_id: str, embedding_model: str, embedding_dimensions: int):
+        """Update the embedding information for a vector store.
+
+        Args:
+        ----
+            vector_store_id (str): The ID of the vector store.
+            embedding_model (str): The name of the embedding model used.
+            embedding_dimensions (int): The number of dimensions in the embedding.
+
+        """
         query = """
         UPDATE vector_stores
         SET embedding_model = %s, embedding_dimensions = %s
@@ -318,6 +431,19 @@ class SqlClient:
     def similarity_search(
         self, vector_store_id: str, query_embedding: List[float], limit: int = 10
     ) -> List[SimilaritySearch]:
+        """Perform a similarity search in the vector store.
+
+        Args:
+        ----
+            vector_store_id (str): The ID of the vector store to search in.
+            query_embedding (List[float]): The query embedding vector.
+            limit (int, optional): The maximum number of results to return. Defaults to 10.
+
+        Returns:
+        -------
+            List[SimilaritySearch]: A list of similarity search results.
+
+        """
         query = """
         SELECT vse.file_id, vse.chunk_text, vse.embedding <-> %s AS distance
         FROM vector_store_embeddings vse
