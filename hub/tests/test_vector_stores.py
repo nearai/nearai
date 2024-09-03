@@ -4,6 +4,7 @@ import tarfile
 import unittest
 import uuid
 import openai
+import io
 
 from fastapi.testclient import TestClient
 from hub.app import app
@@ -15,6 +16,9 @@ class TestVectorStoresRoutes(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
         app.dependency_overrides[revokable_auth] = self.override_dependency
+        self.file_content = b"To list use client.beta.vector_stores.list()"
+        self.in_memory_file = io.BytesIO(self.file_content)
+        self.in_memory_file.name = "test_file.py"
 
     @staticmethod
     async def override_dependency():
@@ -48,7 +52,7 @@ class TestVectorStoresRoutes(unittest.TestCase):
     def test_openai_upload_file(self):
         client = self.create_openai_client()
         response = client.files.create(
-            file=open("test2.py", "rb"),
+            file=self.in_memory_file,
             purpose="batch",
         )
         print(response)
@@ -66,7 +70,7 @@ class TestVectorStoresRoutes(unittest.TestCase):
         print(f"Vector store response: {vs}")
         
         f = client.files.create(
-            file=open("test2.py", "rb"),
+            file=self.in_memory_file,
             purpose="assistants",
         )
         print(f"File response: {f}")
@@ -79,8 +83,6 @@ class TestVectorStoresRoutes(unittest.TestCase):
         
         resp = self.client.post(f"/v1/vector_stores/{vs.id}/search", json={"query": "How to list my vector stores?"})
         print(f"Search response: {resp.json()}")
-        
-        
 
 if __name__ == '__main__':
     unittest.main()
