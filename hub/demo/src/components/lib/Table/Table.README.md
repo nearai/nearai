@@ -88,7 +88,7 @@ const tableRows = [
 
 ## Cell Sizes
 
-In the example above, note the use of the `style` prop on some of the `Cell` components. You can get creative with setting `width`, `maxWidth`, or `minWidth` on a cell or its contents (EG: a nested `Text` component). You can even combine the `clampLines` prop of `<Text>` to implement ellipsis text overflow.
+In the example above, note the use of the `style` prop on some of the `Cell` components. You can get creative with setting `width`, `maxWidth`, or `minWidth` on a cell or its content (EG: a nested `Text` component). You can even combine the `clampLines` prop of `<Text>` to implement ellipsis text overflow.
 
 If you have a cell that contains something like a `Button` and you'd like the cell width to match the `Button` width exactly, you can set the `Cell` width to something really small (EG: `1px`). Due to how `<td>` elements determine their width, this will give us the desired result:
 

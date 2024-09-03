@@ -15,7 +15,8 @@ import { type z } from 'zod';
 import { ChatThread } from '~/components/inference/ChatThread';
 import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
 import { Button } from '~/components/lib/Button';
-import { Card } from '~/components/lib/Card';
+import { Card, CardList } from '~/components/lib/Card';
+import { Code, filePathToCodeLanguage } from '~/components/lib/Code';
 import { Dialog } from '~/components/lib/Dialog';
 import { Dropdown } from '~/components/lib/Dropdown';
 import { Flex } from '~/components/lib/Flex';
@@ -243,9 +244,9 @@ export default function RunAgentPage() {
             </Dropdown.Root>
           </Flex>
 
-          <Flex direction="column" gap="xs">
-            {fileStructure.length ? (
-              fileStructure.map((fileInfo) => (
+          {fileStructure.length ? (
+            <CardList>
+              {fileStructure.map((fileInfo) => (
                 <Card
                   padding="s"
                   gap="s"
@@ -257,7 +258,7 @@ export default function RunAgentPage() {
                   <Flex align="center" gap="s">
                     <Text
                       size="text-s"
-                      color="violet-9"
+                      color="violet-11"
                       weight={500}
                       clampLines={1}
                       style={{ marginRight: 'auto' }}
@@ -268,11 +269,11 @@ export default function RunAgentPage() {
                     <Text size="text-xs">{formatBytes(fileInfo.size)}</Text>
                   </Flex>
                 </Card>
-              ))
-            ) : (
-              <Text size="text-s">No files have been generated yet.</Text>
-            )}
-          </Flex>
+              ))}
+            </CardList>
+          ) : (
+            <Text size="text-s">No files have been generated yet.</Text>
+          )}
 
           <HR />
 
@@ -311,6 +312,7 @@ export default function RunAgentPage() {
       >
         <Dialog.Content
           title={openedFileName}
+          size="l"
           header={
             <Button
               label="Copy file to clipboard"
@@ -322,13 +324,11 @@ export default function RunAgentPage() {
             />
           }
         >
-          <Text
-            size="text-s"
-            color="sand-12"
-            style={{ whiteSpace: 'pre-wrap' }}
-          >
-            {openedFile}
-          </Text>
+          <Code
+            bleed
+            source={openedFile}
+            language={filePathToCodeLanguage(openedFileName)}
+          />
         </Dialog.Content>
       </Dialog.Root>
     </Form>

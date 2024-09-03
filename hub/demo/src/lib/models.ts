@@ -99,6 +99,7 @@ export const registryEntry = z.object({
   tags: z.string().array(),
   details: z.record(z.string(), z.unknown()), // TODO: Figure out standard metadata properties
 });
+
 export const listRegistry = z.array(registryEntry);
 
 export const agentRequestModel = z.object({
@@ -107,3 +108,9 @@ export const agentRequestModel = z.object({
   environment_id: z.string().nullable().optional(),
   max_iterations: z.number(),
 });
+
+export const fileModel = z.object({
+  filename: z.string(),
+});
+
+export const listFiles = fileModel.array();

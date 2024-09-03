@@ -7,6 +7,7 @@ import {
   agentRequestModel,
   chatCompletionsModel,
   chatResponseModel,
+  listFiles,
   listModelsResponseModel,
   listNoncesModel,
   listRegistry,
@@ -240,6 +241,70 @@ export const hubRouter = createTRPCRouter({
     .input(z.object({ environmentId: z.string() }))
     .query(async ({ input }) => {
       return await downloadEnvironment(input.environmentId);
+    }),
+
+  listFilePaths: publicProcedure
+    .input(
+      z.object({
+        namespace: z.string(),
+        name: z.string(),
+        version: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const list = await fetchWithZod(
+        listFiles,
+        `${env.ROUTER_URL}/registry/list_files`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            entry_location: {
+              namespace: input.namespace,
+              name: input.name,
+              version: input.version,
+            },
+          }),
+        },
+      );
+
+      return list.flatMap((file) => file.filename);
+    }),
+
+  loadFileByPath: publicProcedure
+    .input(
+      z.object({
+        filePath: z.string(),
+        namespace: z.string(),
+        name: z.string(),
+        version: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const response = await fetch(`${env.ROUTER_URL}/registry/download_file`, {
+        method: 'POST',
+        headers: {
+          Accept: 'binary/octet-stream',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          entry_location: {
+            namespace: input.namespace,
+            name: input.name,
+            version: input.version,
+          },
+          path: input.filePath,
+        }),
+      });
+
+      const content = await (await response.blob()).text();
+
+      return {
+        content,
+        path: input.filePath,
+      };
     }),
 
   agentChat: protectedProcedure

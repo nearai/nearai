@@ -163,11 +163,11 @@
     outline: none;
 
     &:hover {
-      color: var(--violet-9) !important;
+      color: var(--violet-11) !important;
     }
 
     &:focus-visible {
-      color: var(--violet-9) !important;
+      color: var(--violet-11) !important;
 
       &::after {
         background: var(--violet-5);

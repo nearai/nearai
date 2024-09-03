@@ -45,7 +45,6 @@ type ColorAmber =
   | 'amber-12';
 
 type ColorBlack =
-  | 'black'
   | 'black-a1'
   | 'black-a2'
   | 'black-a3'
@@ -133,7 +132,6 @@ type ColorViolet =
   | 'violet-brand';
 
 type ColorWhite =
-  | 'white'
   | 'white-a1'
   | 'white-a2'
   | 'white-a3'

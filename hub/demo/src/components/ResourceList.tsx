@@ -89,7 +89,7 @@ export const ResourceList = ({ category, title }: Props) => {
                   href={`/agents/${item.namespace}/${item.name}/${item.version}`}
                   style={{ width: '20rem' }}
                 >
-                  <Text size="text-s" weight={500} color="violet-9">
+                  <Text size="text-s" weight={500} color="violet-11">
                     {item.name}
                   </Text>
                 </Table.Cell>

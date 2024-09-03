@@ -1,0 +1,25 @@
+.code {
+  border-radius: 6px;
+  box-shadow: var(--shadow-card-with-outline);
+  overflow: hidden;
+  max-width: 100%;
+
+  pre {
+    background: var(--sand-0) !important;
+  }
+
+  :global(.linenumber) {
+    opacity: 0.5;
+    font-weight: 300 !important;
+  }
+
+  &[data-bleed='true'] {
+    border-radius: 0;
+    box-shadow: none;
+
+    pre {
+      background: transparent !important;
+      padding: 0 !important;
+    }
+  }
+}

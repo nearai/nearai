@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <Section background="white" bleed gap="m" tabs>
+      <Section background="sand-0" bleed gap="m" tabs>
         <Flex align="center" gap="m">
           <Text as="h1" size="text-l">
             {namespace} / {name}
@@ -71,14 +71,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               Overview
             </Tabs.Trigger>
 
-            <Tabs.Trigger href={`${baseUrl}/${version}/run`} value="run">
-              <SvgIcon icon={<Play fill="bold" />} />
-              Run
-            </Tabs.Trigger>
-
             <Tabs.Trigger href={`${baseUrl}/${version}/source`} value="source">
               <SvgIcon icon={<CodeBlock fill="bold" />} />
               Source
+            </Tabs.Trigger>
+
+            <Tabs.Trigger href={`${baseUrl}/${version}/run`} value="run">
+              <SvgIcon icon={<Play fill="bold" />} />
+              Run
             </Tabs.Trigger>
           </Tabs.List>
         </Tabs.Root>

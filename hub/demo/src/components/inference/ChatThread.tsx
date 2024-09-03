@@ -14,6 +14,7 @@ import { Flex } from '../lib/Flex';
 import { Text } from '../lib/Text';
 import { Tooltip } from '../lib/Tooltip';
 import s from './ChatThread.module.scss';
+import { Code, filePathToCodeLanguage } from '../lib/Code';
 
 type Props = {
   messages: z.infer<typeof messageModel>[];
@@ -41,6 +42,17 @@ export const ChatThread = ({ messages }: Props) => {
     }
   }, [count, previousCount]);
 
+  function determineCodeLanguageForMessage(index: number) {
+    if (!index) return;
+    const previousMessage = messages[index - 1];
+    if (!previousMessage) return;
+    const lastLine = previousMessage.content.split('\n').pop()?.trim();
+    if (!lastLine) return;
+
+    if (lastLine.indexOf('WRITE ') === 0)
+      return filePathToCodeLanguage(lastLine);
+  }
+
   return (
     <div className={s.chatThread} ref={element}>
       {messages.map((message, index) => (
@@ -51,9 +63,15 @@ export const ChatThread = ({ messages }: Props) => {
             </Card>
           ) : (
             <Card animateIn>
-              <Text size="text-s" color="sand-12">
-                {message.content}
-              </Text>
+              {determineCodeLanguageForMessage(index) ? (
+                <Code
+                  bleed
+                  source={message.content}
+                  language={determineCodeLanguageForMessage(index)}
+                />
+              ) : (
+                <Text color="sand-12">{message.content}</Text>
+              )}
 
               <Flex align="center" gap="m">
                 <Text
