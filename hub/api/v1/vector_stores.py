@@ -307,7 +307,9 @@ async def upload_file(
         HTTPException: If the purpose is invalid, file type is not supported, or file upload fails.
 
     """
-    logger.info(f"File upload request received for user: {auth.account_id}")
+    logger.info(
+        f"File upload request received for user: {auth.account_id}, file: {file.filename}, type: {file.content_type} purpose: {purpose}"
+    )
 
     valid_purposes = ["assistants", "batch", "fine-tune", "vision"]
     if purpose not in valid_purposes:
@@ -352,7 +354,7 @@ async def upload_file(
         file_uri=file_uri,
         purpose=purpose,
         filename=file.filename,
-        content_type=file.content_type,
+        content_type=content_type,
         file_size=len(content),
         encoding=detected_encoding if content_type.startswith("text/") else None,
     )
