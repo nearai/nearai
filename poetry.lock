@@ -807,8 +807,8 @@ files = [
 jmespath = ">=0.7.1,<2.0.0"
 python-dateutil = ">=2.1,<3.0.0"
 urllib3 = [
-    {version = ">=1.25.4,<1.27", markers = "python_version < \"3.10\""},
     {version = ">=1.25.4,<2.2.0 || >2.2.0,<3", markers = "python_version >= \"3.10\""},
+    {version = ">=1.25.4,<1.27", markers = "python_version < \"3.10\""},
 ]
 
 [package.extras]
@@ -961,6 +961,17 @@ files = [
 
 [package.dependencies]
 pycparser = "*"
+
+[[package]]
+name = "chardet"
+version = "5.2.0"
+description = "Universal encoding detector for Python 3"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "chardet-5.2.0-py3-none-any.whl", hash = "sha256:e1cf59446890a00105fe7b7912492ea04b6e6f06d4b742b2c788469e34c82970"},
+    {file = "chardet-5.2.0.tar.gz", hash = "sha256:1b3b6ff479a8c414bc3fa2c0852995695c4a026dcd6d0633b2dd092ca39c1cf7"},
+]
 
 [[package]]
 name = "charset-normalizer"
@@ -1393,6 +1404,17 @@ files = [
 [package.dependencies]
 dnspython = ">=2.0.0"
 idna = ">=2.0.0"
+
+[[package]]
+name = "et-xmlfile"
+version = "1.1.0"
+description = "An implementation of lxml.xmlfile for the standard library"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "et_xmlfile-1.1.0-py3-none-any.whl", hash = "sha256:a2ba85d1d6a74ef63837eed693bcb89c3f752169b0e3e7ae5b16ca5e1b3deada"},
+    {file = "et_xmlfile-1.1.0.tar.gz", hash = "sha256:8eb9e2bc2f8c97e37a2dc85a09ecdcdec9d8a396530a6d5a33b30b9a92da0c5c"},
+]
 
 [[package]]
 name = "exceptiongroup"
@@ -3335,6 +3357,20 @@ typing-extensions = ">=4.11,<5"
 datalib = ["numpy (>=1)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)"]
 
 [[package]]
+name = "openpyxl"
+version = "3.1.5"
+description = "A Python library to read/write Excel 2010 xlsx/xlsm files"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "openpyxl-3.1.5-py2.py3-none-any.whl", hash = "sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2"},
+    {file = "openpyxl-3.1.5.tar.gz", hash = "sha256:cf0e3cf56142039133628b5acffe8ef0c12bc902d2aadd3e0fe5878dc08d1050"},
+]
+
+[package.dependencies]
+et-xmlfile = "*"
+
+[[package]]
 name = "outlines"
 version = "0.0.46"
 description = "Probabilistic Generative Model Programming"
@@ -3429,8 +3465,8 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.22.4", markers = "python_version < \"3.11\""},
     {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
+    {version = ">=1.22.4", markers = "python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version == \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
@@ -3893,8 +3929,8 @@ files = [
 annotated-types = ">=0.4.0"
 pydantic-core = "2.20.1"
 typing-extensions = [
-    {version = ">=4.6.1", markers = "python_version < \"3.13\""},
     {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
+    {version = ">=4.6.1", markers = "python_version < \"3.13\""},
 ]
 
 [package.extras]
@@ -4075,6 +4111,27 @@ docs = ["sphinx (>=1.6.5)", "sphinx-rtd-theme"]
 tests = ["hypothesis (>=3.27.0)", "pytest (>=3.2.1,!=3.3.0)"]
 
 [[package]]
+name = "pypdf"
+version = "4.3.1"
+description = "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "pypdf-4.3.1-py3-none-any.whl", hash = "sha256:64b31da97eda0771ef22edb1bfecd5deee4b72c3d1736b7df2689805076d6418"},
+    {file = "pypdf-4.3.1.tar.gz", hash = "sha256:b2f37fe9a3030aa97ca86067a56ba3f9d3565f9a791b305c7355d8392c30d91b"},
+]
+
+[package.dependencies]
+typing_extensions = {version = ">=4.0", markers = "python_version < \"3.11\""}
+
+[package.extras]
+crypto = ["PyCryptodome", "cryptography"]
+dev = ["black", "flit", "pip-tools", "pre-commit (<2.18.0)", "pytest-cov", "pytest-socket", "pytest-timeout", "pytest-xdist", "wheel"]
+docs = ["myst_parser", "sphinx", "sphinx_rtd_theme"]
+full = ["Pillow (>=8.0.0)", "PyCryptodome", "cryptography"]
+image = ["Pillow (>=8.0.0)"]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
@@ -4087,6 +4144,21 @@ files = [
 
 [package.dependencies]
 six = ">=1.5"
+
+[[package]]
+name = "python-docx"
+version = "1.1.2"
+description = "Create, read, and update Microsoft Word .docx files."
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "python_docx-1.1.2-py3-none-any.whl", hash = "sha256:08c20d6058916fb19853fcf080f7f42b6270d89eac9fa5f8c15f691c0017fabe"},
+    {file = "python_docx-1.1.2.tar.gz", hash = "sha256:0cf1f22e95b9002addca7948e16f2cd7acdfd498047f1941ca5d293db7762efd"},
+]
+
+[package.dependencies]
+lxml = ">=3.1.0"
+typing-extensions = ">=4.9.0"
 
 [[package]]
 name = "python-dotenv"
@@ -4115,6 +4187,23 @@ files = [
 
 [package.extras]
 dev = ["atomicwrites (==1.4.1)", "attrs (==23.2.0)", "coverage (==7.4.1)", "hatch", "invoke (==2.2.0)", "more-itertools (==10.2.0)", "pbr (==6.0.0)", "pluggy (==1.4.0)", "py (==1.11.0)", "pytest (==8.0.0)", "pytest-cov (==4.1.0)", "pytest-timeout (==2.2.0)", "pyyaml (==6.0.1)", "ruff (==0.2.1)"]
+
+[[package]]
+name = "python-pptx"
+version = "1.0.2"
+description = "Create, read, and update PowerPoint 2007+ (.pptx) files."
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "python_pptx-1.0.2-py3-none-any.whl", hash = "sha256:160838e0b8565a8b1f67947675886e9fea18aa5e795db7ae531606d68e785cba"},
+    {file = "python_pptx-1.0.2.tar.gz", hash = "sha256:479a8af0eaf0f0d76b6f00b0887732874ad2e3188230315290cd1f9dd9cc7095"},
+]
+
+[package.dependencies]
+lxml = ">=3.1.0"
+Pillow = ">=3.3.2"
+typing-extensions = ">=4.9.0"
+XlsxWriter = ">=0.5.7"
 
 [[package]]
 name = "pytz"
@@ -5577,11 +5666,6 @@ files = [
     {file = "triton-3.0.0-1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:34e509deb77f1c067d8640725ef00c5cbfcb2052a1a3cb6a6d343841f92624eb"},
     {file = "triton-3.0.0-1-cp38-cp38-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:bcbf3b1c48af6a28011a5c40a5b3b9b5330530c3827716b5fbf6d7adcc1e53e9"},
     {file = "triton-3.0.0-1-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:6e5727202f7078c56f91ff13ad0c1abab14a0e7f2c87e91b12b6f64f3e8ae609"},
-    {file = "triton-3.0.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:39b052da883351fdf6be3d93cedae6db3b8e3988d3b09ed221bccecfa9612230"},
-    {file = "triton-3.0.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cd34f19a8582af96e6291d4afce25dac08cb2a5d218c599163761e8e0827208e"},
-    {file = "triton-3.0.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0d5e10de8c011adeb7c878c6ce0dd6073b14367749e34467f1cff2bde1b78253"},
-    {file = "triton-3.0.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e8903767951bf86ec960b4fe4e21bc970055afc65e9d57e916d79ae3c93665e3"},
-    {file = "triton-3.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:41004fb1ae9a53fcb3e970745feb87f0e3c94c6ce1ba86e95fa3b8537894bef7"},
 ]
 
 [package.dependencies]
@@ -5654,6 +5738,17 @@ python-versions = ">=3.8"
 files = [
     {file = "types-docutils-0.21.0.20240724.tar.gz", hash = "sha256:29ff7e27660f4fe76ea61d7e54d05ca3ce3b733ca9e8e8721e0fa587dbc10489"},
     {file = "types_docutils-0.21.0.20240724-py3-none-any.whl", hash = "sha256:bf51c6c488d23c0412f9b3ba10686fb1a6cb0b957ef04b45128d8a55c79ebb00"},
+]
+
+[[package]]
+name = "types-openpyxl"
+version = "3.1.5.20240822"
+description = "Typing stubs for openpyxl"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-openpyxl-3.1.5.20240822.tar.gz", hash = "sha256:08b0b771c6721bde35bea5df9c61ca8317ff1e1ee782164c274e69a869e49db4"},
+    {file = "types_openpyxl-3.1.5.20240822-py3-none-any.whl", hash = "sha256:ead901b87e80f9fce1ff3d624c9ae279281d69d6584014f42105513f5cbc68dd"},
 ]
 
 [[package]]
@@ -6336,6 +6431,17 @@ numpy = "*"
 torch = "2.4.0"
 
 [[package]]
+name = "xlsxwriter"
+version = "3.2.0"
+description = "A Python module for creating Excel XLSX files."
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "XlsxWriter-3.2.0-py3-none-any.whl", hash = "sha256:ecfd5405b3e0e228219bcaf24c2ca0915e012ca9464a14048021d21a995d490e"},
+    {file = "XlsxWriter-3.2.0.tar.gz", hash = "sha256:9977d0c661a72866a61f9f7a809e25ebbb0fb7036baa3b9fe74afcfca6b3cb8c"},
+]
+
+[[package]]
 name = "xxhash"
 version = "3.5.0"
 description = "Python binding for xxHash"
@@ -6587,11 +6693,11 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 
 [extras]
 explatform = ["fabric", "flask", "gunicorn", "requests"]
-hub = ["cryptography", "fastapi", "fastapi-cli", "python-dotenv", "sqlmodel"]
+hub = ["chardet", "cryptography", "fastapi", "fastapi-cli", "openpyxl", "pypdf", "python-docx", "python-dotenv", "python-pptx", "sqlmodel"]
 torch = ["torch", "torchao", "torchtune"]
 vllm = ["torch", "vllm"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "01dbb918ced0d8e55e8ea0a36903b1eaa6a5ad2e120ea424ea2f27a158615131"
+content-hash = "7f6eb59daaea71b8671a979ebd91be6cbd97d776aa560492dfe7f8d42a1fa61f"
