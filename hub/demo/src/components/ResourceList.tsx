@@ -1,6 +1,6 @@
 'use client';
 
-import { Play } from '@phosphor-icons/react';
+import { CodeBlock, Play } from '@phosphor-icons/react';
 import Head from 'next/head';
 
 import { Badge } from '~/components/lib/Badge';
@@ -119,15 +119,27 @@ export const ResourceList = ({ category, title }: Props) => {
 
               {category === 'agent' && (
                 <Table.Cell style={{ width: '1px' }}>
-                  <Tooltip asChild content="Run Agent">
-                    <Button
-                      label="Run"
-                      icon={<Play weight="duotone" />}
-                      size="small"
-                      fill="outline"
-                      href={`/agents/${item.namespace}/${item.name}/${item.version}/run`}
-                    />
-                  </Tooltip>
+                  <Flex align="center" gap="xs">
+                    <Tooltip asChild content="View Source">
+                      <Button
+                        label="View Source"
+                        icon={<CodeBlock weight="duotone" />}
+                        size="small"
+                        fill="ghost"
+                        href={`/agents/${item.namespace}/${item.name}/${item.version}/source`}
+                      />
+                    </Tooltip>
+
+                    <Tooltip asChild content="Run Agent">
+                      <Button
+                        label="Run"
+                        icon={<Play weight="duotone" />}
+                        size="small"
+                        fill="ghost"
+                        href={`/agents/${item.namespace}/${item.name}/${item.version}/run`}
+                      />
+                    </Tooltip>
+                  </Flex>
                 </Table.Cell>
               )}
             </Table.Row>
