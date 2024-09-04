@@ -52,3 +52,6 @@ print(f"- {search_response}")
 retrieved_store = client.beta.vector_stores.retrieve(vs.id)
 print(f"Recipe vector store details:")
 print(f"- Details: {retrieved_store}")
+
+res = client.beta.vector_stores.delete(vs.id)
+print(f"Recipe vector store deleted: {res}")

@@ -28,6 +28,9 @@ def upgrade() -> None:
         sa.Column("expires_after", sa.JSON, nullable=False),
         sa.Column("chunking_strategy", sa.JSON, nullable=True),
         sa.Column("metadata", sa.JSON, nullable=True),
+        sa.Column("embedding_model", sa.String(255), nullable=True),
+        sa.Column("embedding_dimensions", sa.Integer, nullable=True),
+        sa.Column("status", sa.String(20), server_default="active"),
         sa.Column("created_at", sa.TIMESTAMP, nullable=False, server_default=sa.func.current_timestamp()),
         sa.Column(
             "updated_at",

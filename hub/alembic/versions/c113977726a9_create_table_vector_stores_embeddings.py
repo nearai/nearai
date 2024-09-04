@@ -44,13 +44,6 @@ def upgrade() -> None:
     op.create_index("idx_vector_store_embeddings_vector_store_id", "vector_store_embeddings", ["vector_store_id"])
     op.create_index("idx_vector_store_embeddings_file_id", "vector_store_embeddings", ["file_id"])
 
-    # Update vector_stores table
-    op.add_column("vector_stores", sa.Column("embedding_model", sa.String(255)))
-    op.add_column("vector_stores", sa.Column("embedding_dimensions", sa.Integer))
-
-    # Update vector_store_files table
-    op.add_column("vector_store_files", sa.Column("embedding_status", sa.String(20)))
-
 
 def downgrade() -> None:
     # Drop indexes
@@ -59,10 +52,3 @@ def downgrade() -> None:
 
     # Drop vector_store_embeddings table
     op.drop_table("vector_store_embeddings")
-
-    # Revert changes to vector_stores table
-    op.drop_column("vector_stores", "embedding_model")
-    op.drop_column("vector_stores", "embedding_dimensions")
-
-    # Revert changes to vector_store_files table
-    op.drop_column("vector_store_files", "embedding_status")

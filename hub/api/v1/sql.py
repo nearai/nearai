@@ -40,6 +40,11 @@ class UserNonces(RootModel):
     root: List[UserNonce]
 
 
+class VectorStoreStatus(str, Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+
 class VectorStore(BaseModel):
     id: str
     account_id: str
@@ -50,6 +55,7 @@ class VectorStore(BaseModel):
     metadata: Dict[str, str]
     created_at: datetime
     updated_at: datetime
+    status: VectorStoreStatus
 
 
 class VectorStoreFile(BaseModel):
@@ -182,8 +188,6 @@ class SqlClient:
         INSERT INTO vector_stores (id, account_id, name, file_ids, expires_after, chunking_strategy, metadata)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        print(expires_after)
-        print(f"DB query: {query} params: {account_id, name, file_ids, expires_after, chunking_strategy, metadata}")
         cursor = self.db.cursor()
         try:
             cursor.execute(
@@ -456,3 +460,39 @@ class SqlClient:
             SimilaritySearch(**res) for res in self.__fetch_all(query, (query_embedding_json, vector_store_id, limit))
         ]
         return results
+
+    def delete_vector_store(self, vector_store_id: str, account_id: str) -> bool:
+        """Delete a vector store and its embeddings from the database.
+
+        Args:
+        ----
+            vector_store_id (str): The ID of the vector store to delete.
+            account_id (str): The ID of the account that owns the vector store.
+
+        Returns:
+        -------
+            bool: True if the vector store was successfully deleted, False otherwise.
+
+        """
+        cursor = self.db.cursor()
+        try:
+            # Delete embeddings first
+            embeddings_query = """
+            DELETE FROM vector_store_embeddings
+            WHERE vector_store_id = %s
+            """
+            cursor.execute(embeddings_query, (vector_store_id,))
+
+            # Then delete the vector store
+            vector_store_query = """
+            DELETE FROM vector_stores
+            WHERE id = %s AND account_id = %s
+            """
+            cursor.execute(vector_store_query, (vector_store_id, account_id))
+
+            self.db.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"Error deleting vector store and its embeddings: {str(e)}")
+            self.db.rollback()
+            return False

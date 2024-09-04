@@ -29,6 +29,7 @@ def upgrade() -> None:
         sa.Column("content_type", sa.String(100), nullable=False),
         sa.Column("file_size", sa.Integer, nullable=False),
         sa.Column("encoding", sa.String(20), nullable=True),
+        sa.Column("embedding_status", sa.String(20)),
         sa.Column("created_at", sa.TIMESTAMP, nullable=False, server_default=sa.func.current_timestamp()),
         sa.Column(
             "updated_at",

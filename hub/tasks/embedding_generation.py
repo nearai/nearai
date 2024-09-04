@@ -130,7 +130,7 @@ def create_chunks(text: str) -> List[str]:
 
     """
     chunks = recursive_split(text, CHUNK_SIZE, CHUNK_OVERLAP)
-    logger.info(f"Created {len(chunks)} chunks, sizes: {[len(chunk) for chunk in chunks]}")
+    logger.debug(f"Created {len(chunks)} chunks, sizes: {[len(chunk) for chunk in chunks]}")
     return chunks
 
 
@@ -152,7 +152,7 @@ def recursive_split(text: str, chunk_size: int, chunk_overlap: int) -> List[str]
         List[str]: List of text chunks.
 
     """
-    logger.info(f"Splitting text into chunks of size {chunk_size} with overlap {chunk_overlap}, length: {len(text)}")
+    logger.debug(f"Splitting text into chunks of size {chunk_size} with overlap {chunk_overlap}, length: {len(text)}")
     if len(text) <= chunk_size:
         return [text]
 
@@ -236,10 +236,10 @@ async def get_file_content(file_details: VectorStoreFile) -> str:
 
     if file_details.file_uri.startswith(FILE_URI_PREFIX):
         file_path = file_details.file_uri[len(FILE_URI_PREFIX) :]
-        logger.info(f"Extracting content from local file: {file_path}")
+        logger.debug(f"Extracting content from local file: {file_path}")
         return extract_content(file_path, encoding)
     elif file_details.file_uri.startswith(S3_URI_PREFIX):
-        logger.info(f"Extracting content from S3 file: {file_details.file_uri}")
+        logger.debug(f"Extracting content from S3 file: {file_details.file_uri}")
         import boto3
 
         s3_client = boto3.client("s3")
@@ -252,10 +252,10 @@ async def get_file_content(file_details: VectorStoreFile) -> str:
         temp_file_path = f"/tmp/tempfile_{uuid.uuid4().hex}_{file_details.filename}"
         with open(temp_file_path, "wb") as f:
             f.write(response["Body"].read())
-        logger.info(f"Downloaded S3 file to temporary path: {temp_file_path}")
+        logger.debug(f"Downloaded S3 file to temporary path: {temp_file_path}")
         content = extract_content(temp_file_path, encoding)
         os.remove(temp_file_path)
-        logger.info(f"Removed temporary file: {temp_file_path}")
+        logger.debug(f"Removed temporary file: {temp_file_path}")
         return content
     else:
         logger.error(f"Unsupported file URI: {file_details.file_uri}")
@@ -279,32 +279,32 @@ def extract_content(file_path: str, encoding: str = "utf-8") -> str:
         str: The extracted content of the file.
 
     """
-    logger.info(f"Extracting content from file: {file_path}")
+    logger.debug(f"Extracting content from file: {file_path}")
     _, file_extension = os.path.splitext(file_path.lower())
 
     if file_extension == ".pdf":
-        logger.info("Detected PDF file, using PDF extraction method")
+        logger.debug("Detected PDF file, using PDF extraction method")
         return extract_pdf_content(file_path)
     elif file_extension == ".docx":
-        logger.info("Detected DOCX file, using python-docx extraction method")
+        logger.debug("Detected DOCX file, using python-docx extraction method")
         return extract_docx_content(file_path)
     elif file_extension == ".pptx":
-        logger.info("Detected PPTX file, using python-pptx extraction method")
+        logger.debug("Detected PPTX file, using python-pptx extraction method")
         return extract_pptx_content(file_path)
     elif file_extension == ".xlsx":
-        logger.info("Detected XLSX file, using openpyxl extraction method")
+        logger.debug("Detected XLSX file, using openpyxl extraction method")
         return extract_xlsx_content(file_path)
     else:
-        logger.info("Detected text file, using standard text extraction method")
+        logger.debug("Detected text file, using standard text extraction method")
         return extract_text_file(file_path, encoding)
 
 
 def extract_text_file(file_path: str, encoding: str) -> str:
-    logger.info(f"Extracting content from text file: {file_path}")
+    logger.debug(f"Extracting content from text file: {file_path}")
     try:
         with open(file_path, "r", encoding=encoding) as file:
             content = file.read()
-        logger.info(f"Successfully extracted content from text file: {file_path}")
+        logger.debug(f"Successfully extracted content from text file: {file_path}")
         return content
     except UnicodeDecodeError:
         logger.error(f"Unable to decode {file_path} with encoding {encoding}")
@@ -312,40 +312,40 @@ def extract_text_file(file_path: str, encoding: str) -> str:
 
 
 def extract_pdf_content(file_path: str) -> str:
-    logger.info(f"Extracting content from PDF file: {file_path}")
+    logger.debug(f"Extracting content from PDF file: {file_path}")
     with open(file_path, "rb") as file:
         reader = PdfReader(file)
         content = "\n".join(page.extract_text() for page in reader.pages)
-    logger.info(f"Successfully extracted content from PDF file: {file_path}")
+    logger.debug(f"Successfully extracted content from PDF file: {file_path}")
     return content
 
 
 def extract_docx_content(file_path: str) -> str:
-    logger.info(f"Extracting content from DOCX file: {file_path}")
+    logger.debug(f"Extracting content from DOCX file: {file_path}")
     doc = Document(file_path)
     content = "\n".join([paragraph.text for paragraph in doc.paragraphs])
-    logger.info(f"Successfully extracted content from DOCX file: {file_path}")
+    logger.debug(f"Successfully extracted content from DOCX file: {file_path}")
     return content
 
 
 def extract_pptx_content(file_path: str) -> str:
-    logger.info(f"Extracting content from PPTX file: {file_path}")
+    logger.debug(f"Extracting content from PPTX file: {file_path}")
     prs = Presentation(file_path)
     content = []
     for slide in prs.slides:
         for shape in slide.shapes:
             if hasattr(shape, "text"):
                 content.append(shape.text)
-    logger.info(f"Successfully extracted content from PPTX file: {file_path}")
+    logger.debug(f"Successfully extracted content from PPTX file: {file_path}")
     return "\n".join(content)
 
 
 def extract_xlsx_content(file_path: str) -> str:
-    logger.info(f"Extracting content from XLSX file: {file_path}")
+    logger.debug(f"Extracting content from XLSX file: {file_path}")
     wb = load_workbook(file_path, read_only=True)
     content = []
     for sheet in wb.worksheets:
         for row in sheet.iter_rows(values_only=True):
             content.append("\t".join(str(cell) for cell in row if cell is not None))
-    logger.info(f"Successfully extracted content from XLSX file: {file_path}")
+    logger.debug(f"Successfully extracted content from XLSX file: {file_path}")
     return "\n".join(content)

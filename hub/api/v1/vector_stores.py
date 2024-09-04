@@ -7,6 +7,7 @@ import boto3
 import chardet
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
 from openai.types.beta.vector_store import ExpiresAfter as OpenAIExpiresAfter
 from openai.types.beta.vector_store import FileCounts, VectorStore
 from openai.types.file_create_params import FileTypes
@@ -224,13 +225,45 @@ async def update_vector_store():
 
 
 @vector_stores_router.delete("/vector_stores/{vector_store_id}")
-async def delete_vector_store():
-    """Delete a vector store. (Not implemented).
+async def delete_vector_store(vector_store_id: str, auth: AuthToken = Depends(revokable_auth)):
+    """Delete a vector store.
 
-    This endpoint is a placeholder for future implementation.
+    Args:
+    ----
+        vector_store_id (str): The ID of the vector store to delete.
+        auth (AuthToken): The authentication token.
+
+    Returns:
+    -------
+        JSONResponse: A JSON object with the deletion status.
+
+    Raises:
+    ------
+        HTTPException: If the vector store is not found or deletion fails.
+
     """
-    logger.info("Delete vector store endpoint called")
-    pass
+    logger.info(f"Deleting vector store: {vector_store_id}")
+    sql_client = SqlClient()
+
+    # Check if the vector store exists and belongs to the authenticated user
+    vector_store = sql_client.get_vector_store_by_account(account_id=auth.account_id, vector_store_id=vector_store_id)
+    if not vector_store:
+        logger.warning(f"Vector store not found: {vector_store_id}")
+        raise HTTPException(status_code=404, detail="Vector store not found")
+
+    try:
+        # Delete the vector store
+        deleted = sql_client.delete_vector_store(vector_store_id=vector_store_id, account_id=auth.account_id)
+        if not deleted:
+            raise HTTPException(status_code=500, detail="Failed to delete vector store")
+
+        logger.info(f"Vector store deleted successfully: {vector_store_id}")
+        return JSONResponse(
+            content={"id": vector_store_id, "object": "vector_store.deleted", "deleted": True}, status_code=200
+        )
+    except Exception as e:
+        logger.error(f"Error deleting vector store: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete vector store") from e
 
 
 class FileUploadRequest(BaseModel):
