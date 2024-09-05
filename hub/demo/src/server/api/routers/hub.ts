@@ -259,7 +259,11 @@ export const hubRouter = createTRPCRouter({
         },
       );
 
-      return list.flatMap((file) => file.filename);
+      const paths = list.flatMap((file) => file.filename);
+      paths.push('metadata.json');
+      paths.sort();
+
+      return paths;
     }),
 
   loadFileByPath: publicProcedure

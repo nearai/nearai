@@ -19,6 +19,8 @@ import { useQueryParams } from '~/hooks/url';
 import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
 
+const METADATA_FILE_PATH = 'metadata.json';
+
 export default function AgentSourcePage() {
   const { createQueryPath, queryParams } = useQueryParams(['file']);
   const { currentResource } = useCurrentResource('agent');
@@ -28,15 +30,21 @@ export default function AgentSourcePage() {
   const fileQuery = api.hub.loadFileByPath.useQuery(
     { ...params, filePath: activeFilePath },
     {
-      enabled: !!activeFilePath,
+      enabled: !!activeFilePath && activeFilePath !== METADATA_FILE_PATH,
     },
   );
 
   const [sidebarOpenForSmallScreens, setSidebarOpenForSmallScreens] =
     useState(false);
 
-  const openedFile =
+  let openedFile =
     activeFilePath === fileQuery.data?.path ? fileQuery.data : undefined;
+  if (activeFilePath === METADATA_FILE_PATH) {
+    openedFile = {
+      content: JSON.stringify(currentResource?.details ?? '{}', null, 2),
+      path: METADATA_FILE_PATH,
+    };
+  }
 
   useEffect(() => {
     setSidebarOpenForSmallScreens(false);

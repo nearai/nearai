@@ -97,21 +97,24 @@ export const registryEntry = z.object({
   version: z.string(),
   description: z.string(),
   tags: z.string().array(),
-  details: z
-    .object({
-      agent: z
-        .object({
-          welcome: z
-            .object({
-              title: z.string(),
-              description: z.string(),
-            })
-            .partial(),
-        })
-        .partial(),
-      icon: z.string(),
-    })
-    .partial(),
+  details: z.intersection(
+    z
+      .object({
+        agent: z
+          .object({
+            welcome: z
+              .object({
+                title: z.string(),
+                description: z.string(),
+              })
+              .partial(),
+          })
+          .partial(),
+        icon: z.string(),
+      })
+      .partial(),
+    z.record(z.string(), z.unknown()),
+  ),
 });
 
 export const listRegistry = z.array(registryEntry);
