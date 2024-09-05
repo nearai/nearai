@@ -27,7 +27,7 @@ import { authorizationModel } from '~/lib/models';
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   const h = headers().has('Authorization')
-    ? { Authorization: headers().get('Authorization') }
+    ? { authorization: headers().get('Authorization') }
     : undefined;
 
   return {
@@ -88,19 +88,20 @@ export const createTRPCRouter = t.router;
 export const publicProcedure = t.procedure;
 
 /** Reusable middleware that enforces users are logged in before running the procedure. */
-const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
-  if (!ctx.Authorization?.includes('Bearer')) {
+const enforceUserIsAuthenticated = t.middleware(({ ctx, next }) => {
+  if (!ctx.authorization?.includes('Bearer')) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
-  const auth: unknown = JSON.parse(ctx.Authorization.replace('Bearer ', ''));
+  const auth: unknown = JSON.parse(ctx.authorization.replace('Bearer ', ''));
   const sig = authorizationModel.parse(auth);
 
   return next({
     ctx: {
+      authorization: ctx.authorization,
       signature: sig,
     },
   });
 });
 
-export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
+export const protectedProcedure = t.procedure.use(enforceUserIsAuthenticated);

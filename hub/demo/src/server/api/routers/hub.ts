@@ -42,7 +42,7 @@ async function downloadEnvironment(environmentId: string) {
   const u = `${env.ROUTER_URL}/registry/download_file`;
   const [namespace, name, version] = environmentId.split('/');
 
-  const resp = await fetch(u, {
+  const response = await fetch(u, {
     method: 'POST',
     headers: {
       Accept: 'binary/octet-stream',
@@ -58,23 +58,16 @@ async function downloadEnvironment(environmentId: string) {
     }),
   });
 
-  if (!resp.ok) {
-    console.error(
-      'Requested Environment is: ',
-      `${namespace}/${name}/${version}`,
-    );
+  if (!response.ok) {
     throw new Error(
-      'Failed to download environment, status: ' +
-        resp.status +
-        ' ' +
-        resp.statusText,
+      `Failed to download environment for ${namespace}/${name}/${version} - status: ${response.status}`,
     );
   }
-  if (!resp.body) {
+  if (!response.body) {
     throw new Error('Response body is null');
   }
 
-  const stream = resp.body.pipeThrough(new DecompressionStream('gzip'));
+  const stream = response.body.pipeThrough(new DecompressionStream('gzip'));
   const blob = await new Response(stream).blob();
   const tarReader = await TarReader.load(blob);
 
@@ -116,9 +109,9 @@ export const hubRouter = createTRPCRouter({
     const u = env.ROUTER_URL + '/models';
 
     const response = await fetch(u);
-    const resp: unknown = await response.json();
+    const data: unknown = await response.json();
 
-    return listModelsResponseModel.parse(resp);
+    return listModelsResponseModel.parse(data);
   }),
 
   chat: protectedProcedure
@@ -130,36 +123,32 @@ export const hubRouter = createTRPCRouter({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: ctx.Authorization!,
+          Authorization: ctx.authorization,
         },
         body: JSON.stringify(input),
       });
 
-      // check for errors
       if (!response.ok) {
         throw new Error(
-          'Failed to send chat completions, status: ' +
-            response.status +
-            ' ' +
-            response.statusText,
+          'Failed to send chat completions, status: ' + response.status,
         );
       }
 
-      const resp: unknown = await response.json();
+      const data: unknown = await response.json();
 
-      return chatResponseModel.parse(resp);
+      return chatResponseModel.parse(data);
     }),
 
   listNonces: protectedProcedure.query(async ({ ctx }) => {
     const u = env.ROUTER_URL + '/nonce/list';
 
-    const resp = await fetchWithZod(listNoncesModel, u, {
+    const nonces = await fetchWithZod(listNoncesModel, u, {
       headers: {
-        Authorization: ctx.Authorization!,
+        Authorization: ctx.authorization,
       },
     });
 
-    return resp;
+    return nonces;
   }),
 
   revokeNonce: protectedProcedure
@@ -169,7 +158,7 @@ export const hubRouter = createTRPCRouter({
 
       try {
         // We can't use regular auth since we need to use the signed revoke message.
-        const resp = await fetch(u, {
+        const response = await fetch(u, {
           headers: {
             Authorization: input.auth,
             'Content-Type': 'application/json',
@@ -177,7 +166,7 @@ export const hubRouter = createTRPCRouter({
           method: 'POST',
           body: JSON.stringify({ nonce: input.nonce }),
         });
-        return resp;
+        return response;
       } catch (e) {
         console.error(e);
         throw e;
@@ -191,14 +180,14 @@ export const hubRouter = createTRPCRouter({
 
       try {
         // We can't use regular auth since we need to use the signed revoke message.
-        const resp = await fetch(u, {
+        const response = await fetch(u, {
           headers: {
             Authorization: input.auth,
             'Content-Type': 'application/json',
           },
           method: 'POST',
         });
-        return resp;
+        return response;
       } catch (e) {
         console.error(e);
         throw e;
@@ -230,11 +219,11 @@ export const hubRouter = createTRPCRouter({
 
       if (input.tags) url.searchParams.append('tags', input.tags.join(','));
 
-      const resp = await fetchWithZod(listRegistry, url.toString(), {
+      const list = await fetchWithZod(listRegistry, url.toString(), {
         method: 'POST',
       });
 
-      return resp;
+      return list;
     }),
 
   loadEnvironment: protectedProcedure
@@ -299,6 +288,10 @@ export const hubRouter = createTRPCRouter({
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`Failed to load file, status: ${response.status}`);
+      }
+
       const content = await (await response.blob()).text();
 
       return {
@@ -316,24 +309,21 @@ export const hubRouter = createTRPCRouter({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: ctx.Authorization!,
+          Authorization: ctx.authorization,
         },
         body: JSON.stringify(input),
       });
 
       if (!response.ok) {
         throw new Error(
-          'Failed to send chat completions, status: ' +
-            response.status +
-            ' ' +
-            response.statusText,
+          `Failed to send chat completions, status: ${response.status}`,
         );
       }
 
       const responseText: string = await response.text();
       if (!responseText.match(/".*\/.*\/.*/)) {
         // check whether the response matches namespace/name/version
-        throw new Error('Failed to run agent, response: ' + responseText);
+        throw new Error('Response text does not match namespace/name/version');
       }
 
       return downloadEnvironment(
