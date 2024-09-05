@@ -151,11 +151,7 @@ export default function InferencePage() {
     <Form stretch onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
       <Sidebar.Root>
         <Sidebar.Main>
-          {isAuthenticated ? (
-            <ChatThread messages={conversation} />
-          ) : (
-            <SignInPrompt />
-          )}
+          <ChatThread messages={conversation} />
 
           <Flex direction="column" gap="m">
             <InputTextarea
@@ -165,30 +161,33 @@ export default function InferencePage() {
               {...form.register('messages.0.content')}
             />
 
-            <Flex align="start" gap="m">
-              <Text size="text-xs" style={{ marginRight: 'auto' }}>
-                <b>Shift + Enter</b> to add a new line
-              </Text>
+            {isAuthenticated ? (
+              <Flex align="start" gap="m">
+                <Text size="text-xs" style={{ marginRight: 'auto' }}>
+                  <b>Shift + Enter</b> to add a new line
+                </Text>
 
-              <BreakpointDisplay show="sidebar-small-screen">
+                <BreakpointDisplay show="sidebar-small-screen">
+                  <Button
+                    label="Edit Parameters"
+                    icon={<Gear weight="bold" />}
+                    size="small"
+                    fill="outline"
+                    onClick={() => setParametersOpenForSmallScreens(true)}
+                  />
+                </BreakpointDisplay>
+
                 <Button
-                  label="Edit Parameters"
-                  icon={<Gear weight="bold" />}
+                  label="Send Message"
+                  type="submit"
+                  icon={<ArrowRight weight="bold" />}
                   size="small"
-                  fill="outline"
-                  onClick={() => setParametersOpenForSmallScreens(true)}
+                  loading={chatMutation.isPending}
                 />
-              </BreakpointDisplay>
-
-              <Button
-                label="Send Message"
-                type="submit"
-                icon={<ArrowRight weight="bold" />}
-                size="small"
-                disabled={!isAuthenticated}
-                loading={chatMutation.isPending}
-              />
-            </Flex>
+              </Flex>
+            ) : (
+              <SignInPrompt />
+            )}
           </Flex>
         </Sidebar.Main>
 

@@ -97,7 +97,21 @@ export const registryEntry = z.object({
   version: z.string(),
   description: z.string(),
   tags: z.string().array(),
-  details: z.record(z.string(), z.unknown()), // TODO: Figure out standard metadata properties
+  details: z
+    .object({
+      agent: z
+        .object({
+          welcome: z
+            .object({
+              title: z.string(),
+              description: z.string(),
+            })
+            .partial(),
+        })
+        .partial(),
+      icon: z.string(),
+    })
+    .partial(),
 });
 
 export const listRegistry = z.array(registryEntry);

@@ -12,7 +12,7 @@ import {
 import { Controller } from 'react-hook-form';
 import { type z } from 'zod';
 
-import { AgentHeader } from '~/components/AgentHeader';
+import { AgentWelcome } from '~/components/AgentWelcome';
 import { ChatThread } from '~/components/inference/ChatThread';
 import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
 import { Button } from '~/components/lib/Button';
@@ -148,33 +148,14 @@ export default function RunAgentPage() {
     return <PlaceholderSection />;
   }
 
-  interface Agent {
-    welcome: {
-      title?: string;
-      description?: string;
-    };
-  }
-
-  const checkAgentHeader = (agent?: Agent | undefined): boolean => {
-    if (!agent) return false;
-    return Boolean(agent?.welcome?.title ?? agent.welcome?.description);
-  };
-
-  const hasAgentHeader = checkAgentHeader(
-    currentResource?.details?.agent as Agent | undefined,
-  );
-
   return (
     <Form stretch onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
       <Sidebar.Root>
         <Sidebar.Main>
-          {hasAgentHeader && <AgentHeader details={currentResource?.details} />}
-
-          {isAuthenticated ? (
-            <ChatThread messages={conversation} />
-          ) : (
-            <SignInPrompt props={{ showWelcome: !hasAgentHeader }} />
-          )}
+          <ChatThread
+            messages={conversation}
+            welcomeMessage={<AgentWelcome details={currentResource.details} />}
+          />
 
           <Flex direction="column" gap="m">
             <InputTextarea
@@ -184,30 +165,33 @@ export default function RunAgentPage() {
               {...form.register('new_message')}
             />
 
-            <Flex align="start" gap="m">
-              <Text size="text-xs" style={{ marginRight: 'auto' }}>
-                <b>Shift + Enter</b> to add a new line
-              </Text>
+            {isAuthenticated ? (
+              <Flex align="start" gap="m">
+                <Text size="text-xs" style={{ marginRight: 'auto' }}>
+                  <b>Shift + Enter</b> to add a new line
+                </Text>
 
-              <BreakpointDisplay show="sidebar-small-screen">
+                <BreakpointDisplay show="sidebar-small-screen">
+                  <Button
+                    label="Edit Parameters"
+                    icon={<Gear weight="bold" />}
+                    size="small"
+                    fill="outline"
+                    onClick={() => setParametersOpenForSmallScreens(true)}
+                  />
+                </BreakpointDisplay>
+
                 <Button
-                  label="Edit Parameters"
-                  icon={<Gear weight="bold" />}
+                  label="Send Message"
+                  type="submit"
+                  icon={<ArrowRight weight="bold" />}
                   size="small"
-                  fill="outline"
-                  onClick={() => setParametersOpenForSmallScreens(true)}
+                  loading={chatMutation.isPending}
                 />
-              </BreakpointDisplay>
-
-              <Button
-                label="Send Message"
-                type="submit"
-                icon={<ArrowRight weight="bold" />}
-                size="small"
-                disabled={!isAuthenticated}
-                loading={chatMutation.isPending}
-              />
-            </Flex>
+              </Flex>
+            ) : (
+              <SignInPrompt />
+            )}
           </Flex>
         </Sidebar.Main>
 

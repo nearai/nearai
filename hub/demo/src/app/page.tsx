@@ -7,7 +7,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    void router.replace('/chat');
+    void router.replace('/agents');
   }, [router]);
 
   return null;

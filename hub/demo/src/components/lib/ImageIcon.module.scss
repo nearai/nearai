@@ -1,0 +1,45 @@
+.imageIcon {
+  border-radius: 100%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #fff;
+  box-shadow: var(--shadow-card-with-outline);
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &[data-size='xxs'] {
+    width: var(--icon-size-xxs);
+    height: var(--icon-size-xxs);
+    padding: 1px;
+  }
+  &[data-size='xs'] {
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
+    padding: 2px;
+  }
+  &[data-size='s'] {
+    width: var(--icon-size-s);
+    height: var(--icon-size-s);
+    padding: 2px;
+  }
+  &[data-size='m'] {
+    width: var(--icon-size-m);
+    height: var(--icon-size-m);
+    padding: 4px;
+  }
+  &[data-size='l'] {
+    width: var(--icon-size-l);
+    height: var(--icon-size-l);
+    padding: 6px;
+  }
+  &[data-size='xl'] {
+    width: var(--icon-size-xl);
+    height: var(--icon-size-xl);
+    padding: 8px;
+  }
+}

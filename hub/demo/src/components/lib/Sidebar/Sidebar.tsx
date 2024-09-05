@@ -46,7 +46,7 @@ export const Root = (props: { children: ReactNode }) => {
 export const Main = ({ children }: { children: ReactNode }) => {
   return (
     <div className={s.main}>
-      {children}
+      <div className={s.mainContent}>{children}</div>
       <Footer />
     </div>
   );

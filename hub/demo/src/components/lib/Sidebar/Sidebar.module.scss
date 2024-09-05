@@ -6,21 +6,24 @@
   align-items: stretch;
   flex-grow: 1;
   min-width: 0;
+
+  * {
+    min-width: 0;
+  }
 }
 
 .main {
   display: flex;
   flex-direction: column;
+  flex-grow: 1;
+}
+
+.mainContent {
+  display: flex;
+  flex-direction: column;
   gap: var(--gap-l);
   padding: var(--gap-l);
-  padding-bottom: 0;
   flex-grow: 1;
-  min-width: 0;
-
-  footer {
-    margin-top: auto;
-    margin-inline: calc(var(--gap-l) * -1);
-  }
 }
 
 .sidebar {
@@ -29,7 +32,6 @@
   top: var(--header-height);
   max-width: 100%;
   max-height: var(--section-fill-height);
-  min-width: 0;
   min-height: 0;
   flex-shrink: 0;
 
