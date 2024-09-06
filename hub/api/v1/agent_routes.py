@@ -62,7 +62,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
     if not body.agent_id and not body.assistant_id:
         raise HTTPException(status_code=400, detail="Missing required parameters: agent_id or assistant_id")
 
-    agents = body.agent_id or body.assistant_id
+    agents = body.agent_id or body.assistant_id or ""
     environment_id = body.environment_id or body.thread
     new_message = body.new_message
 
@@ -75,7 +75,8 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
     agent_entry = get(EntryLocation.from_str(primary_agent))
     if not agent_entry:
         raise HTTPException(status_code=404, detail=f"Agent '{primary_agent}' not found in the registry.")
-    agent_details = agent_entry.details
+    entry_details = agent_entry.details
+    agent_details = entry_details.get("agent", {})
     framework = agent_details.get("framework", "base")
 
     if framework == "prompt":
