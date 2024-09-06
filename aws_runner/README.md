@@ -6,7 +6,7 @@ to fetch agent code, and to fetch and store environments (store not implemented 
 
 
 ## Local testing
-`docker build --platform linux/amd64 -t nearai-runner:test .`
+`docker build --platform linux/amd64 --build-arg FRAMEWORK=-base -t nearai-runner:test .`
 
 `docker run --platform linux/amd64 -p 9000:8080 nearai-runner:test`
 
@@ -22,4 +22,17 @@ curl "http://localhost:9000/2015-03-31/functions/function/invocations" \
         \"signature\":\"SIGNATURE_FIELD_FROM_A_REAL_SIGNATURE\",
         \"callback_url\":\"https://demo.near.ai/auth/login\",\"message\":\"Welcome to NEAR Talkbot app\"}"}
 EOF
+```
+
+## Deployment
+The docker image is built and pushed to the NearAI ECR repository. The image is then deployed to AWS Lambda using the AWS CLI.
+
+Deploy a single framework to a single environment.
+```shell
+FRAMEWORK=langgraph ENV=production deploy.sh
+```
+
+Deploy all frameworks to all environments.
+```shell
+deploy.sh all
 ```

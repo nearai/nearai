@@ -114,7 +114,10 @@ class Environment(object):
         return f"Successfully wrote {len(content) if content else 0} characters to {filename}"
 
     def exec_command(self, command: str) -> Dict[str, str]:
-        """Executes a command in the environment and logs the output."""
+        """Executes a command in the environment and logs the output.
+
+        command: The command to execute.
+        """
         try:
             process = subprocess.Popen(
                 shlex.split(command),
@@ -173,10 +176,11 @@ class Environment(object):
         """Returns all completions for given messages using the given model and runs tools."""
         stream = kwargs.get("stream", False)
         response = self._client.completions(model, messages, stream=stream, tools=tools, **kwargs)
-        response_message = response.choices[0].message
-        if hasattr(response_message, "tool_calls") and response_message.tool_calls:
-            for tool_call in response_message.tool_calls:
-                function_name = tool_call.function.name
+        response_message = response["choices"][0]["message"]
+
+        if hasattr(response_message, "tool_calls") and response_message["tool_calls"]:
+            for tool_call in response_message["tool_calls"]:
+                function_name = tool_call["function.name"]
                 assert function_name, "Tool call must have a function name"
                 function_args = json.loads(tool_call.function.arguments)
                 function_response = self._tools.call_tool(function_name, **function_args)

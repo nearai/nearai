@@ -1,8 +1,11 @@
 FROM public.ecr.aws/lambda/python:3.12
 
-COPY requirements.txt ${LAMBDA_TASK_ROOT}
+# pass with --build-arg FRAMEWORK=-langgraph
+ARG FRAMEWORK=""
 
-RUN pip install -r requirements.txt
+COPY frameworks/requirements${FRAMEWORK}.txt ${LAMBDA_TASK_ROOT}
+
+RUN pip install -r requirements${FRAMEWORK}.txt
 
 # Runner code
 COPY service.py partial_near_client.py ${LAMBDA_TASK_ROOT}

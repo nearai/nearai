@@ -18,6 +18,7 @@ cloudwatch = boto3.client("cloudwatch", region_name="us-east-2")
 PATH = "/tmp/agent-runner-docker/environment-runs"
 RUN_PATH = PATH + "/run"
 FUNCTION_NAME = os.environ["AWS_LAMBDA_FUNCTION_NAME"]
+DEFAULT_API_URL = "https://api.near.ai"
 
 
 def handler(event, context):
@@ -36,12 +37,8 @@ def handler(event, context):
     new_message = event.get("new_message")
 
     params = event.get("params", {})
-    max_iterations = int(params.get("max_iterations", 2))
-    record_run = bool(params.get("record_run", True))
 
-    new_environment_registry_id = run_with_environment(
-        agents, auth_object, environment_id, new_message, max_iterations, record_run
-    )
+    new_environment_registry_id = run_with_environment(agents, auth_object, environment_id, new_message, params)
     if not new_environment_registry_id:
         return f"Run not recorded. Ran {agents} agent(s) with generated near client and environment {environment_id}"
 
@@ -80,11 +77,18 @@ def run_with_environment(
     auth: dict,
     environment_id: str = None,
     new_message: str = None,
-    max_iterations: int = 10,
-    record_run: bool = True,
+    params: dict = None,
 ) -> Optional[str]:
     """Runs agent against environment fetched from id, optionally passing a new message to the environment."""
-    configuration = Configuration(access_token=f"Bearer {json.dumps(auth)}", host="https://api.near.ai")
+    params = params or {}
+    max_iterations = int(params.get("max_iterations", 2))
+    record_run = bool(params.get("record_run", True))
+    api_url = str(params.get("api_url", DEFAULT_API_URL))
+
+    if api_url != DEFAULT_API_URL:
+        print(f"WARNING: Using custom API URL: {api_url}")
+
+    configuration = Configuration(access_token=f"Bearer {json.dumps(auth)}", host=api_url)
     client = ApiClient(configuration)
     near_client = PartialNearClient(client, auth)
 

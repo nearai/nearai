@@ -27,7 +27,6 @@ class LambdaWrapper:
             LogType="Tail" if get_log else "None",
             InvocationType="RequestResponse",
         )
-        print("Remotely running agent", function_params["agents"])
         data = response["Payload"].read()
         if data:
             data = data.decode("utf-8")

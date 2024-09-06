@@ -1,0 +1,9 @@
+python_dateutil >= 2.5.3
+setuptools >= 21.0.0
+urllib3 >= 1.25.3, < 2.1.0
+pydantic >=2.8.2
+typing-extensions >= 4.7.1
+psutil >= 5.9.5
+boto3 >= 1.35.3
+langgraph >= 0.1.4
+langchain-fireworks >= 0.1.4
