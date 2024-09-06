@@ -1,5 +1,7 @@
 # NearAI
 
+Test
+
 NearAI is a project with the goal of making open source and user-owned AGI.
 
 ## Setup
@@ -11,6 +13,7 @@ One line installation with a venv virtual env:
 ```shell
 git clone git@github.com:nearai/nearai.git && cd nearai && ./install.sh;
 ```
+
 <hr/>
 Or, install nearai by running:
 
@@ -19,6 +22,7 @@ git clone git@github.com:nearai/nearai.git
 cd nearai
 python3 -m pip install -e .
 ```
+
 Check that `nearai` was installed as a command line tool:
 
 ```shell
@@ -39,6 +43,7 @@ poetry run nearai version
 ```
 
 ## Usage
+
 To perform write operations you will need to log in with your Near account.
 
 ```
@@ -46,7 +51,6 @@ nearai login
 ```
 
 <b>To learn how to use NearAI, please read the [documentation](https://docs.near.ai/).</b>
-
 
 ## Update
 
