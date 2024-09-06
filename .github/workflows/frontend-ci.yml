@@ -13,8 +13,11 @@ on:
 
 jobs:
   format-and-lint:
-    name: Frontend - Format & Lint
+    name: Format & Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./hub/demo
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,8 +32,11 @@ jobs:
         run: npm run lint:strict
 
   test:
-    name: Frontend - Check Types
+    name: Check Types
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./hub/demo
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
