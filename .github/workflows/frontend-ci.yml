@@ -1,0 +1,55 @@
+name: Frontend CI
+on:
+  pull_request:
+    paths:
+      - hub/demo/**
+  push:
+    branches:
+      - main
+      - staging
+      - develop
+    paths:
+      - hub/demo/**
+
+jobs:
+  format-and-lint:
+    name: Format & Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./hub/demo
+    env:
+      SKIP_ENV_VALIDATION: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: "./hub/demo/package-lock.json"
+      - name: Install dependencies
+        run: npm install
+      - name: Format
+        run: npm run format
+      - name: Lint
+        run: npm run lint:strict
+
+  test:
+    name: Check Types
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./hub/demo
+    env:
+      SKIP_ENV_VALIDATION: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: "./hub/demo/package-lock.json"
+      - name: Install dependencies
+        run: npm install
+      - name: Check types
+        run: npm run ts:check

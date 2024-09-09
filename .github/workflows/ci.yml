@@ -28,6 +28,18 @@ jobs:
     - name: Install poetry
       run: pipx install poetry
 
+    - name: Get Poetry cache dir
+      id: poetry-cache
+      run: echo "dir=$(poetry config cache-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache Poetry dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.poetry-cache.outputs.dir }}
+        key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-${{ matrix.python-version }}-
+
     - name: Install Codespell
       run: pip install codespell
 

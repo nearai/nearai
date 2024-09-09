@@ -6,10 +6,12 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "format": "prettier --write ./src",
+    "format": "prettier --check ./src",
+    "format:fix": "prettier --write ./src",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "pre-commit": "npm run ts:check && npm run lint:fix && npm run format",
+    "lint:strict": "next lint --max-warnings 0",
+    "pre-commit": "npm run ts:check && npm run lint:fix && npm run format:fix",
     "start": "next start",
     "ts:check": "tsc --noEmit --incremental"
   },

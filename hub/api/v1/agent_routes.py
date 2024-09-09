@@ -1,5 +1,5 @@
+from typing import Any, Dict, Optional
 from os import getenv
-from typing import Optional
 
 import boto3
 from fastapi import APIRouter, Body, Depends, HTTPException, Response
@@ -50,6 +50,10 @@ class CreateThreadAndRunRequest(BaseModel):
         True,
         description="Whether to record the run in the registry.",
     )
+    tool_resources: Optional[Dict[str, Any]] = Field(
+        None,
+        description="A dictionary of tool resources to use for the run.",
+    )
 
 
 @v1_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
@@ -69,7 +73,12 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
     runner = _runner_for_env()
     agent_api_url = getenv("API_URL", "https://api.near.ai")
 
-    params = {"max_iterations": body.max_iterations, "record_run": body.record_run, "api_url": agent_api_url}
+    params = {
+        "max_iterations": body.max_iterations,
+        "record_run": body.record_run,
+        "api_url": agent_api_url,
+        "tool_resources": body.tool_resources,
+    }
 
     primary_agent = agents.split(",")[0]
     agent_entry = get(EntryLocation.from_str(primary_agent))
