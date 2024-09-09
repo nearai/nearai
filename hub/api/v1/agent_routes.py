@@ -1,5 +1,5 @@
-from typing import Any, Dict, Optional
 from os import getenv
+from typing import Any, Dict, Optional
 
 import boto3
 from fastapi import APIRouter, Body, Depends, HTTPException, Response
