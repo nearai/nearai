@@ -1,7 +1,8 @@
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
 export function useQueryParams<const T extends string[]>(names: T) {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -22,6 +23,21 @@ export function useQueryParams<const T extends string[]>(names: T) {
     [pathname, searchParams],
   );
 
+  const updateQueryPath = useCallback(
+    (
+      updatedParams: Partial<Record<T[number], string | undefined>>,
+      mode: 'push' | 'replace' = 'push',
+    ) => {
+      const path = createQueryPath(updatedParams);
+      if (mode === 'replace') {
+        router.replace(path);
+      } else {
+        router.push(path);
+      }
+    },
+    [createQueryPath, router],
+  );
+
   const queryParams = useMemo(() => {
     const params: Record<string, string> = {};
 
@@ -38,5 +54,6 @@ export function useQueryParams<const T extends string[]>(names: T) {
   return {
     createQueryPath,
     queryParams,
+    updateQueryPath,
   };
 }

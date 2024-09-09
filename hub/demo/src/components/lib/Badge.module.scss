@@ -28,7 +28,7 @@
     font-weight: 500;
 
     &:hover {
-      box-shadow: 0px 1px 3px 3px rgba(0, 0, 0, 0.1);
+      box-shadow: 0px 1px 5px 1px rgba(0, 0, 0, 0.1);
     }
     &:focus-visible {
       box-shadow: 0 0 0 2px var(--violet-5);
@@ -50,7 +50,17 @@
 
   &[data-count='true'] {
     border-radius: 100px;
+    gap: 0;
     font-variant-numeric: tabular-nums;
+  }
+
+  &[data-variant='neutral-alpha'] {
+    --badge-color-background: var(--black-a2);
+    --badge-color-border: transparent;
+
+    :global(.dark) & {
+      --badge-color-background: var(--white-a2);
+    }
   }
 
   &[data-variant='primary'] {

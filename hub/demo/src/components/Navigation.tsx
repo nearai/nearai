@@ -2,14 +2,12 @@
 
 import {
   BookOpenText,
-  ChartBar,
   ChatCircleDots,
-  Database,
+  Cube,
   Gear,
-  Graph,
-  Lightbulb,
   List,
   Moon,
+  Star,
   Sun,
   User,
   X,
@@ -21,6 +19,7 @@ import { useEffect, useState } from 'react';
 
 import { signInWithNear } from '~/lib/auth';
 import { useAuthStore } from '~/stores/auth';
+import { CATEGORY_LABELS } from '~/utils/category';
 
 import { BreakpointDisplay } from './lib/BreakpointDisplay';
 import { Button } from './lib/Button';
@@ -35,22 +34,22 @@ const navItems = [
   {
     label: 'Agents',
     path: '/agents',
-    icon: <Lightbulb />,
+    icon: CATEGORY_LABELS.agent.icon,
   },
   {
     label: 'Models',
     path: '/models',
-    icon: <Graph />,
+    icon: CATEGORY_LABELS.model.icon,
   },
   {
     label: 'Datasets',
     path: '/datasets',
-    icon: <Database />,
+    icon: CATEGORY_LABELS.dataset.icon,
   },
   {
     label: 'Benchmarks',
     path: '/benchmarks',
-    icon: <ChartBar />,
+    icon: CATEGORY_LABELS.benchmark.icon,
   },
   {
     label: 'Chat',
@@ -176,6 +175,18 @@ export const Navigation = () => {
               </Dropdown.Section>
 
               <Dropdown.Section>
+                <Dropdown.Item href={`/profiles/${store.auth?.account_id}`}>
+                  <SvgIcon icon={<Cube />} />
+                  Your Work
+                </Dropdown.Item>
+
+                <Dropdown.Item
+                  href={`/profiles/${store.auth?.account_id}/starred`}
+                >
+                  <SvgIcon icon={<Star />} />
+                  Your Stars
+                </Dropdown.Item>
+
                 <Dropdown.Item href="/settings">
                   <SvgIcon icon={<Gear />} />
                   Settings

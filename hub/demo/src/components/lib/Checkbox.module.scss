@@ -18,7 +18,8 @@
     box-shadow: 0 0 0 2px var(--violet-5);
   }
 
-  &:hover {
+  &:hover,
+  label:hover & {
     background: var(--sand-4);
   }
 
