@@ -193,17 +193,21 @@ reprocess the previous response and follow up about travel to Paris.
 ```
 
 ## Running an agent through the API
-Agents can be run through the `/agent/runs` endpoint. You will need to pass a signed message to authenticate.
+Agents can be run through the `/agent/runs` endpoint. 
+You will need to pass a signed message to authenticate. This example uses the credentials written by `nearai login` to
+your `~/.nearai/config.json` file.
 
 ```shell
+auth_json=$(jq -c '.auth' ~/.nearai/config.json);
+
 curl "https://api.near.ai/v1/agent/runs" \
       -X POST \
       --header 'Content-Type: application/json' \
-      --header 'Authorization: Bearer {"account_id":"flatirons.near","public_key":"ed25519:F5DeKFoyF1CQ6wG6jYaXxwQeoksgi8a677JkniDBGBTB","signature":"kfiH7AStKrBaMXzwpE50yQ2TRTxksID9tNVEdazxtegEu6rwH6x575smcAJPAUfTtlT2l7xwXtapQkxd+vFUAg==","callback_url":"http://localhost:3000/","message":"Welcome to NEAR AI Hub!","recipient":"ai.near","nonce":"00000000000000000005722050769950"}' \
+      --header "Authorization: Bearer $auth_json" \
 -d @- <<'EOF'
   {
     "agent_id": "flatirons.near/xela-agent/5",
-    "new_message":"Build a backgammon game", 
+    "new_message":"Build a backgammon game",
     "max_iterations": "2"
   }
 EOF

@@ -292,7 +292,7 @@ export default function RunAgentPage() {
                 max={20}
                 min={1}
                 step={1}
-                assistive="The maximum number of iterations to run the agent for."
+                assistive="The maximum number of iterations to run the agent for, usually 1. Each iteration will loop back through your agent allowing it to act and reflect on LLM results."
                 {...field}
               />
             )}
