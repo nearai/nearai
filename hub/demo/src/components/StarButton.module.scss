@@ -1,0 +1,57 @@
+.starButton {
+  overflow: hidden;
+
+  * {
+    z-index: 5;
+  }
+
+  &::before {
+    content: '';
+    display: block;
+    position: absolute;
+    z-index: 0;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 400%;
+    transform: translateX(-100%);
+    background: linear-gradient(
+        -45deg,
+        transparent 30%,
+        var(--amber-6),
+        transparent 70%
+      )
+      no-repeat;
+  }
+
+  &[data-clicked='true'][data-starred='true'] {
+    &::before {
+      animation: background 1200ms linear;
+    }
+
+    svg {
+      animation: icon 800ms;
+    }
+
+    @keyframes background {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(100%);
+      }
+    }
+
+    @keyframes icon {
+      0% {
+        transform: scale(0, 0) rotate(-180deg);
+      }
+      50% {
+        transform: scale(1.5, 1.5) rotate(0deg);
+      }
+      100% {
+        transform: scale(1, 1);
+      }
+    }
+  }
+}

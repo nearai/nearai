@@ -1,0 +1,67 @@
+'use client';
+
+import { Cube, Star, User } from '@phosphor-icons/react';
+import { usePathname } from 'next/navigation';
+import { type ReactNode } from 'react';
+
+import { Badge } from '~/components/lib/Badge';
+import { Flex } from '~/components/lib/Flex';
+import { ImageIcon } from '~/components/lib/ImageIcon';
+import { Section } from '~/components/lib/Section';
+import { SvgIcon } from '~/components/lib/SvgIcon';
+import { Tabs } from '~/components/lib/Tabs';
+import { Text } from '~/components/lib/Text';
+import { useProfileParams } from '~/hooks/profile';
+import { useAuthStore } from '~/stores/auth';
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  const pathSegments = usePathname().split('/');
+  const { accountId } = useProfileParams();
+  const auth = useAuthStore((store) => store.auth);
+  let activeTab: 'published' | 'starred' = 'published';
+  const baseUrl = `/profiles/${accountId}`;
+
+  if (pathSegments.at(-1) === 'starred') {
+    activeTab = 'starred';
+  }
+
+  return (
+    <>
+      <Section background="sand-0" bleed gap="m" tabs>
+        <Flex align="center" gap="m">
+          <ImageIcon
+            size="l"
+            src={undefined}
+            alt={accountId}
+            fallbackIcon={<User />}
+          />
+          {/* NOTE: At some point we should have actual avatars for users... */}
+
+          <Text as="h1" size="text-l">
+            {accountId}
+          </Text>
+
+          {auth?.account_id === accountId && (
+            <Badge label="You" variant="neutral" />
+          )}
+        </Flex>
+
+        <Tabs.Root value={activeTab}>
+          <Tabs.List>
+            <Tabs.Trigger href={`${baseUrl}`} value="published">
+              <SvgIcon icon={<Cube fill="bold" />} />
+              Published
+            </Tabs.Trigger>
+
+            <Tabs.Trigger href={`${baseUrl}/starred`} value="starred">
+              <SvgIcon icon={<Star fill="bold" />} />
+              Starred
+            </Tabs.Trigger>
+          </Tabs.List>
+        </Tabs.Root>
+      </Section>
+
+      {children}
+    </>
+  );
+}

@@ -17,6 +17,8 @@ import { useResourceSearch } from '~/hooks/resources';
 import { type RegistryCategory } from '~/server/api/routers/hub';
 import { api } from '~/trpc/react';
 
+import { StarButton } from './StarButton';
+
 type Props = {
   category: RegistryCategory;
   title: string;
@@ -75,6 +77,13 @@ export const ResourceList = ({ category, title }: Props) => {
             </Table.HeadCell>
             <Table.HeadCell>Version</Table.HeadCell>
             <Table.HeadCell>Tags</Table.HeadCell>
+            <Table.HeadCell
+              column="stars"
+              sortable
+              style={{ paddingInline: '1.5rem' }}
+            >
+              Stars
+            </Table.HeadCell>
             {category === 'agent' && <Table.HeadCell />}
           </Table.Row>
         </Table.Head>
@@ -89,7 +98,7 @@ export const ResourceList = ({ category, title }: Props) => {
                   href={`/agents/${item.namespace}/${item.name}/${item.version}`}
                   style={{ width: '20rem' }}
                 >
-                  <Text size="text-s" weight={500} color="violet-11">
+                  <Text size="text-s" weight={500} color="sand-12">
                     {item.name}
                   </Text>
                 </Table.Cell>
@@ -101,8 +110,10 @@ export const ResourceList = ({ category, title }: Props) => {
                 </Table.Cell>
               )}
 
-              <Table.Cell>
-                <Text size="text-s">{item.namespace}</Text>
+              <Table.Cell href={`/profiles/${item.namespace}`}>
+                <Text size="text-s" weight={500}>
+                  {item.namespace}
+                </Text>
               </Table.Cell>
 
               <Table.Cell>
@@ -115,6 +126,10 @@ export const ResourceList = ({ category, title }: Props) => {
                     <Badge label={tag} variant="neutral" key={tag} />
                   ))}
                 </Flex>
+              </Table.Cell>
+
+              <Table.Cell style={{ width: '1px' }}>
+                <StarButton count={0} starred={false} variant="simple" />
               </Table.Cell>
 
               {category === 'agent' && (

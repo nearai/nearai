@@ -8,3 +8,7 @@
   @include breakpointProperty('flex-gap', 'gap', 0);
   @include breakpointProperty('flex-justify', 'justify-content', normal);
 }
+
+label.flex {
+  cursor: pointer;
+}

@@ -34,7 +34,6 @@ type RegistryFile = {
 export const registryCategory = z.enum([
   'agent',
   'benchmark',
-  'category',
   'dataset',
   'environment',
   'model',

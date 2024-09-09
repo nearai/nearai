@@ -5,7 +5,13 @@ import { forwardRef } from 'react';
 
 import s from './Badge.module.scss';
 
-type Variant = 'neutral' | 'primary' | 'warning' | 'success' | 'alert';
+type Variant =
+  | 'neutral'
+  | 'neutral-alpha'
+  | 'primary'
+  | 'warning'
+  | 'success'
+  | 'alert';
 
 type Props = Omit<ComponentPropsWithRef<'span'>, 'children'> & {
   button?: boolean;
