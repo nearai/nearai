@@ -1,12 +1,14 @@
 import json
-from typing import Any, Callable, Iterable, Optional, Union
+from typing import Any, Callable, Iterable, List, Optional, Union
 
+import requests
 from litellm import CustomStreamWrapper, ModelResponse
 from litellm import completion as litellm_completion
 from openai import OpenAI
 from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
 
 from hub.api.near.primitives import get_provider_model
+from hub.api.v1.sql import SimilaritySearch
 
 from .config import CONFIG, AuthData, Config, NearAiHubConfig
 
@@ -28,6 +30,29 @@ class InferenceRouter(object):
             self._config.nearai_hub = NearAiHubConfig()
         self._endpoint: Any
 
+    def get_auth_str(self, auth: Optional[AuthData] = None) -> str:
+        """Get authentication string from provided auth or config object.
+
+        Args:
+        ----
+            auth (Optional[AuthData]): Authentication data. If None, uses config auth.
+
+        Returns:
+        -------
+            str: JSON string containing authentication data.
+
+        """
+        _auth = auth
+        if auth is None:
+            _auth = self._config.auth
+
+        bearer_data = {
+            key: getattr(_auth, key)
+            for key in ["account_id", "public_key", "signature", "callback_url", "message", "nonce", "recipient"]
+        }
+
+        return json.dumps(bearer_data)
+
     def completions(
         self,
         model: str,
@@ -42,14 +67,7 @@ class InferenceRouter(object):
             raise ValueError("Missing NearAI Hub config")
         provider, model = get_provider_model(self._config.nearai_hub.default_provider, model)
 
-        if auth is None:
-            auth = self._config.auth
-
-        bearer_data = {
-            key: getattr(auth, key)
-            for key in ["account_id", "public_key", "signature", "callback_url", "message", "nonce", "recipient"]
-        }
-        auth_bearer_token = json.dumps(bearer_data)
+        auth_bearer_token = self.get_auth_str(auth)
 
         self._endpoint = lambda model, messages, stream, temperature, **kwargs: litellm_completion(
             model,
@@ -73,3 +91,25 @@ class InferenceRouter(object):
             raise ValueError(f"Bad request: {e}") from None
 
         return result
+
+    def query_vector_store(
+        self, vector_store_id: str, query: str, auth: Optional[AuthData] = None
+    ) -> List[SimilaritySearch]:
+        """Query a vector store."""
+        if self._config.nearai_hub is None:
+            raise ValueError("Missing NearAI Hub config")
+
+        auth_bearer_token = self.get_auth_str(auth)
+
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {auth_bearer_token}"}
+
+        data = {"query": query}
+
+        endpoint = f"{self._config.nearai_hub.base_url}/vector_stores/{vector_store_id}/search"
+
+        try:
+            response = requests.post(endpoint, headers=headers, json=data)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            raise ValueError(f"Error querying vector store: {e}") from None

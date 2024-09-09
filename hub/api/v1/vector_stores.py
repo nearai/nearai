@@ -576,7 +576,7 @@ class QueryVectorStoreRequest(BaseModel):
 
 @vector_stores_router.post("/vector_stores/{vector_store_id}/search")
 async def query_vector_store(
-    vector_store_id: str, request: QueryVectorStoreRequest, auth: AuthToken = Depends(revokable_auth)
+    vector_store_id: str, request: QueryVectorStoreRequest, _: AuthToken = Depends(revokable_auth)
 ):
     """Perform a similarity search on the specified vector store.
 
@@ -597,7 +597,7 @@ async def query_vector_store(
     """
     sql = SqlClient()
     try:
-        vector_store = sql.get_vector_store_by_account(vector_store_id, auth.account_id)
+        vector_store = sql.get_vector_store(vector_store_id)
         if not vector_store:
             logger.warning(f"Vector store not found: {vector_store_id}")
             raise HTTPException(status_code=404, detail="Vector store not found")

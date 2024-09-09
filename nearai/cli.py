@@ -357,6 +357,7 @@ class AgentCli:
         env_vars: Optional[Dict[str, Any]] = None,
         load_env: str = "",
         local: bool = False,
+        tool_resources: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Runs agent interactively with environment from given path."""
         from nearai.environment import Environment
@@ -367,7 +368,14 @@ class AgentCli:
                 path = _agents[0].path
             else:
                 raise ValueError("Local path is required when running multiple agents")
-        env = Environment(path, _agents, CONFIG, env_vars=env_vars)
+        env = Environment(
+            path,
+            _agents,
+            CONFIG,
+            env_vars=env_vars,
+            tool_resources=tool_resources,
+        )
+
         env.run_interactive(record_run, load_env)
 
     def task(

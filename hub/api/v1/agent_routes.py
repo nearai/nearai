@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import boto3
 from fastapi import APIRouter, Body, Depends, HTTPException, Response
@@ -49,6 +49,10 @@ class CreateThreadAndRunRequest(BaseModel):
         True,
         description="Whether to record the run in the registry.",
     )
+    tool_resources: Optional[Dict[str, Any]] = Field(
+        None,
+        description="A dictionary of tool resources to use for the run.",
+    )
 
 
 @v1_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
@@ -68,6 +72,9 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
         "max_iterations": body.max_iterations,
         "record_run": body.record_run,
     }
+
+    if body.tool_resources:
+        params["tool_resources"] = body.tool_resources
 
     wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
     result = wrapper.invoke_function(
