@@ -71,10 +71,8 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
     params = {
         "max_iterations": body.max_iterations,
         "record_run": body.record_run,
+        "tool_resources": body.tool_resources,
     }
-
-    if body.tool_resources:
-        params["tool_resources"] = body.tool_resources
 
     wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
     result = wrapper.invoke_function(
