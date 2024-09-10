@@ -50,20 +50,22 @@ def handler(event, context):
 
 
 def write_metric(metric_name, value, unit="Milliseconds"):
-    cloudwatch.put_metric_data(
-        Namespace="NearAI",
-        MetricData=[
-            {
-                "MetricName": metric_name,
-                "Value": value,
-                "Unit": unit,
-                "Dimensions": [
-                    {"Name": "FunctionName", "Value": FUNCTION_NAME},
-                ],
-            }
-        ],
-    )
-
+    if os.environ.get("AWS_ACCESS_KEY_ID"): # running in lambda or locally passed credentials
+        cloudwatch.put_metric_data(
+            Namespace="NearAI",
+            MetricData=[
+                {
+                    "MetricName": metric_name,
+                    "Value": value,
+                    "Unit": unit,
+                    "Dimensions": [
+                        {"Name": "FunctionName", "Value": FUNCTION_NAME},
+                    ],
+                }
+            ],
+        )
+    else:
+        print(f"Would have written metric {metric_name} with value {value} to cloudwatch")
 
 def load_agent(client, agent, agent_env_vars):
     env_vars = agent_env_vars.get(agent, {})

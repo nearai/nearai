@@ -6,11 +6,18 @@ to fetch agent code, and to fetch and store environments (store not implemented 
 
 
 ## Local testing
-`docker build --platform linux/amd64 --build-arg FRAMEWORK=-base -t nearai-runner:test .`
+__Docker must be run from the root of the repository so the Dockerfile can pull in openapi_client.__
 
-`docker run --platform linux/amd64 -p 9000:8080 nearai-runner:test`
+Note the dash before the framework names and after the environment names.
 
-This will start the server on port 9000. To call the server you will need a signedMessage for the auth param.
+Base framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg -t nearai-runner:test .`
+
+LangGraph framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-langgraph -t nearai-runner:test .`
+
+`docker run --platform linux/amd64 -p 9000:8080 nearai-runner:test` will start the server on port 9000. 
+
+To call the server you will need a signedMessage for the auth param.
+
 ```
 curl "http://localhost:9000/2015-03-31/functions/function/invocations" \
 -d @- <<'EOF'
