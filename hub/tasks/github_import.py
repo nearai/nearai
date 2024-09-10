@@ -14,8 +14,14 @@ from hub.api.v1.models import GitHubSource
 from hub.api.v1.sql import SqlClient
 from hub.tasks.embedding_generation import generate_embeddings_for_file
 
-logger = logging.getLogger(__name__)
+"""
+This module handles the import of files from GitHub repositories into the vector store.
 
+It provides functionality to fetch repository contents, read file contents,
+create file records, and process GitHub sources for vector stores.
+"""
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -32,10 +38,24 @@ HEADERS = {
 
 
 def handle_rate_limit(func):
+    """Decorator to handle GitHub API rate limiting.
+
+    If a rate limit is encountered, the function will wait and retry.
+
+    Args:
+    ----
+        func: The function to be decorated.
+
+    Returns:
+    -------
+        A wrapper function that handles rate limiting.
+
+    """
+
     def wrapper(*args, **kwargs):
         response = func(*args, **kwargs)
         if response.status_code == 403:
-            print(f"Rate limit exceeded. Waiting for {RATE_LIMIT_WAIT} seconds...")
+            logger.warning(f"Rate limit exceeded. Waiting for {RATE_LIMIT_WAIT} seconds...")
             time.sleep(RATE_LIMIT_WAIT)
             return wrapper(*args, **kwargs)
         return response
@@ -45,54 +65,82 @@ def handle_rate_limit(func):
 
 @handle_rate_limit
 def github_get(url: str, source_auth: Optional[str] = None) -> requests.Response:
-    headers = HEADERS
+    """Make a GET request to the GitHub API.
+
+    Args:
+    ----
+        url (str): The GitHub API endpoint URL.
+        source_auth (Optional[str]): Optional authentication token.
+
+    Returns:
+    -------
+        requests.Response: The response from the GitHub API.
+
+    Raises:
+    ------
+        ValueError: If no GitHub token is provided.
+
+    """
+    headers = HEADERS.copy()
     if not source_auth and not GITHUB_TOKEN:
-        raise ValueError("Github token is required")
+        raise ValueError("GitHub token is required")
     if source_auth:
         headers["Authorization"] = f"token {source_auth}"
     return requests.get(url, headers=headers)
 
 
 def get_repo_contents(owner: str, repo: str, branch: str = "main", caller_auth: Optional[str] = None) -> Optional[Dict]:
+    """Fetch the contents of a GitHub repository.
+
+    Args:
+    ----
+        owner (str): The owner of the repository.
+        repo (str): The name of the repository.
+        branch (str): The branch to fetch (default is "main").
+        caller_auth (Optional[str]): Optional caller authentication token.
+
+    Returns:
+    -------
+        Optional[Dict]: A dictionary containing the repository contents, or None if the request fails.
+
+    """
     url = f"{BASE_URL}/{owner}/{repo}/git/trees/{branch}?recursive=1"
     response = github_get(url, caller_auth)
     if response.status_code == 200:
         return response.json()
-    print(f"Error fetching contents: {response.status_code}")
+    logger.error(f"Error fetching contents: {response.status_code}")
     return None
 
 
 def read_file_content(blob_url: str) -> Optional[str]:
+    """Read the content of a file from a GitHub blob URL.
+
+    Args:
+    ----
+        blob_url (str): The GitHub blob URL of the file.
+
+    Returns:
+    -------
+        Optional[str]: The content of the file as a string, or None if the request fails or the file is too large.
+
+    """
     response = github_get(blob_url)
     if response.status_code == 200:
         content = base64.b64decode(response.json()["content"])
         if len(content) > MAX_CONTENT_LENGTH:
-            print("File too large, skipping content.")
+            logger.warning("File too large, skipping content.")
             return None
 
-        # Detect encoding
         detected = chardet.detect(content)
         encoding = detected["encoding"] if detected and detected["encoding"] else "utf-8"
 
         try:
             return content.decode(encoding)
         except UnicodeDecodeError:
-            print(f"Unable to decode content for {blob_url} with utf-8")
+            logger.error(f"Unable to decode content for {blob_url} with {encoding}")
             return None
-    print(f"Error fetching file content: {response.status_code}")
+    logger.error(f"Error fetching file content: {response.status_code}")
     return None
-
-
-def print_file_content(path: str, content: Optional[str]) -> None:
-    if content is None:
-        print(f"url: {path}, Binary file detected, skipping content.")
-        return
-    print(f"File: {path}")
-    if content:
-        print(f"Content:\n{content[:500]}...")  # Print first 500 characters
-        print("=" * 50 + "\n")
-    else:
-        raise Exception("Could not read file content.")
 
 
 async def create_file_from_content(account_id: str, filename: str, content: str, purpose: str) -> Optional[str]:
@@ -114,7 +162,6 @@ async def create_file_from_content(account_id: str, filename: str, content: str,
     file_size = len(content_bytes)
     content_type = mimetypes.guess_type(filename)[0] or "text/plain"
 
-    # Use os.path.basename to get just the filename without any directory structure
     safe_filename = os.path.basename(filename)
     object_key = f"hub/vector-store-files/{account_id}/{safe_filename}"
     try:
@@ -186,5 +233,4 @@ async def process_github_source(
         )
         await generate_embeddings_for_file(file_id, vector_store_id)
 
-    # Update vector store status to completed
     logger.info(f"Completed processing GitHub source for vector store: {vector_store_id}")
