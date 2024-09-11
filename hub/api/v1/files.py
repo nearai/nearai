@@ -8,6 +8,7 @@ import boto3
 import chardet
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from nearai.config import DATA_FOLDER
 from openai.types.file_create_params import FileTypes
 from openai.types.file_object import FileObject
 from pydantic import BaseModel
@@ -94,10 +95,11 @@ async def upload_file_to_storage(content: bytes, object_key: str) -> str:
             raise HTTPException(status_code=500, detail="Failed to upload file") from e
     elif STORAGE_TYPE == "file":
         try:
-            os.makedirs(os.path.dirname(new_object_key), exist_ok=True)
-            with open(new_object_key, "wb") as f:
+            full_path = os.path.join(DATA_FOLDER, new_object_key)
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            with open(full_path, "wb") as f:
                 f.write(content)
-            return f"{FILE_URI_PREFIX}{os.path.abspath(new_object_key)}"
+            return f"{FILE_URI_PREFIX}{os.path.abspath(full_path)}"
         except IOError as e:
             logger.error(f"Failed to write file to local storage: {str(e)}")
             raise HTTPException(status_code=500, detail="Failed to upload file") from e
@@ -168,7 +170,7 @@ async def upload_file(
     detected_encoding = check_text_encoding(content) if content_type.startswith("text/") else None
 
     # Generate object key and upload to storage
-    object_key = f"hub/vector-store-files/{auth.account_id}/{file.filename}"
+    object_key = f"vector-store-files/{auth.account_id}/{file.filename}"
     try:
         file_uri = await upload_file_to_storage(content, object_key)
     except Exception as e:

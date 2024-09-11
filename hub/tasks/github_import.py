@@ -163,7 +163,7 @@ async def create_file_from_content(account_id: str, filename: str, content: str,
     content_type = mimetypes.guess_type(filename)[0] or "text/plain"
 
     safe_filename = os.path.basename(filename)
-    object_key = f"hub/vector-store-files/{account_id}/{safe_filename}"
+    object_key = f"vector-store-files/{account_id}/{safe_filename}"
     try:
         file_uri = await upload_file_to_storage(content_bytes, object_key)
     except Exception as e:
