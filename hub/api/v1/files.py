@@ -1,6 +1,7 @@
 import logging
 import mimetypes
 import os
+import uuid
 from typing import Literal, Optional
 
 import boto3
@@ -41,13 +42,32 @@ class FileUploadRequest(BaseModel):
         arbitrary_types_allowed = True
 
 
+def generate_unique_filename(filename: str) -> str:
+    """Generate a unique filename by adding a short UUID.
+
+    Args:
+    ----
+        filename (str): The original filename.
+
+    Returns:
+    -------
+        str: A new filename with a 24-character hexadecimal UUID inserted before the extension.
+
+    """
+    unique_id = uuid.uuid4().hex[:24]
+    name, ext = os.path.splitext(filename)
+    return f"{unique_id}_{name}{ext}"
+
+
 async def upload_file_to_storage(content: bytes, object_key: str) -> str:
     """Upload file content to either S3 or local file system based on STORAGE_TYPE.
+
+    This function generates a unique filename for the uploaded file to prevent collisions.
 
     Args:
     ----
         content (bytes): The file content to upload.
-        object_key (str): The key/path for the file.
+        object_key (str): The original key/path for the file.
 
     Returns:
     -------
@@ -56,23 +76,28 @@ async def upload_file_to_storage(content: bytes, object_key: str) -> str:
     Raises:
     ------
         HTTPException: If the file upload fails.
+        ValueError: If the storage type is not supported or S3_BUCKET is not set for S3 storage.
 
     """
+    directory, filename = os.path.split(object_key)
+    new_filename = generate_unique_filename(filename)
+    new_object_key = os.path.join(directory, new_filename)
+
     if STORAGE_TYPE == "s3":
         try:
             if not S3_BUCKET:
                 raise ValueError("S3_BUCKET is not set")
-            s3_client.put_object(Bucket=S3_BUCKET, Key=object_key, Body=content)
-            return f"{S3_URI_PREFIX}{S3_BUCKET}/{object_key}"
+            s3_client.put_object(Bucket=S3_BUCKET, Key=new_object_key, Body=content)
+            return f"{S3_URI_PREFIX}{S3_BUCKET}/{new_object_key}"
         except ClientError as e:
             logger.error(f"Failed to upload file to S3: {str(e)}")
             raise HTTPException(status_code=500, detail="Failed to upload file") from e
     elif STORAGE_TYPE == "file":
         try:
-            os.makedirs(os.path.dirname(object_key), exist_ok=True)
-            with open(object_key, "wb") as f:
+            os.makedirs(os.path.dirname(new_object_key), exist_ok=True)
+            with open(new_object_key, "wb") as f:
                 f.write(content)
-            return f"{FILE_URI_PREFIX}{os.path.abspath(object_key)}"
+            return f"{FILE_URI_PREFIX}{os.path.abspath(new_object_key)}"
         except IOError as e:
             logger.error(f"Failed to write file to local storage: {str(e)}")
             raise HTTPException(status_code=500, detail="Failed to upload file") from e
@@ -142,7 +167,7 @@ async def upload_file(
     # Check encoding for text files
     detected_encoding = check_text_encoding(content) if content_type.startswith("text/") else None
 
-    # Generate a unique object key and upload to storage
+    # Generate object key and upload to storage
     object_key = f"hub/vector-store-files/{auth.account_id}/{file.filename}"
     try:
         file_uri = await upload_file_to_storage(content, object_key)
