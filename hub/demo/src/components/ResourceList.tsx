@@ -80,7 +80,7 @@ export const ResourceList = ({ category, title }: Props) => {
             <Table.HeadCell
               column="stars"
               sortable
-              style={{ paddingInline: '1.5rem' }}
+              style={{ paddingLeft: '1.4rem' }}
             >
               Stars
             </Table.HeadCell>
