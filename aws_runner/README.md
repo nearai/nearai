@@ -20,6 +20,21 @@ args='{"agents": "flatirons.near/example-travel-agent/1", "auth": "'; args+=$aut
 curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d $args
 ```
 
+If you want to specify the auth argument inline it should look like this (but with your credentials). This example
+also includes an environment_id param for loading a previous environment.
+```shell
+curl "http://localhost:9000/2015-03-31/functions/function/invocations" \
+-d @- <<'EOF'
+  {
+    "agents": "xela-agent",
+    "environment_id":"environment_run_xela-tools-agent_541869e6753c41538c87cb6f681c6932",
+    "auth":"{\"account_id\":\"your_account.near\",
+        \"public_key\":\"ed25519:F5DeKFoya9fl35hapvpXxwReoksgi9a677JkniDIFLAW\",
+        \"signature\":\"SIGNATURE_FIELD_FROM_A_REAL_SIGNATURE\",
+        \"callback_url\":\"https://demo.near.ai/auth/login\",\"message\":\"Welcome to NEAR Talkbot app\"}"}
+EOF
+```
+
 ## Deployment
 The docker image is built and pushed to the NearAI ECR repository. The image is then deployed to AWS Lambda using the AWS CLI.
 
