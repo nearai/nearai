@@ -1,7 +1,19 @@
 'use client';
 
-import { ArrowRight, Copy, Gear, Info, ShareFat } from '@phosphor-icons/react';
-import { useSearchParams } from 'next/dist/client/components/navigation';
+// TODO: Adding new message to existing thread isn't working as expected
+// TODO: More testing and polish
+// TODO: Small screens for history sidebar
+// TODO: Display text if user has no threads yet - eg: Your threads will appear here...
+
+import {
+  ArrowRight,
+  Copy,
+  Gear,
+  Info,
+  Plus,
+  ShareFat,
+} from '@phosphor-icons/react';
+import { useRouter } from 'next/navigation';
 import {
   type KeyboardEventHandler,
   useEffect,
@@ -14,6 +26,7 @@ import { type z } from 'zod';
 
 import { AgentWelcome } from '~/components/AgentWelcome';
 import { ChatThread } from '~/components/inference/ChatThread';
+import { Badge } from '~/components/lib/Badge';
 import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
 import { Button } from '~/components/lib/Button';
 import { Card, CardList } from '~/components/lib/Card';
@@ -24,15 +37,18 @@ import { Flex } from '~/components/lib/Flex';
 import { Form } from '~/components/lib/Form';
 import { HR } from '~/components/lib/HorizontalRule';
 import { InputTextarea } from '~/components/lib/InputTextarea';
-import { PlaceholderSection } from '~/components/lib/Placeholder';
 import { Sidebar } from '~/components/lib/Sidebar';
 import { Slider } from '~/components/lib/Slider';
+import { SvgIcon } from '~/components/lib/SvgIcon';
 import { Text } from '~/components/lib/Text';
+import { Timestamp } from '~/components/lib/Timestamp';
+import { Tooltip } from '~/components/lib/Tooltip';
 import { SignInPrompt } from '~/components/SignInPrompt';
 import { useZodForm } from '~/hooks/form';
+import { useAgentChatHistory } from '~/hooks/history';
 import { useCurrentResource, useResourceParams } from '~/hooks/resources';
-import { agentRequestModel, type messageModel } from '~/lib/models';
-import { type FileStructure } from '~/server/api/routers/hub';
+import { useQueryParams } from '~/hooks/url';
+import { agentRequestModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
@@ -40,59 +56,44 @@ import { handleClientError } from '~/utils/error';
 import { formatBytes } from '~/utils/number';
 
 export default function RunAgentPage() {
+  const router = useRouter();
   const { currentResource } = useCurrentResource('agent');
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const { namespace, name, version } = useResourceParams();
-  const searchParams = useSearchParams();
-  const environmentId = searchParams.get('environmentId');
+  const { queryParams, createQueryPath } = useQueryParams(['environmentId']);
   const chatMutation = api.hub.agentChat.useMutation();
+  const { threads, threadsQuery } = useAgentChatHistory();
+  const utils = api.useUtils();
 
   const form = useZodForm(agentRequestModel, {
     defaultValues: { agent_id: `${namespace}/${name}/${version}` },
   });
 
-  const environmentQuery = api.hub.loadEnvironment.useQuery(
-    {
-      environmentId: environmentId!,
-    },
-    {
-      enabled: !!environmentId,
-    },
-  );
-
-  const [environmentName, setEnvironmentName] = useState<string>('');
-  const [conversation, setConversation] = useState<
-    z.infer<typeof messageModel>[]
-  >([]);
-  const [fileStructure, setFileStructure] = useState<FileStructure[]>([]);
-  const [files, setFiles] = useState<Record<string, string>>({});
   const [openedFileName, setOpenedFileName] = useState<string | null>(null);
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
+  // const [historyOpenForSmallScreens, setHistoryOpenForSmallScreens] =
+  //   useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  const openedFile = openedFileName && files?.[openedFileName];
+  const environmentQuery = api.hub.loadEnvironment.useQuery(
+    {
+      environmentId: queryParams.environmentId!,
+    },
+    {
+      enabled: false,
+    },
+  );
+
+  const environment = environmentQuery.data;
+  const openedFile = openedFileName && environment?.files?.[openedFileName];
 
   const shareLink = useMemo(() => {
-    if (environmentName) {
-      const urlEncodedEnv = encodeURIComponent(environmentName);
-      return `${window.location.origin}/agents/${namespace}/${name}/${version}/run?environmentId=${urlEncodedEnv}`;
+    if (queryParams.environmentId) {
+      const urlEncodedEnv = encodeURIComponent(queryParams.environmentId);
+      return `${window.location.origin}/agents/${namespace}/${name}/${version}/run?queryParams.environmentId=${urlEncodedEnv}`;
     }
-  }, [environmentName, namespace, name, version]);
-
-  useEffect(() => {
-    const data = environmentQuery?.data;
-
-    if (data && !environmentName) {
-      setEnvironmentName(data.environmentId);
-
-      chatMutation.trpc.path;
-
-      setFileStructure(() => data.fileStructure);
-      setFiles(() => data.files);
-      setConversation(() => data.conversation);
-    }
-  }, [chatMutation.trpc.path, environmentName, environmentQuery.data]);
+  }, [queryParams.environmentId, namespace, name, version]);
 
   function getUrlParams() {
     const searchParams = new URLSearchParams(window.location.search);
@@ -109,17 +110,27 @@ export default function RunAgentPage() {
     try {
       if (!values.new_message.trim()) return;
 
-      if (environmentName) {
-        values.environment_id = environmentName;
+      if (queryParams.environmentId) {
+        values.environment_id = queryParams.environmentId;
       }
 
-      setConversation((current) => [
-        ...current,
+      utils.hub.loadEnvironment.setData(
         {
-          content: values.new_message,
-          role: 'user',
+          environmentId: queryParams.environmentId ?? '',
         },
-      ]);
+        {
+          conversation: [
+            ...(environment?.conversation ?? []),
+            {
+              content: values.new_message,
+              role: 'user',
+            },
+          ],
+          environmentId: environment?.environmentId ?? '',
+          files: environment?.files ?? {},
+          fileStructure: environment?.fileStructure ?? [],
+        },
+      );
 
       form.setValue('new_message', '');
       form.setFocus('new_message');
@@ -133,10 +144,19 @@ export default function RunAgentPage() {
       }
 
       const response = await chatMutation.mutateAsync(values);
-      setEnvironmentName(() => response.environmentId);
-      setFileStructure(() => response.fileStructure);
-      setFiles(() => response.files);
-      setConversation(response.conversation);
+
+      utils.hub.loadEnvironment.setData(
+        {
+          environmentId: response.environmentId,
+        },
+        response,
+      );
+
+      router.replace(
+        createQueryPath({ environmentId: response.environmentId }),
+      );
+
+      void threadsQuery.refetch();
     } catch (error) {
       handleClientError({ error, title: 'Failed to communicate with agent' });
     }
@@ -151,9 +171,33 @@ export default function RunAgentPage() {
     }
   };
 
-  const clearConversation = () => {
-    setConversation([]);
+  const startNewThread = () => {
+    utils.hub.loadEnvironment.setData(
+      {
+        environmentId: '',
+      },
+      {
+        conversation: [],
+        environmentId: '',
+        files: {},
+        fileStructure: [],
+      },
+    );
+
+    router.replace(createQueryPath({ environmentId: undefined }));
+
+    form.setValue('new_message', '');
+    form.setFocus('new_message');
   };
+
+  useEffect(() => {
+    if (
+      queryParams.environmentId &&
+      queryParams.environmentId !== environment?.environmentId
+    ) {
+      void environmentQuery.refetch();
+    }
+  }, [environment, queryParams.environmentId, environmentQuery]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -163,16 +207,76 @@ export default function RunAgentPage() {
 
   if (!currentResource) return null;
 
-  if (environmentQuery.isLoading) {
-    return <PlaceholderSection />;
-  }
-
   return (
     <Form stretch onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
       <Sidebar.Root>
+        <Sidebar.Sidebar
+          openForSmallScreens={parametersOpenForSmallScreens}
+          setOpenForSmallScreens={setParametersOpenForSmallScreens}
+        >
+          <Text size="text-l">Threads</Text>
+
+          <CardList>
+            <Card
+              padding="s"
+              onClick={startNewThread}
+              background={!queryParams.environmentId ? 'sand-0' : 'sand-2'}
+            >
+              <Flex align="center" gap="s">
+                <SvgIcon
+                  icon={<Plus weight="bold" />}
+                  color="green-10"
+                  size="xs"
+                />
+                <Text size="text-xs" weight={500} color="sand-12">
+                  New Thread
+                </Text>
+              </Flex>
+            </Card>
+
+            {threads.map((thread) => (
+              <Card
+                href={thread.url}
+                padding="s"
+                gap="xs"
+                background={
+                  queryParams.environmentId === thread.environmentId
+                    ? 'sand-0'
+                    : 'sand-2'
+                }
+                key={thread.environmentId}
+              >
+                <Text as="span" size="text-xs" weight={500} color="sand-12">
+                  {thread.description}
+                </Text>
+
+                <Flex align="center" gap="s">
+                  <Text size="text-xs" style={{ marginRight: 'auto' }}>
+                    <Timestamp date={thread.lastMessageAt} />
+                  </Text>
+
+                  <Tooltip
+                    asChild
+                    content={`${thread.messageCount} message prompt${thread.messageCount !== 1 ? 's' : ''}`}
+                    key={thread.environmentId}
+                  >
+                    <Badge
+                      label={thread.messageCount}
+                      count
+                      variant="neutral"
+                      size="small"
+                    />
+                  </Tooltip>
+                </Flex>
+              </Card>
+            ))}
+          </CardList>
+        </Sidebar.Sidebar>
+
         <Sidebar.Main>
           <ChatThread
-            messages={conversation}
+            loading={environmentQuery.isLoading}
+            messages={environment?.conversation ?? []}
             welcomeMessage={<AgentWelcome details={currentResource.details} />}
           />
 
@@ -219,9 +323,7 @@ export default function RunAgentPage() {
           setOpenForSmallScreens={setParametersOpenForSmallScreens}
         >
           <Flex align="center" gap="m">
-            <Text size="text-l" style={{ marginRight: 'auto' }}>
-              Output
-            </Text>
+            <Text size="text-l">Output</Text>
 
             <Dropdown.Root>
               <Dropdown.Trigger asChild>
@@ -229,7 +331,7 @@ export default function RunAgentPage() {
                   label="Output Info"
                   icon={<Info weight="duotone" />}
                   size="small"
-                  fill="outline"
+                  fill="ghost"
                 />
               </Dropdown.Trigger>
 
@@ -251,12 +353,12 @@ export default function RunAgentPage() {
                             shareLink && copyTextToClipboard(shareLink)
                           }
                           style={{ marginLeft: 'auto' }}
-                          disabled={!environmentName}
+                          disabled={!queryParams.environmentId}
                         />
                       </Flex>
 
                       <Text size="text-xs">
-                        {environmentName ||
+                        {queryParams.environmentId ??
                           'No output environment has been generated yet.'}
                       </Text>
                     </Flex>
@@ -266,9 +368,9 @@ export default function RunAgentPage() {
             </Dropdown.Root>
           </Flex>
 
-          {fileStructure.length ? (
+          {environment?.fileStructure.length ? (
             <CardList>
-              {fileStructure.map((fileInfo) => (
+              {environment.fileStructure.map((fileInfo) => (
                 <Card
                   padding="s"
                   gap="s"
@@ -316,15 +418,6 @@ export default function RunAgentPage() {
               />
             )}
           />
-
-          <Flex direction="column" gap="m" style={{ marginTop: 'auto' }}>
-            <Button
-              label="Clear Conversation"
-              onClick={clearConversation}
-              size="small"
-              variant="secondary"
-            />
-          </Flex>
         </Sidebar.Sidebar>
       </Sidebar.Root>
 

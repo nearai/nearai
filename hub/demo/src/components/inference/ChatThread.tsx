@@ -13,16 +13,18 @@ import { Button } from '../lib/Button';
 import { Card } from '../lib/Card';
 import { Code, filePathToCodeLanguage } from '../lib/Code';
 import { Flex } from '../lib/Flex';
+import { PlaceholderCard } from '../lib/Placeholder';
 import { Text } from '../lib/Text';
 import { Tooltip } from '../lib/Tooltip';
 import s from './ChatThread.module.scss';
 
 type Props = {
+  loading?: boolean;
   messages: z.infer<typeof messageModel>[];
   welcomeMessage?: ReactNode;
 };
 
-export const ChatThread = ({ messages, welcomeMessage }: Props) => {
+export const ChatThread = ({ loading, messages, welcomeMessage }: Props) => {
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const count = messages.length;
   const previousCount = usePrevious(count);
@@ -57,60 +59,66 @@ export const ChatThread = ({ messages, welcomeMessage }: Props) => {
 
   return (
     <div className={s.chatThread} ref={element}>
-      {welcomeMessage}
-
-      {isAuthenticated && (
+      {loading ? (
+        <PlaceholderCard />
+      ) : (
         <>
-          {messages.map((message, index) => (
-            <Fragment key={index}>
-              {message.role === 'user' ? (
-                <Card
-                  animateIn
-                  background="sand-2"
-                  style={{ alignSelf: 'end' }}
-                >
-                  <Text color="sand-11">{message.content}</Text>
-                </Card>
-              ) : (
-                <Card animateIn>
-                  {determineCodeLanguageForMessage(index) ? (
-                    <Code
-                      bleed
-                      source={message.content}
-                      language={determineCodeLanguageForMessage(index)}
-                    />
+          {' '}
+          {welcomeMessage}
+          {isAuthenticated && (
+            <>
+              {messages.map((message, index) => (
+                <Fragment key={index}>
+                  {message.role === 'user' ? (
+                    <Card
+                      animateIn
+                      background="sand-2"
+                      style={{ alignSelf: 'end' }}
+                    >
+                      <Text color="sand-11">{message.content}</Text>
+                    </Card>
                   ) : (
-                    <Text color="sand-12">{message.content}</Text>
+                    <Card animateIn>
+                      {determineCodeLanguageForMessage(index) ? (
+                        <Code
+                          bleed
+                          source={message.content}
+                          language={determineCodeLanguageForMessage(index)}
+                        />
+                      ) : (
+                        <Text color="sand-12">{message.content}</Text>
+                      )}
+
+                      <Flex align="center" gap="m">
+                        <Text
+                          size="text-xs"
+                          style={{
+                            textTransform: 'capitalize',
+                            marginRight: 'auto',
+                          }}
+                        >
+                          - {message.role}
+                        </Text>
+
+                        <Tooltip
+                          asChild
+                          content="Copy message content to clipboard"
+                        >
+                          <Button
+                            label="Copy message to clipboard"
+                            icon={<Copy />}
+                            size="small"
+                            fill="ghost"
+                            onClick={() => copyTextToClipboard(message.content)}
+                          />
+                        </Tooltip>
+                      </Flex>
+                    </Card>
                   )}
-
-                  <Flex align="center" gap="m">
-                    <Text
-                      size="text-xs"
-                      style={{
-                        textTransform: 'capitalize',
-                        marginRight: 'auto',
-                      }}
-                    >
-                      - {message.role}
-                    </Text>
-
-                    <Tooltip
-                      asChild
-                      content="Copy message content to clipboard"
-                    >
-                      <Button
-                        label="Copy message to clipboard"
-                        icon={<Copy />}
-                        size="small"
-                        fill="ghost"
-                        onClick={() => copyTextToClipboard(message.content)}
-                      />
-                    </Tooltip>
-                  </Flex>
-                </Card>
-              )}
-            </Fragment>
-          ))}
+                </Fragment>
+              ))}
+            </>
+          )}
         </>
       )}
     </div>

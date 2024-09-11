@@ -110,7 +110,11 @@ export const registryEntry = z.object({
               .partial(),
           })
           .partial(),
+        agents: z.string().array(),
+        base_id: z.string().or(z.null()),
         icon: z.string(),
+        run_id: z.string(),
+        timestamp: z.string(),
       })
       .partial(),
     z.record(z.string(), z.unknown()),

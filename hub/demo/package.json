@@ -36,6 +36,7 @@
     "@trpc/react-query": "next",
     "@trpc/server": "next",
     "@uidotdev/usehooks": "^2.4.1",
+    "date-fns": "^3.6.0",
     "downshift": "^9.0.6",
     "lodash-es": "^4.17.21",
     "next": "^14.2.1",

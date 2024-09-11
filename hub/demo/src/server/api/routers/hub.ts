@@ -34,6 +34,7 @@ export const registryCategory = z.enum([
   'benchmark',
   'category',
   'dataset',
+  'environment',
   'model',
 ]);
 export type RegistryCategory = z.infer<typeof registryCategory>;
@@ -330,8 +331,8 @@ export const hubRouter = createTRPCRouter({
         throw new Error('Response text does not match namespace/name/version');
       }
 
-      return downloadEnvironment(
-        responseText.replace(/\\/g, '').replace(/"/g, ''),
-      );
+      const environmentId = responseText.replace(/\\/g, '').replace(/"/g, '');
+
+      return downloadEnvironment(environmentId);
     }),
 });

@@ -38,6 +38,7 @@
   @media (max-width: $tabletBreakpointMaxWidth) {
     position: fixed;
     right: 0;
+    bottom: 0;
     box-shadow: 0 0 3rem rgba(0, 0, 0, 0.2);
     width: 0vw;
     opacity: 0;

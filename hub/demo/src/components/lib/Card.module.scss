@@ -28,6 +28,9 @@
     padding: var(--gap-l);
   }
 
+  &[data-gap='xs'] {
+    gap: var(--gap-xs);
+  }
   &[data-gap='s'] {
     gap: var(--gap-s);
   }

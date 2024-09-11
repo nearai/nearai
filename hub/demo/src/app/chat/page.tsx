@@ -55,6 +55,8 @@ export default function InferencePage() {
 
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
+  const [historyOpenForSmallScreens, setHistoryOpenForSmallScreens] =
+    useState(false);
 
   const models: ComboboxItem[] = useMemo(
     () =>
@@ -150,46 +152,12 @@ export default function InferencePage() {
   return (
     <Form stretch onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
       <Sidebar.Root>
-        <Sidebar.Main>
-          <ChatThread messages={conversation} />
-
-          <Flex direction="column" gap="m">
-            <InputTextarea
-              placeholder="Write your message and press enter..."
-              onKeyDown={onKeyDownContent}
-              disabled={!isAuthenticated}
-              {...form.register('messages.0.content')}
-            />
-
-            {isAuthenticated ? (
-              <Flex align="start" gap="m">
-                <Text size="text-xs" style={{ marginRight: 'auto' }}>
-                  <b>Shift + Enter</b> to add a new line
-                </Text>
-
-                <BreakpointDisplay show="sidebar-small-screen">
-                  <Button
-                    label="Edit Parameters"
-                    icon={<Gear weight="bold" />}
-                    size="small"
-                    fill="outline"
-                    onClick={() => setParametersOpenForSmallScreens(true)}
-                  />
-                </BreakpointDisplay>
-
-                <Button
-                  label="Send Message"
-                  type="submit"
-                  icon={<ArrowRight weight="bold" />}
-                  size="small"
-                  loading={chatMutation.isPending}
-                />
-              </Flex>
-            ) : (
-              <SignInPrompt />
-            )}
-          </Flex>
-        </Sidebar.Main>
+        <Sidebar.Sidebar
+          openForSmallScreens={historyOpenForSmallScreens}
+          setOpenForSmallScreens={setHistoryOpenForSmallScreens}
+        >
+          <Text size="text-l">History</Text>
+        </Sidebar.Sidebar>
 
         <Sidebar.Sidebar
           openForSmallScreens={parametersOpenForSmallScreens}
@@ -265,6 +233,47 @@ export default function InferencePage() {
             />
           </Flex>
         </Sidebar.Sidebar>
+
+        <Sidebar.Main>
+          <ChatThread messages={conversation} />
+
+          <Flex direction="column" gap="m">
+            <InputTextarea
+              placeholder="Write your message and press enter..."
+              onKeyDown={onKeyDownContent}
+              disabled={!isAuthenticated}
+              {...form.register('messages.0.content')}
+            />
+
+            {isAuthenticated ? (
+              <Flex align="start" gap="m">
+                <Text size="text-xs" style={{ marginRight: 'auto' }}>
+                  <b>Shift + Enter</b> to add a new line
+                </Text>
+
+                <BreakpointDisplay show="sidebar-small-screen">
+                  <Button
+                    label="Edit Parameters"
+                    icon={<Gear weight="bold" />}
+                    size="small"
+                    fill="outline"
+                    onClick={() => setParametersOpenForSmallScreens(true)}
+                  />
+                </BreakpointDisplay>
+
+                <Button
+                  label="Send Message"
+                  type="submit"
+                  icon={<ArrowRight weight="bold" />}
+                  size="small"
+                  loading={chatMutation.isPending}
+                />
+              </Flex>
+            ) : (
+              <SignInPrompt />
+            )}
+          </Flex>
+        </Sidebar.Main>
       </Sidebar.Root>
     </Form>
   );

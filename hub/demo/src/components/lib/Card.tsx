@@ -12,7 +12,7 @@ type Props = ComponentPropsWithRef<'div'> & {
   background?: ThemeColor;
   border?: ThemeColor;
   padding?: 's' | 'm' | 'l';
-  gap?: 's' | 'm' | 'l';
+  gap?: 'xs' | 's' | 'm' | 'l';
 };
 
 export const Card = forwardRef<HTMLDivElement, Props>(
