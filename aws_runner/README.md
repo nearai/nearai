@@ -31,7 +31,7 @@ curl "http://localhost:9000/2015-03-31/functions/function/invocations" \
     "auth":"{\"account_id\":\"your_account.near\",
         \"public_key\":\"ed25519:F5DeKFoya9fl35hapvpXxwReoksgi9a677JkniDIFLAW\",
         \"signature\":\"SIGNATURE_FIELD_FROM_A_REAL_SIGNATURE\",
-        \"callback_url\":\"https://demo.near.ai/auth/login\",\"message\":\"Welcome to NEAR Talkbot app\"}"}
+        \"callback_url\":\"https://app.near.ai/",\"message\":\"Welcome to NEAR Talkbot app\"}"}
 EOF
 ```
 

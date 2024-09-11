@@ -213,6 +213,22 @@ curl "https://api.near.ai/v1/agent/runs" \
 EOF
 ```
 
+The full message will look like this. An `environment_id` param can also be passed to continue a previous run. 
+```shell
+curl "https://api.near.ai/v1/agent/runs" \
+      -X POST \
+      --header 'Content-Type: application/json' \
+      --header 'Authorization: Bearer {"account_id":"your_account.near","public_key":"ed25519:YOUR_PUBLIC_KEY","signature":"A_REAL_SIGNATURE","callback_url":"https://app.near.ai/","message":"Welcome to NEAR AI Hub!","recipient":"ai.near","nonce":"A_UNIQUE_NONCE_FOR_THIS_SIGNATURE"}' \
+-d @- <<'EOF'
+  {
+    "agent_id": "flatirons.near/xela-agent/5",
+    "environment_id": "a_previous_environment_id",
+    "new_message":"Build a backgammon game", 
+    "max_iterations": "2"
+  }
+EOF
+```
+
 ## Remote results
 The results of both run_remote and the /agent/runs endpoint are either an error or the resulting environment state.
 >Agent run finished. New environment is "flatirons.near/environment_run_flatirons.near_example-travel-agent_1_1c82938c55fc43e492882ee938c6356a/0"
