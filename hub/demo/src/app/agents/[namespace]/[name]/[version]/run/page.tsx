@@ -48,6 +48,7 @@ export default function EntryRunPage() {
     defaultValues: { agent_id: agentId },
   });
 
+  const [iframeSrc, setIframeSrc] = useState('');
   const [openedFileName, setOpenedFileName] = useState<string | null>(null);
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
@@ -137,6 +138,13 @@ export default function EntryRunPage() {
   };
 
   useEffect(() => {
+    const files = environmentQuery?.data?.files;
+    if (files?.['index.html']) {
+      setIframeSrc(files['index.html'].content);
+    }
+  }, [environmentQuery]);
+
+  useEffect(() => {
     if (environmentId && environmentId !== environment?.environmentId) {
       void environmentQuery.refetch();
     }
@@ -167,6 +175,28 @@ export default function EntryRunPage() {
     setThreadsOpenForSmallScreens(false);
   }, [environmentId]);
 
+  const IframeWithBlob = ({ htmlContent }: { htmlContent: string }) => {
+    const [dataUrl, setDataUrl] = useState('');
+
+    useEffect(() => {
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+
+      setDataUrl(url);
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    }, [htmlContent]);
+
+    return (
+      <iframe
+        src={dataUrl}
+        height={400}
+        sandbox="allow-same-origin allow-scripts"
+      />
+    );
+  };
+
   if (!currentEntry) return null;
 
   return (
@@ -179,6 +209,8 @@ export default function EntryRunPage() {
         />
 
         <Sidebar.Main>
+          {iframeSrc && <IframeWithBlob htmlContent={iframeSrc} />}
+
           <Messages
             loading={environmentQuery.isLoading}
             messages={environment?.conversation ?? []}
