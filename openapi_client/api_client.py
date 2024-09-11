@@ -13,6 +13,9 @@
 
 
 import datetime
+import gzip
+from io import BytesIO
+
 from dateutil.parser import parse
 from enum import Enum
 import json
@@ -310,11 +313,18 @@ class ApiClient:
             elif response_type is not None:
                 match = None
                 content_type = response_data.getheader('content-type')
-                if content_type is not None:
-                    match = re.search(r"charset=([a-zA-Z\-\d]+)[\s;]?", content_type)
-                encoding = match.group(1) if match else "utf-8"
-                response_text = response_data.data.decode(encoding)
-                return_data = self.deserialize(response_text, response_type, content_type)
+
+                if content_type is not None and 'application/gzip' in content_type:
+                    # Handle gzip compressed content
+                    compressed_data = response_data.data
+                    with gzip.GzipFile(fileobj=BytesIO(compressed_data)) as gz:
+                        return_data = gz.read()  # Decompressed binary data
+                else:
+                    if content_type is not None:
+                        match = re.search(r"charset=([a-zA-Z\-\d]+)[\s;]?", content_type)
+                    encoding = match.group(1) if match else "utf-8"
+                    response_text = response_data.data.decode(encoding)
+                    return_data = self.deserialize(response_text, response_type, content_type)
         finally:
             if not 200 <= response_data.status <= 299:
                 raise ApiException.from_response(

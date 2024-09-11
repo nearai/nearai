@@ -400,7 +400,9 @@ class Environment(object):
 
     def clear_temp_agent_files(self) -> None:  # noqa: D102
         """Remove temp agent files created to be used in `runpy`."""
-        shutil.rmtree(self._agents[0].temp_dir)
+        for agent in self._agents:
+            if agent.temp_dir and os.path.exists(agent.temp_dir):
+                shutil.rmtree(agent.temp_dir)
 
     def set_next_actor(self, who: str) -> None:  # noqa: D102
         """Set the next actor / action in the dialogue."""

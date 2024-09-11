@@ -33,6 +33,7 @@ class Environment(object):
         server_url: str = "https://api.near.ai",
         create_files: bool = True,
         metric_function=None,
+        env_vars: Optional[Dict[str, Any]] = None,
     ):
         self._path = path
         self._agents = agents
@@ -42,6 +43,8 @@ class Environment(object):
         self._metric_function = metric_function
         self._tools = ToolRegistry()
         self.register_standard_tools()
+        self.env_vars: Dict[str, Any] = env_vars if env_vars else {}
+
         if create_files:
             os.makedirs(self._path, exist_ok=True)
             open(os.path.join(self._path, CHAT_FILENAME), "a").close()

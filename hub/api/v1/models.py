@@ -4,6 +4,7 @@ from os import getenv
 from typing import Dict, Iterator, Optional
 
 from dotenv import load_dotenv
+from pydantic import BaseModel
 from sqlmodel import JSON, Column, Field, Session, SQLModel, create_engine
 
 load_dotenv()
@@ -117,3 +118,21 @@ SUPPORTED_MIME_TYPES = {
 }
 
 SUPPORTED_TEXT_ENCODINGS = ["utf-8", "utf-16", "ascii"]
+
+
+class Source(BaseModel):
+    type: str
+
+
+class GitHubSource(Source):
+    type: str = "github"
+    owner: str
+    repo: str
+    branch: str = "main"
+
+
+class GitLabSource(Source):
+    type: str = "gitlab"
+    owner: str
+    repo: str
+    branch: str = "main"

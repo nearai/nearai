@@ -9,9 +9,10 @@ from fastapi.responses import JSONResponse
 from hub.api.v1.agent_routes import v1_router as agent_router
 from hub.api.v1.benchmark import v1_router as benchmark_router
 from hub.api.v1.exceptions import TokenValidationError
+from hub.api.v1.files import files_router
 from hub.api.v1.registry import v1_router as registry_router
 from hub.api.v1.routes import v1_router
-from hub.api.v1.vector_stores import files_router, vector_stores_router
+from hub.api.v1.vector_stores import vector_stores_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
