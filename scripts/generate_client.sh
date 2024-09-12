@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 # manually update near-openapi.json
 # it can be fetched from the locally running hub at http://localhost:9000/openapi.json

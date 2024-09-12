@@ -59,6 +59,12 @@ class Tags(SQLModel, table=True):
     tag: str = Field(primary_key=True)
 
 
+class Stars(SQLModel, table=True):
+    account_id: str = Field(primary_key=True)
+    namespace: str = Field(primary_key=True)
+    name: str = Field(primary_key=True)
+
+
 class Benchmark(SQLModel, table=True):
     __tablename__ = "benchmarks"
 

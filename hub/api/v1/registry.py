@@ -279,6 +279,8 @@ class EntryInformation(BaseModel):
     description: str
     details: Dict[str, Any]
     tags: List[str]
+    num_stars: int
+    starred_by_point_of_view: bool
 
 
 @v1_router.post("/list_entries")
@@ -290,6 +292,8 @@ async def list_entries(
     offset: int = 0,
     show_hidden: bool = False,
     show_latest_version: bool = True,
+    starred_by: str = "",
+    star_point_of_view: str = "",
 ) -> List[EntryInformation]:
     tags_list = list({tag for tag in tags.split(",") if tag})
 
@@ -318,18 +322,37 @@ async def list_entries(
         else ""
     )
 
+    bind_params["star_point_of_view"] = star_point_of_view
+    bind_params["starred_by"] = starred_by
+
+    if starred_by:
+        starred_by_condition = "AND CountedStars.starred_by_target = 1"
+    else:
+        starred_by_condition = ""
+
     with get_session() as session:
         entries_info: List[EntryInformation] = []
 
         if len(tags_list) == 0:
-            query_text = f"""
+            query_text = f"""WITH
+            CountedStars AS (
+                SELECT namespace, name, COUNT(account_id) as num_stars,
+                CASE WHEN MAX(account_id = :star_point_of_view) THEN 1 ELSE 0 END as starred_by_pov,
+                CASE WHEN MAX(account_id = :starred_by) THEN 1 ELSE 0 END as starred_by_target
+                FROM stars
+                GROUP BY namespace, name
+            )
             SELECT registry.id, registry.namespace, registry.name, registry.version,
-            registry.category, registry.description, registry.details
+            registry.category, registry.description, registry.details,
+            CountedStars.num_stars, CountedStars.starred_by_pov
             FROM registry_entry registry
+            LEFT JOIN CountedStars
+            ON registry.namespace = CountedStars.namespace AND registry.name = CountedStars.name
             {latest_version_condition}
             WHERE show_entry >= :show_entry
-                  {category_condition}
-                  {namespace_condition}
+                {category_condition}
+                {namespace_condition}
+                {starred_by_condition}
             ORDER BY registry.id DESC
             LIMIT :total
             OFFSET :offset
@@ -342,25 +365,37 @@ async def list_entries(
             tags_list = [valid_tag(tag) for tag in tags_list]
 
             query_text = f"""WITH
+                    CountedStars AS (
+                        SELECT namespace, name, COUNT(account_id) as num_stars,
+                        CASE WHEN MAX(account_id = :star_point_of_view) THEN 1 ELSE 0 END as starred_by_pov,
+                        CASE WHEN MAX(account_id = :starred_by) THEN 1 ELSE 0 END as starred_by_target
+                        FROM stars
+                        GROUP BY namespace, name
+                    ),
                     FilteredRegistry AS (
-                    SELECT registry.id
-                    FROM registry_entry registry
-                    {latest_version_condition}
-                    JOIN entry_tags ON registry.id = entry_tags.registry_id
-                    WHERE show_entry >= :show_entry
+                        SELECT registry.id, CountedStars.num_stars, CountedStars.starred_by_pov
+                        FROM registry_entry registry
+                        {latest_version_condition}
+                        JOIN entry_tags ON registry.id = entry_tags.registry_id
+                        LEFT JOIN CountedStars
+                        ON registry.namespace = CountedStars.namespace AND registry.name = CountedStars.name
+                        WHERE show_entry >= :show_entry
                             AND entry_tags.tag IN :tags
                             {category_condition}
                             {namespace_condition}
-                    GROUP BY registry.id
-                    HAVING COUNT(DISTINCT entry_tags.tag) = :ntags
+                            {starred_by_condition}
+                        GROUP BY registry.id
+                        HAVING COUNT(DISTINCT entry_tags.tag) = :ntags
                     ),
                     RankedRegistry AS (
-                        SELECT id, ROW_NUMBER() OVER (ORDER BY id DESC) AS col_rank
+                        SELECT id, num_stars, starred_by_pov, ROW_NUMBER() OVER (ORDER BY id DESC) AS col_rank
                         FROM FilteredRegistry
                     )
 
                     SELECT registry.id, registry.namespace, registry.name, registry.version,
-                           registry.category, registry.description, registry.details FROM RankedRegistry ranked
+                           registry.category, registry.description, registry.details,
+                           ranked.num_stars, ranked.starred_by_pov
+                    FROM RankedRegistry ranked
                     JOIN registry_entry registry ON ranked.id = registry.id
                     WHERE   ranked.col_rank >= :lower_bound AND
                             ranked.col_rank < :upper_bound
@@ -372,10 +407,10 @@ async def list_entries(
             bind_params["tags"] = tags_list
             bind_params["ntags"] = len(tags_list)
 
-        print(bind_params)
-        for id, namespace_, name, version, category_, description, details in session.exec(
+        for id, namespace_, name, version, category_, description, details, num_stars, pov in session.exec(
             text(query_text).bindparams(**bind_params)
         ).all():  # type: ignore
+            print(namespace_, name, version, num_stars)
             entries_info.append(
                 EntryInformation(
                     id=id,
@@ -386,6 +421,8 @@ async def list_entries(
                     description=description,
                     details=json.loads(details),
                     tags=[],
+                    num_stars=num_stars or 0,
+                    starred_by_point_of_view=bool(pov),
                 )
             )
 
