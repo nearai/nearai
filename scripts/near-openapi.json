@@ -1144,42 +1144,18 @@
         }
       }
     },
-    "/v1/vector_stores": {
-      "get": {
-        "tags": [
-          "Vector Stores"
-        ],
-        "summary": "List Vector Stores",
-        "description": "List all vector stores for the authenticated account.\n\nArgs:\n----\n    auth (AuthToken): The authentication token.\n\nReturns:\n-------\n    List[VectorStore]: A list of vector stores.",
-        "operationId": "list_vector_stores_v1_vector_stores_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
+    "/v1/stars/add_star": {
       "post": {
         "tags": [
-          "Vector Stores"
+          "stars"
         ],
-        "summary": "Create Vector Store",
-        "description": "Create a new vector store.\n\nArgs:\n----\n    request (CreateVectorStoreRequest): The request containing vector store details.\n    background_tasks (BackgroundTasks): FastAPI background tasks.\n    auth (AuthToken): The authentication token.\n\nReturns:\n-------\n    VectorStore: The created vector store object.\n\nRaises:\n------\n    HTTPException: If the vector store creation fails.",
-        "operationId": "create_vector_store_v1_vector_stores_post",
+        "summary": "Add Star",
+        "operationId": "add_star_v1_stars_add_star_post",
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/x-www-form-urlencoded": {
               "schema": {
-                "$ref": "#/components/schemas/CreateVectorStoreRequest"
+                "$ref": "#/components/schemas/Body_add_star_v1_stars_add_star_post"
               }
             }
           },
@@ -1190,9 +1166,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VectorStore"
-                }
+                "schema": {}
               }
             }
           },
@@ -1214,239 +1188,18 @@
         ]
       }
     },
-    "/v1/vector_stores/{vector_store_id}": {
-      "get": {
-        "tags": [
-          "Vector Stores"
-        ],
-        "summary": "Get Vector Store",
-        "description": "Retrieve a specific vector store.\n\nArgs:\n----\n    vector_store_id (str): The ID of the vector store to retrieve.\n    auth (AuthToken): The authentication token.\n\nReturns:\n-------\n    VectorStore: The requested vector store.\n\nRaises:\n------\n    HTTPException: If the vector store is not found.",
-        "operationId": "get_vector_store_v1_vector_stores__vector_store_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "vector_store_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Vector Store Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "Vector Stores"
-        ],
-        "summary": "Update Vector Store",
-        "description": "Update a vector store. (Not implemented).\n\nThis endpoint is a placeholder for future implementation.",
-        "operationId": "update_vector_store_v1_vector_stores__vector_store_id__patch",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Vector Stores"
-        ],
-        "summary": "Delete Vector Store",
-        "description": "Delete a vector store.\n\nArgs:\n----\n    vector_store_id (str): The ID of the vector store to delete.\n    auth (AuthToken): The authentication token.\n\nReturns:\n-------\n    JSONResponse: A JSON object with the deletion status.\n\nRaises:\n------\n    HTTPException: If the vector store is not found or deletion fails.",
-        "operationId": "delete_vector_store_v1_vector_stores__vector_store_id__delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "vector_store_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Vector Store Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/vector_stores/{vector_store_id}/files": {
+    "/v1/stars/remove_star": {
       "post": {
         "tags": [
-          "Vector Stores"
+          "stars"
         ],
-        "summary": "Create Vector Store File",
-        "description": "Attach a file to an existing vector store and initiate embedding generation.\n\nArgs:\n----\n    vector_store_id (str): The ID of the vector store to attach the file to.\n    file_data (VectorStoreFileCreate): The file data containing the file_id to attach.\n    background_tasks (BackgroundTasks): FastAPI background tasks for asynchronous processing.\n    auth (AuthToken): The authentication token for the current user.\n\nReturns:\n-------\n    VectorStore: The updated vector store object with the newly attached file.\n\nRaises:\n------\n    HTTPException:\n        - 404 if the vector store is not found.\n        - 500 if file attachment fails or if there's an error updating the vector store.\n\nNotes:\n-----\n    - This function updates the vector store by adding the new file_id to its list of files.\n    - It queues a background task to generate embeddings for the newly attached file.\n    - The vector store's status is set to \"in_progress\" as embedding generation begins.",
-        "operationId": "create_vector_store_file_v1_vector_stores__vector_store_id__files_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "vector_store_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Vector Store Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VectorStoreFileCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/vector_stores/{vector_store_id}/search": {
-      "post": {
-        "tags": [
-          "Vector Stores"
-        ],
-        "summary": "Query Vector Store",
-        "description": "Perform a similarity search on the specified vector store.\n\nArgs:\n----\n    vector_store_id (str): The ID of the vector store to search.\n    request (QueryVectorStoreRequest): The request containing the query text.\n    auth (AuthToken): The authentication token for the request.\n\nReturns:\n-------\n    List[Dict]: A list of search results, each containing the document content and metadata.\n\nRaises:\n------\n    HTTPException: If the vector store is not found or if there's an error during the search.",
-        "operationId": "query_vector_store_v1_vector_stores__vector_store_id__search_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "vector_store_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Vector Store Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/QueryVectorStoreRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/vector_stores/from_source": {
-      "post": {
-        "tags": [
-          "Vector Stores"
-        ],
-        "summary": "Create Vector Store From Source",
-        "description": "Create a new vector store from a source (currently only GitHub).\n\nArgs:\n----\n    request (CreateVectorStoreFromSourceRequest): The request containing vector store and source details.\n    background_tasks (BackgroundTasks): FastAPI background tasks.\n    auth (AuthToken): The authentication token.\n\nReturns:\n-------\n    VectorStore: The created vector store object.\n\nRaises:\n------\n    HTTPException: If the vector store creation fails.",
-        "operationId": "create_vector_store_from_source_v1_vector_stores_from_source_post",
+        "summary": "Remove Star",
+        "operationId": "remove_star_v1_stars_remove_star_post",
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/x-www-form-urlencoded": {
               "schema": {
-                "$ref": "#/components/schemas/CreateVectorStoreFromSourceRequest"
+                "$ref": "#/components/schemas/Body_remove_star_v1_stars_remove_star_post"
               }
             }
           },
@@ -1457,56 +1210,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VectorStore"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/files": {
-      "post": {
-        "tags": [
-          "Files"
-        ],
-        "summary": "Upload File",
-        "description": "Upload a file to the system and create a corresponding database record.\n\nThis function handles file uploads, determines the content type, checks for\nsupported file types and encodings, and stores the file in the configured\nstorage system.\n\nArgs:\n----\n    file (UploadFile): The file to be uploaded.\n    purpose (str): The purpose of the file upload. Must be one of:\n                   \"assistants\", \"batch\", \"fine-tune\", \"vision\".\n    auth (AuthToken): The authentication token for the current user.\n\nReturns:\n-------\n    FileObject: An object containing details of the uploaded file.\n\nRaises:\n------\n    HTTPException:\n        - 400 if the purpose is invalid, file type is not supported,\n          or file encoding is not supported.\n        - 404 if the file details are not found after creation.\n        - 500 if there's an error during file upload or database operations.",
-        "operationId": "upload_file_v1_files_post",
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_upload_file_v1_files_post"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FileObject"
-                }
+                "schema": {}
               }
             }
           },
@@ -1613,6 +1317,24 @@
         ],
         "title": "BenchmarkResultOutput"
       },
+      "Body_add_star_v1_stars_add_star_post": {
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "title": "Namespace"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "namespace",
+          "name"
+        ],
+        "title": "Body_add_star_v1_stars_add_star_post"
+      },
       "Body_download_environment_v1_download_environment_post": {
         "properties": {
           "path": {
@@ -1671,30 +1393,23 @@
         ],
         "title": "Body_list_files_v1_registry_list_files_post"
       },
-      "Body_upload_file_v1_files_post": {
+      "Body_remove_star_v1_stars_remove_star_post": {
         "properties": {
-          "file": {
+          "namespace": {
             "type": "string",
-            "format": "binary",
-            "title": "File"
+            "title": "Namespace"
           },
-          "purpose": {
+          "name": {
             "type": "string",
-            "enum": [
-              "assistants",
-              "batch",
-              "fine-tune",
-              "vision"
-            ],
-            "title": "Purpose"
+            "title": "Name"
           }
         },
         "type": "object",
         "required": [
-          "file",
-          "purpose"
+          "namespace",
+          "name"
         ],
-        "title": "Body_upload_file_v1_files_post"
+        "title": "Body_remove_star_v1_stars_remove_star_post"
       },
       "Body_upload_file_v1_registry_upload_file_post": {
         "properties": {
@@ -1861,12 +1576,6 @@
         ],
         "title": "ChatCompletionsRequest",
         "description": "Request for chat completions."
-      },
-      "ChunkingStrategy": {
-        "properties": {},
-        "type": "object",
-        "title": "ChunkingStrategy",
-        "description": "Defines the chunking strategy for vector stores."
       },
       "CompletionsRequest": {
         "properties": {
@@ -2109,138 +1818,6 @@
         "type": "object",
         "title": "CreateThreadAndRunRequest"
       },
-      "CreateVectorStoreFromSourceRequest": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "source": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/GitHubSource"
-              },
-              {
-                "$ref": "#/components/schemas/GitLabSource"
-              }
-            ],
-            "title": "Source"
-          },
-          "source_auth": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Auth"
-          },
-          "chunking_strategy": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ChunkingStrategy"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "expires_after": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ExpiresAfter-Input"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "metadata": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "string"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Metadata"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "source"
-        ],
-        "title": "CreateVectorStoreFromSourceRequest"
-      },
-      "CreateVectorStoreRequest": {
-        "properties": {
-          "chunking_strategy": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ChunkingStrategy"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "expires_after": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ExpiresAfter-Input"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "file_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Ids"
-          },
-          "metadata": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "string"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Metadata"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name"
-        ],
-        "title": "CreateVectorStoreRequest",
-        "description": "Request model for creating a new vector store."
-      },
       "EmbeddingsRequest": {
         "properties": {
           "input": {
@@ -2462,159 +2039,6 @@
         ],
         "title": "EntryMetadataInput"
       },
-      "ExpiresAfter-Input": {
-        "properties": {
-          "anchor": {
-            "type": "string",
-            "enum": [
-              "last_active_at"
-            ],
-            "const": "last_active_at",
-            "title": "Anchor"
-          },
-          "days": {
-            "type": "integer",
-            "title": "Days"
-          }
-        },
-        "type": "object",
-        "required": [
-          "anchor",
-          "days"
-        ],
-        "title": "ExpiresAfter",
-        "description": "Defines the expiration policy for vector stores."
-      },
-      "ExpiresAfter-Output": {
-        "properties": {
-          "anchor": {
-            "type": "string",
-            "enum": [
-              "last_active_at"
-            ],
-            "const": "last_active_at",
-            "title": "Anchor"
-          },
-          "days": {
-            "type": "integer",
-            "title": "Days"
-          }
-        },
-        "additionalProperties": true,
-        "type": "object",
-        "required": [
-          "anchor",
-          "days"
-        ],
-        "title": "ExpiresAfter"
-      },
-      "FileCounts": {
-        "properties": {
-          "cancelled": {
-            "type": "integer",
-            "title": "Cancelled"
-          },
-          "completed": {
-            "type": "integer",
-            "title": "Completed"
-          },
-          "failed": {
-            "type": "integer",
-            "title": "Failed"
-          },
-          "in_progress": {
-            "type": "integer",
-            "title": "In Progress"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          }
-        },
-        "additionalProperties": true,
-        "type": "object",
-        "required": [
-          "cancelled",
-          "completed",
-          "failed",
-          "in_progress",
-          "total"
-        ],
-        "title": "FileCounts"
-      },
-      "FileObject": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "bytes": {
-            "type": "integer",
-            "title": "Bytes"
-          },
-          "created_at": {
-            "type": "integer",
-            "title": "Created At"
-          },
-          "filename": {
-            "type": "string",
-            "title": "Filename"
-          },
-          "object": {
-            "type": "string",
-            "enum": [
-              "file"
-            ],
-            "const": "file",
-            "title": "Object"
-          },
-          "purpose": {
-            "type": "string",
-            "enum": [
-              "assistants",
-              "assistants_output",
-              "batch",
-              "batch_output",
-              "fine-tune",
-              "fine-tune-results",
-              "vision"
-            ],
-            "title": "Purpose"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "uploaded",
-              "processed",
-              "error"
-            ],
-            "title": "Status"
-          },
-          "status_details": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status Details"
-          }
-        },
-        "additionalProperties": true,
-        "type": "object",
-        "required": [
-          "id",
-          "bytes",
-          "created_at",
-          "filename",
-          "object",
-          "purpose",
-          "status"
-        ],
-        "title": "FileObject"
-      },
       "Filename": {
         "properties": {
           "filename": {
@@ -2627,62 +2051,6 @@
           "filename"
         ],
         "title": "Filename"
-      },
-      "GitHubSource": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "title": "Type",
-            "default": "github"
-          },
-          "owner": {
-            "type": "string",
-            "title": "Owner"
-          },
-          "repo": {
-            "type": "string",
-            "title": "Repo"
-          },
-          "branch": {
-            "type": "string",
-            "title": "Branch",
-            "default": "main"
-          }
-        },
-        "type": "object",
-        "required": [
-          "owner",
-          "repo"
-        ],
-        "title": "GitHubSource"
-      },
-      "GitLabSource": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "title": "Type",
-            "default": "gitlab"
-          },
-          "owner": {
-            "type": "string",
-            "title": "Owner"
-          },
-          "repo": {
-            "type": "string",
-            "title": "Repo"
-          },
-          "branch": {
-            "type": "string",
-            "title": "Branch",
-            "default": "main"
-          }
-        },
-        "type": "object",
-        "required": [
-          "owner",
-          "repo"
-        ],
-        "title": "GitLabSource"
       },
       "HTTPValidationError": {
         "properties": {
@@ -2714,20 +2082,6 @@
           "content"
         ],
         "title": "Message"
-      },
-      "QueryVectorStoreRequest": {
-        "properties": {
-          "query": {
-            "type": "string",
-            "title": "Query"
-          }
-        },
-        "type": "object",
-        "required": [
-          "query"
-        ],
-        "title": "QueryVectorStoreRequest",
-        "description": "Request model for querying a vector store."
       },
       "ResponseFormat": {
         "properties": {
@@ -2800,113 +2154,6 @@
           "type"
         ],
         "title": "ValidationError"
-      },
-      "VectorStore": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "created_at": {
-            "type": "integer",
-            "title": "Created At"
-          },
-          "file_counts": {
-            "$ref": "#/components/schemas/FileCounts"
-          },
-          "last_active_at": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Active At"
-          },
-          "metadata": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Metadata"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "object": {
-            "type": "string",
-            "enum": [
-              "vector_store"
-            ],
-            "const": "vector_store",
-            "title": "Object"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "expired",
-              "in_progress",
-              "completed"
-            ],
-            "title": "Status"
-          },
-          "usage_bytes": {
-            "type": "integer",
-            "title": "Usage Bytes"
-          },
-          "expires_after": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ExpiresAfter-Output"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "expires_at": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expires At"
-          }
-        },
-        "additionalProperties": true,
-        "type": "object",
-        "required": [
-          "id",
-          "created_at",
-          "file_counts",
-          "name",
-          "object",
-          "status",
-          "usage_bytes"
-        ],
-        "title": "VectorStore"
-      },
-      "VectorStoreFileCreate": {
-        "properties": {
-          "file_id": {
-            "type": "string",
-            "title": "File Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file_id"
-        ],
-        "title": "VectorStoreFileCreate",
-        "description": "Request model for creating a vector store file."
       }
     },
     "securitySchemes": {

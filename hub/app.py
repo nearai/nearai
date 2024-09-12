@@ -12,6 +12,7 @@ from hub.api.v1.exceptions import TokenValidationError
 from hub.api.v1.files import files_router
 from hub.api.v1.registry import v1_router as registry_router
 from hub.api.v1.routes import v1_router
+from hub.api.v1.stars import v1_router as stars_router
 from hub.api.v1.vector_stores import vector_stores_router
 
 # Configure logging
@@ -37,6 +38,7 @@ app.include_router(agent_router, prefix="/v1")
 app.include_router(benchmark_router, prefix="/v1")
 app.include_router(vector_stores_router, prefix="/v1")
 app.include_router(files_router, prefix="/v1")
+app.include_router(stars_router, prefix="/v1")
 
 
 @app.get("/health")

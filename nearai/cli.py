@@ -100,6 +100,7 @@ class RegistryCli:
         offset: int = 0,
         show_all: bool = False,
         show_latest_version: bool = True,
+        star: str = "",
     ) -> None:
         """List available items."""
         # Make sure tags is a comma-separated list of tags
@@ -114,6 +115,7 @@ class RegistryCli:
             offset=offset,
             show_all=show_all,
             show_latest_version=show_latest_version,
+            starred_by=star,
         )
 
         more_rows = len(entries) > total

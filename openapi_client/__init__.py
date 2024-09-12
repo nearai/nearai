@@ -23,6 +23,7 @@ from openapi_client.api.agents_assistants_api import AgentsAssistantsApi
 from openapi_client.api.benchmark_api import BenchmarkApi
 from openapi_client.api.default_api import DefaultApi
 from openapi_client.api.registry_api import RegistryApi
+from openapi_client.api.stars_api import StarsApi
 
 # import ApiClient
 from openapi_client.api_response import ApiResponse
