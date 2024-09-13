@@ -25,9 +25,9 @@ export default function AgentSourcePage() {
   const { createQueryPath, queryParams } = useQueryParams(['file']);
   const { currentResource } = useCurrentResource('agent');
   const params = useResourceParams();
-  const filePathsQuery = api.hub.listFilePaths.useQuery(params);
+  const filePathsQuery = api.hub.filePaths.useQuery(params);
   const activeFilePath = queryParams.file ?? filePathsQuery.data?.[0] ?? '';
-  const fileQuery = api.hub.loadFileByPath.useQuery(
+  const fileQuery = api.hub.file.useQuery(
     { ...params, filePath: activeFilePath },
     {
       enabled: !!activeFilePath && activeFilePath !== METADATA_FILE_PATH,
@@ -59,28 +59,34 @@ export default function AgentSourcePage() {
           openForSmallScreens={sidebarOpenForSmallScreens}
           setOpenForSmallScreens={setSidebarOpenForSmallScreens}
         >
-          <Text size="text-l">Files</Text>
+          <Text size="text-xs" weight={500} uppercase>
+            Files
+          </Text>
 
           {filePathsQuery.data ? (
-            <CardList>
-              {filePathsQuery.data?.map((path) => (
-                <Card
-                  padding="s"
-                  href={createQueryPath({ file: path })}
-                  key={path}
-                  background={path === activeFilePath ? 'sand-0' : 'sand-2'}
-                >
-                  <Text
-                    size="text-s"
-                    color="violet-11"
-                    weight={500}
-                    clampLines={1}
+            <Sidebar.SidebarContentBleed>
+              <CardList>
+                {filePathsQuery.data?.map((path) => (
+                  <Card
+                    padding="s"
+                    paddingInline="m"
+                    href={createQueryPath({ file: path })}
+                    key={path}
+                    background={path === activeFilePath ? 'sand-0' : 'sand-2'}
                   >
-                    {path}
-                  </Text>
-                </Card>
-              ))}
-            </CardList>
+                    <Text
+                      size="text-s"
+                      color="violet-11"
+                      clickableHighlight
+                      weight={500}
+                      clampLines={1}
+                    >
+                      {path}
+                    </Text>
+                  </Card>
+                ))}
+              </CardList>
+            </Sidebar.SidebarContentBleed>
           ) : (
             <PlaceholderStack />
           )}

@@ -16,7 +16,7 @@ import { Input } from './Input';
 import { SvgIcon } from './SvgIcon';
 import { Text } from './Text';
 
-export type ComboboxItem = {
+export type ComboboxOption = {
   hidden?: boolean;
   label?: string;
   value: string | number;
@@ -28,7 +28,7 @@ type BaseProps = {
   assistive?: string;
   error?: string;
   icon?: ReactElement;
-  items: ComboboxItem[];
+  items: ComboboxOption[];
   label?: string;
   maxDropdownHeight?: string;
   name: string;
@@ -56,7 +56,7 @@ type Props = BaseProps & ConditionalProps;
 export const Combobox = forwardRef<HTMLInputElement, Props>(
   ({ allowCustomInput, allowNone, noneLabel, ...props }, ref) => {
     const noneItem = useMemo(() => {
-      const item: ComboboxItem = {
+      const item: ComboboxOption = {
         label: noneLabel ?? 'None',
         value: '__NONE__',
       };

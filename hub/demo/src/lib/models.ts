@@ -15,7 +15,7 @@ export const messageModel = z.object({
   content: z.string(),
 });
 
-export const chatCompletionsModel = z.object({
+export const chatModel = z.object({
   max_tokens: z.number().default(64),
   temperature: z.number().default(0.1),
   frequency_penalty: z.number().default(0),
@@ -97,6 +97,7 @@ export const registryEntry = z.object({
   version: z.string(),
   description: z.string(),
   tags: z.string().array(),
+  show_entry: z.boolean().default(true),
   details: z.intersection(
     z
       .object({
@@ -110,10 +111,13 @@ export const registryEntry = z.object({
               .partial(),
           })
           .partial(),
-        agents: z.string().array(),
+        primary_agent_name: z.string(),
+        primary_agent_namespace: z.string(),
+        primary_agent_version: z.string(),
         base_id: z.string().or(z.null()),
         icon: z.string(),
         run_id: z.string(),
+
         timestamp: z.string(),
       })
       .partial(),
@@ -121,9 +125,9 @@ export const registryEntry = z.object({
   ),
 });
 
-export const listRegistry = z.array(registryEntry);
+export const registryEntries = z.array(registryEntry);
 
-export const agentRequestModel = z.object({
+export const chatWithAgentModel = z.object({
   agent_id: z.string(),
   new_message: z.string(),
   environment_id: z.string().nullable().optional(),

@@ -12,6 +12,7 @@ type Props = ComponentPropsWithRef<'div'> & {
   background?: ThemeColor;
   border?: ThemeColor;
   padding?: 's' | 'm' | 'l';
+  paddingInline?: 's' | 'm' | 'l';
   gap?: 'xs' | 's' | 'm' | 'l';
 };
 
@@ -24,6 +25,7 @@ export const Card = forwardRef<HTMLDivElement, Props>(
       className = '',
       gap,
       padding,
+      paddingInline,
       style,
       ...props
     },
@@ -39,6 +41,7 @@ export const Card = forwardRef<HTMLDivElement, Props>(
         data-background={background}
         data-gap={gap}
         data-padding={padding}
+        data-padding-inline={paddingInline}
         role={props.onClick ? 'button' : undefined}
         tabIndex={props.tabIndex ?? props.onClick ? 0 : undefined}
         ref={ref}

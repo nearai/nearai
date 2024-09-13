@@ -19,7 +19,7 @@ import { authorizationModel } from '~/lib/models';
 import { api } from '~/trpc/react';
 
 export const NonceList = () => {
-  const nonces = api.hub.listNonces.useQuery();
+  const nonces = api.hub.nonces.useQuery();
   const revokeNonceMutation = api.hub.revokeNonce.useMutation();
   const revokeAllNoncesMutation = api.hub.revokeAllNonces.useMutation();
 

@@ -26,6 +26,23 @@
   flex-grow: 1;
 }
 
+.mainStickyFooter {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  background: var(--sand-1);
+  box-shadow: 0 0 0.5rem 0.5rem var(--sand-1);
+  padding: var(--gap-m);
+  padding-top: 0;
+  margin: calc(var(--gap-m) * -1);
+  margin-top: 0;
+
+  textarea {
+    max-height: 50vh !important;
+    overscroll-behavior: contain;
+  }
+}
+
 .sidebar {
   position: sticky;
   z-index: 250;
@@ -34,12 +51,14 @@
   max-height: var(--section-fill-height);
   min-height: 0;
   flex-shrink: 0;
+  box-shadow:
+    0 0 1rem rgba(0, 0, 0, 0.1),
+    0 0 0 1px var(--sand-4);
 
   @media (max-width: $tabletBreakpointMaxWidth) {
     position: fixed;
     right: 0;
     bottom: 0;
-    box-shadow: 0 0 3rem rgba(0, 0, 0, 0.2);
     width: 0vw;
     opacity: 0;
     transition:
@@ -55,7 +74,8 @@
 }
 
 .sidebarContent {
-  width: 360px;
+  width: 18vw;
+  min-width: 260px;
   flex-shrink: 0;
   background: var(--sand-2);
   overflow: auto;
@@ -72,13 +92,18 @@
 }
 
 .sidebarContentInner {
+  --sidebar-padding: var(--gap-m);
   display: flex;
   flex-direction: column;
-  gap: var(--gap-l);
-  padding: var(--gap-l);
+  gap: var(--gap-m);
+  padding: var(--sidebar-padding);
   width: 100%;
   min-height: 100%;
   position: relative;
+
+  @media (max-width: 1200px) {
+    --sidebar-padding: var(--gap-m);
+  }
 
   @media (max-width: $tabletBreakpointMaxWidth) {
     min-height: calc(100% + 1px);
@@ -92,5 +117,15 @@
 
   @media (min-width: $tabletBreakpointMaxWidth) {
     display: none !important;
+  }
+}
+
+.sidebarContentBleed {
+  margin-inline: calc(var(--sidebar-padding) * -1);
+
+  > *,
+  > * > * {
+    border-radius: 0 !important;
+    border-inline: none !important;
   }
 }

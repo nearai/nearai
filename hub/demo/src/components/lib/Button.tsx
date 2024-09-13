@@ -5,7 +5,7 @@ import { forwardRef } from 'react';
 import s from './Button.module.scss';
 
 type Fill = 'solid' | 'outline' | 'ghost';
-type Size = 'small' | 'default' | 'large';
+type Size = 'x-small' | 'small' | 'default' | 'large';
 type Variant = 'primary' | 'secondary' | 'affirmative' | 'destructive';
 
 type Props = Omit<ComponentPropsWithRef<'button'>, 'size'> & {

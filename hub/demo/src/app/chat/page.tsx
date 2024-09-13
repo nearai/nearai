@@ -1,6 +1,7 @@
 'use client';
 
-import { ArrowRight, Gear } from '@phosphor-icons/react';
+import { ArrowRight, ChatCircleText, Gear } from '@phosphor-icons/react';
+import { useRouter } from 'next/navigation';
 import {
   type KeyboardEventHandler,
   useEffect,
@@ -11,43 +12,45 @@ import {
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { type z } from 'zod';
 
-import { ChatThread } from '~/components/inference/ChatThread';
 import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
 import { Button } from '~/components/lib/Button';
-import { Combobox, type ComboboxItem } from '~/components/lib/Combobox';
+import { Combobox, type ComboboxOption } from '~/components/lib/Combobox';
 import { Flex } from '~/components/lib/Flex';
 import { Form } from '~/components/lib/Form';
 import { InputTextarea } from '~/components/lib/InputTextarea';
 import { Sidebar } from '~/components/lib/Sidebar';
 import { Slider } from '~/components/lib/Slider';
 import { Text } from '~/components/lib/Text';
+import { Messages } from '~/components/Messages';
 import { SignInPrompt } from '~/components/SignInPrompt';
+import { ThreadsSidebar } from '~/components/ThreadsSidebar';
 import { useZodForm } from '~/hooks/form';
 import { useListModels } from '~/hooks/queries';
-import { chatCompletionsModel, type messageModel } from '~/lib/models';
+import { chatModel, type messageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { handleClientError } from '~/utils/error';
 
 const LOCAL_STORAGE_KEY = 'inference_conversation';
 
-const roles: ComboboxItem[] = [
+const roleOptions: ComboboxOption[] = [
   { label: 'User', value: 'user' },
   { label: 'Assistant', value: 'assistant' },
   { label: 'System', value: 'system' },
 ];
 
-const providers: ComboboxItem[] = [
+const providerOptions: ComboboxOption[] = [
   { label: 'Fireworks', value: 'fireworks' },
   { label: 'Hyperbolic', value: 'hyperbolic' },
 ];
 
 export default function InferencePage() {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement | null>(null);
-  const form = useZodForm(chatCompletionsModel);
+  const form = useZodForm(chatModel);
   const chatMutation = api.hub.chat.useMutation();
   const provider = form.watch('provider');
-  const listModels = useListModels(provider);
+  const models = useListModels(provider);
   const [conversation, setConversation] = useState<
     z.infer<typeof messageModel>[]
   >([]);
@@ -55,21 +58,19 @@ export default function InferencePage() {
 
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
-  const [historyOpenForSmallScreens, setHistoryOpenForSmallScreens] =
+  const [threadsOpenForSmallScreens, setThreadsOpenForSmallScreens] =
     useState(false);
 
-  const models: ComboboxItem[] = useMemo(
+  const modelOptions: ComboboxOption[] = useMemo(
     () =>
-      listModels.data?.map((model) => ({
+      models.data?.map((model) => ({
         ...model,
         label: model.label.split('/').pop(),
       })) ?? [],
-    [listModels.data],
+    [models.data],
   );
 
-  const onSubmit: SubmitHandler<z.infer<typeof chatCompletionsModel>> = async (
-    values,
-  ) => {
+  const onSubmit: SubmitHandler<z.infer<typeof chatModel>> = async (values) => {
     try {
       const message = values.messages.at(-1)!;
       if (!message.content.trim()) return;
@@ -117,24 +118,22 @@ export default function InferencePage() {
   };
 
   useEffect(() => {
-    if (!provider || !models.length) return;
+    if (!provider || !modelOptions.length) return;
 
     const currentModel = form.getValues('model');
-    const matchingModel = models.find((m) => m.value === currentModel);
+    const matchingModel = modelOptions.find((m) => m.value === currentModel);
 
     if (!matchingModel) {
-      form.setValue('model', (models[0]?.value ?? '').toString());
+      form.setValue('model', (modelOptions[0]?.value ?? '').toString());
     }
-  }, [form, provider, models]);
+  }, [form, provider, modelOptions]);
 
   useEffect(() => {
     const previousConversationRaw = localStorage.getItem(LOCAL_STORAGE_KEY);
 
     if (previousConversationRaw) {
       try {
-        const parsed = chatCompletionsModel.parse(
-          JSON.parse(previousConversationRaw),
-        );
+        const parsed = chatModel.parse(JSON.parse(previousConversationRaw));
         setConversation(parsed.messages);
       } catch (error) {
         console.error(error);
@@ -152,25 +151,79 @@ export default function InferencePage() {
   return (
     <Form stretch onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
       <Sidebar.Root>
-        <Sidebar.Sidebar
-          openForSmallScreens={historyOpenForSmallScreens}
-          setOpenForSmallScreens={setHistoryOpenForSmallScreens}
-        >
-          <Text size="text-l">History</Text>
-        </Sidebar.Sidebar>
+        <ThreadsSidebar
+          onRequestNewThread={() => router.push('/agents')}
+          openForSmallScreens={threadsOpenForSmallScreens}
+          setOpenForSmallScreens={setThreadsOpenForSmallScreens}
+        />
+
+        <Sidebar.Main>
+          <Messages threadId="chat" messages={conversation} />
+
+          <Sidebar.MainStickyFooter>
+            <Flex direction="column" gap="m">
+              <InputTextarea
+                placeholder="Write your message and press enter..."
+                onKeyDown={onKeyDownContent}
+                disabled={!isAuthenticated}
+                {...form.register('messages.0.content')}
+              />
+
+              {isAuthenticated ? (
+                <Flex align="start" gap="m">
+                  <Text size="text-xs" style={{ marginRight: 'auto' }}>
+                    <b>Shift + Enter</b> to add a new line
+                  </Text>
+
+                  <BreakpointDisplay show="sidebar-small-screen">
+                    <Button
+                      label="Select Thread"
+                      icon={<ChatCircleText />}
+                      size="small"
+                      fill="outline"
+                      onClick={() => setThreadsOpenForSmallScreens(true)}
+                    />
+                  </BreakpointDisplay>
+
+                  <BreakpointDisplay show="sidebar-small-screen">
+                    <Button
+                      label="Edit Parameters"
+                      icon={<Gear weight="bold" />}
+                      size="small"
+                      fill="outline"
+                      onClick={() => setParametersOpenForSmallScreens(true)}
+                    />
+                  </BreakpointDisplay>
+
+                  <Button
+                    label="Send Message"
+                    type="submit"
+                    icon={<ArrowRight weight="bold" />}
+                    size="small"
+                    loading={chatMutation.isPending}
+                  />
+                </Flex>
+              ) : (
+                <SignInPrompt />
+              )}
+            </Flex>
+          </Sidebar.MainStickyFooter>
+        </Sidebar.Main>
 
         <Sidebar.Sidebar
           openForSmallScreens={parametersOpenForSmallScreens}
           setOpenForSmallScreens={setParametersOpenForSmallScreens}
         >
-          <Text size="text-l">Parameters</Text>
+          <Text size="text-xs" weight={500} uppercase>
+            Parameters
+          </Text>
 
           <Controller
             control={form.control}
             defaultValue="fireworks"
             name="provider"
             render={({ field }) => (
-              <Combobox label="Provider" items={providers} {...field} />
+              <Combobox label="Provider" items={providerOptions} {...field} />
             )}
           />
 
@@ -179,7 +232,7 @@ export default function InferencePage() {
             defaultValue="fireworks::accounts/fireworks/models/mixtral-8x22b-instruct"
             name="model"
             render={({ field }) => (
-              <Combobox label="Model" items={models} {...field} />
+              <Combobox label="Model" items={modelOptions} {...field} />
             )}
           />
 
@@ -188,7 +241,7 @@ export default function InferencePage() {
             defaultValue="user"
             name="messages.0.role"
             render={({ field }) => (
-              <Combobox label="Role" items={roles} {...field} />
+              <Combobox label="Role" items={roleOptions} {...field} />
             )}
           />
 
@@ -233,47 +286,6 @@ export default function InferencePage() {
             />
           </Flex>
         </Sidebar.Sidebar>
-
-        <Sidebar.Main>
-          <ChatThread messages={conversation} />
-
-          <Flex direction="column" gap="m">
-            <InputTextarea
-              placeholder="Write your message and press enter..."
-              onKeyDown={onKeyDownContent}
-              disabled={!isAuthenticated}
-              {...form.register('messages.0.content')}
-            />
-
-            {isAuthenticated ? (
-              <Flex align="start" gap="m">
-                <Text size="text-xs" style={{ marginRight: 'auto' }}>
-                  <b>Shift + Enter</b> to add a new line
-                </Text>
-
-                <BreakpointDisplay show="sidebar-small-screen">
-                  <Button
-                    label="Edit Parameters"
-                    icon={<Gear weight="bold" />}
-                    size="small"
-                    fill="outline"
-                    onClick={() => setParametersOpenForSmallScreens(true)}
-                  />
-                </BreakpointDisplay>
-
-                <Button
-                  label="Send Message"
-                  type="submit"
-                  icon={<ArrowRight weight="bold" />}
-                  size="small"
-                  loading={chatMutation.isPending}
-                />
-              </Flex>
-            ) : (
-              <SignInPrompt />
-            )}
-          </Flex>
-        </Sidebar.Main>
       </Sidebar.Root>
     </Form>
   );

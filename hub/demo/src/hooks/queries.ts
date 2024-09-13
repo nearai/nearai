@@ -5,12 +5,12 @@ import { api } from '~/trpc/react';
 const PROVIDER_MODEL_SEP = '::';
 
 export function useListModels(provider: string) {
-  const listModels = api.hub.listModels.useQuery();
+  const models = api.hub.models.useQuery();
 
   return useQuery({
-    queryKey: ['listModels', provider],
+    queryKey: ['models', provider],
     queryFn: () => {
-      const m = listModels.data?.data
+      const m = models.data?.data
         .map((m) => {
           if (!m.supports_chat) {
             return null;
@@ -28,6 +28,6 @@ export function useListModels(provider: string) {
 
       return m;
     },
-    enabled: !!listModels.data,
+    enabled: !!models.data,
   });
 }

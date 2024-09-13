@@ -2,7 +2,7 @@ import { useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { type z } from 'zod';
 
-import { type listRegistry } from '~/lib/models';
+import { type registryEntries } from '~/lib/models';
 import { type RegistryCategory } from '~/server/api/routers/hub';
 import { api } from '~/trpc/react';
 
@@ -21,7 +21,7 @@ export function useResourceParams() {
 export function useCurrentResource(category: RegistryCategory) {
   const { namespace, name, version } = useResourceParams();
 
-  const list = api.hub.listRegistry.useQuery({
+  const list = api.hub.registryEntries.useQuery({
     category,
     namespace,
     showLatestVersion: false,
@@ -40,7 +40,7 @@ export function useCurrentResource(category: RegistryCategory) {
 }
 
 export function useResourceSearch(
-  data: z.infer<typeof listRegistry> | undefined,
+  data: z.infer<typeof registryEntries> | undefined,
 ) {
   const [searchQuery, setSearchQuery] = useState('');
   const searchQueryDebounced = useDebouncedValue(searchQuery, 150);

@@ -23,7 +23,7 @@ type Props = {
 };
 
 export const ResourceList = ({ category, title }: Props) => {
-  const listQuery = api.hub.listRegistry.useQuery({ category });
+  const listQuery = api.hub.registryEntries.useQuery({ category });
 
   const { searched, searchQuery, setSearchQuery } = useResourceSearch(
     listQuery.data,

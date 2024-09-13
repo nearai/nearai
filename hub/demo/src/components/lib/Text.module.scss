@@ -6,10 +6,26 @@
     display: inline;
   }
 
+  [role='button']:hover > &,
+  [role='button']:focus-visible > &,
+  button:hover > &,
+  button:focus-visible > &,
   a:hover > &,
   a:focus-visible > & {
     color: var(--violet-11) !important;
     text-decoration: underline;
+  }
+
+  &[data-clickable-highlight='true'] {
+    [role='button']:hover &,
+    [role='button']:focus-visible &,
+    button:hover &,
+    button:focus-visible &,
+    a:hover &,
+    a:focus-visible & {
+      color: var(--violet-11) !important;
+      text-decoration: underline;
+    }
   }
 
   &[data-clamp-lines] {

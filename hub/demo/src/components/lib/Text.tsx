@@ -23,6 +23,7 @@ type Props = {
   children: ReactNode;
   clampLines?: number;
   className?: string;
+  clickableHighlight?: boolean;
   color?: ThemeColor;
   decoration?: CSSProperties['textDecoration'];
   forceWordBreak?: boolean;
@@ -33,6 +34,7 @@ type Props = {
   style?: CSSProperties;
   noWrap?: boolean;
   weight?: string | number;
+  uppercase?: boolean;
 };
 
 export const Text = ({
@@ -40,6 +42,7 @@ export const Text = ({
   children,
   clampLines,
   className = '',
+  clickableHighlight,
   color,
   decoration,
   forceWordBreak,
@@ -47,6 +50,7 @@ export const Text = ({
   style,
   weight,
   noWrap,
+  uppercase,
   ...props
 }: Props) => {
   const Tag = as;
@@ -57,6 +61,7 @@ export const Text = ({
       className={`${s.text} ${className}`}
       data-clamp-lines={clampLines}
       data-size={size ?? defaultSize}
+      data-clickable-highlight={clickableHighlight}
       style={{
         color: color
           ? color === 'current'
@@ -68,6 +73,7 @@ export const Text = ({
         WebkitLineClamp: clampLines,
         whiteSpace: noWrap ? 'nowrap' : undefined,
         wordBreak: forceWordBreak ? 'break-word' : undefined,
+        textTransform: uppercase ? 'uppercase' : undefined,
         ...style,
       }}
       {...props}

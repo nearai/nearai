@@ -9,25 +9,31 @@ import { type messageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { copyTextToClipboard } from '~/utils/clipboard';
 
-import { Button } from '../lib/Button';
-import { Card } from '../lib/Card';
-import { Code, filePathToCodeLanguage } from '../lib/Code';
-import { Flex } from '../lib/Flex';
-import { PlaceholderCard } from '../lib/Placeholder';
-import { Text } from '../lib/Text';
-import { Tooltip } from '../lib/Tooltip';
-import s from './ChatThread.module.scss';
+import { Button } from './lib/Button';
+import { Card } from './lib/Card';
+import { Code, filePathToCodeLanguage } from './lib/Code';
+import { Flex } from './lib/Flex';
+import { PlaceholderCard } from './lib/Placeholder';
+import { Text } from './lib/Text';
+import { Tooltip } from './lib/Tooltip';
+import s from './Messages.module.scss';
 
 type Props = {
   loading?: boolean;
   messages: z.infer<typeof messageModel>[];
+  threadId: string;
   welcomeMessage?: ReactNode;
 };
 
-export const ChatThread = ({ loading, messages, welcomeMessage }: Props) => {
+export const Messages = ({
+  loading,
+  messages,
+  threadId,
+  welcomeMessage,
+}: Props) => {
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
-  const count = messages.length;
-  const previousCount = usePrevious(count);
+  const previousThreadId = usePrevious(threadId);
+  const previousMessages = usePrevious(messages);
   const element = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -35,17 +41,30 @@ export const ChatThread = ({ loading, messages, welcomeMessage }: Props) => {
     const children = [...element.current.children];
     if (!children.length) return;
 
-    if (previousCount >= count) {
-      children[0]?.scrollIntoView({
-        block: 'nearest',
-      });
-    } else {
-      const newIndex = Math.min(children.length - 1, previousCount);
-      children[newIndex]?.scrollIntoView({
-        block: 'center',
-      });
+    const count = messages.length;
+    const previousCount = previousMessages?.length;
+
+    function scroll() {
+      if (threadId !== previousThreadId) {
+        window.scrollTo(0, document.body.scrollHeight);
+      } else if (previousCount >= count) {
+        children[0]?.scrollIntoView({
+          block: 'start',
+        });
+      } else {
+        const newIndex = Math.min(children.length - 1, previousCount);
+        children[newIndex]?.scrollIntoView({
+          block: 'start',
+        });
+      }
     }
-  }, [count, previousCount]);
+
+    scroll();
+
+    setTimeout(() => {
+      scroll();
+    });
+  }, [threadId, previousThreadId, previousMessages, messages]);
 
   function determineCodeLanguageForMessage(index: number) {
     if (!index) return;

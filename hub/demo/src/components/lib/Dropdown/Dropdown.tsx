@@ -26,7 +26,9 @@ export const Content = forwardRef<
         ref={ref}
         {...props}
       >
-        <div className={s.scroll}>{children}</div>
+        <div className={s.scroll} onClick={(event) => event.stopPropagation()}>
+          {children}
+        </div>
 
         <Primitive.Arrow className={s.arrowBorder} />
         <Primitive.Arrow className={s.arrowFill} />

@@ -4,14 +4,15 @@ import { createZodFetcher } from 'zod-fetch';
 
 import { env } from '~/env';
 import {
-  agentRequestModel,
-  chatCompletionsModel,
+  chatModel,
   chatResponseModel,
+  chatWithAgentModel,
   listFiles,
   listModelsResponseModel,
   listNoncesModel,
-  listRegistry,
   type messageModel,
+  registryEntries,
+  registryEntry,
   revokeNonceModel,
 } from '~/lib/models';
 import {
@@ -106,19 +107,33 @@ async function downloadEnvironment(environmentId: string) {
 }
 
 export const hubRouter = createTRPCRouter({
-  listModels: publicProcedure.query(async () => {
-    const u = env.ROUTER_URL + '/models';
+  chat: protectedProcedure.input(chatModel).mutation(async ({ ctx, input }) => {
+    const u = env.ROUTER_URL + '/chat/completions';
 
-    const response = await fetch(u);
+    const response = await fetch(u, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: ctx.authorization,
+      },
+      body: JSON.stringify(input),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        'Failed to send chat completions, status: ' + response.status,
+      );
+    }
+
     const data: unknown = await response.json();
 
-    return listModelsResponseModel.parse(data);
+    return chatResponseModel.parse(data);
   }),
 
-  chat: protectedProcedure
-    .input(chatCompletionsModel)
+  chatWithAgent: protectedProcedure
+    .input(chatWithAgentModel)
     .mutation(async ({ ctx, input }) => {
-      const u = env.ROUTER_URL + '/chat/completions';
+      const u = env.ROUTER_URL + '/agent/runs';
 
       const response = await fetch(u, {
         method: 'POST',
@@ -131,16 +146,109 @@ export const hubRouter = createTRPCRouter({
 
       if (!response.ok) {
         throw new Error(
-          'Failed to send chat completions, status: ' + response.status,
+          `Failed to send chat completions, status: ${response.status}`,
         );
       }
 
-      const data: unknown = await response.json();
+      const responseText: string = await response.text();
+      if (!responseText.match(/".*\/.*\/.*/)) {
+        // check whether the response matches namespace/name/version
+        throw new Error('Response text does not match namespace/name/version');
+      }
 
-      return chatResponseModel.parse(data);
+      const environmentId = responseText.replace(/\\/g, '').replace(/"/g, '');
+
+      return downloadEnvironment(environmentId);
     }),
 
-  listNonces: protectedProcedure.query(async ({ ctx }) => {
+  environment: protectedProcedure
+    .input(z.object({ environmentId: z.string() }))
+    .query(async ({ input }) => {
+      return await downloadEnvironment(input.environmentId);
+    }),
+
+  file: publicProcedure
+    .input(
+      z.object({
+        filePath: z.string(),
+        namespace: z.string(),
+        name: z.string(),
+        version: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const response = await fetch(`${env.ROUTER_URL}/registry/download_file`, {
+        method: 'POST',
+        headers: {
+          Accept: 'binary/octet-stream',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          entry_location: {
+            namespace: input.namespace,
+            name: input.name,
+            version: input.version,
+          },
+          path: input.filePath,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load file, status: ${response.status}`);
+      }
+
+      const content = await (await response.blob()).text();
+
+      return {
+        content,
+        path: input.filePath,
+      };
+    }),
+
+  filePaths: publicProcedure
+    .input(
+      z.object({
+        namespace: z.string(),
+        name: z.string(),
+        version: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const list = await fetchWithZod(
+        listFiles,
+        `${env.ROUTER_URL}/registry/list_files`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            entry_location: {
+              namespace: input.namespace,
+              name: input.name,
+              version: input.version,
+            },
+          }),
+        },
+      );
+
+      const paths = list.flatMap((file) => file.filename);
+      paths.push('metadata.json');
+      paths.sort();
+
+      return paths;
+    }),
+
+  models: publicProcedure.query(async () => {
+    const u = env.ROUTER_URL + '/models';
+
+    const response = await fetch(u);
+    const data: unknown = await response.json();
+
+    return listModelsResponseModel.parse(data);
+  }),
+
+  nonces: protectedProcedure.query(async ({ ctx }) => {
     const u = env.ROUTER_URL + '/nonce/list';
 
     const nonces = await fetchWithZod(listNoncesModel, u, {
@@ -151,6 +259,38 @@ export const hubRouter = createTRPCRouter({
 
     return nonces;
   }),
+
+  registryEntries: publicProcedure
+    .input(
+      z.object({
+        category: registryCategory,
+        limit: z.number().default(10_000),
+        namespace: z.string().optional(),
+        showLatestVersion: z.boolean().default(true),
+        tags: z.string().array().optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const url = new URL(`${env.ROUTER_URL}/registry/list_entries`);
+
+      url.searchParams.append('category', input.category);
+      url.searchParams.append('total', `${input.limit}`);
+      url.searchParams.append(
+        'show_latest_version',
+        `${input.showLatestVersion}`,
+      );
+
+      if (input.namespace)
+        url.searchParams.append('namespace', input.namespace);
+
+      if (input.tags) url.searchParams.append('tags', input.tags.join(','));
+
+      const list = await fetchWithZod(registryEntries, url.toString(), {
+        method: 'POST',
+      });
+
+      return list;
+    }),
 
   revokeNonce: protectedProcedure
     .input(revokeNonceModel)
@@ -195,144 +335,51 @@ export const hubRouter = createTRPCRouter({
       }
     }),
 
-  listRegistry: publicProcedure
-    .input(
-      z.object({
-        category: registryCategory,
-        limit: z.number().default(10_000),
-        namespace: z.string().optional(),
-        showLatestVersion: z.boolean().default(true),
-        tags: z.string().array().optional(),
-      }),
-    )
-    .query(async ({ input }) => {
-      const url = new URL(`${env.ROUTER_URL}/registry/list_entries`);
-
-      url.searchParams.append('category', input.category);
-      url.searchParams.append('total', `${input.limit}`);
-      url.searchParams.append(
-        'show_latest_version',
-        `${input.showLatestVersion}`,
-      );
-
-      if (input.namespace)
-        url.searchParams.append('namespace', input.namespace);
-
-      if (input.tags) url.searchParams.append('tags', input.tags.join(','));
-
-      const list = await fetchWithZod(listRegistry, url.toString(), {
-        method: 'POST',
-      });
-
-      return list;
-    }),
-
-  loadEnvironment: protectedProcedure
-    .input(z.object({ environmentId: z.string() }))
-    .query(async ({ input }) => {
-      return await downloadEnvironment(input.environmentId);
-    }),
-
-  listFilePaths: publicProcedure
+  updateMetadata: protectedProcedure
     .input(
       z.object({
         namespace: z.string(),
         name: z.string(),
         version: z.string(),
+        metadata: registryEntry.partial(),
       }),
     )
-    .query(async ({ input }) => {
-      const list = await fetchWithZod(
-        listFiles,
-        `${env.ROUTER_URL}/registry/list_files`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            entry_location: {
-              namespace: input.namespace,
-              name: input.name,
-              version: input.version,
+    .mutation(
+      async ({ ctx, input: { name, namespace, version, metadata } }) => {
+        try {
+          const response = await fetch(
+            `${env.ROUTER_URL}/registry/upload_metadata`,
+            {
+              headers: {
+                Authorization: ctx.authorization,
+                'Content-Type': 'application/json',
+              },
+              method: 'POST',
+              body: JSON.stringify({
+                metadata,
+                entry_location: {
+                  namespace,
+                  name,
+                  version,
+                },
+              }),
             },
-          }),
-        },
-      );
+          );
 
-      const paths = list.flatMap((file) => file.filename);
-      paths.push('metadata.json');
-      paths.sort();
+          const data = (await response.json()) as unknown;
 
-      return paths;
-    }),
+          if (!response.ok) {
+            console.error(data);
+            throw new Error(
+              `Failed to update metadata for ${namespace}/${name}/${version} - status: ${response.status}`,
+            );
+          }
 
-  loadFileByPath: publicProcedure
-    .input(
-      z.object({
-        filePath: z.string(),
-        namespace: z.string(),
-        name: z.string(),
-        version: z.string(),
-      }),
-    )
-    .query(async ({ input }) => {
-      const response = await fetch(`${env.ROUTER_URL}/registry/download_file`, {
-        method: 'POST',
-        headers: {
-          Accept: 'binary/octet-stream',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          entry_location: {
-            namespace: input.namespace,
-            name: input.name,
-            version: input.version,
-          },
-          path: input.filePath,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to load file, status: ${response.status}`);
-      }
-
-      const content = await (await response.blob()).text();
-
-      return {
-        content,
-        path: input.filePath,
-      };
-    }),
-
-  agentChat: protectedProcedure
-    .input(agentRequestModel)
-    .mutation(async ({ ctx, input }) => {
-      const u = env.ROUTER_URL + '/agent/runs';
-
-      const response = await fetch(u, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: ctx.authorization,
-        },
-        body: JSON.stringify(input),
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to send chat completions, status: ${response.status}`,
-        );
-      }
-
-      const responseText: string = await response.text();
-      if (!responseText.match(/".*\/.*\/.*/)) {
-        // check whether the response matches namespace/name/version
-        throw new Error('Response text does not match namespace/name/version');
-      }
-
-      const environmentId = responseText.replace(/\\/g, '').replace(/"/g, '');
-
-      return downloadEnvironment(environmentId);
-    }),
+          return true;
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
+      },
+    ),
 });
