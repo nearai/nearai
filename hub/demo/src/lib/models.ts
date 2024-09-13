@@ -98,6 +98,8 @@ export const registryEntry = z.object({
   description: z.string(),
   tags: z.string().array(),
   show_entry: z.boolean().default(true),
+  starred_by_point_of_view: z.boolean().default(false),
+  num_stars: z.number(),
   details: z.intersection(
     z
       .object({

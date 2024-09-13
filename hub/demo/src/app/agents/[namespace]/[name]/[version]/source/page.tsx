@@ -14,7 +14,10 @@ import {
 } from '~/components/lib/Placeholder';
 import { Sidebar } from '~/components/lib/Sidebar';
 import { Text } from '~/components/lib/Text';
-import { useCurrentResource, useResourceParams } from '~/hooks/resources';
+import {
+  useCurrentRegistryEntry,
+  useRegistryEntryParams,
+} from '~/hooks/registry';
 import { useQueryParams } from '~/hooks/url';
 import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
@@ -23,8 +26,8 @@ const METADATA_FILE_PATH = 'metadata.json';
 
 export default function AgentSourcePage() {
   const { createQueryPath, queryParams } = useQueryParams(['file']);
-  const { currentResource } = useCurrentResource('agent');
-  const params = useResourceParams();
+  const { currentResource } = useCurrentRegistryEntry('agent');
+  const params = useRegistryEntryParams();
   const filePathsQuery = api.hub.filePaths.useQuery(params);
   const activeFilePath = queryParams.file ?? filePathsQuery.data?.[0] ?? '';
   const fileQuery = api.hub.file.useQuery(

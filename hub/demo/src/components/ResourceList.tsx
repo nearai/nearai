@@ -13,7 +13,7 @@ import { Table } from '~/components/lib/Table';
 import { useTable } from '~/components/lib/Table/hooks';
 import { Text } from '~/components/lib/Text';
 import { Tooltip } from '~/components/lib/Tooltip';
-import { useResourceSearch } from '~/hooks/resources';
+import { useRegistryEntriesSearch } from '~/hooks/registry';
 import { type RegistryCategory } from '~/server/api/routers/hub';
 import { api } from '~/trpc/react';
 
@@ -27,7 +27,7 @@ type Props = {
 export const ResourceList = ({ category, title }: Props) => {
   const listQuery = api.hub.registryEntries.useQuery({ category });
 
-  const { searched, searchQuery, setSearchQuery } = useResourceSearch(
+  const { searched, searchQuery, setSearchQuery } = useRegistryEntriesSearch(
     listQuery.data,
   );
 
@@ -129,7 +129,7 @@ export const ResourceList = ({ category, title }: Props) => {
               </Table.Cell>
 
               <Table.Cell style={{ width: '1px' }}>
-                <StarButton count={0} starred={false} variant="simple" />
+                <StarButton item={item} variant="simple" />
               </Table.Cell>
 
               {category === 'agent' && (

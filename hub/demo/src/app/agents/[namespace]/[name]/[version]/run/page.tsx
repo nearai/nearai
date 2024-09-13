@@ -23,7 +23,10 @@ import { Messages } from '~/components/Messages';
 import { SignInPrompt } from '~/components/SignInPrompt';
 import { ThreadsSidebar } from '~/components/ThreadsSidebar';
 import { useZodForm } from '~/hooks/form';
-import { useCurrentResource, useResourceParams } from '~/hooks/resources';
+import {
+  useCurrentRegistryEntry,
+  useRegistryEntryParams,
+} from '~/hooks/registry';
 import { useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
 import { chatWithAgentModel } from '~/lib/models';
@@ -36,9 +39,9 @@ import { getQueryParams } from '~/utils/url';
 
 export default function RunAgentPage() {
   const router = useRouter();
-  const { currentResource } = useCurrentResource('agent');
+  const { currentResource } = useCurrentRegistryEntry('agent');
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
-  const { namespace, name, version } = useResourceParams();
+  const { namespace, name, version } = useRegistryEntryParams();
   const { queryParams, createQueryPath } = useQueryParams(['environmentId']);
   const environmentId = queryParams.environmentId ?? '';
   const chatMutation = api.hub.chatWithAgent.useMutation();
