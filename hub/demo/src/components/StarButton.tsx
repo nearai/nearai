@@ -1,57 +1,95 @@
 import { Star } from '@phosphor-icons/react';
 import { type CSSProperties, useEffect, useState } from 'react';
+import { type z } from 'zod';
+
+import { signInWithNear } from '~/lib/auth';
+import { type registryEntry } from '~/lib/models';
+import { useAuthStore } from '~/stores/auth';
+import { api } from '~/trpc/react';
 
 import { Button } from './lib/Button';
 import { SvgIcon } from './lib/SvgIcon';
+import { openToast } from './lib/Toast';
 import { Tooltip } from './lib/Tooltip';
 import s from './StarButton.module.scss';
 
 type Props = {
-  count: number;
-  variant: 'simple' | 'detailed';
-  starred: boolean;
+  item: z.infer<typeof registryEntry> | undefined;
   style?: CSSProperties;
+  variant: 'simple' | 'detailed';
 };
 
-export const StarButton = ({ style, variant = 'simple', ...props }: Props) => {
+export const StarButton = ({ item, style, variant = 'simple' }: Props) => {
+  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const [starred, setStarred] = useState(false);
   const [count, setCount] = useState(0);
   const [clicked, setClicked] = useState(false);
+  const mutation = api.hub.starRegistryEntry.useMutation();
+  const visuallyStarred = isAuthenticated && starred;
 
   useEffect(() => {
-    setCount(props.count);
+    setCount(item?.num_stars ?? 0);
     setClicked(false);
-  }, [props.count]);
+  }, [item]);
 
   useEffect(() => {
-    setStarred(props.starred);
+    setStarred(!!item?.starred_by_point_of_view);
     setClicked(false);
-  }, [props.starred]);
+  }, [item]);
 
   const toggleStar = () => {
+    if (!item) return;
+
+    if (!isAuthenticated) {
+      openToast({
+        type: 'info',
+        title: 'Please Sign In',
+        description:
+          'Signing in will allow you to star and interact with agents and other resources',
+        actionText: 'Sign In',
+        action: signInWithNear,
+        duration: Infinity,
+      });
+      return;
+    }
+
     setClicked(true);
 
     if (starred) {
       setStarred(false);
       setCount((value) => Math.max(0, value - 1));
+      mutation.mutate({
+        action: 'remove',
+        name: item.name,
+        namespace: item.namespace,
+      });
     } else {
       setStarred(true);
       setCount((value) => value + 1);
+      mutation.mutate({
+        action: 'add',
+        name: item.name,
+        namespace: item.namespace,
+      });
     }
   };
 
   return (
     <Tooltip
       asChild
-      content={starred ? 'Unstar' : 'Star'}
-      disabled={variant === 'detailed' && !starred}
+      content={visuallyStarred ? 'Unstar' : 'Star'}
+      disabled={variant === 'detailed' && !visuallyStarred}
     >
       <Button
         label={
-          variant === 'simple' ? count.toString() : starred ? `Starred` : `Star`
+          variant === 'simple'
+            ? count.toString()
+            : visuallyStarred
+              ? `Starred`
+              : `Star`
         }
         iconLeft={
-          starred ? (
+          visuallyStarred ? (
             <SvgIcon size="xs" icon={<Star weight="fill" />} color="amber-10" />
           ) : (
             <SvgIcon size="xs" icon={<Star />} color="sand-9" />
@@ -68,7 +106,7 @@ export const StarButton = ({ style, variant = 'simple', ...props }: Props) => {
         }}
         className={s.starButton}
         data-clicked={clicked}
-        data-starred={starred}
+        data-starred={visuallyStarred}
       />
     </Tooltip>
   );

@@ -37,7 +37,7 @@ export default function ProfilePage() {
   const [sidebarOpenForSmallScreens, setSidebarOpenForSmallScreens] =
     useState(false);
 
-  const list = api.hub.listRegistry.useQuery({
+  const list = api.hub.registryEntries.useQuery({
     namespace: accountId,
   });
 
@@ -99,7 +99,8 @@ export default function ProfilePage() {
                       .length
                   }
                   count
-                  variant="neutral"
+                  variant="neutral-alpha"
+                  size="small"
                 />
               </Flex>
             ))}

@@ -20,13 +20,16 @@ import { SvgIcon } from '~/components/lib/SvgIcon';
 import { Tabs } from '~/components/lib/Tabs';
 import { Text } from '~/components/lib/Text';
 import { StarButton } from '~/components/StarButton';
-import { useCurrentResource, useResourceParams } from '~/hooks/resources';
+import {
+  useCurrentRegistryEntry,
+  useRegistryEntryParams,
+} from '~/hooks/registry';
 import { CATEGORY_LABELS } from '~/utils/category';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const pathSegments = usePathname().split('/');
-  const { namespace, name, version } = useResourceParams();
-  const { currentResource, currentVersions } = useCurrentResource('agent');
+  const { namespace, name, version } = useRegistryEntryParams();
+  const { currentResource, currentVersions } = useCurrentRegistryEntry('agent');
   const baseUrl = `/agents/${namespace}/${name}`;
   let activeTab: 'overview' | 'run' | 'source' = 'overview';
 
@@ -109,7 +112,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </Flex>
           </Flex>
 
-          <StarButton count={0} starred={false} variant="detailed" />
+          <StarButton item={currentResource} variant="detailed" />
         </Flex>
 
         <Tabs.Root value={activeTab}>

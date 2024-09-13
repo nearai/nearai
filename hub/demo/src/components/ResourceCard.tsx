@@ -65,7 +65,7 @@ export const ResourceCard = ({ item }: Props) => {
           <Badge label={item.version} variant="neutral" />
         </Tooltip>
 
-        <StarButton count={0} starred={false} variant="simple" />
+        <StarButton item={item} variant="simple" />
 
         {item.category === 'agent' && (
           <>

@@ -79,7 +79,12 @@ export const Button = forwardRef<HTMLButtonElement, Props>(
               {iconLeft && <span className={s.icon}>{iconLeft}</span>}
               <span className={s.label}>{label}</span>
               {typeof count === 'number' && (
-                <Badge label={count.toString()} count variant="neutral-alpha" />
+                <Badge
+                  label={count.toString()}
+                  size="small"
+                  count
+                  variant="neutral-alpha"
+                />
               )}
               {iconRight && <span className={s.icon}>{iconRight}</span>}
             </>

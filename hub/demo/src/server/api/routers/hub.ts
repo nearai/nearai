@@ -265,27 +265,32 @@ export const hubRouter = createTRPCRouter({
   registryEntries: publicProcedure
     .input(
       z.object({
-        category: registryCategory,
+        category: registryCategory.optional(),
         limit: z.number().default(10_000),
         namespace: z.string().optional(),
         showLatestVersion: z.boolean().default(true),
         tags: z.string().array().optional(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const url = new URL(`${env.ROUTER_URL}/registry/list_entries`);
 
-      url.searchParams.append('category', input.category);
       url.searchParams.append('total', `${input.limit}`);
       url.searchParams.append(
         'show_latest_version',
         `${input.showLatestVersion}`,
       );
 
+      if (input.category) url.searchParams.append('category', input.category);
+
       if (input.namespace)
         url.searchParams.append('namespace', input.namespace);
 
       if (input.tags) url.searchParams.append('tags', input.tags.join(','));
+
+      if (ctx.signature) {
+        url.searchParams.append('star_point_of_view', ctx.signature.account_id);
+      }
 
       const list = await fetchWithZod(registryEntries, url.toString(), {
         method: 'POST',
@@ -335,6 +340,39 @@ export const hubRouter = createTRPCRouter({
         console.error(e);
         throw e;
       }
+    }),
+
+  starRegistryEntry: protectedProcedure
+    .input(
+      z.object({
+        action: z.enum(['add', 'remove']),
+        namespace: z.string(),
+        name: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input: { action, namespace, name } }) => {
+      const url =
+        env.ROUTER_URL +
+        `/stars/${action === 'add' ? 'add_star' : 'remove_star'}`;
+
+      const formData = new FormData();
+      formData.append('namespace', namespace);
+      formData.append('name', name);
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: ctx.authorization,
+        },
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const data: unknown = await response.json();
+        console.error(data);
+      }
+
+      return true;
     }),
 
   updateMetadata: protectedProcedure
