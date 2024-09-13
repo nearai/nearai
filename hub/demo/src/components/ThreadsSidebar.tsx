@@ -219,12 +219,12 @@ export const ThreadsSidebar = ({
                         <Dropdown.Item
                           onSelect={() =>
                             copyTextToClipboard(
-                              `${window.location.origin}${thread.agent.url}`,
+                              `${window.location.origin}${thread.url}`,
                             )
                           }
                         >
                           <SvgIcon icon={<LinkIcon />} />
-                          Copy Shareable Link
+                          Copy Thread Link
                         </Dropdown.Item>
 
                         <Dropdown.Item onSelect={() => removeThread(thread)}>
