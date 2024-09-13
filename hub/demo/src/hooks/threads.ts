@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { useAuthStore } from '~/stores/auth';
 import { api, type RouterOutputs } from '~/trpc/react';
@@ -10,14 +10,17 @@ export type Thread = {
     version: string;
     url: string;
   };
+  description: string;
   environments: RouterOutputs['hub']['registryEntries'];
   environmentId: string;
   lastMessageAt: Date | null;
   messageCount: number;
+  url: string;
 };
 
 export function useThreads() {
   const accountId = useAuthStore((store) => store.auth?.account_id);
+  const utils = api.useUtils();
 
   const list = api.hub.registryEntries.useQuery(
     {
@@ -27,6 +30,34 @@ export function useThreads() {
     {
       enabled: !!accountId,
     },
+  );
+
+  const setThreadEnvironmentData = useCallback(
+    (
+      id: number,
+      data: Partial<RouterOutputs['hub']['registryEntries'][number]>,
+    ) => {
+      const environment = list.data?.find((env) => env.id === id);
+      const environments = [...(list.data ?? [])].filter(
+        (env) => env.id !== id,
+      );
+
+      if (environment) {
+        environments.push({
+          ...environment,
+          ...data,
+        });
+      }
+
+      utils.hub.registryEntries.setData(
+        {
+          category: 'environment',
+          namespace: accountId,
+        },
+        environments,
+      );
+    },
+    [accountId, utils, list.data],
   );
 
   const threads = useMemo(() => {
@@ -44,9 +75,10 @@ export function useThreads() {
 
     for (const parent of parents) {
       const environments = followThread(children, parent);
+      const firstEnvironment = environments[0];
       const lastEnvironment = environments.at(-1);
 
-      if (lastEnvironment) {
+      if (firstEnvironment && lastEnvironment) {
         const environmentId = `${accountId}/${lastEnvironment.name}/${lastEnvironment.version}`;
         const name = lastEnvironment.details.primary_agent_name;
         const namespace = lastEnvironment.details.primary_agent_namespace;
@@ -54,21 +86,29 @@ export function useThreads() {
 
         if (!name || !namespace || !version) continue;
 
-        const url = `/agents/${namespace}/${name}/${version}/run?environmentId=${encodeURIComponent(environmentId)}`;
+        const agentUrl = `/agents/${namespace}/${name}/${version}`;
+        const threadUrl = `${agentUrl}/run?environmentId=${encodeURIComponent(environmentId)}`;
+
+        let description = firstEnvironment.description;
+        if (description.startsWith('Agent remote run')) {
+          description = name;
+        }
 
         result.push({
           agent: {
             name,
             namespace,
             version,
-            url,
+            url: agentUrl,
           },
+          description,
           environments,
           environmentId,
           lastMessageAt: lastEnvironment.details.timestamp
             ? new Date(lastEnvironment.details.timestamp)
             : null,
           messageCount: environments.length,
+          url: threadUrl,
         });
       }
     }
@@ -77,6 +117,7 @@ export function useThreads() {
   }, [accountId, list.data]);
 
   return {
+    setThreadEnvironmentData,
     threads,
     threadsQuery: list,
   };

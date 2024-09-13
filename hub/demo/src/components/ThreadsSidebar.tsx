@@ -2,7 +2,9 @@
 
 import {
   DotsThreeVertical,
+  Lightbulb,
   Link as LinkIcon,
+  Pencil,
   Plus,
   Trash,
 } from '@phosphor-icons/react';
@@ -10,6 +12,7 @@ import { usePrevious } from '@uidotdev/usehooks';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { type SubmitHandler, useForm } from 'react-hook-form';
 
 import { Badge } from '~/components/lib/Badge';
 import { Button } from '~/components/lib/Button';
@@ -28,6 +31,10 @@ import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
 import { handleClientError } from '~/utils/error';
+
+import { Dialog } from './lib/Dialog';
+import { Form } from './lib/Form';
+import { Input } from './lib/Input';
 
 type Props = {
   onRequestNewThread: () => unknown;
@@ -50,11 +57,14 @@ export const ThreadsSidebar = ({
   const [removedEnvironmentIds, setRemovedEnvironmentIds] = useState<string[]>(
     [],
   );
+  const [editingThreadEnvironmentId, setEditingThreadEnvironmentId] = useState<
+    string | null
+  >(null);
   const filteredThreads = threads?.filter(
     (thread) => !removedEnvironmentIds.includes(thread.environmentId),
   );
   const isViewingAgent = pathname.startsWith('/agents');
-  const updateMetadataMutation = api.hub.updateMetadata.useMutation();
+  const updateMutation = api.hub.updateMetadata.useMutation();
 
   const currentEnvironmentIdMatchesThread = !!filteredThreads?.find(
     (thread) => thread.environmentId === environmentId,
@@ -74,7 +84,7 @@ export const ThreadsSidebar = ({
         version,
         ...environment
       } of thread.environments) {
-        await updateMetadataMutation.mutateAsync({
+        await updateMutation.mutateAsync({
           name,
           namespace,
           version,
@@ -122,7 +132,7 @@ export const ThreadsSidebar = ({
           <CardList>
             {filteredThreads.map((thread) => (
               <Card
-                href={thread.agent.url}
+                href={thread.url}
                 padding="s"
                 paddingInline="m"
                 gap="xs"
@@ -143,14 +153,15 @@ export const ThreadsSidebar = ({
                     weight={500}
                     color="sand-12"
                     clickableHighlight
+                    clampLines={1}
                     style={{ marginRight: 'auto' }}
                   >
-                    {thread.agent.name} {thread.agent.version}
+                    {thread.description}
                   </Text>
 
                   <Tooltip
                     asChild
-                    content={`${thread.messageCount} prompt${thread.messageCount !== 1 ? 's' : ''}`}
+                    content={`Total Prompts: ${thread.messageCount}`}
                     key={thread.environmentId}
                   >
                     <Badge
@@ -167,11 +178,8 @@ export const ThreadsSidebar = ({
                     clampLines={1}
                     style={{ marginRight: 'auto' }}
                   >
-                    @{thread.agent.namespace}
-                  </Text>
-
-                  <Text size="text-xs" noWrap style={{ flexShrink: 0 }}>
-                    <Timestamp date={thread.lastMessageAt} />
+                    {thread.agent.namespace}/{thread.agent.name}/
+                    {thread.agent.version}
                   </Text>
 
                   <Dropdown.Root>
@@ -186,6 +194,28 @@ export const ThreadsSidebar = ({
 
                     <Dropdown.Content sideOffset={0}>
                       <Dropdown.Section>
+                        <Dropdown.SectionContent>
+                          <Text size="text-xs" weight={600} uppercase>
+                            Thread
+                          </Text>
+                        </Dropdown.SectionContent>
+                      </Dropdown.Section>
+
+                      <Dropdown.Section>
+                        <Dropdown.Item
+                          onSelect={() =>
+                            setEditingThreadEnvironmentId(thread.environmentId)
+                          }
+                        >
+                          <SvgIcon icon={<Pencil />} />
+                          Edit
+                        </Dropdown.Item>
+
+                        <Dropdown.Item href={thread.agent.url}>
+                          <SvgIcon icon={<Lightbulb />} />
+                          View Agent
+                        </Dropdown.Item>
+
                         <Dropdown.Item
                           onSelect={() =>
                             copyTextToClipboard(
@@ -201,6 +231,17 @@ export const ThreadsSidebar = ({
                           <SvgIcon icon={<Trash />} color="red-10" />
                           Delete
                         </Dropdown.Item>
+                      </Dropdown.Section>
+
+                      <Dropdown.Section>
+                        <Dropdown.SectionContent>
+                          <Text size="text-xs">
+                            Last prompt at{' '}
+                            <b>
+                              <Timestamp date={thread.lastMessageAt} />
+                            </b>
+                          </Text>
+                        </Dropdown.SectionContent>
                       </Dropdown.Section>
                     </Dropdown.Content>
                   </Dropdown.Root>
@@ -238,6 +279,103 @@ export const ThreadsSidebar = ({
           )}
         </>
       )}
+
+      <Dialog.Root
+        open={!!editingThreadEnvironmentId}
+        onOpenChange={() => setEditingThreadEnvironmentId(null)}
+      >
+        <Dialog.Content title="Edit Thread" size="s">
+          <EditThreadForm
+            threadEnvironmentId={editingThreadEnvironmentId}
+            onFinish={() => setEditingThreadEnvironmentId(null)}
+          />
+        </Dialog.Content>
+      </Dialog.Root>
     </Sidebar.Sidebar>
+  );
+};
+
+type EditThreadFormProps = {
+  threadEnvironmentId: string | null;
+  onFinish: () => unknown;
+};
+
+type EditThreadFormSchema = {
+  description: string;
+};
+
+const EditThreadForm = ({
+  threadEnvironmentId,
+  onFinish,
+}: EditThreadFormProps) => {
+  const form = useForm<EditThreadFormSchema>({});
+  const { setThreadEnvironmentData, threads } = useThreads();
+  const thread = threads?.find((t) => t.environmentId === threadEnvironmentId);
+  const updateMutation = api.hub.updateMetadata.useMutation();
+
+  useEffect(() => {
+    if (!form.formState.isDirty) {
+      form.setValue('description', thread?.description ?? '');
+
+      setTimeout(() => {
+        form.setFocus('description');
+      });
+    }
+  }, [form, thread]);
+
+  const onSubmit: SubmitHandler<EditThreadFormSchema> = async (data) => {
+    // This submit handler optimistically updates environment data to make the update feel instant
+
+    try {
+      const firstEnvironment = thread?.environments[0];
+      if (!firstEnvironment) return;
+      const { namespace, name, version, ...environment } = firstEnvironment;
+
+      const updates = {
+        description: data.description,
+      };
+
+      setThreadEnvironmentData(firstEnvironment.id, updates);
+
+      void updateMutation.mutateAsync({
+        name,
+        namespace,
+        version,
+        metadata: {
+          ...environment,
+          ...updates,
+        },
+      });
+    } catch (error) {
+      handleClientError({ error });
+    }
+
+    onFinish();
+  };
+
+  return (
+    <Form onSubmit={form.handleSubmit(onSubmit)}>
+      <Flex direction="column" gap="l">
+        <Input
+          label="Description"
+          type="text"
+          {...form.register('description')}
+        />
+
+        <Flex align="center" justify="space-between">
+          <Button
+            label="Cancel"
+            variant="secondary"
+            fill="outline"
+            onClick={onFinish}
+          />
+          <Button
+            label="Save"
+            variant="affirmative"
+            loading={updateMutation.isPending}
+          />
+        </Flex>
+      </Flex>
+    </Form>
   );
 };

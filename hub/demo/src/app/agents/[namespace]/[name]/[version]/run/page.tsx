@@ -67,7 +67,9 @@ export default function RunAgentPage() {
   );
 
   const environment = environmentQuery.data;
-  const openedFile = openedFileName && environment?.files?.[openedFileName];
+  const openedFile = openedFileName
+    ? environment?.files?.[openedFileName]
+    : undefined;
 
   async function onSubmit(values: z.infer<typeof chatWithAgentModel>) {
     try {
@@ -91,7 +93,6 @@ export default function RunAgentPage() {
           ],
           environmentId: environment?.environmentId ?? '',
           files: environment?.files ?? {},
-          fileStructure: environment?.fileStructure ?? [],
         },
       );
 
@@ -142,7 +143,6 @@ export default function RunAgentPage() {
         conversation: [],
         environmentId: '',
         files: {},
-        fileStructure: [],
       },
     );
 
@@ -245,16 +245,16 @@ export default function RunAgentPage() {
             Output
           </Text>
 
-          {environment?.fileStructure.length ? (
+          {environment?.files && Object.keys(environment.files).length ? (
             <CardList>
-              {environment.fileStructure.map((fileInfo) => (
+              {Object.values(environment.files).map((file) => (
                 <Card
                   padding="s"
                   gap="s"
-                  key={fileInfo.name}
+                  key={file.name}
                   background="sand-2"
                   onClick={() => {
-                    setOpenedFileName(fileInfo.name);
+                    setOpenedFileName(file.name);
                   }}
                 >
                   <Flex align="center" gap="s">
@@ -266,10 +266,10 @@ export default function RunAgentPage() {
                       clampLines={1}
                       style={{ marginRight: 'auto' }}
                     >
-                      {fileInfo.name}
+                      {file.name}
                     </Text>
 
-                    <Text size="text-xs">{formatBytes(fileInfo.size)}</Text>
+                    <Text size="text-xs">{formatBytes(file.size)}</Text>
                   </Flex>
                 </Card>
               ))}
@@ -317,14 +317,16 @@ export default function RunAgentPage() {
               icon={<Copy />}
               size="small"
               fill="outline"
-              onClick={() => openedFile && copyTextToClipboard(openedFile)}
+              onClick={() =>
+                openedFile && copyTextToClipboard(openedFile?.content)
+              }
               style={{ marginLeft: 'auto' }}
             />
           }
         >
           <Code
             bleed
-            source={openedFile}
+            source={openedFile?.content}
             language={filePathToCodeLanguage(openedFileName)}
           />
         </Dialog.Content>

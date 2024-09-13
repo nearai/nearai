@@ -23,12 +23,13 @@ import {
 
 const fetchWithZod = createZodFetcher();
 
-export interface FileStructure {
+type RegistryFile = {
+  content: string;
   name: string;
   type: number;
   size: number;
   headerOffset: number;
-}
+};
 
 export const registryCategory = z.enum([
   'agent',
@@ -81,11 +82,9 @@ async function downloadEnvironment(environmentId: string) {
       return JSON.parse(message) as z.infer<typeof messageModel>;
     });
 
-  const fileStructure: FileStructure[] = [];
-  const files: Record<string, string> = {};
+  const files: Record<string, RegistryFile> = {};
   const environment = {
     environmentId,
-    fileStructure,
     files,
     conversation,
   };
@@ -97,8 +96,10 @@ async function downloadEnvironment(environmentId: string) {
       const fileName = originalFileName.replace(/^\.\//, '');
       if (fileName !== 'chat.txt' && fileName !== '.next_action') {
         fileInfo.name = fileName;
-        environment.fileStructure.push(fileInfo);
-        environment.files[fileName] = tarReader.getTextFile(fileName);
+        environment.files[fileName] = {
+          ...fileInfo,
+          content: tarReader.getTextFile(fileName),
+        };
       }
     }
   }
@@ -158,7 +159,9 @@ export const hubRouter = createTRPCRouter({
 
       const environmentId = responseText.replace(/\\/g, '').replace(/"/g, '');
 
-      return downloadEnvironment(environmentId);
+      const environment = await downloadEnvironment(environmentId);
+
+      return environment;
     }),
 
   environment: protectedProcedure

@@ -48,7 +48,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Dropdown.Content>
               <Dropdown.Section>
                 <Dropdown.SectionContent>
-                  <Text size="text-xs">Versions</Text>
+                  <Text size="text-xs" weight={600} uppercase>
+                    Versions
+                  </Text>
                 </Dropdown.SectionContent>
 
                 {currentVersions?.map((item) => (
