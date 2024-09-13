@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from textwrap import fill
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Tuple
 
 from openapi_client.models.entry_information import EntryInformation
 from tabulate import tabulate
@@ -15,7 +15,18 @@ EVALUATED_ENTRY_METADATA = "evaluated_entry_metadata"
 def record_single_score_evaluation(solver_strategy: SolverStrategy, score: float) -> None:
     """Uploads single score evaluation into registry."""
     evaluation_name = solver_strategy.evaluation_name()
-    metrics = {evaluation_name: score}
+    record_evaluation_metrics(solver_strategy, {evaluation_name: score}, False)
+
+
+def _prepend_name_to_metrics(evaluation_name: str, metrics: Dict[str, Any]) -> Dict[str, Any]:
+    return {f"{evaluation_name}/{key}": value for key, value in metrics.items()}
+
+
+def record_evaluation_metrics(
+    solver_strategy: SolverStrategy, metrics: Dict[str, Any], prepend_evaluation_name: bool = True
+) -> None:
+    """Uploads evaluation metrics into registry."""
+    evaluation_name = solver_strategy.evaluation_name()
     model = ""
     agent = ""
     version = ""
@@ -30,7 +41,7 @@ def record_single_score_evaluation(solver_strategy: SolverStrategy, score: float
 
     upload_evaluation(
         evaluation_name,
-        metrics,
+        metrics if not prepend_evaluation_name else _prepend_name_to_metrics(evaluation_name, metrics),
         model,
         agent,
         solver_strategy.evaluated_entry_namespace(),
@@ -85,6 +96,7 @@ def upload_evaluation(
         json.dump(metrics, f, indent=2)
 
     metadata_path = entry_path / "metadata.json"
+    # TODO(#273): Currently that will not update existing evaluation.
     with open(metadata_path, "w") as f:
         json.dump(
             {
@@ -103,13 +115,19 @@ def upload_evaluation(
     registry.upload(Path(entry_path), show_progress=True)
 
 
-def evaluations_table(entries: List[EntryInformation], verbose: bool = False) -> None:
+def evaluations_table(
+    entries: List[EntryInformation],
+    all_key_columns: bool,
+    all_metrics: bool,
+    num_columns: int,
+    metric_name_max_length: int,
+) -> None:
     """Prints table of evaluations."""
     rows: Dict[tuple[tuple[str, Any], ...], Dict[str, str]] = {}
     metric_names: Set[str] = set()
     for entry in entries:
         evaluation_name = f"{entry.namespace}/{entry.name}/{entry.version}"
-        evaluation_path = registry.download(evaluation_name)
+        evaluation_path = registry.download(evaluation_name, verbose=False)
         metrics_path = evaluation_path / "metrics.json"
         with open(metrics_path, "r") as f:
             metrics = json.load(f)
@@ -127,30 +145,78 @@ def evaluations_table(entries: List[EntryInformation], verbose: bool = False) ->
             # Initialize the inner dictionary if this key doesn't exist
             if key_tuple not in rows:
                 rows[key_tuple] = {}
-            rows[key_tuple] = {}
 
             # Add all other metrics that are not EVALUATED_ENTRY_METADATA
             for metric_name, metric_value in metrics.items():
-                if metric_name != EVALUATED_ENTRY_METADATA:
-                    rows[key_tuple][metric_name] = str(metric_value)
-                    metric_names.add(metric_name)
+                if metric_name == EVALUATED_ENTRY_METADATA:
+                    continue
+                if not all_metrics and not _is_important_metric(metric_name, metrics):
+                    continue
+                rows[key_tuple][metric_name] = str(metric_value)
+                metric_names.add(metric_name)
 
-    header: List[str] = ["model", "agent"]
-    if verbose:
-        header = ["model", "agent", "namespace", "version", "provider"]
-    for metric_name in metric_names:
-        header.append(metric_name)
+    _print_metrics_tables(rows, sorted(metric_names), num_columns, all_key_columns, metric_name_max_length)
 
-    table = []
+
+def _is_important_metric(metric_name, metrics) -> bool:
+    """Simple heuristics to determine if the metric is important."""
+    if len(metrics) == 2:
+        # One score and metadata.
+        return True
+    return "coding" in metric_name or "average" in metric_name or "avg" in metric_name
+
+
+def _shorten_metric_name(name: str, max_length: int) -> str:
+    """Shortens metric name if needed."""
+    if len(name) <= max_length:
+        return name
+    keep = max_length - 2  # 2 dots
+    beginning = keep // 3
+    ending = keep - beginning
+    return name[:beginning] + ".." + name[-ending:]
+
+
+def _print_metrics_tables(
+    rows: Dict[Tuple, Dict],
+    metric_names: List[str],
+    num_columns: int,
+    all_key_columns: bool,
+    metric_name_max_length: int,
+):
+    """Builds table(s) and prints them."""
+    # Shorten metric names
+    short_metric_names = [_shorten_metric_name(name, metric_name_max_length) for name in metric_names]
+
+    # Prepare the base header and rows
+    base_header = ["model", "agent"]
+    if all_key_columns:
+        base_header.extend(["namespace", "version", "provider"])
+
+    base_rows = []
     for row_key_tuple, row_metrics in rows.items():
         row_key = dict(row_key_tuple)
-        row: List[str] = [fill(row_key["model"]), fill(row_key["agent"])]
-        if verbose:
-            row.append(fill(row_key["namespace"]))
-            row.append(fill(row_key["version"]))
-            row.append(fill(row_key["provider"]))
-        for metric_name in metric_names:
-            row.append(fill(row_metrics.get(metric_name, "")))
-        table.append(row)
+        base_row = [fill(row_key["model"]), fill(row_key["agent"])]
+        if all_key_columns:
+            base_row.extend([fill(row_key["namespace"]), fill(row_key["version"]), fill(row_key["provider"])])
+        base_rows.append((base_row, row_metrics))
 
-    print(tabulate(table, headers=header, tablefmt="simple_grid"))
+    n_metrics_per_table = max(1, num_columns - len(base_header))
+    # Split metrics into groups
+    metric_groups = list(
+        zip(
+            [
+                short_metric_names[i : i + n_metrics_per_table]
+                for i in range(0, len(short_metric_names), n_metrics_per_table)
+            ],
+            [metric_names[i : i + n_metrics_per_table] for i in range(0, len(metric_names), n_metrics_per_table)],
+        )
+    )
+
+    # Print tables
+    for short_group, full_group in metric_groups:
+        header = base_header + short_group
+        table = []
+        for base_row, row_metrics in base_rows:
+            row = base_row + [fill(str(row_metrics.get(metric, ""))) for metric in full_group]
+            table.append(row)
+        print(tabulate(table, headers=header, tablefmt="simple_grid"))

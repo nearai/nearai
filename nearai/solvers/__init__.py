@@ -1,5 +1,21 @@
 from abc import ABC, ABCMeta, abstractmethod
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+
+class SolverScoringMethod(Enum):
+    # Scores each question with 'True' or 'False'.
+    TrueOrFalseList = "TrueOrFalseList"
+    # Custom dataset with custom answers.
+    Custom = "Custom"
+
+
+class SolverStrategyClassProperty:
+    def __init__(self, fget):
+        self.fget = fget
+
+    def __get__(self, _owner_self, owner_cls):
+        return self.fget(owner_cls)
 
 
 class SolverStrategyMeta(ABCMeta):
@@ -22,6 +38,10 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
     def name(self) -> str:
         """Returns the name of the solver strategy."""
         return type(self).__name__
+
+    @SolverStrategyClassProperty
+    def scoring_method(self) -> SolverScoringMethod:
+        return SolverScoringMethod.TrueOrFalseList
 
     @abstractmethod
     def evaluation_name(self) -> str:
@@ -58,12 +78,29 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
         """Solves the task for the given datum."""
         ...
 
+    def get_custom_tasks(self) -> List[dict]:
+        """Custom tasks for custom benchmark."""
+        if self.scoring_method == SolverScoringMethod.Custom:
+            raise NotImplementedError("get_custom_tasks must be implemented for Custom scoring method")
+        else:
+            raise AttributeError("get_custom_tasks is only applicable for Custom scoring method")
+
+    def get_evaluation_metrics(self, tasks_results: List[Tuple[bool, Any]]) -> Dict[str, Any]:
+        """Given results for all datums, returns evaluation metrics.
+
+        Not used by TrueOrFalseList scoring method.
+        Do not prepend with evaluation_name. If hierarchical, use slashes /.
+        Expected metrics is a dict of scores, e.g.: {"average": <val>, "group/coding": <val>}.
+        """
+        raise NotImplementedError("get_evaluation_metrics not implemented")
+
 
 SolverStrategyRegistry: Dict[str, SolverStrategy] = {}
 
 from nearai.solvers.ddot_v0_solver import DDOTSV0Solver  # noqa: E402
 from nearai.solvers.gsm8k_solver import GSM8KSolverStrategy  # noqa: E402
 from nearai.solvers.hellaswag_solver import HellaswagSolverStrategy  # noqa: E402
+from nearai.solvers.livebench_solver import LiveBenchSolverStrategy  # noqa: E402
 from nearai.solvers.mbpp_agent_solver import MBPPSolverAgent  # noqa: E402
 from nearai.solvers.mbpp_solver import MBPPSolverStrategy  # noqa: E402
 from nearai.solvers.mmlu_solver import MMLUSolverStrategy  # noqa: E402
@@ -75,5 +112,6 @@ __all__ = [
     "MBPPSolverAgent",
     "MMLUSolverStrategy",
     "HellaswagSolverStrategy",
+    "LiveBenchSolverStrategy",
     "GSM8KSolverStrategy",
 ]
