@@ -37,17 +37,16 @@ export function useThreads() {
       id: number,
       data: Partial<RouterOutputs['hub']['registryEntries'][number]>,
     ) => {
-      const environment = list.data?.find((env) => env.id === id);
-      const environments = [...(list.data ?? [])].filter(
-        (env) => env.id !== id,
-      );
+      const environments = [...(list.data ?? [])].map((environment) => {
+        if (environment.id === id) {
+          return {
+            ...environment,
+            ...data,
+          };
+        }
 
-      if (environment) {
-        environments.push({
-          ...environment,
-          ...data,
-        });
-      }
+        return environment;
+      });
 
       utils.hub.registryEntries.setData(
         {

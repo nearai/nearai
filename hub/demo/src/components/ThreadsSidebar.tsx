@@ -66,9 +66,9 @@ export const ThreadsSidebar = ({
   const isViewingAgent = pathname.startsWith('/agents');
   const updateMutation = api.hub.updateMetadata.useMutation();
 
-  const currentEnvironmentIdMatchesThread = !!filteredThreads?.find(
-    (thread) => thread.environmentId === environmentId,
-  );
+  const currentEnvironmentIdMatchesThread =
+    !environmentId ||
+    !!filteredThreads?.find((thread) => thread.environmentId === environmentId);
 
   const removeThread = async (thread: Thread) => {
     try {
