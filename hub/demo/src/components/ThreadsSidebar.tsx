@@ -161,7 +161,7 @@ export const ThreadsSidebar = ({
 
                   <Tooltip
                     asChild
-                    content={`Total Prompts: ${thread.messageCount}`}
+                    content={`${thread.messageCount} message${thread.messageCount === 1 ? '' : 's'} sent`}
                     key={thread.environmentId}
                   >
                     <Badge
@@ -208,7 +208,7 @@ export const ThreadsSidebar = ({
                           }
                         >
                           <SvgIcon icon={<Pencil />} />
-                          Edit
+                          Rename Thread
                         </Dropdown.Item>
 
                         <Dropdown.Item href={thread.agent.url}>
@@ -224,12 +224,12 @@ export const ThreadsSidebar = ({
                           }
                         >
                           <SvgIcon icon={<LinkIcon />} />
-                          Copy Link
+                          Copy Shareable Link
                         </Dropdown.Item>
 
                         <Dropdown.Item onSelect={() => removeThread(thread)}>
                           <SvgIcon icon={<Trash />} color="red-10" />
-                          Delete
+                          Delete Thread
                         </Dropdown.Item>
                       </Dropdown.Section>
 
@@ -284,7 +284,7 @@ export const ThreadsSidebar = ({
         open={!!editingThreadEnvironmentId}
         onOpenChange={() => setEditingThreadEnvironmentId(null)}
       >
-        <Dialog.Content title="Edit Thread" size="s">
+        <Dialog.Content title="Rename Thread" size="s">
           <EditThreadForm
             threadEnvironmentId={editingThreadEnvironmentId}
             onFinish={() => setEditingThreadEnvironmentId(null)}
@@ -356,11 +356,7 @@ const EditThreadForm = ({
   return (
     <Form onSubmit={form.handleSubmit(onSubmit)}>
       <Flex direction="column" gap="l">
-        <Input
-          label="Description"
-          type="text"
-          {...form.register('description')}
-        />
+        <Input label="Name" type="text" {...form.register('description')} />
 
         <Flex align="center" justify="space-between">
           <Button
