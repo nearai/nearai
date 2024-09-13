@@ -14,7 +14,7 @@ Base framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --b
 
 LangGraph framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-langgraph -t nearai-runner:test .`
 
-This will start the server on port 9000.
+Then `docker run --platform linux/amd64 -p 9000:8080 nearai-runner:test` will start the server on port 9000. 
 
 To call the server you will need a signedMessage for the auth param.
 Then you can call the server with the following curl command.
