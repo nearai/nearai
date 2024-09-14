@@ -16,7 +16,6 @@ from openapi_client.api.benchmark_api import BenchmarkApi
 from openapi_client.api.default_api import DefaultApi
 from tabulate import tabulate
 
-from nearai.agent import load_agent
 from nearai.clients.lambda_client import LambdaWrapper
 from nearai.config import (
     CONFIG,
@@ -345,37 +344,9 @@ class AgentCli:
     def inspect(self, path: str) -> None:
         """Inspect environment from given path."""
         from nearai.environment import Environment
-
-        env = Environment(path, [], CONFIG, create_files=False)
-        env.inspect()
-
-    def save_folder(self, path: str, name: Optional[str] = None) -> None:
-        """Saves all subfolders with agent task runs (must contain non-empty chat.txt)."""
-        from nearai.environment import Environment
-
-        env = Environment(path, [], CONFIG, create_files=False)
-        env.save_folder(name)
-
-    def save_from_history(self, name: Optional[str] = None) -> None:
-        """Reads piped history, finds agent task runs, writes start_command.log files, and saves to registry. For detailed usage, run: nearai agent save_from_history --help.
-
-        This command:
-        1. Finds agent task runs (must contain non-empty chat.txt)
-        2. Writes start_command.log files
-        3. Saves to registry
-
-        Only 'interactive' is supported.
-        Assumes format:
-        ' <line_number>  <program_name> agent interactive <comma_separated_agents> <path> <other_args>'
-        Run:
-        $ history | grep "agent interactive" | sed "s:~:$HOME:g" | nearai agent save_from_history environment_interactive_runs_from_lambda_00
-        """  # noqa: E501
-        from nearai.environment import Environment
-
-        env = Environment("/", [], CONFIG, create_files=False)
-        # Read from stdin (piped input)
-        lines = sys.stdin.readlines()
-        env.save_from_history(lines, name)
+        import subprocess
+        filename = Path(os.path.abspath(__file__)).parent / "streamlit_inspect.py"
+        subprocess.call(["streamlit", "run", filename, "--", path])
 
     def interactive(
         self,
@@ -390,8 +361,9 @@ class AgentCli:
     ) -> None:
         """Runs agent interactively with environment from given path."""
         from nearai.environment import Environment
+        from nearai.agents.local_runner import LocalRunner
 
-        _agents = [load_agent(agent, local) for agent in agents.split(",")]
+        _agents = [LocalRunner.load_agent(agent, local) for agent in agents.split(",")]
         if not path:
             if len(_agents) == 1:
                 path = _agents[0].path
@@ -405,8 +377,8 @@ class AgentCli:
             tool_resources=tool_resources,
             print_system_log=print_system_log,
         )
-
-        env.run_interactive(record_run, load_env)
+        runner = LocalRunner(env)
+        runner.run_interactive(record_run, load_env)
 
     def task(
         self,
@@ -418,20 +390,25 @@ class AgentCli:
         env_vars: Optional[Dict[str, Any]] = None,
         load_env: str = "",
         local: bool = False,
+        tool_resources: Optional[Dict[str, Any]] = None,
+        print_system_log: bool = True,
     ) -> None:
         """Runs agent non interactively with environment from given path."""
         from nearai.environment import Environment
+        from nearai.agents.local_runner import LocalRunner
 
-        _agents = [load_agent(agent, local) for agent in agents.split(",")]
+        _agents = [LocalRunner.load_agent(agent, local) for agent in agents.split(",")]
         if not path:
             if len(_agents) == 1:
                 path = _agents[0].path
             else:
                 raise ValueError("Local path is required when running multiple agents")
-        env = Environment(path, _agents, CONFIG, env_vars=env_vars)
-        env.run_task(task, record_run, load_env, max_iterations)
+        env = Environment(path, _agents, CONFIG, env_vars=env_vars, tool_resources=tool_resources, print_system_log=print_system_log)
+        runner = LocalRunner(env)
+        runner.run_task(task, record_run, load_env, max_iterations)
 
-    def run_remote(
+
+def run_remote(
         self,
         agents: str,
         new_message: str = "",

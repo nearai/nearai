@@ -9,7 +9,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx as hx
 import tenacity
 
-from nearai.agent import Agent, load_agent
+from nearai.agent import Agent
+from nearai.agents.local_runner import LocalRunner
 from nearai.config import CONFIG, DATA_FOLDER, DEFAULT_PROVIDER, Config
 from nearai.dataset import Dataset
 from nearai.environment import Environment
@@ -135,7 +136,7 @@ class DDOTSV0Solver(SolverStrategy):
     """
 
     def __init__(self, dataset_ref: Dataset, agents: str, max_iterations: int, save_snapshots: bool = False):  # noqa: D107
-        self.agents = [load_agent(agent) for agent in agents.split(",")]
+        self.agents = [LocalRunner.load_agent(agent) for agent in agents.split(",")]
         self.max_iterations = max_iterations
 
         date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

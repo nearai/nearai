@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from datasets import Dataset, DatasetDict  # type: ignore[attr-defined]
 
-from nearai.agent import load_agent
+from nearai.agents.local_runner import LocalRunner
 from nearai.config import CONFIG, DEFAULT_PROVIDER
 from nearai.environment import Environment
 from nearai.solvers import SolverStrategy
@@ -20,7 +20,7 @@ class MBPPSolverAgent(SolverStrategy):
     ) -> None:
         super().__init__()
         self.dataset_ref = dataset_ref
-        self.agent = load_agent(agent)
+        self.agent = LocalRunner.load_agent(agent)
         self.verbose = verbose
         self.num_iterations = num_iterations
 
