@@ -34,21 +34,18 @@ export default function ProfilePage() {
   const starred = pathSegments.at(-1) === 'starred';
   const { accountId } = useProfileParams();
   const { updateQueryPath, queryParams } = useQueryParams(['category', 'sort']);
+  const sort = queryParams.sort ?? 'stars';
   const [sidebarOpenForSmallScreens, setSidebarOpenForSmallScreens] =
     useState(false);
 
   const list = api.hub.registryEntries.useQuery({
-    namespace: accountId,
+    namespace: starred ? undefined : accountId,
     starredBy: starred ? accountId : undefined,
   });
 
   const allPublished = list.data?.filter((item) =>
     categories.includes(item.category as RegistryCategory),
   );
-
-  allPublished?.sort((a, b) => {
-    return a.name.localeCompare(b.name);
-  });
 
   const filteredPublished = queryParams.category
     ? allPublished?.filter((item) => item.category === queryParams.category)
@@ -58,9 +55,16 @@ export default function ProfilePage() {
     setSidebarOpenForSmallScreens(false);
   }, [queryParams.category]);
 
-  if (starred) {
-    // TODO: Filtering and sorting
-    console.log(starred);
+  switch (sort) {
+    case 'stars':
+      allPublished?.sort((a, b) => {
+        let sort = b.num_stars - a.num_stars;
+        if (sort === 0) sort = a.name.localeCompare(b.name);
+        return sort;
+      });
+      break;
+    default:
+      allPublished?.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   if (!allPublished || !filteredPublished) return <PlaceholderSection />;
@@ -115,7 +119,7 @@ export default function ProfilePage() {
               <Dropdown.Trigger asChild>
                 <Badge
                   button
-                  label={toTitleCase(queryParams.sort ?? 'Name')}
+                  label={toTitleCase(sort)}
                   iconLeft={<ArrowsDownUp />}
                   variant="neutral"
                 />
@@ -128,7 +132,7 @@ export default function ProfilePage() {
                   </Dropdown.SectionContent>
 
                   <Dropdown.Item
-                    onSelect={() => updateQueryPath({ sort: undefined })}
+                    onSelect={() => updateQueryPath({ sort: 'name' })}
                   >
                     Name
                   </Dropdown.Item>
