@@ -1,7 +1,6 @@
 'use client';
 
 import { ArrowRight, ChatCircleText, Copy, Gear } from '@phosphor-icons/react';
-import { useRouter } from 'next/navigation';
 import { type KeyboardEventHandler, useEffect, useRef, useState } from 'react';
 import { Controller } from 'react-hook-form';
 import { type z } from 'zod';
@@ -38,7 +37,6 @@ import { formatBytes } from '~/utils/number';
 import { getQueryParams } from '~/utils/url';
 
 export default function RunAgentPage() {
-  const router = useRouter();
   const { currentResource } = useCurrentRegistryEntry('agent');
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const { namespace, name, version } = useRegistryEntryParams();
