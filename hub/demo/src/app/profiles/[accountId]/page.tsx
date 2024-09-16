@@ -39,6 +39,7 @@ export default function ProfilePage() {
 
   const list = api.hub.registryEntries.useQuery({
     namespace: accountId,
+    starredBy: starred ? accountId : undefined,
   });
 
   const allPublished = list.data?.filter((item) =>

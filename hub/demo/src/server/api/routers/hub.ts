@@ -269,6 +269,7 @@ export const hubRouter = createTRPCRouter({
         limit: z.number().default(10_000),
         namespace: z.string().optional(),
         showLatestVersion: z.boolean().default(true),
+        starredBy: z.string().optional(),
         tags: z.string().array().optional(),
       }),
     )
@@ -287,6 +288,10 @@ export const hubRouter = createTRPCRouter({
         url.searchParams.append('namespace', input.namespace);
 
       if (input.tags) url.searchParams.append('tags', input.tags.join(','));
+
+      if (input.starredBy) {
+        url.searchParams.append('starred_by', input.starredBy);
+      }
 
       if (ctx.signature) {
         url.searchParams.append('star_point_of_view', ctx.signature.account_id);
