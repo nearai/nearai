@@ -78,8 +78,8 @@ export const ResourceList = ({ category, title }: Props) => {
             <Table.HeadCell>Version</Table.HeadCell>
             <Table.HeadCell>Tags</Table.HeadCell>
             <Table.HeadCell
-              column="stars"
-              sortable
+              column="num_stars"
+              sortable={{ startingOrder: 'DESCENDING' }}
               style={{ paddingLeft: '1.4rem' }}
             >
               Stars
