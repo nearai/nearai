@@ -10,7 +10,7 @@ import {
 } from '@phosphor-icons/react';
 import { usePrevious } from '@uidotdev/usehooks';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 
@@ -47,10 +47,9 @@ export const ThreadsSidebar = ({
   openForSmallScreens,
   setOpenForSmallScreens,
 }: Props) => {
-  const router = useRouter();
   const pathname = usePathname();
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
-  const { createQueryPath, queryParams } = useQueryParams(['environmentId']);
+  const { updateQueryPath, queryParams } = useQueryParams(['environmentId']);
   const environmentId = queryParams.environmentId ?? '';
   const previousEnvironmentId = usePrevious(environmentId);
   const { threads } = useThreads();
@@ -73,7 +72,7 @@ export const ThreadsSidebar = ({
   const removeThread = async (thread: Thread) => {
     try {
       if (environmentId === thread.environmentId) {
-        router.replace(createQueryPath({ environmentId: undefined }));
+        updateQueryPath({ environmentId: undefined });
       }
 
       setRemovedEnvironmentIds((value) => [...value, thread.environmentId]);
