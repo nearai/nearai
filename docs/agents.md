@@ -333,3 +333,24 @@ nearai agent interactive user.near/agent/1 --local --env_vars='{"foo":"bar"}'
 ####  Example
 
 Consider an agent `zavodil.near/test-env-agent/1` that has configurable environment variables.
+
+## Agent Frameworks
+Agents can be built using a variety of frameworks and libraries. A particular bundle of libraries is given a name, such as `langgraph-1-4`.
+To run your agent remotely with a particular framework, set the framework name in the agent's metadata.json file.
+```json
+{
+  "details": {
+    "agent": {
+      "framework": "langgraph-1-4"
+    }
+  }
+}
+```
+For local development, you can install any libraries you would like to use by adding them to top level `pyproject.toml`.
+
+Current frameworks can be found in the repo's [frameworks](https://github.com/nearai/nearai/tree/main/aws_runner/frameworks) folder.
+
+### LangChain / LangGraph
+The example agent [langgraph-min-example](https://app.near.ai/agents/flatirons.near/langgraph-min-example/1.0.1/source)
+has metadata that specifies the `langgraph-1-4` framework to run on langgraph version 1.4. In addition, the agent.py 
+code contains an adaptor class, `AgentChatModel` that maps LangChain inference operations to `env.completions` calls.
