@@ -42,7 +42,7 @@ export default function RunAgentPage() {
   const { currentResource } = useCurrentRegistryEntry('agent');
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const { namespace, name, version } = useRegistryEntryParams();
-  const { queryParams, createQueryPath } = useQueryParams(['environmentId']);
+  const { queryParams, updateQueryPath } = useQueryParams(['environmentId']);
   const environmentId = queryParams.environmentId ?? '';
   const chatMutation = api.hub.chatWithAgent.useMutation();
   const { threadsQuery } = useThreads();
@@ -118,9 +118,7 @@ export default function RunAgentPage() {
         response,
       );
 
-      router.replace(
-        createQueryPath({ environmentId: response.environmentId }),
-      );
+      updateQueryPath({ environmentId: response.environmentId });
 
       void threadsQuery.refetch();
     } catch (error) {
@@ -149,7 +147,7 @@ export default function RunAgentPage() {
       },
     );
 
-    router.replace(createQueryPath({ environmentId: undefined }));
+    updateQueryPath({ environmentId: undefined });
 
     form.setValue('new_message', '');
     form.setFocus('new_message');
