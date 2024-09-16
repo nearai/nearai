@@ -125,14 +125,18 @@ type HeadCellProps = ComponentPropsWithRef<'th'> &
       }
     | {
         column: string;
-        sortable: boolean;
+        sortable:
+          | boolean
+          | {
+              startingOrder: SortableTable['order'];
+            };
       }
   );
 
 export const HeadCell = forwardRef<HTMLTableCellElement, HeadCellProps>(
   ({ children, column, sortable, ...props }, ref) => {
     const { sort, setSort } = useContext(TableContext)!;
-    const clickable = !!props.onClick || sortable;
+    const clickable = !!props.onClick || !!sortable;
     const role = clickable ? 'button' : undefined;
     const tabIndex = clickable ? 0 : undefined;
     const columnHasActiveSort = sort?.column === column;
@@ -154,7 +158,12 @@ export const HeadCell = forwardRef<HTMLTableCellElement, HeadCellProps>(
 
       if (!sortable || !column || !sort || !setSort) return;
 
-      if (columnHasActiveSort && sort.order === 'ASCENDING') {
+      if (
+        (columnHasActiveSort && sort.order === 'ASCENDING') ||
+        (!columnHasActiveSort &&
+          typeof sortable === 'object' &&
+          sortable.startingOrder === 'DESCENDING')
+      ) {
         setSort({
           column,
           order: 'DESCENDING',
