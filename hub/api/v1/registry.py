@@ -310,7 +310,7 @@ async def list_entries(
 
     if namespace:
         namespace = valid_identifier(namespace)
-        namespace_condition = "AND namespace = :namespace"
+        namespace_condition = "AND registry.namespace = :namespace"
         bind_params["namespace"] = namespace
     else:
         namespace_condition = ""
