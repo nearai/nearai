@@ -128,18 +128,12 @@ class PartialNearClient:
         )
         return result
 
-    def save_environment(self, file: bytes, name: str, description: str, details: dict, tags: List[str]) -> str:
+    def save_environment(self, file: bytes, metadata: dict) -> str:
         """Saves an environment to NearAI registry."""
         api_instance = RegistryApi(self._client)
 
         author = self.auth.get("account_id")
-        metadata = {
-            "category": "environment",
-            "description": description,
-            "details": details,
-            "tags": tags,
-            "show_entry": True,
-        }
+        name = metadata.get("name")
         entry_location = {"namespace": author, "name": name, "version": "0"}
         api_instance.upload_metadata_v1_registry_upload_metadata_post(
             BodyUploadMetadataV1RegistryUploadMetadataPost(metadata=metadata, entry_location=entry_location)

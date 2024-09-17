@@ -8,7 +8,6 @@ import subprocess
 import tarfile
 import tempfile
 import threading
-import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -43,6 +42,7 @@ class Environment(object):
         create_files: bool = True,
         metric_function=None,
         env_vars: Optional[Dict[str, Any]] = None,
+        tool_resources: Optional[Dict[str, Any]] = None,
         print_system_log: bool = False,
     ):
         self._path = path
@@ -55,7 +55,9 @@ class Environment(object):
         self.register_standard_tools()
         self.env_vars: Dict[str, Any] = env_vars if env_vars else {}
         self._last_used_model = ""
+        self.tool_resources: Dict[str, Any] = tool_resources if tool_resources else {}
         self.print_system_log = print_system_log
+        self._approvals: Dict[str, Any] = {"confirm_execution": lambda _: True}
 
         if create_files:
             os.makedirs(self._path, exist_ok=True)
@@ -66,7 +68,11 @@ class Environment(object):
     def _generate_run_id() -> str:
         return uuid.uuid4().hex
 
+    def set_approvals(self, approvals: Dict[str, Any]) -> None:  # noqa: D102
+        self._approvals = approvals
+
     def get_tool_registry(self) -> ToolRegistry:  # noqa: D102
+        """Returns the tool registry, a dictionary of tools that can be called by the agent."""
         return self._tools
 
     def register_standard_tools(self) -> None:  # noqa: D102
@@ -77,7 +83,8 @@ class Environment(object):
         reg.register_tool(self.request_user_input)
         reg.register_tool(self.list_files)
 
-    def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME, **kwargs: Any) -> None:  # noqa: D102
+    def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME, **kwargs: Any) -> None:
+        """Add a message to the chat file."""
         with open(os.path.join(self._path, filename), "a") as f:
             f.write(json.dumps({"role": role, "content": message, **kwargs}) + DELIMITER)
 
@@ -117,7 +124,7 @@ class Environment(object):
     def _add_agent_start_system_log(self, agent_idx: int) -> None:
         """Add agent start system log."""
         agent = self._agents[agent_idx]
-        message = f"Starting an agent {agent.name}"
+        message = f"Running agent {agent.name}"
         if agent.model != "":
             model = self.get_model_for_inference(agent.model)
             self._last_used_model = model
@@ -128,10 +135,12 @@ class Environment(object):
                 message += f", max_tokens={agent.model_max_tokens}"
         self.add_system_log(message)
 
-    def list_terminal_commands(self, filename: str = TERMINAL_FILENAME) -> List[Any]:  # noqa: D102
+    def list_terminal_commands(self, filename: str = TERMINAL_FILENAME) -> List[Any]:
+        """Returns the terminal commands from the terminal file."""
         return self.list_messages(filename)
 
-    def list_messages(self, filename: str = CHAT_FILENAME) -> List[Any]:  # noqa: D102
+    def list_messages(self, filename: str = CHAT_FILENAME) -> List[Any]:
+        """Returns messages from a specified file."""
         path = os.path.join(self._path, filename)
 
         if not os.path.exists(path):
@@ -148,6 +157,7 @@ class Environment(object):
         return os.listdir(os.path.join(self._path, path))
 
     def get_path(self) -> str:  # noqa: D102
+        """Returns the path of the current directory."""
         return self._path
 
     def read_file(self, filename: str) -> str:
@@ -178,8 +188,17 @@ class Environment(object):
     def exec_command(self, command: str) -> Dict[str, str]:
         """Executes a command in the environment and logs the output.
 
-        command: The command to execute.
-        """
+        The environment does not allow running interactive programs. It will run a program for 1 second then will interrupt it if it is still running or if it is waiting for user input.
+        command: The command to execute, like 'ls -l' or 'python3 tests.py'
+        """  # noqa: E501
+        if not self._approvals["confirm_execution"](command):
+            return {
+                "command": command,
+                "returncode": 999,
+                "stdout": "",
+                "stderr": "Command execution was not approved.",
+            }
+
         try:
             process = subprocess.Popen(
                 shlex.split(command),
@@ -347,61 +366,36 @@ class Environment(object):
             snapshot = f.read()
         return snapshot
 
-    def save_to_registry(
-        self,
-        path: str,
-        run_type: str,
-        run_id: str,
-        base_id: Optional[Union[str, int]] = None,
-    ) -> str:
-        """Save Environment to Registry.
+    def environment_run_info(self, run_id, base_id, run_type) -> dict:
+        """Returns the environment run information."""
+        if not self._agents or not self._agents[0]:
+            raise ValueError("Agent not found")
+        primary_agent = self._agents[0]
 
-        :return: The name of the saved environment.
-        """
-        save_start_time = time.perf_counter()
-        full_agent_name = self._agents[0].name if self._agents else "unknown"
+        full_agent_name = "/".join([primary_agent.namespace, primary_agent.name, primary_agent.version])
         safe_agent_name = full_agent_name.replace("/", "_")
         generated_name = f"environment_run_{safe_agent_name}_{run_id}"
         name = generated_name
 
-        with tempfile.NamedTemporaryFile(suffix=".tar.gz") as f:
-            with tarfile.open(fileobj=f, mode="w:gz") as tar:
-                tar.add(path, arcname=".")
-            f.flush()
-            f.seek(0)
-            snapshot = f.read()
-            tar_filename = f.name
-
-            timestamp = datetime.now(timezone.utc).isoformat()
-            description = f"Agent {run_type} {safe_agent_name} {run_id} {timestamp}"
-            details = {
+        timestamp = datetime.now(timezone.utc).isoformat()
+        return {
+            "name": name,
+            "version": "0",
+            "description": f"Agent {run_type} {full_agent_name} {run_id} {timestamp}",
+            "category": "environment",
+            "tags": ["environment"],
+            "details": {
                 "base_id": base_id,
                 "timestamp": timestamp,
                 "agents": [agent.name for agent in self._agents],
+                "primary_agent_namespace": primary_agent.namespace,
+                "primary_agent_name": primary_agent.name,
+                "primary_agent_version": primary_agent.version,
                 "run_id": run_id,
                 "run_type": run_type,
-                "filename": tar_filename,
-            }
-            tags_l = ["environment"]
-            request_start_time = time.perf_counter()
-            registry_id = self._client.save_environment(
-                file=snapshot,
-                name=name,
-                description=description,
-                details=details,
-                tags=tags_l,
-            )
-            request_stop_time = time.perf_counter()
-            if self._metric_function:
-                self._metric_function("SaveEnvironmentToRegistry_Duration", request_stop_time - request_start_time)
-            print(
-                f"Saved environment {registry_id} to registry. To load use flag `--load-env={registry_id}`. "
-                f"or `--load-env={name}`"
-            )
-            save_stop_time = time.perf_counter()
-            if self._metric_function:
-                self._metric_function("SaveEnvironment_Duration", save_stop_time - save_start_time)
-            return registry_id
+            },
+            "show_entry": True,
+        }
 
     def load_snapshot(self, snapshot: bytes) -> None:
         """Load Environment from Snapshot."""
@@ -425,7 +419,14 @@ class Environment(object):
         """Must be called to request input from the user."""
         self.set_next_actor("user")
 
+    def clear_temp_agent_files(self) -> None:  # noqa: D102
+        """Remove temp agent files created to be used in `runpy`."""
+        for agent in self._agents:
+            if agent.temp_dir and os.path.exists(agent.temp_dir):
+                shutil.rmtree(agent.temp_dir)
+
     def set_next_actor(self, who: str) -> None:  # noqa: D102
+        """Set the next actor / action in the dialogue."""
         next_action_fn = os.path.join(self._path, ".next_action")
 
         with open(next_action_fn, "w") as f:
@@ -443,18 +444,14 @@ class Environment(object):
 
     def run(
         self,
-        new_message: str,
-        record_run: bool = True,
-        load_env: str = "",
+        new_message: Optional[str] = None,
         max_iterations: int = 10,
     ) -> Optional[str]:
         """Runs agent(s) against a new or previously created environment."""
+
         run_id = self._generate_run_id()
-        base_id = load_env
         iteration = 0
-
         self._add_agent_start_system_log(agent_idx=0)
-
         self.set_next_actor("agent")
 
         if new_message:
@@ -464,13 +461,7 @@ class Environment(object):
             iteration += 1
             self._agents[0].run(self, task=new_message)
 
-        if record_run:
-            return self.save_to_registry(self._path, "remote run", run_id, base_id)
-        return None
-
-    def contains_non_empty_chat_txt(self, directory: str) -> bool:  # noqa: D102
-        chat_txt_path = os.path.join(directory, "chat.txt")
-        return os.path.isfile(chat_txt_path) and os.path.getsize(chat_txt_path) > 0
+        return run_id
 
     def generate_folder_hash_id(self, path: str) -> str:
         """Returns id similar to _generate_run_id(), but based on files and their contents in path, including subfolders."""  # noqa: E501

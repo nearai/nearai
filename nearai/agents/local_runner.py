@@ -22,6 +22,8 @@ class LocalRunner:
         self._path = env._path
         self._agents = env._agents
         self._env = env
+        env.set_approvals({"confirm_execution": self.confirm_execution})
+
 
     @staticmethod
     def load_agent(name: str, local: bool = False) -> Agent:
@@ -45,6 +47,7 @@ class LocalRunner:
 
         last_message_idx = 0
         last_message_idx = self._print_messages(env.list_messages(), last_message_idx)
+        run_id = "No run id"
 
         while True:
             if env.get_next_actor() != "user":
@@ -141,3 +144,10 @@ class LocalRunner:
 
         rmtree(tempdir)
         return entry_location
+
+    def confirm_execution(self, command):
+        if self._env._config.get("confirm_commands", True):
+            yes_no = input("> Do you want to run the following command? (Y/n): " + command)
+            if yes_no != "" and yes_no.lower() == "y":
+                return True
+        return False

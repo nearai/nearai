@@ -54,7 +54,7 @@ class Environment(object):
         self._last_used_model = ""
         self.tool_resources: Dict[str, Any] = tool_resources if tool_resources else {}
         self.print_system_log = print_system_log
-
+        self._approvals: Dict[str, Any] = {"confirm_execution": lambda _: True}
         if self._config.nearai_hub is None:
             self._config.nearai_hub = NearAiHubConfig()
 
@@ -66,6 +66,9 @@ class Environment(object):
     @staticmethod
     def _generate_run_id() -> str:
         return uuid.uuid4().hex
+
+    def set_approvals(self, approvals: Dict[str, Any]) -> None:  # noqa: D102
+        self._approvals = approvals
 
     def get_tool_registry(self) -> ToolRegistry:  # noqa: D102
         """Returns the tool registry, a dictionary of tools that can be called by the agent."""
@@ -205,15 +208,13 @@ class Environment(object):
         The environment does not allow running interactive programs. It will run a program for 1 second then will interrupt it if it is still running or if it is waiting for user input.
         command: The command to execute, like 'ls -l' or 'python3 tests.py'
         """  # noqa: E501
-        if self._config.get("confirm_commands", True):
-            yes_no = input("> Do you want to run the following command? (Y/n): " + command)
-            if yes_no != "" and yes_no.lower() != "y":
-                return {
-                    "command": command,
-                    "returncode": 999,
-                    "stdout": "",
-                    "stderr": "declined by user",
-                }
+        if not self._approvals["confirm_execution"](command):
+            return {
+                "command": command,
+                "returncode": 999,
+                "stdout": "",
+                "stderr": "Command execution was not approved.",
+            }
 
         try:
             process = subprocess.Popen(
