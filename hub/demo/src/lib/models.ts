@@ -118,7 +118,7 @@ export const registryEntry = z.object({
         primary_agent_version: z.string(),
         base_id: z.string().or(z.null()),
         icon: z.string(),
-        run_id: z.string(),
+        run_id: z.coerce.string(),
 
         timestamp: z.string(),
       })
