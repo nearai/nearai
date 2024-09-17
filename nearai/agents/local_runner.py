@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 from shutil import rmtree
 
-from hub.api.v1.registry import EntryLocation
+from hub.api.v1.entry_location import EntryLocation
 from openapi_client import EntryMetadata
 from nearai import plain_location
 

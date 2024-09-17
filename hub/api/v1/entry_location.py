@@ -1,0 +1,41 @@
+import re
+from typing import Annotated
+
+from fastapi import Form, HTTPException
+from pydantic import BaseModel, AfterValidator
+
+
+identifier_pattern = re.compile(r"^[a-zA-Z0-9_\-.]+$")
+
+def valid_identifier(identifier: str) -> str:
+    result = identifier_pattern.match(identifier)
+    if result is None:
+        raise HTTPException(
+            status_code=400, detail=f"Invalid identifier: {repr(identifier)}. Should match {identifier_pattern.pattern}"
+        )
+    return result[0]
+
+class EntryLocation(BaseModel):
+    namespace: Annotated[str, AfterValidator(valid_identifier)]
+    name: Annotated[str, AfterValidator(valid_identifier)]
+    version: Annotated[str, AfterValidator(valid_identifier)]
+
+    @staticmethod
+    def from_str(entry: str) -> "EntryLocation":
+        """Create a location from a string in the format namespace/name/version."""
+        pattern = re.compile("^(?P<namespace>[^/]+)/(?P<name>[^/]+)/(?P<version>[^/]+)$")
+        match = pattern.match(entry)
+
+        if match is None:
+            raise ValueError(f"Invalid entry format: {entry}. Should have the format <namespace>/<name>/<version>")
+
+        return EntryLocation(
+            namespace=match.group("namespace"),
+            name=match.group("name"),
+            version=match.group("version"),
+        )
+
+    @classmethod
+    def as_form(cls, namespace: str = Form(...), name: str = Form(...), version: str = Form(...)):
+        """Create a location from form data."""
+        return cls(namespace=namespace, name=name, version=version)

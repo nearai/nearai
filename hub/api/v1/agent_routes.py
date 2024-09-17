@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 
 from hub.api.v1.auth import AuthToken, revokable_auth
 from hub.api.v1.models import RegistryEntry
-from hub.api.v1.registry import S3_BUCKET, EntryLocation, get
+from hub.api.v1.registry import S3_BUCKET, get
+from hub.api.v1.entry_location import EntryLocation
 
 s3 = boto3.client("s3")
 
