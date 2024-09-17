@@ -25,13 +25,10 @@ from nearai.config import (
     DEFAULT_PROVIDER,
     update_config,
 )
-from nearai.dataset import get_dataset
-from nearai.evaluation import evaluations_table
 from nearai.finetune import FinetuneCli
 from nearai.hub import Hub
 from nearai.lib import check_metadata, parse_location
 from nearai.registry import registry
-from nearai.solvers import SolverScoringMethod
 from nearai.tensorboard_feed import TensorboardCli
 
 
@@ -237,8 +234,8 @@ class BenchmarkCli:
         If force is set to True, it will run the benchmark again and update the cache.
         """
         from nearai.benchmark import BenchmarkExecutor, DatasetInfo
-        from nearai.dataset import load_dataset
-        from nearai.solvers import SolverStrategy, SolverStrategyRegistry
+        from nearai.dataset import load_dataset, get_dataset
+        from nearai.solvers import SolverStrategy, SolverStrategyRegistry, SolverScoringMethod
 
         args = dict(solver_args)
         if subset is not None:
@@ -251,7 +248,7 @@ class BenchmarkCli:
             force=force,
         )
 
-        solver_strategy_class: SolverStrategy | None = SolverStrategyRegistry.get(solver_strategy, None)
+        solver_strategy_class: Union[SolverStrategy, None] = SolverStrategyRegistry.get(solver_strategy, None)
         assert (
             solver_strategy_class
         ), f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
@@ -324,6 +321,7 @@ class EvaluationCli:
         metric_name_max_length: int = 30,
     ) -> None:
         """Prints table of evaluations."""
+        from nearai.evaluation import evaluations_table
         # Make sure tags is a comma-separated list of tags
         tags_l = parse_tags(tags)
         tags = ",".join(tags_l)
@@ -343,7 +341,6 @@ class EvaluationCli:
 class AgentCli:
     def inspect(self, path: str) -> None:
         """Inspect environment from given path."""
-        from nearai.environment import Environment
         import subprocess
         filename = Path(os.path.abspath(__file__)).parent / "streamlit_inspect.py"
         subprocess.call(["streamlit", "run", filename, "--", path])
