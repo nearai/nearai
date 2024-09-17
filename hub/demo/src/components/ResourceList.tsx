@@ -2,7 +2,6 @@
 
 import { CodeBlock, Play } from '@phosphor-icons/react';
 import Head from 'next/head';
-import { useEffect } from 'react';
 
 import { Badge } from '~/components/lib/Badge';
 import { Button } from '~/components/lib/Button';
