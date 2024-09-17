@@ -284,7 +284,7 @@ class Environment(object):
         messages: Iterable[ChatCompletionMessageParam] | str,
         model: Iterable[ChatCompletionMessageParam] | str,
         stream: bool,
-        auth: Optional[AuthData],
+        auth: Optional[AuthData] = None,
         **kwargs: Any,
     ) -> Union[ModelResponse, CustomStreamWrapper]:
         """Run inference completions for given parameters."""
