@@ -596,6 +596,8 @@ class RegistryApi:
         offset: Optional[StrictInt] = None,
         show_hidden: Optional[StrictBool] = None,
         show_latest_version: Optional[StrictBool] = None,
+        starred_by: Optional[StrictStr] = None,
+        star_point_of_view: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -626,6 +628,10 @@ class RegistryApi:
         :type show_hidden: bool
         :param show_latest_version:
         :type show_latest_version: bool
+        :param starred_by:
+        :type starred_by: str
+        :param star_point_of_view:
+        :type star_point_of_view: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -656,6 +662,8 @@ class RegistryApi:
             offset=offset,
             show_hidden=show_hidden,
             show_latest_version=show_latest_version,
+            starred_by=starred_by,
+            star_point_of_view=star_point_of_view,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -687,6 +695,8 @@ class RegistryApi:
         offset: Optional[StrictInt] = None,
         show_hidden: Optional[StrictBool] = None,
         show_latest_version: Optional[StrictBool] = None,
+        starred_by: Optional[StrictStr] = None,
+        star_point_of_view: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -717,6 +727,10 @@ class RegistryApi:
         :type show_hidden: bool
         :param show_latest_version:
         :type show_latest_version: bool
+        :param starred_by:
+        :type starred_by: str
+        :param star_point_of_view:
+        :type star_point_of_view: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -747,6 +761,8 @@ class RegistryApi:
             offset=offset,
             show_hidden=show_hidden,
             show_latest_version=show_latest_version,
+            starred_by=starred_by,
+            star_point_of_view=star_point_of_view,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -778,6 +794,8 @@ class RegistryApi:
         offset: Optional[StrictInt] = None,
         show_hidden: Optional[StrictBool] = None,
         show_latest_version: Optional[StrictBool] = None,
+        starred_by: Optional[StrictStr] = None,
+        star_point_of_view: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -808,6 +826,10 @@ class RegistryApi:
         :type show_hidden: bool
         :param show_latest_version:
         :type show_latest_version: bool
+        :param starred_by:
+        :type starred_by: str
+        :param star_point_of_view:
+        :type star_point_of_view: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -838,6 +860,8 @@ class RegistryApi:
             offset=offset,
             show_hidden=show_hidden,
             show_latest_version=show_latest_version,
+            starred_by=starred_by,
+            star_point_of_view=star_point_of_view,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -864,6 +888,8 @@ class RegistryApi:
         offset,
         show_hidden,
         show_latest_version,
+        starred_by,
+        star_point_of_view,
         _request_auth,
         _content_type,
         _headers,
@@ -911,6 +937,14 @@ class RegistryApi:
         if show_latest_version is not None:
             
             _query_params.append(('show_latest_version', show_latest_version))
+            
+        if starred_by is not None:
+            
+            _query_params.append(('starred_by', starred_by))
+            
+        if star_point_of_view is not None:
+            
+            _query_params.append(('star_point_of_view', star_point_of_view))
             
         # process the header parameters
         # process the form parameters

@@ -2,7 +2,7 @@ import re
 from datetime import datetime as dt
 from datetime import timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Tuple, Union
 
 from openapi_client.models.entry_location import EntryLocation
 
@@ -64,3 +64,17 @@ def check_metadata(path: Path):
         print(f"Metadata file not found: {path.absolute()}")
         print("Create a metadata file with `nearai registry metadata_template`")
         exit(1)
+
+
+def parse_tags(tags: Union[str, Tuple[str, ...]]) -> List[str]:
+    if not tags:
+        return []
+
+    elif isinstance(tags, tuple):
+        return list(tags)
+
+    elif isinstance(tags, str):
+        return tags.split(",")
+
+    else:
+        raise ValueError(f"Invalid tags argument: {tags}")

@@ -274,6 +274,7 @@ class Registry:
         offset: int,
         show_all: bool,
         show_latest_version: bool,
+        starred_by: str = "",
     ) -> List[EntryInformation]:
         """List and filter entries in the registry."""
         return self.api.list_entries_v1_registry_list_entries_post(
@@ -284,6 +285,7 @@ class Registry:
             offset=offset,
             show_hidden=show_all,
             show_latest_version=show_latest_version,
+            starred_by=starred_by,
         )
 
     def list_all_visible(self) -> List[EntryInformation]:

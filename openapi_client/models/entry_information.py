@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictInt, StrictStr
+from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List
 from typing import Optional, Set
 from typing_extensions import Self
@@ -34,7 +34,9 @@ class EntryInformation(BaseModel):
     description: StrictStr
     details: Dict[str, Any]
     tags: List[StrictStr]
-    __properties: ClassVar[List[str]] = ["id", "namespace", "name", "version", "category", "description", "details", "tags"]
+    num_stars: StrictInt
+    starred_by_point_of_view: StrictBool
+    __properties: ClassVar[List[str]] = ["id", "namespace", "name", "version", "category", "description", "details", "tags", "num_stars", "starred_by_point_of_view"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -94,7 +96,9 @@ class EntryInformation(BaseModel):
             "category": obj.get("category"),
             "description": obj.get("description"),
             "details": obj.get("details"),
-            "tags": obj.get("tags")
+            "tags": obj.get("tags"),
+            "num_stars": obj.get("num_stars"),
+            "starred_by_point_of_view": obj.get("starred_by_point_of_view")
         })
         return _obj
 

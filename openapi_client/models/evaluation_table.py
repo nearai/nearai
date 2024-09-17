@@ -17,21 +17,19 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictInt, StrictStr
-from typing import Any, ClassVar, Dict, List, Optional
+from pydantic import BaseModel, ConfigDict, StrictStr
+from typing import Any, ClassVar, Dict, List
 from typing import Optional, Set
 from typing_extensions import Self
 
-class Benchmark(BaseModel):
+class EvaluationTable(BaseModel):
     """
-    Benchmark
+    EvaluationTable
     """ # noqa: E501
-    id: Optional[StrictInt] = None
-    namespace: StrictStr
-    benchmark: StrictStr
-    solver: StrictStr
-    args: StrictStr
-    __properties: ClassVar[List[str]] = ["id", "namespace", "benchmark", "solver", "args"]
+    rows: List[Dict[str, StrictStr]]
+    columns: List[StrictStr]
+    important_columns: List[StrictStr]
+    __properties: ClassVar[List[str]] = ["rows", "columns", "important_columns"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -51,7 +49,7 @@ class Benchmark(BaseModel):
 
     @classmethod
     def from_json(cls, json_str: str) -> Optional[Self]:
-        """Create an instance of Benchmark from a JSON string"""
+        """Create an instance of EvaluationTable from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -76,7 +74,7 @@ class Benchmark(BaseModel):
 
     @classmethod
     def from_dict(cls, obj: Optional[Dict[str, Any]]) -> Optional[Self]:
-        """Create an instance of Benchmark from a dict"""
+        """Create an instance of EvaluationTable from a dict"""
         if obj is None:
             return None
 
@@ -84,11 +82,9 @@ class Benchmark(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "id": obj.get("id"),
-            "namespace": obj.get("namespace"),
-            "benchmark": obj.get("benchmark"),
-            "solver": obj.get("solver"),
-            "args": obj.get("args")
+            "rows": obj.get("rows"),
+            "columns": obj.get("columns"),
+            "important_columns": obj.get("important_columns")
         })
         return _obj
 

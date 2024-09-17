@@ -3,9 +3,9 @@ from pathlib import Path
 from textwrap import fill
 from typing import Any, Dict, List, Set, Tuple
 
-from openapi_client.models.entry_information import EntryInformation
 from tabulate import tabulate
 
+from nearai.lib import parse_tags
 from nearai.registry import get_registry_folder, registry
 from nearai.solvers import SolverStrategy
 
@@ -115,16 +115,26 @@ def upload_evaluation(
     registry.upload(Path(entry_path), show_progress=True)
 
 
-def evaluations_table(
-    entries: List[EntryInformation],
-    all_key_columns: bool,
-    all_metrics: bool,
-    num_columns: int,
-    metric_name_max_length: int,
-) -> None:
-    """Prints table of evaluations."""
+def evaluation_table(
+    namespace: str = "", tags: str = ""
+) -> Tuple[Dict[tuple[tuple[str, Any], ...], Dict[str, str]], List[str], List[str]]:
+    """Returns rows, columns, and important columns."""
+    # Make sure tags is a comma-separated list of tags
+    tags_l = parse_tags(tags)
+    tags = ",".join(tags_l)
+
+    entries = registry.list(
+        namespace=namespace,
+        category="evaluation",
+        tags=tags,
+        total=10000,
+        offset=0,
+        show_all=False,
+        show_latest_version=True,
+    )
     rows: Dict[tuple[tuple[str, Any], ...], Dict[str, str]] = {}
     metric_names: Set[str] = set()
+    important_metric_names: Set[str] = set()
     for entry in entries:
         evaluation_name = f"{entry.namespace}/{entry.name}/{entry.version}"
         evaluation_path = registry.download(evaluation_name, verbose=False)
@@ -150,12 +160,29 @@ def evaluations_table(
             for metric_name, metric_value in metrics.items():
                 if metric_name == EVALUATED_ENTRY_METADATA:
                     continue
-                if not all_metrics and not _is_important_metric(metric_name, metrics):
-                    continue
+                if _is_important_metric(metric_name, metrics):
+                    important_metric_names.add(metric_name)
                 rows[key_tuple][metric_name] = str(metric_value)
                 metric_names.add(metric_name)
 
-    _print_metrics_tables(rows, sorted(metric_names), num_columns, all_key_columns, metric_name_max_length)
+    sorted_metric_names = sorted(metric_names)
+    columns = ["model", "agent", "namespace", "version", "provider"] + sorted_metric_names
+    important_columns = ["model", "agent"] + sorted(important_metric_names)
+    return rows, columns, important_columns
+
+
+def print_evaluation_table(
+    rows: Dict[tuple[tuple[str, Any], ...], Dict[str, str]],
+    columns: List[str],
+    important_columns: List[str],
+    all_key_columns: bool,
+    all_metrics: bool,
+    num_columns: int,
+    metric_name_max_length: int,
+) -> None:
+    """Prints table of evaluations."""
+    metric_names = columns[5:] if all_metrics else important_columns[2:]
+    _print_metrics_tables(rows, metric_names, num_columns, all_key_columns, metric_name_max_length)
 
 
 def _is_important_metric(metric_name, metrics) -> bool:

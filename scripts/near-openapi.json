@@ -573,6 +573,26 @@
               "default": true,
               "title": "Show Latest Version"
             }
+          },
+          {
+            "name": "starred_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Starred By"
+            }
+          },
+          {
+            "name": "star_point_of_view",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Star Point Of View"
+            }
           }
         ],
         "responses": {
@@ -1124,6 +1144,125 @@
         }
       }
     },
+    "/v1/evaluation/table": {
+      "get": {
+        "tags": [
+          "evaluation"
+        ],
+        "summary": "Get Evaluation Table",
+        "operationId": "get_evaluation_table_v1_evaluation_table_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationTable"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/stars/add_star": {
+      "post": {
+        "tags": [
+          "stars"
+        ],
+        "summary": "Add Star",
+        "operationId": "add_star_v1_stars_add_star_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_star_v1_stars_add_star_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/stars/remove_star": {
+      "post": {
+        "tags": [
+          "stars"
+        ],
+        "summary": "Remove Star",
+        "operationId": "remove_star_v1_stars_remove_star_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_remove_star_v1_stars_remove_star_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -1209,6 +1348,54 @@
         ],
         "title": "BenchmarkResultOutput"
       },
+      "EvaluationTable": {
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "important_columns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["rows", "columns", "important_columns"],
+        "title": "EvaluationTable"
+      },
+      "Body_add_star_v1_stars_add_star_post": {
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "title": "Namespace"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "namespace",
+          "name"
+        ],
+        "title": "Body_add_star_v1_stars_add_star_post"
+      },
       "Body_download_environment_v1_download_environment_post": {
         "properties": {
           "path": {
@@ -1266,6 +1453,24 @@
           "entry_location"
         ],
         "title": "Body_list_files_v1_registry_list_files_post"
+      },
+      "Body_remove_star_v1_stars_remove_star_post": {
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "title": "Namespace"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "namespace",
+          "name"
+        ],
+        "title": "Body_remove_star_v1_stars_remove_star_post"
       },
       "Body_upload_file_v1_registry_upload_file_post": {
         "properties": {
@@ -1633,6 +1838,42 @@
             "title": "Record Run",
             "description": "Whether to record the run in the registry.",
             "default": true
+          },
+          "tool_resources": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Resources",
+            "description": "A dictionary of tool resources to use for the run."
+          },
+          "user_env_vars": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Env Vars",
+            "description": "Env vars provided by the user"
+          },
+          "agent_env_vars": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Env Vars",
+            "description": "Env vars provided by the agent"
           }
         },
         "type": "object",
@@ -1729,6 +1970,14 @@
             },
             "type": "array",
             "title": "Tags"
+          },
+          "num_stars": {
+            "type": "integer",
+            "title": "Num Stars"
+          },
+          "starred_by_point_of_view": {
+            "type": "boolean",
+            "title": "Starred By Point Of View"
           }
         },
         "type": "object",
@@ -1740,7 +1989,9 @@
           "category",
           "description",
           "details",
-          "tags"
+          "tags",
+          "num_stars",
+          "starred_by_point_of_view"
         ],
         "title": "EntryInformation"
       },
