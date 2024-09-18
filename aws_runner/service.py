@@ -11,7 +11,6 @@ import boto3
 from partial_near_client import PartialNearClient, ENVIRONMENT_FILENAME
 from runner.agent import Agent
 from runner.environment import Environment
-from shared.client_config import ClientConfig
 
 cloudwatch = boto3.client("cloudwatch", region_name="us-east-2")
 
@@ -119,12 +118,7 @@ def run_with_environment(
     if api_url != DEFAULT_API_URL:
         print(f"WARNING: Using custom API URL: {api_url}")
 
-    client_config = ClientConfig(
-        base_url=api_url+"/v1",
-        auth=auth,
-    )
-
-    near_client = PartialNearClient(client_config, auth)
+    near_client = PartialNearClient(api_url, auth)
 
     loaded_agents = [load_agent(near_client, agent, agent_env_vars) for agent in agents.split(",")]
 

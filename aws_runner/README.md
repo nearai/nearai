@@ -1,18 +1,19 @@
 # NearAI AWS Runner
 A docker container that runs on AWS Lambda to run NearAI agents.
  * This is invoked by the NearAI Api server or the NearAI cli agent run_remote command.
- * The runner calls back to the NearAI Api server for inference,
-to fetch agent code, and to fetch and store environments (store not implemented yet).
+ * The runner calls back to the NearAI Api server for inference, to fetch agent code, 
+and to fetch and store environments. An environment is the files that result from an agent run, which will always
+include chat.txt and system.log.txt files.
 
 
 ## Local testing
-__Docker must be run from the root of the repository so the Dockerfile can pull in openapi_client.__
+__Docker must be run from the root of the repository so the Dockerfile can pull in the openapi_client and shared directories.__
 
 Note the dash before the framework name when passing a framework. The deploy script adds the dash but here it must be added manually.
 
 Base framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg -t nearai-runner:test .`
 
-LangGraph framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-langgraph -t nearai-runner:test .`
+LangGraph framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-langgraph-1-4 -t nearai-runner:test .`
 
 Then `docker run --platform linux/amd64 -p 9000:8080 nearai-runner:test` will start the server on port 9000. 
 
@@ -31,8 +32,8 @@ also includes an environment_id param for loading a previous environment.
 curl "http://localhost:9000/2015-03-31/functions/function/invocations" \
 -d @- <<'EOF'
   {
-    "agents": "xela-agent",
-    "environment_id":"environment_run_xela-tools-agent_541869e6753c41538c87cb6f681c6932",
+    "agents": "flatirons.near/example-travel-agent/1",
+    "environment_id":"flatirons.near/environment_run_flatirons.near_example-travel-agent_1_e03703aeebd8487895d5cad37a2d5f9d/0",
     "auth":"{\"account_id\":\"your_account.near\",
         \"public_key\":\"ed25519:F5DeKFoya9fl35hapvpXxwReoksgi9a677JkniDIFLAW\",
         \"signature\":\"SIGNATURE_FIELD_FROM_A_REAL_SIGNATURE\",
