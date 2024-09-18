@@ -10,6 +10,8 @@ from nearai.config import CONFIG, DEFAULT_PROVIDER
 from nearai.agents.environment import Environment
 from nearai.solvers import SolverStrategy
 from nearai.solvers.mbpp_solver import MBPPDatum, get_function_name
+from shared.client_config import ClientConfig
+from shared.inference_client import InferenceClient
 
 
 class MBPPSolverAgent(SolverStrategy):
@@ -48,6 +50,12 @@ class MBPPSolverAgent(SolverStrategy):
         datum = MBPPDatum(**datum).model_dump()
         function_name = get_function_name(datum["code"])
 
+        client_config = ClientConfig(
+            base_url=CONFIG.nearai_hub.base_url,
+            auth=CONFIG.auth,
+        )
+        client = InferenceClient(client_config)
+
         path = os.path.join(
             "/tmp",
             "mbpp",
@@ -55,9 +63,12 @@ class MBPPSolverAgent(SolverStrategy):
             str(int(time.time() * 1000)),
             str(random.randint(0, 1000)),
         )
-        CONFIG.confirm_commands = False
-        env = Environment(path, [self.agent], CONFIG)
-
+        env = Environment(
+            path,
+            [self.agent],
+            client,
+            approvals={"confirm_execution": lambda _: False},
+        )
         new_line = "\n"
         task = f"""{datum["text"]}
 Write a single file with python function named `{function_name}` that solves the above problem and satisfied the following tests:
@@ -65,7 +76,7 @@ Write a single file with python function named `{function_name}` that solves the
         if self.verbose:
             print(task)
             print(path)
-        env.run_task(task, max_iterations=self.num_iterations)
+        env.run(task, max_iterations=self.num_iterations)
 
         code = ""
         for filename in env.list_files("."):
