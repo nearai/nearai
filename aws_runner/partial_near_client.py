@@ -1,3 +1,4 @@
+import json
 import re
 from typing import List
 
@@ -8,37 +9,44 @@ from openapi_client import (
     BodyListFilesV1RegistryListFilesPost,
     BodyUploadMetadataV1RegistryUploadMetadataPost,
 )
-from openapi_client.api.agents_assistants_api import AgentsAssistantsApi
-from openapi_client.api.default_api import DefaultApi
-from openapi_client.api.registry_api import RegistryApi
-from openapi_client.models.chat_completions_request import ChatCompletionsRequest
-from openapi_client.models.request import Request
-from runner.environment import ENVIRONMENT_FILENAME
+from openapi_client.api_client import ApiClient
+from openapi_client.configuration import Configuration
 
+from openapi_client.api.agents_assistants_api import AgentsAssistantsApi
+from openapi_client.api.registry_api import RegistryApi
+from shared.inference_client import InferenceClient
+from shared.models import SimilaritySearch
+
+ENVIRONMENT_FILENAME = "environment.tar.gz"
 
 class PartialNearClient:
     """Wrap NearAI api registry methods, uses generated NearAI client."""
 
-    def __init__(self, client, auth: dict):  # noqa: D107
+    def __init__(self, client_config, auth):  # noqa: D107
+        host = client_config.base_url
+        configuration = Configuration(access_token=f"Bearer {json.dumps(auth)}", host=host)
+        client = ApiClient(configuration)
+        self._inference = InferenceClient(client_config)
+
         self._client = client
         self.entry_location_pattern = re.compile("^(?P<namespace>[^/]+)/(?P<name>[^/]+)/(?P<version>[^/]+)$")
         self.auth = auth
 
     def completions(self, model, messages, stream=False, temperature=None, max_tokens=None, **kwargs):
         """Calls NearAI Api to return all completions for given messages using the given model."""
-        api_instance = DefaultApi(self._client)
-        chat_completions_request = ChatCompletionsRequest(
-            model=model,
-            messages=messages,
+        return self._inference.completions(
+            model,
+            messages,
             stream=stream,
             temperature=temperature,
             max_tokens=max_tokens,
             **kwargs,
         )
-        request = Request(actual_instance=chat_completions_request, anyof_schema_1_validator=chat_completions_request)
-        api_response = api_instance.chat_completions_v1_chat_completions_post(request)
 
-        return api_response
+    def query_vector_store(
+            self, vector_store_id: str, query: str
+    ) -> List[SimilaritySearch]:
+        raise NotImplementedError("Method not implemented") # todo implement
 
     def parse_location(self, entry_location: str) -> dict:
         """Create a EntryLocation from a string in the format namespace/name/version."""

@@ -7,7 +7,8 @@ from pydantic import BaseModel
 
 from shared.near.primitives import get_provider_model
 from shared.inference_client import InferenceClient
-from nearai.config import CONFIG, DEFAULT_PROVIDER
+from nearai.config import CONFIG
+from shared.client_config import DEFAULT_PROVIDER
 from nearai.solvers import SolverStrategy
 
 

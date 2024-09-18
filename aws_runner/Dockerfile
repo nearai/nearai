@@ -11,5 +11,6 @@ RUN pip install -r requirements${FRAMEWORK}.txt
 COPY aws_runner/service.py aws_runner/partial_near_client.py ${LAMBDA_TASK_ROOT}
 COPY aws_runner/runner ${LAMBDA_TASK_ROOT}/runner
 COPY openapi_client ${LAMBDA_TASK_ROOT}/openapi_client
+COPY shared ${LAMBDA_TASK_ROOT}/shared
 
 CMD [ "service.handler" ]

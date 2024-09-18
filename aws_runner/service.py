@@ -8,11 +8,10 @@ from subprocess import call
 from typing import Optional
 
 import boto3
-from openapi_client.api_client import ApiClient
-from openapi_client.configuration import Configuration
-from partial_near_client import PartialNearClient
+from partial_near_client import PartialNearClient, ENVIRONMENT_FILENAME
 from runner.agent import Agent
-from runner.environment import ENVIRONMENT_FILENAME, Environment
+from runner.environment import Environment
+from shared.client_config import ClientConfig
 
 cloudwatch = boto3.client("cloudwatch", region_name="us-east-2")
 
@@ -120,9 +119,12 @@ def run_with_environment(
     if api_url != DEFAULT_API_URL:
         print(f"WARNING: Using custom API URL: {api_url}")
 
-    configuration = Configuration(access_token=f"Bearer {json.dumps(auth)}", host=api_url)
-    client = ApiClient(configuration)
-    near_client = PartialNearClient(client, auth)
+    client_config = ClientConfig(
+        base_url=api_url+"/v1",
+        auth=auth,
+    )
+
+    near_client = PartialNearClient(client_config, auth)
 
     loaded_agents = [load_agent(near_client, agent, agent_env_vars) for agent in agents.split(",")]
 
@@ -143,7 +145,7 @@ def run_with_environment(
         except tarfile.ReadError:
             print("The file is not a valid tar archive.")
 
-    env = Environment(RUN_PATH, loaded_agents, near_client, metric_function=write_metric, env_vars=user_env_vars)
+    env = Environment(RUN_PATH, loaded_agents, near_client, env_vars=user_env_vars)
     start_time = time.perf_counter()
     run_id = env.run(new_message, max_iterations)
     new_environment = save_environment(env, near_client, run_id, environment_id, write_metric) if record_run else None

@@ -19,11 +19,9 @@ from tabulate import tabulate
 from nearai.clients.lambda_client import LambdaWrapper
 from nearai.config import (
     CONFIG,
-    DEFAULT_MODEL,
-    DEFAULT_PROVIDER,
     update_config,
 )
-from shared.client_config import DEFAULT_MODEL_TEMPERATURE, DEFAULT_MODEL_MAX_TOKENS
+from shared.client_config import DEFAULT_MODEL_TEMPERATURE, DEFAULT_MODEL_MAX_TOKENS, DEFAULT_PROVIDER, DEFAULT_MODEL
 from nearai.finetune import FinetuneCli
 from nearai.hub import Hub
 from nearai.lib import check_metadata, parse_location, parse_tags
@@ -327,7 +325,7 @@ class AgentCli:
         self,
         agents: str,
         path: Optional[str] = "",
-        record_run: str = "true",
+        record_run: bool = True,
         env_vars: Optional[Dict[str, Any]] = None,
         load_env: str = "",
         local: bool = False,
@@ -369,7 +367,7 @@ class AgentCli:
         task: str,
         path: Optional[str] = "",
         max_iterations: int = 10,
-        record_run: str = "true",
+        record_run: bool = True,
         env_vars: Optional[Dict[str, Any]] = None,
         load_env: str = "",
         local: bool = False,

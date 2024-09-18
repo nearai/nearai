@@ -14,8 +14,14 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
 import psutil
+from litellm.types.utils import Choices, ModelResponse
+from litellm.utils import CustomStreamWrapper
+from openai.types.chat import ChatCompletionMessageParam
 
+import shared.near.sign as near
+from shared.near.primitives import PROVIDER_MODEL_SEP
 from runner.agent import Agent
+from shared.client_config import DEFAULT_PROVIDER, DEFAULT_PROVIDER_MODEL
 from runner.tool_registry import ToolRegistry
 
 DELIMITER = "\n"
@@ -23,14 +29,8 @@ CHAT_FILENAME = "chat.txt"
 SYSTEM_LOG_FILENAME = "system_log.txt"
 AGENT_LOG_FILENAME = "agent_log.txt"
 TERMINAL_FILENAME = "terminal.txt"
-ENVIRONMENT_FILENAME = "environment.tar.gz"
 
-# TODO(#290): Add API endpoints for nearai/config defaults
-DEFAULT_PROVIDER = "fireworks"
-DEFAULT_MODEL = "llama-v3p1-405b-instruct-long"
-DEFAULT_PROVIDER_MODEL = f"fireworks::accounts/fireworks/models/{DEFAULT_MODEL}"
-PROVIDER_MODEL_SEP = "::"
-
+default_approvals: Dict[str, Any] = {"confirm_execution": lambda _: True}
 
 class Environment(object):
     def __init__(  # noqa: D107
@@ -39,23 +39,22 @@ class Environment(object):
         agents: List["Agent"],
         client,
         create_files: bool = True,
-        metric_function=None,
         env_vars: Optional[Dict[str, Any]] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
         print_system_log: bool = False,
-    ):
+        approvals: Optional[Dict[str, Any]] = default_approvals,
+    ) -> None:
         self._path = path
         self._agents = agents
         self._done = False
         self._client = client
-        self._metric_function = metric_function
         self._tools = ToolRegistry()
         self.register_standard_tools()
         self.env_vars: Dict[str, Any] = env_vars if env_vars else {}
         self._last_used_model = ""
         self.tool_resources: Dict[str, Any] = tool_resources if tool_resources else {}
         self.print_system_log = print_system_log
-        self._approvals: Dict[str, Any] = {"confirm_execution": lambda _: True}
+        self._approvals = approvals
 
         if create_files:
             os.makedirs(self._path, exist_ok=True)
@@ -66,8 +65,6 @@ class Environment(object):
     def _generate_run_id() -> str:
         return uuid.uuid4().hex
 
-    def set_approvals(self, approvals: Dict[str, Any]) -> None:  # noqa: D102
-        self._approvals = approvals
 
     def get_tool_registry(self) -> ToolRegistry:  # noqa: D102
         """Returns the tool registry, a dictionary of tools that can be called by the agent."""
@@ -80,6 +77,8 @@ class Environment(object):
         reg.register_tool(self.write_file)
         reg.register_tool(self.request_user_input)
         reg.register_tool(self.list_files)
+        reg.register_tool(self.verify_message)
+        reg.register_tool(self.query_vector_store)
 
     def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME, **kwargs: Any) -> None:
         """Add a message to the chat file."""
@@ -147,6 +146,14 @@ class Environment(object):
         with open(path, "r") as f:
             return [json.loads(message) for message in f.read().split(DELIMITER) if message]
 
+    def verify_message(
+        self, account_id: str, public_key: str, signature: str, message: str, nonce: str, callback_url: str
+    ) -> bool:
+        """Verify user message signed with NEAR Account."""
+        return near.verify_signed_message(
+            account_id, public_key, signature, message, nonce, self._agents[0].name, callback_url
+        )
+
     def list_files(self, path: str) -> List[str]:
         """Lists files in the environment.
 
@@ -183,7 +190,15 @@ class Environment(object):
             f.write(content)
         return f"Successfully wrote {len(content) if content else 0} characters to {filename}"
 
-    def exec_command(self, command: str) -> Dict[str, str]:
+    def query_vector_store(self, vector_store_id: str, query: str):
+        """Query a vector store.
+
+        vector_store_id: The id of the vector store to query.
+        query: The query to search for.
+        """
+        return self._client.query_vector_store(vector_store_id, query)
+
+    def exec_command(self, command: str) -> Dict[str, Union[str, int]]:
         """Executes a command in the environment and logs the output.
 
         The environment does not allow running interactive programs. It will run a program for 1 second then will interrupt it if it is still running or if it is waiting for user input.
@@ -258,21 +273,21 @@ class Environment(object):
 
     def _run_inference_completions(
         self,
-        messages: Iterable[Any] | str,
-        model: Iterable[Any] | str,
+        messages: Iterable[ChatCompletionMessageParam] | str,
+        model: Iterable[ChatCompletionMessageParam] | str,
         stream: bool,
         **kwargs: Any,
-    ) -> Any:
+    ) -> Union[ModelResponse, CustomStreamWrapper]:
         """Run inference completions for given parameters."""
         if isinstance(messages, str):
             self.add_system_log("Deprecated completions call. Pass `messages` as a first parameter.", logging.WARNING)
             messages_or_model = messages
             model_or_messages = model
             model = cast(str, messages_or_model)
-            messages = cast(Iterable[Any], model_or_messages)
+            messages = cast(Iterable[ChatCompletionMessageParam], model_or_messages)
         else:
             model = cast(str, model)
-            messages = cast(Iterable[Any], messages)
+            messages = cast(Iterable[ChatCompletionMessageParam], messages)
         model = self.get_model_for_inference(model)
         if model != self._last_used_model:
             self._last_used_model = model
@@ -288,27 +303,33 @@ class Environment(object):
 
     # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
     def completions(
-        self, messages: Iterable[Any] | str, model: Iterable[Any] | str = "", stream: bool = False, **kwargs: Any
-    ) -> Any:
+        self,
+        messages: Iterable[ChatCompletionMessageParam] | str,
+        model: Iterable[ChatCompletionMessageParam] | str = "",
+        stream: bool = False,
+        **kwargs: Any,
+    ) -> Union[ModelResponse, CustomStreamWrapper]:
         """Returns all completions for given messages using the given model."""
         return self._run_inference_completions(messages, model, stream, **kwargs)
 
     # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
     def completions_and_run_tools(
         self,
-        messages: Iterable[Any] | str,
-        model: Iterable[Any] | str,
+        messages: Iterable[ChatCompletionMessageParam] | str,
+        model: Iterable[ChatCompletionMessageParam] | str = "",
         tools: Optional[List] = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> ModelResponse:
         """Returns all completions for given messages using the given model and runs tools."""
-        stream = kwargs.get("stream", False)
-        response = self._run_inference_completions(messages, model, stream=stream, tools=tools, **kwargs)
-        response_message = response["choices"][0]["message"]
-
-        if hasattr(response_message, "tool_calls") and response_message["tool_calls"]:
-            for tool_call in response_message["tool_calls"]:
-                function_name = tool_call["function.name"]
+        raw_response = self._run_inference_completions(messages, model, stream=False, tools=tools, **kwargs)
+        assert isinstance(raw_response, ModelResponse), "Expected ModelResponse"
+        response: ModelResponse = raw_response
+        assert all(map(lambda choice: isinstance(choice, Choices), response.choices)), "Expected Choices"
+        choices: List[Choices] = response.choices  # type: ignore
+        response_message = choices[0].message
+        if hasattr(response_message, "tool_calls") and response_message.tool_calls:
+            for tool_call in response_message.tool_calls:
+                function_name = tool_call.function.name
                 assert function_name, "Tool call must have a function name"
                 function_args = json.loads(tool_call.function.arguments)
                 function_response = self._tools.call_tool(function_name, **function_args)
@@ -319,24 +340,36 @@ class Environment(object):
         return response
 
     # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
-    def completion(self, messages: Iterable[Any] | str, model: Iterable[Any] | str = "") -> str:
+    def completion(
+        self,
+        messages: Iterable[ChatCompletionMessageParam] | str,
+        model: Iterable[ChatCompletionMessageParam] | str = "",
+    ) -> str:
         """Returns a completion for the given messages using the given model."""
-        result = self.completions(model, messages)
-        response_message = result["choices"][0]["message"]["content"]
+        raw_response = self.completions(messages, model)
+        assert isinstance(raw_response, ModelResponse), "Expected ModelResponse"
+        response: ModelResponse = raw_response
+        assert all(map(lambda choice: isinstance(choice, Choices), response.choices)), "Expected Choices"
+        choices: List[Choices] = response.choices  # type: ignore
+        response_message = choices[0].message.content
         assert response_message, "No completions returned"
         return response_message
 
     # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
     def completion_and_run_tools(
         self,
-        messages: Iterable[Any] | str,
-        model: Iterable[Any] | str,
+        messages: Iterable[ChatCompletionMessageParam] | str,
+        model: Iterable[ChatCompletionMessageParam] | str = "",
         tools: Optional[List] = None,
         **kwargs: Any,
     ) -> str:
         """Returns a completion for the given messages using the given model and runs tools."""
-        completion_tools_response = self.completions_and_run_tools(model, messages, tools, **kwargs)
-        response_message = completion_tools_response["choices"][0]["message"]["content"]
+        completion_tools_response = self.completions_and_run_tools(messages, model, tools, **kwargs)
+        assert all(
+            map(lambda choice: isinstance(choice, Choices), completion_tools_response.choices)
+        ), "Expected Choices"
+        choices: List[Choices] = completion_tools_response.choices  # type: ignore
+        response_message = choices[0].message.content
         assert response_message, "No completions returned"
         return response_message
 

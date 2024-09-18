@@ -21,7 +21,7 @@ from openai.types.chat import ChatCompletionMessageParam
 import shared.near.sign as near
 from shared.near.primitives import PROVIDER_MODEL_SEP
 from nearai.agents.agent import Agent
-from nearai.config import DEFAULT_PROVIDER, DEFAULT_PROVIDER_MODEL
+from shared.client_config import DEFAULT_PROVIDER, DEFAULT_PROVIDER_MODEL
 from nearai.agents.tool_registry import ToolRegistry
 
 DELIMITER = "\n"
