@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ComponentPropsWithRef, ReactElement } from 'react';
 import { forwardRef } from 'react';
 
+import { Badge } from './Badge';
 import s from './Button.module.scss';
 
 type Fill = 'solid' | 'outline' | 'ghost';
@@ -9,6 +10,7 @@ type Size = 'x-small' | 'small' | 'default' | 'large';
 type Variant = 'primary' | 'secondary' | 'affirmative' | 'destructive';
 
 type Props = Omit<ComponentPropsWithRef<'button'>, 'size'> & {
+  count?: number;
   fill?: Fill;
   href?: string;
   target?: ComponentPropsWithRef<'a'>['target'];
@@ -25,6 +27,7 @@ export const Button = forwardRef<HTMLButtonElement, Props>(
   (
     {
       className = '',
+      count,
       disabled,
       fill = 'solid',
       href,
@@ -75,6 +78,14 @@ export const Button = forwardRef<HTMLButtonElement, Props>(
             <>
               {iconLeft && <span className={s.icon}>{iconLeft}</span>}
               <span className={s.label}>{label}</span>
+              {typeof count === 'number' && (
+                <Badge
+                  label={count.toString()}
+                  size="small"
+                  count
+                  variant="neutral-alpha"
+                />
+              )}
               {iconRight && <span className={s.icon}>{iconRight}</span>}
             </>
           )}

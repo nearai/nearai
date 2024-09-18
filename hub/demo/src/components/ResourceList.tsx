@@ -13,9 +13,11 @@ import { Table } from '~/components/lib/Table';
 import { useTable } from '~/components/lib/Table/hooks';
 import { Text } from '~/components/lib/Text';
 import { Tooltip } from '~/components/lib/Tooltip';
-import { useResourceSearch } from '~/hooks/resources';
+import { useRegistryEntriesSearch } from '~/hooks/registry';
 import { type RegistryCategory } from '~/server/api/routers/hub';
 import { api } from '~/trpc/react';
+
+import { StarButton } from './StarButton';
 
 type Props = {
   category: RegistryCategory;
@@ -25,13 +27,14 @@ type Props = {
 export const ResourceList = ({ category, title }: Props) => {
   const listQuery = api.hub.registryEntries.useQuery({ category });
 
-  const { searched, searchQuery, setSearchQuery } = useResourceSearch(
+  const { searched, searchQuery, setSearchQuery } = useRegistryEntriesSearch(
     listQuery.data,
   );
 
   const { sorted, ...tableProps } = useTable({
     data: searched,
-    sortColumn: 'name',
+    sortColumn: 'num_stars',
+    sortOrder: 'DESCENDING',
   });
 
   return (
@@ -64,7 +67,13 @@ export const ResourceList = ({ category, title }: Props) => {
         />
       </Grid>
 
-      <Table.Root {...tableProps}>
+      <Table.Root
+        {...tableProps}
+        setSort={(value) => {
+          void listQuery.refetch();
+          tableProps.setSort(value);
+        }}
+      >
         <Table.Head>
           <Table.Row>
             <Table.HeadCell column="name" sortable>
@@ -75,6 +84,13 @@ export const ResourceList = ({ category, title }: Props) => {
             </Table.HeadCell>
             <Table.HeadCell>Version</Table.HeadCell>
             <Table.HeadCell>Tags</Table.HeadCell>
+            <Table.HeadCell
+              column="num_stars"
+              sortable={{ startingOrder: 'DESCENDING' }}
+              style={{ paddingLeft: '1.4rem' }}
+            >
+              Stars
+            </Table.HeadCell>
             {category === 'agent' && <Table.HeadCell />}
           </Table.Row>
         </Table.Head>
@@ -89,7 +105,7 @@ export const ResourceList = ({ category, title }: Props) => {
                   href={`/agents/${item.namespace}/${item.name}/${item.version}`}
                   style={{ width: '20rem' }}
                 >
-                  <Text size="text-s" weight={500} color="violet-11">
+                  <Text size="text-s" weight={500} color="sand-12">
                     {item.name}
                   </Text>
                 </Table.Cell>
@@ -101,8 +117,10 @@ export const ResourceList = ({ category, title }: Props) => {
                 </Table.Cell>
               )}
 
-              <Table.Cell>
-                <Text size="text-s">{item.namespace}</Text>
+              <Table.Cell href={`/profiles/${item.namespace}`}>
+                <Text size="text-s" weight={500}>
+                  {item.namespace}
+                </Text>
               </Table.Cell>
 
               <Table.Cell>
@@ -115,6 +133,10 @@ export const ResourceList = ({ category, title }: Props) => {
                     <Badge label={tag} variant="neutral" key={tag} />
                   ))}
                 </Flex>
+              </Table.Cell>
+
+              <Table.Cell style={{ width: '1px' }}>
+                <StarButton item={item} variant="simple" />
               </Table.Cell>
 
               {category === 'agent' && (

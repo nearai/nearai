@@ -8,7 +8,7 @@ import { api } from '~/trpc/react';
 
 import { useDebouncedValue } from './debounce';
 
-export function useResourceParams() {
+export function useRegistryEntryParams() {
   const { namespace, name, version } = useParams();
 
   return {
@@ -18,8 +18,8 @@ export function useResourceParams() {
   };
 }
 
-export function useCurrentResource(category: RegistryCategory) {
-  const { namespace, name, version } = useResourceParams();
+export function useCurrentRegistryEntry(category: RegistryCategory) {
+  const { namespace, name, version } = useRegistryEntryParams();
 
   const list = api.hub.registryEntries.useQuery({
     category,
@@ -39,7 +39,7 @@ export function useCurrentResource(category: RegistryCategory) {
   };
 }
 
-export function useResourceSearch(
+export function useRegistryEntriesSearch(
   data: z.infer<typeof registryEntries> | undefined,
 ) {
   const [searchQuery, setSearchQuery] = useState('');

@@ -1,7 +1,6 @@
 'use client';
 
 import { ArrowRight, ChatCircleText, Copy, Gear } from '@phosphor-icons/react';
-import { useRouter } from 'next/navigation';
 import { type KeyboardEventHandler, useEffect, useRef, useState } from 'react';
 import { Controller } from 'react-hook-form';
 import { type z } from 'zod';
@@ -23,7 +22,10 @@ import { Messages } from '~/components/Messages';
 import { SignInPrompt } from '~/components/SignInPrompt';
 import { ThreadsSidebar } from '~/components/ThreadsSidebar';
 import { useZodForm } from '~/hooks/form';
-import { useCurrentResource, useResourceParams } from '~/hooks/resources';
+import {
+  useCurrentRegistryEntry,
+  useRegistryEntryParams,
+} from '~/hooks/registry';
 import { useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
 import { chatWithAgentModel } from '~/lib/models';
@@ -35,11 +37,10 @@ import { formatBytes } from '~/utils/number';
 import { getQueryParams } from '~/utils/url';
 
 export default function RunAgentPage() {
-  const router = useRouter();
-  const { currentResource } = useCurrentResource('agent');
+  const { currentResource } = useCurrentRegistryEntry('agent');
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
-  const { namespace, name, version } = useResourceParams();
-  const { queryParams, createQueryPath } = useQueryParams(['environmentId']);
+  const { namespace, name, version } = useRegistryEntryParams();
+  const { queryParams, updateQueryPath } = useQueryParams(['environmentId']);
   const environmentId = queryParams.environmentId ?? '';
   const chatMutation = api.hub.chatWithAgent.useMutation();
   const { threadsQuery } = useThreads();
@@ -115,9 +116,7 @@ export default function RunAgentPage() {
         response,
       );
 
-      router.replace(
-        createQueryPath({ environmentId: response.environmentId }),
-      );
+      updateQueryPath({ environmentId: response.environmentId });
 
       void threadsQuery.refetch();
     } catch (error) {
@@ -146,7 +145,7 @@ export default function RunAgentPage() {
       },
     );
 
-    router.replace(createQueryPath({ environmentId: undefined }));
+    updateQueryPath({ environmentId: undefined });
 
     form.setValue('new_message', '');
     form.setFocus('new_message');

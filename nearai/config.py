@@ -16,6 +16,7 @@ LOCAL_CONFIG_FILE = Path(".nearai") / "config.json"
 REPO_FOLDER = Path(__file__).parent.parent
 PROMPTS_FOLDER = REPO_FOLDER / "nearai" / "prompts"
 ETC_FOLDER = REPO_FOLDER / "etc"
+DEFAULT_NAMESPACE = "near.ai"
 
 
 def get_config_path(local: bool = False) -> Path:

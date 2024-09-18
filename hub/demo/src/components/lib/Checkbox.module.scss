@@ -18,7 +18,8 @@
     box-shadow: 0 0 0 2px var(--violet-5);
   }
 
-  &:hover {
+  &:hover,
+  label:hover & {
     background: var(--sand-4);
   }
 
@@ -63,5 +64,5 @@
 .group {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-m);
+  gap: var(--gap-s);
 }

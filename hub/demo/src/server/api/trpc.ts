@@ -85,7 +85,30 @@ export const createTRPCRouter = t.router;
  * guarantee that a user querying is authorized, but you can still access user session data if they
  * are logged in.
  */
-export const publicProcedure = t.procedure;
+const userMightBeAuthenticated = t.middleware(({ ctx, next }) => {
+  if (ctx.authorization?.includes('Bearer')) {
+    try {
+      const auth: unknown = JSON.parse(
+        ctx.authorization.replace('Bearer ', ''),
+      );
+      const sig = authorizationModel.parse(auth);
+
+      return next({
+        ctx: {
+          authorization: ctx.authorization,
+          signature: sig,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  return next({
+    ctx: {},
+  });
+});
+export const publicProcedure = t.procedure.use(userMightBeAuthenticated);
 
 /** Reusable middleware that enforces users are logged in before running the procedure. */
 const enforceUserIsAuthenticated = t.middleware(({ ctx, next }) => {

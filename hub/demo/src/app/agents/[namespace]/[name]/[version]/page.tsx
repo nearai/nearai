@@ -4,10 +4,10 @@ import { Badge } from '~/components/lib/Badge';
 import { Flex } from '~/components/lib/Flex';
 import { Section } from '~/components/lib/Section';
 import { Text } from '~/components/lib/Text';
-import { useCurrentResource } from '~/hooks/resources';
+import { useCurrentRegistryEntry } from '~/hooks/registry';
 
 export default function AgentDetailsPage() {
-  const { currentResource } = useCurrentResource('agent');
+  const { currentResource } = useCurrentRegistryEntry('agent');
 
   if (!currentResource) return null;
 

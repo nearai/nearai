@@ -10,12 +10,25 @@ import botocore.exceptions
 from dotenv import load_dotenv
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
+from nearai.config import DEFAULT_NAMESPACE
 from pydantic import BaseModel
 from sqlmodel import delete, select, text
 
 from hub.api.v1.auth import AuthToken, revokable_auth
 from hub.api.v1.entry_location import EntryLocation, valid_identifier
 from hub.api.v1.models import RegistryEntry, Tags, get_session
+
+DEFAULT_NAMESPACE_WRITE_ACCESS_LIST = [
+    "spensa2.near",
+    "marcelo.near",
+    "vadim.near",
+    "root.near",
+    "cmrfrd.near",
+    "pierre-dev.near",
+    "alomonos.near",
+    "flatirons.near",
+    "calebjacob.near",
+]
 
 load_dotenv()
 S3_BUCKET = getenv("S3_BUCKET")
@@ -46,12 +59,15 @@ def with_write_access(use_forms=False):
         auth: AuthToken = Depends(revokable_auth),
     ) -> EntryLocation:
         """Check the user has write access to the entry."""
-        if auth.account_id != entry_location.namespace:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Unauthorized. Namespace: {entry_location.namespace} != Account: {auth.account_id}",
-            )
-        return entry_location
+        if auth.account_id == entry_location.namespace:
+            return entry_location
+        if entry_location.namespace == DEFAULT_NAMESPACE:
+            if auth.account_id in DEFAULT_NAMESPACE_WRITE_ACCESS_LIST:
+                return entry_location
+        raise HTTPException(
+            status_code=403,
+            detail=f"Unauthorized. Namespace: {entry_location.namespace} != Account: {auth.account_id}",
+        )
 
     return fn_with_write_access
 

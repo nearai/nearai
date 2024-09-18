@@ -1,6 +1,7 @@
 .text {
   text-wrap: pretty;
   text-underline-offset: 0.2em;
+  outline: none;
 
   a > & {
     display: inline;
