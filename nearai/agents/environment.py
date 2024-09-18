@@ -204,7 +204,12 @@ class Environment(object):
         The environment does not allow running interactive programs. It will run a program for 1 second then will interrupt it if it is still running or if it is waiting for user input.
         command: The command to execute, like 'ls -l' or 'python3 tests.py'
         """  # noqa: E501
-        if not self._approvals["confirm_execution"](command):
+        approval_function = self._approvals["confirm_execution"] if self._approvals else None
+        if not approval_function:
+            return {
+                "stderr": "Agent runner misconfiguration. No command execution approval function found.",
+            }
+        if not approval_function(command):
             return {
                 "command": command,
                 "returncode": 999,
@@ -477,7 +482,7 @@ class Environment(object):
         self,
         new_message: Optional[str] = None,
         max_iterations: int = 10,
-    ) -> Optional[str]:
+    ) -> str:
         """Runs agent(s) against a new or previously created environment."""
         run_id = self._generate_run_id()
         iteration = 0

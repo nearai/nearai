@@ -338,10 +338,10 @@ class AgentCli:
 
         from nearai.agents.local_runner import LocalRunner
 
-        agents = LocalRunner.load_agents(agents, local)
+        agent_list = LocalRunner.load_agents(agents, local)
         if not path:
-            if len(agents) == 1:
-                path = agents[0].path
+            if len(agent_list) == 1:
+                path = agent_list[0].path
             else:
                 raise ValueError("Local path is required when running multiple agents")
 
@@ -354,7 +354,7 @@ class AgentCli:
 
         runner = LocalRunner(
             path,
-            agents,
+            agent_list,
             client_config,
             env_vars=env_vars,
             tool_resources=tool_resources,
@@ -381,10 +381,10 @@ class AgentCli:
 
         from nearai.agents.local_runner import LocalRunner
 
-        agents = LocalRunner.load_agents(agents, local)
+        agent_list = LocalRunner.load_agents(agents, local)
         if not path:
-            if len(agents) == 1:
-                path = agents[0].path
+            if len(agent_list) == 1:
+                path = agent_list[0].path
             else:
                 raise ValueError("Local path is required when running multiple agents")
 
@@ -397,7 +397,7 @@ class AgentCli:
 
         runner = LocalRunner(
             path,
-            agents,
+            agent_list,
             client_config,
             env_vars=env_vars,
             tool_resources=tool_resources,

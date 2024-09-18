@@ -4,7 +4,7 @@ from datasets import Dataset, DatasetDict  # type: ignore[attr-defined]
 from jinja2 import Template
 from litellm import Choices, ModelResponse
 from pydantic import BaseModel
-from shared.client_config import DEFAULT_PROVIDER
+from shared.client_config import DEFAULT_PROVIDER, ClientConfig
 from shared.inference_client import InferenceClient
 from shared.near.primitives import get_provider_model
 
@@ -33,7 +33,8 @@ class HellaswagSolverStrategy(SolverStrategy):
     def __init__(self, dataset_ref: Union[Dataset, DatasetDict], model: str) -> None:  # noqa: D107
         super().__init__()
         self.dataset_ref = dataset_ref
-        self.completion_fn = InferenceClient(CONFIG).completions
+        client_config = ClientConfig(base_url=CONFIG.nearai_hub.base_url, auth=CONFIG.auth)
+        self.completion_fn = InferenceClient(client_config).completions
         self.model = model
 
     def evaluation_name(self) -> str:  # noqa: D102

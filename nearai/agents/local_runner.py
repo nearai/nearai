@@ -5,10 +5,9 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
-from openapi_client import EntryMetadata
+from openapi_client import EntryLocation, EntryMetadata
 from shared.inference_client import InferenceClient
 
-from hub.api.v1.entry_location import EntryLocation
 from nearai import plain_location
 from nearai.agents.agent import Agent
 from nearai.agents.environment import Environment

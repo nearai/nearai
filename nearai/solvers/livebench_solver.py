@@ -8,12 +8,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import shortuuid  # type: ignore
 from litellm import Choices, ModelResponse
-from openai.types.chat import (
+from litellm.types.completion import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
-from shared.client_config import DEFAULT_PROVIDER
+from shared.client_config import DEFAULT_PROVIDER, ClientConfig
 from shared.inference_client import InferenceClient
 from shared.near.primitives import get_provider_model
 from tqdm import tqdm
@@ -63,7 +63,8 @@ class LiveBenchSolverStrategy(SolverStrategy):
     ) -> None:
         super().__init__()
         self.dataset_ref = dataset_ref
-        self.completion_fn = InferenceClient(CONFIG).completions
+        client_config = ClientConfig(base_url=CONFIG.nearai_hub.base_url, auth=CONFIG.auth)
+        self.completion_fn = InferenceClient(client_config).completions
         assert "/" not in model
         self.model = model
         self.step = step
