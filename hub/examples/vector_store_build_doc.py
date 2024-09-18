@@ -6,7 +6,8 @@ import tempfile
 import time
 from typing import Any, Dict, List
 
-from nearai.completion import InferenceRouter
+from shared.client_config import ClientConfig
+from shared.inference_client import InferenceClient
 from nearai.config import Config, load_config_file
 
 # BUILD VECTOR STORE FROM FILES + USE IT FOR LLM RESPONSE
@@ -19,7 +20,8 @@ CONFIG = CONFIG.update_with(config_data)
 if CONFIG.api_url is None:
     raise ValueError("CONFIG.api_url is None")
 
-base_url = CONFIG.api_url + "v1"
+base_url = CONFIG.api_url + "/v1"
+client_config = ClientConfig(base_url=base_url, auth=CONFIG.auth)
 
 client = openai.OpenAI(base_url=base_url, api_key=json.dumps(config_data["auth"]))
 
@@ -135,7 +137,7 @@ def generate_llm_response(messages, processed_results):
             "content": f"User query: {messages[-1]['content']}\n\nRelevant information:\n{vs_results}",
         },
     ]
-    return inference.completions(model=model, messages=messages, auth=CONFIG.auth, max_results=16000)
+    return inference.completions(model=model, messages=messages, max_tokens=16000)
 
 
 # Retrieve the vector store details
@@ -152,7 +154,7 @@ explanation of what Vector Stores are and how they function.
 Always include Python examples with comments. Ensure that all necessary functions used in the examples are included.
 Please generalize the examples."""
 
-inference = InferenceRouter(CONFIG)
+inference = InferenceClient(client_config)
 vector_results = inference.query_vector_store(vs_id, search_query)
 processed_results = process_vector_results([vector_results])
 # Create chat history for LLM

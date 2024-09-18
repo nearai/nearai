@@ -6,7 +6,7 @@ import time
 
 # Load NEAR AI Hub configuration
 config = nearai.config.load_config_file()
-base_url = config.get("api_url", "https://api.nearai.com/") + "v1"
+base_url = config.get("api_url", "https://api.near.ai/") + "v1"
 auth = config["auth"]
 
 client = openai.OpenAI(base_url=base_url, api_key=json.dumps(auth))
