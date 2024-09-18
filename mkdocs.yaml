@@ -134,6 +134,7 @@ nav:
     - Inference (OpenAI compatible): 'inference.md'
     - Fine-tuning: 'fine_tuning.md'
     - API Reference: 'api.md'
+    - Vector Stores: 'vector-stores.md'
     - Login with NEAR: 'login.md'
     - Contributing: 'contributing.md'
 plugins:
