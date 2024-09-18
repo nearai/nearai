@@ -1,6 +1,6 @@
 # NearAI AWS Runner
 A docker container that runs on AWS Lambda to run NearAI agents.
- * This is invoked by the NearAI Api server or NearAI cli.
+ * This is invoked by the NearAI Api server or the NearAI cli agent run_remote command.
  * The runner calls back to the NearAI Api server for inference,
 to fetch agent code, and to fetch and store environments (store not implemented yet).
 

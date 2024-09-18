@@ -15,8 +15,8 @@ from openai.types.chat import (
 )
 from tqdm import tqdm
 
-from hub.api.near.primitives import get_provider_model
-from nearai.completion import InferenceRouter
+from shared.near.primitives import get_provider_model
+from nearai.completion import InferenceClient
 from nearai.config import CONFIG, DEFAULT_PROVIDER
 from nearai.solvers import (
     SolverScoringMethod,
@@ -62,7 +62,7 @@ class LiveBenchSolverStrategy(SolverStrategy):
     ) -> None:
         super().__init__()
         self.dataset_ref = dataset_ref
-        self.completion_fn = InferenceRouter(CONFIG).completions
+        self.completion_fn = InferenceClient(CONFIG).completions
         assert "/" not in model
         self.model = model
         self.step = step

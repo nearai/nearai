@@ -1,58 +1,20 @@
-import json
-from typing import Any, Callable, Iterable, List, Optional, Union
+from typing import Any, Iterable, List, Optional, Union
 
 import litellm
 import requests
 from litellm import CustomStreamWrapper, ModelResponse
 from litellm import completion as litellm_completion
-from openai import OpenAI
-from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
+from litellm.types.completion import ChatCompletionMessageParam
 
-from hub.api.near.primitives import get_provider_model
-from hub.api.v1.sql import SimilaritySearch
-
-from .config import CONFIG, DEFAULT_MODEL_MAX_TOKENS, DEFAULT_MODEL_TEMPERATURE, AuthData, Config, NearAiHubConfig
+from shared.client_config import ClientConfig, DEFAULT_MODEL_TEMPERATURE, DEFAULT_MODEL_MAX_TOKENS
+from shared.near.primitives import get_provider_model
+from shared.models import SimilaritySearch
 
 
-def create_completion_fn(model: str) -> Callable[..., ChatCompletion]:
-    client = OpenAI(base_url=CONFIG.inference_url, api_key=CONFIG.inference_api_key)
-
-    def complete(**kwargs: Any) -> ChatCompletion:
-        completion: ChatCompletion = client.chat.completions.create(model=model, **kwargs)
-        return completion
-
-    return complete
-
-
-class InferenceRouter(object):
-    def __init__(self, config: Config) -> None:  # noqa: D107
+class InferenceClient(object):
+    def __init__(self, config: ClientConfig) -> None:  # noqa: D107
         self._config = config
-        if self._config.nearai_hub is None:
-            self._config.nearai_hub = NearAiHubConfig()
-        self._endpoint: Any
-
-    def get_auth_str(self, auth: Optional[AuthData] = None) -> str:
-        """Get authentication string from provided auth or config object.
-
-        Args:
-        ----
-            auth (Optional[AuthData]): Authentication data. If None, uses config auth.
-
-        Returns:
-        -------
-            str: JSON string containing authentication data.
-
-        """
-        _auth = auth
-        if auth is None:
-            _auth = self._config.auth
-
-        bearer_data = {
-            key: getattr(_auth, key)
-            for key in ["account_id", "public_key", "signature", "callback_url", "message", "nonce", "recipient"]
-        }
-
-        return json.dumps(bearer_data)
+        self._auth = config.auth.generate_bearer_token()
 
     def completions(
         self,
@@ -60,7 +22,6 @@ class InferenceRouter(object):
         messages: Iterable[ChatCompletionMessageParam],
         stream: bool = False,
         temperature: Optional[float] = None,
-        auth: Optional[AuthData] = None,
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> Union[ModelResponse, CustomStreamWrapper]:
@@ -70,11 +31,9 @@ class InferenceRouter(object):
         1. full path `provider::model_full_path`.
         2. `model_short_name`. Default provider will be used.
         """
-        if self._config.nearai_hub is None:
-            raise ValueError("Missing NearAI Hub config")
-        provider, _ = get_provider_model(self._config.nearai_hub.default_provider, model)
+        provider, _ = get_provider_model(self._config.default_provider, model)
 
-        auth_bearer_token = self.get_auth_str(auth)
+        auth_bearer_token = self._auth
 
         if temperature is None:
             temperature = DEFAULT_MODEL_TEMPERATURE
@@ -85,23 +44,23 @@ class InferenceRouter(object):
         # NOTE(#246): this is to disable "Provider List" messages.
         litellm.suppress_debug_info = True
 
-        self._endpoint = lambda model, messages, stream, temperature, max_tokens, **kwargs: litellm_completion(
+        endpoint = lambda model, messages, stream, temperature, max_tokens, **kwargs: litellm_completion(
             model,
             messages,
             stream=stream,
-            custom_llm_provider=self._config.nearai_hub.custom_llm_provider,
+            custom_llm_provider=self._config.custom_llm_provider,
             input_cost_per_token=0,
             output_cost_per_token=0,
             temperature=temperature,
             max_tokens=max_tokens,
-            base_url=self._config.nearai_hub.base_url,
+            base_url=self._config.base_url,
             provider=provider,
             api_key=auth_bearer_token,
             **kwargs,
         )
 
         try:
-            result: Union[ModelResponse, CustomStreamWrapper] = self._endpoint(
+            result: Union[ModelResponse, CustomStreamWrapper] = endpoint(
                 model=model, messages=messages, stream=stream, temperature=temperature, max_tokens=max_tokens, **kwargs
             )
         except Exception as e:
@@ -110,19 +69,19 @@ class InferenceRouter(object):
         return result
 
     def query_vector_store(
-        self, vector_store_id: str, query: str, auth: Optional[AuthData] = None
+        self, vector_store_id: str, query: str
     ) -> List[SimilaritySearch]:
         """Query a vector store."""
-        if self._config.nearai_hub is None:
+        if self._config is None:
             raise ValueError("Missing NearAI Hub config")
 
-        auth_bearer_token = self.get_auth_str(auth)
+        auth_bearer_token = self._auth
 
         headers = {"Content-Type": "application/json", "Authorization": f"Bearer {auth_bearer_token}"}
 
         data = {"query": query}
 
-        endpoint = f"{self._config.nearai_hub.base_url}/vector_stores/{vector_store_id}/search"
+        endpoint = f"{self._config.base_url}/vector_stores/{vector_store_id}/search"
 
         try:
             response = requests.post(endpoint, headers=headers, json=data)

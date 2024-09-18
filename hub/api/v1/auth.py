@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, field_validator
 
-from hub.api.near.sign import validate_nonce, verify_signed_message
+from shared.near.sign import validate_nonce, verify_signed_message
 from hub.api.v1.exceptions import TokenValidationError
 from hub.api.v1.sql import SqlClient
 

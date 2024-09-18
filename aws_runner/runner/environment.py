@@ -38,7 +38,6 @@ class Environment(object):
         path: str,
         agents: List["Agent"],
         client,
-        server_url: str = "https://api.near.ai",
         create_files: bool = True,
         metric_function=None,
         env_vars: Optional[Dict[str, Any]] = None,
@@ -48,7 +47,6 @@ class Environment(object):
         self._path = path
         self._agents = agents
         self._done = False
-        self._server_url = server_url
         self._client = client
         self._metric_function = metric_function
         self._tools = ToolRegistry()

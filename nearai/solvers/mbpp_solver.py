@@ -8,8 +8,8 @@ from jinja2 import Template
 from litellm import Choices, ModelResponse
 from pydantic import BaseModel
 
-from hub.api.near.primitives import get_provider_model
-from nearai.completion import InferenceRouter
+from shared.near.primitives import get_provider_model
+from nearai.completion import InferenceClient
 from nearai.config import CONFIG, DEFAULT_PROVIDER, PROMPTS_FOLDER
 from nearai.solvers import SolverStrategy
 
@@ -53,7 +53,7 @@ class MBPPSolverStrategy(SolverStrategy):
     def __init__(self, dataset_ref: Union[Dataset, DatasetDict], model: str) -> None:  # noqa: D107
         super().__init__()
         self.dataset_ref = dataset_ref
-        self.completion_fn = InferenceRouter(CONFIG).completions
+        self.completion_fn = InferenceClient(CONFIG).completions
         self.model = model
 
     def evaluation_name(self) -> str:  # noqa: D102

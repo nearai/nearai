@@ -1,6 +1,7 @@
 from typing import Optional
 
 from nearai.agent import Agent
+from nearai.completion import InferenceClient
 from nearai.environment import Environment
 from nearai.registry import get_registry_folder, registry
 import os
@@ -17,13 +18,35 @@ from nearai import plain_location
 class LocalRunner:
     def __init__(  # noqa: D107
             self,
-            env: Environment,
+            path,
+            agents,
+            client_config,
+            env_vars=None,
+            tool_resources=None,
+            print_system_log=True,
+            confirm_commands=True
     ) -> None:
-        self._path = env._path
-        self._agents = env._agents
-        self._env = env
-        env.set_approvals({"confirm_execution": self.confirm_execution})
+        self._path = path
+        self._agents = agents
+        self._client_config = client_config
+        self._confirm_commands = confirm_commands
 
+        client = InferenceClient(client_config)
+
+        self._env = Environment(
+            path,
+            agents,
+            client,
+            env_vars=env_vars,
+            tool_resources=tool_resources,
+            print_system_log=print_system_log,
+            approvals={"confirm_execution": self.confirm_execution},
+        )
+
+
+    @staticmethod
+    def load_agents(agents: str, local: bool = False) -> list[Agent]:
+        return [LocalRunner.load_agent(agent, local) for agent in agents.split(",")]
 
     @staticmethod
     def load_agent(name: str, local: bool = False) -> Agent:
@@ -123,7 +146,7 @@ class LocalRunner:
 
     def save_env(self, env, run_id, base_id, run_type) -> Optional[EntryLocation]:
         """Saves the current env to the registry."""
-        if env._config.auth is None:
+        if self._client_config.auth is None:
             print("Warning: Authentication is not set up. Run not saved to registry. To log in, run `nearai login`")
             return None
 
@@ -146,7 +169,7 @@ class LocalRunner:
         return entry_location
 
     def confirm_execution(self, command):
-        if self._env._config.get("confirm_commands", True):
+        if self._confirm_commands:
             yes_no = input("> Do you want to run the following command? (Y/n): " + command)
             if yes_no != "" and yes_no.lower() == "y":
                 return True

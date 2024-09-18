@@ -20,11 +20,10 @@ from nearai.clients.lambda_client import LambdaWrapper
 from nearai.config import (
     CONFIG,
     DEFAULT_MODEL,
-    DEFAULT_MODEL_MAX_TOKENS,
-    DEFAULT_MODEL_TEMPERATURE,
     DEFAULT_PROVIDER,
     update_config,
 )
+from shared.client_config import DEFAULT_MODEL_TEMPERATURE, DEFAULT_MODEL_MAX_TOKENS
 from nearai.finetune import FinetuneCli
 from nearai.hub import Hub
 from nearai.lib import check_metadata, parse_location, parse_tags
@@ -336,24 +335,32 @@ class AgentCli:
         print_system_log: bool = True,
     ) -> None:
         """Runs agent interactively with environment from given path."""
-        from nearai.environment import Environment
         from nearai.agents.local_runner import LocalRunner
+        from shared.client_config import ClientConfig
 
-        _agents = [LocalRunner.load_agent(agent, local) for agent in agents.split(",")]
+        agents = LocalRunner.load_agents(agents, local)
         if not path:
-            if len(_agents) == 1:
-                path = _agents[0].path
+            if len(agents) == 1:
+                path = agents[0].path
             else:
                 raise ValueError("Local path is required when running multiple agents")
-        env = Environment(
+
+        client_config = ClientConfig(
+            base_url=CONFIG.nearai_hub.base_url,
+            auth=CONFIG.auth,
+            custom_llm_provider=CONFIG.nearai_hub.custom_llm_provider,
+            default_provider=CONFIG.nearai_hub.default_provider,
+        )
+
+        runner = LocalRunner(
             path,
-            _agents,
-            CONFIG,
+            agents,
+            client_config,
             env_vars=env_vars,
             tool_resources=tool_resources,
             print_system_log=print_system_log,
+            confirm_commands=CONFIG.get("confirm_commands", True),
         )
-        runner = LocalRunner(env)
         runner.run_interactive(record_run, load_env)
 
     def task(
@@ -370,17 +377,32 @@ class AgentCli:
         print_system_log: bool = True,
     ) -> None:
         """Runs agent non interactively with environment from given path."""
-        from nearai.environment import Environment
         from nearai.agents.local_runner import LocalRunner
+        from shared.client_config import ClientConfig
 
-        _agents = [LocalRunner.load_agent(agent, local) for agent in agents.split(",")]
+        agents = LocalRunner.load_agents(agents, local)
         if not path:
-            if len(_agents) == 1:
-                path = _agents[0].path
+            if len(agents) == 1:
+                path = agents[0].path
             else:
                 raise ValueError("Local path is required when running multiple agents")
-        env = Environment(path, _agents, CONFIG, env_vars=env_vars, tool_resources=tool_resources, print_system_log=print_system_log)
-        runner = LocalRunner(env)
+
+        client_config = ClientConfig(
+            base_url=CONFIG.nearai_hub.base_url,
+            auth=CONFIG.auth,
+            custom_llm_provider=CONFIG.nearai_hub.custom_llm_provider,
+            default_provider=CONFIG.nearai_hub.default_provider,
+        )
+
+        runner = LocalRunner(
+            path,
+            agents,
+            client_config,
+            env_vars=env_vars,
+            tool_resources=tool_resources,
+            print_system_log=print_system_log,
+            confirm_commands=CONFIG.get("confirm_commands", True),
+        )
         runner.run_task(task, record_run, load_env, max_iterations)
 
 

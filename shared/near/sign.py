@@ -7,7 +7,7 @@ import base58
 import nacl.signing
 import requests
 
-from hub.api.near.serializer import BinarySerializer
+from shared.near.serializer import BinarySerializer
 
 ED_PREFIX = "ed25519:"  # noqa: N806
 

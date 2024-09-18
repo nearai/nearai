@@ -6,6 +6,8 @@ from typing import Any, Callable, Dict, Optional
 from openapi_client import ApiClient, Configuration
 from pydantic import BaseModel
 
+from shared.auth_data import AuthData
+
 DATA_FOLDER = Path.home() / ".nearai"
 DATA_FOLDER.mkdir(parents=True, exist_ok=True)
 CONFIG_FILE = DATA_FOLDER / "config.json"
@@ -16,8 +18,6 @@ ETC_FOLDER = REPO_FOLDER / "etc"
 DEFAULT_PROVIDER = "fireworks"
 DEFAULT_MODEL = "llama-v3p1-405b-instruct-long"
 DEFAULT_PROVIDER_MODEL = f"fireworks::accounts/fireworks/models/{DEFAULT_MODEL}"
-DEFAULT_MODEL_TEMPERATURE = 1.0
-DEFAULT_MODEL_MAX_TOKENS = 16384
 
 
 def get_config_path(local: bool = False) -> Path:
@@ -72,28 +72,6 @@ class NearAiHubConfig(BaseModel):
     custom_llm_provider: str = "openai"
     login_with_near: Optional[bool] = True
     api_key: Optional[str] = ""
-
-
-class AuthData(BaseModel):
-    account_id: str
-    signature: str
-    public_key: str
-    callback_url: str
-    nonce: str
-    recipient: str
-    message: str
-
-    def generate_bearer_token(self):
-        """Generates a JSON-encoded bearer token containing authentication data."""
-        required_keys = {"account_id", "public_key", "signature", "callback_url", "message", "nonce", "recipient"}
-
-        for key in required_keys:
-            if getattr(self, key) is None:
-                raise ValueError(f"Missing required auth data: {key}")
-
-        bearer_data = {key: getattr(self, key) for key in required_keys}
-
-        return json.dumps(bearer_data)
 
 
 class Config(BaseModel):
