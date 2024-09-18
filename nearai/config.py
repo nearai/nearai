@@ -5,7 +5,6 @@ from typing import Any, Callable, Dict, Optional
 
 from openapi_client import ApiClient, Configuration
 from pydantic import BaseModel
-
 from shared.auth_data import AuthData
 from shared.client_config import DEFAULT_PROVIDER, DEFAULT_PROVIDER_MODEL
 

@@ -13,12 +13,12 @@ from openai.types.chat import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
+from shared.client_config import DEFAULT_PROVIDER
+from shared.inference_client import InferenceClient
+from shared.near.primitives import get_provider_model
 from tqdm import tqdm
 
-from shared.near.primitives import get_provider_model
-from shared.inference_client import InferenceClient
 from nearai.config import CONFIG
-from shared.client_config import DEFAULT_PROVIDER
 from nearai.solvers import (
     SolverScoringMethod,
     SolverStrategy,

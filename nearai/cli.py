@@ -7,13 +7,14 @@ from collections import OrderedDict
 from dataclasses import asdict
 from pathlib import Path
 from textwrap import fill
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import boto3
 import fire
 from openapi_client import EntryLocation, EntryMetadataInput
 from openapi_client.api.benchmark_api import BenchmarkApi
 from openapi_client.api.default_api import DefaultApi
+from shared.client_config import DEFAULT_MODEL, DEFAULT_MODEL_MAX_TOKENS, DEFAULT_MODEL_TEMPERATURE, DEFAULT_PROVIDER
 from tabulate import tabulate
 
 from nearai.clients.lambda_client import LambdaWrapper
@@ -21,7 +22,6 @@ from nearai.config import (
     CONFIG,
     update_config,
 )
-from shared.client_config import DEFAULT_MODEL_TEMPERATURE, DEFAULT_MODEL_MAX_TOKENS, DEFAULT_PROVIDER, DEFAULT_MODEL
 from nearai.finetune import FinetuneCli
 from nearai.hub import Hub
 from nearai.lib import check_metadata, parse_location, parse_tags
@@ -219,8 +219,8 @@ class BenchmarkCli:
         If force is set to True, it will run the benchmark again and update the cache.
         """
         from nearai.benchmark import BenchmarkExecutor, DatasetInfo
-        from nearai.dataset import load_dataset, get_dataset
-        from nearai.solvers import SolverStrategy, SolverStrategyRegistry, SolverScoringMethod
+        from nearai.dataset import get_dataset, load_dataset
+        from nearai.solvers import SolverScoringMethod, SolverStrategy, SolverStrategyRegistry
 
         args = dict(solver_args)
         if subset is not None:
@@ -318,6 +318,7 @@ class AgentCli:
     def inspect(self, path: str) -> None:
         """Inspect environment from given path."""
         import subprocess
+
         filename = Path(os.path.abspath(__file__)).parent / "streamlit_inspect.py"
         subprocess.call(["streamlit", "run", filename, "--", path])
 
@@ -333,8 +334,9 @@ class AgentCli:
         print_system_log: bool = True,
     ) -> None:
         """Runs agent interactively with environment from given path."""
-        from nearai.agents.local_runner import LocalRunner
         from shared.client_config import ClientConfig
+
+        from nearai.agents.local_runner import LocalRunner
 
         agents = LocalRunner.load_agents(agents, local)
         if not path:
@@ -375,8 +377,9 @@ class AgentCli:
         print_system_log: bool = True,
     ) -> None:
         """Runs agent non interactively with environment from given path."""
-        from nearai.agents.local_runner import LocalRunner
         from shared.client_config import ClientConfig
+
+        from nearai.agents.local_runner import LocalRunner
 
         agents = LocalRunner.load_agents(agents, local)
         if not path:
@@ -405,37 +408,37 @@ class AgentCli:
 
 
 def run_remote(
-        self,
-        agents: str,
-        new_message: str = "",
-        environment_id: str = "",
-        provider: str = "aws_lambda",
-        params: object = None,
-    ) -> None:
-        """Invoke a Container based AWS lambda function to run agents on a given environment."""
-        if not CONFIG.auth:
-            print("Please login with `nearai login`")
-            return
-        if provider != "aws_lambda":
-            print(f"Provider {provider} is not supported.")
-            return
-        if not params:
-            params = {"max_iterations": 2}
-        wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
-        try:
-            new_environment = wrapper.invoke_function(
-                "agent-runner-docker",
-                {
-                    "agents": agents,
-                    "environment_id": environment_id,
-                    "auth": CONFIG.auth.model_dump(),
-                    "new_message": new_message,
-                    "params": params,
-                },
-            )
-            print(f"Agent run finished. New environment is {new_environment}")
-        except Exception as e:
-            print(f"Error running agent remotely: {e}")
+    self,
+    agents: str,
+    new_message: str = "",
+    environment_id: str = "",
+    provider: str = "aws_lambda",
+    params: object = None,
+) -> None:
+    """Invoke a Container based AWS lambda function to run agents on a given environment."""
+    if not CONFIG.auth:
+        print("Please login with `nearai login`")
+        return
+    if provider != "aws_lambda":
+        print(f"Provider {provider} is not supported.")
+        return
+    if not params:
+        params = {"max_iterations": 2}
+    wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
+    try:
+        new_environment = wrapper.invoke_function(
+            "agent-runner-docker",
+            {
+                "agents": agents,
+                "environment_id": environment_id,
+                "auth": CONFIG.auth.model_dump(),
+                "new_message": new_message,
+                "params": params,
+            },
+        )
+        print(f"Agent run finished. New environment is {new_environment}")
+    except Exception as e:
+        print(f"Error running agent remotely: {e}")
 
 
 class VllmCli:

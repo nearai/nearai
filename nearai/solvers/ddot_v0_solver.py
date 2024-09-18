@@ -7,14 +7,14 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import httpx as hx
 import tenacity
+from shared.client_config import DEFAULT_PROVIDER, ClientConfig
+from shared.inference_client import InferenceClient
 
 from nearai.agents.agent import Agent
+from nearai.agents.environment import Environment
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import CONFIG, DATA_FOLDER
 from nearai.dataset import Dataset
-from nearai.agents.environment import Environment
-from shared.client_config import ClientConfig, DEFAULT_PROVIDER
-from shared.inference_client import InferenceClient
 
 from . import SolverStrategy
 

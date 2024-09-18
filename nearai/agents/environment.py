@@ -14,14 +14,14 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
 import psutil
+import shared.near.sign as near
 from litellm.types.utils import Choices, ModelResponse
 from litellm.utils import CustomStreamWrapper
 from openai.types.chat import ChatCompletionMessageParam
-
-import shared.near.sign as near
-from shared.near.primitives import PROVIDER_MODEL_SEP
-from nearai.agents.agent import Agent
 from shared.client_config import DEFAULT_PROVIDER, DEFAULT_PROVIDER_MODEL
+from shared.near.primitives import PROVIDER_MODEL_SEP
+
+from nearai.agents.agent import Agent
 from nearai.agents.tool_registry import ToolRegistry
 
 DELIMITER = "\n"
@@ -31,6 +31,7 @@ AGENT_LOG_FILENAME = "agent_log.txt"
 TERMINAL_FILENAME = "terminal.txt"
 
 default_approvals: Dict[str, Any] = {"confirm_execution": lambda _: True}
+
 
 class Environment(object):
     def __init__(  # noqa: D107
@@ -64,7 +65,6 @@ class Environment(object):
     @staticmethod
     def _generate_run_id() -> str:
         return uuid.uuid4().hex
-
 
     def get_tool_registry(self) -> ToolRegistry:  # noqa: D102
         """Returns the tool registry, a dictionary of tools that can be called by the agent."""
@@ -479,7 +479,6 @@ class Environment(object):
         max_iterations: int = 10,
     ) -> Optional[str]:
         """Runs agent(s) against a new or previously created environment."""
-
         run_id = self._generate_run_id()
         iteration = 0
         self._add_agent_start_system_log(agent_idx=0)

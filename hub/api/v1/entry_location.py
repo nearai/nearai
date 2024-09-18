@@ -2,10 +2,10 @@ import re
 from typing import Annotated
 
 from fastapi import Form, HTTPException
-from pydantic import BaseModel, AfterValidator
-
+from pydantic import AfterValidator, BaseModel
 
 identifier_pattern = re.compile(r"^[a-zA-Z0-9_\-.]+$")
+
 
 def valid_identifier(identifier: str) -> str:
     result = identifier_pattern.match(identifier)
@@ -14,6 +14,7 @@ def valid_identifier(identifier: str) -> str:
             status_code=400, detail=f"Invalid identifier: {repr(identifier)}. Should match {identifier_pattern.pattern}"
         )
     return result[0]
+
 
 class EntryLocation(BaseModel):
     namespace: Annotated[str, AfterValidator(valid_identifier)]

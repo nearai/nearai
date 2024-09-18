@@ -10,7 +10,6 @@ import pymysql
 import pymysql.cursors
 from dotenv import load_dotenv
 from pydantic import BaseModel, RootModel
-
 from shared.models import SimilaritySearch
 
 load_dotenv()

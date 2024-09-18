@@ -1,30 +1,30 @@
-from typing import Optional
-
-from nearai.agents.agent import Agent
-from shared.inference_client import InferenceClient
-from nearai.agents.environment import Environment
-from nearai.registry import get_registry_folder, registry
 import os
 import tarfile
 import tempfile
 from pathlib import Path
 from shutil import rmtree
+from typing import Optional
+
+from openapi_client import EntryMetadata
+from shared.inference_client import InferenceClient
 
 from hub.api.v1.entry_location import EntryLocation
-from openapi_client import EntryMetadata
 from nearai import plain_location
+from nearai.agents.agent import Agent
+from nearai.agents.environment import Environment
+from nearai.registry import get_registry_folder, registry
 
 
 class LocalRunner:
     def __init__(  # noqa: D107
-            self,
-            path,
-            agents,
-            client_config,
-            env_vars=None,
-            tool_resources=None,
-            print_system_log=True,
-            confirm_commands=True
+        self,
+        path,
+        agents,
+        client_config,
+        env_vars=None,
+        tool_resources=None,
+        print_system_log=True,
+        confirm_commands=True,
     ) -> None:
         self._path = path
         self._agents = agents
@@ -43,13 +43,14 @@ class LocalRunner:
             approvals={"confirm_execution": self.confirm_execution},
         )
 
-
     @staticmethod
     def load_agents(agents: str, local: bool = False) -> list[Agent]:
+        """Loads agents from the registry."""
         return [LocalRunner.load_agent(agent, local) for agent in agents.split(",")]
 
     @staticmethod
     def load_agent(name: str, local: bool = False) -> Agent:
+        """Loads a single agent from the registry."""
         if local:
             path = get_registry_folder() / name
         else:
@@ -113,14 +114,13 @@ class LocalRunner:
         return len(messages)
 
     def run_task(
-            self,
-            task: str,
-            record_run: bool = True,
-            load_env: str = "",
-            max_iterations: int = 10,
+        self,
+        task: str,
+        record_run: bool = True,
+        load_env: str = "",
+        max_iterations: int = 10,
     ) -> None:
         """Runs a task within the given env."""
-
         base_id = self.load_from_registry(load_env) if load_env else None
 
         env = self._env
@@ -169,6 +169,7 @@ class LocalRunner:
         return entry_location
 
     def confirm_execution(self, command):
+        """If specified by config, prompts the user to confirm the execution of a command."""
         if self._confirm_commands:
             yes_no = input("> Do you want to run the following command? (Y/n): " + command)
             if yes_no != "" and yes_no.lower() == "y":

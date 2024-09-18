@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel, field_validator
-
 from shared.near.primitives import PROVIDER_MODEL_SEP, get_provider_model
+
 from hub.api.v1.auth import AuthToken, revokable_auth, validate_signature
 from hub.api.v1.completions import Message, Provider, get_llm_ai, handle_stream
 from hub.api.v1.sql import SqlClient

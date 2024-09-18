@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Optional, Union, cast
 from datasets import Dataset, DatasetDict  # type: ignore[attr-defined]
 from litellm import Choices, ModelResponse
 from pydantic import BaseModel
-
-from shared.near.primitives import get_provider_model
-from shared.inference_client import InferenceClient
-from nearai.config import CONFIG
 from shared.client_config import DEFAULT_PROVIDER
+from shared.inference_client import InferenceClient
+from shared.near.primitives import get_provider_model
+
+from nearai.config import CONFIG
 from nearai.solvers import SolverStrategy
 
 

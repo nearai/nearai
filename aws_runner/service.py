@@ -8,7 +8,7 @@ from subprocess import call
 from typing import Optional
 
 import boto3
-from partial_near_client import PartialNearClient, ENVIRONMENT_FILENAME
+from partial_near_client import ENVIRONMENT_FILENAME, PartialNearClient
 from runner.agent import Agent
 from runner.environment import Environment
 
@@ -84,7 +84,7 @@ def clear_temp_agent_files(agents):
             shutil.rmtree(agent.temp_dir)
 
 
-def save_environment(env, client, run_id, base_id, metric_function = None) -> str:
+def save_environment(env, client, run_id, base_id, metric_function=None) -> str:
     save_start_time = time.perf_counter()
     snapshot = env.create_snapshot()
     metadata = env.environment_run_info(run_id, base_id, "remote run")

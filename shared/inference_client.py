@@ -6,9 +6,9 @@ from litellm import CustomStreamWrapper, ModelResponse
 from litellm import completion as litellm_completion
 from litellm.types.completion import ChatCompletionMessageParam
 
-from shared.client_config import ClientConfig, DEFAULT_MODEL_TEMPERATURE, DEFAULT_MODEL_MAX_TOKENS
-from shared.near.primitives import get_provider_model
+from shared.client_config import DEFAULT_MODEL_MAX_TOKENS, DEFAULT_MODEL_TEMPERATURE, ClientConfig
 from shared.models import SimilaritySearch
+from shared.near.primitives import get_provider_model
 
 
 class InferenceClient(object):
@@ -44,33 +44,27 @@ class InferenceClient(object):
         # NOTE(#246): this is to disable "Provider List" messages.
         litellm.suppress_debug_info = True
 
-        endpoint = lambda model, messages, stream, temperature, max_tokens, **kwargs: litellm_completion(
-            model,
-            messages,
-            stream=stream,
-            custom_llm_provider=self._config.custom_llm_provider,
-            input_cost_per_token=0,
-            output_cost_per_token=0,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            base_url=self._config.base_url,
-            provider=provider,
-            api_key=auth_bearer_token,
-            **kwargs,
-        )
-
         try:
-            result: Union[ModelResponse, CustomStreamWrapper] = endpoint(
-                model=model, messages=messages, stream=stream, temperature=temperature, max_tokens=max_tokens, **kwargs
+            result: Union[ModelResponse, CustomStreamWrapper] = litellm_completion(
+                model,
+                messages,
+                stream=stream,
+                custom_llm_provider=self._config.custom_llm_provider,
+                input_cost_per_token=0,
+                output_cost_per_token=0,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                base_url=self._config.base_url,
+                provider=provider,
+                api_key=auth_bearer_token,
+                **kwargs,
             )
         except Exception as e:
             raise ValueError(f"Bad request: {e}") from None
 
         return result
 
-    def query_vector_store(
-        self, vector_store_id: str, query: str
-    ) -> List[SimilaritySearch]:
+    def query_vector_store(self, vector_store_id: str, query: str) -> List[SimilaritySearch]:
         """Query a vector store."""
         if self._config is None:
             raise ValueError("Missing NearAI Hub config")

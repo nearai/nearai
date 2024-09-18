@@ -4,14 +4,14 @@ import time
 from typing import Any, Dict, List, Optional, Union
 
 from datasets import Dataset, DatasetDict  # type: ignore[attr-defined]
+from shared.client_config import DEFAULT_PROVIDER, ClientConfig
+from shared.inference_client import InferenceClient
 
+from nearai.agents.environment import Environment
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import CONFIG
-from nearai.agents.environment import Environment
 from nearai.solvers import SolverStrategy
 from nearai.solvers.mbpp_solver import MBPPDatum, get_function_name
-from shared.client_config import ClientConfig, DEFAULT_PROVIDER
-from shared.inference_client import InferenceClient
 
 
 class MBPPSolverAgent(SolverStrategy):
