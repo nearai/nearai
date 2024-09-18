@@ -1,8 +1,8 @@
 from typing import Optional
 
-from nearai.agent import Agent
-from nearai.completion import InferenceClient
-from nearai.environment import Environment
+from nearai.agents.agent import Agent
+from shared.inference_client import InferenceClient
+from nearai.agents.environment import Environment
 from nearai.registry import get_registry_folder, registry
 import os
 import tarfile

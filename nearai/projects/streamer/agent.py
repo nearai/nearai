@@ -3,7 +3,7 @@ from typing import List, cast
 import litellm
 from openai.types.chat import ChatCompletionMessageParam
 
-from nearai.environment import Environment
+from nearai.agents.environment import Environment
 
 
 class StreamerAgent(object):

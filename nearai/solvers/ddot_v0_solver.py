@@ -9,11 +9,11 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx as hx
 import tenacity
 
-from nearai.agent import Agent
+from nearai.agents.agent import Agent
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import CONFIG, DATA_FOLDER, DEFAULT_PROVIDER, Config
 from nearai.dataset import Dataset
-from nearai.environment import Environment
+from nearai.agents.environment import Environment
 
 from . import SolverStrategy
 

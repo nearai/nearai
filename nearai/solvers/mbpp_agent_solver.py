@@ -7,7 +7,7 @@ from datasets import Dataset, DatasetDict  # type: ignore[attr-defined]
 
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import CONFIG, DEFAULT_PROVIDER
-from nearai.environment import Environment
+from nearai.agents.environment import Environment
 from nearai.solvers import SolverStrategy
 from nearai.solvers.mbpp_solver import MBPPDatum, get_function_name
 

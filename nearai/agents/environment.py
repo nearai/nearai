@@ -20,9 +20,9 @@ from openai.types.chat import ChatCompletionMessageParam
 
 import shared.near.sign as near
 from shared.near.primitives import PROVIDER_MODEL_SEP
-from nearai.agent import Agent
+from nearai.agents.agent import Agent
 from nearai.config import DEFAULT_PROVIDER, DEFAULT_PROVIDER_MODEL
-from nearai.tool_registry import ToolRegistry
+from nearai.agents.tool_registry import ToolRegistry
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"

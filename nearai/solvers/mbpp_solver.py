@@ -9,7 +9,7 @@ from litellm import Choices, ModelResponse
 from pydantic import BaseModel
 
 from shared.near.primitives import get_provider_model
-from nearai.completion import InferenceClient
+from shared.inference_client import InferenceClient
 from nearai.config import CONFIG, DEFAULT_PROVIDER, PROMPTS_FOLDER
 from nearai.solvers import SolverStrategy
 

@@ -16,7 +16,7 @@ from openai.types.chat import (
 from tqdm import tqdm
 
 from shared.near.primitives import get_provider_model
-from nearai.completion import InferenceClient
+from shared.inference_client import InferenceClient
 from nearai.config import CONFIG, DEFAULT_PROVIDER
 from nearai.solvers import (
     SolverScoringMethod,
