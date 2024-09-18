@@ -4,14 +4,14 @@ from typing import Annotated
 from fastapi import Form, HTTPException
 from pydantic import AfterValidator, BaseModel
 
-identifier_pattern = re.compile(r"^[a-zA-Z0-9_\-.]+$")
+IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z0-9_\-.]+$")
 
 
 def valid_identifier(identifier: str) -> str:
-    result = identifier_pattern.match(identifier)
+    result = IDENTIFIER_PATTERN.match(identifier)
     if result is None:
         raise HTTPException(
-            status_code=400, detail=f"Invalid identifier: {repr(identifier)}. Should match {identifier_pattern.pattern}"
+            status_code=400, detail=f"Invalid identifier: {repr(identifier)}. Should match {IDENTIFIER_PATTERN.pattern}"
         )
     return result[0]
 
@@ -23,7 +23,7 @@ class EntryLocation(BaseModel):
 
     @staticmethod
     def from_str(entry: str) -> "EntryLocation":
-        """Create a location from a string in the format namespace/name/version."""
+        """Creates a location from a string `entry` in the format namespace/name/version."""
         pattern = re.compile("^(?P<namespace>[^/]+)/(?P<name>[^/]+)/(?P<version>[^/]+)$")
         match = pattern.match(entry)
 
@@ -38,5 +38,5 @@ class EntryLocation(BaseModel):
 
     @classmethod
     def as_form(cls, namespace: str = Form(...), name: str = Form(...), version: str = Form(...)):
-        """Create a location from form data."""
+        """Creates a location from form data."""
         return cls(namespace=namespace, name=name, version=version)

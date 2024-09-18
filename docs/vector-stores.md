@@ -106,11 +106,12 @@ def generate_llm_response(messages, processed_results) -> str:
             "content": f"User query: {messages[-1]['content']}\n\nRelevant information:\n{vs_results}",
         },
     ]
-    return inference.completions(model="llama-v3p1-405b-instruct", messages=messages, auth=CONFIG.auth, max_results=16000)
+    return inference.completions(model="llama-v3p1-405b-instruct", messages=messages, max_tokens=16000)
 
 # Get an LLM response using the vector store
 search_query = "example search query"
-inference = InferenceRouter(CONFIG)
+client_config = ClientConfig(base_url=CONFIG.nearai_hub.base_url, auth=CONFIG.auth)
+inference = InferenceRouter(client_config)
 vector_results = inference.query_vector_store(vs.id, search_query)
 processed_results = process_vector_results([vector_results])
 llm_response = generate_llm_response(messages, processed_results)

@@ -66,7 +66,7 @@ class Environment(object):
     def _generate_run_id() -> str:
         return uuid.uuid4().hex
 
-    def get_tool_registry(self) -> ToolRegistry:  # noqa: D102
+    def get_tool_registry(self) -> ToolRegistry:
         """Returns the tool registry, a dictionary of tools that can be called by the agent."""
         return self._tools
 
@@ -81,7 +81,7 @@ class Environment(object):
         reg.register_tool(self.query_vector_store)
 
     def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME, **kwargs: Any) -> None:
-        """Add a message to the chat file."""
+        """Adds a message to the chat file."""
         with open(os.path.join(self._path, filename), "a") as f:
             f.write(json.dumps({"role": role, "content": message, **kwargs}) + DELIMITER)
 
@@ -149,7 +149,7 @@ class Environment(object):
     def verify_message(
         self, account_id: str, public_key: str, signature: str, message: str, nonce: str, callback_url: str
     ) -> bool:
-        """Verify user message signed with NEAR Account."""
+        """Verifies that the user message is signed with NEAR Account."""
         return near.verify_signed_message(
             account_id, public_key, signature, message, nonce, self._agents[0].name, callback_url
         )
@@ -161,7 +161,7 @@ class Environment(object):
         """
         return os.listdir(os.path.join(self._path, path))
 
-    def get_path(self) -> str:  # noqa: D102
+    def get_path(self) -> str:
         """Returns the path of the current directory."""
         return self._path
 
@@ -191,7 +191,7 @@ class Environment(object):
         return f"Successfully wrote {len(content) if content else 0} characters to {filename}"
 
     def query_vector_store(self, vector_store_id: str, query: str):
-        """Query a vector store.
+        """Queries a vector store.
 
         vector_store_id: The id of the vector store to query.
         query: The query to search for.
@@ -201,9 +201,11 @@ class Environment(object):
     def exec_command(self, command: str) -> Dict[str, Union[str, int]]:
         """Executes a command in the environment and logs the output.
 
-        The environment does not allow running interactive programs. It will run a program for 1 second then will interrupt it if it is still running or if it is waiting for user input.
+        The environment does not allow running interactive programs.
+        It will run a program for 1 second then will interrupt it if it is still running
+        or if it is waiting for user input.
         command: The command to execute, like 'ls -l' or 'python3 tests.py'
-        """  # noqa: E501
+        """
         approval_function = self._approvals["confirm_execution"] if self._approvals else None
         if not approval_function:
             return {
@@ -455,13 +457,13 @@ class Environment(object):
         """Must be called to request input from the user."""
         self.set_next_actor("user")
 
-    def clear_temp_agent_files(self) -> None:  # noqa: D102
+    def clear_temp_agent_files(self) -> None:
         """Remove temp agent files created to be used in `runpy`."""
         for agent in self._agents:
             if agent.temp_dir and os.path.exists(agent.temp_dir):
                 shutil.rmtree(agent.temp_dir)
 
-    def set_next_actor(self, who: str) -> None:  # noqa: D102
+    def set_next_actor(self, who: str) -> None:
         """Set the next actor / action in the dialogue."""
         next_action_fn = os.path.join(self._path, ".next_action")
 
