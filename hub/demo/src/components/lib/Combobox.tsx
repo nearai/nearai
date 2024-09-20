@@ -1,6 +1,6 @@
 'use client';
 
-import { CaretDown, CheckCircle, Circle, Plus } from '@phosphor-icons/react';
+import { CaretDown, CheckCircle, Circle } from '@phosphor-icons/react';
 import { useCombobox } from 'downshift';
 import type { CSSProperties, FocusEventHandler, ReactElement } from 'react';
 import { useMemo, useRef } from 'react';
