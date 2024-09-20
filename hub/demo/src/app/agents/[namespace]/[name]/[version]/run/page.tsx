@@ -131,19 +131,7 @@ export default function EntryRunPage() {
   };
 
   const startNewThread = () => {
-    utils.hub.environment.setData(
-      {
-        environmentId: '',
-      },
-      {
-        conversation: [],
-        environmentId: '',
-        files: {},
-      },
-    );
-
     updateQueryPath({ environmentId: undefined });
-
     form.setValue('new_message', '');
     form.setFocus('new_message');
   };
@@ -153,6 +141,21 @@ export default function EntryRunPage() {
       void environmentQuery.refetch();
     }
   }, [environment, environmentId, environmentQuery]);
+
+  useEffect(() => {
+    if (!environmentId) {
+      utils.hub.environment.setData(
+        {
+          environmentId: '',
+        },
+        {
+          conversation: [],
+          environmentId: '',
+          files: {},
+        },
+      );
+    }
+  }, [environmentId, utils]);
 
   useEffect(() => {
     if (currentEntry && isAuthenticated) {
