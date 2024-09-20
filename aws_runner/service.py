@@ -8,9 +8,9 @@ from subprocess import call
 from typing import Optional
 
 import boto3
-from partial_near_client import ENVIRONMENT_FILENAME, PartialNearClient
-from runner.agent import Agent
-from runner.environment import Environment
+from aws_runner.partial_near_client import ENVIRONMENT_FILENAME, PartialNearClient
+from nearai.agents.agent import Agent
+from nearai.agents.environment import Environment
 
 cloudwatch = boto3.client("cloudwatch", region_name="us-east-2")
 
@@ -74,7 +74,7 @@ def load_agent(client, agent, agent_env_vars):
     write_metric("GetAgentFromRegistry_Duration", stop_time - start_time)
     agent_metadata = client.get_agent_metadata(agent)
 
-    return Agent(agent, RUN_PATH, agent_files, env_vars, agent_metadata)
+    return Agent(agent, agent_files, agent_metadata)
 
 
 def clear_temp_agent_files(agents):

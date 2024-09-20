@@ -100,9 +100,12 @@ nearai agent task flatirons.near/xela-agent/5 "Build a command line chess engine
 ## The Environment API
 Your agent will receive an `env` object that has the following methods:
 
-  * [`request_user_input`](api.md#nearai.agents.environment.Environment.request_user_input): tell the agent that it is the user's turn, stop iterating.
+  * [`request_user_input`](api.md#nearai.agents.environment.Environment.request_user_input): 
+tell the agent that it is the user's turn, stop iterating.
   * [`completion`](api.md#nearai.agents.environment.Environment.completion): request inference completions from a provider and model.
-The model format can be either `PROVIDER::MODEL` or simply `MODEL`. By default the provider is `fireworks` and the model is `llama-v3p1-405b-instruct-long`. The model can be passed into `completion` function or as an agent metadata:
+The model format can be either `PROVIDER::MODEL` or simply `MODEL`. 
+By default the provider is `fireworks` and the model is `llama-v3p1-405b-instruct-long`. 
+The model can be passed into `completion` function or as an agent metadata:
    ```json
    "details": {
      "agent": {

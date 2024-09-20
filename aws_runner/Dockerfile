@@ -7,10 +7,11 @@ COPY aws_runner/frameworks/requirements${FRAMEWORK}.txt ${LAMBDA_TASK_ROOT}
 
 RUN pip install -r requirements${FRAMEWORK}.txt
 
-# Runner code
-COPY aws_runner/service.py aws_runner/partial_near_client.py ${LAMBDA_TASK_ROOT}
-COPY aws_runner/runner ${LAMBDA_TASK_ROOT}/runner
+RUN mkdir ${LAMBDA_TASK_ROOT}/aws_runner
+RUN mkdir ${LAMBDA_TASK_ROOT}/nearai
+COPY aws_runner/service.py aws_runner/partial_near_client.py ${LAMBDA_TASK_ROOT}/aws_runner/
+COPY nearai/agents ${LAMBDA_TASK_ROOT}/nearai/agents
 COPY openapi_client ${LAMBDA_TASK_ROOT}/openapi_client
 COPY shared ${LAMBDA_TASK_ROOT}/shared
 
-CMD [ "service.handler" ]
+CMD [ "aws_runner/service.handler" ]

@@ -1,17 +1,20 @@
+import json
 import os
 import tarfile
 import tempfile
 from pathlib import Path
 from shutil import rmtree
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from openapi_client import EntryLocation, EntryMetadata
 from shared.inference_client import InferenceClient
 
-from nearai import plain_location
+from nearai import CONFIG, check_metadata, plain_location
 from nearai.agents.agent import Agent
 from nearai.agents.environment import Environment
 from nearai.registry import get_registry_folder, registry
+
+DEFAULT_OUTPUT_PATH = "/tmp/nearai/conversations/"
 
 
 class LocalRunner:
@@ -25,7 +28,12 @@ class LocalRunner:
         print_system_log=True,
         confirm_commands=True,
     ) -> None:
-        self._path = path
+        if path:
+            self._path = path
+        else:
+            first_agent = agents[0].identifier
+            self._path = f"{DEFAULT_OUTPUT_PATH}{first_agent.replace('/', '_')}"
+            print(f"Output path not specified. Using default path: {self._path}")
         self._agents = agents
         self._client_config = client_config
         self._confirm_commands = confirm_commands
@@ -33,7 +41,7 @@ class LocalRunner:
         client = InferenceClient(client_config)
 
         self._env = Environment(
-            path,
+            self._path,
             agents,
             client,
             env_vars=env_vars,
@@ -50,13 +58,27 @@ class LocalRunner:
     @staticmethod
     def load_agent(name: str, local: bool = False) -> Agent:
         """Loads a single agent from the registry."""
+        identifier = None
         if local:
-            path = get_registry_folder() / name
+            agent_files_path = get_registry_folder() / name
+            if CONFIG.auth is None:
+                namespace = "not-logged-in"
+            else:
+                namespace = CONFIG.auth.account_id
         else:
-            path = registry.download(name)
+            agent_files_path = registry.download(name)
+            identifier = name
+        assert agent_files_path is not None, f"Agent {name} not found."
 
-        assert path is not None, f"Agent {name} not found."
-        return Agent(path.as_posix())
+        metadata_path = os.path.join(agent_files_path, "metadata.json")
+        check_metadata(Path(metadata_path))
+        with open(metadata_path) as f:
+            metadata: Dict[str, Any] = json.load(f)
+
+        if not identifier:
+            identifier = "/".join([namespace, metadata["name"], metadata["version"]])
+
+        return Agent(identifier, agent_files_path, metadata)
 
     def run_interactive(self, record_run: bool = True, load_env: str = "") -> None:
         """Runs an interactive session within the given env."""
