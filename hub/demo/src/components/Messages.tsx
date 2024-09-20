@@ -32,39 +32,36 @@ export const Messages = ({
   welcomeMessage,
 }: Props) => {
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
-  const previousThreadId = usePrevious(threadId);
   const previousMessages = usePrevious(messages);
-  const element = useRef<HTMLDivElement | null>(null);
+  const messagesRef = useRef<HTMLDivElement | null>(null);
+  const scrolledToThreadId = useRef('');
 
   useEffect(() => {
-    if (!element.current) return;
-    const children = [...element.current.children];
+    if (!messagesRef.current) return;
+    const children = [...messagesRef.current.children];
     if (!children.length) return;
 
     const count = messages.length;
     const previousCount = previousMessages?.length;
 
     function scroll() {
-      if (threadId !== previousThreadId) {
+      if (threadId !== scrolledToThreadId.current) {
         window.scrollTo(0, document.body.scrollHeight);
-      } else if (previousCount >= count) {
-        children[0]?.scrollIntoView({
+      } else if (previousCount < count) {
+        const index = previousCount;
+        children[index]?.scrollIntoView({
           block: 'start',
-        });
-      } else {
-        const newIndex = Math.min(children.length - 1, previousCount);
-        children[newIndex]?.scrollIntoView({
-          block: 'start',
+          behavior: 'smooth',
         });
       }
+
+      setTimeout(() => {
+        scrolledToThreadId.current = threadId;
+      }, 1000);
     }
 
     scroll();
-
-    setTimeout(() => {
-      scroll();
-    });
-  }, [threadId, previousThreadId, previousMessages, messages]);
+  }, [threadId, previousMessages, messages]);
 
   function determineCodeLanguageForMessage(index: number) {
     if (!index) return;
@@ -77,15 +74,14 @@ export const Messages = ({
   }
 
   return (
-    <div className={s.chatThread} ref={element}>
+    <div className={s.wrapper}>
       {isAuthenticated && loading ? (
         <PlaceholderCard />
       ) : (
         <>
-          {' '}
           {welcomeMessage}
           {isAuthenticated && (
-            <>
+            <div className={s.messages} ref={messagesRef}>
               {messages.map((message, index) => (
                 <Fragment key={index}>
                   {message.role === 'user' ? (
@@ -136,7 +132,7 @@ export const Messages = ({
                   )}
                 </Fragment>
               ))}
-            </>
+            </div>
           )}
         </>
       )}
