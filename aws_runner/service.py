@@ -66,8 +66,7 @@ def write_metric(metric_name, value, unit="Milliseconds"):
         print(f"Would have written metric {metric_name} with value {value} to cloudwatch")
 
 
-def load_agent(client, agent, agent_env_vars):
-    env_vars = agent_env_vars.get(agent, {})
+def load_agent(client, agent):
     start_time = time.perf_counter()
     agent_files = client.get_agent(agent)
     stop_time = time.perf_counter()
@@ -112,7 +111,6 @@ def run_with_environment(
     max_iterations = int(params.get("max_iterations", 2))
     record_run = bool(params.get("record_run", True))
     api_url = str(params.get("api_url", DEFAULT_API_URL))
-    agent_env_vars: dict = params.get("agent_env_vars", {})
     user_env_vars: dict = params.get("user_env_vars", {})
 
     if api_url != DEFAULT_API_URL:
@@ -120,7 +118,7 @@ def run_with_environment(
 
     near_client = PartialNearClient(api_url, auth)
 
-    loaded_agents = [load_agent(near_client, agent, agent_env_vars) for agent in agents.split(",")]
+    loaded_agents = [load_agent(near_client, agent) for agent in agents.split(",")]
 
     if environment_id:
         start_time = time.perf_counter()
