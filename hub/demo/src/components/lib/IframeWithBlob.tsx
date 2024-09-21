@@ -70,6 +70,7 @@ export const IframeWithBlob = ({ className = '', html, ...props }: Props) => {
         src={dataUrl}
         sandbox="allow-scripts"
         className={`${s.visibleIframe} ${className}`}
+        data-loading={height < 10}
         {...props}
       />
     </div>
