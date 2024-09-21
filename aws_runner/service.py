@@ -34,13 +34,13 @@ def handler(event, context):
 
     start_time_val = time.perf_counter()
     if not verify_signed_message(
-            auth_object.get("account_id"),
-            auth_object.get("public_key"),
-            auth_object.get("signature"),
-            auth_object.get("message"),
-            auth_object.get("nonce"),
-            auth_object.get("recipient"),
-            auth_object.get("callback_url"),
+        auth_object.get("account_id"),
+        auth_object.get("public_key"),
+        auth_object.get("signature"),
+        auth_object.get("message"),
+        auth_object.get("nonce"),
+        auth_object.get("recipient"),
+        auth_object.get("callback_url"),
     ):
         return "Unauthorized: Invalid signature"
     stop_time_val = time.perf_counter()
