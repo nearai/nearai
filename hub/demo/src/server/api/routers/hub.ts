@@ -141,7 +141,10 @@ export const hubRouter = createTRPCRouter({
       const text: string = await response.text();
       if (!text.match(/".*\/.*\/.*/)) {
         // check whether the response matches namespace/name/version
-        throw new Error('Response text does not match namespace/name/version');
+        console.log('Agent encountered an error:', text);
+        throw new Error(
+          'Agent encountered an error. Error has been logged to the console.',
+        );
       }
 
       const environmentId = text.replace(/\\/g, '').replace(/"/g, '');
