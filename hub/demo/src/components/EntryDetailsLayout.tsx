@@ -1,12 +1,16 @@
 'use client';
 
-import { CaretDown } from '@phosphor-icons/react';
+import { 
+  CaretDown, 
+  Copy as CopyIcon,
+} from '@phosphor-icons/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactElement, type ReactNode } from 'react';
 
 import { ErrorSection } from '~/components/ErrorSection';
 import { Badge } from '~/components/lib/Badge';
+import { Button } from '~/components/lib/Button';
 import { Dropdown } from '~/components/lib/Dropdown';
 import { Flex } from '~/components/lib/Flex';
 import { ImageIcon } from '~/components/lib/ImageIcon';
@@ -19,6 +23,7 @@ import { StarButton } from '~/components/StarButton';
 import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
+import { copyTextToClipboard } from '~/utils/clipboard';
 
 type Props = {
   category: EntryCategory;
@@ -112,6 +117,14 @@ export const EntryDetailsLayout = ({ category, children, tabs }: Props) => {
                   </Text>
                 </Link>
               </Flex>
+              <Button
+                className="copyButton"
+                onClick={() => 
+                  copyTextToClipboard(`${namespace}/${name}/${version}`)
+                }
+              >
+                <SvgIcon icon={<CopyIcon />} />
+              </Button>
             </Flex>
           </Flex>
 

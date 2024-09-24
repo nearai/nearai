@@ -79,6 +79,11 @@ npm install
 cp .env.example .env
 ```
 
+-   If running only Frontend, update the Router URL in `.env` to
+```bash
+ROUTER_URL=https://api.near.ai/v1
+```
+
 -   Start the next app in development mode:
 
 ```bash
