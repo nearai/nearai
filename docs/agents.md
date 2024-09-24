@@ -96,6 +96,19 @@ To run without user interaction pass the task input to the task
 nearai agent task flatirons.near/xela-agent/5 "Build a command line chess engine" ~/tmp/test-agents/xela-agent/chess-engine
 ```
 
+### Running an agent through AI Hub
+To run an agent in the [AI Hub](https://app.near.ai/agents):
+1. Select the desired agent.
+1. Navigate to the **Run** tab.
+1. Interact with the agent using the chat interface
+
+Note:
+1. Streaming is currently unavailable through the AI Hub
+2. Messages will be stored and managed through the `env.list_messages()` method. For example, to log an output shown in the chat, you would call in the `agents.py` file:
+```
+env.add_message("agent", "Agent response here")
+```
+
 
 ## The Environment API
 Your agent will receive an `env` object that has the following methods:
