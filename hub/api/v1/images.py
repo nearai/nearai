@@ -5,11 +5,14 @@ from fireworks.client.image import Answer, ImageInference
 
 
 class ImageGenerator(Protocol):
-    def generate(self, **kwargs) -> dict: ...
+    def generate(self, **kwargs) -> dict:
+        """Generates images"""
+        ...
 
 
 class FireworksImageGenerator:
     def __init__(self):
+        """Initializes the Fireworks image generator."""
         api_key = os.environ.get("FIREWORKS_API_KEY")
         if not api_key:
             raise ValueError("FIREWORKS_API_KEY environment variable is not set")
@@ -19,9 +22,11 @@ class FireworksImageGenerator:
         """Generate images using the Fireworks API.
 
         Args:
+        ----
             **kwargs: Additional keyword arguments.
 
         Returns:
+        -------
             dict: The response from the Fireworks API.
 
         """
