@@ -12,6 +12,7 @@ from shared.near.primitives import PROVIDER_MODEL_SEP, get_provider_model
 
 from hub.api.v1.auth import AuthToken, revokable_auth, validate_signature
 from hub.api.v1.completions import Message, Provider, get_llm_ai, handle_stream
+from hub.api.v1.images import get_images_ai
 from hub.api.v1.sql import SqlClient
 
 v1_router = APIRouter()
@@ -87,9 +88,25 @@ class EmbeddingsRequest(BaseModel):
     provider: Optional[str] = None
 
 
+class ImageGenerationRequest(BaseModel):
+    """Request for image generation."""
+
+    prompt: str
+    """A text description of the desired image(s)."""
+    model: str = f"fireworks{PROVIDER_MODEL_SEP}accounts/fireworks/models/playground-v2-5-1024px-aesthetic"
+    provider: Optional[str] = None
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, value: str):  # noqa: D102
+        if PROVIDER_MODEL_SEP not in value:
+            value = f"fireworks{PROVIDER_MODEL_SEP}accounts/fireworks/models/{value}"
+        return value
+
+
 # The request might come as provider::model
 # OpenAI API specs expects model name to be only the model name, not provider::model
-def convert_request(request: ChatCompletionsRequest | CompletionsRequest | EmbeddingsRequest):
+def convert_request(request: ChatCompletionsRequest | CompletionsRequest | EmbeddingsRequest | ImageGenerationRequest):
     provider, model = get_provider_model(request.provider, request.model)
     request.model = model
     request.provider = provider
@@ -275,3 +292,31 @@ async def verify_revoke_nonce(auth):
 @v1_router.get("/version")
 async def version() -> str:
     return importlib.metadata.version("nearai")
+
+
+@v1_router.post("/images/generations")
+def generate_images(
+    request: ImageGenerationRequest = Depends(convert_request), auth: AuthToken = Depends(revokable_auth)
+):
+    logger.info(f"Received image generation request: {request.model_dump()}")
+
+    try:
+        assert request.provider is not None
+        images_api = get_images_ai(request.provider)
+    except NotImplementedError:
+        raise HTTPException(status_code=400, detail="Provider not supported") from None
+
+    try:
+        resp = images_api.generate(**request.model_dump(exclude={"provider"}))
+    except Exception as e:
+        error_message = str(e)
+        logger.error(f"Image generation failed: {error_message}")
+        raise HTTPException(status_code=400, detail=f"Image generation failed: {error_message}") from None
+
+    c = json.dumps(resp)
+    logger.info(f"Image generation response: {c}")
+    db.add_user_usage(
+        auth.account_id, request.prompt, c, request.model or "default", request.provider, "/images/generations"
+    )
+
+    return JSONResponse(content=json.loads(c))

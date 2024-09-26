@@ -187,5 +187,6 @@ module = [
     'pymysql.*',
     'torchtune.*',
     'torchao.*',
+    'fireworks.*',
 ]
 ignore_missing_imports = true
