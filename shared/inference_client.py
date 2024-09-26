@@ -106,6 +106,7 @@ class InferenceClient(object):
         """Creates a vector store from the given source.
 
         Args:
+        ----
             name (str): The name of the vector store.
             source (Union[GitHubSource, GitLabSource]): The source from which to create the vector store.
             source_auth (Optional[str]): The source authentication token.
@@ -114,6 +115,7 @@ class InferenceClient(object):
             metadata (Optional[Dict[str, str]]): Additional metadata.
 
         Returns:
+        -------
             VectorStore: The created vector store.
 
         """

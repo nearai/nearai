@@ -216,14 +216,17 @@ class Environment(object):
     ) -> VectorStore:
         """Creates a vector store from the given source.
 
-        name: The name of the vector store.
-        source: The source from which to create the vector store.
-        source_auth: The source authentication token.
-        chunking_strategy: The chunking strategy to use.
-        expires_after: The expiration policy.
-        metadata: Additional metadata.
+        Args:
+        ----
+            name: The name of the vector store.
+            source: The source from which to create the vector store.
+            source_auth: The source authentication token.
+            chunking_strategy: The chunking strategy to use.
+            expires_after: The expiration policy.
+            metadata: Additional metadata.
 
         Returns:
+        -------
             VectorStore: The created vector store.
 
         """
