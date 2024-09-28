@@ -159,8 +159,10 @@ def my_tool():
 
 env.get_tool_registry().register_tool(my_tool)
 
-response = env.completions_and_run_tools("llama-v3p1-405b-instruct-long", messages, tools=get_tool_registry().get_all_tools())
+response = env.completions_and_run_tools(messages, tools=get_tool_registry().get_all_tools())
 ```
+The tool registry supports OpenAI style tool calling and Llama style. When a llama model is passed to completions_and_run_tools
+a system message is added to the conversation with the tool definitions.
 
 ### Logging
 * [`add_system_log`](api.md#nearai.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".

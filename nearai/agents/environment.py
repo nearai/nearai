@@ -2,6 +2,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -11,11 +12,11 @@ import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import psutil
 import shared.near.sign as near
-from litellm.types.utils import Choices, ModelResponse
+from litellm.types.utils import ChatCompletionMessageToolCall, Choices, Function, ModelResponse
 from litellm.utils import CustomStreamWrapper
 from openai.types.beta.vector_store import VectorStore
 from openai.types.chat import ChatCompletionMessageParam
@@ -28,6 +29,7 @@ from shared.models import (
 )
 from shared.near.primitives import PROVIDER_MODEL_SEP
 
+from nearai.agents import tool_json_helper
 from nearai.agents.agent import Agent
 from nearai.agents.tool_registry import ToolRegistry
 
@@ -36,6 +38,8 @@ CHAT_FILENAME = "chat.txt"
 SYSTEM_LOG_FILENAME = "system_log.txt"
 AGENT_LOG_FILENAME = "agent_log.txt"
 TERMINAL_FILENAME = "terminal.txt"
+
+LLAMA_TOOL_FORMAT_PATTERN = re.compile(r"(.*?)<function=(\w+)>(.*?)(</function>|$|\Z)(.*?)", re.DOTALL | re.MULTILINE)
 
 default_approvals: Dict[str, Any] = {"confirm_execution": lambda _: True}
 
@@ -372,32 +376,103 @@ class Environment(object):
         """Returns all completions for given messages using the given model."""
         return self._run_inference_completions(messages, model, stream, **kwargs)
 
-    # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
     def completions_and_run_tools(
         self,
-        messages: Iterable[ChatCompletionMessageParam] | str,
-        model: Iterable[ChatCompletionMessageParam] | str = "",
+        messages: List[ChatCompletionMessageParam],
+        model: str = "",
         tools: Optional[List] = None,
+        add_responses_to_messages: bool = True,
+        agent_role_name="agent",
+        tool_role_name="tool",
         **kwargs: Any,
     ) -> ModelResponse:
         """Returns all completions for given messages using the given model and runs tools."""
+        if self._use_llama_tool_syntax(model, tools):
+            tool_prompt = self._llama_tool_prompt(tools)
+            messages.append({"role": "system", "content": tool_prompt})
         raw_response = self._run_inference_completions(messages, model, stream=False, tools=tools, **kwargs)
         assert isinstance(raw_response, ModelResponse), "Expected ModelResponse"
         response: ModelResponse = raw_response
         assert all(map(lambda choice: isinstance(choice, Choices), response.choices)), "Expected Choices"
         choices: List[Choices] = response.choices  # type: ignore
         response_message = choices[0].message
-        if hasattr(response_message, "tool_calls") and response_message.tool_calls:
-            for tool_call in response_message.tool_calls:
-                function_name = tool_call.function.name
-                assert function_name, "Tool call must have a function name"
-                function_args = json.loads(tool_call.function.arguments)
-                function_response = self._tools.call_tool(function_name, **function_args)
 
-                if function_response:
-                    function_response_json = json.dumps(function_response) if function_response else ""
-                    self.add_message("tool", function_response_json, tool_call_id=tool_call.id, name=function_name)
+        self._handle_tool_calls(response_message, add_responses_to_messages, agent_role_name, tool_role_name)
+
         return response
+
+    def _handle_tool_calls(self, response_message, add_responses_to_messages, agent_role_name, tool_role_name):
+        (message_without_tool_call, tool_calls) = self._parse_tool_call(response_message)
+        if add_responses_to_messages and response_message.content:
+            self.add_message(agent_role_name, message_without_tool_call)
+        if tool_calls:
+            for tool_call in tool_calls:
+                function_name = tool_call.function.name
+                try:
+                    assert function_name, "Tool call must have a function name"
+                    function_signature = self.get_tool_registry().get_tool_definition(function_name)
+                    assert function_signature, f"Tool {function_name} not found"
+                    args = tool_call.function.arguments
+                    function_args = tool_json_helper.parse_json_args(function_signature, args)
+                    self.add_system_log(f"Calling tool {function_name} with args {function_args}")
+                    function_response = self._tools.call_tool(function_name, **function_args if function_args else {})
+
+                    if function_response:
+                        function_response_json = json.dumps(function_response) if function_response else ""
+                        if add_responses_to_messages:
+                            self.add_message(
+                                tool_role_name, function_response_json, tool_call_id=tool_call.id, name=function_name
+                            )
+                except Exception as e:
+                    error_message = f"Error calling tool {function_name}: {e}"
+                    self.add_system_log(error_message, level=logging.ERROR)
+                    if add_responses_to_messages:
+                        self.add_message(tool_role_name, error_message, tool_call_id=tool_call.id, name=function_name)
+
+    @staticmethod
+    def _parse_tool_call(response_message) -> Tuple[Optional[str], Optional[List[ChatCompletionMessageToolCall]]]:
+        if hasattr(response_message, "tool_calls") and response_message.tool_calls:
+            return response_message.content, response_message.tool_calls
+        content = response_message.content
+        if content is None:
+            return None, None
+        llama_matches = LLAMA_TOOL_FORMAT_PATTERN.findall(content)
+        if llama_matches:
+            text = ""
+            tool_calls = []
+            for llama_match in llama_matches:
+                before_call_text, function_name, args, end_tag, after_call_text = llama_match
+                function = Function(name=function_name, arguments=args)
+                tool_call = ChatCompletionMessageToolCall(id=str(uuid.uuid4()), function=function)
+                text += before_call_text + after_call_text
+                tool_calls.append(tool_call)
+            return text, tool_calls
+        return content, None
+
+    @staticmethod
+    def _use_llama_tool_syntax(model: str, tools: Optional[List]) -> bool:
+        return tools is not None and "llama" in model
+
+    @staticmethod
+    def _llama_tool_prompt(tools: Optional[List]) -> str:
+        return (
+            """Answer the user's question by making use of the following functions if needed.
+            If none of the function can be used, please say so.
+            Here is a list of functions in JSON format:"""
+            + json.dumps(tools)
+            + """Think very carefully before calling functions.
+            If you choose to call a function ONLY reply in the following format with no prefix or suffix:
+
+            <function=example_function_name>{"example_name": "example_value"}</function>
+
+            Reminder:
+            - Function calls MUST follow the specified format, start with <function= and end with </function>
+            - Function arguments MUST be in JSON format using double quotes
+            - Required parameters MUST be specified
+            - Multiple functions can be called in one message as long as they are on separate lines.
+            - Put the entire function call reply on one line
+        """
+        )
 
     # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
     def completion(
@@ -415,23 +490,21 @@ class Environment(object):
         assert response_message, "No completions returned"
         return response_message
 
-    # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
     def completion_and_run_tools(
         self,
-        messages: Iterable[ChatCompletionMessageParam] | str,
-        model: Iterable[ChatCompletionMessageParam] | str = "",
+        messages: List[ChatCompletionMessageParam],
+        model: str = "",
         tools: Optional[List] = None,
         **kwargs: Any,
-    ) -> str:
+    ) -> Optional[str]:
         """Returns a completion for the given messages using the given model and runs tools."""
         completion_tools_response = self.completions_and_run_tools(messages, model, tools, **kwargs)
         assert all(
             map(lambda choice: isinstance(choice, Choices), completion_tools_response.choices)
         ), "Expected Choices"
         choices: List[Choices] = completion_tools_response.choices  # type: ignore
-        response_message = choices[0].message.content
-        assert response_message, "No completions returned"
-        return response_message
+        response_content = choices[0].message.content
+        return response_content
 
     def call_agent(self, agent_path: int, task: str) -> None:
         """Calls agent with given task."""

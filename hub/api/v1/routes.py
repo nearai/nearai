@@ -58,6 +58,7 @@ class LlmRequest(BaseModel):
     """The format of the response."""
     stream: bool = False
     """Whether to stream the response."""
+    tools: Optional[List] = None
 
     @field_validator("model")
     @classmethod
