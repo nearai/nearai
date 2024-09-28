@@ -1,8 +1,6 @@
 import json
 import re
 
-import fuzzy_json
-
 
 def _ending_transform(x):
     if x.endswith('}"') or x.endswith("}}"):
@@ -24,7 +22,6 @@ def parse_json_args(signature: dict, args: str):
         lambda x: json.loads(x),
         _ending_transform,
         lambda x: parse_json_args_based_on_signature(signature, x),
-        lambda x: fuzzy_json.loads(x) if x else {},
     ]
 
     for transform in transforms:
