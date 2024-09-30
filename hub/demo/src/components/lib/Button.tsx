@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ComponentPropsWithRef, ReactElement } from 'react';
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 
 import { Badge } from './Badge';
 import s from './Button.module.scss';
