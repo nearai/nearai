@@ -237,52 +237,6 @@
   }
 }
 
-.copyButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.25rem 0.25rem;
-  padding-right: 10px;
-  background-color: var(--button-color-background);
-  border: 1px solid var(--button-color-border);
-  border-radius: 100px;
-  cursor: pointer;
-  font-size: var(--button-font);
-  line-height: 1;
-  width: var(--button-width);
-  height: var(--button-height);
-  transition: var(--transitions);
-  color: var(--button-color-text);
-  text-decoration: none;
-
-  .icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%; /* Ensure icon fills available space */
-    height: 100%;
-    color: var(--button-color-icon);
-  }
-
-  svg {
-    width: 100%;
-    height: 100%;
-    fill: currentColor;
-    stroke: currentColor;
-  }
-}
-
-// Dark mode adjustments
-.dark-mode .copyButton {
-  background-color: var(--dark-button-background-color);
-  color: var(--dark-button-text-color);
-
-  &:hover {
-    background-color: var(--dark-button-hover-background-color);
-    color: var(--dark-button-hover-text-color);
-  }
-}
-
 .inner {
   display: inline-flex;
   align-items: center;

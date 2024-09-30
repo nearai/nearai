@@ -1,9 +1,6 @@
 'use client';
 
-import { 
-  CaretDown, 
-  Copy as CopyIcon,
-} from '@phosphor-icons/react';
+import { CaretDown, Copy } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactElement, type ReactNode } from 'react';
@@ -24,6 +21,8 @@ import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
 import { copyTextToClipboard } from '~/utils/clipboard';
+
+import { Tooltip } from './lib/Tooltip';
 
 type Props = {
   category: EntryCategory;
@@ -106,6 +105,22 @@ export const EntryDetailsLayout = ({ category, children, tabs }: Props) => {
                       </Dropdown.Section>
                     </Dropdown.Content>
                   </Dropdown.Root>
+
+                  <Tooltip
+                    asChild
+                    content={`Copy ${category} path to clipboard`}
+                  >
+                    <Button
+                      label="Copy"
+                      icon={<Copy />}
+                      size="x-small"
+                      variant="secondary"
+                      fill="ghost"
+                      onClick={() =>
+                        copyTextToClipboard(`${namespace}/${name}/${version}`)
+                      }
+                    />
+                  </Tooltip>
                 </Flex>
 
                 <Link
@@ -117,14 +132,6 @@ export const EntryDetailsLayout = ({ category, children, tabs }: Props) => {
                   </Text>
                 </Link>
               </Flex>
-              <Button
-                className="copyButton"
-                onClick={() => 
-                  copyTextToClipboard(`${namespace}/${name}/${version}`)
-                }
-              >
-                <SvgIcon icon={<CopyIcon />} />
-              </Button>
             </Flex>
           </Flex>
 

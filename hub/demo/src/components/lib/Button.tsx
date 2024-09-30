@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ComponentPropsWithRef, ReactElement } from 'react';
-import React, { ReactNode, forwardRef } from 'react';
+import React, { forwardRef } from 'react';
 
 import { Badge } from './Badge';
 import s from './Button.module.scss';
@@ -10,7 +10,6 @@ type Size = 'x-small' | 'small' | 'default' | 'large';
 type Variant = 'primary' | 'secondary' | 'affirmative' | 'destructive';
 
 type Props = Omit<ComponentPropsWithRef<'button'>, 'size'> & {
-  children?: ReactNode;
   count?: number;
   fill?: Fill;
   href?: string;
@@ -40,7 +39,6 @@ export const Button = forwardRef<HTMLButtonElement, Props>(
       size = 'default',
       type = 'button',
       variant = 'primary',
-      children,
       ...forwardedProps
     },
     ref,
@@ -63,7 +61,7 @@ export const Button = forwardRef<HTMLButtonElement, Props>(
 
     return (
       <Element
-        className={`${s.button} ${s[className]}`} // Combine class names correctly using CSS modules
+        className={`${s.button} ${className}`}
         data-icon={!!icon}
         data-fill={fill}
         data-loading={loading}
@@ -91,7 +89,6 @@ export const Button = forwardRef<HTMLButtonElement, Props>(
               {iconRight && <span className={s.icon}>{iconRight}</span>}
             </>
           )}
-          {children}
         </span>
       </Element>
     );
