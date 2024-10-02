@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 import boto3
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from pydantic import BaseModel
 
 from hub.api.v1.auth import AuthToken, revokable_auth
@@ -37,11 +37,6 @@ class RemoveHubSecretRequest(BaseModel):
     key: str
 
     category: Optional[str] = "agent"
-
-
-class GetUserHubSecret(BaseModel):
-    limit: Optional[int] = 100
-    offset: Optional[int] = 0
 
 
 @hub_secrets_router.post("/create_hub_secret")
@@ -94,14 +89,17 @@ async def remove_hub_secret(
 
 @hub_secrets_router.get("/get_user_secrets")
 async def get_user_secrets(
-    request: GetUserHubSecret, background_tasks: BackgroundTasks, auth: AuthToken = Depends(revokable_auth)
+    background_tasks: BackgroundTasks,
+    auth: AuthToken = Depends(revokable_auth),
+    limit: Optional[int] = Query(100, description="Limit of the results"),
+    offset: Optional[int] = Query(0, description="Offset for pagination"),
 ):
     """Get hub secrets for a given user."""
     sql_client = SqlClient()
     result = sql_client.get_user_secrets(
         owner_namespace=auth.account_id,
-        limit=request.limit,
-        offset=request.offset,
+        limit=limit,
+        offset=offset,
     )
 
     # TODO decryption

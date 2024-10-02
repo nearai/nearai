@@ -11,7 +11,7 @@
 ##
 ## Builds the Docker image, pushes it to ECR, and updates the Lambda function to use it.
 
-ALL_FRAMEWORKS=("base" "langgraph-1-4")
+ALL_FRAMEWORKS=("base" "langgraph-0-1-4", "langgraph-0-2-6")
 ALL_ENVIRONMENTS=("staging" "production")
 
 deploy() {

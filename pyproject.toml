@@ -74,7 +74,8 @@ hub = [
     "openpyxl",
     "python-pptx",
     "pypdf",
-    "chardet"
+    "chardet",
+    "shortuuid"
 ]
 torch = ["torch", "torchao", "torchtune"]
 vllm = ["vllm", "torch"]

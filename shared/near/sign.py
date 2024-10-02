@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import time
+from enum import Enum
 from typing import Any, List, Optional, Union
 
 import base58
@@ -85,7 +86,24 @@ def validate_nonce(value: Union[str, bytes, list[int]]):
     return nonce
 
 
-def verify_signed_message(account_id, public_key, signature, message, nonce, recipient, callback_url):
+class SignatureVerificationResult(Enum):
+    TRUE = True
+    FALSE = False
+    VERIFY_ACCESS_KEY_OWNER_SERVICE_NOT_AVAILABLE = "verify_access_key_owner_not_available"
+
+    @classmethod
+    def from_bool(cls, value: bool):
+        """Gets VerificationResult based on a boolean value."""
+        return cls.TRUE if value else cls.FALSE
+
+    def __bool__(self):
+        """Overrides the behavior when checking for truthiness."""
+        return self == SignatureVerificationResult.TRUE
+
+
+def verify_signed_message(
+    account_id, public_key, signature, message, nonce, recipient, callback_url
+) -> SignatureVerificationResult:
     """Verifies a signed message and ensures the public key belongs to the specified account."""
     is_valid = validate_signature(public_key, signature, Payload(message, nonce, recipient, callback_url))
 
@@ -96,10 +114,12 @@ def verify_signed_message(account_id, public_key, signature, message, nonce, rec
         # verify that key belongs to `account_id`
         return verify_access_key_owner(public_key, account_id)
 
-    return False
+    # TODO verifies that key is a FULL ACCESS KEY
+
+    return SignatureVerificationResult.FALSE
 
 
-def verify_access_key_owner(public_key, account_id):
+def verify_access_key_owner(public_key, account_id) -> SignatureVerificationResult:
     """Verifies if a given public key belongs to a specified account ID using FastNEAR API."""
     try:
         url = f"https://api.fastnear.com/v0/public_key/{public_key}"
@@ -110,13 +130,13 @@ def verify_access_key_owner(public_key, account_id):
         key_owner_verified = account_id in account_ids
         if not key_owner_verified:
             print("Key's owner verification failed. Only NEAR Mainnet accounts are supported.")
-        return key_owner_verified
+        return SignatureVerificationResult.from_bool(key_owner_verified)
     except requests.exceptions.HTTPError as http_err:
         print(f"HTTP error occurred: {http_err}")
     except Exception as err:
         print(f"Other error occurred: {err}")
 
-    return False
+    return SignatureVerificationResult.VERIFY_ACCESS_KEY_OWNER_SERVICE_NOT_AVAILABLE
 
 
 def create_signature(private_key: str, payload: Payload) -> tuple[str, str]:

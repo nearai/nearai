@@ -3,7 +3,30 @@ from typing import Any, Callable, Dict, Literal, Optional, _GenericAlias, get_ty
 
 
 class ToolRegistry:
-    """A registry for tools that can be called by the agent."""
+    """A registry for tools that can be called by the agent.
+
+    Tool definitions follow this structure:
+
+        {
+            "type": "function",
+            "function": {
+                "name": "get_current_weather",
+                "description": "Get the current weather in a given location",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "The city and state, e.g. San Francisco, CA",
+                        },
+                        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                    },
+                    "required": ["location"],
+                },
+            },
+        }
+
+    """
 
     def __init__(self) -> None:  # noqa: D107
         self.tools: Dict[str, Callable] = {}

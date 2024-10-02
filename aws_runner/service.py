@@ -11,7 +11,7 @@ import boto3
 from aws_runner.partial_near_client import ENVIRONMENT_FILENAME, PartialNearClient
 from nearai.agents.agent import Agent
 from nearai.agents.environment import Environment
-from shared.near.sign import verify_signed_message
+from shared.near.sign import SignatureVerificationResult, verify_signed_message
 
 cloudwatch = boto3.client("cloudwatch", region_name="us-east-2")
 
@@ -33,7 +33,7 @@ def handler(event, context):
     auth_object = auth if isinstance(auth, dict) else json.loads(auth)
 
     start_time_val = time.perf_counter()
-    if not verify_signed_message(
+    verification_result = verify_signed_message(
         auth_object.get("account_id"),
         auth_object.get("public_key"),
         auth_object.get("signature"),
@@ -41,10 +41,16 @@ def handler(event, context):
         auth_object.get("nonce"),
         auth_object.get("recipient"),
         auth_object.get("callback_url"),
-    ):
+    )
+
+    if verification_result == SignatureVerificationResult.VERIFY_ACCESS_KEY_OWNER_SERVICE_NOT_AVAILABLE:
+        write_metric("AdminNotifications", "SignatureAccessKeyVerificationServiceFailed", "Count")
+    elif not verification_result:
         return "Unauthorized: Invalid signature"
-    stop_time_val = time.perf_counter()
-    write_metric("VerifySignatureDuration", stop_time_val - start_time_val)
+    else:
+        # signature is valid
+        stop_time_val = time.perf_counter()
+        write_metric("VerifySignatureDuration", stop_time_val - start_time_val)
 
     environment_id = event.get("environment_id")
     new_message = event.get("new_message")

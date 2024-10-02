@@ -1,5 +1,4 @@
 import logging
-from typing import Dict, List, Literal, Optional, Union
 
 import boto3
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -7,9 +6,9 @@ from fastapi.responses import JSONResponse
 from openai.types.beta.vector_store import ExpiresAfter as OpenAIExpiresAfter
 from openai.types.beta.vector_store import FileCounts, VectorStore
 from pydantic import BaseModel
+from shared.models import CreateVectorStoreFromSourceRequest, CreateVectorStoreRequest, GitHubSource, GitLabSource
 
 from hub.api.v1.auth import AuthToken, revokable_auth
-from hub.api.v1.models import GitHubSource, GitLabSource
 from hub.api.v1.sql import SqlClient
 from hub.tasks.embedding_generation import (
     generate_embedding,
@@ -22,36 +21,6 @@ vector_stores_router = APIRouter(tags=["Vector Stores"])
 logger = logging.getLogger(__name__)
 
 s3_client = boto3.client("s3")
-
-
-class ChunkingStrategy(BaseModel):
-    """Defines the chunking strategy for vector stores."""
-
-    pass
-
-
-class ExpiresAfter(BaseModel):
-    """Defines the expiration policy for vector stores."""
-
-    anchor: Literal["last_active_at"]
-    """The anchor point for expiration calculation."""
-    days: int
-    """The number of days after which the vector store expires."""
-
-
-class CreateVectorStoreRequest(BaseModel):
-    """Request model for creating a new vector store."""
-
-    chunking_strategy: Optional[ChunkingStrategy] = None
-    """The chunking strategy to use for the vector store."""
-    expires_after: Optional[ExpiresAfter] = None
-    """The expiration time for the vector store."""
-    file_ids: Optional[List[str]] = None
-    """The file IDs to attach to the vector store."""
-    metadata: Optional[Dict[str, str]] = None
-    """The metadata to attach to the vector store."""
-    name: str
-    """The name of the vector store."""
 
 
 @vector_stores_router.post("/vector_stores", response_model=VectorStore)
@@ -397,15 +366,6 @@ async def query_vector_store(
     except Exception as e:
         logger.error(f"Error querying vector store: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to query vector store") from None
-
-
-class CreateVectorStoreFromSourceRequest(BaseModel):
-    name: str
-    source: Union[GitHubSource, GitLabSource]
-    source_auth: Optional[str] = None
-    chunking_strategy: Optional[ChunkingStrategy] = None
-    expires_after: Optional[ExpiresAfter] = None
-    metadata: Optional[Dict[str, str]] = None
 
 
 @vector_stores_router.post("/vector_stores/from_source", response_model=VectorStore)

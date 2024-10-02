@@ -34,7 +34,7 @@ import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
 import { useZodForm } from '~/hooks/form';
 import { useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
-import { chatWithAgentModel } from '~/lib/models';
+import { chatWithAgentModel, type messageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
@@ -58,7 +58,8 @@ export default function EntryRunPage() {
   });
 
   const [htmlOutput, setHtmlOutput] = useState('');
-  const [view, setView] = useState<'conversation' | 'output' | 'auto'>('auto');
+  const previousHtmlOutput = useRef('');
+  const [view, setView] = useState<'conversation' | 'output'>('conversation');
   const [openedFileName, setOpenedFileName] = useState<string | null>(null);
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
@@ -79,6 +80,18 @@ export default function EntryRunPage() {
   const openedFile = openedFileName
     ? environment?.files?.[openedFileName]
     : undefined;
+
+  const latestAssistantMessages: z.infer<typeof messageModel>[] = [];
+  if (environment) {
+    for (let i = environment.conversation.length - 1; i >= 0; i--) {
+      const message = environment.conversation[i];
+      if (message?.role === 'assistant') {
+        latestAssistantMessages.push(message);
+      } else {
+        break;
+      }
+    }
+  }
 
   async function onSubmit(values: z.infer<typeof chatWithAgentModel>) {
     try {
@@ -153,11 +166,20 @@ export default function EntryRunPage() {
 
   useEffect(() => {
     const files = environmentQuery?.data?.files;
-    if (files?.['index.html']) {
-      setHtmlOutput(files['index.html'].content);
-      setView((current) => (current === 'auto' ? 'output' : current));
+    const htmlFile = files?.['index.html'];
+
+    if (htmlFile) {
+      setHtmlOutput(htmlFile.content);
+      if (previousHtmlOutput.current !== htmlFile.content) {
+        setView('output');
+      }
+    } else {
+      setView('conversation');
+      setHtmlOutput('');
     }
-  }, [environmentQuery]);
+
+    previousHtmlOutput.current = htmlOutput;
+  }, [environmentQuery, htmlOutput]);
 
   useEffect(() => {
     if (environmentId && environmentId !== environment?.environmentId) {
@@ -166,9 +188,6 @@ export default function EntryRunPage() {
   }, [environment, environmentId, environmentQuery]);
 
   useEffect(() => {
-    setView('auto');
-    setHtmlOutput('');
-
     if (!environmentId) {
       utils.hub.environment.setData(
         {
@@ -206,7 +225,17 @@ export default function EntryRunPage() {
 
         <Sidebar.Main>
           {view === 'output' ? (
-            <IframeWithBlob html={htmlOutput} />
+            <>
+              <IframeWithBlob html={htmlOutput} />
+
+              {latestAssistantMessages.length > 0 && (
+                <Messages
+                  loading={environmentQuery.isLoading}
+                  messages={latestAssistantMessages}
+                  threadId={agentId}
+                />
+              )}
+            </>
           ) : (
             <Messages
               loading={environmentQuery.isLoading}

@@ -1,7 +1,9 @@
+import json
 from os import getenv
 from typing import Any, Dict, Optional
 
 import boto3
+import requests
 from fastapi import APIRouter, Body, Depends, HTTPException, Response
 from nearai.clients.lambda_client import LambdaWrapper
 from pydantic import BaseModel, Field
@@ -62,6 +64,47 @@ class CreateThreadAndRunRequest(BaseModel):
     )
 
 
+def invoke_function_via_curl(runner_invoke_url, agents, environment_id, auth: AuthToken, new_message, params):
+    auth_data = auth.model_dump()
+
+    if auth_data["nonce"]:
+        if isinstance(auth_data["nonce"], bytes):
+            auth_data["nonce"] = auth_data["nonce"].decode("utf-8")
+
+    payload = {
+        "agents": agents,
+        "environment_id": environment_id,
+        "auth": auth_data,
+        "new_message": new_message,
+        "params": params,
+    }
+
+    headers = {"Content-Type": "application/json"}
+
+    response = requests.post(runner_invoke_url, data=json.dumps(payload), headers=headers)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        raise Exception(f"Request failed with status code {response.status_code}: {response.text}")
+
+
+def invoke_function_via_lambda(function_name, agents, environment_id, auth: AuthToken, new_message, params):
+    wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
+    result = wrapper.invoke_function(
+        function_name,
+        {
+            "agents": agents,
+            "environment_id": environment_id,
+            "auth": auth.model_dump(),
+            "new_message": new_message,
+            "params": params,
+        },
+    )
+
+    return result
+
+
 @v1_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
 @v1_router.post("/agent/runs", tags=["Agents", "Assistants"])
 def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokable_auth)) -> str:
@@ -119,23 +162,19 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
     if framework == "prompt":
         raise HTTPException(status_code=400, detail="Prompt only agents are not implemented yet.")
     else:
-        function_name = f"{runner}-{framework.lower()}"
-        if agent_api_url != "https://api.near.ai":
-            print(f"Passing agent API URL: {agent_api_url}")
-        print(f"Running function {function_name} with: agents={agents}, environment_id={environment_id}, ")
+        if runner == "local":
+            runner_invoke_url = getenv("RUNNER_INVOKE_URL", None)
+            if runner_invoke_url:
+                return invoke_function_via_curl(runner_invoke_url, agents, environment_id, auth, new_message, params)
+        else:
+            function_name = f"{runner}-{framework.lower()}"
+            if agent_api_url != "https://api.near.ai":
+                print(f"Passing agent API URL: {agent_api_url}")
+            print(f"Running function {function_name} with: agents={agents}, environment_id={environment_id}, ")
 
-        wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
-        result = wrapper.invoke_function(
-            function_name,
-            {
-                "agents": agents,
-                "environment_id": environment_id,
-                "auth": auth.model_dump(),
-                "new_message": new_message,
-                "params": params,
-            },
-        )
-        return result
+            return invoke_function_via_lambda(function_name, agents, environment_id, auth, new_message, params)
+
+        raise HTTPException(status_code=400, detail="Invalid runner parameters")
 
 
 @v1_router.post(
@@ -150,8 +189,10 @@ def download_environment(entry: RegistryEntry = Depends(get), path: str = Body()
 
 
 def _runner_for_env():
-    env = getenv("SERVER_ENVIRONMENT", "local")
-    if env == "production":
+    runner_env = getenv("RUNNER_ENVIRONMENT", "local")
+    if runner_env == "production":
         return "production-agent-runner"
-    else:
+    elif runner_env == "staging":
         return "staging-agent-runner"
+    else:
+        return runner_env
