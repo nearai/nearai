@@ -103,14 +103,22 @@ To run an agent in the [AI Hub](https://app.near.ai/agents):
 1. Interact with the agent using the chat interface
 
 Note:
-1. Streaming agent chat is not yet available through the AI Hub.
-2. Messages will be stored and managed through the `env.list_messages()` method. For example, to log an output shown in the chat, you would call in the `agents.py` file:
-```
-env.add_message("agent", "Agent response here")
-```
+. Agent chat through the AI Hub does not yet stream back responses, it takes a few seconds to respond.
 
 
 ## The Environment API
+This is the api your agent will use to interact with NearAI. For example, to add an agent's response you could call completions and add_message.
+```
+prompt = {"role": "system", "content": "You are a travel agent that helps users plan trips."}
+
+conversation = env.list_messages() # the user's new message is added to this list by both the remote and local UIs.
+
+agent_response = env.completion([prompt] + conversation)
+
+env.add_message("agent", agent_response)
+```
+
+
 Your agent will receive an `env` object that has the following methods:
 
   * [`request_user_input`](api.md#nearai.agents.environment.Environment.request_user_input): 
