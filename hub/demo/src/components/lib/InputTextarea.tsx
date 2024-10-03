@@ -39,7 +39,7 @@ export const InputTextarea = forwardRef<HTMLTextAreaElement, Props>(
         : 'default';
 
     const onKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
-      if (event.key === 'Enter' && !event.shiftKey) {
+      if (enterKeySubmitsForm && event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
         event.currentTarget.closest('form')?.requestSubmit();
       }
