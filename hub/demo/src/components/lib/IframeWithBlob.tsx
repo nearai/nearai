@@ -2,14 +2,28 @@ import { type ComponentProps, useEffect, useRef, useState } from 'react';
 
 import s from './IframeWithBlob.module.scss';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type IframePostMessageEventHandler<T = any> = (
+  event: Omit<MessageEvent, 'data'> & {
+    data: T;
+  },
+) => unknown;
+
 type Props = ComponentProps<'iframe'> & {
   html: string;
+  onPostMessage?: IframePostMessageEventHandler;
 };
 
-export const IframeWithBlob = ({ className = '', html, ...props }: Props) => {
+export const IframeWithBlob = ({
+  className = '',
+  html,
+  onPostMessage,
+  ...props
+}: Props) => {
   const hiddenHeightCalculationIframeRef = useRef<HTMLIFrameElement | null>(
     null,
   );
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [dataUrl, setDataUrl] = useState('');
   const [height, setHeight] = useState(0);
 
@@ -31,14 +45,27 @@ export const IframeWithBlob = ({ className = '', html, ...props }: Props) => {
   }, [html]);
 
   useEffect(() => {
-    function onResize() {
+    function resizeListener() {
       resizeIframe();
     }
-    window.addEventListener('resize', onResize);
+    window.addEventListener('resize', resizeListener);
     () => {
-      window.removeEventListener('resize', onResize);
+      window.removeEventListener('resize', resizeListener);
     };
   }, []);
+
+  useEffect(() => {
+    function messageListener(event: MessageEvent) {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      onPostMessage?.(event);
+    }
+
+    window.addEventListener('message', messageListener);
+
+    return () => {
+      window.removeEventListener('message', messageListener);
+    };
+  }, [onPostMessage]);
 
   /*
     SECURITY NOTE:
@@ -67,6 +94,7 @@ export const IframeWithBlob = ({ className = '', html, ...props }: Props) => {
 
       <iframe
         height={height}
+        ref={iframeRef}
         src={dataUrl}
         sandbox="allow-scripts"
         className={`${s.visibleIframe} ${className}`}

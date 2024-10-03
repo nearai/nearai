@@ -10,12 +10,7 @@ import {
 } from '@phosphor-icons/react';
 import { type KeyboardEventHandler, useEffect, useRef, useState } from 'react';
 import { Controller } from 'react-hook-form';
-import {
-  type z,
-  type ZodNullable,
-  type ZodOptional,
-  type ZodString,
-} from 'zod';
+import { type z } from 'zod';
 
 import { AgentWelcome } from '~/components/AgentWelcome';
 import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
@@ -26,7 +21,10 @@ import { Dialog } from '~/components/lib/Dialog';
 import { Flex } from '~/components/lib/Flex';
 import { Form } from '~/components/lib/Form';
 import { HR } from '~/components/lib/HorizontalRule';
-import { IframeWithBlob } from '~/components/lib/IframeWithBlob';
+import {
+  type IframePostMessageEventHandler,
+  IframeWithBlob,
+} from '~/components/lib/IframeWithBlob';
 import { InputTextarea } from '~/components/lib/InputTextarea';
 import { Sidebar } from '~/components/lib/Sidebar';
 import { Slider } from '~/components/lib/Slider';
@@ -45,6 +43,7 @@ import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
 import { handleClientError } from '~/utils/error';
 import { formatBytes } from '~/utils/number';
+import { unreachable } from '~/utils/unreachable';
 import { getQueryParams } from '~/utils/url';
 
 export default function EntryRunPage() {
@@ -62,7 +61,6 @@ export default function EntryRunPage() {
     defaultValues: { agent_id: agentId },
   });
 
-  const auth = useAuthStore((store) => store.auth);
   const [htmlOutput, setHtmlOutput] = useState('');
   const previousHtmlOutput = useRef('');
   const [view, setView] = useState<'conversation' | 'output'>('conversation');
@@ -99,7 +97,7 @@ export default function EntryRunPage() {
     }
   }
 
-  async function onSubmit(values: z.infer<typeof chatWithAgentModel>) {
+  const onSubmit = async (values: z.infer<typeof chatWithAgentModel>) => {
     try {
       if (!values.new_message.trim()) return;
 
@@ -153,7 +151,7 @@ export default function EntryRunPage() {
     } catch (error) {
       handleClientError({ error, title: 'Failed to communicate with agent' });
     }
-  }
+  };
 
   const onKeyDownContent: KeyboardEventHandler<HTMLTextAreaElement> = (
     event,
@@ -170,70 +168,39 @@ export default function EntryRunPage() {
     form.setFocus('new_message');
   };
 
-  interface MessageData {
-    action: string;
+  const onIframePostMessage: IframePostMessageEventHandler<{
+    action: 'remote_agent_run' | 'refresh_environment_id';
     data: typeof chatWithAgentModel;
-  }
+  }> = async (event) => {
+    try {
+      const chat = chatWithAgentModel.parse(event.data.data);
 
-  const refreshEnvironment = (
-    environmentId: ZodOptional<ZodNullable<ZodString>>['_output'] | undefined,
-  ) => {
-    if (environmentId) {
-      updateQueryPath({ environmentId }, 'replace', false);
-      console.log(`Refresh environment: ${environmentId}`);
+      const conditionallyUpdateEnvironmentId = (
+        environmentId: string | null | undefined,
+      ) => {
+        if (!environmentId) return;
+        updateQueryPath({ environmentId }, 'replace', false);
+      };
+
+      switch (event.data.action) {
+        case 'remote_agent_run':
+          chat.max_iterations = Number(chat.max_iterations) || 1;
+          chat.environment_id = chat.environment_id ?? environmentId;
+          const response = await chatMutation.mutateAsync(chat);
+          conditionallyUpdateEnvironmentId(response.environmentId);
+          break;
+
+        case 'refresh_environment_id':
+          conditionallyUpdateEnvironmentId(chat.environment_id);
+          break;
+
+        default:
+          unreachable(event.data.action);
+      }
+    } catch (error) {
+      console.error(`Unable to handle message in onIframePostMessage()`, error);
     }
   };
-
-  // iframe messages
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== 'null') {
-        // our sandbox iframe always has origin "null"
-        return;
-      }
-
-      const message_data = event.data as MessageData;
-
-      if (message_data.action === 'remote_agent_run') {
-        const parsedData = chatWithAgentModel.safeParse(message_data.data);
-
-        if (!parsedData.success) {
-          console.error('Invalid message data:', parsedData.error);
-          return;
-        }
-
-        const requestData = parsedData.data;
-        requestData.max_iterations = Number(requestData.max_iterations) || 1;
-        requestData.environment_id =
-          requestData.environment_id ?? environmentId;
-
-        chatMutation
-          .mutateAsync(requestData)
-          .then((response) => {
-            refreshEnvironment(response.environmentId);
-          })
-          .catch((error) => {
-            console.error('Error in mutation:', error);
-          });
-
-      } else if (message_data.action === 'refresh_environment_id') {
-        const parsedData = chatWithAgentModel.safeParse(message_data.data);
-
-        if (!parsedData.success) {
-          console.error('Invalid message data:', parsedData.error);
-          return;
-        }
-
-        refreshEnvironment(parsedData.data.environment_id);
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, [auth, environmentId, chatMutation]);
 
   useEffect(() => {
     const files = environmentQuery?.data?.files;
@@ -301,7 +268,10 @@ export default function EntryRunPage() {
         <Sidebar.Main>
           {view === 'output' ? (
             <>
-              <IframeWithBlob html={htmlOutput} />
+              <IframeWithBlob
+                html={htmlOutput}
+                onPostMessage={onIframePostMessage}
+              />
 
               {latestAssistantMessages.length > 0 && (
                 <Messages
