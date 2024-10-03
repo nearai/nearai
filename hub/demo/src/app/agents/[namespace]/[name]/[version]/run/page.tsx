@@ -172,7 +172,7 @@ export default function EntryRunPage() {
 
   const onIframePostMessage: IframePostMessageEventHandler<{
     action: 'remote_agent_run' | 'refresh_environment_id';
-    data: typeof chatWithAgentModel;
+    data: unknown;
   }> = async (event) => {
     try {
       const chat = chatWithAgentModel.parse(event.data.data);
