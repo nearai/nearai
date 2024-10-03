@@ -1,8 +1,13 @@
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { type z } from 'zod';
 
-import { type entriesModel, type EntryCategory } from '~/lib/models';
+import {
+  type entriesModel,
+  type EntryCategory,
+  type entrySecretModel,
+} from '~/lib/models';
+import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { wordsMatchFuzzySearch } from '~/utils/search';
 
@@ -64,4 +69,93 @@ export function useEntriesSearch(
     searchQuery,
     setSearchQuery,
   };
+}
+
+export type EntryEnvironmentVariable = {
+  key: string;
+  metadataValue?: string;
+  urlValue?: string;
+  secret?: z.infer<typeof entrySecretModel>;
+};
+
+export function useCurrentEntryEnvironmentVariables(
+  category: EntryCategory,
+  excludeQueryParamKeys?: string[],
+) {
+  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const { currentEntry } = useCurrentEntry(category);
+  const searchParams = useSearchParams();
+  const secretsQuery = api.hub.secrets.useQuery(
+    {},
+    {
+      enabled: isAuthenticated,
+    },
+  );
+
+  const result = useMemo(() => {
+    const defaultVariablesByKey = currentEntry?.details.env_vars ?? {};
+    const urlVariablesByKey: Record<string, string> = {};
+
+    searchParams.forEach((value, key) => {
+      if (excludeQueryParamKeys?.includes(key)) return;
+      urlVariablesByKey[key] = value;
+    });
+
+    const variablesByKey: Record<string, EntryEnvironmentVariable> = {};
+
+    Object.entries(defaultVariablesByKey).forEach(([key, value]) => {
+      variablesByKey[key] = {
+        key,
+        metadataValue: value,
+      };
+    });
+
+    Object.entries(urlVariablesByKey).forEach(([key, value]) => {
+      const existing = variablesByKey[key];
+      if (existing) {
+        existing.urlValue = value;
+      } else {
+        variablesByKey[key] = {
+          key,
+          urlValue: value,
+        };
+      }
+    });
+
+    const secrets = secretsQuery.data?.filter((secret) => {
+      if (!currentEntry) return false;
+      return (
+        secret.category === currentEntry.category &&
+        secret.namespace === currentEntry.namespace &&
+        secret.name === currentEntry.name &&
+        secret.version === currentEntry.version
+      );
+    });
+
+    secrets?.forEach((secret) => {
+      const existing = variablesByKey[secret.key];
+      if (existing) {
+        existing.secret = secret;
+      } else {
+        variablesByKey[secret.key] = {
+          key: secret.key,
+          secret,
+        };
+      }
+    });
+
+    const variables = Object.values(variablesByKey);
+    variables.sort((a, b) => a.key.localeCompare(b.key));
+
+    return {
+      defaultVariablesByKey,
+      urlVariablesByKey,
+      variablesByKey,
+      variables,
+    };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEntry, searchParams, secretsQuery.data]);
+
+  return result;
 }

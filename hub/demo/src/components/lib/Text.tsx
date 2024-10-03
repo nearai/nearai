@@ -1,4 +1,8 @@
-import { type CSSProperties, type ReactNode } from 'react';
+import {
+  type CSSProperties,
+  type MouseEventHandler,
+  type ReactNode,
+} from 'react';
 
 import { type ThemeColor, type ThemeFontSize } from '~/utils/theme';
 
@@ -26,6 +30,7 @@ type Props = {
   clickableHighlight?: boolean;
   color?: ThemeColor;
   decoration?: CSSProperties['textDecoration'];
+  family?: 'standard' | 'monospace';
   forceWordBreak?: boolean;
   id?: string;
   size?: ThemeFontSize;
@@ -33,6 +38,7 @@ type Props = {
   sizeTablet?: ThemeFontSize;
   style?: CSSProperties;
   noWrap?: boolean;
+  onClick?: MouseEventHandler<HTMLElement>;
   weight?: string | number;
   uppercase?: boolean;
 };
@@ -45,11 +51,13 @@ export const Text = ({
   clickableHighlight,
   color,
   decoration,
+  family,
   forceWordBreak,
   size,
   style,
   weight,
   noWrap,
+  onClick,
   uppercase,
   ...props
 }: Props) => {
@@ -62,6 +70,9 @@ export const Text = ({
       data-clamp-lines={clampLines}
       data-size={size ?? defaultSize}
       data-clickable-highlight={clickableHighlight}
+      data-family={family}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
       style={{
         color: color
           ? color === 'current'
@@ -76,6 +87,7 @@ export const Text = ({
         textTransform: uppercase ? 'uppercase' : undefined,
         ...style,
       }}
+      onClick={onClick}
       {...props}
     >
       {children}

@@ -364,11 +364,7 @@ const EditThreadForm = ({
             fill="outline"
             onClick={onFinish}
           />
-          <Button
-            label="Save"
-            variant="affirmative"
-            loading={updateMutation.isPending}
-          />
+          <Button label="Save" variant="affirmative" type="submit" />
         </Flex>
       </Flex>
     </Form>

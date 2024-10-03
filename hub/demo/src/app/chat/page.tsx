@@ -26,7 +26,7 @@ import { SignInPrompt } from '~/components/SignInPrompt';
 import { ThreadsSidebar } from '~/components/ThreadsSidebar';
 import { useChatModels } from '~/hooks/chat';
 import { useZodForm } from '~/hooks/form';
-import { chatModel, type messageModel } from '~/lib/models';
+import { chatWithModelModel, type messageModel } from '~/lib/models';
 import { PROVIDER_OPTIONS } from '~/lib/providers';
 import { ROLE_OPTIONS } from '~/lib/roles';
 import { useAuthStore } from '~/stores/auth';
@@ -38,8 +38,8 @@ const LOCAL_STORAGE_KEY = 'inference_conversation';
 export default function InferencePage() {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement | null>(null);
-  const form = useZodForm(chatModel);
-  const chatMutation = api.hub.chat.useMutation();
+  const form = useZodForm(chatWithModelModel);
+  const chatMutation = api.hub.chatWithModel.useMutation();
   const provider = form.watch('provider');
   const models = useChatModels(provider);
   const [conversation, setConversation] = useState<
@@ -61,7 +61,9 @@ export default function InferencePage() {
     [models.data],
   );
 
-  const onSubmit: SubmitHandler<z.infer<typeof chatModel>> = async (values) => {
+  const onSubmit: SubmitHandler<z.infer<typeof chatWithModelModel>> = async (
+    values,
+  ) => {
     try {
       const message = values.messages.at(-1)!;
       if (!message.content.trim()) return;
@@ -124,7 +126,9 @@ export default function InferencePage() {
 
     if (previousConversationRaw) {
       try {
-        const parsed = chatModel.parse(JSON.parse(previousConversationRaw));
+        const parsed = chatWithModelModel.parse(
+          JSON.parse(previousConversationRaw),
+        );
         setConversation(parsed.messages);
       } catch (error) {
         console.error(error);

@@ -17,7 +17,16 @@ export const messageModel = z.object({
   content: z.string(),
 });
 
-export const chatModel = z.object({
+export const chatWithAgentModel = z.object({
+  agent_id: z.string(),
+  new_message: z.string(),
+  environment_id: z.string().nullable().optional(),
+  max_iterations: z.number(),
+  user_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
+  agent_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
+});
+
+export const chatWithModelModel = z.object({
   max_tokens: z.number().default(64),
   temperature: z.number().default(0.1),
   frequency_penalty: z.number().default(0),
@@ -125,6 +134,7 @@ export const entryModel = z.object({
               .partial(),
           })
           .partial(),
+        env_vars: z.record(z.string(), z.string()),
         primary_agent_name: z.string(),
         primary_agent_namespace: z.string(),
         primary_agent_version: z.string(),
@@ -140,15 +150,6 @@ export const entryModel = z.object({
 });
 
 export const entriesModel = z.array(entryModel);
-
-export const chatWithAgentModel = z.object({
-  agent_id: z.string(),
-  new_message: z.string(),
-  environment_id: z.string().nullable().optional(),
-  max_iterations: z.number(),
-  user_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
-  agent_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
-});
 
 export const fileModel = z.object({
   filename: z.string(),
@@ -175,4 +176,14 @@ export const evaluationsTableModel = z.object({
   columns: z.string().array(),
   important_columns: z.string().array(),
   rows: evaluationTableRowModel.array(),
+});
+
+export const entrySecretModel = z.object({
+  namespace: z.string(),
+  name: z.string(),
+  version: z.string().optional(),
+  description: z.string().default(''),
+  key: z.string(),
+  value: z.string(),
+  category: z.string().optional(),
 });

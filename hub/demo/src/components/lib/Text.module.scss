@@ -2,6 +2,17 @@
   text-wrap: pretty;
   text-underline-offset: 0.2em;
   outline: none;
+  background: none;
+  padding: 0;
+  border: none;
+
+  &[role='button'] {
+    cursor: pointer;
+  }
+
+  &[data-family='monospace'] {
+    font-family: monospace !important;
+  }
 
   a > & {
     display: inline;
@@ -11,6 +22,8 @@
     line-height: 0;
   }
 
+  &[role='button']:hover,
+  &[role='button']:focus-visible,
   [role='button']:hover > &,
   [role='button']:focus-visible > &,
   button:hover > &,

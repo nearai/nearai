@@ -13,6 +13,7 @@ import { Controller } from 'react-hook-form';
 import { type z } from 'zod';
 
 import { AgentWelcome } from '~/components/AgentWelcome';
+import { EntryEnvironmentVariables } from '~/components/EntryEnvironmentVariables';
 import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
 import { Button } from '~/components/lib/Button';
 import { Card, CardList } from '~/components/lib/Card';
@@ -20,7 +21,6 @@ import { Code, filePathToCodeLanguage } from '~/components/lib/Code';
 import { Dialog } from '~/components/lib/Dialog';
 import { Flex } from '~/components/lib/Flex';
 import { Form } from '~/components/lib/Form';
-import { HR } from '~/components/lib/HorizontalRule';
 import { IframeWithBlob } from '~/components/lib/IframeWithBlob';
 import { InputTextarea } from '~/components/lib/InputTextarea';
 import { Sidebar } from '~/components/lib/Sidebar';
@@ -30,7 +30,11 @@ import { Tooltip } from '~/components/lib/Tooltip';
 import { Messages } from '~/components/Messages';
 import { SignInPrompt } from '~/components/SignInPrompt';
 import { ThreadsSidebar } from '~/components/ThreadsSidebar';
-import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
+import {
+  useCurrentEntry,
+  useCurrentEntryEnvironmentVariables,
+  useEntryParams,
+} from '~/hooks/entries';
 import { useZodForm } from '~/hooks/form';
 import { useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
@@ -40,13 +44,16 @@ import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
 import { handleClientError } from '~/utils/error';
 import { formatBytes } from '~/utils/number';
-import { getQueryParams } from '~/utils/url';
 
 export default function EntryRunPage() {
   const { currentEntry } = useCurrentEntry('agent');
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const { namespace, name, version } = useEntryParams();
   const { queryParams, updateQueryPath } = useQueryParams(['environmentId']);
+  const entryEnvironmentVariables = useCurrentEntryEnvironmentVariables(
+    'agent',
+    Object.keys(queryParams),
+  );
   const environmentId = queryParams.environmentId ?? '';
   const chatMutation = api.hub.chatWithAgent.useMutation();
   const { threadsQuery } = useThreads();
@@ -120,13 +127,8 @@ export default function EntryRunPage() {
 
       form.setValue('new_message', '');
 
-      values.user_env_vars = getQueryParams();
-      if (currentEntry?.details.env_vars) {
-        values.agent_env_vars = {
-          ...(values.agent_env_vars ?? {}),
-          [values.agent_id]: currentEntry?.details?.env_vars ?? {},
-        };
-      }
+      values.agent_env_vars = entryEnvironmentVariables.defaultVariablesByKey;
+      values.user_env_vars = entryEnvironmentVariables.urlVariablesByKey;
 
       const response = await chatMutation.mutateAsync(values);
 
@@ -330,66 +332,75 @@ export default function EntryRunPage() {
           openForSmallScreens={parametersOpenForSmallScreens}
           setOpenForSmallScreens={setParametersOpenForSmallScreens}
         >
-          <Text size="text-xs" weight={600} uppercase>
-            Output
-          </Text>
+          <Flex direction="column" gap="l">
+            <Flex direction="column" gap="m">
+              <Text size="text-xs" weight={600} uppercase>
+                Output
+              </Text>
 
-          {environment?.files && Object.keys(environment.files).length ? (
-            <CardList>
-              {Object.values(environment.files).map((file) => (
-                <Card
-                  padding="s"
-                  gap="s"
-                  key={file.name}
-                  background="sand-2"
-                  onClick={() => {
-                    setOpenedFileName(file.name);
-                  }}
-                >
-                  <Flex align="center" gap="s">
-                    <Text
-                      size="text-s"
-                      color="violet-11"
-                      clickableHighlight
-                      weight={500}
-                      clampLines={1}
-                      style={{ marginRight: 'auto' }}
+              {environment?.files && Object.keys(environment.files).length ? (
+                <CardList>
+                  {Object.values(environment.files).map((file) => (
+                    <Card
+                      padding="s"
+                      gap="s"
+                      key={file.name}
+                      background="sand-2"
+                      onClick={() => {
+                        setOpenedFileName(file.name);
+                      }}
                     >
-                      {file.name}
-                    </Text>
+                      <Flex align="center" gap="s">
+                        <Text
+                          size="text-s"
+                          color="violet-11"
+                          clickableHighlight
+                          weight={500}
+                          clampLines={1}
+                          style={{ marginRight: 'auto' }}
+                        >
+                          {file.name}
+                        </Text>
 
-                    <Text size="text-xs">{formatBytes(file.size)}</Text>
-                  </Flex>
-                </Card>
-              ))}
-            </CardList>
-          ) : (
-            <Text size="text-s" color="sand-10">
-              No files generated yet.
-            </Text>
-          )}
+                        <Text size="text-xs">{formatBytes(file.size)}</Text>
+                      </Flex>
+                    </Card>
+                  ))}
+                </CardList>
+              ) : (
+                <Text size="text-s" color="sand-10">
+                  No files generated yet.
+                </Text>
+              )}
+            </Flex>
 
-          <HR />
+            <EntryEnvironmentVariables
+              entry={currentEntry}
+              variables={entryEnvironmentVariables}
+            />
 
-          <Text size="text-xs" weight={600} uppercase>
-            Parameters
-          </Text>
+            <Flex direction="column" gap="m">
+              <Text size="text-xs" weight={600} uppercase>
+                Parameters
+              </Text>
 
-          <Controller
-            control={form.control}
-            defaultValue={1}
-            name="max_iterations"
-            render={({ field }) => (
-              <Slider
-                label="Max Iterations"
-                max={20}
-                min={1}
-                step={1}
-                assistive="The maximum number of iterations to run the agent for, usually 1. Each iteration will loop back through your agent allowing it to act and reflect on LLM results."
-                {...field}
+              <Controller
+                control={form.control}
+                defaultValue={1}
+                name="max_iterations"
+                render={({ field }) => (
+                  <Slider
+                    label="Max Iterations"
+                    max={20}
+                    min={1}
+                    step={1}
+                    assistive="The maximum number of iterations to run the agent for, usually 1. Each iteration will loop back through your agent allowing it to act and reflect on LLM results."
+                    {...field}
+                  />
+                )}
               />
-            )}
-          />
+            </Flex>
+          </Flex>
         </Sidebar.Sidebar>
       </Sidebar.Root>
 
