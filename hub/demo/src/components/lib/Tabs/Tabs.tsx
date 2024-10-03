@@ -71,7 +71,7 @@ export const Trigger = forwardRef<HTMLButtonElement, TriggerProps>(
     }, [href, router]);
 
     useEffect(() => {
-      function onClick(event: MouseEvent) {
+      function clickListener(event: MouseEvent) {
         if (href) {
           if (event.metaKey || event.ctrlKey) {
             window.open(href, '_blank');
@@ -82,10 +82,10 @@ export const Trigger = forwardRef<HTMLButtonElement, TriggerProps>(
       }
 
       const el = elementRef.current;
-      el?.addEventListener('click', onClick);
+      el?.addEventListener('click', clickListener);
 
       return () => {
-        el?.removeEventListener('click', onClick);
+        el?.removeEventListener('click', clickListener);
       };
     }, [href, router]);
 

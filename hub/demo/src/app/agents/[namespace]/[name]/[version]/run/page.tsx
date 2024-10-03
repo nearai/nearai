@@ -9,7 +9,7 @@ import {
   List,
 } from '@phosphor-icons/react';
 import { type KeyboardEventHandler, useEffect, useRef, useState } from 'react';
-import { Controller } from 'react-hook-form';
+import { Controller, type SubmitHandler } from 'react-hook-form';
 import { type z } from 'zod';
 
 import { AgentWelcome } from '~/components/AgentWelcome';
@@ -97,12 +97,14 @@ export default function EntryRunPage() {
     }
   }
 
-  const onSubmit = async (values: z.infer<typeof chatWithAgentModel>) => {
+  const onSubmit: SubmitHandler<z.infer<typeof chatWithAgentModel>> = async (
+    data,
+  ) => {
     try {
-      if (!values.new_message.trim()) return;
+      if (!data.new_message.trim()) return;
 
       if (environmentId) {
-        values.environment_id = environmentId;
+        data.environment_id = environmentId;
       }
 
       utils.hub.environment.setData(
@@ -113,7 +115,7 @@ export default function EntryRunPage() {
           conversation: [
             ...(environment?.conversation ?? []),
             {
-              content: values.new_message,
+              content: data.new_message,
               role: 'user',
             },
           ],
@@ -124,15 +126,15 @@ export default function EntryRunPage() {
 
       form.setValue('new_message', '');
 
-      values.user_env_vars = getQueryParams();
+      data.user_env_vars = getQueryParams();
       if (currentEntry?.details.env_vars) {
-        values.agent_env_vars = {
-          ...(values.agent_env_vars ?? {}),
-          [values.agent_id]: currentEntry?.details?.env_vars ?? {},
+        data.agent_env_vars = {
+          ...(data.agent_env_vars ?? {}),
+          [data.agent_id]: currentEntry?.details?.env_vars ?? {},
         };
       }
 
-      const response = await chatMutation.mutateAsync(values);
+      const response = await chatMutation.mutateAsync(data);
 
       utils.hub.environment.setData(
         {

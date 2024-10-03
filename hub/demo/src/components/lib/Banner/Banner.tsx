@@ -44,16 +44,16 @@ export const Banner = ({ actions, bannerId, message }: Props) => {
   useEffect(() => {
     updateBannerHeightProperty();
 
-    function onWindowChange() {
+    function listener() {
       updateBannerHeightProperty();
     }
 
-    window.addEventListener('resize', onWindowChange);
-    window.addEventListener('scroll', onWindowChange);
+    window.addEventListener('resize', listener);
+    window.addEventListener('scroll', listener);
 
     return () => {
-      window.removeEventListener('resize', onWindowChange);
-      window.removeEventListener('scroll', onWindowChange);
+      window.removeEventListener('resize', listener);
+      window.removeEventListener('scroll', listener);
     };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
