@@ -11,7 +11,7 @@
 ##
 ## Builds the Docker image, pushes it to ECR, and updates the Lambda function to use it.
 
-ALL_FRAMEWORKS=("base" "langgraph-0-1-4", "langgraph-0-2-6")
+ALL_FRAMEWORKS=("base" "langgraph-0-1-4" "langgraph-0-2-6")
 ALL_ENVIRONMENTS=("staging" "production")
 
 deploy() {
@@ -21,7 +21,7 @@ deploy() {
   echo "Deploying ${ENV}agent-runner${FRAMEWORK}"
 
   aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 543900120763.dkr.ecr.us-east-2.amazonaws.com
-  docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=${FRAMEWORK} -t nearai-runner${FRAMEWORK} .
+  docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=${FRAMEWORK} --provenance=false -t nearai-runner${FRAMEWORK} .
   docker tag nearai-runner${FRAMEWORK}:latest 543900120763.dkr.ecr.us-east-2.amazonaws.com/nearai-runner${FRAMEWORK}:latest
   docker push 543900120763.dkr.ecr.us-east-2.amazonaws.com/nearai-runner${FRAMEWORK}:latest
   aws lambda update-function-code --region us-east-2 \
