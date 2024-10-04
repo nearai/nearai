@@ -88,7 +88,6 @@ class Environment(object):
         reg.register_tool(self.write_file)
         reg.register_tool(self.request_user_input)
         reg.register_tool(self.list_files)
-        reg.register_tool(self.verify_message)
         reg.register_tool(self.query_vector_store)
 
     def add_message(self, role: str, message: str, filename: str = CHAT_FILENAME, **kwargs: Any) -> None:
