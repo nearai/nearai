@@ -4,12 +4,14 @@
 
 import { useEffect } from 'react';
 
+import { useAgentSettingsStore } from '~/stores/agent-settings';
 import { useAuthStore } from '~/stores/auth';
 
 export const ZustandHydration = () => {
   useEffect(() => {
     const rehydrate = async () => {
       await useAuthStore.persist.rehydrate();
+      await useAgentSettingsStore.persist.rehydrate();
 
       /*
         Make sure `isAuthenticated` stays synced with `auth` in case 

@@ -48,6 +48,7 @@ import { useZodForm } from '~/hooks/form';
 import { useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
 import { chatWithAgentModel, type messageModel } from '~/lib/models';
+import { useAgentSettingsStore } from '~/stores/agent-settings';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
@@ -74,6 +75,12 @@ export default function EntryRunPage() {
   const { threadsQuery } = useThreads();
   const utils = api.useUtils();
   const agentId = `${namespace}/${name}/${version}`;
+  const getAgentSettings = useAgentSettingsStore(
+    (store) => store.getAgentSettings,
+  );
+  const setAgentSettings = useAgentSettingsStore(
+    (store) => store.setAgentSettings,
+  );
 
   const form = useZodForm(chatWithAgentModel, {
     defaultValues: { agent_id: agentId },
@@ -205,6 +212,8 @@ export default function EntryRunPage() {
     data: unknown;
   }> = async (event) => {
     try {
+      if (!currentEntry) return;
+
       const chat = chatWithAgentModel.parse(event.data.data);
 
       const conditionallyUpdateEnvironmentId = (
@@ -213,6 +222,16 @@ export default function EntryRunPage() {
         if (!environmentId) return;
         updateQueryPath({ environmentId }, 'replace', false);
       };
+
+      // TODO
+
+      // const settings = getAgentSettings(currentEntry);
+
+      // console.log(settings);
+
+      // setAgentSettings(currentEntry, {
+      //   trustRemoteRunRequests: true,
+      // });
 
       switch (event.data.action) {
         case 'remote_agent_run':
