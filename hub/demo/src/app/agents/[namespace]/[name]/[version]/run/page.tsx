@@ -4,11 +4,17 @@ import {
   ArrowRight,
   Chats,
   Copy,
+  Eye,
   Gear,
-  Image as ImageIcon,
   List,
 } from '@phosphor-icons/react';
-import { type KeyboardEventHandler, useEffect, useRef, useState } from 'react';
+import {
+  type KeyboardEventHandler,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { type z } from 'zod';
 
@@ -49,11 +55,16 @@ import { handleClientError } from '~/utils/error';
 import { formatBytes } from '~/utils/number';
 import { unreachable } from '~/utils/unreachable';
 
+type RunView = 'conversation' | 'output' | undefined;
+
 export default function EntryRunPage() {
   const { currentEntry } = useCurrentEntry('agent');
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const { namespace, name, version } = useEntryParams();
-  const { queryParams, updateQueryPath } = useQueryParams(['environmentId']);
+  const { queryParams, updateQueryPath } = useQueryParams([
+    'environmentId',
+    'view',
+  ]);
   const entryEnvironmentVariables = useCurrentEntryEnvironmentVariables(
     'agent',
     Object.keys(queryParams),
@@ -70,7 +81,6 @@ export default function EntryRunPage() {
 
   const [htmlOutput, setHtmlOutput] = useState('');
   const previousHtmlOutput = useRef('');
-  const [view, setView] = useState<'conversation' | 'output'>('conversation');
   const [openedFileName, setOpenedFileName] = useState<string | null>(null);
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
@@ -103,6 +113,25 @@ export default function EntryRunPage() {
       }
     }
   }
+
+  const [__view, __setView] = useState<RunView>();
+  const view = (queryParams.view as RunView) ?? __view;
+  const setView = useCallback(
+    (value: RunView, updateUrl = false) => {
+      __setView(value);
+
+      if (updateUrl) {
+        updateQueryPath(
+          {
+            view: value,
+          },
+          'replace',
+          false,
+        );
+      }
+    },
+    [updateQueryPath],
+  );
 
   const onSubmit: SubmitHandler<z.infer<typeof chatWithAgentModel>> = async (
     data,
@@ -216,16 +245,12 @@ export default function EntryRunPage() {
         agentId,
       );
       setHtmlOutput(htmlContent);
-      if (previousHtmlOutput.current !== htmlContent) {
-        setView('output');
-      }
+      setView('output');
     } else {
-      setView('conversation');
       setHtmlOutput('');
+      setView('conversation');
     }
-
-    previousHtmlOutput.current = htmlOutput;
-  }, [environmentQuery, htmlOutput, agentId]);
+  }, [environmentQuery, htmlOutput, agentId, setView]);
 
   useEffect(() => {
     if (environmentId && environmentId !== environment?.environmentId) {
@@ -309,7 +334,7 @@ export default function EntryRunPage() {
                     <b>Shift + Enter</b> to add a new line
                   </Text>
 
-                  <Flex align="start" gap="s">
+                  <Flex align="start" gap="xs">
                     <BreakpointDisplay show="sidebar-small-screen">
                       <Button
                         label="Select Thread"
@@ -329,36 +354,33 @@ export default function EntryRunPage() {
                         onClick={() => setParametersOpenForSmallScreens(true)}
                       />
                     </BreakpointDisplay>
-
-                    {htmlOutput && (
-                      <>
-                        {view === 'output' ? (
-                          <Tooltip
-                            asChild
-                            content="Switch to conversation view"
-                          >
-                            <Button
-                              label="Toggle View"
-                              icon={<Chats />}
-                              size="small"
-                              fill="ghost"
-                              onClick={() => setView('conversation')}
-                            />
-                          </Tooltip>
-                        ) : (
-                          <Tooltip asChild content="Switch to output view">
-                            <Button
-                              label="Toggle View"
-                              icon={<ImageIcon />}
-                              size="small"
-                              fill="ghost"
-                              onClick={() => setView('output')}
-                            />
-                          </Tooltip>
-                        )}
-                      </>
-                    )}
                   </Flex>
+
+                  {htmlOutput && (
+                    <>
+                      {view === 'output' ? (
+                        <Tooltip asChild content="Switch to conversation view">
+                          <Button
+                            label="Toggle View"
+                            icon={<Chats />}
+                            size="small"
+                            variant="secondary"
+                            onClick={() => setView('conversation', true)}
+                          />
+                        </Tooltip>
+                      ) : (
+                        <Tooltip asChild content="Switch to output view">
+                          <Button
+                            label="Toggle View"
+                            icon={<Eye />}
+                            size="small"
+                            variant="secondary"
+                            onClick={() => setView('output', true)}
+                          />
+                        </Tooltip>
+                      )}
+                    </>
+                  )}
 
                   <Button
                     label="Send Message"
