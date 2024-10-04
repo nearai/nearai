@@ -93,7 +93,7 @@ export function useCurrentEntryEnvironmentVariables(
   );
 
   const result = useMemo(() => {
-    const defaultVariablesByKey = currentEntry?.details.env_vars ?? {};
+    const metadataVariablesByKey = currentEntry?.details.env_vars ?? {};
     const urlVariablesByKey: Record<string, string> = {};
 
     searchParams.forEach((value, key) => {
@@ -103,7 +103,7 @@ export function useCurrentEntryEnvironmentVariables(
 
     const variablesByKey: Record<string, EntryEnvironmentVariable> = {};
 
-    Object.entries(defaultVariablesByKey).forEach(([key, value]) => {
+    Object.entries(metadataVariablesByKey).forEach(([key, value]) => {
       variablesByKey[key] = {
         key,
         metadataValue: value,
@@ -148,7 +148,7 @@ export function useCurrentEntryEnvironmentVariables(
     variables.sort((a, b) => a.key.localeCompare(b.key));
 
     return {
-      defaultVariablesByKey,
+      metadataVariablesByKey,
       urlVariablesByKey,
       variablesByKey,
       variables,

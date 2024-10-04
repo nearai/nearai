@@ -133,7 +133,7 @@ export default function EntryRunPage() {
 
       form.setValue('new_message', '');
 
-      data.agent_env_vars = entryEnvironmentVariables.defaultVariablesByKey;
+      data.agent_env_vars = entryEnvironmentVariables.metadataVariablesByKey;
       data.user_env_vars = entryEnvironmentVariables.urlVariablesByKey;
 
       const response = await chatMutation.mutateAsync(data);
