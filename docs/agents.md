@@ -1,5 +1,3 @@
-from hub.examples.vec import all_files
-
 # Agents
 
 <b>Quickest start</b>, this script runs the Quickstart commands below.
@@ -155,10 +153,11 @@ You have full control to add and remove messages from this list.
 
 ### Additional environment methods
 There are several variations for completions:
+
  * [`completions`](api.md#nearai.agents.environment.Environment.completions): returns the full llm response for more control
  * for tool calling completions see the [Tool registry and function Tool Calling](#tool-registry-and-function-tool-calling) section below.
 
-For working with files and running commands the following functions are also available on `env`. You may call these
+For working with files and running commands the following methods are also available on `env`. You may call these
 directly or use them through the tool_registry and passing them to a completions method.
 
  * [`list_terminal_commands`](api.md#nearai.agents.environment.Environment.list_terminal_commands): list the history of terminal commands
@@ -167,7 +166,7 @@ directly or use them through the tool_registry and passing them to a completions
  * [`read_file`](api.md#nearai.agents.environment.Environment.read_file): read a file
  * [`write_file`](api.md#nearai.agents.environment.Environment.write_file): write to a file
  * [`exec_command`](api.md#nearai.agents.environment.Environment.exec_command): execute a terminal command
- * [`query_vector_store`]: query a vector store
+ * [`query_vector_store`](api.md#nearai.agents.environment.Environment.query_vector_store): query a vector store
 
 ### Logging
 * [`add_system_log`](api.md#nearai.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".
@@ -183,6 +182,7 @@ a system message is added to the conversation. This system message contains the 
 using `<function>` tags.
 
 To tell the LLM about your tools and automatically execute them when selected by the LLM, call one of these environment methods:
+
 * [`completion_and_run_tools`](api.md#nearai.agents.environment.Environment.completion_and_run_tools): Allows tools to be passed and processes any returned tool_calls by running the tool
 * [`completions_and_run_tools`](api.md#nearai.agents.environment.Environment.completions_and_run_tools): Handles tool calls and returns the full llm response.
 
