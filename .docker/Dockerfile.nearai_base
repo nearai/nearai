@@ -1,0 +1,33 @@
+FROM python:3.10-slim
+
+## Top level args / env vars
+ARG USER=user
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV DEBIAN_FRONTEND=noninteractive
+
+## Apt based dependencies
+RUN apt-get update -y \
+    && apt-get upgrade -y \
+    && apt-get -y install \
+    curl \
+    wget \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+## Create unpriv user
+RUN groupadd --gid $USER_GID $USER \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USER \
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo $USER ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USER \
+    && chmod 0440 /etc/sudoers.d/$USER
+
+USER ${USER}
+RUN python3 -m pip install --user poetry
+WORKDIR /home/${USER}/
+ENV PATH="/home/${USER}/.local/bin:${PATH}"
+COPY . .
+RUN python3 -m poetry install --extras "hub"

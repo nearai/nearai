@@ -58,7 +58,7 @@ class LlmRequest(BaseModel):
     """The format of the response."""
     stream: bool = False
     """Whether to stream the response."""
-    tools: Optional[List] = None
+    tools: Optional[List] = []
 
     @field_validator("model")
     @classmethod
@@ -111,7 +111,11 @@ async def completions(
     except NotImplementedError:
         raise HTTPException(status_code=400, detail="Provider not supported") from None
 
-    resp = await llm.completions.create(**request.model_dump(exclude={"provider", "response_format"}))
+    ## remove tools from the model as it is not supported by the completions API
+    model = request.model_dump(exclude={"provider", "response_format"})
+    model.pop("tools", None)
+
+    resp = await llm.completions.create(**model)
 
     if request.stream:
 

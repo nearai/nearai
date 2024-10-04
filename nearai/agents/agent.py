@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import runpy
 import shutil
@@ -43,16 +44,29 @@ class Agent(object):
             for file_obj in agent_files:
                 file_path = os.path.join(temp_dir, file_obj["filename"])
 
-                content = file_obj["content"]
-                if isinstance(content, dict):
-                    content = str(content)
+                try:
+                    if not os.path.exists(os.path.dirname(file_path)):
+                        os.makedirs(os.path.dirname(file_path))
 
-                if isinstance(content, str):
-                    content = content.encode("utf-8")
+                    content = file_obj["content"]
 
-                with open(file_path, "wb") as f:
-                    with io.BytesIO(content) as byte_stream:
-                        shutil.copyfileobj(byte_stream, f)
+                    if isinstance(content, dict) or isinstance(content, list):
+                        try:
+                            content = json.dumps(content)
+                        except Exception as e:
+                            print(f"Error converting content to json: {e}")
+                        content = str(content)
+
+                    if isinstance(content, str):
+                        content = content.encode("utf-8")
+
+                    with open(file_path, "wb") as f:
+                        with io.BytesIO(content) as byte_stream:
+                            shutil.copyfileobj(byte_stream, f)
+                except Exception as e:
+                    print(f"Error writing file {file_path}: {e}")
+                    raise e
+
         else:
             # if agent files is a PosixPath, it is a path to the agent directory
             # Copy all agent files including subfolders

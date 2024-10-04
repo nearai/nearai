@@ -8,6 +8,7 @@ from sqlmodel import JSON, Column, Field, Session, SQLModel, create_engine
 
 load_dotenv()
 
+S3_ENDPOINT = getenv("S3_ENDPOINT")
 S3_BUCKET = getenv("S3_BUCKET")
 S3_PREFIX = getenv("S3_PREFIX")
 DB_HOST = getenv("DATABASE_HOST")

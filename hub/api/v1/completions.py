@@ -13,6 +13,7 @@ load_dotenv()
 class Provider(Enum):
     HYPERBOLIC = "hyperbolic"
     FIREWORKS = "fireworks"
+    LOCAL = "local"
 
 
 async def handle_stream(resp_stream, add_usage_callback: Callable):
@@ -35,6 +36,8 @@ def get_llm_ai(provider: str) -> AsyncOpenAI:
         return AsyncOpenAI(base_url="https://api.hyperbolic.xyz/v1", api_key=getenv("HYPERBOLIC_API_KEY"))
     elif provider == "fireworks":
         return AsyncOpenAI(base_url="https://api.fireworks.ai/inference/v1", api_key=getenv("FIREWORKS_API_KEY"))
+    elif provider == "local":
+        return AsyncOpenAI(base_url=getenv("PROVIDER_LOCAL_BASE_URL"), api_key=getenv("PROVIDER_LOCAL_API_KEY"))
     else:
         raise NotImplementedError
 

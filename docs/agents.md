@@ -96,8 +96,29 @@ To run without user interaction pass the task input to the task
 nearai agent task flatirons.near/xela-agent/5 "Build a command line chess engine" ~/tmp/test-agents/xela-agent/chess-engine
 ```
 
+### Running an agent through AI Hub
+To run an agent in the [AI Hub](https://app.near.ai/agents):
+1. Select the desired agent.
+1. Navigate to the **Run** tab.
+1. Interact with the agent using the chat interface
+
+Note:
+. Agent chat through the AI Hub does not yet stream back responses, it takes a few seconds to respond.
+
 
 ## The Environment API
+This is the api your agent will use to interact with NearAI. For example, to add an agent's response you could call completions and add_message.
+```
+prompt = {"role": "system", "content": "You are a travel agent that helps users plan trips."}
+
+conversation = env.list_messages() # the user's new message is added to this list by both the remote and local UIs.
+
+agent_response = env.completion([prompt] + conversation)
+
+env.add_message("agent", agent_response)
+```
+
+
 Your agent will receive an `env` object that has the following methods:
 
   * [`request_user_input`](api.md#nearai.agents.environment.Environment.request_user_input): 
@@ -130,15 +151,13 @@ You have full control to add and remove messages from this list.
     *  `agent`: messages from the agent (i.e. llm responses, programmatic responses)
     *  `user`: messages from the user
 
-### Additional environment tools
+### Additional environment methods
 There are several variations for completions:
 
  * [`completions`](api.md#nearai.agents.environment.Environment.completions): returns the full llm response for more control
- * [`completion_and_run_tools`](api.md#nearai.agents.environment.Environment.completion_and_run_tools): Allows tools to be passed and processes any returned tool_calls by running the tool
- * [`completions_and_run_tools`](api.md#nearai.agents.environment.Environment.completions_and_run_tools): Both tool calls and returns the full llm response.
+ * for tool calling completions see the [Tool registry and function Tool Calling](#tool-registry-and-function-tool-calling) section below.
 
-
-For working with files and running commands the following functions are also available on `env`. You may call these
+For working with files and running commands the following methods are also available on `env`. You may call these
 directly or use them through the tool_registry and passing them to a completions method.
 
  * [`list_terminal_commands`](api.md#nearai.agents.environment.Environment.list_terminal_commands): list the history of terminal commands
@@ -147,8 +166,32 @@ directly or use them through the tool_registry and passing them to a completions
  * [`read_file`](api.md#nearai.agents.environment.Environment.read_file): read a file
  * [`write_file`](api.md#nearai.agents.environment.Environment.write_file): write to a file
  * [`exec_command`](api.md#nearai.agents.environment.Environment.exec_command): execute a terminal command
+ * [`query_vector_store`](api.md#nearai.agents.environment.Environment.query_vector_store): query a vector store
 
-### Tool registry
+### Logging
+* [`add_system_log`](api.md#nearai.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".
+* [`add_agent_log`](api.md#nearai.agents.environment.Environment.add_system_log): any agent logs may go here. Saved into "agent_log.txt".
+
+
+### Tool registry and function Tool Calling
+NearAI supports function based tool calling where the LLM can decide to call one of the functions (Tools) that you pass it.
+You can register your own function or use any of the built-in tools (list_files, read_file, write_file, exec_command, query_vector_store, request_user_input).
+
+The tool registry supports OpenAI style tool calling and Llama style. When a llama model is explicitly passed to completion(s)_and_run_tools
+a system message is added to the conversation. This system message contains the tool definitions and instructions on how to invoke them 
+using `<function>` tags.
+
+To tell the LLM about your tools and automatically execute them when selected by the LLM, call one of these environment methods:
+
+* [`completion_and_run_tools`](api.md#nearai.agents.environment.Environment.completion_and_run_tools): Allows tools to be passed and processes any returned tool_calls by running the tool
+* [`completions_and_run_tools`](api.md#nearai.agents.environment.Environment.completions_and_run_tools): Handles tool calls and returns the full llm response.
+
+By default, these methods will add both the LLM response and tool invocation responses to the message list. 
+You do not need to call `env.add_message` for these responses.
+This behavior allows the LLM to see its call then tool responses in the message list on the next iteration or next run. 
+This can be disabled by passing `add_to_messages=False` to the method.
+
+
  * [`get_tool_registry`](api.md#nearai.agents.environment.Environment.get_tool_registry): returns the tool registry, a dictionary of tools that can be called by the agent. By default
 it is populated with the tools listed above for working with files and commands plus [`request_user_input`](api.md#nearai.agents.environment.Environment.request_user_input). To register a function as
 a new tool, call [`register_tool`](api.md#nearai.agents.tool_registry.ToolRegistry.register_tool) on the tool registry, passing it your function. 
@@ -157,16 +200,25 @@ def my_tool():
     """A simple tool that returns a string. This docstring helps the LLM know when to call the tool."""
     return "Hello from my tool"
 
-env.get_tool_registry().register_tool(my_tool)
-
-response = env.completions_and_run_tools(messages, tools=get_tool_registry().get_all_tools())
+tool_registry = env.get_tool_registry()
+tool_registry.register_tool(my_tool)
+tool_def = tool_registry.get_tool_definition('my_tool')
+response = env.completions_and_run_tools(messages, tools=[tool_def], model="llama-v3p1-405b-instruct")
 ```
-The tool registry supports OpenAI style tool calling and Llama style. When a llama model is passed to completions_and_run_tools
-a system message is added to the conversation with the tool definitions.
 
-### Logging
-* [`add_system_log`](api.md#nearai.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".
-* [`add_agent_log`](api.md#nearai.agents.environment.Environment.add_system_log): any agent logs may go here. Saved into "agent_log.txt".
+To pass all the built in tools plus any you have registered use the `get_all_tool_definitions` method.
+```python
+all_tools = env.get_tool_registry().get_all_tool_definitions()
+response = env.completions_and_run_tools(messages, tools=all_tools, model="llama-v3p1-405b-instruct")
+```
+If you are registering several tools and do not want to use the built in tools, instantiate a new ToolRegistry
+```python
+    tool_registry = ToolRegistry()
+    tool_registry.register_tool(my_tool)
+    tool_registry.register_tool(my_tool2)
+    response = env.completions_and_run_tools(messages, tools=tool_registry.get_all_tool_definitions())
+```
+
 
 ## Uploading an agent
  * You need a folder with an `agent.py` file in it, `~/.nearai/registry/example_agent` in this example. 

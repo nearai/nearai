@@ -9,7 +9,7 @@ import {
   List,
 } from '@phosphor-icons/react';
 import { type KeyboardEventHandler, useEffect, useRef, useState } from 'react';
-import { Controller } from 'react-hook-form';
+import { Controller, type SubmitHandler } from 'react-hook-form';
 import { type z } from 'zod';
 
 import { AgentWelcome } from '~/components/AgentWelcome';
@@ -21,7 +21,10 @@ import { Code, filePathToCodeLanguage } from '~/components/lib/Code';
 import { Dialog } from '~/components/lib/Dialog';
 import { Flex } from '~/components/lib/Flex';
 import { Form } from '~/components/lib/Form';
-import { IframeWithBlob } from '~/components/lib/IframeWithBlob';
+import {
+  type IframePostMessageEventHandler,
+  IframeWithBlob,
+} from '~/components/lib/IframeWithBlob';
 import { InputTextarea } from '~/components/lib/InputTextarea';
 import { Sidebar } from '~/components/lib/Sidebar';
 import { Slider } from '~/components/lib/Slider';
@@ -44,6 +47,7 @@ import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
 import { handleClientError } from '~/utils/error';
 import { formatBytes } from '~/utils/number';
+import { unreachable } from '~/utils/unreachable';
 
 export default function EntryRunPage() {
   const { currentEntry } = useCurrentEntry('agent');
@@ -100,12 +104,14 @@ export default function EntryRunPage() {
     }
   }
 
-  async function onSubmit(values: z.infer<typeof chatWithAgentModel>) {
+  const onSubmit: SubmitHandler<z.infer<typeof chatWithAgentModel>> = async (
+    data,
+  ) => {
     try {
-      if (!values.new_message.trim()) return;
+      if (!data.new_message.trim()) return;
 
       if (environmentId) {
-        values.environment_id = environmentId;
+        data.environment_id = environmentId;
       }
 
       utils.hub.environment.setData(
@@ -116,7 +122,7 @@ export default function EntryRunPage() {
           conversation: [
             ...(environment?.conversation ?? []),
             {
-              content: values.new_message,
+              content: data.new_message,
               role: 'user',
             },
           ],
@@ -127,10 +133,10 @@ export default function EntryRunPage() {
 
       form.setValue('new_message', '');
 
-      values.agent_env_vars = entryEnvironmentVariables.defaultVariablesByKey;
-      values.user_env_vars = entryEnvironmentVariables.urlVariablesByKey;
+      data.agent_env_vars = entryEnvironmentVariables.defaultVariablesByKey;
+      data.user_env_vars = entryEnvironmentVariables.urlVariablesByKey;
 
-      const response = await chatMutation.mutateAsync(values);
+      const response = await chatMutation.mutateAsync(data);
 
       utils.hub.environment.setData(
         {
@@ -149,7 +155,7 @@ export default function EntryRunPage() {
     } catch (error) {
       handleClientError({ error, title: 'Failed to communicate with agent' });
     }
-  }
+  };
 
   const onKeyDownContent: KeyboardEventHandler<HTMLTextAreaElement> = (
     event,
@@ -166,13 +172,51 @@ export default function EntryRunPage() {
     form.setFocus('new_message');
   };
 
+  const onIframePostMessage: IframePostMessageEventHandler<{
+    action: 'remote_agent_run' | 'refresh_environment_id';
+    data: unknown;
+  }> = async (event) => {
+    try {
+      const chat = chatWithAgentModel.parse(event.data.data);
+
+      const conditionallyUpdateEnvironmentId = (
+        environmentId: string | null | undefined,
+      ) => {
+        if (!environmentId) return;
+        updateQueryPath({ environmentId }, 'replace', false);
+      };
+
+      switch (event.data.action) {
+        case 'remote_agent_run':
+          chat.max_iterations = Number(chat.max_iterations) || 1;
+          chat.environment_id = chat.environment_id ?? environmentId;
+          const response = await chatMutation.mutateAsync(chat);
+          conditionallyUpdateEnvironmentId(response.environmentId);
+          break;
+
+        case 'refresh_environment_id':
+          conditionallyUpdateEnvironmentId(chat.environment_id);
+          break;
+
+        default:
+          unreachable(event.data.action);
+      }
+    } catch (error) {
+      console.error(`Unable to handle message in onIframePostMessage()`, error);
+    }
+  };
+
   useEffect(() => {
     const files = environmentQuery?.data?.files;
     const htmlFile = files?.['index.html'];
 
     if (htmlFile) {
-      setHtmlOutput(htmlFile.content);
-      if (previousHtmlOutput.current !== htmlFile.content) {
+      const htmlContent = htmlFile.content.replaceAll(
+        '{{%agent_id%}}',
+        agentId,
+      );
+      setHtmlOutput(htmlContent);
+      if (previousHtmlOutput.current !== htmlContent) {
         setView('output');
       }
     } else {
@@ -181,7 +225,7 @@ export default function EntryRunPage() {
     }
 
     previousHtmlOutput.current = htmlOutput;
-  }, [environmentQuery, htmlOutput]);
+  }, [environmentQuery, htmlOutput, agentId]);
 
   useEffect(() => {
     if (environmentId && environmentId !== environment?.environmentId) {
@@ -228,7 +272,10 @@ export default function EntryRunPage() {
         <Sidebar.Main>
           {view === 'output' ? (
             <>
-              <IframeWithBlob html={htmlOutput} />
+              <IframeWithBlob
+                html={htmlOutput}
+                onPostMessage={onIframePostMessage}
+              />
 
               {latestAssistantMessages.length > 0 && (
                 <Messages

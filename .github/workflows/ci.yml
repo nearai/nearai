@@ -13,6 +13,7 @@ on:
 jobs:
   pipeline:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11"]
@@ -63,3 +64,36 @@ jobs:
 
     - name: Build Site
       run: ./scripts/build_mkdocs.sh
+
+  integration:
+    runs-on: integration
+    timeout-minutes: 30
+    environment: NearAI CI
+    steps:
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+      with:
+        driver: docker
+
+    # TODO: remove this step, in order to build the child images
+    # we need to have the base image already built
+    - name: Build nearai_base Image
+      run: docker compose -f .docker/compose-ci.yml build nearai_base
+    
+    - name: Build Docker Images
+      run: docker compose -f .docker/compose-ci.yml build
+
+    - name: Start Docker Compose
+      run: docker compose -f .docker/compose-ci.yml up -d
+      env:
+        SINGLESTORE_LICENSE: ${{ secrets.SINGLESTORE_LICENSE }}
+
+    - name: Exec Integration Tests
+      run: sleep 60 && docker exec docker-ci-1 poetry run pytest -m integration ./ci/
+    
+    - name: Stop Docker Compose
+      run: docker compose -f .docker/compose-ci.yml down

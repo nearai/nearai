@@ -1,0 +1,92 @@
+services:
+  nearai_base:
+    image: nearai_base:latest
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.nearai_base
+
+  minio:
+    image: minio/minio
+    volumes:
+      - minio_data:/data
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  singlestore:
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.singlestore
+    volumes:
+      - singlestore_data:/var/lib/memsql
+    environment:
+      SINGLESTORE_LICENSE: ${SINGLESTORE_LICENSE}
+      ROOT_PASSWORD: change-me
+    ports:
+      - "3306:3306"
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "memsqlctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  vllm:
+    image: thecmrfrd/vllm-cpu:v0.6.1
+    ## Build optionally from local Dockerfile
+    # build:
+    #   context: ..
+    #   dockerfile: .docker/Dockerfile.vllm.cpu
+    ipc: host
+    ports:
+      - 8000:8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nearaihub:
+    depends_on:
+      - nearai_base
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.hub
+    ports:  
+      - 8081:8081
+    environment:
+      SERVER_ENVIRONMENT: local
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY_ID: minioadmin
+      S3_SECRET_ACCESS_KEY: minioadmin
+      S3_BUCKET: kholinar-registry
+      S3_PREFIX: hub
+      DATABASE_HOST: singlestore
+      DATABASE_USER: root
+      DATABASE_PASSWORD: change-me
+      DATABASE_NAME: hub
+      PROVIDER_LOCAL_BASE_URL: http://vllm:8000/v1
+      PROVIDER_LOCAL_API_KEY: n/a
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  ci:
+    depends_on:
+      - nearai_base
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.ci
+    command: sleep 3000 && exit 1
+
+volumes:
+  minio_data:
+  singlestore_data:
