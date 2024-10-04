@@ -80,7 +80,6 @@ export default function EntryRunPage() {
   });
 
   const [htmlOutput, setHtmlOutput] = useState('');
-  const previousHtmlOutput = useRef('');
   const [openedFileName, setOpenedFileName] = useState<string | null>(null);
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
