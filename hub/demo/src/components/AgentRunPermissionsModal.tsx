@@ -9,6 +9,7 @@ import { useAgentSettingsStore } from '~/stores/agent-settings';
 import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
 import { idForEntry } from '~/lib/entries';
 import { useEffect } from 'react';
+import { useAuthStore } from '~/stores/auth';
 
 type Props = {
   request: z.infer<typeof chatWithAgentModel> | null;
@@ -41,6 +42,7 @@ export const AgentRunPermissionsModal = ({
   setRequest,
   onAllow,
 }: Props) => {
+  const auth = useAuthStore((store) => store.auth);
   const { currentEntry } = useCurrentEntry('agent');
   const { id: agentId } = useEntryParams();
   const setAgentSettings = useAgentSettingsStore(
@@ -94,13 +96,16 @@ export const AgentRunPermissionsModal = ({
                   {agentId}
                 </Text>
               </Link>{' '}
-              wants to use your account signature to send a request to a
-              different agent{' '}
+              wants to send an additional request to a different agent{' '}
               <Link href={`/agents/${request?.agent_id}`} target="_blank">
                 <Text as="span" color="violet-11" weight={500}>
                   {request?.agent_id}
                 </Text>
-              </Link>
+              </Link>{' '}
+              using your account's signature{' '}
+              <Text as="span" color="sand-12" weight={500}>
+                {auth?.account_id}
+              </Text>
             </Text>
           )}
 
