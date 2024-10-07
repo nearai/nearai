@@ -1,15 +1,17 @@
-import { z } from 'zod';
-import { chatWithAgentModel, entryModel } from '~/lib/models';
+import Link from 'next/link';
+import { useEffect } from 'react';
+import { type z } from 'zod';
+
+import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
+import { idForEntry } from '~/lib/entries';
+import { type chatWithAgentModel, type entryModel } from '~/lib/models';
+import { useAgentSettingsStore } from '~/stores/agent-settings';
+import { useAuthStore } from '~/stores/auth';
+
+import { Button } from './lib/Button';
 import { Dialog } from './lib/Dialog';
 import { Flex } from './lib/Flex';
 import { Text } from './lib/Text';
-import Link from 'next/link';
-import { Button } from './lib/Button';
-import { useAgentSettingsStore } from '~/stores/agent-settings';
-import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
-import { idForEntry } from '~/lib/entries';
-import { useEffect } from 'react';
-import { useAuthStore } from '~/stores/auth';
 
 type Props = {
   request: z.infer<typeof chatWithAgentModel> | null;
@@ -82,6 +84,8 @@ export const AgentRunPermissionsModal = ({
       setRequest(null);
       request && onAllow(request);
     }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -102,7 +106,7 @@ export const AgentRunPermissionsModal = ({
                   {request?.agent_id}
                 </Text>
               </Link>{' '}
-              using your account's signature{' '}
+              using your {`account's`} signature{' '}
               <Text as="span" color="sand-12" weight={500}>
                 {auth?.account_id}
               </Text>

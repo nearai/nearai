@@ -17,11 +17,11 @@ import {
 } from 'react';
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { type z } from 'zod';
+
 import {
   AgentRunPermissionsModal,
   checkAgentRunPermissions,
 } from '~/components/AgentRunPermissionsModal';
-
 import { AgentWelcome } from '~/components/AgentWelcome';
 import { EntryEnvironmentVariables } from '~/components/EntryEnvironmentVariables';
 import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
@@ -212,7 +212,7 @@ export default function EntryRunPage() {
   ) => {
     if (!currentEntry) return;
     const permissionsCheck = checkAgentRunPermissions(currentEntry, request);
-    if (allowedBypass || permissionsCheck.allowed) {
+    if (allowedBypass ?? permissionsCheck.allowed) {
       const response = await chatMutation.mutateAsync(request);
       updateQueryPath(
         { environmentId: response.environmentId },
@@ -235,7 +235,7 @@ export default function EntryRunPage() {
         case 'remote_agent_run':
           chat.max_iterations = Number(chat.max_iterations) || 1;
           chat.environment_id = chat.environment_id ?? environmentId;
-          conditionallyRunAgent(chat);
+          void conditionallyRunAgent(chat);
           break;
 
         case 'refresh_environment_id':
