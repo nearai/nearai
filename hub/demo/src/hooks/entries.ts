@@ -15,8 +15,10 @@ import { useDebouncedValue } from './debounce';
 
 export function useEntryParams() {
   const { namespace, name, version } = useParams();
+  const id = `${namespace}/${name}/${version}`;
 
   return {
+    id,
     namespace: namespace as string,
     name: name as string,
     version: version as string,

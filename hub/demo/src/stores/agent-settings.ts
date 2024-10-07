@@ -6,7 +6,7 @@ import { idForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
 
 type AgentSettings = Partial<{
-  trustRemoteRunRequests: boolean;
+  allowRemoteRunCallsToOtherAgents: boolean;
 }>;
 
 type AgentSettingsStore = {
