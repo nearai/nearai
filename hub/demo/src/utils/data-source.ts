@@ -11,7 +11,7 @@ const localEntryModel = entryModel.extend({
   namespace: z.string().default(''),
 });
 
-export async function readMetadataJson(filePath: string) {
+async function readMetadataJson(filePath: string) {
   try {
     const data = await fs.readFile(filePath, 'utf8');
     return localEntryModel.parse(JSON.parse(data));
