@@ -1,3 +1,4 @@
+import { Check, Prohibit } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { type z } from 'zod';
@@ -11,6 +12,7 @@ import { useAuthStore } from '~/stores/auth';
 import { Button } from './lib/Button';
 import { Dialog } from './lib/Dialog';
 import { Flex } from './lib/Flex';
+import { SvgIcon } from './lib/SvgIcon';
 import { Text } from './lib/Text';
 
 type Props = {
@@ -93,24 +95,51 @@ export const AgentRunPermissionsModal = ({
       <Dialog.Content title="Agent Run Request" size="s">
         <Flex direction="column" gap="l">
           {!check?.permissions.allowRemoteRunCallsToOtherAgents && (
-            <Text>
-              The current agent{' '}
-              <Link href={`/agents/${agentId}`} target="_blank">
-                <Text as="span" color="violet-11" weight={500}>
-                  {agentId}
+            <>
+              <Text>
+                The current agent{' '}
+                <Link href={`/agents/${agentId}`} target="_blank">
+                  <Text as="span" color="violet-11" weight={500}>
+                    {agentId}
+                  </Text>
+                </Link>{' '}
+                wants to send an additional request to a different agent{' '}
+                <Link href={`/agents/${request?.agent_id}`} target="_blank">
+                  <Text as="span" color="violet-11" weight={500}>
+                    {request?.agent_id}
+                  </Text>
+                </Link>{' '}
+                using your {`account's`} signature{' '}
+                <Text as="span" color="sand-12" weight={500}>
+                  {auth?.account_id}
                 </Text>
-              </Link>{' '}
-              wants to send an additional request to a different agent{' '}
-              <Link href={`/agents/${request?.agent_id}`} target="_blank">
-                <Text as="span" color="violet-11" weight={500}>
-                  {request?.agent_id}
-                </Text>
-              </Link>{' '}
-              using your {`account's`} signature{' '}
-              <Text as="span" color="sand-12" weight={500}>
-                {auth?.account_id}
               </Text>
-            </Text>
+
+              <Flex direction="column" gap="m">
+                <Flex align="center" gap="s">
+                  <SvgIcon
+                    size="xs"
+                    icon={<Check weight="bold" />}
+                    color="green-10"
+                  />
+                  <Text size="text-s">
+                    Allow the agent to execute actions within the Near AI Hub.
+                  </Text>
+                </Flex>
+
+                <Flex align="center" gap="s">
+                  <SvgIcon
+                    size="xs"
+                    icon={<Prohibit weight="bold" />}
+                    color="red-10"
+                  />
+                  <Text size="text-s">
+                    {`Won't`} allow the agent to perform actions on your NEAR
+                    blockchain account.
+                  </Text>
+                </Flex>
+              </Flex>
+            </>
           )}
 
           <Flex gap="s">
