@@ -24,7 +24,7 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '~/server/api/trpc';
-import { processDirectory } from '~/utils/data-source';
+import { loadEntriesFromDirectory } from '~/utils/data-source';
 
 const fetchWithZod = createZodFetcher();
 
@@ -192,7 +192,7 @@ export const hubRouter = createTRPCRouter({
             'Missing required HOME environment variable for serving local files',
           );
         const registryPath = path.join(env.HOME, '.nearai', 'registry');
-        return await processDirectory(registryPath, [], registryPath);
+        return await loadEntriesFromDirectory(registryPath);
       }
 
       if (input.starredBy) {
