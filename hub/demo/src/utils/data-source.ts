@@ -12,8 +12,8 @@ export async function readMetadataJson(
   try {
     const data = await fs.readFile(filePath, 'utf8');
     return entryModel.parse(JSON.parse(data));
-  } catch (err) {
-    console.error(`Error reading ${filePath}`);
+  } catch (error) {
+    console.error(`Error parsing local agent metadata: ${filePath}`, error);
     return null;
   }
 }
@@ -28,40 +28,43 @@ export async function processDirectory(
 
     await Promise.all(
       files.map(async (file) => {
-        // skip hidden items
-        if (file.name.startsWith('.')) return;
+        const isHidden = file.name.startsWith('.');
+        if (isHidden) return;
 
         const filePath = path.join(dirPath, file.name);
+
         if (file.isDirectory()) {
           await processDirectory(filePath, results, registryPath);
         } else if (file.name === 'metadata.json') {
           try {
             const metadata: EntryModel | null =
               await readMetadataJson(filePath);
+
             if (metadata) {
               metadata.id = results.length + 1;
 
               const agentRelativePath = path.relative(registryPath, dirPath);
               const agentPathParts = agentRelativePath.split(path.sep);
+
               if (
                 agentPathParts.length > 0 &&
                 agentPathParts[0]?.endsWith('.near')
               ) {
-                // ignore version from metadata if actual version in filePath is different
+                // Ignore version from metadata if actual version in filePath is different
                 metadata.version =
                   agentPathParts[agentPathParts.length - 1] ?? '';
                 metadata.namespace = agentPathParts[0];
                 results.push(metadata);
               }
             }
-          } catch (err) {
+          } catch (error) {
             // Ignore error if agent.py doesn't exist or any other read error
           }
         }
       }),
     );
-  } catch (err) {
-    console.error(`Error reading ${dirPath}`);
+  } catch (error) {
+    console.error(`Unexpected error reading local agent: ${dirPath}`, error);
   }
 
   return results;

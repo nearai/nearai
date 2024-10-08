@@ -139,9 +139,9 @@ export const entryDetailsModel = z.intersection(
 
 export const entryModel = z.object({
   id: z.number().default(0),
-  category: entryCategory,
-  namespace: z.string(),
-  name: z.string(),
+  category: entryCategory.default('agent'),
+  namespace: z.string().default('undefined'),
+  name: z.string().default('undefined'),
   version: z.string().default('0'),
   description: z.string().default(''),
   tags: z.string().array().default([]),
