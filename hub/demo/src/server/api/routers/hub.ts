@@ -252,8 +252,13 @@ export const hubRouter = createTRPCRouter({
       }
     });
 
+    const defaultBenchmarkColumns = evaluations.important_columns.filter(
+      (column) => !infoColumns.includes(column),
+    );
+
     return {
       benchmarkColumns,
+      defaultBenchmarkColumns,
       infoColumns,
       results: evaluations.rows,
     };

@@ -25,7 +25,7 @@ import { Text } from '~/components/lib/Text';
 import { Tooltip } from '~/components/lib/Tooltip';
 import { useDebouncedValue } from '~/hooks/debounce';
 import { useQueryParams } from '~/hooks/url';
-import { STANDARD_BENCHMARK_COLUMNS } from '~/lib/benchmarks';
+import { DEFAULT_BENCHMARK_COLUMNS } from '~/lib/benchmarks';
 import { idForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
 import { api } from '~/trpc/react';
@@ -52,6 +52,13 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
     category: 'benchmark',
   });
 
+  const defaultBenchmarkColumns = useMemo(() => {
+    return (
+      evaluationsQuery.data?.defaultBenchmarkColumns ??
+      DEFAULT_BENCHMARK_COLUMNS
+    );
+  }, [evaluationsQuery.data]);
+
   const selectedBenchmarkIds = useMemo(() => {
     const ids = queryParams.benchmarks ? queryParams.benchmarks.split(',') : [];
 
@@ -68,12 +75,12 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
       ? queryParams.columns.split(',')
       : selectedBenchmarkIds.length > 0
         ? []
-        : STANDARD_BENCHMARK_COLUMNS;
+        : defaultBenchmarkColumns;
 
     columns.sort();
 
     return columns;
-  }, [queryParams.columns, selectedBenchmarkIds]);
+  }, [defaultBenchmarkColumns, queryParams.columns, selectedBenchmarkIds]);
 
   const selectedBenchmarks = useMemo(() => {
     return benchmarksQuery.data?.filter((entry) =>
@@ -130,7 +137,7 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
 
   const { sorted, ...tableProps } = useTable({
     data: searched,
-    sortColumn: STANDARD_BENCHMARK_COLUMNS[0]!,
+    sortColumn: defaultBenchmarkColumns[0]!,
     sortOrder: 'DESCENDING',
   });
 
