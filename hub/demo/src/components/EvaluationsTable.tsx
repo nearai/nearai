@@ -354,61 +354,63 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
             </>
           ) : (
             <Table.Root {...tableProps}>
-              <Table.Head>
-                <Table.Row>
-                  <Table.HeadCell column="provider" sortable>
-                    Provider
-                  </Table.HeadCell>
+              {sorted && (
+                <Table.Head>
+                  <Table.Row>
+                    <Table.HeadCell column="provider" sortable>
+                      Provider
+                    </Table.HeadCell>
 
-                  <Table.HeadCell
-                    column="model"
-                    sortable
-                    style={{ minWidth: '12rem' }}
-                  >
-                    Model
-                  </Table.HeadCell>
+                    <Table.HeadCell
+                      column="model"
+                      sortable
+                      style={{ minWidth: '12rem' }}
+                    >
+                      Model
+                    </Table.HeadCell>
 
-                  <Table.HeadCell
-                    column="agentId"
-                    sortable
-                    style={{ minWidth: '15rem' }}
-                  >
-                    Agent
-                  </Table.HeadCell>
+                    <Table.HeadCell
+                      column="agentId"
+                      sortable
+                      style={{ minWidth: '15rem' }}
+                    >
+                      Agent
+                    </Table.HeadCell>
 
-                  {selectedBenchmarkColumns.map((column) => (
-                    <Table.HeadCell column={column} sortable key={column}>
-                      <Flex
-                        as="span"
-                        direction="column"
-                        style={{ textTransform: 'none' }}
-                      >
-                        {column.includes('/') && (
+                    {selectedBenchmarkColumns.map((column) => (
+                      <Table.HeadCell column={column} sortable key={column}>
+                        <Flex
+                          as="span"
+                          direction="column"
+                          style={{ textTransform: 'none' }}
+                        >
+                          {column.includes('/') && (
+                            <Text
+                              as="span"
+                              size="text-2xs"
+                              color="current"
+                              style={{
+                                marginBottom: '-0.1rem',
+                                display: 'inline-block',
+                              }}
+                            >
+                              {column.split('/').slice(0, -1).join('/')}/
+                            </Text>
+                          )}
                           <Text
                             as="span"
-                            size="text-2xs"
+                            size="text-s"
+                            weight={600}
                             color="current"
-                            style={{
-                              marginBottom: '-0.1rem',
-                              display: 'inline-block',
-                            }}
                           >
-                            {column.split('/').slice(0, -1).join('/')}/
+                            {column.split('/').at(-1)}
                           </Text>
-                        )}
-                        <Text
-                          as="span"
-                          size="text-s"
-                          weight={600}
-                          color="current"
-                        >
-                          {column.split('/').at(-1)}
-                        </Text>
-                      </Flex>
-                    </Table.HeadCell>
-                  ))}
-                </Table.Row>
-              </Table.Head>
+                        </Flex>
+                      </Table.HeadCell>
+                    ))}
+                  </Table.Row>
+                </Table.Head>
+              )}
 
               <Table.Body>
                 {!sorted && <Table.PlaceholderRows />}
