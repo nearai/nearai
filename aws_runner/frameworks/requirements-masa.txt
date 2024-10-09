@@ -10,6 +10,14 @@ psutil >= 5.9.5
 boto3 >= 1.35.3
 litellm >= 1.41.0
 
-langgraph >= 0.1.4
-langchain-fireworks >= 0.1.4
 openai == 1.51.2
+langchain == 0.3.0
+langgraph == 0.2.26
+
+langchain
+langchain_huggingface
+langchain_community
+pydantic
+faiss-cpu
+tiktoken
+sentence-transformers
