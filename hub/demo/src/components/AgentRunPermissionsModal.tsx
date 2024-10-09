@@ -134,7 +134,7 @@ export const AgentRunPermissionsModal = ({
                     color="red-10"
                   />
                   <Text size="text-s">
-                    {`Won't`} allow the agent to perform actions on your NEAR
+                    Will NOT allow the agent to perform actions on your NEAR
                     blockchain account.
                   </Text>
                 </Flex>
