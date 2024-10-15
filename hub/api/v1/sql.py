@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Literal, Optional
 import pymysql
 import pymysql.cursors
 from dotenv import load_dotenv
-from nearai.shared.models import SimilaritySearch
+from nearai.shared.models import SimilaritySearch, SimilaritySearchFile
 from pydantic import BaseModel, RootModel
 
 load_dotenv()
@@ -459,12 +459,52 @@ class SqlClient:
         SELECT vse.file_id, vse.chunk_text, vse.embedding <-> %s AS distance
         FROM vector_store_embeddings vse
         WHERE vse.vector_store_id = %s
-        ORDER BY distance
+        ORDER BY distance desc
         LIMIT %s
         """
         query_embedding_json = json.dumps(query_embedding)
         results = [
             SimilaritySearch(**res) for res in self.__fetch_all(query, (query_embedding_json, vector_store_id, limit))
+        ]
+        return results
+
+    def similarity_search_full_files(
+        self, vector_store_id: str, query_embedding: List[float], limit: int = 10
+    ) -> List[SimilaritySearchFile]:
+        """Perform a similarity search in the vector store and return full files.
+
+        Args:
+        ----
+            vector_store_id (str): The ID of the vector store to search in.
+            query_embedding (List[float]): The query embedding vector.
+            limit (int, optional): The maximum number of results to return. Defaults to 10.
+
+        Returns:
+        -------
+            List[SimilaritySearch]: A list of similarity search results where chunk_text contains the full file.
+
+        """
+        query = """
+        SELECT f.file_id, f.file_content, s.distance, fd.filename
+        FROM (SELECT vse.file_id, max(vse.embedding <-> %s) AS distance
+            FROM vector_store_embeddings vse
+            WHERE vse.vector_store_id = %s
+            GROUP BY vse.file_id
+            ORDER BY distance
+            LIMIT %s
+            ) as s
+        INNER JOIN (
+            SELECT CONCAT_WS(' ', GROUP_CONCAT(vse.chunk_text ORDER BY vse.chunk_index ASC))
+                as file_content, vse.file_id
+            FROM vector_store_embeddings vse
+            WHERE vse.vector_store_id = %s
+            GROUP BY vse.file_id
+            ) as f ON s.file_id = f.file_id
+        INNER JOIN vector_store_files fd ON fd.id = f.file_id
+        """
+        query_embedding_json = json.dumps(query_embedding)
+        results = [
+            SimilaritySearchFile(**res) for res in self.__fetch_all(query, (query_embedding_json, vector_store_id, limit))
         ]
         return results
 
