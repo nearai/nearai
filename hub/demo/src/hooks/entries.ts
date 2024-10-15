@@ -52,9 +52,12 @@ export function useCurrentEntry(
     (item) => item.name === name,
   );
 
-  const currentEntry = currentVersions?.find(
-    (item) => item.version === version,
-  );
+  currentVersions?.sort((a, b) => b.id - a.id);
+
+  const currentEntry =
+    version === 'latest'
+      ? currentVersions?.[0]
+      : currentVersions?.find((item) => item.version === version);
 
   return {
     currentEntry,

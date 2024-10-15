@@ -106,7 +106,11 @@ export const EntryDetailsLayout = ({
                       <Dropdown.Trigger asChild>
                         <Badge
                           button
-                          label={version}
+                          label={
+                            version === 'latest'
+                              ? `Latest (${currentVersions?.[0]?.version})`
+                              : version
+                          }
                           iconRight={<CaretDown />}
                           variant="neutral"
                         />
@@ -123,7 +127,7 @@ export const EntryDetailsLayout = ({
                             href={`${baseUrl}/latest`}
                             key="latest"
                           >
-                            latest
+                            Latest
                           </Dropdown.Item>
                           {currentVersions?.map((entry) => (
                             <Dropdown.Item
