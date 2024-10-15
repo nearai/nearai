@@ -2,8 +2,8 @@
 
 import { CaretDown, Copy } from '@phosphor-icons/react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { type ReactElement, type ReactNode } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { type ReactElement, type ReactNode, useEffect } from 'react';
 
 import { ErrorSection } from '~/components/ErrorSection';
 import { Badge } from '~/components/lib/Badge';
@@ -17,6 +17,7 @@ import { SvgIcon } from '~/components/lib/SvgIcon';
 import { Tabs } from '~/components/lib/Tabs';
 import { Text } from '~/components/lib/Text';
 import { StarButton } from '~/components/StarButton';
+import { env } from '~/env';
 import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
@@ -27,20 +28,40 @@ import { Tooltip } from './lib/Tooltip';
 type Props = {
   category: EntryCategory;
   children: ReactNode;
-  tabs: {
-    path: string;
-    label: string;
-    icon: ReactElement;
-  }[];
+  defaultConsumerModePath?: string;
+  tabs:
+    | {
+        path: string;
+        label: string;
+        icon: ReactElement;
+      }[]
+    | null;
 };
 
-export const EntryDetailsLayout = ({ category, children, tabs }: Props) => {
+export const EntryDetailsLayout = ({
+  category,
+  children,
+  defaultConsumerModePath,
+  tabs,
+}: Props) => {
   const pathname = usePathname();
   const { namespace, name, version } = useEntryParams();
   const { currentEntry, currentEntryIsHidden, currentVersions } =
     useCurrentEntry(category);
   const baseUrl = `/${category}s/${namespace}/${name}`;
   const activeTabPath = pathname.replace(`${baseUrl}/${version}`, '');
+  const router = useRouter();
+  const defaultConsumerPath = `${baseUrl}/${version}${defaultConsumerModePath}`;
+  const shouldRedirectToDefaultConsumerPath =
+    env.NEXT_PUBLIC_CONSUMER_MODE &&
+    defaultConsumerModePath &&
+    !pathname.includes(defaultConsumerPath);
+
+  useEffect(() => {
+    if (shouldRedirectToDefaultConsumerPath) {
+      router.replace(defaultConsumerPath);
+    }
+  }, [defaultConsumerPath, router, shouldRedirectToDefaultConsumerPath]);
 
   if (currentEntryIsHidden) {
     return <ErrorSection error="404" />;
@@ -48,7 +69,7 @@ export const EntryDetailsLayout = ({ category, children, tabs }: Props) => {
 
   return (
     <>
-      <Section background="sand-0" bleed gap="m" tabs>
+      <Section background="sand-0" bleed gap="m" tabs={!!tabs}>
         <Flex
           align="center"
           gap="m"
@@ -106,21 +127,23 @@ export const EntryDetailsLayout = ({ category, children, tabs }: Props) => {
                     </Dropdown.Content>
                   </Dropdown.Root>
 
-                  <Tooltip
-                    asChild
-                    content={`Copy ${category} path to clipboard`}
-                  >
-                    <Button
-                      label="Copy"
-                      icon={<Copy />}
-                      size="x-small"
-                      variant="secondary"
-                      fill="ghost"
-                      onClick={() =>
-                        copyTextToClipboard(`${namespace}/${name}/${version}`)
-                      }
-                    />
-                  </Tooltip>
+                  {!env.NEXT_PUBLIC_CONSUMER_MODE && (
+                    <Tooltip
+                      asChild
+                      content={`Copy ${category} path to clipboard`}
+                    >
+                      <Button
+                        label="Copy"
+                        icon={<Copy />}
+                        size="x-small"
+                        variant="secondary"
+                        fill="ghost"
+                        onClick={() =>
+                          copyTextToClipboard(`${namespace}/${name}/${version}`)
+                        }
+                      />
+                    </Tooltip>
+                  )}
                 </Flex>
 
                 <Link
@@ -138,25 +161,29 @@ export const EntryDetailsLayout = ({ category, children, tabs }: Props) => {
           <StarButton entry={currentEntry} variant="detailed" />
         </Flex>
 
-        <Tabs.Root value={activeTabPath}>
-          <Tabs.List>
-            {tabs.map((tab) => (
-              <Tabs.Trigger
-                href={`${baseUrl}/${version}${tab.path}`}
-                value={tab.path}
-                key={tab.path}
-              >
-                <SvgIcon icon={tab.icon} />
-                {tab.label}
-              </Tabs.Trigger>
-            ))}
-          </Tabs.List>
-        </Tabs.Root>
+        {tabs && (
+          <Tabs.Root value={activeTabPath}>
+            <Tabs.List>
+              {tabs.map((tab) => (
+                <Tabs.Trigger
+                  href={`${baseUrl}/${version}${tab.path}`}
+                  value={tab.path}
+                  key={tab.path}
+                >
+                  <SvgIcon icon={tab.icon} />
+                  {tab.label}
+                </Tabs.Trigger>
+              ))}
+            </Tabs.List>
+          </Tabs.Root>
+        )}
       </Section>
 
-      {!currentEntry && <PlaceholderSection />}
+      {(!currentEntry || shouldRedirectToDefaultConsumerPath) && (
+        <PlaceholderSection />
+      )}
 
-      {children}
+      {!shouldRedirectToDefaultConsumerPath && children}
     </>
   );
 };

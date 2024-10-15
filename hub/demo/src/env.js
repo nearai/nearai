@@ -20,6 +20,14 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_BASE_URL: z.string().url(),
+    NEXT_PUBLIC_CONSUMER_MODE: z.preprocess(
+      (val) => (val === 'true' ? true : false),
+      z.boolean(),
+    ),
+    NEXT_PUBLIC_CONSUMER_CHAT_AGENT_ID: z
+      .string()
+      .regex(/.+\/.+\/.+/)
+      .optional(),
   },
 
   /**
@@ -34,6 +42,9 @@ export const env = createEnv({
       : process.env.NEXT_PUBLIC_BASE_URL,
     DATA_SOURCE: process.env.DATA_SOURCE,
     HOME: process.env.HOME,
+    NEXT_PUBLIC_CONSUMER_MODE: process.env.NEXT_PUBLIC_CONSUMER_MODE,
+    NEXT_PUBLIC_CONSUMER_CHAT_AGENT_ID:
+      process.env.NEXT_PUBLIC_CONSUMER_CHAT_AGENT_ID,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

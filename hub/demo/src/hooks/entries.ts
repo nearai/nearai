@@ -13,8 +13,15 @@ import { wordsMatchFuzzySearch } from '~/utils/search';
 
 import { useDebouncedValue } from './debounce';
 
-export function useEntryParams() {
-  const { namespace, name, version } = useParams();
+export function useEntryParams(overrides?: {
+  namespace?: string;
+  name?: string;
+  version?: string;
+}) {
+  const params = useParams();
+  const namespace = overrides?.namespace ?? params.namespace;
+  const name = overrides?.name ?? params.name;
+  const version = overrides?.version ?? params.version;
   const id = `${namespace as string}/${name as string}/${version as string}`;
 
   return {
@@ -25,8 +32,15 @@ export function useEntryParams() {
   };
 }
 
-export function useCurrentEntry(category: EntryCategory) {
-  const { namespace, name, version } = useEntryParams();
+export function useCurrentEntry(
+  category: EntryCategory,
+  overrides?: {
+    namespace?: string;
+    name?: string;
+    version?: string;
+  },
+) {
+  const { id, namespace, name, version } = useEntryParams(overrides);
 
   const entriesQuery = api.hub.entries.useQuery({
     category,
@@ -44,6 +58,7 @@ export function useCurrentEntry(category: EntryCategory) {
 
   return {
     currentEntry,
+    currentEntryId: id,
     currentEntryIsHidden: !!entriesQuery.data && !currentEntry,
     currentVersions,
   };

@@ -118,3 +118,18 @@ export function sourceUrlForEntry(entry: z.infer<typeof entryModel>) {
 export function idForEntry(entry: z.infer<typeof entryModel>) {
   return `${entry.namespace}/${entry.name}/${entry.version}`;
 }
+
+export function parseEntryId(id: string) {
+  const segments = id.split('/');
+  const namespace = segments[0];
+  const name = segments[1];
+  const version = segments[2];
+
+  if (!namespace || !name || !version) {
+    throw new Error(
+      `Attempted to parse invalid entry ID: ${id} (expected format is "namespace/name/version")`,
+    );
+  }
+
+  return { namespace, name, version };
+}

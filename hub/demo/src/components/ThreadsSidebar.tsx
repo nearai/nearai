@@ -25,6 +25,7 @@ import { SvgIcon } from '~/components/lib/SvgIcon';
 import { Text } from '~/components/lib/Text';
 import { Timestamp } from '~/components/lib/Timestamp';
 import { Tooltip } from '~/components/lib/Tooltip';
+import { env } from '~/env';
 import { type Thread, useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
 import { useAuthStore } from '~/stores/auth';
@@ -114,7 +115,7 @@ export const ThreadsSidebar = ({
           Threads
         </Text>
 
-        <Tooltip asChild content="Start a new agent thread">
+        <Tooltip asChild content="Start a new thread">
           <Button
             label="New Thread"
             icon={<Plus weight="bold" />}
@@ -210,11 +211,6 @@ export const ThreadsSidebar = ({
                           Rename Thread
                         </Dropdown.Item>
 
-                        <Dropdown.Item href={thread.agent.url}>
-                          <SvgIcon icon={<Lightbulb />} />
-                          View Agent
-                        </Dropdown.Item>
-
                         <Dropdown.Item
                           onSelect={() =>
                             copyTextToClipboard(
@@ -226,6 +222,20 @@ export const ThreadsSidebar = ({
                           Copy Thread Link
                         </Dropdown.Item>
 
+                        <Dropdown.Item href={thread.agent.url}>
+                          {env.NEXT_PUBLIC_CONSUMER_MODE ? (
+                            <>
+                              <SvgIcon icon={<Plus />} />
+                              New Thread
+                            </>
+                          ) : (
+                            <>
+                              <SvgIcon icon={<Lightbulb />} />
+                              View Agent
+                            </>
+                          )}
+                        </Dropdown.Item>
+
                         <Dropdown.Item onSelect={() => removeThread(thread)}>
                           <SvgIcon icon={<Trash />} color="red-10" />
                           Delete Thread
@@ -235,7 +245,7 @@ export const ThreadsSidebar = ({
                       <Dropdown.Section>
                         <Dropdown.SectionContent>
                           <Text size="text-xs">
-                            Last prompt at{' '}
+                            Last message sent at{' '}
                             <b>
                               <Timestamp date={thread.lastMessageAt} />
                             </b>
