@@ -131,6 +131,24 @@ def get_read_access(
     return entry
 
 
+def latest_version(entry_location: EntryLocation = Body()) -> RegistryEntry:
+    with get_session() as session:
+        entry = session.exec(
+            select(RegistryEntry)
+            .where(
+                RegistryEntry.namespace == entry_location.namespace,
+                RegistryEntry.name == entry_location.name,
+            )
+            .order_by(RegistryEntry.id.desc())
+            .limit(1)
+        ).first()
+
+        if entry is None:
+            raise HTTPException(status_code=404, detail=f"Entry '{entry_location}' not found")
+
+        return entry
+
+
 class EntryMetadataInput(BaseModel):
     category: str
     description: str

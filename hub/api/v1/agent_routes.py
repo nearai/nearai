@@ -16,7 +16,7 @@ from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import RegistryEntry, get_session
 from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
-from hub.api.v1.registry import S3_BUCKET, get, get_read_access
+from hub.api.v1.registry import S3_BUCKET, get, get_read_access, latest_version
 from hub.api.v1.sql import SqlClient
 
 S3_ENDPOINT = getenv("S3_ENDPOINT")
@@ -264,6 +264,10 @@ def _runner_for_env():
 
 def get_agent_entry(agent, data_source: str, account_id: str) -> Optional[RegistryEntry]:
     if data_source == "registry":
+        entry_location = EntryLocation.from_str(agent)
+        if entry_location.version == "latest":
+            return latest_version(entry_location)
+
         return get(EntryLocation.from_str(agent))
     elif data_source == "local_files":
         entry_location = EntryLocation.from_str(agent)

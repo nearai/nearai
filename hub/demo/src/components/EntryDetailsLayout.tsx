@@ -119,7 +119,12 @@ export const EntryDetailsLayout = ({
                               Versions
                             </Text>
                           </Dropdown.SectionContent>
-
+                          <Dropdown.Item
+                            href={`${baseUrl}/latest`}
+                            key="latest"
+                          >
+                            latest
+                          </Dropdown.Item>
                           {currentVersions?.map((entry) => (
                             <Dropdown.Item
                               href={`${baseUrl}/${entry.version}`}
