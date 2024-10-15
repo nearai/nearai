@@ -216,9 +216,9 @@ To pass all the built in tools plus any you have registered use the `get_all_too
 all_tools = env.get_tool_registry().get_all_tool_definitions()
 response = env.completions_and_run_tools(messages, tools=all_tools, model="llama-v3p1-405b-instruct")
 ```
-If you are registering several tools and do not want to use the built in tools, instantiate a new ToolRegistry
+If you do not want to use the built-in tools, use `get_tool_registry(new=True)`
 ```python
-    tool_registry = ToolRegistry()
+    tool_registry = env.get_tool_registry(new=True)
     tool_registry.register_tool(my_tool)
     tool_registry.register_tool(my_tool2)
     response = env.completions_and_run_tools(messages, tools=tool_registry.get_all_tool_definitions())

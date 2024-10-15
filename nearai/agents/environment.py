@@ -81,8 +81,10 @@ class Environment(object):
     def _generate_run_id() -> str:
         return uuid.uuid4().hex
 
-    def get_tool_registry(self) -> ToolRegistry:
+    def get_tool_registry(self, new: bool = False) -> ToolRegistry:
         """Returns the tool registry, a dictionary of tools that can be called by the agent."""
+        if new:
+            self._tools = ToolRegistry()
         return self._tools
 
     def register_standard_tools(self) -> None:  # noqa: D102
