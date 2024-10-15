@@ -14,7 +14,7 @@ from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadF
 from fastapi.responses import StreamingResponse
 from nearai.shared.client_config import DEFAULT_NAMESPACE
 from pydantic import BaseModel
-from sqlmodel import delete, select, text
+from sqlmodel import col, delete, select, text
 
 from hub.api.v1.auth import AuthToken, get_auth, get_optional_auth
 from hub.api.v1.entry_location import EntryLocation, valid_identifier
@@ -139,7 +139,7 @@ def latest_version(entry_location: EntryLocation = Body()) -> RegistryEntry:
                 RegistryEntry.namespace == entry_location.namespace,
                 RegistryEntry.name == entry_location.name,
             )
-            .order_by(RegistryEntry.id.desc())
+            .order_by(col(RegistryEntry.id).desc())
             .limit(1)
         ).first()
 
