@@ -110,15 +110,15 @@ The code above can run for both models and agents. If both `model` and `agent` a
 To check agent functionality to write files:
 ```python
     def solve(self, datum: Dict[str, str]) -> bool:
-        datum = ThreeDigitAdditionDatum(**datum)
-        label = datum.input.replace(" + ", "+")
+        task = ThreeDigitAdditionDatum(**datum)
+        label = task.input.replace(" + ", "+")
         session = self.start_inference_session(label)
         
-        goal = f"""Please add the following numbers together: {datum.input}\n\nOutput the result in a file called 'result.txt'."""
+        goal = f"""Please add the following numbers together: {task.input}\n\nOutput the result in a file called 'result.txt'."""
         session.run_task(goal)
         with open(os.path.join(session.path, "result.txt"), "r") as f:
             result = f.read().strip()
-        return result == datum.output
+        return result == task.output
 ```
 
 ### Step 3: Running the benchmark

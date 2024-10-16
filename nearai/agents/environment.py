@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import re
-import shlex
 import shutil
 import subprocess
 import tarfile
@@ -328,9 +327,10 @@ class Environment(object):
 
         try:
             process = subprocess.Popen(
-                shlex.split(command),
+                command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                shell=True,
                 bufsize=0,
                 universal_newlines=True,
                 cwd=self._path,

@@ -294,6 +294,8 @@ class BenchmarkCli:
         subset: Optional[str] = None,
         check_compatibility: bool = True,
         record: bool = False,
+        shell_execution_deny_all: bool = False,
+        shell_execution_allow_all: bool = False,
         **solver_args: Any,
     ) -> None:
         """Run benchmark on a dataset with a solver strategy.
@@ -328,6 +330,8 @@ class BenchmarkCli:
             dataset = load_dataset(dataset)
 
         solver_strategy_obj: SolverStrategy = solver_strategy_class(dataset_ref=dataset, **solver_args)  # type: ignore
+        solver_strategy_obj.shell_execution_deny_all = shell_execution_deny_all
+        solver_strategy_obj.shell_execution_allow_all = shell_execution_allow_all
         if check_compatibility:
             assert name in solver_strategy_obj.compatible_datasets() or any(
                 map(lambda n: n in name, solver_strategy_obj.compatible_datasets())

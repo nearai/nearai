@@ -12,6 +12,7 @@ from shared.inference_client import InferenceClient
 from shared.provider_models import get_provider_namespaced_model
 
 from nearai.agents.agent import Agent
+from nearai.agents.environment import Environment
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import CONFIG
 
@@ -42,14 +43,18 @@ class SolverStrategyMeta(ABCMeta):
 
 
 class SolverInferenceSession:
-    def __init__(self, agent_obj, model_full_path, client, evaluation_name):
+    def __init__(
+        self, agent_obj, model_full_path, client, evaluation_name, shell_execution_deny_all, shell_execution_allow_all
+    ):
         self.agent_obj = agent_obj
         self.model_full_path = model_full_path
         self.client = client
         self.evaluation_name = evaluation_name
         self.path = ""
-        self.runner = None
+        self.env = None
         self.messages: List[ChatCompletionMessageParam] = []
+        self.shell_execution_deny_all = shell_execution_deny_all
+        self.shell_execution_allow_all = shell_execution_allow_all
 
     def start_inference_session(self, task_id: str) -> "SolverInferenceSession":
         if self.agent_obj:
@@ -60,32 +65,42 @@ class SolverInferenceSession:
                 str(int(time.time() * 1000)),
                 str(random.randint(0, 1000)),
             )
-            self.runner = LocalRunner(
+            self.env = Environment(
                 self.path,
                 [self.agent_obj],
-                CONFIG.get_client_config(),
+                self.client,
                 print_system_log=False,
-                confirm_commands=False,
+                approvals={"confirm_execution": self.confirm_execution},
             )
         return self
 
+    def confirm_execution(self, command: str) -> bool:
+        if self.shell_execution_deny_all:
+            return False
+        if self.shell_execution_allow_all:
+            print(f"Shell command running: {command}")
+            return True
+        yes_no = input("> Do you approve running the following command? (y/n): " + command)
+        return yes_no.lower() == "y"
+
     def add_system_message(self, message: str) -> None:
-        if self.runner:
-            self.runner.env.add_message(role="system", message=message)
+        if self.env:
+            self.env.add_message(role="system", message=message)
         else:
             self.messages.append({"role": "system", "content": message})
 
     def run_task(self, task: str) -> str:
-        if self.runner:
-            self.runner.run_task(task, max_iterations=1, record_run=False)
-            output = ""
-            messages = self.runner.env.list_messages()
-            i = len(messages) - 1
-            while i >= 0 and messages[i]["role"] != "user":
-                if messages[i]["role"] == "assistant":
-                    output = messages[i]["content"] + output
-                i = i - 1
-            return output
+        if self.env:
+            self.env.run(task, max_iterations=1)
+            output = []
+            messages = self.env.list_messages()
+            for message in reversed(messages):
+                if message["role"] == "user":
+                    break
+                if message["role"] == "assistant":
+                    output.append(message["content"])
+
+            return "\n".join(reversed(output))
         else:
             self.messages.append({"role": "user", "content": task})
             completion_response = cast(
@@ -100,12 +115,15 @@ class SolverInferenceSession:
             self.messages.append({"role": "assistant", "content": response_content})
             return response_content
 
+    def __del__(self):
+        if self.env:
+            self.env.clear_temp_agent_files()
+
 
 class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
     """Abstract class for solver strategies."""
 
     def __init__(self, model: str = "", agent: str = "") -> None:
-        CONFIG.confirm_commands = False
         client_config = ClientConfig(base_url=CONFIG.nearai_hub.base_url, auth=CONFIG.auth)
         self.client = InferenceClient(client_config)
         assert model != "" or agent != ""
@@ -128,6 +146,9 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
                 self.agent_obj.model = self.model_full_path
             if self.provider != "":
                 self.agent_obj.model_provider = self.provider
+
+        self.shell_execution_deny_all = False
+        self.shell_execution_allow_all = False
 
     @property
     def name(self) -> str:
@@ -195,7 +216,12 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
 
     def start_inference_session(self, task_id: str) -> SolverInferenceSession:
         return SolverInferenceSession(
-            self.agent_obj, self.model_full_path, self.client, self.evaluation_name()
+            self.agent_obj,
+            self.model_full_path,
+            self.client,
+            self.evaluation_name(),
+            self.shell_execution_deny_all,
+            self.shell_execution_allow_all,
         ).start_inference_session(task_id)
 
 
@@ -207,6 +233,7 @@ from nearai.solvers.hellaswag_solver import HellaswagSolverStrategy  # noqa: E40
 from nearai.solvers.livebench_solver import LiveBenchSolverStrategy  # noqa: E402
 from nearai.solvers.mbpp_solver import MBPPSolverStrategy  # noqa: E402
 from nearai.solvers.mmlu_solver import MMLUSolverStrategy  # noqa: E402
+from nearai.solvers.shell_benchmark_solver import ShellBenchmarkSolverStrategy  # noqa: E402
 
 __all__ = [
     "SolverStrategyRegistry",
@@ -216,4 +243,5 @@ __all__ = [
     "HellaswagSolverStrategy",
     "LiveBenchSolverStrategy",
     "GSM8KSolverStrategy",
+    "ShellBenchmarkSolverStrategy",
 ]

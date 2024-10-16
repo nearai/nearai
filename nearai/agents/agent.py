@@ -1,6 +1,7 @@
 import io
 import json
 import os
+import random
 import runpy
 import shutil
 import sys
@@ -35,7 +36,7 @@ class Agent(object):
         self.original_cwd = os.getcwd()
 
     def write_agent_files_to_temp(self):  # noqa: D102
-        temp_dir = os.path.join(tempfile.gettempdir(), str(int(time.time())))
+        temp_dir = os.path.join(tempfile.gettempdir(), str(int(time.time() * 1000)), str(random.randint(0, 1000)))
 
         if isinstance(self.agent_files, List):
             os.makedirs(temp_dir, exist_ok=True)
