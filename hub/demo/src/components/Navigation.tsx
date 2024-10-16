@@ -76,6 +76,8 @@ export const Navigation = () => {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
 
+  const title = env.NEXT_PUBLIC_CONSUMER_MODE ? 'AI Chat' : 'AI Hub';
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -83,7 +85,7 @@ export const Navigation = () => {
   return (
     <header className={s.navigation}>
       <Link className={s.logo} href="/">
-        AI Hub
+        {title}
       </Link>
 
       <BreakpointDisplay show="larger-than-tablet" className={s.breakpoint}>
