@@ -223,6 +223,7 @@ If you do not want to use the built-in tools, use `get_tool_registry(new=True)`
 
 
 ## Uploading an agent
+ * In order to upload, you must be registered and [logged in with NEAR](login.md) to upload, `nearai login`
  * You need a folder with an `agent.py` file in it, `~/.nearai/registry/example_agent` in this example. 
  * The agent may consist of additional files in the folder.
 
@@ -254,7 +255,6 @@ If you do not want to use the built-in tools, use `get_tool_registry(new=True)`
 }
 ```
 
- * You must be [logged in with NEAR](login.md) to upload, `nearai login`
  * Upload the agent `nearai registry upload ~/.nearai/registry/example_agent`
 
 ⚠️ You can't remove or overwrite a file once it's uploaded, but you can hide the entire agent by setting the `"show_entry": false` field.
