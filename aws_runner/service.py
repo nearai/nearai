@@ -8,6 +8,7 @@ from typing import Optional
 
 import boto3
 from aws_runner.partial_near_client import PartialNearClient
+from hub.api.v1.entry_location import valid_identifier
 from nearai.agents.agent import Agent
 from nearai.agents.environment import Environment
 from shared.auth_data import AuthData
@@ -95,7 +96,7 @@ def write_metric(metric_name, value, unit="Milliseconds"):
         print(f"Would have written metric {metric_name} with value {value} to cloudwatch")
 
 
-def load_agent(client, agent, params: dict = None):
+def load_agent(client, agent, params: dict = None, account_id: str = "local") -> Agent:
     agent_metadata = None
 
     if params["data_source"] == "registry":
@@ -106,6 +107,9 @@ def load_agent(client, agent, params: dict = None):
         agent_metadata = client.get_agent_metadata(agent)
     elif params["data_source"] == "local_files":
         agent_files = get_local_agent_files(agent)
+
+        if not valid_identifier(agent):
+            agent = f"{account_id}/{agent}/local"
 
         for file in agent_files:
             if os.path.basename(file["filename"]) == "metadata.json":
@@ -172,7 +176,7 @@ def run_with_environment(
     loaded_agents = []
 
     for agent_name in agents.split(","):
-        agent = load_agent(near_client, agent_name, params)
+        agent = load_agent(near_client, agent_name, params, auth.account_id)
         # agents secrets has higher priority then agent metadata's env_vars
         agent.env_vars = {**agent.env_vars, **agent_env_vars.get(agent_name, {})}
         loaded_agents.append(agent)

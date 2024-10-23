@@ -34,8 +34,6 @@ from hub.api.v1.models import get_session
 from hub.api.v1.scheduler import get_scheduler
 from hub.api.v1.sql import SqlClient
 
-s3 = boto3.client("s3")
-
 threads_router = APIRouter(
     tags=["Threads"],
 )
@@ -49,7 +47,6 @@ async def create_thread(
     auth: AuthToken = Depends(revokable_auth),
 ) -> Thread:
     with get_session() as session:
-        print(thread)
         thread_model = ThreadModel(
             messages=thread["messages"] if hasattr(thread, "messages") else [],
             meta_data=thread["metadata"] if hasattr(thread, "metadata") else None,
@@ -116,6 +113,8 @@ async def create_message(
         if thread_model is None:
             raise HTTPException(status_code=404, detail="Thread not found")
 
+        if not message.content:
+            message.content = " "  # OpenAI format requires content to be non-empty
         message_model = MessageModel(
             thread_id=thread_id,
             content=message.content,
@@ -365,7 +364,7 @@ def run_agent(thread_id: str, run_id: str, auth: AuthToken = Depends(revokable_a
         agent_env_vars: Dict[str, Any] = {}
         user_env_vars: Dict[str, Any] = {}
 
-        agent_entry = get_agent_entry(run_model.assistant_id, data_source)
+        agent_entry = get_agent_entry(run_model.assistant_id, data_source, auth.account_id)
 
         # read secret for every requested agent
         if agent_entry:
