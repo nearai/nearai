@@ -212,11 +212,10 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
             invoke_function_via_lambda(function_name, agents, thread_id, run_id, auth, new_message, params)
 
     with get_session() as session:
-        run_model = session.get(RunModel, run_id)
-        if not run_model:
-            raise HTTPException(status_code=500, detail=f"Run '{run_id}' not found.")
-        run_model.status = "requires_action"
-        session.commit()
+        completed_run_model = session.get(RunModel, run_id)
+        if completed_run_model:
+            completed_run_model.status = "requires_action"
+            session.commit()
 
     return thread_id
 
