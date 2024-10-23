@@ -213,6 +213,8 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
 
     with get_session() as session:
         run_model = session.get(RunModel, run_id)
+        if not run_model:
+            raise HTTPException(status_code=500, detail=f"Run '{run_id}' not found.")
         run_model.status = "requires_action"
         session.commit()
 
