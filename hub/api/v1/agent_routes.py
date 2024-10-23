@@ -10,14 +10,17 @@ from pydantic import BaseModel, Field
 
 from hub.api.v1.auth import AuthToken, revokable_auth
 from hub.api.v1.entry_location import EntryLocation
-from hub.api.v1.models import RegistryEntry
+from hub.api.v1.models import Message as MessageModel
+from hub.api.v1.models import RegistryEntry, get_session
+from hub.api.v1.models import Run as RunModel
+from hub.api.v1.models import Thread as ThreadModel
 from hub.api.v1.registry import S3_BUCKET, get
 from hub.api.v1.sql import SqlClient
 
 S3_ENDPOINT = getenv("S3_ENDPOINT")
 s3 = boto3.client("s3", endpoint_url=S3_ENDPOINT)
 
-v1_router = APIRouter(
+run_agent_router = APIRouter(
     tags=["agents, assistants"],
 )
 
@@ -38,7 +41,7 @@ class CreateThreadAndRunRequest(BaseModel):
         description="The ID of the environment to use to as a base for this run. If not provided, a new environment"
         " will be created.",
     )
-    thread: Optional[str] = Field(
+    thread_id: Optional[str] = Field(
         None,
         description="An OpenAI compatibility alias for environment. If no thread is provided, an empty thread"
         " will be created.",
@@ -108,8 +111,8 @@ def invoke_function_via_lambda(function_name, agents, thread_id, run_id, auth: A
     return result
 
 
-@v1_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
-@v1_router.post("/agent/runs", tags=["Agents", "Assistants"])
+@run_agent_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
+@run_agent_router.post("/agent/runs", tags=["Agents", "Assistants"])
 def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokable_auth)) -> str:
     """Run an agent against an existing or a new environment.
 
@@ -121,7 +124,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
     db = SqlClient()
 
     agents = body.agent_id or body.assistant_id or ""
-    environment_id = body.environment_id or body.thread
+    thread_id = body.environment_id or body.thread_id
     new_message = body.new_message
 
     runner = _runner_for_env()
@@ -164,27 +167,59 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
     agent_details = entry_details.get("agent", {})
     framework = agent_details.get("framework", "base")
 
+    with get_session() as session:
+        messages = []
+        if new_message:
+            messages.append(
+                MessageModel(
+                    thread_id=thread_id,
+                    content=new_message,
+                    role="user",
+                )
+            )
+        if not thread_id:
+            thread_model = ThreadModel(
+                messages=messages,
+            )
+            session.add(thread_model)
+            session.commit()
+            thread_id = thread_model.id
+
+        run_model = RunModel(
+            thread_id=thread_id,
+            assistant_id=agents,  # needs primary agent
+            model="agent_specified",
+            status="queued",
+        )
+
+    session.add(run_model)
+    session.commit()
+
+    run_id = run_model.id
+
     if framework == "prompt":
         raise HTTPException(status_code=400, detail="Prompt only agents are not implemented yet.")
     else:
         if runner == "local":
             runner_invoke_url = getenv("RUNNER_INVOKE_URL", None)
             if runner_invoke_url:
-                return invoke_function_via_curl(
-                    runner_invoke_url, agents, environment_id, "", auth, new_message, params
-                )
+                invoke_function_via_curl(runner_invoke_url, agents, thread_id, run_id, auth, new_message, params)
         else:
             function_name = f"{runner}-{framework.lower()}"
             if agent_api_url != "https://api.near.ai":
                 print(f"Passing agent API URL: {agent_api_url}")
-            print(f"Running function {function_name} with: agents={agents}, environment_id={environment_id}, ")
 
-            return invoke_function_via_lambda(function_name, agents, environment_id, "", auth, new_message, params)
+            invoke_function_via_lambda(function_name, agents, thread_id, run_id, auth, new_message, params)
 
-        raise HTTPException(status_code=400, detail="Invalid runner parameters")
+    with get_session() as session:
+        run_model = session.get(RunModel, run_id)
+        run_model.status = "requires_action"
+        session.commit()
+
+    return thread_id
 
 
-@v1_router.post(
+@run_agent_router.post(
     "/download_environment",
     responses={200: {"content": {"application/gzip": {"schema": {"type": "string", "format": "binary"}}}}},
 )
