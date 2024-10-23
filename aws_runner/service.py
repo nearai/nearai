@@ -8,13 +8,14 @@ from typing import Optional
 
 import boto3
 from aws_runner.partial_near_client import PartialNearClient
-from hub.api.v1.entry_location import valid_identifier
 from nearai.agents.agent import Agent
 from nearai.agents.environment import Environment
 from shared.auth_data import AuthData
 from shared.client_config import ClientConfig
 from shared.inference_client import InferenceClient
 from shared.near.sign import SignatureVerificationResult, verify_signed_message
+
+from hub.api.v1.entry_location import valid_identifier
 
 cloudwatch = boto3.client("cloudwatch", region_name="us-east-2")
 

@@ -3,7 +3,6 @@ from datetime import datetime
 from os import getenv
 from typing import Any, Dict, Iterable, List, Literal, Optional, Union
 
-import boto3
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import load_config_file
