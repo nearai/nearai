@@ -222,7 +222,7 @@ If you do not want to use the built-in tools, use `get_tool_registry(new=True)`
 ```
 
 
-## Uploading an agent
+## Uploading an Agent
  * In order to upload, you must be registered and [logged in with NEAR](login.md) to upload, `nearai login`
  * You need a folder with an `agent.py` file in it, `~/.nearai/registry/example_agent` in this example. 
  * The agent may consist of additional files in the folder.
