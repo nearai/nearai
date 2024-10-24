@@ -9,7 +9,7 @@ from nearai.clients.lambda_client import LambdaWrapper
 from pydantic import BaseModel, Field
 
 from hub.api.v1.auth import AuthToken, revokable_auth
-from hub.api.v1.entry_location import EntryLocation
+from hub.api.v1.entry_location import EntryLocation, valid_identifier
 from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import RegistryEntry, get_session
 from hub.api.v1.models import Run as RunModel
@@ -139,7 +139,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
 
     agent_entry: RegistryEntry | None = None
     for agent in reversed(agents.split(",")):
-        agent_entry = get_agent_entry(agent, data_source)
+        agent_entry = get_agent_entry(agent, data_source, auth.account_id)
 
         # read secret for every requested agent
         if agent_entry:
@@ -244,15 +244,22 @@ def _runner_for_env():
         return runner_env
 
 
-def get_agent_entry(agent, data_source: str) -> RegistryEntry | None:
+def get_agent_entry(agent, data_source: str, account_id: str) -> RegistryEntry | None:
     if data_source == "registry":
         return get(EntryLocation.from_str(agent))
     elif data_source == "local_files":
-        entry_location = EntryLocation.from_str(agent)
-        return RegistryEntry(
-            namespace=entry_location.namespace,
-            name=entry_location.name,
-            version=entry_location.version,
-        )
+        if valid_identifier(agent):
+            entry_location = EntryLocation.from_str(agent)
+            return RegistryEntry(
+                namespace=entry_location.namespace,
+                name=entry_location.name,
+                version=entry_location.version,
+            )
+        else:
+            return RegistryEntry(
+                namespace=account_id,
+                name=agent,
+                version="local",
+            )
     else:
         raise HTTPException(status_code=404, detail=f"Illegal data_source '{data_source}'.")
