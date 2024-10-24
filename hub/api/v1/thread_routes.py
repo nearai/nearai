@@ -39,13 +39,21 @@ threads_router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
-SUMMARY_PROMPT = """You are a helpful assistant that summarizes conversations in a maximum if 5 words.
+SUMMARY_PROMPT = """You are an expert at summarizing conversations in a maximum of 5 words.
 
-Example 1: "User: What is the weather in Tokyo?"
-Response: "Weather in Tokyo"
+**Instructions:**
 
-Example 2: "User: Help me plan a trip to Lisbon."
-Response: "Trip to Lisbon"
+- Provide a concise summary of the conversation in 5 words or less.
+- Focus on the main topic or action discussed.
+- **Do not** include any additional text, explanations, or greetings.
+
+**Example Responses:**
+
+- "Weather in Tokyo"
+- "Trip to Lisbon"
+- "Career change advice"
+- "Book recommendation request"
+- "Tech support for laptop"
 """
 
 
@@ -229,16 +237,20 @@ def update_thread_topic(thread_id: str):
         ).all()
 
         client = ClientConfig(base_url=CONFIG.nearai_hub.base_url, auth=CONFIG.auth).get_hub_client()
+
+        # TODO(#436): Once thread forking is implemented.
+        # Fork the thread and use agent: agentic.near/summary/0.0.3/source. (Same prompt as SUMMARY_PROMPT)
         completion = client.chat.completions.create(
-            messages=[message.to_completions_model() for message in messages]
-            + [
+            messages=[
                 {
                     "role": "system",
                     "content": SUMMARY_PROMPT,
                 }
-            ],
+            ]
+            + [message.to_completions_model() for message in messages],
             model=DEFAULT_PROVIDER_MODEL,
         )
+
         if thread.meta_data is None:
             thread.meta_data = {}
         thread.meta_data["topic"] = completion.choices[0].message.content
