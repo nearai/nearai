@@ -1,5 +1,7 @@
 FROM nearai_base:latest
 
+ARG NEARAICI_SIGNATURE
+
 RUN mkdir -p ~/.nearai && \
     cat <<EOF > ~/.nearai/config.json
 {
@@ -14,7 +16,7 @@ RUN mkdir -p ~/.nearai && \
     },
     "auth": {
         "account_id": "nearaici.near",
-        "signature": "54fCq9dKLNzBGjrxBRFgJISaQuBK1qn7ig/AIxLBMz3KvVBjENNotukgOXPcX2Dzqqz0vMOqeyXnnbVsPQZqBA==",
+        "signature": "${NEARAICI_SIGNATURE}",
         "public_key": "ed25519:ETEvMsdeVAvCyV7KY4wPqxio99wBcoEzvAHKyUEb7ogx",
         "callback_url": "http://localhost:49225/capture",
         "nonce": "1727052557096",

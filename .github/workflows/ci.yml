@@ -86,6 +86,8 @@ jobs:
     
     - name: Build Docker Images
       run: docker compose -f .docker/compose-ci.yml build
+      env:
+        NEARAICI_SIGNATURE: ${{ secrets.NEARAICI_SIGNATURE }}
 
     - name: Start Docker Compose
       run: docker compose -f .docker/compose-ci.yml up -d
@@ -93,7 +95,10 @@ jobs:
         SINGLESTORE_LICENSE: ${{ secrets.SINGLESTORE_LICENSE }}
 
     - name: Exec Integration Tests
-      run: sleep 60 && docker exec docker-ci-1 poetry run pytest -m integration ./ci/
+      run: |
+        sleep 60
+        docker compose -f .docker/compose-ci.yml logs
+        docker exec docker-ci-1 poetry run pytest -m integration ./ci/
     
     - name: Stop Docker Compose
       run: docker compose -f .docker/compose-ci.yml down

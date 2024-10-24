@@ -3,11 +3,13 @@ import logging
 import mimetypes
 import os
 import uuid
+from os import getenv
 from typing import Literal, Optional
 
 import boto3
 import chardet
 from botocore.exceptions import ClientError
+from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Path, UploadFile
 from fastapi.responses import StreamingResponse
 from nearai.config import DATA_FOLDER
@@ -30,7 +32,13 @@ files_router = APIRouter(tags=["Files"])
 
 logger = logging.getLogger(__name__)
 
-s3_client = boto3.client("s3")
+load_dotenv()
+
+S3_ENDPOINT = getenv("S3_ENDPOINT")
+s3_client = boto3.client(
+    "s3",
+    endpoint_url=S3_ENDPOINT,
+)
 
 
 class FileUploadRequest(BaseModel):

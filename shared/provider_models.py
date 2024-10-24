@@ -47,6 +47,9 @@ def get_provider_namespaced_model(provider_model: str, provider: Optional[str] =
             return provider, NamespacedName(namespace=parts[0], name=parts[1])
         else:
             raise ValueError(f"Invalid model format for Fireworks: {model}")
+    if provider == "local":
+        model = re.sub(r".*/", "", model)
+        return provider, NamespacedName(name=model)
     raise ValueError(f"Unrecognized provider: {provider}")
 
 

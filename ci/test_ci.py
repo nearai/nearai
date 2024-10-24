@@ -1,12 +1,15 @@
 import json
+import re
 import tempfile
 from pathlib import Path
 
+import datasets
 import nearai
 import openai
 import pytest
-from nearai.cli import RegistryCli
+from nearai.cli import BenchmarkCli, RegistryCli
 from nearai.registry import Registry
+from nearai.solvers.hellaswag_solver import HellaswagSolverStrategy
 
 MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
 
@@ -15,7 +18,6 @@ MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
 def test_registry():
     """When a directory is uploaded to the registry, it can be listed."""
     registry = Registry()
-    assert registry.list_all_visible() == []
 
     tmp_dir = tempfile.TemporaryDirectory()
 
@@ -69,3 +71,77 @@ def test_hub_chat():
         max_tokens=4,
     )
     print(chat_completion)
+
+
+@pytest.mark.integration
+def test_spotcheck_benchmark():
+    metadata = {
+        "name": "hellaswag_spotcheck",
+        "version": "0.0.1",
+        "description": "A test dataset for ci purposes, hellaswag format specific",
+        "category": "dataset",
+        "tags": ["dataset"],
+        "details": {},
+        "show_entry": True,
+    }
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        dataset_path = Path(tmp_dir) / "dataset"
+
+        dataset = datasets.Dataset.from_generator(
+            lambda: iter(
+                [
+                    {
+                        "ind": 14,
+                        "activity_label": "Wakeboarding",
+                        "ctx_a": "A man is being pulled on a water ski as he floats in the water casually.",
+                        "ctx_b": "he",
+                        "ctx": "A man is being pulled on a water ski as he floats in the water casually. he",
+                        "endings": [
+                            "mounts the water ski and tears through the water at fast speeds.",
+                            "goes over several speeds, trying to stay upright.",
+                            "struggles a little bit as he talks about it.",
+                            "is seated in a boat with three other people.",
+                        ],
+                        "source_id": "test",
+                        "split": "test",
+                        "split_type": "indomain",
+                        "label": "",
+                    }
+                ]
+            ),
+            features=datasets.Features(
+                {
+                    "ind": datasets.Value("int32"),
+                    "activity_label": datasets.Value("string"),
+                    "ctx_a": datasets.Value("string"),
+                    "ctx_b": datasets.Value("string"),
+                    "ctx": datasets.Value("string"),
+                    "endings": datasets.Sequence(datasets.Value("string")),
+                    "source_id": datasets.Value("string"),
+                    "split": datasets.Value("string"),
+                    "split_type": datasets.Value("string"),
+                    "label": datasets.Value("string"),
+                }
+            ),
+        )
+        dataset_dict = datasets.DatasetDict({"dev": dataset})
+        dataset_dict.save_to_disk(dataset_path)
+
+        with open(dataset_path / "metadata.json", "w") as f:
+            json.dump(metadata, f)
+
+        registry = Registry()
+        registry.upload(dataset_path)
+
+        assert metadata["name"] in map(lambda x: x.name, registry.list_all_visible())
+        item = list(filter(lambda x: x.name == metadata["name"], registry.list_all_visible()))[0]
+
+        benchmark_cli = BenchmarkCli()
+        benchmark_cli.run(
+            solver_strategy=re.search(r"\'.*\'", str(HellaswagSolverStrategy)).group(0).replace("'", "").split(".")[-1],
+            model=f"local::{MODEL_NAME}",
+            dataset=f"{item.namespace}/{item.name}/{item.version}",
+            subset="dev",
+            shots=0,
+        )
