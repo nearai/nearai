@@ -172,6 +172,15 @@ class Message(SQLModel, table=True):
             incomplete_at=int(self.incomplete_at.timestamp()) if self.incomplete_at else None,
         )
 
+    def to_completions_model(self):
+        """Transform to a model compatible with OpenAI completions API."""
+        print("self.content", self.content)
+        return {
+            "id": self.id,
+            "content": "\n".join([c["text"]["value"] for c in self.content]),
+            "role": self.role,
+        }
+
 
 class Thread(SQLModel, table=True):
     __tablename__ = "threads"
@@ -181,6 +190,7 @@ class Thread(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.now, nullable=False)
     tool_resources: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
     meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", JSON))
+    owner_id: str = Field(nullable=False)
 
     def to_openai(self) -> OpenAITThread:
         """Convert to OpenAI Thread."""

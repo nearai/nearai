@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterable, List, Literal, Optional, Union
 import boto3
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
 from nearai.agents.local_runner import LocalRunner
-from nearai.config import load_config_file
+from nearai.config import CONFIG, load_config_file
 from openai.types.beta.assistant_response_format_option_param import AssistantResponseFormatOptionParam
 from openai.types.beta.thread import Thread
 from openai.types.beta.thread_create_params import ThreadCreateParams
@@ -17,7 +17,7 @@ from openai.types.beta.threads.run import Run as OpenAIRun
 from openai.types.beta.threads.run_create_params import AdditionalMessage, TruncationStrategy
 from pydantic import BaseModel, Field
 from shared.auth_data import AuthData
-from shared.client_config import DEFAULT_PROVIDER_MODEL
+from shared.client_config import DEFAULT_PROVIDER_MODEL, ClientConfig
 from sqlmodel import asc, desc, select
 
 from hub.api.v1.agent_routes import (
@@ -42,6 +42,15 @@ threads_router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
+SUMMARY_PROMPT = """You are a helpful assistant that summarizes conversations in a maximum if 5 words.
+
+Example 1: "User: What is the weather in Tokyo?"
+Response: "Weather in Tokyo"
+
+Example 2: "User: Help me plan a trip to Lisbon."
+Response: "Trip to Lisbon"
+"""
+
 
 @threads_router.post("/threads")
 async def create_thread(
@@ -54,10 +63,20 @@ async def create_thread(
             messages=thread["messages"] if hasattr(thread, "messages") else [],
             meta_data=thread["metadata"] if hasattr(thread, "metadata") else None,
             tool_resources=thread["tool_resources"] if hasattr(thread, "tool_resources") else None,
+            owner_id=auth.account_id,
         )
         session.add(thread_model)
         session.commit()
         return thread_model.to_openai()
+
+
+@threads_router.get("/threads")
+async def list_threads(
+    auth: AuthToken = Depends(revokable_auth),
+) -> List[Thread]:
+    with get_session() as session:
+        threads = session.exec(select(ThreadModel).where(ThreadModel.owner_id == auth.account_id)).all()
+        return [thread.to_openai() for thread in threads]
 
 
 @threads_router.get("/threads/{thread_id}")
@@ -69,7 +88,68 @@ async def get_thread(
         thread_model = session.get(ThreadModel, thread_id)
         if thread_model is None:
             raise HTTPException(status_code=404, detail="Thread not found")
+        if thread_model.owner_id != auth.account_id:
+            raise HTTPException(status_code=403, detail="You don't have permission to access this thread")
         return thread_model.to_openai()
+
+
+class ThreadUpdateParams(BaseModel):
+    metadata: Optional[Dict[str, str]] = Field(
+        None, description="Set of 16 key-value pairs that can be attached to an object."
+    )
+    tool_resources: Optional[Dict[str, Any]] = Field(
+        None, description="A set of resources that are made available to the assistant's tools in this thread."
+    )
+
+
+@threads_router.post("/threads/{thread_id}")
+async def update_thread(
+    thread_id: str,
+    thread: ThreadUpdateParams = Body(...),
+    auth: AuthToken = Depends(revokable_auth),
+) -> Thread:
+    with get_session() as session:
+        thread_model = session.get(ThreadModel, thread_id)
+        if thread_model is None:
+            raise HTTPException(status_code=404, detail="Thread not found")
+
+        if thread_model.owner_id != auth.account_id:
+            raise HTTPException(status_code=403, detail="You don't have permission to update this thread")
+
+        if thread.metadata is not None:
+            thread_model.meta_data = thread.metadata
+
+        if thread.tool_resources is not None:
+            thread_model.tool_resources = thread.tool_resources
+
+        session.add(thread_model)
+        session.commit()
+        return thread_model.to_openai()
+
+
+class ThreadDeletionStatus(BaseModel):
+    id: str
+    object: str = "thread.deleted"
+    deleted: bool = True
+
+
+@threads_router.delete("/threads/{thread_id}")
+async def delete_thread(
+    thread_id: str,
+    auth: AuthToken = Depends(revokable_auth),
+) -> ThreadDeletionStatus:
+    with get_session() as session:
+        thread_model = session.get(ThreadModel, thread_id)
+        if thread_model is None:
+            raise HTTPException(status_code=404, detail="Thread not found")
+
+        if thread_model.owner_id != auth.account_id:
+            raise HTTPException(status_code=403, detail="You don't have permission to delete this thread")
+
+        session.delete(thread_model)
+        session.commit()
+
+        return ThreadDeletionStatus(id=thread_id)
 
 
 class MessageCreateParams(BaseModel):
@@ -108,13 +188,17 @@ class MessageCreateParams(BaseModel):
 @threads_router.post("/threads/{thread_id}/messages")
 async def create_message(
     thread_id: str,
+    background_tasks: BackgroundTasks,
     message: MessageCreateParams = Body(...),
     auth: AuthToken = Depends(revokable_auth),
 ) -> Message:
     with get_session() as session:
-        thread_model = session.get(ThreadModel, thread_id)
-        if thread_model is None:
+        thread = session.get(ThreadModel, thread_id)
+        if thread is None:
             raise HTTPException(status_code=404, detail="Thread not found")
+
+        if not thread.meta_data or not thread.meta_data.get("topic"):
+            background_tasks.add_task(update_thread_topic, thread_id)
 
         message_model = MessageModel(
             thread_id=thread_id,
@@ -129,6 +213,38 @@ async def create_message(
         session.add(message_model)
         session.commit()
         return message_model.to_openai()
+
+
+def update_thread_topic(thread_id: str):
+    with get_session() as session:
+        thread = session.get(ThreadModel, thread_id)
+        if thread is None:
+            raise HTTPException(status_code=404, detail="Thread not found")
+
+        messages = session.exec(
+            select(MessageModel)
+            .where(MessageModel.thread_id == thread_id)
+            .where(MessageModel.role != "assistant")
+            .order_by(desc(MessageModel.created_at))
+            .limit(1)
+        ).all()
+
+        client = ClientConfig(base_url=CONFIG.nearai_hub.base_url, auth=CONFIG.auth).get_hub_client()
+        completion = client.chat.completions.create(
+            messages=[message.to_completions_model() for message in messages]
+            + [
+                {
+                    "role": "system",
+                    "content": SUMMARY_PROMPT,
+                }
+            ],
+            model=DEFAULT_PROVIDER_MODEL,
+        )
+        if thread.meta_data is None:
+            thread.meta_data = {}
+        thread.meta_data["topic"] = completion.choices[0].message.content
+        session.add(thread)
+        session.commit()
 
 
 class ListMessagesResponse(BaseModel):

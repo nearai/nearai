@@ -171,7 +171,13 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
             runner_invoke_url = getenv("RUNNER_INVOKE_URL", None)
             if runner_invoke_url:
                 return invoke_function_via_curl(
-                    runner_invoke_url, agents, environment_id, "", auth, new_message, params
+                    runner_invoke_url,
+                    agents,
+                    thread_id=environment_id,
+                    run_id="",
+                    auth=auth,
+                    new_message=new_message,
+                    params=params,
                 )
         else:
             function_name = f"{runner}-{framework.lower()}"
@@ -179,7 +185,15 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
                 print(f"Passing agent API URL: {agent_api_url}")
             print(f"Running function {function_name} with: agents={agents}, environment_id={environment_id}, ")
 
-            return invoke_function_via_lambda(function_name, agents, environment_id, "", auth, new_message, params)
+            return invoke_function_via_lambda(
+                function_name,
+                agents,
+                thread_id=environment_id,
+                run_id="",
+                auth=auth,
+                new_message=new_message,
+                params=params,
+            )
 
         raise HTTPException(status_code=400, detail="Invalid runner parameters")
 

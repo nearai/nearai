@@ -22,6 +22,8 @@ logger.info("Authenticated with NEAR AI Hub")
 
 client = openai.OpenAI(base_url=hub_url, api_key=signature)
 
+
+
 # Create a new thread
 logger.info("Creating a new thread")
 thread = client.beta.threads.create()
@@ -104,3 +106,21 @@ if file_ids and file_ids[0] is not None:
     logger.info(f"File content: {content}")
 else:
     logger.warning("No valid file IDs found in the attachments.")
+
+threads = client.get(
+    path=f"{hub_url}/threads",
+    cast_to=dict
+)
+
+logger.info(f"Threads: {threads}")
+
+thread_update = client.beta.threads.update(thread_id=thread.id, metadata={"test": "test"})
+logger.info(f"Thread updated: {thread_update}")
+
+# Retrieve the thread
+retrieved_thread = client.beta.threads.retrieve(thread_id=thread.id)
+logger.info(f"Retrieved thread: {retrieved_thread}")
+
+
+thread_delete = client.beta.threads.delete(thread.id)
+logger.info(f"Thread deleted: {thread_delete}")
