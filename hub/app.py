@@ -6,7 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from hub.api.v1.agent_routes import v1_router as agent_router
+from hub.api.v1.agent_routes import run_agent_router
 from hub.api.v1.benchmark import v1_router as benchmark_router
 from hub.api.v1.evaluation import v1_router as evaluation_router
 from hub.api.v1.exceptions import TokenValidationError
@@ -40,7 +40,7 @@ app.add_middleware(
 
 app.include_router(v1_router, prefix="/v1")
 app.include_router(registry_router, prefix="/v1")
-app.include_router(agent_router, prefix="/v1")
+app.include_router(run_agent_router, prefix="/v1")
 app.include_router(benchmark_router, prefix="/v1")
 app.include_router(vector_stores_router, prefix="/v1")
 app.include_router(files_router, prefix="/v1")

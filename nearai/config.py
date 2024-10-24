@@ -130,9 +130,8 @@ def setup_api_client():
 
 
 def get_hub_client():
-    config = load_config_file()
-    signature = json.dumps(config["auth"])
-    base_url = config["api_url"] + "/v1"
+    signature = CONFIG.auth.model_dump_json()
+    base_url = CONFIG.api_url + "/v1"
     return openai.OpenAI(base_url=base_url, api_key=signature)
 
 

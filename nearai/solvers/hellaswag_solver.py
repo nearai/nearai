@@ -24,14 +24,15 @@ class HellaswagDatum(BaseModel):
 class HellaswagSolverStrategy(SolverStrategy):
     """Solver strategy for the MMLU dataset."""
 
-    SHOTS = 8
-
-    def __init__(self, dataset_ref: Union[Dataset, DatasetDict], model: str = "", agent: str = "") -> None:  # noqa: D107
+    def __init__(  # noqa: D107
+        self, dataset_ref: Union[Dataset, DatasetDict], model: str = "", agent: str = "", shots: int = 8
+    ) -> None:
         super().__init__(model, agent)
         self.dataset_ref = dataset_ref
+        self.shots = shots
 
     def evaluation_name(self) -> str:  # noqa: D102
-        return "hellaswag"
+        return f"hellaswag_{self.shots}shots"
 
     def compatible_datasets(self) -> List[str]:  # noqa: D102
         return ["hellaswag"]
@@ -40,7 +41,7 @@ class HellaswagSolverStrategy(SolverStrategy):
         datum = HellaswagDatum(**datum).model_dump()
 
         choices = ["A", "B", "C", "D"]
-        example_problems_indices = list(range(0, 5 * self.SHOTS, 5))
+        example_problems_indices = list(range(0, 5 * self.shots, 5))
         example_problems = list(
             map(
                 lambda d: HellaswagDatum(**d).model_dump(),

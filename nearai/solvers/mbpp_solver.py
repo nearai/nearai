@@ -68,14 +68,15 @@ class MBPPDatum(BaseModel):
 class MBPPSolverStrategy(SolverStrategy):
     """Solver strategy for the MBPP dataset."""
 
-    SHOTS = 3
-
-    def __init__(self, dataset_ref: Union[Dataset, DatasetDict], model: str = "", agent: str = "") -> None:  # noqa: D107
+    def __init__(  # noqa: D107
+        self, dataset_ref: Union[Dataset, DatasetDict], model: str = "", agent: str = "", shots: int = 3
+    ) -> None:
         super().__init__(model, agent)
         self.dataset_ref = dataset_ref
+        self.shots = shots
 
     def evaluation_name(self) -> str:  # noqa: D102
-        return "mbpp"
+        return f"mbpp_{self.shots}shots"
 
     def compatible_datasets(self) -> List[str]:  # noqa: D102
         return ["mbpp"]
@@ -85,7 +86,7 @@ class MBPPSolverStrategy(SolverStrategy):
 
         ## Allow LLM to think "out loud" for it's answer
         function_name = get_function_name(datum["code"])
-        example_problems = list(islice(self.dataset_ref["prompt"], self.SHOTS))
+        example_problems = list(islice(self.dataset_ref["prompt"], self.shots))
         base_prompt = Template(open(PROMPTS_FOLDER / "mbpp_verbose_answer.j2").read(), trim_blocks=True).render(
             function_name=function_name,
             example_problems=example_problems,
