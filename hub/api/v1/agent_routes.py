@@ -9,7 +9,7 @@ from nearai.clients.lambda_client import LambdaWrapper
 from pydantic import BaseModel, Field
 
 from hub.api.v1.auth import AuthToken, revokable_auth
-from hub.api.v1.entry_location import EntryLocation, IDENTIFIER_PATTERN
+from hub.api.v1.entry_location import IDENTIFIER_PATTERN, EntryLocation
 from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import RegistryEntry, get_session
 from hub.api.v1.models import Run as RunModel
