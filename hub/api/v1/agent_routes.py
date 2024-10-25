@@ -173,23 +173,22 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
     framework = agent_details.get("framework", "base")
 
     with get_session() as session:
-        messages = []
-        if new_message:
-            messages.append(
-                MessageModel(
-                    thread_id=thread_id,
-                    content=new_message,
-                    role="user",
-                )
-            )
         if not thread_id:
             thread_model = ThreadModel(
-                messages=messages,
                 owner_id=auth.account_id,
             )
             session.add(thread_model)
             session.commit()
             thread_id = thread_model.id
+
+        if new_message:
+            message_model = MessageModel(
+                thread_id=thread_id,
+                content=new_message,
+                role="user",
+            )
+            session.add(message_model)
+            session.commit()
 
         run_model = RunModel(
             thread_id=thread_id,
