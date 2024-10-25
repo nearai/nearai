@@ -50,50 +50,41 @@ export const ThreadsSidebar = ({
 }: Props) => {
   const pathname = usePathname();
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
-  const { updateQueryPath, queryParams } = useQueryParams(['environmentId']);
-  const environmentId = queryParams.environmentId ?? '';
-  const previousEnvironmentId = usePrevious(environmentId);
+  const { updateQueryPath, queryParams } = useQueryParams(['threadId']);
+  const threadId = queryParams.threadId ?? '';
+  const previousThreadId = usePrevious(threadId);
   const { threads } = useThreads();
-  const [removedEnvironmentIds, setRemovedEnvironmentIds] = useState<string[]>(
-    [],
-  );
-  const [editingThreadEnvironmentId, setEditingThreadEnvironmentId] = useState<
-    string | null
-  >(null);
+  const [removedThreadIds, setRemovedThreadIds] = useState<string[]>([]);
+  const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
   const filteredThreads = threads?.filter(
-    (thread) => !removedEnvironmentIds.includes(thread.environmentId),
+    (thread) => !removedThreadIds.includes(thread.id),
   );
   const isViewingAgent = pathname.startsWith('/agents');
   const updateMutation = api.hub.updateMetadata.useMutation();
 
-  const currentEnvironmentIdMatchesThread =
-    !environmentId ||
-    !!filteredThreads?.find((thread) => thread.environmentId === environmentId);
+  console.log(threads);
+
+  const currentThreadIdMatchesThread =
+    !threadId || !!filteredThreads?.find((thread) => thread.id === threadId);
 
   const removeThread = async (thread: Thread) => {
     try {
-      if (environmentId === thread.environmentId) {
-        updateQueryPath({ environmentId: undefined });
+      if (threadId === thread.id) {
+        updateQueryPath({ threadId: undefined });
       }
 
-      setRemovedEnvironmentIds((value) => [...value, thread.environmentId]);
+      setRemovedThreadIds((value) => [...value, thread.id]);
 
-      for (const {
-        namespace,
-        name,
-        version,
-        ...environment
-      } of thread.environments) {
-        await updateMutation.mutateAsync({
-          name,
-          namespace,
-          version,
-          metadata: {
-            ...environment,
-            show_entry: false,
-          },
-        });
-      }
+      // TODO: Implement remove endpoint
+      // await updateMutation.mutateAsync({
+      //   name,
+      //   namespace,
+      //   version,
+      //   metadata: {
+      //     ...environment,
+      //     show_entry: false,
+      //   },
+      // });
     } catch (error) {
       handleClientError({ error, title: 'Failed to delete thread' });
     }
@@ -101,7 +92,7 @@ export const ThreadsSidebar = ({
 
   useEffect(() => {
     setOpenForSmallScreens(false);
-  }, [setOpenForSmallScreens, environmentId]);
+  }, [setOpenForSmallScreens, threadId]);
 
   if (!isAuthenticated) return null;
 
@@ -137,14 +128,13 @@ export const ThreadsSidebar = ({
                 paddingInline="m"
                 gap="xs"
                 background={
-                  (currentEnvironmentIdMatchesThread &&
-                    environmentId === thread.environmentId) ||
-                  (!currentEnvironmentIdMatchesThread &&
-                    previousEnvironmentId === thread.environmentId)
+                  (currentThreadIdMatchesThread && threadId === thread.id) ||
+                  (!currentThreadIdMatchesThread &&
+                    previousThreadId === thread.id)
                     ? 'sand-0'
                     : 'sand-2'
                 }
-                key={thread.environmentId}
+                key={thread.id}
               >
                 <Flex align="center" gap="s">
                   <Text
@@ -156,13 +146,13 @@ export const ThreadsSidebar = ({
                     clampLines={1}
                     style={{ marginRight: 'auto' }}
                   >
-                    {thread.description}
+                    {thread.metadata.topic}
                   </Text>
 
                   <Tooltip
                     asChild
                     content={`${thread.messageCount} message${thread.messageCount === 1 ? '' : 's'} sent`}
-                    key={thread.environmentId}
+                    key={thread.id}
                   >
                     <Badge
                       label={thread.messageCount}
@@ -203,9 +193,7 @@ export const ThreadsSidebar = ({
 
                       <Dropdown.Section>
                         <Dropdown.Item
-                          onSelect={() =>
-                            setEditingThreadEnvironmentId(thread.environmentId)
-                          }
+                          onSelect={() => setEditingThreadId(thread.id)}
                         >
                           <SvgIcon icon={<Pencil />} />
                           Rename Thread
@@ -290,13 +278,13 @@ export const ThreadsSidebar = ({
       )}
 
       <Dialog.Root
-        open={!!editingThreadEnvironmentId}
-        onOpenChange={() => setEditingThreadEnvironmentId(null)}
+        open={!!editingThreadId}
+        onOpenChange={() => setEditingThreadId(null)}
       >
         <Dialog.Content title="Rename Thread" size="s">
           <EditThreadForm
-            threadEnvironmentId={editingThreadEnvironmentId}
-            onFinish={() => setEditingThreadEnvironmentId(null)}
+            threadThreadId={editingThreadId}
+            onFinish={() => setEditingThreadId(null)}
           />
         </Dialog.Content>
       </Dialog.Root>
@@ -305,7 +293,7 @@ export const ThreadsSidebar = ({
 };
 
 type EditThreadFormProps = {
-  threadEnvironmentId: string | null;
+  threadThreadId: string | null;
   onFinish: () => unknown;
 };
 
@@ -313,18 +301,15 @@ type EditThreadFormSchema = {
   description: string;
 };
 
-const EditThreadForm = ({
-  threadEnvironmentId,
-  onFinish,
-}: EditThreadFormProps) => {
+const EditThreadForm = ({ threadThreadId, onFinish }: EditThreadFormProps) => {
   const form = useForm<EditThreadFormSchema>({});
-  const { setThreadEnvironmentData, threads } = useThreads();
-  const thread = threads?.find((t) => t.environmentId === threadEnvironmentId);
+  const { setThreadData, threads } = useThreads();
+  const thread = threads?.find((t) => t.id === threadThreadId);
   const updateMutation = api.hub.updateMetadata.useMutation();
 
   useEffect(() => {
     if (!form.formState.isDirty) {
-      form.setValue('description', thread?.description ?? '');
+      form.setValue('description', thread?.metadata.topic ?? '');
 
       setTimeout(() => {
         form.setFocus('description');
@@ -336,25 +321,26 @@ const EditThreadForm = ({
     // This submit handler optimistically updates environment data to make the update feel instant
 
     try {
-      const firstEnvironment = thread?.environments[0];
-      if (!firstEnvironment) return;
-      const { namespace, name, version, ...environment } = firstEnvironment;
+      if (!thread) return;
 
       const updates = {
-        description: data.description,
+        metadata: {
+          topic: data.description,
+        },
       };
 
-      setThreadEnvironmentData(firstEnvironment.id, updates);
+      setThreadData(thread.id, updates);
 
-      void updateMutation.mutateAsync({
-        name,
-        namespace,
-        version,
-        metadata: {
-          ...environment,
-          ...updates,
-        },
-      });
+      // TODO: Implement edit endpoint
+      // void updateMutation.mutateAsync({
+      //   name,
+      //   namespace,
+      //   version,
+      //   metadata: {
+      //     ...environment,
+      //     ...updates,
+      //   },
+      // });
     } catch (error) {
       handleClientError({ error });
     }

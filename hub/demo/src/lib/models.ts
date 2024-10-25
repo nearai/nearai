@@ -210,3 +210,60 @@ export const agentWalletAccountRequestModel = z.object({
   accountId: z.string().nullable().default(''),
   requestId: z.string().nullable().default(''),
 });
+
+export const threadMetadataModel = z.intersection(
+  z
+    .object({
+      agent_ids: z.string().array().default([]),
+      root_agent: z.object({
+        namespace: z.string(),
+        name: z.string(),
+        version: z.string(),
+      }),
+      topic: z.string(),
+    })
+    .partial(),
+  z.record(z.string(), z.unknown()),
+);
+
+export const threadModel = z.object({
+  id: z.string(),
+  created_at: z.number(),
+  object: z.string(),
+  metadata: z.preprocess((value) => value ?? {}, threadMetadataModel),
+});
+
+export const threadsModel = threadModel.array();
+
+export const threadMessageModel = z.object({
+  id: z.string(),
+  assistant_id: z.unknown(),
+  attachments: z.unknown(),
+  created_at: z.number(),
+  completed_at: z.number().nullable(),
+  content: z
+    .object({
+      text: z.object({
+        annotations: z.unknown().array(),
+        value: z.string(),
+      }),
+      type: z.string(),
+    })
+    .array(),
+  incomplete_at: z.number().nullable(),
+  incomplete_details: z.unknown().nullable(),
+  metadata: z.unknown(),
+  object: z.string(),
+  role: z.string(),
+  run_id: z.string().nullable(),
+  status: z.string(),
+  thread_id: z.string(),
+});
+
+export const threadMessagesModel = z.object({
+  object: z.string(),
+  data: threadMessageModel.array(),
+  has_more: z.boolean(),
+  first_id: z.string(),
+  last_id: z.string(),
+});

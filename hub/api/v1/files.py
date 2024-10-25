@@ -235,7 +235,8 @@ def determine_content_type(file: UploadFile) -> str:
 
     """
     filename = file.filename or ""
-    content_type = file.content_type or mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    # content_type = file.content_type or mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
     if content_type == "application/octet-stream":
         file_extension = os.path.splitext(filename)[1].lower()
         for mime_type, extensions in SUPPORTED_MIME_TYPES.items():

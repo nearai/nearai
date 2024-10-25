@@ -18,6 +18,9 @@ import {
   modelsModel,
   noncesModel,
   revokeNonceModel,
+  threadMessagesModel,
+  threadModel,
+  threadsModel,
 } from '~/lib/models';
 import {
   createTRPCRouter,
@@ -512,6 +515,69 @@ export const hubRouter = createTRPCRouter({
 
       return true;
     }),
+
+  thread: protectedProcedure
+    .input(
+      z.object({
+        threadId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const messages = await fetchWithZod(
+        threadMessagesModel,
+        `${env.ROUTER_URL}/threads/${input.threadId}/messages`,
+        {
+          headers: {
+            Authorization: ctx.authorization,
+          },
+        },
+      );
+
+      // const messages = await fetchWithZod(
+      //   threadMessagesModel,
+      //   `${env.ROUTER_URL}/threads/${input.threadId}/messages`,
+      //   {
+      //     headers: {
+      //       Authorization: ctx.authorization,
+      //     },
+      //   },
+      // );
+
+      return {
+        conversation: [],
+        messages,
+      };
+    }),
+
+  threads: protectedProcedure.query(async ({ ctx }) => {
+    const url = `${env.ROUTER_URL}/threads`;
+
+    let threads = await fetchWithZod(threadsModel, url, {
+      headers: {
+        Authorization: ctx.authorization,
+      },
+    });
+
+    threads = threads.filter((thread) => {
+      const rootAgent = thread.metadata.agent_ids?.[0];
+      if (!rootAgent) return false;
+      const [namespace, name, version, ...otherSegments] = rootAgent.split('/');
+      if (!namespace || !name || !version || otherSegments.length > 0)
+        return false;
+
+      thread.metadata.root_agent = {
+        namespace,
+        name,
+        version,
+      };
+
+      return true;
+    });
+
+    threads.sort((a, b) => b.created_at - a.created_at);
+
+    return threads;
+  }),
 
   updateMetadata: protectedProcedure
     .input(

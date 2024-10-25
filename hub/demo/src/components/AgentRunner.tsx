@@ -78,7 +78,7 @@ export const AgentRunner = ({
 
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const { queryParams, updateQueryPath } = useQueryParams([
-    'environmentId',
+    'threadId',
     'view',
     'transactionHashes',
     'transactionRequestId',
@@ -87,7 +87,7 @@ export const AgentRunner = ({
     'agent',
     Object.keys(queryParams),
   );
-  const environmentId = queryParams.environmentId ?? '';
+  const threadId = queryParams.threadId ?? '';
   const chatMutation = api.hub.chatWithAgent.useMutation();
   const { threadsQuery } = useThreads();
   const utils = api.useUtils();
@@ -98,7 +98,7 @@ export const AgentRunner = ({
     conditionallyProcessAgentRequests,
     iframePostMessage,
     onIframePostMessage,
-  } = useAgentRequestsWithIframe(currentEntry, chatMutation, environmentId);
+  } = useAgentRequestsWithIframe(currentEntry, chatMutation, threadId);
 
   const form = useZodForm(chatWithAgentModel, {
     defaultValues: { agent_id: agentId, max_iterations: 1 },
@@ -112,24 +112,34 @@ export const AgentRunner = ({
     useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  const environmentQuery = api.hub.environment.useQuery(
+  // const threadQuery = api.hub.environment.useQuery(
+  //   {
+  //     environmentId: threadId,
+  //   },
+  //   {
+  //     enabled: false,
+  //   },
+  // );
+
+  const threadQuery = api.hub.thread.useQuery(
     {
-      environmentId,
+      threadId,
     },
     {
       enabled: false,
     },
   );
+  console.log(threadQuery.data);
 
-  const environment = environmentQuery.data;
+  const thread = threadQuery.data;
   const openedFile = openedFileName
-    ? environment?.files?.[openedFileName]
+    ? thread?.files?.[openedFileName]
     : undefined;
 
   const latestAssistantMessages: z.infer<typeof messageModel>[] = [];
-  if (environment) {
-    for (let i = environment.conversation.length - 1; i >= 0; i--) {
-      const message = environment.conversation[i];
+  if (thread) {
+    for (let i = thread.conversation.length - 1; i >= 0; i--) {
+      const message = thread.conversation[i];
       if (message?.role === 'assistant') {
         latestAssistantMessages.push(message);
       } else {
@@ -163,26 +173,27 @@ export const AgentRunner = ({
     try {
       if (!data.new_message.trim()) return;
 
-      if (environmentId) {
-        data.environment_id = environmentId;
+      if (threadId) {
+        data.environment_id = threadId;
       }
 
-      utils.hub.environment.setData(
-        {
-          environmentId,
-        },
-        {
-          conversation: [
-            ...(environment?.conversation ?? []),
-            {
-              content: data.new_message,
-              role: 'user',
-            },
-          ],
-          environmentId: environment?.environmentId ?? '',
-          files: environment?.files ?? {},
-        },
-      );
+      //TODO
+      // utils.hub.environment.setData(
+      //   {
+      //     threadId,
+      //   },
+      //   {
+      //     conversation: [
+      //       ...(environment?.conversation ?? []),
+      //       {
+      //         content: data.new_message,
+      //         role: 'user',
+      //       },
+      //     ],
+      //     threadId: environment?.threadId ?? '',
+      //     files: environment?.files ?? {},
+      //   },
+      // );
 
       form.setValue('new_message', '');
 
@@ -191,18 +202,20 @@ export const AgentRunner = ({
 
       const response = await chatMutation.mutateAsync(data);
 
-      utils.hub.environment.setData(
-        {
-          environmentId: response.environmentId,
-        },
-        response,
-      );
+      // TODO
 
-      updateQueryPath(
-        { environmentId: response.environmentId },
-        'replace',
-        false,
-      );
+      // utils.hub.environment.setData(
+      //   {
+      //     threadId: response.threadId,
+      //   },
+      //   response,
+      // );
+
+      // updateQueryPath(
+      //   { threadId: response.threadId },
+      //   'replace',
+      //   false,
+      // );
 
       void threadsQuery.refetch();
     } catch (error) {
@@ -220,13 +233,13 @@ export const AgentRunner = ({
   };
 
   const startNewThread = () => {
-    updateQueryPath({ environmentId: undefined });
+    updateQueryPath({ threadId: undefined });
     form.setValue('new_message', '');
     form.setFocus('new_message');
   };
 
   useEffect(() => {
-    const files = environmentQuery?.data?.files;
+    const files = threadQuery?.data?.files;
     const htmlFile = files?.['index.html'];
 
     if (htmlFile) {
@@ -240,16 +253,16 @@ export const AgentRunner = ({
       setHtmlOutput('');
       setView('conversation');
     }
-  }, [environmentQuery, htmlOutput, agentId, setView]);
+  }, [threadQuery, htmlOutput, agentId, setView]);
 
   useEffect(() => {
-    if (environmentId && environmentId !== environment?.environmentId) {
-      void environmentQuery.refetch();
+    if (threadId && threadId !== thread?.id) {
+      void threadQuery.refetch();
     }
-  }, [environment, environmentId, environmentQuery]);
+  }, [thread, threadId, threadQuery]);
 
   useEffect(() => {
-    if (!environmentId) {
+    if (!threadId) {
       utils.hub.environment.setData(
         {
           environmentId: '',
@@ -261,17 +274,17 @@ export const AgentRunner = ({
         },
       );
     }
-  }, [environmentId, utils]);
+  }, [threadId, utils]);
 
   useEffect(() => {
     if (currentEntry && isAuthenticated) {
       form.setFocus('new_message');
     }
-  }, [environmentId, currentEntry, isAuthenticated, form]);
+  }, [threadId, currentEntry, isAuthenticated, form]);
 
   useEffect(() => {
     setThreadsOpenForSmallScreens(false);
-  }, [environmentId]);
+  }, [threadId]);
 
   if (!currentEntry) {
     if (showLoadingPlaceholder) return <PlaceholderSection />;
@@ -298,7 +311,7 @@ export const AgentRunner = ({
 
               {latestAssistantMessages.length > 0 && (
                 <Messages
-                  loading={environmentQuery.isLoading}
+                  loading={threadQuery.isLoading}
                   messages={latestAssistantMessages}
                   threadId={agentId}
                 />
@@ -306,8 +319,8 @@ export const AgentRunner = ({
             </>
           ) : (
             <Messages
-              loading={environmentQuery.isLoading}
-              messages={environment?.conversation ?? []}
+              loading={threadQuery.isLoading}
+              messages={thread?.conversation ?? []}
               threadId={agentId}
               welcomeMessage={<AgentWelcome details={currentEntry.details} />}
             />
@@ -401,9 +414,9 @@ export const AgentRunner = ({
                 Output
               </Text>
 
-              {environment?.files && Object.keys(environment.files).length ? (
+              {thread?.files && Object.keys(thread.files).length ? (
                 <CardList>
-                  {Object.values(environment.files).map((file) => (
+                  {Object.values(thread.files).map((file) => (
                     <Card
                       padding="s"
                       gap="s"

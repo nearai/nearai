@@ -177,6 +177,9 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
         if not thread_id:
             thread_model = ThreadModel(
                 owner_id=auth.account_id,
+                meta_data={
+                    "agent_ids": [agents],
+                },
             )
             session.add(thread_model)
             session.commit()
