@@ -306,6 +306,7 @@ SUPPORTED_MIME_TYPES = {
     "application/json": [".json"],
     "application/pdf": [".pdf"],
     "application/typescript": [".ts"],
+    "application/yaml": [".yaml"],
 }
 
 SUPPORTED_TEXT_ENCODINGS = ["utf-8", "utf-16", "ascii"]

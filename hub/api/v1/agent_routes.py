@@ -9,7 +9,7 @@ from nearai.clients.lambda_client import LambdaWrapper
 from pydantic import BaseModel, Field
 
 from hub.api.v1.auth import AuthToken, revokable_auth
-from hub.api.v1.entry_location import EntryLocation, valid_identifier
+from hub.api.v1.entry_location import EntryLocation, IDENTIFIER_PATTERN
 from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import RegistryEntry, get_session
 from hub.api.v1.models import Run as RunModel
@@ -248,7 +248,7 @@ def get_agent_entry(agent, data_source: str, account_id: str) -> RegistryEntry |
     if data_source == "registry":
         return get(EntryLocation.from_str(agent))
     elif data_source == "local_files":
-        if valid_identifier(agent):
+        if IDENTIFIER_PATTERN.match(agent):
             entry_location = EntryLocation.from_str(agent)
             return RegistryEntry(
                 namespace=entry_location.namespace,

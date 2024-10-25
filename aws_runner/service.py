@@ -15,7 +15,7 @@ from shared.client_config import ClientConfig
 from shared.inference_client import InferenceClient
 from shared.near.sign import SignatureVerificationResult, verify_signed_message
 
-from hub.api.v1.entry_location import valid_identifier
+from hub.api.v1.entry_location import IDENTIFIER_PATTERN
 
 cloudwatch = boto3.client("cloudwatch", region_name="us-east-2")
 
@@ -109,7 +109,7 @@ def load_agent(client, agent, params: dict = None, account_id: str = "local") ->
     elif params["data_source"] == "local_files":
         agent_files = get_local_agent_files(agent)
 
-        if not valid_identifier(agent):
+        if not IDENTIFIER_PATTERN.match(agent):
             agent = f"{account_id}/{agent}/local"
 
         for file in agent_files:
