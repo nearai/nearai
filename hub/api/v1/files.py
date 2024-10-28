@@ -220,6 +220,18 @@ async def upload_file(
     )
 
 
+@files_router.delete("/files/{file_id}")
+async def delete_file(
+    file_id: str = Path(..., description="The ID of the file to delete"),
+    auth: AuthToken = Depends(revokable_auth),
+):
+    sql_client = SqlClient()
+    deleted = sql_client.delete_file(file_id=file_id, account_id=auth.account_id)
+    if not deleted:
+        raise HTTPException(status_code=500, detail="Failed to delete file")
+    return {"status": "success"}
+
+
 def determine_content_type(file: UploadFile) -> str:
     """Determine the content type of the uploaded file.
 

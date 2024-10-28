@@ -240,6 +240,18 @@ class SqlClient:
         query = f"SELECT * FROM vector_stores WHERE account_id = '{account_id}'"
         return [VectorStore(**x) for x in self.__fetch_all(query)]
 
+    def get_user_memory(self, account_id: str) -> Optional[str]:
+        """Get the user memory vector store id for a given account."""
+        query = f"SELECT vector_store_id FROM user_memory WHERE account_id = '{account_id}'"
+        r = self.__fetch_one(query)
+        return r["vector_store_id"] if r else None
+
+    def set_user_memory(self, account_id: str, vector_store_id: str):
+        """Set the user memory vector store id for a given account."""
+        query = f"INSERT INTO user_memory (account_id, vector_store_id) VALUES ('{account_id}', '{vector_store_id}')"
+        self.db.cursor().execute(query)
+        self.db.commit()
+
     def create_file(
         self,
         account_id: str,
@@ -602,3 +614,123 @@ class SqlClient:
                 agent_secrets[secret["key"]] = secret["value"]
 
         return agent_secrets, user_secrets
+
+    def remove_embeddings_from_vector_store(self, vector_store_id: str, file_id: str) -> bool:
+        """Remove all embeddings for a specific file from a vector store.
+
+        Args:
+        ----
+            vector_store_id (str): The ID of the vector store.
+            file_id (str): The ID of the file whose embeddings should be removed.
+
+        Returns:
+        -------
+            bool: True if embeddings were successfully removed, False otherwise.
+
+        """
+        cursor = self.db.cursor()
+        try:
+            query = """
+            DELETE FROM vector_store_embeddings
+            WHERE vector_store_id = %s AND file_id = %s
+            """
+            cursor.execute(query, (vector_store_id, file_id))
+            self.db.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Error removing embeddings from vector store: {str(e)}")
+            self.db.rollback()
+            return False
+
+    def remove_file_from_vector_store(
+        self, vector_store_id: str, file_id: str, account_id: str
+    ) -> Optional[VectorStore]:
+        """Remove a file from a vector store and delete its embeddings.
+
+        Args:
+        ----
+            vector_store_id (str): The ID of the vector store.
+            file_id (str): The ID of the file to remove.
+            account_id (str): The ID of the account that owns the vector store.
+
+        Returns:
+        -------
+            Optional[VectorStore]: The updated vector store if successful, None otherwise.
+
+        """
+        # First get the current vector store to check ownership and get current file_ids
+        vector_store = self.get_vector_store_by_account(vector_store_id, account_id)
+        if not vector_store:
+            return None
+
+        # Remove the file_id from the list
+        updated_file_ids = [fid for fid in vector_store.file_ids if fid != file_id]
+
+        # Remove the embeddings for this file
+        if not self.remove_embeddings_from_vector_store(vector_store_id, file_id):
+            return None
+
+        # Update the vector store with the new file_ids list
+        return self.update_files_in_vector_store(vector_store_id, updated_file_ids, account_id)
+
+    def delete_file(self, file_id: str, account_id: str) -> bool:
+        """Delete a file and all its related records from the database.
+
+        This includes:
+        - Removing the file from any vector stores that reference it
+        - Deleting all embeddings associated with the file
+        - Deleting the file record itself
+
+        Args:
+        ----
+            file_id (str): The ID of the file to delete.
+            account_id (str): The ID of the account that owns the file.
+
+        Returns:
+        -------
+            bool: True if the file was successfully deleted, False otherwise.
+
+        """
+        cursor = self.db.cursor()
+        try:
+            # First verify the file belongs to the account
+            file = self.get_file_details_by_account(file_id, account_id)
+            if not file:
+                logger.warning(f"File {file_id} not found or doesn't belong to account {account_id}")
+                return False
+
+            # Get all vector stores that contain this file
+            query = """
+            SELECT vector_store_id FROM vector_store_embeddings
+            WHERE file_id = %s
+            """
+
+            cursor.execute(query, (file_id))
+            vector_stores = cursor.fetchall()
+
+            # Remove file from each vector store that references it
+            for vs in vector_stores:
+                print(f"Removing file {file_id} from vector store {vs[0]}")
+                self.remove_file_from_vector_store(vs[0], file_id, account_id)
+
+            # Delete any remaining embeddings for this file
+            query = """
+            DELETE FROM vector_store_embeddings
+            WHERE file_id = %s
+            """
+            cursor.execute(query, (file_id,))
+
+            # Finally delete the file record
+            query = """
+            DELETE FROM vector_store_files
+            WHERE id = %s AND account_id = %s
+            """
+            cursor.execute(query, (file_id, account_id))
+            self.db.commit()
+
+            # Check if any rows were affected
+            return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"Error deleting file {file_id}: {str(e)}")
+            self.db.rollback()
+            return False
