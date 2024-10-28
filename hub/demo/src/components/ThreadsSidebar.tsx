@@ -14,7 +14,6 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 
-import { Badge } from '~/components/lib/Badge';
 import { Button } from '~/components/lib/Button';
 import { Card, CardList } from '~/components/lib/Card';
 import { Dropdown } from '~/components/lib/Dropdown';
@@ -23,7 +22,6 @@ import { PlaceholderStack } from '~/components/lib/Placeholder';
 import { Sidebar } from '~/components/lib/Sidebar';
 import { SvgIcon } from '~/components/lib/SvgIcon';
 import { Text } from '~/components/lib/Text';
-import { Timestamp } from '~/components/lib/Timestamp';
 import { Tooltip } from '~/components/lib/Tooltip';
 import { env } from '~/env';
 import { type Thread, useThreads } from '~/hooks/threads';
@@ -60,9 +58,7 @@ export const ThreadsSidebar = ({
     (thread) => !removedThreadIds.includes(thread.id),
   );
   const isViewingAgent = pathname.startsWith('/agents');
-  const updateMutation = api.hub.updateMetadata.useMutation();
-
-  console.log(threads);
+  const removeMutation = api.hub.removeThread.useMutation();
 
   const currentThreadIdMatchesThread =
     !threadId || !!filteredThreads?.find((thread) => thread.id === threadId);
@@ -75,16 +71,9 @@ export const ThreadsSidebar = ({
 
       setRemovedThreadIds((value) => [...value, thread.id]);
 
-      // TODO: Implement remove endpoint
-      // await updateMutation.mutateAsync({
-      //   name,
-      //   namespace,
-      //   version,
-      //   metadata: {
-      //     ...environment,
-      //     show_entry: false,
-      //   },
-      // });
+      await removeMutation.mutateAsync({
+        threadId: thread.id,
+      });
     } catch (error) {
       handleClientError({ error, title: 'Failed to delete thread' });
     }
@@ -149,7 +138,7 @@ export const ThreadsSidebar = ({
                     {thread.metadata.topic}
                   </Text>
 
-                  <Tooltip
+                  {/* <Tooltip
                     asChild
                     content={`${thread.messageCount} message${thread.messageCount === 1 ? '' : 's'} sent`}
                     key={thread.id}
@@ -159,7 +148,7 @@ export const ThreadsSidebar = ({
                       count
                       variant="neutral"
                     />
-                  </Tooltip>
+                  </Tooltip> */}
                 </Flex>
 
                 <Flex align="center" gap="s">
@@ -230,7 +219,7 @@ export const ThreadsSidebar = ({
                         </Dropdown.Item>
                       </Dropdown.Section>
 
-                      <Dropdown.Section>
+                      {/* <Dropdown.Section>
                         <Dropdown.SectionContent>
                           <Text size="text-xs">
                             Last message sent at{' '}
@@ -239,7 +228,7 @@ export const ThreadsSidebar = ({
                             </b>
                           </Text>
                         </Dropdown.SectionContent>
-                      </Dropdown.Section>
+                      </Dropdown.Section> */}
                     </Dropdown.Content>
                   </Dropdown.Root>
                 </Flex>
@@ -305,7 +294,7 @@ const EditThreadForm = ({ threadThreadId, onFinish }: EditThreadFormProps) => {
   const form = useForm<EditThreadFormSchema>({});
   const { setThreadData, threads } = useThreads();
   const thread = threads?.find((t) => t.id === threadThreadId);
-  const updateMutation = api.hub.updateMetadata.useMutation();
+  const updateMutation = api.hub.updateThread.useMutation();
 
   useEffect(() => {
     if (!form.formState.isDirty) {
@@ -325,22 +314,17 @@ const EditThreadForm = ({ threadThreadId, onFinish }: EditThreadFormProps) => {
 
       const updates = {
         metadata: {
+          ...thread.metadata,
           topic: data.description,
         },
       };
 
       setThreadData(thread.id, updates);
 
-      // TODO: Implement edit endpoint
-      // void updateMutation.mutateAsync({
-      //   name,
-      //   namespace,
-      //   version,
-      //   metadata: {
-      //     ...environment,
-      //     ...updates,
-      //   },
-      // });
+      void updateMutation.mutateAsync({
+        threadId: thread.id,
+        ...updates,
+      });
     } catch (error) {
       handleClientError({ error });
     }

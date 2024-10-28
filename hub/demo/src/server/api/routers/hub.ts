@@ -1,4 +1,3 @@
-import { TarReader } from '@gera2ld/tarjs';
 import path from 'path';
 import { z } from 'zod';
 import { createZodFetcher } from 'zod-fetch';
@@ -14,12 +13,11 @@ import {
   entrySecretModel,
   evaluationsTableModel,
   filesModel,
-  type messageModel,
   modelsModel,
   noncesModel,
   revokeNonceModel,
   threadMessagesModel,
-  threadModel,
+  threadMetadataModel,
   threadsModel,
 } from '~/lib/models';
 import {
@@ -27,83 +25,10 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '~/server/api/trpc';
-import { loadEntriesFromDirectory } from '~/utils/data-source';
+import { loadEntriesFromDirectory } from '~/server/utils/data-source';
+import { loadAttachmentFilesForMessages } from '~/server/utils/files';
 
 const fetchWithZod = createZodFetcher();
-
-type RegistryFile = {
-  content: string;
-  name: string;
-  type: number;
-  size: number;
-  headerOffset: number;
-};
-
-async function downloadEnvironment(environmentId: string) {
-  const url = `${env.ROUTER_URL}/registry/download_file`;
-  const [namespace, name, version] = environmentId.split('/');
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Accept: 'binary/octet-stream',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      entry_location: {
-        namespace,
-        name,
-        version,
-      },
-      path: 'environment.tar.gz',
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to download environment for ${namespace}/${name}/${version} - status: ${response.status}`,
-    );
-  }
-  if (!response.body) {
-    throw new Error('Response body is null');
-  }
-
-  const stream = response.body.pipeThrough(new DecompressionStream('gzip'));
-  const blob = await new Response(stream).blob();
-  const tarReader = await TarReader.load(blob);
-
-  const conversation = tarReader
-    .getTextFile('./chat.txt')
-    .split('\n')
-    .filter((message) => message)
-    .map((message) => {
-      return JSON.parse(message) as z.infer<typeof messageModel>;
-    });
-
-  const files: Record<string, RegistryFile> = {};
-  const environment = {
-    environmentId,
-    files,
-    conversation,
-  };
-
-  for (const fileInfo of tarReader.fileInfos) {
-    if ((fileInfo.type as number) === 48) {
-      // Files are actually coming through as 48
-      const originalFileName = fileInfo.name;
-      const fileName = originalFileName.replace(/^\.\//, '');
-      if (fileName !== 'chat.txt' && fileName !== '.next_action') {
-        fileInfo.name = fileName;
-        environment.files[fileName] = {
-          ...fileInfo,
-          content: tarReader.getTextFile(fileName),
-        };
-      }
-    }
-  }
-
-  return environment;
-}
 
 export const hubRouter = createTRPCRouter({
   chatWithAgent: protectedProcedure
@@ -121,25 +46,14 @@ export const hubRouter = createTRPCRouter({
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to send chat completions, status: ${response.status}`,
-        );
+        throw new Error(`Failed to run agent, status: ${response.status}`);
       }
 
-      const text: string = await response.text();
-      if (!text.match(/".*\/.*\/.*/)) {
-        // check whether the response matches namespace/name/version
-        console.log('Agent encountered an error:', text);
-        throw new Error(
-          'Agent encountered an error. Error has been logged to the console.',
-        );
-      }
+      const threadId = (await response.text()).replace(/"/g, '');
 
-      const environmentId = text.replace(/\\/g, '').replace(/"/g, '');
-
-      const environment = await downloadEnvironment(environmentId);
-
-      return environment;
+      return {
+        threadId,
+      };
     }),
 
   chatWithModel: protectedProcedure
@@ -230,12 +144,6 @@ export const hubRouter = createTRPCRouter({
         .filter((entry) => !!entry);
 
       return list;
-    }),
-
-  environment: protectedProcedure
-    .input(z.object({ environmentId: z.string() }))
-    .query(async ({ input }) => {
-      return await downloadEnvironment(input.environmentId);
     }),
 
   evaluations: publicProcedure.query(async () => {
@@ -523,61 +431,82 @@ export const hubRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const messages = await fetchWithZod(
-        threadMessagesModel,
+      const url = new URL(
         `${env.ROUTER_URL}/threads/${input.threadId}/messages`,
-        {
-          headers: {
-            Authorization: ctx.authorization,
-          },
+      );
+      url.searchParams.append('limit', '1000');
+      url.searchParams.append('order', 'asc');
+
+      const messages = await fetchWithZod(threadMessagesModel, url.toString(), {
+        headers: {
+          Authorization: ctx.authorization,
         },
+      });
+
+      const files = await loadAttachmentFilesForMessages(
+        ctx.authorization,
+        messages,
       );
 
-      // const messages = await fetchWithZod(
-      //   threadMessagesModel,
-      //   `${env.ROUTER_URL}/threads/${input.threadId}/messages`,
-      //   {
-      //     headers: {
-      //       Authorization: ctx.authorization,
-      //     },
-      //   },
-      // );
-
       return {
-        conversation: [],
-        messages,
+        id: input.threadId,
+        files,
+        messages: messages.data,
       };
     }),
 
   threads: protectedProcedure.query(async ({ ctx }) => {
     const url = `${env.ROUTER_URL}/threads`;
 
-    let threads = await fetchWithZod(threadsModel, url, {
+    const threads = await fetchWithZod(threadsModel, url, {
       headers: {
         Authorization: ctx.authorization,
       },
-    });
-
-    threads = threads.filter((thread) => {
-      const rootAgent = thread.metadata.agent_ids?.[0];
-      if (!rootAgent) return false;
-      const [namespace, name, version, ...otherSegments] = rootAgent.split('/');
-      if (!namespace || !name || !version || otherSegments.length > 0)
-        return false;
-
-      thread.metadata.root_agent = {
-        namespace,
-        name,
-        version,
-      };
-
-      return true;
     });
 
     threads.sort((a, b) => b.created_at - a.created_at);
 
     return threads;
   }),
+
+  removeThread: protectedProcedure
+    .input(
+      z.object({
+        threadId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await fetch(`${env.ROUTER_URL}/threads/${input.threadId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: ctx.authorization,
+        },
+      });
+
+      return true;
+    }),
+
+  updateThread: protectedProcedure
+    .input(
+      z.object({
+        threadId: z.string(),
+        metadata: threadMetadataModel,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await fetch(`${env.ROUTER_URL}/threads/${input.threadId}`, {
+        method: 'POST',
+        headers: {
+          Authorization: ctx.authorization,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          metadata: input.metadata,
+        }),
+      });
+
+      return true;
+    }),
 
   updateMetadata: protectedProcedure
     .input(

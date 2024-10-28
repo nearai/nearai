@@ -24,15 +24,6 @@ export function useThreads() {
   const threadsQuery = api.hub.threads.useQuery(undefined, {
     enabled: !!accountId,
   });
-  // const entriesQuery = api.hub.entries.useQuery(
-  //   {
-  //     category: 'environment',
-  //     namespace: accountId,
-  //   },
-  //   {
-  //     enabled: !!accountId,
-  //   },
-  // );
 
   const setThreadData = useCallback(
     (id: string, data: Partial<RouterOutputs['hub']['threads'][number]>) => {
@@ -59,9 +50,12 @@ export function useThreads() {
     const result: Thread[] = [];
 
     for (const data of threadsQuery.data) {
-      if (!data.metadata.root_agent) continue;
+      const rootAgentId = data.metadata.agent_ids?.[0];
+      if (!rootAgentId) continue;
 
-      const { name, namespace, version } = data.metadata.root_agent;
+      const [namespace, name, version, ...otherSegments] =
+        rootAgentId.split('/');
+      if (!namespace || !name || !version || otherSegments.length > 0) continue;
 
       const agentUrl = `/agents/${namespace}/${name}/${version}`;
       const threadUrl = `${agentUrl}/run?threadId=${encodeURIComponent(data.id)}`;
@@ -79,8 +73,8 @@ export function useThreads() {
           version,
           url: agentUrl,
         },
-        lastMessageAt: new Date(), // TODO: Add to thread metadata?
-        messageCount: 0, // TODO: Add to thread metadata?
+        lastMessageAt: new Date(),
+        messageCount: 0,
         url: threadUrl,
       });
     }

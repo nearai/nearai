@@ -46,7 +46,8 @@ import {
 import { useZodForm } from '~/hooks/form';
 import { useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
-import { chatWithAgentModel, type messageModel } from '~/lib/models';
+import { chatWithAgentModel, type threadMessageModel } from '~/lib/models';
+import { returnOptimisticThreadMessage } from '~/lib/thread';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
@@ -105,21 +106,12 @@ export const AgentRunner = ({
   });
 
   const [htmlOutput, setHtmlOutput] = useState('');
-  const [openedFileName, setOpenedFileName] = useState<string | null>(null);
+  const [openedFileId, setOpenedFileId] = useState<string | null>(null);
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
   const [threadsOpenForSmallScreens, setThreadsOpenForSmallScreens] =
     useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
-
-  // const threadQuery = api.hub.environment.useQuery(
-  //   {
-  //     environmentId: threadId,
-  //   },
-  //   {
-  //     enabled: false,
-  //   },
-  // );
 
   const threadQuery = api.hub.thread.useQuery(
     {
@@ -129,17 +121,16 @@ export const AgentRunner = ({
       enabled: false,
     },
   );
-  console.log(threadQuery.data);
-
   const thread = threadQuery.data;
-  const openedFile = openedFileName
-    ? thread?.files?.[openedFileName]
+
+  const openedFile = openedFileId
+    ? thread?.files?.find((file) => file.id === openedFileId)
     : undefined;
 
-  const latestAssistantMessages: z.infer<typeof messageModel>[] = [];
+  const latestAssistantMessages: z.infer<typeof threadMessageModel>[] = [];
   if (thread) {
-    for (let i = thread.conversation.length - 1; i >= 0; i--) {
-      const message = thread.conversation[i];
+    for (let i = thread.messages.length - 1; i >= 0; i--) {
+      const message = thread.messages[i];
       if (message?.role === 'assistant') {
         latestAssistantMessages.push(message);
       } else {
@@ -174,26 +165,22 @@ export const AgentRunner = ({
       if (!data.new_message.trim()) return;
 
       if (threadId) {
-        data.environment_id = threadId;
+        data.thread_id = threadId;
       }
 
-      //TODO
-      // utils.hub.environment.setData(
-      //   {
-      //     threadId,
-      //   },
-      //   {
-      //     conversation: [
-      //       ...(environment?.conversation ?? []),
-      //       {
-      //         content: data.new_message,
-      //         role: 'user',
-      //       },
-      //     ],
-      //     threadId: environment?.threadId ?? '',
-      //     files: environment?.files ?? {},
-      //   },
-      // );
+      utils.hub.thread.setData(
+        {
+          threadId,
+        },
+        {
+          id: threadId,
+          files: thread?.files ?? [],
+          messages: [
+            ...(thread?.messages ?? []),
+            returnOptimisticThreadMessage(threadId, data.new_message),
+          ],
+        },
+      );
 
       form.setValue('new_message', '');
 
@@ -202,20 +189,11 @@ export const AgentRunner = ({
 
       const response = await chatMutation.mutateAsync(data);
 
-      // TODO
-
-      // utils.hub.environment.setData(
-      //   {
-      //     threadId: response.threadId,
-      //   },
-      //   response,
-      // );
-
-      // updateQueryPath(
-      //   { threadId: response.threadId },
-      //   'replace',
-      //   false,
-      // );
+      if (response.threadId === threadId) {
+        await threadQuery.refetch();
+      } else {
+        updateQueryPath({ threadId: response.threadId }, 'replace', false);
+      }
 
       void threadsQuery.refetch();
     } catch (error) {
@@ -240,7 +218,7 @@ export const AgentRunner = ({
 
   useEffect(() => {
     const files = threadQuery?.data?.files;
-    const htmlFile = files?.['index.html'];
+    const htmlFile = files?.find((file) => file.filename === 'index.html');
 
     if (htmlFile) {
       const htmlContent = htmlFile.content.replaceAll(
@@ -263,14 +241,14 @@ export const AgentRunner = ({
 
   useEffect(() => {
     if (!threadId) {
-      utils.hub.environment.setData(
+      utils.hub.thread.setData(
         {
-          environmentId: '',
+          threadId: '',
         },
         {
-          conversation: [],
-          environmentId: '',
-          files: {},
+          files: [],
+          messages: [],
+          id: '',
         },
       );
     }
@@ -313,15 +291,15 @@ export const AgentRunner = ({
                 <Messages
                   loading={threadQuery.isLoading}
                   messages={latestAssistantMessages}
-                  threadId={agentId}
+                  threadId={threadId}
                 />
               )}
             </>
           ) : (
             <Messages
               loading={threadQuery.isLoading}
-              messages={thread?.conversation ?? []}
-              threadId={agentId}
+              messages={thread?.messages ?? []}
+              threadId={threadId}
               welcomeMessage={<AgentWelcome details={currentEntry.details} />}
             />
           )}
@@ -394,7 +372,7 @@ export const AgentRunner = ({
                     type="submit"
                     icon={<ArrowRight weight="bold" />}
                     size="small"
-                    loading={chatMutation.isPending}
+                    loading={form.formState.isSubmitting}
                   />
                 </Flex>
               ) : (
@@ -420,10 +398,10 @@ export const AgentRunner = ({
                     <Card
                       padding="s"
                       gap="s"
-                      key={file.name}
+                      key={file.id}
                       background="sand-2"
                       onClick={() => {
-                        setOpenedFileName(file.name);
+                        setOpenedFileId(file.id);
                       }}
                     >
                       <Flex align="center" gap="s">
@@ -435,10 +413,10 @@ export const AgentRunner = ({
                           clampLines={1}
                           style={{ marginRight: 'auto' }}
                         >
-                          {file.name}
+                          {file.filename}
                         </Text>
 
-                        <Text size="text-xs">{formatBytes(file.size)}</Text>
+                        <Text size="text-xs">{formatBytes(file.bytes)}</Text>
                       </Flex>
                     </Card>
                   ))}
@@ -492,11 +470,11 @@ export const AgentRunner = ({
       />
 
       <Dialog.Root
-        open={openedFileName !== null}
-        onOpenChange={() => setOpenedFileName(null)}
+        open={openedFileId !== null}
+        onOpenChange={() => setOpenedFileId(null)}
       >
         <Dialog.Content
-          title={openedFileName}
+          title={openedFileId}
           size="l"
           header={
             <Button
@@ -514,7 +492,7 @@ export const AgentRunner = ({
           <Code
             bleed
             source={openedFile?.content}
-            language={filePathToCodeLanguage(openedFileName)}
+            language={filePathToCodeLanguage(openedFile?.filename)}
           />
         </Dialog.Content>
       </Dialog.Root>

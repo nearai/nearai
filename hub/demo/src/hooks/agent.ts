@@ -17,7 +17,7 @@ import {
 } from '~/lib/models';
 import { useNearStore } from '~/stores/near';
 import { useWalletStore } from '~/stores/wallet';
-import { type api } from '~/trpc/react';
+import { api } from '~/trpc/react';
 import { unreachable } from '~/utils/unreachable';
 
 import { useQueryParams } from './url';
@@ -27,11 +27,11 @@ const PENDING_TRANSACTION_KEY = 'agent-transaction-request-pending-connection';
 export function useAgentRequestsWithIframe(
   currentEntry: z.infer<typeof entryModel> | undefined,
   chatMutation: ReturnType<typeof api.hub.chatWithAgent.useMutation>,
-  environmentId: string | null | undefined,
+  threadId: string | null | undefined,
 ) {
   const { queryParams, updateQueryPath } = useQueryParams([
     'account_id',
-    'environmentId',
+    'threadId',
     'public_key',
     'transactionHashes',
     'transactionRequestId',
@@ -44,6 +44,7 @@ export function useAgentRequestsWithIframe(
   const [iframePostMessage, setIframePostMessage] = useState<unknown>(null);
   const [agentRequestsNeedingPermissions, setAgentRequestsNeedingPermissions] =
     useState<AgentRequest[] | null>(null);
+  const utils = api.useUtils();
 
   const handleWalletTransactionResponse = useCallback(
     (options: {
@@ -88,12 +89,9 @@ export function useAgentRequestsWithIframe(
     if (allowedBypass ?? permissionsCheck.allowed) {
       requests.forEach(async (request) => {
         if ('agent_id' in request) {
-          const response = await chatMutation.mutateAsync(request);
-          updateQueryPath(
-            { environmentId: response.environmentId },
-            'replace',
-            false,
-          );
+          const { threadId } = await chatMutation.mutateAsync(request);
+          updateQueryPath({ threadId }, 'replace', false);
+          void utils.hub.thread.invalidate({ threadId });
         } else {
           if (wallet) {
             try {
@@ -210,17 +208,14 @@ export function useAgentRequestsWithIframe(
         }
       } else if (action === 'refresh_environment_id') {
         const chat = chatWithAgentModel.parse(event.data.data);
-        if (chat.environment_id) {
-          updateQueryPath(
-            { environmentId: chat.environment_id },
-            'replace',
-            false,
-          );
+        if (chat.thread_id) {
+          updateQueryPath({ threadId: chat.thread_id }, 'replace', false);
+          void utils.hub.thread.invalidate({ threadId: chat.thread_id });
         }
       } else if (action === 'remote_agent_run') {
         const chat = chatWithAgentModel.parse(event.data.data);
         chat.max_iterations = Number(chat.max_iterations) || 1;
-        chat.environment_id = chat.environment_id ?? environmentId;
+        chat.thread_id = chat.thread_id ?? threadId;
         void conditionallyProcessAgentRequests([chat]);
       } else {
         unreachable(action);

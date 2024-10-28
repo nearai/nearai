@@ -98,7 +98,7 @@ async def get_thread(
 
 
 class ThreadUpdateParams(BaseModel):
-    metadata: Optional[Dict[str, str]] = Field(
+    metadata: Optional[Dict[str, Any]] = Field(
         None, description="Set of 16 key-value pairs that can be attached to an object."
     )
     tool_resources: Optional[Dict[str, Any]] = Field(

@@ -20,7 +20,7 @@ export const messageModel = z.object({
 export const chatWithAgentModel = z.object({
   agent_id: z.string(),
   new_message: z.string(),
-  environment_id: z.string().nullable().optional(),
+  thread_id: z.string().nullable().optional(),
   max_iterations: z.number(),
   user_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
   agent_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
@@ -215,11 +215,6 @@ export const threadMetadataModel = z.intersection(
   z
     .object({
       agent_ids: z.string().array().default([]),
-      root_agent: z.object({
-        namespace: z.string(),
-        name: z.string(),
-        version: z.string(),
-      }),
       topic: z.string(),
     })
     .partial(),
@@ -238,7 +233,13 @@ export const threadsModel = threadModel.array();
 export const threadMessageModel = z.object({
   id: z.string(),
   assistant_id: z.unknown(),
-  attachments: z.unknown(),
+  attachments: z
+    .object({
+      file_id: z.string(),
+      tools: z.unknown().array(),
+    })
+    .array()
+    .nullable(),
   created_at: z.number(),
   completed_at: z.number().nullable(),
   content: z
@@ -254,7 +255,7 @@ export const threadMessageModel = z.object({
   incomplete_details: z.unknown().nullable(),
   metadata: z.unknown(),
   object: z.string(),
-  role: z.string(),
+  role: z.enum(['user', 'assistant', 'system']),
   run_id: z.string().nullable(),
   status: z.string(),
   thread_id: z.string(),
@@ -266,4 +267,16 @@ export const threadMessagesModel = z.object({
   has_more: z.boolean(),
   first_id: z.string(),
   last_id: z.string(),
+});
+
+export const threadFileModel = z.object({
+  id: z.string(),
+  bytes: z.number(),
+  created_at: z.number(),
+  filename: z.string(),
+  object: z.string(),
+  purpose: z.string(),
+  status: z.string(),
+  status_details: z.string(),
+  content: z.string().default(''),
 });
