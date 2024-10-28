@@ -6,8 +6,21 @@ set -e
 # curl http://localhost:9000/openapi.json | jq  > near-openapi.json
 
 # https://openapi-generator.tech/docs/generators/python
-openapi-generator-cli generate -i near-openapi.json -g python -o /tmp/nearai_api_client/
+
+#determine whether the command is installed as openapi-generator-cli or openapi-generator
+if command -v openapi-generator-cli 2>&1 /dev/null
+then
+  OPENAPI_GENERATOR="openapi-generator-cli"
+elif command -v openapi-generator 2>&1 /dev/null
+then
+  OPENAPI_GENERATOR="openapi-generator"
+else
+  echo "openapi-generator-cli or openapi-generator not found"
+  echo "Install it from https://openapi-generator.tech/docs/installation"
+  exit 1
+fi
+
+$OPENAPI_GENERATOR generate -i near-openapi.json -g python -o /tmp/nearai_api_client/
 
 rm -rf ../openapi_client/
 cp -r /tmp/nearai_api_client/openapi_client/ ../openapi_client/
-cp -r ../openapi_client/ ../aws_runner/openapi_client/
