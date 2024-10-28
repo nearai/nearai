@@ -463,6 +463,8 @@ class RunCreateParamsBase(BaseModel):
     # Custom fields
     schedule_at: Optional[datetime] = Field(None, description="The time at which the run should be scheduled.")
 
+    delegate_execution: bool = Field(False, description="Whether to delegate execution to an external actor.")
+
 
 @threads_router.post("/threads/{thread_id}/runs")
 async def create_run(
@@ -477,6 +479,14 @@ async def create_run(
         thread_model = session.get(ThreadModel, thread_id)
         if thread_model is None:
             raise HTTPException(status_code=404, detail="Thread not found")
+
+        if not thread_model.meta_data:
+            thread_model.meta_data = {}
+        if not thread_model.meta_data.get("agent_ids"):
+            thread_model.meta_data["agent_ids"] = []
+        if run.assistant_id not in thread_model.meta_data["agent_ids"]:
+            thread_model.meta_data["agent_ids"].append(run.assistant_id)
+            session.add(thread_model)
 
         if run.additional_messages:
             messages = []
@@ -517,6 +527,9 @@ async def create_run(
 
         # Add the run and messages in DB
         session.commit()
+
+        if run.delegate_execution:
+            return run_model.to_openai()
 
         # Queue the run
         if not run.schedule_at:

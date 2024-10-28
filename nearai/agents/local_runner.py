@@ -16,7 +16,7 @@ class LocalRunner:
         thread_id,
         run_id,
         auth: AuthData,
-        params,
+        params: dict,
     ) -> None:
         print(
             f"Initializing LocalRunner with path: {path}, agents: {agents}, thread_id: {thread_id},"
@@ -25,4 +25,4 @@ class LocalRunner:
 
         self._agents = agents
         self._confirm_commands = True
-        run_with_environment(agents, auth, thread_id, run_id, params=params)
+        run_with_environment(agents, auth, thread_id, run_id, additional_path=path, params=params)
