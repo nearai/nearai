@@ -293,12 +293,24 @@ class Environment(object):
         content: str,
         encoding: str = "utf-8",
         filetype: str = "text/plain",
+        write_to_disk: bool = True,
     ) -> FileObject:
         """Writes a file to the environment.
 
         filename: The name of the file to write to
-        content: The content to write to the file.
+        content: The content to write to the file
+        encoding: The encoding to use when writing the file (default is utf-8)
+        filetype: The MIME type of the file (default is text/plain)
+        write_to_disk: If True, write locally to disk (default is True)
         """
+        if write_to_disk:
+            # Write locally
+            path = Path(self._path) / filename
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with open(path, "w", encoding=encoding) as f:
+                f.write(content)
+
+        # Upload to Hub
         file_data = io.BytesIO(content.encode(encoding))
         file = self._hub_client.files.create(file=(filename, file_data, filetype), purpose="assistants")
         res = self.add_message(

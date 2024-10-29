@@ -185,7 +185,7 @@ def run_with_environment(
     inference_client = InferenceClient(client_config)
     hub_client = client_config.get_hub_client()
     env = Environment(
-        RUN_PATH,
+        additional_path if additional_path else RUN_PATH,
         loaded_agents,
         inference_client,
         hub_client,
