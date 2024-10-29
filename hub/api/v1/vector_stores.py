@@ -478,6 +478,7 @@ async def query_user_memory(
         auth: The auth token of the requesting user
 
     Returns:
+    -------
         List of relevant memory entries with their content and metadata
 
     """
