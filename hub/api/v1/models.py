@@ -147,12 +147,18 @@ class Message(SQLModel, table=True):
             raise ValueError(f"Invalid status: {self.status}")
         if self.attachments:
             # Convert each attachment to a dictionary
-            self.attachments = [attachment.model_dump() for attachment in self.attachments]
+            self.attachments = [
+                attachment.model_dump() if hasattr(attachment, "model_dump") else attachment
+                for attachment in self.attachments
+            ]
         if self.content:
             if isinstance(self.content, str):
                 self.content = [TextContentBlock(text=Text(value=self.content, annotations=[]), type="text")]
 
-            self.content = [content.model_dump() for content in self.content]
+            # Handle both Pydantic models and dictionaries
+            self.content = [
+                content.model_dump() if hasattr(content, "model_dump") else content for content in self.content
+            ]
 
     def to_openai(self) -> OpenAITThreadMessage:
         """Convert to OpenAI Thread."""

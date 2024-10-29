@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterable, List, Literal, Optional, Union
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import CONFIG, load_config_file
+from openai import BaseModel
 from openai.types.beta.assistant_response_format_option_param import AssistantResponseFormatOptionParam
 from openai.types.beta.thread import Thread
 from openai.types.beta.thread_create_params import ThreadCreateParams
@@ -14,7 +15,7 @@ from openai.types.beta.threads.message_create_params import MessageContentPartPa
 from openai.types.beta.threads.message_update_params import MessageUpdateParams
 from openai.types.beta.threads.run import Run as OpenAIRun
 from openai.types.beta.threads.run_create_params import AdditionalMessage, TruncationStrategy
-from pydantic import BaseModel, Field
+from pydantic import Field
 from shared.auth_data import AuthData
 from shared.client_config import DEFAULT_PROVIDER_MODEL, ClientConfig
 from sqlmodel import asc, desc, select

@@ -4,6 +4,7 @@ import nearai
 import logging
 import time
 from datetime import datetime, timedelta
+from hub.api.v1.thread_routes import ThreadForkResponse
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -121,7 +122,7 @@ logger.info(f"Thread updated: {thread_update}")
 retrieved_thread = client.beta.threads.retrieve(thread_id=thread.id)
 logger.info(f"Retrieved thread: {retrieved_thread}")
 
-forked_thread = client.post(path=f"{hub_url}/threads/{thread.id}/fork", cast_to=dict)
+forked_thread = client.post(path=f"{hub_url}/threads/{thread.id}/fork", cast_to=ThreadForkResponse)
 logger.info(f"Forked thread: {forked_thread}")
 
 
@@ -129,5 +130,5 @@ thread_delete = client.beta.threads.delete(thread.id)
 logger.info(f"Thread deleted: {thread_delete}")
 
 #messages in forked thread
-messages = client.beta.threads.messages.list(forked_thread["id"])
+messages = client.beta.threads.messages.list(forked_thread.id)
 logger.info(f"Messages in forked thread: {messages}")
