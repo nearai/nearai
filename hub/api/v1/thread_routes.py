@@ -259,7 +259,7 @@ async def create_message(
             raise HTTPException(status_code=404, detail="Thread not found")
 
         if not thread.meta_data or not thread.meta_data.get("topic"):
-            background_tasks.add_task(update_thread_topic, thread_id)
+            background_tasks.add_task(update_thread_topic, thread_id, auth)
 
         if not message.content:
             message.content = " "  # OpenAI format requires content to be non-empty
@@ -279,7 +279,7 @@ async def create_message(
         return message_model.to_openai()
 
 
-def update_thread_topic(thread_id: str):
+def update_thread_topic(thread_id: str, auth):
     with get_session() as session:
         thread = session.get(ThreadModel, thread_id)
         if thread is None:
@@ -293,7 +293,7 @@ def update_thread_topic(thread_id: str):
             .limit(1)
         ).all()
 
-        client = ClientConfig(base_url=CONFIG.nearai_hub.base_url, auth=CONFIG.auth).get_hub_client()
+        client = ClientConfig(base_url=CONFIG.nearai_hub.base_url, auth=auth).get_hub_client()
 
         # TODO(#436): Once thread forking is implemented.
         # Fork the thread and use agent: agentic.near/summary/0.0.3/source. (Same prompt as SUMMARY_PROMPT)
