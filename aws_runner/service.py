@@ -156,9 +156,10 @@ def run_with_environment(
     params: dict = None,
 ) -> Optional[str]:
     """Runs agent against environment fetched from id, optionally passing a new message to the environment."""
-    print("Running with :", agents, auth, new_message, params, thread_id, run_id)
-    print(f"Running with:\nagents: {agents}\nnew_message: {new_message}\nparams: {params}"
-          f"\nthread_id: {thread_id}\nrun_id: {run_id}\nauth: {auth}")
+    print(
+        f"Running with:\nagents: {agents}\nnew_message: {new_message}\nparams: {params}"
+        f"\nthread_id: {thread_id}\nrun_id: {run_id}\nauth: {auth}"
+    )
     params = params or {}
     max_iterations = int(params.get("max_iterations", 2))
     record_run = bool(params.get("record_run", True))
