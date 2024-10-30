@@ -245,7 +245,11 @@ class Environment(object):
             callback_url,
         )
 
-    def list_files(self, path: Optional[str] = None, order: Literal["asc", "desc"] = "asc") -> List[FileObject]:
+    def list_files(self, path: str, order: Literal["asc", "desc"] = "asc") -> List[str]:
+        """Lists files in the environment."""
+        return os.listdir(os.path.join(self._path, path))
+
+    def list_files_from_thread(self, order: Literal["asc", "desc"] = "asc") -> List[FileObject]:
         """Lists files in the thread."""
         messages = self._list_messages(order=order)
         # Extract attachments from messages
@@ -259,23 +263,26 @@ class Environment(object):
         """Returns the path of the current directory."""
         return self._path
 
-    def read_file(self, filename: str, write_to_disk: bool = True):
-        """Reads a file from the thread."""
-        files = self.list_files("")
+    def read_file(self, filename: str):
+        """Reads a file from the environment or thread."""
+        # First try to read from local filesystem
+        local_path = os.path.join(self._path, filename)
+        if os.path.exists(local_path):
+            with open(local_path, "r") as local_file:
+                file_content = local_file.read()
 
-        for f in files:
+        thread_files = self.list_files_from_thread(order="desc")
+
+        # Then try to read from thread, starting from the most recent
+        for f in thread_files:
             if f.filename == filename:
                 file_content = self.read_file_by_id(f.id)
                 break
+
         if not file_content:
             return None
 
-        if not write_to_disk:
-            return file_content
-
         # Write the file content to the local filesystem
-        local_path = os.path.join(self._path, filename)
-
         with open(local_path, "w") as local_file:
             local_file.write(file_content)
 
