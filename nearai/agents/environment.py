@@ -266,7 +266,7 @@ class Environment(object):
     def read_file(self, filename: str):
         """Reads a file from the environment or thread."""
         # First try to read from local filesystem
-        local_path = os.path.join(self._path, filename)
+        local_path = os.path.join(self.get_primary_agent_temp_dir(), filename)
         if os.path.exists(local_path):
             with open(local_path, "r") as local_file:
                 file_content = local_file.read()
@@ -313,6 +313,7 @@ class Environment(object):
         if write_to_disk:
             # Write locally
             path = Path(self._path) / filename
+            path = Path(self.get_primary_agent_temp_dir()) / filename
             path.parent.mkdir(parents=True, exist_ok=True)
             with open(path, "w", encoding=encoding) as f:
                 f.write(content)
