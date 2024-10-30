@@ -247,7 +247,7 @@ class Environment(object):
 
     def list_files(self, path: str, order: Literal["asc", "desc"] = "asc") -> List[str]:
         """Lists files in the environment."""
-        return os.listdir(os.path.join(self._path, path))
+        return os.listdir(os.path.join(self.get_primary_agent_temp_dir(), path))
 
     def list_files_from_thread(self, order: Literal["asc", "desc"] = "asc") -> List[FileObject]:
         """Lists files in the thread."""
@@ -262,6 +262,10 @@ class Environment(object):
     def get_path(self) -> str:
         """Returns the path of the current directory."""
         return self._path
+
+    def get_agent_temp_path(self) -> Path:
+        """Returns temp dir for primary agent where execution happens."""
+        return self.get_primary_agent_temp_dir()
 
     def read_file(self, filename: str):
         """Reads a file from the environment or thread."""
