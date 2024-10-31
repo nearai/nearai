@@ -53,6 +53,8 @@ AGENT_LOG_FILENAME = "agent_log.txt"
 TERMINAL_FILENAME = "terminal.txt"
 
 LLAMA_TOOL_FORMAT_PATTERN = re.compile(r"(.*?)<function=(\w+)>(.*?)(</function>|$|\Z)(.*?)", re.DOTALL | re.MULTILINE)
+LLAMA_TOOL_FORMAT_PATTERN2 = re.compile(r"(.*)<tool_call>\n(.*)\n</tool_call>(.*)", re.DOTALL)
+
 
 default_approvals: Dict[str, Any] = {"confirm_execution": lambda _: True}
 
@@ -648,6 +650,26 @@ class Environment(object):
                 text += before_call_text + after_call_text
                 tool_calls.append(tool_call)
             return text, tool_calls
+
+        llama_matches = LLAMA_TOOL_FORMAT_PATTERN2.findall(content)
+        if llama_matches:
+            text = ""
+            tool_calls = []
+            for llama_match in llama_matches:
+                before_call_text, function_name_and_args, after_call_text = llama_match
+                try:
+                    parsed_function_name_and_args = json.loads(function_name_and_args)
+                    function_name = parsed_function_name_and_args.get("name")
+                    args = parsed_function_name_and_args.get("arguments")
+                    function = Function(name=function_name, arguments=args)
+                    tool_call = ChatCompletionMessageToolCall(id=str(uuid.uuid4()), function=function)
+                    text += before_call_text + after_call_text
+                    tool_calls.append(tool_call)
+                except json.JSONDecodeError:
+                    print(f"Error parsing tool_call function name and args: {function_name_and_args}")
+                    continue
+            return text, tool_calls
+
         return content, None
 
     @staticmethod
