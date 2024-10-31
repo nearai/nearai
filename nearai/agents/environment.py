@@ -113,6 +113,27 @@ class Environment(object):
         reg.register_tool(self.list_files)
         reg.register_tool(self.query_vector_store)
 
+    def add_reply(
+        self,
+        message: str,
+        attachments: Optional[Iterable[Attachment]] = None,
+        **kwargs: Any,
+    ):
+        """Assistant adds a message to the environment."""
+        # NOTE: message from `user` are not stored in the memory
+
+        return self._hub_client.beta.threads.messages.create(
+            thread_id=self._thread_id,
+            role="assistant",
+            content=message,
+            extra_body={
+                "assistant_id": self._agents[0].identifier,
+                "run_id": self._run_id,
+            },
+            metadata=kwargs,
+            attachments=attachments,
+        )
+
     def add_message(
         self,
         role: str,
@@ -120,12 +141,9 @@ class Environment(object):
         attachments: Optional[Iterable[Attachment]] = None,
         **kwargs: Any,
     ):
-        """Assistant adds a message to the environment."""
-        if role not in [
-            "user",
-            "assistant",
-        ]:  # backwards compatibility with agents adding messages has `system` and others.
-            role = "assistant"
+        """Deprecated. Please use `add_reply` instead. Assistant adds a message to the environment."""
+        # Prevent agent to save messages on behalf of `user` to avoid adding false memory
+        role = "assistant"
 
         return self._hub_client.beta.threads.messages.create(
             thread_id=self._thread_id,
@@ -259,9 +277,9 @@ class Environment(object):
         files = [self._hub_client.files.retrieve(f) for f in file_ids if f]
         return files
 
-    def get_path(self) -> str:
-        """Returns the path of the current directory."""
-        return self._path
+    def get_system_path(self) -> Path:
+        """Returns the system path where chat.txt & system_log are stored."""
+        return Path(self._path)
 
     def get_agent_temp_path(self) -> Path:
         """Returns temp dir for primary agent where execution happens."""

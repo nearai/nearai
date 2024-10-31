@@ -38,7 +38,7 @@ This will remove the existing session data and start a new one.
 # In local interactive mode, the first user input is collected before the agent runs.
 prompt = {"role": "system", "content": "You are a travel agent that helps users plan trips."}
 result = env.completion([prompt] + env.list_messages())
-env.add_message("agent", result)
+env.add_reply(result)
 env.request_user_input()
 ```
 
@@ -64,7 +64,7 @@ Example:
 nearai agent interactive example_agent --local
 ```
 
-* The agent can save temporary files to track the progress of a task from the user in case the dialogue execution is interrupted. By default, the entire message history is stored in a file named `chat.txt`. The agent can add messages there by using [`env.add_message()`](api.md#nearai.agents.environment.Environment.add_message). Learn more about [the environment API](#the-environment-api).
+* The agent can save temporary files to track the progress of a task from the user in case the dialogue execution is interrupted. By default, the entire message history is stored in a file named `chat.txt`. The agent can add messages there by using [`env.add_reply()`](api.md#nearai.agents.environment.Environment.add_message). Learn more about [the environment API](#the-environment-api).
 * During its operation, the agent creates a file named `.next_agent`, which stores the role of the next participant expected in the dialogue (either `user` or `agent`) during the next iteration of the loop. The agent can control this value using [`env.set_next_actor()`](api.md#nearai.agents.environment.Environment.set_next_actor).
 * The agent can use local imports from the home folder or its subfolders. It is executed from a temporary folder within a temporary environment.
 
@@ -126,7 +126,7 @@ conversation = env.list_messages() # the user's new message is added to this lis
 
 agent_response = env.completion([prompt] + conversation)
 
-env.add_message("agent", agent_response)
+env.add_reply(agent_response)
 ```
 
 
@@ -151,16 +151,7 @@ The model can be passed into `completion` function or as an agent metadata:
      }
    }
    ```
-  * [`list_messages`](api.md#nearai.agents.environment.Environment.list_messages): returns the list of messages in the conversation. 
-You have full control to add and remove messages from this list.
-  * [`add_message`](api.md#nearai.agents.environment.Environment.add_message): adds a message to the conversation. Arguments are role and content.
-   ```python
-   env.add_message("user", "Hello, I would like to travel to Paris")
-   ```
-   Normal roles are: 
-    *  `system`: usually your starting prompt
-    *  `agent`: messages from the agent (i.e. llm responses, programmatic responses)
-    *  `user`: messages from the user
+  * [`list_messages`](api.md#nearai.agents.environment.Environment.list_messages): returns the list of messages in the conversation.
 
 ### Additional environment methods
 There are several variations for completions:
