@@ -9,7 +9,6 @@ from nearai.agents.local_runner import LocalRunner
 from nearai.clients.lambda_client import LambdaWrapper
 from pydantic import BaseModel, Field
 from shared.auth_data import AuthData
-from shared.client_config import IDENTIFIER_PATTERN
 
 from hub.api.v1.auth import AuthToken, revokable_auth
 from hub.api.v1.entry_location import EntryLocation
