@@ -164,7 +164,7 @@ directly or use them through the tool_registry and passing them to a completions
 
  * [`list_terminal_commands`](api.md#nearai.agents.environment.Environment.list_terminal_commands): list the history of terminal commands
  * [`list_files`](api.md#nearai.agents.environment.Environment.list_files): list the files in the current directory
- * [`get_path`](api.md#nearai.agents.environment.Environment.get_path): get the path of the current directory
+ * [`get_path`](api.md#nearai.agents.environment.Environment.get_system_path): get the path of the current directory
  * [`read_file`](api.md#nearai.agents.environment.Environment.read_file): read a file
  * [`write_file`](api.md#nearai.agents.environment.Environment.write_file): write to a file
  * [`exec_command`](api.md#nearai.agents.environment.Environment.exec_command): execute a terminal command
