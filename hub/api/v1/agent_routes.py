@@ -261,18 +261,11 @@ def get_agent_entry(agent, data_source: str, account_id: str) -> Union[RegistryE
     if data_source == "registry":
         return get(EntryLocation.from_str(agent))
     elif data_source == "local_files":
-        if IDENTIFIER_PATTERN.match(agent):
-            entry_location = EntryLocation.from_str(agent)
-            return RegistryEntry(
-                namespace=entry_location.namespace,
-                name=entry_location.name,
-                version=entry_location.version,
-            )
-        else:
-            return RegistryEntry(
-                namespace=account_id,
-                name=agent,
-                version="local",
-            )
+        entry_location = EntryLocation.from_str(agent)
+        return RegistryEntry(
+            namespace=entry_location.namespace,
+            name=entry_location.name,
+            version=entry_location.version,
+        )
     else:
         raise HTTPException(status_code=404, detail=f"Illegal data_source '{data_source}'.")
