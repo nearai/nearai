@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from collections import defaultdict
 from os import getenv
@@ -10,8 +11,8 @@ import botocore.exceptions
 from dotenv import load_dotenv
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
-from nearai.config import DEFAULT_NAMESPACE
 from pydantic import BaseModel
+from shared.client_config import DEFAULT_NAMESPACE
 from sqlmodel import delete, select, text
 
 from hub.api.v1.auth import AuthToken, revokable_auth
@@ -33,13 +34,20 @@ DEFAULT_NAMESPACE_WRITE_ACCESS_LIST = [
 load_dotenv()
 S3_BUCKET = getenv("S3_BUCKET")
 
-s3 = boto3.client("s3")
+S3_ENDPOINT = getenv("S3_ENDPOINT")
+s3 = boto3.client(
+    "s3",
+    endpoint_url=S3_ENDPOINT,
+)
 
 v1_router = APIRouter(
     prefix="/registry",
     tags=["registry"],
 )
 
+
+# Add logger configuration
+logger = logging.getLogger(__name__)
 
 tag_pattern = re.compile(r"^[a-zA-Z0-9_\-]+$")
 
@@ -95,6 +103,7 @@ def get_or_create(entry_location: EntryLocation = Depends(with_write_access())) 
 
 
 def get(entry_location: EntryLocation = Body()) -> RegistryEntry:
+    logger.debug(f"Getting entry: {entry_location}")
     with get_session() as session:
         entry = session.exec(
             select(RegistryEntry).where(
@@ -105,7 +114,8 @@ def get(entry_location: EntryLocation = Body()) -> RegistryEntry:
         ).first()
 
         if entry is None:
-            raise HTTPException(status_code=404, detail="Entry not found")
+            logger.debug(f"Entry not found: {entry_location}")
+            raise HTTPException(status_code=404, detail=f"Entry '{entry_location}' not found")
 
         return entry
 
@@ -240,6 +250,7 @@ class Filename(BaseModel):
 @v1_router.post("/list_files")
 async def list_files_async(entry: RegistryEntry = Depends(get)) -> List[Filename]:
     """Lists all files that belong to a entry."""
+    logger.info(f"Listing files for entry: {entry}")
     return list_files(entry)
 
 
@@ -259,7 +270,7 @@ def list_files(entry: RegistryEntry) -> List[Filename]:
         raise HTTPException(status_code=400, detail=f"Unsupported source: {source}")
 
     key = key.strip("/") + "/"
-
+    logger.info(f"Listing files for bucket: {bucket}, key: {key}")
     objects = s3.list_objects(Bucket=bucket, Prefix=key)
     files = [Filename(filename=obj["Key"][len(key) :]) for obj in objects.get("Contents", [])]
     return files

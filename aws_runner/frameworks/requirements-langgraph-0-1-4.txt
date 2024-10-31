@@ -12,3 +12,4 @@ litellm >= 1.41.0
 
 langgraph >= 0.1.4
 langchain-fireworks >= 0.1.4
+openai == 1.51.2

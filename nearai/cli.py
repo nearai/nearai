@@ -1,6 +1,7 @@
 import importlib.metadata
 import json
 import os
+import re
 import runpy
 import sys
 from collections import OrderedDict
@@ -15,16 +16,26 @@ from openapi_client import EntryLocation, EntryMetadataInput
 from openapi_client.api.benchmark_api import BenchmarkApi
 from openapi_client.api.default_api import DefaultApi
 from openapi_client.api.evaluation_api import EvaluationApi
-from shared.client_config import DEFAULT_MODEL, DEFAULT_MODEL_MAX_TOKENS, DEFAULT_MODEL_TEMPERATURE, DEFAULT_PROVIDER
+from shared.client_config import (
+    DEFAULT_MODEL,
+    DEFAULT_MODEL_MAX_TOKENS,
+    DEFAULT_MODEL_TEMPERATURE,
+    DEFAULT_NAMESPACE,
+    DEFAULT_PROVIDER,
+)
+from shared.naming import NamespacedName, create_registry_name
+from shared.provider_models import ProviderModels, get_provider_namespaced_model
 from tabulate import tabulate
 
+from nearai.agents.local_runner import LocalRunner
 from nearai.config import (
     CONFIG,
+    get_hub_client,
     update_config,
 )
 from nearai.finetune import FinetuneCli
 from nearai.lib import check_metadata, parse_location, parse_tags
-from nearai.registry import registry
+from nearai.registry import get_registry_folder, registry
 from nearai.tensorboard_feed import TensorboardCli
 
 
@@ -39,6 +50,22 @@ class RegistryCli:
             return
 
         print(metadata.model_dump_json(indent=2))
+        if metadata.category == "model":
+            available_provider_matches = ProviderModels(CONFIG.get_client_config()).available_provider_matches(
+                NamespacedName(name=metadata.name, namespace=entry_location.namespace)
+            )
+            if len(available_provider_matches) > 0:
+                header = ["provider", "name"]
+
+                table = []
+                for provider, name in available_provider_matches.items():
+                    table.append(
+                        [
+                            fill(provider),
+                            fill(name),
+                        ]
+                    )
+                print(tabulate(table, headers=header, tablefmt="simple_grid"))
 
     def metadata_template(self, local_path: str = ".", category: str = "", description: str = ""):
         """Create a metadata template."""
@@ -119,6 +146,15 @@ class RegistryCli:
 
         print(tabulate(table, headers=header, tablefmt="simple_grid"))
 
+        if category == "model" and len(entries) < total and namespace == "" and tags == "" and star == "":
+            unregistered_common_provider_models = ProviderModels(
+                CONFIG.get_client_config()
+            ).get_unregistered_common_provider_models(registry.dict_models())
+            if len(unregistered_common_provider_models):
+                print(
+                    f"There are unregistered common provider models: {unregistered_common_provider_models}. Run 'nearai registry upload-unregistered-common-provider-models' to update registry."  # noqa: E501
+                )
+
     def update(self, local_path: str = ".") -> None:
         """Update metadata of a registry item."""
         path = Path(local_path)
@@ -146,6 +182,57 @@ class RegistryCli:
         entry_metadata = EntryMetadataInput.model_validate(metadata)
         result = registry.update(entry_location, entry_metadata)
         print(json.dumps(result, indent=2))
+
+    def upload_unregistered_common_provider_models(self, dry_run: bool = True) -> None:
+        """Creates new registry items for unregistered common provider models."""
+        provider_matches_list = ProviderModels(CONFIG.get_client_config()).get_unregistered_common_provider_models(
+            registry.dict_models()
+        )
+        if len(provider_matches_list) == 0:
+            print("No new models to upload.")
+            return
+
+        print("Going to create new registry items:")
+        header = ["entry", "description"]
+        table = []
+        paths = []
+        for provider_matches in provider_matches_list:
+            provider_model = provider_matches.get(DEFAULT_PROVIDER) or next(iter(provider_matches.values()))
+            _, model = get_provider_namespaced_model(provider_model)
+            assert model.namespace == ""
+            model.name = create_registry_name(model.name)
+            model.namespace = DEFAULT_NAMESPACE
+            version = "1.0.0"
+            description = " & ".join(provider_matches.values())
+            table.append(
+                [
+                    fill(f"{model.namespace}/{model.name}/{version}"),
+                    fill(description, 50),
+                ]
+            )
+
+            path = get_registry_folder() / model.namespace / model.name / version
+            path.mkdir(parents=True, exist_ok=True)
+            paths.append(path)
+            metadata_path = path / "metadata.json"
+            with open(metadata_path, "w") as f:
+                metadata: Dict[str, Any] = {
+                    "name": model.name,
+                    "version": version,
+                    "description": description,
+                    "category": "model",
+                    "tags": [],
+                    "details": {},
+                    "show_entry": True,
+                }
+                json.dump(metadata, f, indent=2)
+
+        print(tabulate(table, headers=header, tablefmt="simple_grid"))
+        if dry_run:
+            print("Please verify, then repeat the command with --dry_run=False")
+        else:
+            for path in paths:
+                self.upload(str(path))
 
     def upload(self, local_path: str = ".") -> None:
         """Upload item to the registry."""
@@ -205,11 +292,12 @@ class BenchmarkCli:
         self,
         dataset: str,
         solver_strategy: str,
-        max_concurrent: int = -1,
+        max_concurrent: int = 2,
         force: bool = False,
         subset: Optional[str] = None,
         check_compatibility: bool = True,
         record: bool = False,
+        num_inference_retries: int = 10,
         **solver_args: Any,
     ) -> None:
         """Run benchmark on a dataset with a solver strategy.
@@ -220,6 +308,8 @@ class BenchmarkCli:
         from nearai.benchmark import BenchmarkExecutor, DatasetInfo
         from nearai.dataset import get_dataset, load_dataset
         from nearai.solvers import SolverScoringMethod, SolverStrategy, SolverStrategyRegistry
+
+        CONFIG.num_inference_retries = num_inference_retries
 
         args = dict(solver_args)
         if subset is not None:
@@ -330,86 +420,126 @@ class AgentCli:
     def interactive(
         self,
         agents: str,
-        path: Optional[str] = "",
-        record_run: bool = True,
-        env_vars: Optional[Dict[str, Any]] = None,
-        load_env: str = "",
-        local: bool = False,
+        thread_id: Optional[str] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
-        print_system_log: bool = True,
+        local: bool = False,
+        env_vars: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Runs agent interactively with environment from given path."""
-        from shared.client_config import ClientConfig
+        """Runs agent interactively."""
+        last_message_id = None
+        while True:
+            new_message = input("> ")
+            if new_message.lower() == "exit":
+                break
 
-        from nearai.agents.local_runner import LocalRunner
+            last_message_id = self._task(
+                agents=agents,
+                task=new_message,
+                thread_id=thread_id,
+                tool_resources=tool_resources,
+                record_run=False,
+                last_message_id=last_message_id,
+                local=local,
+                env_vars=env_vars,
+            )
 
-        agent_list = LocalRunner.load_agents(agents, local)
-        if not path:
-            if len(agent_list) == 1:
-                path = agent_list[0].path
-            else:
-                raise ValueError("Local path is required when running multiple agents")
-
-        client_config = ClientConfig(
-            base_url=CONFIG.nearai_hub.base_url,
-            auth=CONFIG.auth,
-            custom_llm_provider=CONFIG.nearai_hub.custom_llm_provider,
-            default_provider=CONFIG.nearai_hub.default_provider,
-        )
-
-        runner = LocalRunner(
-            path,
-            agent_list,
-            client_config,
-            env_vars=env_vars,
-            tool_resources=tool_resources,
-            print_system_log=print_system_log,
-            confirm_commands=CONFIG.get("confirm_commands", True),
-        )
-        runner.run_interactive(record_run, load_env)
+            # Update thread_id for the next iteration
+            if thread_id is None:
+                thread_id = self.last_thread_id
 
     def task(
         self,
         agents: str,
         task: str,
-        path: Optional[str] = "",
-        max_iterations: int = 10,
-        record_run: bool = True,
-        env_vars: Optional[Dict[str, Any]] = None,
-        load_env: str = "",
-        local: bool = False,
+        thread_id: Optional[str] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
-        print_system_log: bool = True,
+        local: bool = False,
+        env_vars: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Runs agent non interactively with environment from given path."""
-        from shared.client_config import ClientConfig
-
-        from nearai.agents.local_runner import LocalRunner
-
-        agent_list = LocalRunner.load_agents(agents, local)
-        if not path:
-            if len(agent_list) == 1:
-                path = agent_list[0].path
-            else:
-                raise ValueError("Local path is required when running multiple agents")
-
-        client_config = ClientConfig(
-            base_url=CONFIG.nearai_hub.base_url,
-            auth=CONFIG.auth,
-            custom_llm_provider=CONFIG.nearai_hub.custom_llm_provider,
-            default_provider=CONFIG.nearai_hub.default_provider,
-        )
-
-        runner = LocalRunner(
-            path,
-            agent_list,
-            client_config,
-            env_vars=env_vars,
+        """CLI wrapper for the _task method."""
+        last_message_id = self._task(
+            agents=agents,
+            task=task,
+            thread_id=thread_id,
             tool_resources=tool_resources,
-            print_system_log=print_system_log,
-            confirm_commands=CONFIG.get("confirm_commands", True),
+            record_run=True,
+            local=local,
+            env_vars=env_vars,
         )
-        runner.run_task(task, record_run, load_env, max_iterations)
+        if last_message_id:
+            print(f"Task completed. Thread ID: {self.last_thread_id}")
+            print(f"Last message ID: {last_message_id}")
+
+    def _task(
+        self,
+        agents: str,
+        task: str,
+        thread_id: Optional[str] = None,
+        tool_resources: Optional[Dict[str, Any]] = None,
+        record_run: bool = True,
+        last_message_id: Optional[str] = None,
+        local: bool = False,
+        env_vars: Optional[Dict[str, Any]] = None,
+    ) -> Optional[str]:
+        """Runs agent non-interactively with a single task."""
+        hub_client = get_hub_client()
+        if thread_id:
+            thread = hub_client.beta.threads.retrieve(thread_id)
+        else:
+            thread = hub_client.beta.threads.create(
+                tool_resources=tool_resources,
+            )
+
+        hub_client.beta.threads.messages.create(
+            thread_id=thread.id,
+            role="user",
+            content=task,
+        )
+
+        if not local:
+            hub_client.beta.threads.runs.create_and_poll(
+                thread_id=thread.id,
+                assistant_id=agents,
+                instructions="You are a helpful assistant. Complete the given task.",
+                model="fireworks::accounts/fireworks/models/llama-v3p1-405b-instruct",
+            )
+        else:
+            run = hub_client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id=agents,
+                instructions="You are a helpful assistant. Complete the given task.",
+                model="fireworks::accounts/fireworks/models/llama-v3p1-405b-instruct",
+                extra_body={"delegate_execution": True},
+            )
+            params = {
+                "max_iterations": 3,
+                "record_run": True,
+                "api_url": CONFIG.api_url,
+                "tool_resources": run.tools,
+                "data_source": "local_files",
+                "model": run.model,
+                "user_env_vars": env_vars,
+                "agent_env_vars": {},
+            }
+            auth = CONFIG.auth
+            assert auth is not None
+            LocalRunner(agents, agents, thread.id, run.id, auth, params)
+
+        # List new messages
+        messages = hub_client.beta.threads.messages.list(thread_id=thread.id, after=last_message_id, order="asc")
+        message_list = list(messages)
+        if message_list:
+            for msg in message_list:
+                if msg.role == "assistant":
+                    print(f"Assistant: {msg.content[0].text.value}")
+            last_message_id = message_list[-1].id
+        else:
+            print("No new messages")
+
+        # Store the thread_id for potential use in interactive mode
+        self.last_thread_id = thread.id
+
+        return last_message_id
 
     def run_remote(
         self,
@@ -448,6 +578,163 @@ class AgentCli:
             print(f"Agent run finished. New environment is {new_environment}")
         except Exception as e:
             print(f"Error running agent remotely: {e}")
+
+    def create(self, name: Optional[str] = None, description: Optional[str] = None, fork: Optional[str] = None) -> None:
+        """Create a new agent or fork an existing one.
+
+        Usage:
+          nearai agent create
+          nearai agent create --name <agent_name> --description <description>
+          nearai agent create --fork <namespace/agent_name/version> [--name <new_agent_name>]
+
+        Options:
+          --name          Name of the new agent.
+          --description   Description of the new agent.
+          --fork          Fork an existing agent specified by namespace/agent_name/version.
+
+        Examples
+        --------
+          nearai agent create
+          nearai agent create --name my_agent --description "My new agent"
+          nearai agent create --fork agentic.near/summary/0.0.3 --name new_summary_agent
+
+        """
+        # Check if the user is authenticated
+        if CONFIG.auth is None or CONFIG.auth.account_id is None:
+            print("Please login with `nearai login` before creating an agent.")
+            return
+
+        namespace = CONFIG.auth.account_id
+
+        if fork:
+            # Fork an existing agent
+            self._fork_agent(fork, namespace, name)
+        else:
+            # Create a new agent from scratch
+            self._create_new_agent(namespace, name, description)
+
+    def _create_new_agent(self, namespace: str, name: Optional[str], description: Optional[str]) -> None:
+        """Create a new agent from scratch."""
+        # Prompt for agent name if not provided
+        if not name or not isinstance(name, str):
+            name = input("Name: ").strip()
+            while not name or not isinstance(name, str):
+                print("Agent name cannot be empty.")
+                name = input("Name: ").strip()
+
+        # Prompt for description if not provided
+        while not description or not isinstance(description, str):
+            print("A description is needed for agent matching and cannot be empty.")
+            description = input("Description: ").strip()
+
+        # Set the agent path
+        agent_path = get_registry_folder() / namespace / name / "0.0.1"
+        agent_path.mkdir(parents=True, exist_ok=True)
+
+        # Create metadata.json
+        metadata = {
+            "name": name,
+            "version": "0.0.1",
+            "description": description,
+            "category": "agent",
+            "tags": [],
+            "details": {
+                "agent": {
+                    "defaults": {
+                        "model": DEFAULT_MODEL,
+                        "model_provider": DEFAULT_PROVIDER,
+                        "model_temperature": DEFAULT_MODEL_TEMPERATURE,
+                        "model_max_tokens": DEFAULT_MODEL_MAX_TOKENS,
+                    }
+                }
+            },
+            "show_entry": True,
+        }
+
+        metadata_path = agent_path / "metadata.json"
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f, indent=2)
+
+        # Create a default agent.py
+        agent_py_content = """from nearai.agents.environment import Environment
+
+
+def run(env: Environment):
+    env.add_message("assistant", "Hello, world!")
+    # Your agent code here
+    # Example:
+    # prompt = {"role": "system", "content": "You are a helpful assistant."}
+    # result = env.completion([prompt] + env.list_messages())
+    # env.add_message("assistant", result)
+
+
+run(env)
+
+"""
+        agent_py_path = agent_path / "agent.py"
+        with open(agent_py_path, "w") as f:
+            f.write(agent_py_content)
+
+        print(f"\nAgent created at: {agent_path}")
+        print("\nUseful commands:")
+        print(f"  > nearai agent interactive {name} --local")
+        print(f"  > nearai registry upload {agent_path}")
+
+    def _fork_agent(self, fork: str, namespace: str, new_name: Optional[str]) -> None:
+        """Fork an existing agent."""
+        import shutil
+
+        # Parse the fork parameter
+        try:
+            entry_location = parse_location(fork)
+            fork_namespace = entry_location.namespace
+            fork_name = entry_location.name
+            fork_version = entry_location.version
+        except ValueError:
+            print("Invalid fork parameter format. Expected format: <namespace>/<agent-name>/<version>")
+            return
+
+        # Download the agent from the registry
+        agent_location = f"{fork_namespace}/{fork_name}/{fork_version}"
+        print(f"Downloading agent '{agent_location}'...")
+        registry.download(agent_location, force=False, show_progress=True)
+        source_path = get_registry_folder() / fork_namespace / fork_name / fork_version
+
+        # Prompt for the new agent name if not provided
+        if not new_name:
+            new_name = input("Enter the new agent name: ").strip()
+            if not new_name:
+                print("Agent name cannot be empty.")
+                return
+
+            # confirm pattern is ok
+            identifier_pattern = re.compile(r"^[a-zA-Z0-9_\-.]+$")
+            if identifier_pattern.match(new_name) is None:
+                print("Invalid Name, please choose something different")
+                return
+
+        # Set the destination path
+        dest_path = get_registry_folder() / namespace / new_name / "0.0.1"
+
+        # Copy the agent files
+        shutil.copytree(source_path, dest_path)
+
+        # Update metadata.json
+        metadata_path = dest_path / "metadata.json"
+        with open(metadata_path, "r") as file:
+            metadata = json.load(file)
+
+        metadata["name"] = new_name
+        metadata["version"] = "0.0.1"
+
+        with open(metadata_path, "w") as file:
+            json.dump(metadata, file, indent=2)
+
+        print(f"\nForked agent '{agent_location}' to '{dest_path}'")
+        print(f"Agent '{new_name}' created at '{dest_path}' with updated metadata.")
+        print("\nUseful commands:")
+        print(f"  > nearai agent interactive {new_name} --local")
+        print(f"  > nearai registry upload {dest_path}")
 
 
 class VllmCli:
@@ -584,6 +871,10 @@ class CLI:
     def version(self):
         """Show nearai version."""
         print(importlib.metadata.version("nearai"))
+
+    def task(self, *args, **kwargs):
+        """CLI command for running a single task."""
+        self.agent.task_cli(*args, **kwargs)
 
 
 def check_update():

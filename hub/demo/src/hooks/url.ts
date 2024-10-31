@@ -27,13 +27,14 @@ export function useQueryParams<const T extends string[]>(names: T) {
     (
       updatedParams: Partial<Record<T[number], string | undefined>>,
       mode: 'push' | 'replace' = 'push',
+      scroll = true,
     ) => {
       const path = createQueryPath(updatedParams);
 
       if (mode === 'replace') {
-        router.replace(path);
+        router.replace(path, { scroll });
       } else {
-        router.push(path);
+        router.push(path, { scroll });
       }
     },
     [createQueryPath, router],

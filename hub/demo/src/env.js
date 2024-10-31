@@ -9,6 +9,8 @@ export const env = createEnv({
   server: {
     NODE_ENV: z.enum(['development', 'test', 'production']),
     ROUTER_URL: z.string().url(),
+    DATA_SOURCE: z.enum(['registry', 'local_files']).default('registry'),
+    HOME: z.string().optional(),
   },
 
   /**
@@ -18,6 +20,14 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_BASE_URL: z.string().url(),
+    NEXT_PUBLIC_CONSUMER_MODE: z.preprocess(
+      (val) => (val === 'true' ? true : false),
+      z.boolean(),
+    ),
+    NEXT_PUBLIC_CONSUMER_CHAT_AGENT_ID: z
+      .string()
+      .regex(/.+\/.+\/.+/)
+      .optional(),
   },
 
   /**
@@ -30,6 +40,11 @@ export const env = createEnv({
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_VERCEL_URL
       ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/`
       : process.env.NEXT_PUBLIC_BASE_URL,
+    DATA_SOURCE: process.env.DATA_SOURCE,
+    HOME: process.env.HOME,
+    NEXT_PUBLIC_CONSUMER_MODE: process.env.NEXT_PUBLIC_CONSUMER_MODE,
+    NEXT_PUBLIC_CONSUMER_CHAT_AGENT_ID:
+      process.env.NEXT_PUBLIC_CONSUMER_CHAT_AGENT_ID,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

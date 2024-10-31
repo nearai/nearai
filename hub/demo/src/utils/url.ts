@@ -1,4 +1,4 @@
-export function parseHashParams(hash: string) {
+export function getHashParams(hash: string) {
   const hashParams = new URLSearchParams(hash.substring(1));
   const params: Record<string, string> = {};
   hashParams.forEach((value, key) => {

@@ -1,7 +1,7 @@
 from typing import List, cast
 
 import litellm
-from openai.types.chat import ChatCompletionMessageParam
+from litellm.types.completion import ChatCompletionMessageParam
 
 from nearai.agents.environment import Environment
 

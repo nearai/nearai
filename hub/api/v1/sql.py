@@ -240,6 +240,18 @@ class SqlClient:
         query = f"SELECT * FROM vector_stores WHERE account_id = '{account_id}'"
         return [VectorStore(**x) for x in self.__fetch_all(query)]
 
+    def get_user_memory(self, account_id: str) -> Optional[str]:
+        """Get the user memory vector store id for a given account."""
+        query = f"SELECT vector_store_id FROM user_memory WHERE account_id = '{account_id}'"
+        r = self.__fetch_one(query)
+        return r["vector_store_id"] if r else None
+
+    def set_user_memory(self, account_id: str, vector_store_id: str):
+        """Set the user memory vector store id for a given account."""
+        query = f"INSERT INTO user_memory (account_id, vector_store_id) VALUES ('{account_id}', '{vector_store_id}')"
+        self.db.cursor().execute(query)
+        self.db.commit()
+
     def create_file(
         self,
         account_id: str,
@@ -489,5 +501,236 @@ class SqlClient:
             return cursor.rowcount > 0
         except Exception as e:
             logger.error(f"Error deleting vector store and its embeddings: {str(e)}")
+            self.db.rollback()
+            return False
+
+    def create_hub_secret(
+        self,
+        owner_namespace: str,
+        namespace: str,
+        name: str,
+        key: str,
+        value: str,
+        version: Optional[str] = "",
+        description: Optional[str] = "",
+        category: Optional[str] = "agent",
+    ) -> None:
+        """Create hub secret."""
+        query = """
+        INSERT INTO hub_secrets (`owner_namespace`, `namespace`, `name`, `version`, `key`, `value`, `description`,
+        `category`)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """
+
+        cursor = self.db.cursor()
+        try:
+            cursor.execute(
+                query,
+                (owner_namespace, namespace, name, version, key, value, description, category),
+            )
+            self.db.commit()
+        except TypeError as e:
+            if "dict can not be used as parameter" in str(e):
+                raise ValueError(
+                    "Invalid data type in parameters. Ensure all dictionary values are JSON serializable."
+                ) from e
+            raise
+
+    def remove_hub_secret(
+        self,
+        owner_namespace: str,
+        namespace: str,
+        name: str,
+        key: str,
+        version: Optional[str] = "",
+        category: Optional[str] = "agent",
+    ) -> None:
+        """Remove hub secrets."""
+        query = """
+        DELETE FROM hub_secrets
+        WHERE `owner_namespace` = %s
+          AND `namespace` = %s
+          AND `name` = %s
+          AND `version` = %s
+          AND `key` = %s
+          AND `category` = %s
+        """
+
+        parameters = (owner_namespace, namespace, name, version, key, category)
+
+        cursor = self.db.cursor()
+        try:
+            cursor.execute(query, parameters)
+            self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            raise RuntimeError("Hub secret removal error: " + str(e)) from e
+
+    def get_user_secrets(
+        self, owner_namespace: str, limit: Optional[int] = 100, offset: Optional[int] = 0
+    ) -> (dict)[Any, Any]:  # noqa: D102
+        """Load all hub secrets of the user."""
+        query = """
+            SELECT `namespace`, `name`, `version`, `description`, `key`, `value`, `category`
+            FROM `hub_secrets`
+            WHERE `owner_namespace`= %s
+             LIMIT %s OFFSET %s
+        """
+
+        cursor = self.db.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(query, [owner_namespace, limit, offset])
+        result = cursor.fetchall()
+
+        return result
+
+    def get_agent_secrets(
+        self, owner_namespace: str, namespace: str, name: str, version: str
+    ) -> tuple[dict[Any, Any], dict[Any, Any]]:  # noqa: D102
+        """Load hub secrets for an agent."""
+        query = """
+            SELECT `owner_namespace`, `key`, `value`
+            FROM `hub_secrets`
+            WHERE `owner_namespace` IN %s
+              AND `namespace` = %s
+              AND `name` = %s
+              AND (`version` = %s OR `version` IS NULL OR version = '')
+              AND category = 'agent'
+        """
+        # check both owner secret and agent author's secret
+        owner_namespaces = [owner_namespace, namespace]
+        params = [tuple(owner_namespaces), namespace, name, version]
+
+        cursor = self.db.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(query, params)
+        result = cursor.fetchall()
+
+        agent_secrets = {}
+        user_secrets = {}
+
+        for secret in result:
+            if secret["owner_namespace"] == owner_namespace:
+                user_secrets[secret["key"]] = secret["value"]
+            else:
+                agent_secrets[secret["key"]] = secret["value"]
+
+        return agent_secrets, user_secrets
+
+    def remove_embeddings_from_vector_store(self, vector_store_id: str, file_id: str) -> bool:
+        """Remove all embeddings for a specific file from a vector store.
+
+        Args:
+        ----
+            vector_store_id (str): The ID of the vector store.
+            file_id (str): The ID of the file whose embeddings should be removed.
+
+        Returns:
+        -------
+            bool: True if embeddings were successfully removed, False otherwise.
+
+        """
+        cursor = self.db.cursor()
+        try:
+            query = """
+            DELETE FROM vector_store_embeddings
+            WHERE vector_store_id = %s AND file_id = %s
+            """
+            cursor.execute(query, (vector_store_id, file_id))
+            self.db.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Error removing embeddings from vector store: {str(e)}")
+            self.db.rollback()
+            return False
+
+    def remove_file_from_vector_store(
+        self, vector_store_id: str, file_id: str, account_id: str
+    ) -> Optional[VectorStore]:
+        """Remove a file from a vector store and delete its embeddings.
+
+        Args:
+        ----
+            vector_store_id (str): The ID of the vector store.
+            file_id (str): The ID of the file to remove.
+            account_id (str): The ID of the account that owns the vector store.
+
+        Returns:
+        -------
+            Optional[VectorStore]: The updated vector store if successful, None otherwise.
+
+        """
+        # First get the current vector store to check ownership and get current file_ids
+        vector_store = self.get_vector_store_by_account(vector_store_id, account_id)
+        if not vector_store:
+            return None
+
+        # Remove the file_id from the list
+        updated_file_ids = [fid for fid in vector_store.file_ids if fid != file_id]
+
+        # Remove the embeddings for this file
+        if not self.remove_embeddings_from_vector_store(vector_store_id, file_id):
+            return None
+
+        # Update the vector store with the new file_ids list
+        return self.update_files_in_vector_store(vector_store_id, updated_file_ids, account_id)
+
+    def delete_file(self, file_id: str, account_id: str) -> bool:
+        """Delete a file and all its related records from the database.
+
+        This includes:
+        - Removing the file from any vector stores that reference it
+        - Deleting all embeddings associated with the file
+        - Deleting the file record itself
+
+        Args:
+        ----
+            file_id (str): The ID of the file to delete.
+            account_id (str): The ID of the account that owns the file.
+
+        Returns:
+        -------
+            bool: True if the file was successfully deleted, False otherwise.
+
+        """
+        cursor = self.db.cursor()
+        try:
+            # First verify the file belongs to the account
+            file = self.get_file_details_by_account(file_id, account_id)
+            if not file:
+                logger.warning(f"File {file_id} not found or doesn't belong to account {account_id}")
+                return False
+
+            # Get all vector stores that contain this file
+            query = """
+            SELECT vector_store_id FROM vector_store_embeddings
+            WHERE file_id = %s
+            """
+
+            cursor.execute(query, (file_id))
+            vector_stores = cursor.fetchall()
+
+            # Remove file from each vector store that references it
+            for vs in vector_stores:
+                print(f"Removing file {file_id} from vector store {vs[0]}")
+                self.remove_file_from_vector_store(vs[0], file_id, account_id)
+
+            # Delete any remaining embeddings for this file
+            query = """
+            DELETE FROM vector_store_embeddings
+            WHERE file_id = %s
+            """
+            cursor.execute(query, (file_id,))
+
+            # Finally delete the file record
+            query = """
+            DELETE FROM vector_store_files
+            WHERE id = %s AND account_id = %s
+            """
+            cursor.execute(query, (file_id, account_id))
+            self.db.commit()
+
+            # Check if any rows were affected
+            return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"Error deleting file {file_id}: {str(e)}")
             self.db.rollback()
             return False

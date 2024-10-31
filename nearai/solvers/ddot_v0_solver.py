@@ -3,17 +3,16 @@ import enum
 import random
 from datetime import datetime
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Tuple
 
 import httpx as hx
 import tenacity
-from shared.client_config import DEFAULT_PROVIDER, ClientConfig
+from shared.client_config import ClientConfig
 from shared.inference_client import InferenceClient
 
 from nearai.agents.agent import Agent
 from nearai.agents.environment import Environment
-from nearai.agents.local_runner import LocalRunner
-from nearai.config import CONFIG, DATA_FOLDER
+from nearai.config import CONFIG, DATA_FOLDER, get_hub_client
 from nearai.dataset import Dataset
 
 from . import SolverStrategy
@@ -78,7 +77,18 @@ async def submit_problem(problem_id: str, code: str, extension: Extensions) -> s
 class DDOTSEnvironment(Environment):
     def __init__(self, agents: List[Agent], problem_id: str, description: str, client):  # noqa: D107
         self.tdir = TemporaryDirectory()
-        super().__init__(self.tdir.name, agents, client, approvals={"confirm_execution": lambda _: False})
+        self.hub_client = get_hub_client()
+        thread = self.hub_client.beta.threads.create()
+        super().__init__(
+            self.tdir.name,
+            agents,
+            client,
+            self.hub_client,
+            thread.id,
+            "todo",
+            "todo",
+            approvals={"confirm_execution": lambda _: False},
+        )
 
         self.problem_id = problem_id
         self.solved = False
@@ -137,7 +147,11 @@ class DDOTSV0Solver(SolverStrategy):
     """
 
     def __init__(self, dataset_ref: Dataset, agents: str, max_iterations: int, save_snapshots: bool = False):  # noqa: D107
-        self.agents = [LocalRunner.load_agent(agent) for agent in agents.split(",")]
+        client_config = ClientConfig(
+            base_url=CONFIG.nearai_hub.base_url,
+            auth=CONFIG.auth,
+        )
+        self.agents = [Agent.load_agent(agent, client_config) for agent in agents.split(",")]
         self.max_iterations = max_iterations
 
         date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -153,20 +167,6 @@ class DDOTSV0Solver(SolverStrategy):
 
     def compatible_datasets(self) -> List[str]:  # noqa: D102
         return ["ddots_codeforces_small/v0", "datasets/ddots_codeforces_medium_A_B/v0"]
-
-    def model_metadata(self) -> Optional[Dict[str, Any]]:  # noqa: D102
-        # TODO: we may want to return the model used by an agent here.
-        return None
-
-    def agent_metadata(self) -> Optional[Dict[str, Any]]:  # noqa: D102
-        return self.agents[0].metadata
-
-    def evaluated_entry_namespace(self) -> str:  # noqa: D102
-        return self.agents[0].namespace
-
-    def model_provider(self) -> str:  # noqa: D102
-        # TODO: we may want to return the provider used by an agent here.
-        return DEFAULT_PROVIDER
 
     def solve(self, datum: dict) -> bool:  # noqa: D102
         problem_id = datum["problem_id"]

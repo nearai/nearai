@@ -2,7 +2,7 @@ services:
   nearai_dev:
     build:
       context: ..
-      dockerfile: .devcontainer/Dockerfile.gpu.dev
+      dockerfile: .docker/Dockerfile.gpu.dev
     network_mode: host
     volumes:
       - ..:/workspace:Z

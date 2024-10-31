@@ -1,5 +1,5 @@
 import { useAuthStore } from '~/stores/auth';
-import { parseHashParams } from '~/utils/url';
+import { getHashParams } from '~/utils/url';
 
 export const RECIPIENT = 'ai.near';
 export const MESSAGE = 'Welcome to NEAR AI Hub!';
@@ -69,7 +69,7 @@ export function generateNonce() {
 }
 
 export function extractSignatureFromHashParams() {
-  const hashParams = parseHashParams(location.hash);
+  const hashParams = getHashParams(location.hash);
 
   if (!hashParams.signature) {
     return null;

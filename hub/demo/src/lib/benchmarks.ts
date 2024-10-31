@@ -1,1 +1,1 @@
-export const STANDARD_BENCHMARK_COLUMNS = ['live_bench/average', 'mbpp'];
+export const DEFAULT_BENCHMARK_COLUMNS = ['live_bench/average', 'mbpp'];

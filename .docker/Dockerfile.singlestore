@@ -1,0 +1,6 @@
+FROM ghcr.io/singlestore-labs/singlestoredb-dev:latest
+
+USER root
+RUN echo "CREATE DATABASE IF NOT EXISTS hub;" > /init.sql
+
+USER singlestore

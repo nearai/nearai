@@ -1,14 +1,9 @@
 from textwrap import dedent
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import List, Union
 
 from datasets import Dataset, DatasetDict  # type: ignore[attr-defined]
-from litellm import Choices, ModelResponse
 from pydantic import BaseModel
-from shared.client_config import DEFAULT_PROVIDER, ClientConfig
-from shared.inference_client import InferenceClient
-from shared.near.primitives import get_provider_model
 
-from nearai.config import CONFIG
 from nearai.solvers import SolverStrategy
 
 
@@ -22,32 +17,15 @@ class GSM8KSolverStrategy(SolverStrategy):
 
     SHOTS = 8
 
-    def __init__(self, dataset_ref: Union[Dataset, DatasetDict], model: str) -> None:  # noqa: D107
-        super().__init__()
+    def __init__(self, dataset_ref: Union[Dataset, DatasetDict], model: str = "", agent: str = "") -> None:  # noqa: D107
+        super().__init__(model, agent)
         self.dataset_ref = dataset_ref
-        client_config = ClientConfig(base_url=CONFIG.nearai_hub.base_url, auth=CONFIG.auth)
-        self.completion_fn = InferenceClient(client_config).completions
-        self.model = model
 
     def evaluation_name(self) -> str:  # noqa: D102
         return "gsm8k"
 
     def compatible_datasets(self) -> List[str]:  # noqa: D102
         return ["gsm8k"]
-
-    def model_metadata(self) -> Optional[Dict[str, Any]]:  # noqa: D102
-        return {"name": self.model}
-
-    def agent_metadata(self) -> Optional[Dict[str, Any]]:  # noqa: D102
-        return None
-
-    def evaluated_entry_namespace(self) -> str:  # noqa: D102
-        # Only provider models are supported.
-        return ""
-
-    def model_provider(self) -> str:  # noqa: D102
-        provider, _ = get_provider_model(DEFAULT_PROVIDER, self.model)
-        return provider
 
     def solve(self, datum: dict) -> bool:  # noqa: D102
         parsed_datum: GSM8KDatum = GSM8KDatum(**datum)
@@ -59,42 +37,29 @@ class GSM8KSolverStrategy(SolverStrategy):
                 problem_shots_indices,
             )
         )
-        res: ModelResponse = cast(
-            ModelResponse,
-            self.completion_fn(
-                model=self.model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": dedent(
-                            """
+
+        session = self.start_inference_session("")
+        session.add_system_message(
+            dedent(
+                """
                     You are a helpful assistant. You're goal is to answer word based math questions.
                     """
-                            + "\n\n"
-                            + "Here are some examples of math questions and their answers:"
-                            + "\n\n".join(
-                                [f"Question: {shot['question']}\nAnswer: {shot['answer']}" for shot in problem_shots]
-                            )
-                            + "\n\n"
-                            + "Now, answer the next question provided in the user prompt. "
-                            + "Think step by step about how to solve the problem. "
-                            + "Then, provide the answer."
-                        ),
-                    },
-                    {"role": "user", "content": parsed_datum.question},
-                ],
-            ),
+                + "\n\n"
+                + "Here are some examples of math questions and their answers:"
+                + "\n\n".join([f"Question: {shot['question']}\nAnswer: {shot['answer']}" for shot in problem_shots])
+                + "\n\n"
+                + "Now, answer the next question provided in the user prompt. "
+                + "Think step by step about how to solve the problem. "
+                + "Then, provide the answer."
+            )
         )
-        res_output = str(cast(List[Choices], res.choices)[0].message.content).strip()
-        res_refined: ModelResponse = cast(
-            ModelResponse,
-            self.completion_fn(
-                model=self.model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": dedent(
-                            f"""
+        res_output = session.run_task(parsed_datum.question).strip()
+
+        ## cleanup the output
+        session = self.start_inference_session("")
+        res_refined_output = session.run_task(
+            dedent(
+                f"""
                     You are a helpful assistant. You're goal is to answer math questions.
 
                     You have just answered a math question with the following response:
@@ -107,14 +72,8 @@ class GSM8KSolverStrategy(SolverStrategy):
 
                     Only output the final number *without units* as your answer. Nothing else.
                     """
-                        ),
-                    },
-                ],
-            ),
-        )
-
-        ## cleanup the output
-        res_refined_output = str(cast(List[Choices], res_refined.choices)[0].message.content).strip()
+            )
+        ).strip()
         res_refined_output = res_refined_output.replace("$", "").replace(",", "")
         if " " in res_refined_output:
             res_refined_output = res_refined_output.split(" ")[0]

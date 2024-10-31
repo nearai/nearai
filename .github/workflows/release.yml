@@ -8,6 +8,15 @@ on:
         required: true
         default: 'false'
         type: boolean
+      bump:
+        description: 'Version bump type (applies if make-release is true)'
+        required: true
+        default: 'PATCH'
+        type: choice
+        options:
+        - PATCH
+        - MINOR
+        - MAJOR
       publish-pypi:
         description: 'Publish to PyPI'
         required: true
@@ -24,7 +33,31 @@ jobs:
     runs-on: ubuntu-latest
     environment: NearAI CI
     steps:
-    - uses: actions/checkout@v4
+
+    - name: Generate a token
+      id: generate-token
+      uses: actions/create-github-app-token@v1.11.0
+      with:
+        app-id: ${{ secrets.APP_ID }}
+        private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+    - name: Ensure NearAIBot status
+      run: |
+        echo "${{ steps.generate-token.outputs.token }}" | gh auth login --with-token
+        gh auth setup-git
+        gh auth status
+    
+    - name: Set git config for commit identity
+      run: |
+        git config --global user.email "nearaibot[bot]@users.noreply.github.com"
+        git config --global user.name "nearaibot[bot]"
+
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ steps.generate-token.outputs.token }}
+        fetch-depth: 0
+        persist-credentials: false
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -58,14 +91,20 @@ jobs:
     - name: Bump version and generate changelog
       uses: commitizen-tools/commitizen-action@master
       with:
+        github_token: ${{ steps.generate-token.outputs.token }}
         changelog_increment_filename: body.md
+        increment: ${{ github.event.inputs.bump }}
       if: ${{ github.event.inputs.make-release == 'true' }}
-    
+
     - name: Create release
       uses: actions/create-release@v1
       with:
         tag_name: ${{ env.REVISION }}
         body_path: "body.md"
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
       if: ${{ github.event.inputs.make-release == 'true' }}
     
     - name: Build site

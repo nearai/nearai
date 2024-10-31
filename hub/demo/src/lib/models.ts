@@ -17,7 +17,16 @@ export const messageModel = z.object({
   content: z.string(),
 });
 
-export const chatModel = z.object({
+export const chatWithAgentModel = z.object({
+  agent_id: z.string(),
+  new_message: z.string(),
+  thread_id: z.string().nullable().optional(),
+  max_iterations: z.number(),
+  user_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
+  agent_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
+});
+
+export const chatWithModelModel = z.object({
   max_tokens: z.number().default(64),
   temperature: z.number().default(0.1),
   frequency_penalty: z.number().default(0),
@@ -101,54 +110,48 @@ export const entryCategory = z.enum([
 ]);
 export type EntryCategory = z.infer<typeof entryCategory>;
 
+export const entryDetailsModel = z.intersection(
+  z
+    .object({
+      agent: z
+        .object({
+          welcome: z
+            .object({
+              title: z.string(),
+              description: z.string(),
+            })
+            .partial(),
+        })
+        .partial(),
+      env_vars: z.record(z.string(), z.string()),
+      primary_agent_name: z.string(),
+      primary_agent_namespace: z.string(),
+      primary_agent_version: z.string(),
+      base_id: z.string().or(z.null()),
+      icon: z.string(),
+      run_id: z.coerce.string(),
+
+      timestamp: z.string(),
+    })
+    .partial(),
+  z.record(z.string(), z.unknown()),
+);
+
 export const entryModel = z.object({
   id: z.number(),
   category: entryCategory,
   namespace: z.string(),
   name: z.string(),
   version: z.string(),
-  description: z.string(),
-  tags: z.string().array(),
+  description: z.string().default(''),
+  tags: z.string().array().default([]),
   show_entry: z.boolean().default(true),
   starred_by_point_of_view: z.boolean().default(false),
-  num_stars: z.number(),
-  details: z.intersection(
-    z
-      .object({
-        agent: z
-          .object({
-            welcome: z
-              .object({
-                title: z.string(),
-                description: z.string(),
-              })
-              .partial(),
-          })
-          .partial(),
-        primary_agent_name: z.string(),
-        primary_agent_namespace: z.string(),
-        primary_agent_version: z.string(),
-        base_id: z.string().or(z.null()),
-        icon: z.string(),
-        run_id: z.coerce.string(),
-
-        timestamp: z.string(),
-      })
-      .partial(),
-    z.record(z.string(), z.unknown()),
-  ),
+  num_stars: z.number().default(0),
+  details: entryDetailsModel.default({}),
 });
 
 export const entriesModel = z.array(entryModel);
-
-export const chatWithAgentModel = z.object({
-  agent_id: z.string(),
-  new_message: z.string(),
-  environment_id: z.string().nullable().optional(),
-  max_iterations: z.number(),
-  user_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
-  agent_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
-});
 
 export const fileModel = z.object({
   filename: z.string(),
@@ -175,4 +178,105 @@ export const evaluationsTableModel = z.object({
   columns: z.string().array(),
   important_columns: z.string().array(),
   rows: evaluationTableRowModel.array(),
+});
+
+export const entrySecretModel = z.object({
+  namespace: z.string(),
+  name: z.string(),
+  version: z.string().optional(),
+  description: z.string().default(''),
+  key: z.string(),
+  value: z.string(),
+  category: z.string().optional(),
+});
+
+export const agentWalletTransactionRequestModel = z.object({
+  deposit: z.string(),
+  gas: z.string(),
+  method: z.string(),
+  params: z.record(z.string(), z.unknown()).default({}),
+  recipient: z.string(),
+  requestId: z.string().nullable().default(''),
+});
+
+export const agentWalletViewRequestModel = z.object({
+  method: z.string(),
+  params: z.record(z.string(), z.unknown()).default({}),
+  recipient: z.string(),
+  requestId: z.string().nullable().default(''),
+});
+
+export const agentWalletAccountRequestModel = z.object({
+  accountId: z.string().nullable().default(''),
+  requestId: z.string().nullable().default(''),
+});
+
+export const threadMetadataModel = z.intersection(
+  z
+    .object({
+      agent_ids: z.string().array().default([]),
+      topic: z.string(),
+    })
+    .partial(),
+  z.record(z.string(), z.unknown()),
+);
+
+export const threadModel = z.object({
+  id: z.string(),
+  created_at: z.number(),
+  object: z.string(),
+  metadata: z.preprocess((value) => value ?? {}, threadMetadataModel),
+});
+
+export const threadsModel = threadModel.array();
+
+export const threadMessageModel = z.object({
+  id: z.string(),
+  assistant_id: z.unknown(),
+  attachments: z
+    .object({
+      file_id: z.string(),
+      tools: z.unknown().array(),
+    })
+    .array()
+    .nullable(),
+  created_at: z.number(),
+  completed_at: z.number().nullable(),
+  content: z
+    .object({
+      text: z.object({
+        annotations: z.unknown().array(),
+        value: z.string(),
+      }),
+      type: z.string(),
+    })
+    .array(),
+  incomplete_at: z.number().nullable(),
+  incomplete_details: z.unknown().nullable(),
+  metadata: z.unknown(),
+  object: z.string(),
+  role: z.enum(['user', 'assistant', 'system']),
+  run_id: z.string().nullable(),
+  status: z.string(),
+  thread_id: z.string(),
+});
+
+export const threadMessagesModel = z.object({
+  object: z.string(),
+  data: threadMessageModel.array(),
+  has_more: z.boolean(),
+  first_id: z.string(),
+  last_id: z.string(),
+});
+
+export const threadFileModel = z.object({
+  id: z.string(),
+  bytes: z.number(),
+  created_at: z.number(),
+  filename: z.string(),
+  object: z.string(),
+  purpose: z.string(),
+  status: z.string(),
+  status_details: z.string(),
+  content: z.string().default(''),
 });

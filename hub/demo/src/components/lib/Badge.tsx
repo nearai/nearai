@@ -47,7 +47,7 @@ export const Badge = forwardRef<HTMLSpanElement, Props>(
         data-size={size}
         data-variant={variant}
         role={isButton ? 'button' : undefined}
-        tabIndex={props.tabIndex ?? isButton ? 0 : undefined}
+        tabIndex={(props.tabIndex ?? isButton) ? 0 : undefined}
         ref={ref}
         {...props}
       >

@@ -150,8 +150,8 @@ export default function ProfilePage() {
               <Button
                 label={`Filter (${
                   queryParams.category
-                    ? ENTRY_CATEGORY_LABELS[queryParams.category]?.label ??
-                      'Unknown'
+                    ? (ENTRY_CATEGORY_LABELS[queryParams.category]?.label ??
+                      'Unknown')
                     : 'All'
                 })`}
                 iconLeft={<SlidersHorizontal weight="bold" />}

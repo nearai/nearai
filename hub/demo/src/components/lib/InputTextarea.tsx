@@ -1,6 +1,6 @@
 'use client';
 
-import type { ComponentPropsWithRef } from 'react';
+import type { ComponentPropsWithRef, KeyboardEventHandler } from 'react';
 import { forwardRef } from 'react';
 
 import { type ThemeInputVariant } from '~/utils/theme';
@@ -10,6 +10,7 @@ import s from './Input.module.scss';
 
 type Props = ComponentPropsWithRef<'textarea'> & {
   assistive?: string;
+  enterKeySubmitsForm?: boolean;
   error?: string;
   label?: string;
   name: string;
@@ -17,13 +18,33 @@ type Props = ComponentPropsWithRef<'textarea'> & {
 };
 
 export const InputTextarea = forwardRef<HTMLTextAreaElement, Props>(
-  ({ assistive, error, label, name, style, success, ...props }, ref) => {
+  (
+    {
+      assistive,
+      enterKeySubmitsForm,
+      error,
+      label,
+      name,
+      style,
+      success,
+      ...props
+    },
+    ref,
+  ) => {
     const assistiveTextId = `${name}-assistive-text`;
     const variant: ThemeInputVariant = error
       ? 'error'
       : success
         ? 'success'
         : 'default';
+
+    const onKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
+      if (enterKeySubmitsForm && event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        event.currentTarget.closest('form')?.requestSubmit();
+      }
+      props.onKeyDown && props.onKeyDown(event);
+    };
 
     return (
       <div
@@ -45,6 +66,7 @@ export const InputTextarea = forwardRef<HTMLTextAreaElement, Props>(
               name={name}
               ref={ref}
               {...props}
+              onKeyDown={onKeyDown}
             />
           </div>
 

@@ -1,57 +1,33 @@
 import logging
-from typing import Dict, List, Literal, Optional, Union
 
 import boto3
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import JSONResponse
+from openai import BaseModel
 from openai.types.beta.vector_store import ExpiresAfter as OpenAIExpiresAfter
 from openai.types.beta.vector_store import FileCounts, VectorStore
-from pydantic import BaseModel
+from shared.models import (
+    CreateVectorStoreFromSourceRequest,
+    CreateVectorStoreRequest,
+    GitHubSource,
+    GitLabSource,
+    VectorStoreFileCreate,
+)
 
 from hub.api.v1.auth import AuthToken, revokable_auth
-from hub.api.v1.models import GitHubSource, GitLabSource
 from hub.api.v1.sql import SqlClient
 from hub.tasks.embedding_generation import (
     generate_embedding,
     generate_embeddings_for_file,
+    generate_embeddings_for_vector_store,
 )
-from hub.tasks.github_import import process_github_source
+from hub.tasks.github_import import create_file_from_content, process_github_source
 
 vector_stores_router = APIRouter(tags=["Vector Stores"])
 
 logger = logging.getLogger(__name__)
 
 s3_client = boto3.client("s3")
-
-
-class ChunkingStrategy(BaseModel):
-    """Defines the chunking strategy for vector stores."""
-
-    pass
-
-
-class ExpiresAfter(BaseModel):
-    """Defines the expiration policy for vector stores."""
-
-    anchor: Literal["last_active_at"]
-    """The anchor point for expiration calculation."""
-    days: int
-    """The number of days after which the vector store expires."""
-
-
-class CreateVectorStoreRequest(BaseModel):
-    """Request model for creating a new vector store."""
-
-    chunking_strategy: Optional[ChunkingStrategy] = None
-    """The chunking strategy to use for the vector store."""
-    expires_after: Optional[ExpiresAfter] = None
-    """The expiration time for the vector store."""
-    file_ids: Optional[List[str]] = None
-    """The file IDs to attach to the vector store."""
-    metadata: Optional[Dict[str, str]] = None
-    """The metadata to attach to the vector store."""
-    name: str
-    """The name of the vector store."""
 
 
 @vector_stores_router.post("/vector_stores", response_model=VectorStore)
@@ -82,7 +58,7 @@ async def create_vector_store(
         account_id=auth.account_id,
         name=request.name,
         file_ids=request.file_ids or [],
-        expires_after=request.expires_after.model_dump() if request.expires_after else None,
+        expires_after=dict(request.expires_after) if request.expires_after else None,
         chunking_strategy=request.chunking_strategy.model_dump() if request.chunking_strategy else None,
         metadata=request.metadata,
     )
@@ -96,6 +72,9 @@ async def create_vector_store(
     expires_at = None
     if vector_store.expires_after and vector_store.expires_after.get("days"):
         expires_at = vector_store.created_at.timestamp() + vector_store.expires_after["days"] * 24 * 60 * 60
+
+    logger.info(f"Queueing embedding generation for vector store: {vector_store_id}")
+    background_tasks.add_task(generate_embeddings_for_vector_store, vector_store.id)
 
     logger.info(f"Vector store created successfully: {vector_store_id}")
     return VectorStore(
@@ -253,13 +232,6 @@ async def delete_vector_store(vector_store_id: str, auth: AuthToken = Depends(re
         raise HTTPException(status_code=500, detail="Failed to delete vector store") from e
 
 
-class VectorStoreFileCreate(BaseModel):
-    """Request model for creating a vector store file."""
-
-    file_id: str
-    """File ID returned from upload file endpoint."""
-
-
 @vector_stores_router.post("/vector_stores/{vector_store_id}/files")
 async def create_vector_store_file(
     vector_store_id: str,
@@ -354,6 +326,17 @@ async def create_vector_store_file(
     )
 
 
+@vector_stores_router.delete("/vector_stores/{vector_store_id}/files/{file_id}")
+async def remove_file_from_vector_store(vector_store_id: str, file_id: str, auth: AuthToken = Depends(revokable_auth)):
+    sql_client = SqlClient()
+
+    deleted = sql_client.delete_file(file_id, auth.account_id)
+    if not deleted:
+        raise HTTPException(status_code=500, detail="Failed to remove file from vector store")
+
+    return JSONResponse(content={"deleted": True}, status_code=200)
+
+
 class QueryVectorStoreRequest(BaseModel):
     """Request model for querying a vector store."""
 
@@ -399,15 +382,6 @@ async def query_vector_store(
         raise HTTPException(status_code=500, detail="Failed to query vector store") from None
 
 
-class CreateVectorStoreFromSourceRequest(BaseModel):
-    name: str
-    source: Union[GitHubSource, GitLabSource]
-    source_auth: Optional[str] = None
-    chunking_strategy: Optional[ChunkingStrategy] = None
-    expires_after: Optional[ExpiresAfter] = None
-    metadata: Optional[Dict[str, str]] = None
-
-
 @vector_stores_router.post("/vector_stores/from_source", response_model=VectorStore)
 async def create_vector_store_from_source(
     request: CreateVectorStoreFromSourceRequest,
@@ -438,7 +412,7 @@ async def create_vector_store_from_source(
         account_id=auth.account_id,
         name=request.name,
         file_ids=[],
-        expires_after=request.expires_after.model_dump() if request.expires_after else None,
+        expires_after=dict(request.expires_after) if request.expires_after else None,
         chunking_strategy=request.chunking_strategy.model_dump() if request.chunking_strategy else None,
         metadata=request.metadata,
     )
@@ -486,3 +460,92 @@ async def create_vector_store_from_source(
         expires_after=OpenAIExpiresAfter(**vector_store.expires_after) if vector_store.expires_after else None,
         expires_at=expires_at,
     )
+
+
+@vector_stores_router.post("/vector_stores/memory/query")
+async def query_user_memory(
+    request: QueryVectorStoreRequest,
+    auth: AuthToken = Depends(revokable_auth),
+):
+    """Get relevant memory/context for a user based on a query.
+
+    This endpoint searches a dedicated vector store containing the user's memory/context
+    and returns relevant matches based on the query.
+
+    Args:
+    ----
+        request: The request containing the query text
+        auth: The auth token of the requesting user
+
+    Returns:
+    -------
+        List of relevant memory entries with their content and metadata
+
+    """
+    logger.info(f"Querying user memory for account: {auth.account_id}")
+
+    sql_client = SqlClient()
+
+    memory_store_id = sql_client.get_user_memory(auth.account_id)
+    if not memory_store_id:
+        logger.info("No memory store id found, creating new memory store")
+        vs_id = sql_client.create_vector_store(
+            account_id=auth.account_id, name=f"Memory Store: {auth.account_id}", file_ids=[]
+        )
+        sql_client.set_user_memory(auth.account_id, vs_id)
+        vs = sql_client.get_vector_store(vs_id)
+    else:
+        vs = sql_client.get_vector_store(memory_store_id)
+
+    if not vs:
+        raise HTTPException(status_code=500, detail="Failed to retrieve memory store")
+
+    return await query_vector_store(vs.id, request, auth)
+
+
+class AddUserMemoryRequest(BaseModel):
+    memory: str
+
+
+class AddUserMemoryResponse(BaseModel):
+    """Response model for adding user memory."""
+
+    status: str
+    memory_id: str
+    object: str = "memory.created"  # Add this field to match OpenAI response patterns
+
+
+@vector_stores_router.post("/vector_stores/memory")
+async def add_user_memory(
+    request: AddUserMemoryRequest,
+    background_tasks: BackgroundTasks,
+    auth: AuthToken = Depends(revokable_auth),
+) -> AddUserMemoryResponse:  # Add explicit return type annotation
+    """Add a new memory entry to the user's memory store."""
+    logger.info(f"Adding memory for account: {auth.account_id}")
+    sql_client = SqlClient()
+    memory_store_id = sql_client.get_user_memory(auth.account_id)
+    logger.info(f"Memory store id: {memory_store_id}")
+    if not memory_store_id:
+        logger.info("No memory store id found, creating new memory store")
+        vs_id = sql_client.create_vector_store(
+            account_id=auth.account_id, name=f"Memory Store: {auth.account_id}", file_ids=[]
+        )
+        sql_client.set_user_memory(auth.account_id, vs_id)
+        vs = sql_client.get_vector_store(vs_id)
+    else:
+        logger.info(f"Memory store id found: {memory_store_id}, querying DB")
+        vs = sql_client.get_vector_store(memory_store_id)
+
+    if not vs:
+        raise HTTPException(status_code=500, detail="Failed to retrieve memory store")
+
+    file_id = await create_file_from_content(auth.account_id, "memory", request.memory, "assistants")
+
+    if not file_id:
+        raise HTTPException(status_code=500, detail="Failed to create file from memory")
+
+    file_data = VectorStoreFileCreate(file_id=file_id)
+    await create_vector_store_file(vs.id, file_data, background_tasks, auth)
+
+    return AddUserMemoryResponse(status="success", memory_id=file_id, object="memory.created")

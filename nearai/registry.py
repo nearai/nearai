@@ -12,6 +12,7 @@ from openapi_client.api.registry_api import (
     RegistryApi,
 )
 from openapi_client.exceptions import BadRequestException, NotFoundException
+from shared.naming import NamespacedName, get_canonical_name
 from tqdm import tqdm
 
 # Note: We should import nearai.config on this file to make sure the method setup_api_client is called at least once
@@ -19,7 +20,6 @@ from tqdm import tqdm
 #       API client that is used by Registry API.
 from nearai.config import CONFIG, DATA_FOLDER
 from nearai.lib import check_metadata, parse_location
-from nearai.naming import get_canonical_name
 
 REGISTRY_FOLDER = "registry"
 
@@ -288,12 +288,28 @@ class Registry:
             starred_by=starred_by,
         )
 
-    def list_all_visible(self) -> List[EntryInformation]:
+    def list_all_visible(self, category: str = "") -> List[EntryInformation]:
         """List all visible entries."""
         total = 10000
-        entries = self.list("", "", "", total, 0, False, True)
+        entries = self.list(
+            namespace="", category=category, tags="", total=total, offset=0, show_all=False, show_latest_version=True
+        )
         assert len(entries) < total
         return entries
+
+    def dict_models(self) -> Dict[NamespacedName, NamespacedName]:
+        """Returns a mapping canonical->name."""
+        entries = self.list_all_visible(category="model")
+        result: Dict[NamespacedName, NamespacedName] = {}
+        for entry in entries:
+            namespaced_name = NamespacedName(name=entry.name, namespace=entry.namespace)
+            canonical_namespaced_name = namespaced_name.canonical()
+            if canonical_namespaced_name in result:
+                raise ValueError(
+                    f"Duplicate registry entry for model {namespaced_name}, canonical {canonical_namespaced_name}"
+                )
+            result[canonical_namespaced_name] = namespaced_name
+        return result
 
 
 registry = Registry()

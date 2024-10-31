@@ -1,25 +1,46 @@
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { type z } from 'zod';
 
-import { type entriesModel, type EntryCategory } from '~/lib/models';
+import {
+  type entriesModel,
+  type EntryCategory,
+  type entrySecretModel,
+} from '~/lib/models';
+import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { wordsMatchFuzzySearch } from '~/utils/search';
 
 import { useDebouncedValue } from './debounce';
 
-export function useEntryParams() {
-  const { namespace, name, version } = useParams();
+export function useEntryParams(overrides?: {
+  namespace?: string;
+  name?: string;
+  version?: string;
+}) {
+  const params = useParams();
+  const namespace = overrides?.namespace ?? params.namespace;
+  const name = overrides?.name ?? params.name;
+  const version = overrides?.version ?? params.version;
+  const id = `${namespace as string}/${name as string}/${version as string}`;
 
   return {
+    id,
     namespace: namespace as string,
     name: name as string,
     version: version as string,
   };
 }
 
-export function useCurrentEntry(category: EntryCategory) {
-  const { namespace, name, version } = useEntryParams();
+export function useCurrentEntry(
+  category: EntryCategory,
+  overrides?: {
+    namespace?: string;
+    name?: string;
+    version?: string;
+  },
+) {
+  const { id, namespace, name, version } = useEntryParams(overrides);
 
   const entriesQuery = api.hub.entries.useQuery({
     category,
@@ -37,6 +58,7 @@ export function useCurrentEntry(category: EntryCategory) {
 
   return {
     currentEntry,
+    currentEntryId: id,
     currentEntryIsHidden: !!entriesQuery.data && !currentEntry,
     currentVersions,
   };
@@ -64,4 +86,93 @@ export function useEntriesSearch(
     searchQuery,
     setSearchQuery,
   };
+}
+
+export type EntryEnvironmentVariable = {
+  key: string;
+  metadataValue?: string;
+  urlValue?: string;
+  secret?: z.infer<typeof entrySecretModel>;
+};
+
+export function useCurrentEntryEnvironmentVariables(
+  category: EntryCategory,
+  excludeQueryParamKeys?: string[],
+) {
+  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const { currentEntry } = useCurrentEntry(category);
+  const searchParams = useSearchParams();
+  const secretsQuery = api.hub.secrets.useQuery(
+    {},
+    {
+      enabled: isAuthenticated,
+    },
+  );
+
+  const result = useMemo(() => {
+    const metadataVariablesByKey = currentEntry?.details.env_vars ?? {};
+    const urlVariablesByKey: Record<string, string> = {};
+
+    searchParams.forEach((value, key) => {
+      if (excludeQueryParamKeys?.includes(key)) return;
+      urlVariablesByKey[key] = value;
+    });
+
+    const variablesByKey: Record<string, EntryEnvironmentVariable> = {};
+
+    Object.entries(metadataVariablesByKey).forEach(([key, value]) => {
+      variablesByKey[key] = {
+        key,
+        metadataValue: value,
+      };
+    });
+
+    Object.entries(urlVariablesByKey).forEach(([key, value]) => {
+      const existing = variablesByKey[key];
+      if (existing) {
+        existing.urlValue = value;
+      } else {
+        variablesByKey[key] = {
+          key,
+          urlValue: value,
+        };
+      }
+    });
+
+    const secrets = secretsQuery.data?.filter((secret) => {
+      if (!currentEntry) return false;
+      return (
+        secret.category === currentEntry.category &&
+        secret.namespace === currentEntry.namespace &&
+        secret.name === currentEntry.name &&
+        secret.version === currentEntry.version
+      );
+    });
+
+    secrets?.forEach((secret) => {
+      const existing = variablesByKey[secret.key];
+      if (existing) {
+        existing.secret = secret;
+      } else {
+        variablesByKey[secret.key] = {
+          key: secret.key,
+          secret,
+        };
+      }
+    });
+
+    const variables = Object.values(variablesByKey);
+    variables.sort((a, b) => a.key.localeCompare(b.key));
+
+    return {
+      metadataVariablesByKey,
+      urlVariablesByKey,
+      variablesByKey,
+      variables,
+    };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEntry, searchParams, secretsQuery.data]);
+
+  return result;
 }

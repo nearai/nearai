@@ -9,3 +9,4 @@ typing-extensions >= 4.7.1
 psutil >= 5.9.5
 boto3 >= 1.35.3
 litellm >= 1.41.0
+openai == 1.51.2

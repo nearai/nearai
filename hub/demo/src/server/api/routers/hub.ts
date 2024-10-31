@@ -1,127 +1,40 @@
-import { TarReader } from '@gera2ld/tarjs';
+import path from 'path';
 import { z } from 'zod';
 import { createZodFetcher } from 'zod-fetch';
 
 import { env } from '~/env';
 import {
-  chatModel,
   chatResponseModel,
   chatWithAgentModel,
+  chatWithModelModel,
   type entriesModel,
   entryCategory,
   entryModel,
+  entrySecretModel,
   evaluationsTableModel,
   filesModel,
-  type messageModel,
   modelsModel,
   noncesModel,
   revokeNonceModel,
+  threadMessagesModel,
+  threadMetadataModel,
+  threadsModel,
 } from '~/lib/models';
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from '~/server/api/trpc';
+import { loadEntriesFromDirectory } from '~/server/utils/data-source';
+import { loadAttachmentFilesForMessages } from '~/server/utils/files';
 
 const fetchWithZod = createZodFetcher();
 
-type RegistryFile = {
-  content: string;
-  name: string;
-  type: number;
-  size: number;
-  headerOffset: number;
-};
-
-async function downloadEnvironment(environmentId: string) {
-  const url = `${env.ROUTER_URL}/registry/download_file`;
-  const [namespace, name, version] = environmentId.split('/');
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Accept: 'binary/octet-stream',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      entry_location: {
-        namespace,
-        name,
-        version,
-      },
-      path: 'environment.tar.gz',
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to download environment for ${namespace}/${name}/${version} - status: ${response.status}`,
-    );
-  }
-  if (!response.body) {
-    throw new Error('Response body is null');
-  }
-
-  const stream = response.body.pipeThrough(new DecompressionStream('gzip'));
-  const blob = await new Response(stream).blob();
-  const tarReader = await TarReader.load(blob);
-
-  const conversation = tarReader
-    .getTextFile('./chat.txt')
-    .split('\n')
-    .filter((message) => message)
-    .map((message) => {
-      return JSON.parse(message) as z.infer<typeof messageModel>;
-    });
-
-  const files: Record<string, RegistryFile> = {};
-  const environment = {
-    environmentId,
-    files,
-    conversation,
-  };
-
-  for (const fileInfo of tarReader.fileInfos) {
-    if ((fileInfo.type as number) === 48) {
-      // Files are actually coming through as 48
-      const originalFileName = fileInfo.name;
-      const fileName = originalFileName.replace(/^\.\//, '');
-      if (fileName !== 'chat.txt' && fileName !== '.next_action') {
-        fileInfo.name = fileName;
-        environment.files[fileName] = {
-          ...fileInfo,
-          content: tarReader.getTextFile(fileName),
-        };
-      }
-    }
-  }
-
-  return environment;
-}
-
 export const hubRouter = createTRPCRouter({
-  chat: protectedProcedure.input(chatModel).mutation(async ({ ctx, input }) => {
-    const url = env.ROUTER_URL + '/chat/completions';
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: ctx.authorization,
-      },
-      body: JSON.stringify(input),
-    });
-
-    const data: unknown = await response.json();
-    if (!response.ok) throw data;
-
-    return chatResponseModel.parse(data);
-  }),
-
   chatWithAgent: protectedProcedure
     .input(chatWithAgentModel)
     .mutation(async ({ ctx, input }) => {
-      const url = env.ROUTER_URL + '/agent/runs';
+      const url = `${env.ROUTER_URL}/agent/runs`;
 
       const response = await fetch(url, {
         method: 'POST',
@@ -133,22 +46,34 @@ export const hubRouter = createTRPCRouter({
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to send chat completions, status: ${response.status}`,
-        );
+        throw new Error(`Failed to run agent, status: ${response.status}`);
       }
 
-      const text: string = await response.text();
-      if (!text.match(/".*\/.*\/.*/)) {
-        // check whether the response matches namespace/name/version
-        throw new Error('Response text does not match namespace/name/version');
-      }
+      const threadId = (await response.text()).replace(/"/g, '');
 
-      const environmentId = text.replace(/\\/g, '').replace(/"/g, '');
+      return {
+        threadId,
+      };
+    }),
 
-      const environment = await downloadEnvironment(environmentId);
+  chatWithModel: protectedProcedure
+    .input(chatWithModelModel)
+    .mutation(async ({ ctx, input }) => {
+      const url = `${env.ROUTER_URL}/chat/completions`;
 
-      return environment;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: ctx.authorization,
+        },
+        body: JSON.stringify(input),
+      });
+
+      const data: unknown = await response.json();
+      if (!response.ok) throw data;
+
+      return chatResponseModel.parse(data);
     }),
 
   entries: publicProcedure
@@ -177,6 +102,15 @@ export const hubRouter = createTRPCRouter({
         url.searchParams.append('namespace', input.namespace);
 
       if (input.tags) url.searchParams.append('tags', input.tags.join(','));
+
+      if (input.category == 'agent' && env.DATA_SOURCE == 'local_files') {
+        if (!env.HOME)
+          throw new Error(
+            'Missing required HOME environment variable for serving local files',
+          );
+        const registryPath = path.join(env.HOME, '.nearai', 'registry');
+        return await loadEntriesFromDirectory(registryPath);
+      }
 
       if (input.starredBy) {
         url.searchParams.append('starred_by', input.starredBy);
@@ -212,12 +146,6 @@ export const hubRouter = createTRPCRouter({
       return list;
     }),
 
-  environment: protectedProcedure
-    .input(z.object({ environmentId: z.string() }))
-    .query(async ({ input }) => {
-      return await downloadEnvironment(input.environmentId);
-    }),
-
   evaluations: publicProcedure.query(async () => {
     const evaluations = await fetchWithZod(
       evaluationsTableModel,
@@ -235,8 +163,13 @@ export const hubRouter = createTRPCRouter({
       }
     });
 
+    const defaultBenchmarkColumns = evaluations.important_columns.filter(
+      (column) => !infoColumns.includes(column),
+    );
+
     return {
       benchmarkColumns,
+      defaultBenchmarkColumns,
       infoColumns,
       results: evaluations.rows,
     };
@@ -315,7 +248,7 @@ export const hubRouter = createTRPCRouter({
     }),
 
   models: publicProcedure.query(async () => {
-    const url = env.ROUTER_URL + '/models';
+    const url = `${env.ROUTER_URL}/models`;
 
     const response = await fetch(url);
     const data: unknown = await response.json();
@@ -324,7 +257,7 @@ export const hubRouter = createTRPCRouter({
   }),
 
   nonces: protectedProcedure.query(async ({ ctx }) => {
-    const url = env.ROUTER_URL + '/nonce/list';
+    const url = `${env.ROUTER_URL}/nonce/list`;
 
     const nonces = await fetchWithZod(noncesModel, url, {
       headers: {
@@ -338,7 +271,7 @@ export const hubRouter = createTRPCRouter({
   revokeNonce: protectedProcedure
     .input(revokeNonceModel)
     .mutation(async ({ input }) => {
-      const url = env.ROUTER_URL + '/nonce/revoke';
+      const url = `${env.ROUTER_URL}/nonce/revoke`;
 
       // We can't use regular auth since we need to use the signed revoke message.
       const response = await fetch(url, {
@@ -359,7 +292,7 @@ export const hubRouter = createTRPCRouter({
   revokeAllNonces: protectedProcedure
     .input(z.object({ auth: z.string() }))
     .mutation(async ({ input }) => {
-      const url = env.ROUTER_URL + '/nonce/revoke/all';
+      const url = `${env.ROUTER_URL}/nonce/revoke/all`;
 
       // We can't use regular auth since we need to use the signed revoke message.
       const response = await fetch(url, {
@@ -374,6 +307,90 @@ export const hubRouter = createTRPCRouter({
       if (!response.ok) throw data;
 
       return data;
+    }),
+
+  secrets: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().default(10_000),
+        offset: z.number().default(0),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const url = new URL(`${env.ROUTER_URL}/get_user_secrets`);
+
+      url.searchParams.append('limit', `${input.limit}`);
+      url.searchParams.append('offset', `${input.offset}`);
+
+      const secrets = await fetchWithZod(
+        entrySecretModel.array(),
+        url.toString(),
+        {
+          headers: {
+            Authorization: ctx.authorization,
+          },
+        },
+      );
+
+      return secrets;
+    }),
+
+  addSecret: protectedProcedure
+    .input(
+      z.object({
+        category: entryCategory,
+        description: z.string().optional().default(''),
+        key: z.string(),
+        name: z.string(),
+        namespace: z.string(),
+        value: z.string(),
+        version: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const url = `${env.ROUTER_URL}/create_hub_secret`;
+
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: ctx.authorization,
+        },
+        method: 'POST',
+        body: JSON.stringify(input),
+      });
+
+      const data: unknown = await response.json();
+      if (!response.ok) throw data;
+
+      return true;
+    }),
+
+  removeSecret: protectedProcedure
+    .input(
+      z.object({
+        category: entryCategory.optional(),
+        key: z.string(),
+        name: z.string(),
+        namespace: z.string(),
+        version: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const url = `${env.ROUTER_URL}/remove_hub_secret`;
+
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: ctx.authorization,
+        },
+        method: 'POST',
+        body: JSON.stringify(input),
+      });
+
+      const data: unknown = await response.json();
+      if (!response.ok) throw data;
+
+      return true;
     }),
 
   starEntry: protectedProcedure
@@ -403,6 +420,90 @@ export const hubRouter = createTRPCRouter({
 
       const data: unknown = await response.json();
       if (!response.ok) throw data;
+
+      return true;
+    }),
+
+  thread: protectedProcedure
+    .input(
+      z.object({
+        threadId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const url = new URL(
+        `${env.ROUTER_URL}/threads/${input.threadId}/messages`,
+      );
+      url.searchParams.append('limit', '1000');
+      url.searchParams.append('order', 'asc');
+
+      const messages = await fetchWithZod(threadMessagesModel, url.toString(), {
+        headers: {
+          Authorization: ctx.authorization,
+        },
+      });
+
+      const files = await loadAttachmentFilesForMessages(
+        ctx.authorization,
+        messages,
+      );
+
+      return {
+        id: input.threadId,
+        files,
+        messages: messages.data,
+      };
+    }),
+
+  threads: protectedProcedure.query(async ({ ctx }) => {
+    const url = `${env.ROUTER_URL}/threads`;
+
+    const threads = await fetchWithZod(threadsModel, url, {
+      headers: {
+        Authorization: ctx.authorization,
+      },
+    });
+
+    threads.sort((a, b) => b.created_at - a.created_at);
+
+    return threads;
+  }),
+
+  removeThread: protectedProcedure
+    .input(
+      z.object({
+        threadId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await fetch(`${env.ROUTER_URL}/threads/${input.threadId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: ctx.authorization,
+        },
+      });
+
+      return true;
+    }),
+
+  updateThread: protectedProcedure
+    .input(
+      z.object({
+        threadId: z.string(),
+        metadata: threadMetadataModel,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await fetch(`${env.ROUTER_URL}/threads/${input.threadId}`, {
+        method: 'POST',
+        headers: {
+          Authorization: ctx.authorization,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          metadata: input.metadata,
+        }),
+      });
 
       return true;
     }),

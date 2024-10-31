@@ -1,5 +1,5 @@
-@import './/reset';
-@import './/theme';
+@import './reset';
+@import './theme';
 
 @font-face {
   font-family: 'Mona Sans';
@@ -33,4 +33,12 @@ html {
 a {
   text-decoration: none;
   outline: none;
+}
+
+#near-wallet-selector-modal {
+  --wallet-selector-backdrop-bg: var(--black-a10);
+
+  .open {
+    z-index: 10000;
+  }
 }

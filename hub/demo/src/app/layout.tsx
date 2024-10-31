@@ -1,4 +1,5 @@
 import '~/styles/globals.scss';
+import '@near-wallet-selector/modal-ui/styles.css';
 
 import { ThemeProvider } from 'next-themes';
 import { type ReactNode } from 'react';
@@ -6,7 +7,9 @@ import { type ReactNode } from 'react';
 import { Footer } from '~/components/Footer';
 import { Toaster } from '~/components/lib/Toast';
 import { Navigation } from '~/components/Navigation';
+import { NearInitializer } from '~/components/NearInitializer';
 import { ZustandHydration } from '~/components/ZustandHydration';
+import { env } from '~/env';
 import { TRPCReactProvider } from '~/trpc/react';
 
 import s from './layout.module.scss';
@@ -17,21 +20,24 @@ import s from './layout.module.scss';
 */
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const title = env.NEXT_PUBLIC_CONSUMER_MODE ? 'AI Chat' : 'AI Hub';
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>AI Hub</title>
+        <title>{title}</title>
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, minimum-scale=1"
         />
-        <meta name="description" content="NEAR AI Hub" />
+        <meta name="description" content={`NEAR ${title}`} />
         <link rel="icon" href="/favicon.ico" />
       </head>
 
       <body>
         <ThemeProvider attribute="class">
           <TRPCReactProvider>
+            <NearInitializer />
             <ZustandHydration />
             <Toaster />
 

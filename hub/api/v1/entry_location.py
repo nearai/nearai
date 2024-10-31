@@ -3,8 +3,7 @@ from typing import Annotated
 
 from fastapi import Form, HTTPException
 from pydantic import AfterValidator, BaseModel
-
-IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z0-9_\-.]+$")
+from shared.client_config import IDENTIFIER_PATTERN
 
 
 def valid_identifier(identifier: str) -> str:

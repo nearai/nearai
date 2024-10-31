@@ -6,31 +6,39 @@ docs/agent_quickstart.sh
 ```
 
 ## QUICKSTART: build and run a python agent on NearAI
-1. [Install](https://github.com/nearai/nearai/#setup) the NearAI CLI.
+#### 1. [Install](https://github.com/nearai/nearai/#setup) the NearAI CLI.
 
-2. Create a new folder for your agent; 
+#### 2. Create a new folder for your agent:
 
-    we recommend placing it inside your local registry `mkdir -p ~/.nearai/registry/example_agent`. 
+we recommend placing it inside your local registry `mkdir -p ~/.nearai/registry/example_agent`. 
 
-3. Create a metadata.json file for your agent
 
-   `nearai registry metadata_template ~/.nearai/registry/example_agent agent "Example agent"` and edit it.
+#### 3. Create files for your agent:
 
-4. Create an `agent.py` file in that folder.
-     * Write your agent, in agent.py, using the [environment API](#the-environment-api) described below.
-     * Or paste in the [example agent.py](#example-agentpy) below.
+  The fastest way to create both your metadata and agent .py file would be the create or clone functions
 
-5. Run your agent locally using the cli and passing it a folder to write output to. 
+  * `nearai agent create --name <agent_name> --description <description>` allows you to create clean agent
+  * `nearai agent create --fork <namespace/agent_name/version> [--name <new_agent_name>]` forks an existing codebase 
+  * `nearai registry list` can tell you what agents are forkable.
+  * otherwise you can use `nearai registry metadata_template ~/.nearai/registry/example_agent agent "Example agent"` and edit it, as well as a created agent.py, [example of which is below](#example-agentpy) using the [environment API](#the-environment-api).
+
+
+#### 4. Run your agent locally using the cli and passing it a folder to write output to. 
 ```shell
 nearai agent interactive example_agent /tmp/example_agent_run_1 --local
 ```
+
+When running the agent locally, session files such as chat history are stored in the `/tmp/nearai/conversations/` folder. 
+If you want to reset these files and clear the conversation history, you can run the agent with the `--reset` flag. 
+This will remove the existing session data and start a new one.
+
 
 ### Example agent.py
 ```python
 # In local interactive mode, the first user input is collected before the agent runs.
 prompt = {"role": "system", "content": "You are a travel agent that helps users plan trips."}
 result = env.completion([prompt] + env.list_messages())
-env.add_message("agent", result)
+env.add_reply(result)
 env.request_user_input()
 ```
 
@@ -56,7 +64,7 @@ Example:
 nearai agent interactive example_agent --local
 ```
 
-* The agent can save temporary files to track the progress of a task from the user in case the dialogue execution is interrupted. By default, the entire message history is stored in a file named `chat.txt`. The agent can add messages there by using [`env.add_message()`](api.md#nearai.agents.environment.Environment.add_message). Learn more about [the environment API](#the-environment-api).
+* The agent can save temporary files to track the progress of a task from the user in case the dialogue execution is interrupted. By default, the entire message history is stored in a file named `chat.txt`. The agent can add messages there by using [`env.add_reply()`](api.md#nearai.agents.environment.Environment.add_message). Learn more about [the environment API](#the-environment-api).
 * During its operation, the agent creates a file named `.next_agent`, which stores the role of the next participant expected in the dialogue (either `user` or `agent`) during the next iteration of the loop. The agent can control this value using [`env.set_next_actor()`](api.md#nearai.agents.environment.Environment.set_next_actor).
 * The agent can use local imports from the home folder or its subfolders. It is executed from a temporary folder within a temporary environment.
 
@@ -96,13 +104,40 @@ To run without user interaction pass the task input to the task
 nearai agent task flatirons.near/xela-agent/5 "Build a command line chess engine" ~/tmp/test-agents/xela-agent/chess-engine
 ```
 
+### Running an agent through AI Hub
+To run an agent in the [AI Hub](https://app.near.ai/agents):
+
+1. Select the desired agent.
+
+2. Navigate to the **Run** tab.
+
+3. Interact with the agent using the chat interface
+
+Note:
+. Agent chat through the AI Hub does not yet stream back responses, it takes a few seconds to respond.
+
 
 ## The Environment API
+This is the api your agent will use to interact with NearAI. For example, to add an agent's response you could call completions and add_message.
+```
+prompt = {"role": "system", "content": "You are a travel agent that helps users plan trips."}
+
+conversation = env.list_messages() # the user's new message is added to this list by both the remote and local UIs.
+
+agent_response = env.completion([prompt] + conversation)
+
+env.add_reply(agent_response)
+```
+
+
 Your agent will receive an `env` object that has the following methods:
 
-  * [`request_user_input`](api.md#nearai.agents.environment.Environment.request_user_input): tell the agent that it is the user's turn, stop iterating.
+  * [`request_user_input`](api.md#nearai.agents.environment.Environment.request_user_input): 
+tell the agent that it is the user's turn, stop iterating.
   * [`completion`](api.md#nearai.agents.environment.Environment.completion): request inference completions from a provider and model.
-The model format can be either `PROVIDER::MODEL` or simply `MODEL`. By default the provider is `fireworks` and the model is `llama-v3p1-405b-instruct-long`. The model can be passed into `completion` function or as an agent metadata:
+The model format can be either `PROVIDER::MODEL` or simply `MODEL`. 
+By default the provider is `fireworks` and the model is `llama-v3p1-405b-instruct-long`. 
+The model can be passed into `completion` function or as an agent metadata:
    ```json
    "details": {
      "agent": {
@@ -116,36 +151,49 @@ The model format can be either `PROVIDER::MODEL` or simply `MODEL`. By default t
      }
    }
    ```
-  * [`list_messages`](api.md#nearai.agents.environment.Environment.list_messages): returns the list of messages in the conversation. 
-You have full control to add and remove messages from this list.
-  * [`add_message`](api.md#nearai.agents.environment.Environment.add_message): adds a message to the conversation. Arguments are role and content.
-   ```python
-   env.add_message("user", "Hello, I would like to travel to Paris")
-   ```
-   Normal roles are: 
-    *  `system`: usually your starting prompt
-    *  `agent`: messages from the agent (i.e. llm responses, programmatic responses)
-    *  `user`: messages from the user
+  * [`list_messages`](api.md#nearai.agents.environment.Environment.list_messages): returns the list of messages in the conversation.
 
-### Additional environment tools
+### Additional environment methods
 There are several variations for completions:
 
  * [`completions`](api.md#nearai.agents.environment.Environment.completions): returns the full llm response for more control
- * [`completion_and_run_tools`](api.md#nearai.agents.environment.Environment.completion_and_run_tools): Allows tools to be passed and processes any returned tool_calls by running the tool
- * [`completions_and_run_tools`](api.md#nearai.agents.environment.Environment.completions_and_run_tools): Both tool calls and returns the full llm response.
+ * for tool calling completions see the [Tool registry and function Tool Calling](#tool-registry-and-function-tool-calling) section below.
 
-
-For working with files and running commands the following functions are also available on `env`. You may call these
+For working with files and running commands the following methods are also available on `env`. You may call these
 directly or use them through the tool_registry and passing them to a completions method.
 
  * [`list_terminal_commands`](api.md#nearai.agents.environment.Environment.list_terminal_commands): list the history of terminal commands
  * [`list_files`](api.md#nearai.agents.environment.Environment.list_files): list the files in the current directory
- * [`get_path`](api.md#nearai.agents.environment.Environment.get_path): get the path of the current directory
+ * [`get_path`](api.md#nearai.agents.environment.Environment.get_system_path): get the path of the current directory
  * [`read_file`](api.md#nearai.agents.environment.Environment.read_file): read a file
  * [`write_file`](api.md#nearai.agents.environment.Environment.write_file): write to a file
  * [`exec_command`](api.md#nearai.agents.environment.Environment.exec_command): execute a terminal command
+ * [`query_vector_store`](api.md#nearai.agents.environment.Environment.query_vector_store): query a vector store
 
-### Tool registry
+### Logging
+* [`add_system_log`](api.md#nearai.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".
+* [`add_agent_log`](api.md#nearai.agents.environment.Environment.add_system_log): any agent logs may go here. Saved into "agent_log.txt".
+
+
+### Tool registry and function Tool Calling
+NearAI supports function based tool calling where the LLM can decide to call one of the functions (Tools) that you pass it.
+You can register your own function or use any of the built-in tools (list_files, read_file, write_file, exec_command, query_vector_store, request_user_input).
+
+The tool registry supports OpenAI style tool calling and Llama style. When a llama model is explicitly passed to completion(s)_and_run_tools
+a system message is added to the conversation. This system message contains the tool definitions and instructions on how to invoke them 
+using `<function>` tags.
+
+To tell the LLM about your tools and automatically execute them when selected by the LLM, call one of these environment methods:
+
+* [`completion_and_run_tools`](api.md#nearai.agents.environment.Environment.completion_and_run_tools): Allows tools to be passed and processes any returned tool_calls by running the tool
+* [`completions_and_run_tools`](api.md#nearai.agents.environment.Environment.completions_and_run_tools): Handles tool calls and returns the full llm response.
+
+By default, these methods will add both the LLM response and tool invocation responses to the message list. 
+You do not need to call `env.add_message` for these responses.
+This behavior allows the LLM to see its call then tool responses in the message list on the next iteration or next run. 
+This can be disabled by passing `add_to_messages=False` to the method.
+
+
  * [`get_tool_registry`](api.md#nearai.agents.environment.Environment.get_tool_registry): returns the tool registry, a dictionary of tools that can be called by the agent. By default
 it is populated with the tools listed above for working with files and commands plus [`request_user_input`](api.md#nearai.agents.environment.Environment.request_user_input). To register a function as
 a new tool, call [`register_tool`](api.md#nearai.agents.tool_registry.ToolRegistry.register_tool) on the tool registry, passing it your function. 
@@ -154,14 +202,25 @@ def my_tool():
     """A simple tool that returns a string. This docstring helps the LLM know when to call the tool."""
     return "Hello from my tool"
 
-env.get_tool_registry().register_tool(my_tool)
-
-response = env.completions_and_run_tools("llama-v3p1-405b-instruct-long", messages, tools=get_tool_registry().get_all_tools())
+tool_registry = env.get_tool_registry()
+tool_registry.register_tool(my_tool)
+tool_def = tool_registry.get_tool_definition('my_tool')
+response = env.completions_and_run_tools(messages, tools=[tool_def], model="llama-v3p1-405b-instruct")
 ```
 
-### Logging
-* [`add_system_log`](api.md#nearai.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".
-* [`add_agent_log`](api.md#nearai.agents.environment.Environment.add_system_log): any agent logs may go here. Saved into "agent_log.txt".
+To pass all the built in tools plus any you have registered use the `get_all_tool_definitions` method.
+```python
+all_tools = env.get_tool_registry().get_all_tool_definitions()
+response = env.completions_and_run_tools(messages, tools=all_tools, model="llama-v3p1-405b-instruct")
+```
+If you do not want to use the built-in tools, use `get_tool_registry(new=True)`
+```python
+    tool_registry = env.get_tool_registry(new=True)
+    tool_registry.register_tool(my_tool)
+    tool_registry.register_tool(my_tool2)
+    response = env.completions_and_run_tools(messages, tools=tool_registry.get_all_tool_definitions())
+```
+
 
 ## Uploading an agent
  * You need a folder with an `agent.py` file in it, `~/.nearai/registry/example_agent` in this example. 
@@ -335,13 +394,13 @@ nearai agent interactive user.near/agent/1 --local --env_vars='{"foo":"bar"}'
 Consider an agent `zavodil.near/test-env-agent/1` that has configurable environment variables.
 
 ## Agent Frameworks
-Agents can be built using a variety of frameworks and libraries. A particular bundle of libraries is given a name, such as `langgraph-1-4`.
+Agents can be built using a variety of frameworks and libraries. A particular bundle of libraries is given a name, such as `langgraph-0-2-26`.
 To run your agent remotely with a particular framework, set the framework name in the agent's metadata.json file.
 ```json
 {
   "details": {
     "agent": {
-      "framework": "langgraph-1-4"
+      "framework": "langgraph-0-2-26"
     }
   }
 }
@@ -352,5 +411,5 @@ Current frameworks can be found in the repo's [frameworks](https://github.com/ne
 
 ### LangChain / LangGraph
 The example agent [langgraph-min-example](https://app.near.ai/agents/flatirons.near/langgraph-min-example/1.0.1/source)
-has metadata that specifies the `langgraph-1-4` framework to run on langgraph version 1.4. In addition, the agent.py 
+has metadata that specifies the `langgraph-0-1-4` framework to run on langgraph version 1.4. In addition, the agent.py 
 code contains an adaptor class, `AgentChatModel` that maps LangChain inference operations to `env.completions` calls.

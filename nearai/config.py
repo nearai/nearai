@@ -3,10 +3,11 @@ import os
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
+import openai
 from openapi_client import ApiClient, Configuration
 from pydantic import BaseModel
 from shared.auth_data import AuthData
-from shared.client_config import DEFAULT_PROVIDER, DEFAULT_PROVIDER_MODEL
+from shared.client_config import DEFAULT_PROVIDER, DEFAULT_PROVIDER_MODEL, ClientConfig
 
 DATA_FOLDER = Path.home() / ".nearai"
 DATA_FOLDER.mkdir(parents=True, exist_ok=True)
@@ -15,7 +16,6 @@ LOCAL_CONFIG_FILE = Path(".nearai") / "config.json"
 REPO_FOLDER = Path(__file__).parent.parent
 PROMPTS_FOLDER = REPO_FOLDER / "nearai" / "prompts"
 ETC_FOLDER = REPO_FOLDER / "etc"
-DEFAULT_NAMESPACE = "near.ai"
 
 
 def get_config_path(local: bool = False) -> Path:
@@ -80,6 +80,7 @@ class Config(BaseModel):
     nearai_hub: NearAiHubConfig = NearAiHubConfig()
     confirm_commands: bool = True
     auth: Optional[AuthData] = None
+    num_inference_retries: int = 1
 
     def update_with(self, extra_config: Dict[str, Any], map_key: Callable[[str], str] = lambda x: x) -> "Config":
         """Update the config with the given dictionary."""
@@ -99,6 +100,15 @@ class Config(BaseModel):
         """Get the value of a key in the config if it exists."""
         return getattr(self, key, default)
 
+    def get_client_config(self) -> ClientConfig:  # noqa: D102
+        return ClientConfig(
+            base_url=CONFIG.nearai_hub.base_url,
+            auth=CONFIG.auth,
+            custom_llm_provider=CONFIG.nearai_hub.custom_llm_provider,
+            default_provider=CONFIG.nearai_hub.default_provider,
+            num_inference_retries=CONFIG.num_inference_retries,
+        )
+
 
 # Load default configs
 CONFIG = Config()
@@ -117,6 +127,12 @@ def setup_api_client():
     configuration = Configuration(**kwargs)
     client = ApiClient(configuration)
     ApiClient.set_default(client)
+
+
+def get_hub_client():
+    signature = CONFIG.auth.model_dump_json()
+    base_url = CONFIG.api_url + "/v1"
+    return openai.OpenAI(base_url=base_url, api_key=signature)
 
 
 setup_api_client()

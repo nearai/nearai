@@ -130,12 +130,13 @@ nav:
   - Getting Started: 
     - Welcome To NearAI Docs: 'index.md'
     - Agents: 'agents.md'
-    - Building and running a benchmark: 'benchmarking.md'
+    - Benchmarks and Evaluations: 'benchmarks_and_evaluations.md'
     - Inference (OpenAI compatible): 'inference.md'
     - Fine-tuning: 'fine_tuning.md'
     - API Reference: 'api.md'
     - Vector Stores: 'vector-stores.md'
     - Login with NEAR: 'login.md'
+    - Secrets: 'hub_secrets.md'
     - Contributing: 'contributing.md'
 plugins:
   - social

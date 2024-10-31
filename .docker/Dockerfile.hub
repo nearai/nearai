@@ -1,0 +1,15 @@
+FROM nearai_base:latest
+
+## Top level args / env vars
+ARG USER=user
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV DEBIAN_FRONTEND=noninteractive
+
+USER root
+RUN chmod +x /home/${USER}/hub/start.sh
+USER ${USER}
+WORKDIR /home/${USER}/hub/
+CMD ["poetry", "run", "./start.sh"]

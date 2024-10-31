@@ -6,18 +6,23 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from hub.api.v1.agent_routes import v1_router as agent_router
+from hub.api.v1.agent_routes import run_agent_router
 from hub.api.v1.benchmark import v1_router as benchmark_router
 from hub.api.v1.evaluation import v1_router as evaluation_router
 from hub.api.v1.exceptions import TokenValidationError
 from hub.api.v1.files import files_router
+from hub.api.v1.hub_secrets import hub_secrets_router
 from hub.api.v1.registry import v1_router as registry_router
 from hub.api.v1.routes import v1_router
 from hub.api.v1.stars import v1_router as stars_router
+from hub.api.v1.thread_routes import threads_router
 from hub.api.v1.vector_stores import vector_stores_router
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
@@ -35,12 +40,14 @@ app.add_middleware(
 
 app.include_router(v1_router, prefix="/v1")
 app.include_router(registry_router, prefix="/v1")
-app.include_router(agent_router, prefix="/v1")
+app.include_router(run_agent_router, prefix="/v1")
 app.include_router(benchmark_router, prefix="/v1")
 app.include_router(vector_stores_router, prefix="/v1")
 app.include_router(files_router, prefix="/v1")
 app.include_router(evaluation_router, prefix="/v1")
 app.include_router(stars_router, prefix="/v1")
+app.include_router(hub_secrets_router, prefix="/v1")
+app.include_router(threads_router, prefix="/v1")
 
 
 @app.get("/health")

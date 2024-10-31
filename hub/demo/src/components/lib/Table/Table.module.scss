@@ -18,6 +18,10 @@
     padding-bottom: 0;
   }
 
+  &:has(.body:first-child) {
+    padding-top: var(--table-half-padding);
+  }
+
   @media (max-width: $tabletBreakpointMaxWidth) {
     margin-inline: calc(var(--section-padding-x) * -1);
     width: auto;

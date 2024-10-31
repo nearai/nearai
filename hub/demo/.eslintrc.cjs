@@ -36,6 +36,7 @@ const config = {
       'error',
       {
         checksVoidReturn: {
+          arguments: false,
           attributes: false,
         },
       },

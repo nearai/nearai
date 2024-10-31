@@ -1,7 +1,7 @@
 {
 	"name": "nearai_dev",
 	"dockerComposeFile": [
-		"../.devcontainer/compose.yml"
+		"../.docker/compose.yml"
 	],
 	"remoteUser": "user",
 	"customizations": {

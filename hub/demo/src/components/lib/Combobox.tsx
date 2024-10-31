@@ -84,7 +84,7 @@ export const Combobox = forwardRef<HTMLInputElement, Props>(
       defaultSelectedItem,
       items: filteredItems,
       itemToString(item) {
-        return item ? item.label ?? item.value.toString() : '';
+        return item ? (item.label ?? item.value.toString()) : '';
       },
       onInputValueChange(event) {
         const query = event.inputValue?.toLowerCase() ?? '';
@@ -108,7 +108,7 @@ export const Combobox = forwardRef<HTMLInputElement, Props>(
         const newValue =
           event.selectedItem?.value === '__NONE__'
             ? null
-            : event.selectedItem?.value ?? null;
+            : (event.selectedItem?.value ?? null);
         internalCurrentValue.current = newValue;
 
         // Do nothing if we're simply syncing with outside form state (this prevents us from prematurely marking a form as dirty):

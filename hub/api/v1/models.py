@@ -1,14 +1,22 @@
+import uuid
 from contextlib import contextmanager
 from datetime import datetime
 from os import getenv
-from typing import Dict, Iterator, Optional
+from typing import Dict, Iterator, List, Optional
 
 from dotenv import load_dotenv
-from pydantic import BaseModel
+from openai.types.beta.thread import Thread as OpenAITThread
+from openai.types.beta.threads.message import Attachment
+from openai.types.beta.threads.message import Message as OpenAITThreadMessage
+from openai.types.beta.threads.message_content import MessageContent
+from openai.types.beta.threads.run import Run as OpenAIRun
+from openai.types.beta.threads.text import Text
+from openai.types.beta.threads.text_content_block import TextContentBlock
 from sqlmodel import JSON, Column, Field, Session, SQLModel, create_engine
 
 load_dotenv()
 
+S3_ENDPOINT = getenv("S3_ENDPOINT")
 S3_BUCKET = getenv("S3_BUCKET")
 S3_PREFIX = getenv("S3_PREFIX")
 DB_HOST = getenv("DATABASE_HOST")
@@ -50,6 +58,34 @@ class RegistryEntry(SQLModel, table=True):
         return key
 
 
+class HubSecrets(SQLModel, table=True):
+    """Encrypted hub secrets stored in the registry."""
+
+    __tablename__ = "hub_secrets"
+
+    id: int = Field(default=None, primary_key=True)
+
+    owner_namespace: str = Field(nullable=False)
+    """Owner of the secret"""
+
+    namespace: str = Field(nullable=False)
+    """Namespace of the secret recipient"""
+    name: str = Field(default="", nullable=False)
+    """Name of the secret recipient"""
+    version: str = Field(default="", nullable=False)
+    """Version of the secret recipient"""
+
+    key: str = Field(nullable=False)
+    value: str = Field(nullable=False)
+
+    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
+    """Time when the entry was added to the registry."""
+    description: str = Field(default="", nullable=False)
+    """Long description of the entry."""
+    category: str = Field(default="", nullable=False)
+    """Type of the entry, e.g. 'dataset', 'model', 'agent', ...."""
+
+
 class Tags(SQLModel, table=True):
     """Many-to-many table between registry entries and tags."""
 
@@ -85,7 +121,162 @@ class BenchmarkResult(SQLModel, table=True):
     info: Dict = Field(default_factory=dict, sa_column=Column(JSON))
 
 
-engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}")
+class Message(SQLModel, table=True):
+    __tablename__ = "messages"
+
+    id: str = Field(default_factory=lambda: "msg_" + uuid.uuid4().hex[:24], primary_key=True)
+    object: str = Field(default="message", nullable=False)
+    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
+    thread_id: str = Field(nullable=False, foreign_key="threads.id")
+    status: str = Field(default="completed", nullable=False)
+    incomplete_details: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    completed_at: Optional[datetime] = Field(default=None)
+    incomplete_at: Optional[datetime] = Field(default=None)
+    role: str = Field(nullable=False)
+    content: List[MessageContent] = Field(sa_column=Column(JSON))
+    assistant_id: Optional[str] = Field(default=None)
+    run_id: Optional[str] = Field(default=None)
+    attachments: Optional[List[Attachment]] = Field(default=None, sa_column=Column(JSON))
+    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", JSON))
+
+    def __init__(self, **data):  # noqa: D107
+        super().__init__(**data)
+        if not is_valid_message_role(self.role):
+            raise ValueError(f"Invalid role: {self.role}")
+        if not is_valid_message_status(self.status):
+            raise ValueError(f"Invalid status: {self.status}")
+        if self.attachments:
+            # Convert each attachment to a dictionary
+            self.attachments = [
+                attachment.model_dump() if hasattr(attachment, "model_dump") else attachment
+                for attachment in self.attachments
+            ]
+        if self.content:
+            if isinstance(self.content, str):
+                self.content = [TextContentBlock(text=Text(value=self.content, annotations=[]), type="text")]
+
+            # Handle both Pydantic models and dictionaries
+            self.content = [
+                content.model_dump() if hasattr(content, "model_dump") else content for content in self.content
+            ]
+
+    def to_openai(self) -> OpenAITThreadMessage:
+        """Convert to OpenAI Thread."""
+        return OpenAITThreadMessage(
+            metadata=self.meta_data,
+            created_at=int(self.created_at.timestamp()),
+            id=self.id,
+            object="thread.message",
+            role=self.role,  # type: ignore
+            content=self.content,
+            status=self.status,  # type: ignore
+            attachments=self.attachments,
+            thread_id=self.thread_id,
+            run_id=self.run_id,
+            assistant_id=self.assistant_id,
+            completed_at=int(self.completed_at.timestamp()) if self.completed_at else None,
+            incomplete_at=int(self.incomplete_at.timestamp()) if self.incomplete_at else None,
+        )
+
+    def to_completions_model(self):
+        """Transform to a model compatible with OpenAI completions API."""
+        print("self.content", self.content)
+        return {
+            "id": self.id,
+            "content": "\n".join([c["text"]["value"] for c in self.content]),
+            "role": self.role,
+        }
+
+
+class Thread(SQLModel, table=True):
+    __tablename__ = "threads"
+
+    id: str = Field(default_factory=lambda: "thread_" + uuid.uuid4().hex[:24], primary_key=True)
+    object: str = Field(default="thread", nullable=False)
+    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
+    tool_resources: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", JSON))
+    owner_id: str = Field(nullable=False)
+
+    def to_openai(self) -> OpenAITThread:
+        """Convert to OpenAI Thread."""
+        return OpenAITThread(
+            metadata=self.meta_data,
+            tool_resources=None,  # TODO: Implement conversion
+            created_at=int(self.created_at.timestamp()),
+            id=self.id,
+            object="thread",
+        )
+
+
+class Run(SQLModel, table=True):
+    __tablename__ = "runs"
+
+    id: str = Field(default_factory=lambda: "run_" + uuid.uuid4().hex[:24], primary_key=True)
+    object: str = Field(default="thread.run", nullable=False)
+    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
+    assistant_id: str = Field(nullable=False)
+    thread_id: str = Field(nullable=False, foreign_key="threads.id")
+    status: str = Field(default="queued")
+    started_at: Optional[datetime] = Field(default=None)
+    expires_at: Optional[datetime] = Field(default=None)
+    cancelled_at: Optional[datetime] = Field(default=None)
+    failed_at: Optional[datetime] = Field(default=None)
+    completed_at: Optional[datetime] = Field(default=None)
+    last_error: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    model: str = Field(nullable=False)
+    instructions: Optional[str] = Field(default=None)
+    tools: List[Dict] = Field(default=[], sa_column=Column(JSON))
+    file_ids: List[str] = Field(default=[], sa_column=Column(JSON))
+    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", JSON))
+    usage: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    temperature: Optional[float] = Field(default=None)
+    top_p: Optional[float] = Field(default=None)
+    max_prompt_tokens: Optional[int] = Field(default=None)
+    max_completion_tokens: Optional[int] = Field(default=None)
+    truncation_strategy: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    response_format: Optional[str] = Field(default=None)
+    tool_choice: Optional[str] = Field(default=None)
+    parallel_tool_calls: bool = Field(default=False)
+
+    def __init__(self, **data):  # noqa: D107
+        super().__init__(**data)
+        if not is_valid_run_status(self.status):
+            raise ValueError(f"Invalid status: {self.status}")
+
+    def to_openai(self) -> OpenAIRun:
+        """Convert to OpenAI Run object."""
+        return OpenAIRun(
+            id=self.id,
+            object="thread.run",
+            created_at=int(self.created_at.timestamp()),
+            assistant_id=self.assistant_id,
+            thread_id=self.thread_id,
+            status=self.status,  # type: ignore
+            started_at=int(self.started_at.timestamp()) if self.started_at else None,
+            expires_at=int(self.expires_at.timestamp()) if self.expires_at else None,
+            cancelled_at=int(self.cancelled_at.timestamp()) if self.cancelled_at else None,
+            failed_at=int(self.failed_at.timestamp()) if self.failed_at else None,
+            completed_at=int(self.completed_at.timestamp()) if self.completed_at else None,
+            last_error=None,
+            model=self.model,
+            instructions=self.instructions or "",
+            tools=[],
+            metadata=self.meta_data,
+            usage=None,
+            temperature=self.temperature,
+            top_p=self.top_p,
+            max_prompt_tokens=self.max_prompt_tokens,
+            max_completion_tokens=self.max_completion_tokens,
+            truncation_strategy=None,
+            response_format=None,
+            tool_choice=None,
+            parallel_tool_calls=self.parallel_tool_calls,
+        )
+
+
+db_url = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+engine = create_engine(db_url)
 
 
 @contextmanager
@@ -121,24 +312,30 @@ SUPPORTED_MIME_TYPES = {
     "application/json": [".json"],
     "application/pdf": [".pdf"],
     "application/typescript": [".ts"],
+    "application/yaml": [".yaml"],
 }
 
 SUPPORTED_TEXT_ENCODINGS = ["utf-8", "utf-16", "ascii"]
 
 
-class Source(BaseModel):
-    type: str
+# Add type checking functions
+def is_valid_message_role(role: str) -> bool:
+    return role in ("user", "assistant")
 
 
-class GitHubSource(Source):
-    type: str = "github"
-    owner: str
-    repo: str
-    branch: str = "main"
+def is_valid_message_status(status: str) -> bool:
+    return status in ("in_progress", "incomplete", "completed")
 
 
-class GitLabSource(Source):
-    type: str = "gitlab"
-    owner: str
-    repo: str
-    branch: str = "main"
+def is_valid_run_status(status: str) -> bool:
+    return status in (
+        "queued",
+        "in_progress",
+        "requires_action",
+        "cancelling",
+        "cancelled",
+        "failed",
+        "completed",
+        "incomplete",
+        "expired",
+    )

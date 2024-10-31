@@ -43,7 +43,7 @@ export const Card = forwardRef<HTMLDivElement, Props>(
         data-padding={padding}
         data-padding-inline={paddingInline}
         role={props.onClick ? 'button' : undefined}
-        tabIndex={props.tabIndex ?? props.onClick ? 0 : undefined}
+        tabIndex={(props.tabIndex ?? props.onClick) ? 0 : undefined}
         ref={ref}
         style={{
           '--card-background-color': `var(--${background})`,

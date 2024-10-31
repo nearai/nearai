@@ -25,7 +25,7 @@ import { Text } from '~/components/lib/Text';
 import { Tooltip } from '~/components/lib/Tooltip';
 import { useDebouncedValue } from '~/hooks/debounce';
 import { useQueryParams } from '~/hooks/url';
-import { STANDARD_BENCHMARK_COLUMNS } from '~/lib/benchmarks';
+import { DEFAULT_BENCHMARK_COLUMNS } from '~/lib/benchmarks';
 import { idForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
 import { api } from '~/trpc/react';
@@ -52,6 +52,13 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
     category: 'benchmark',
   });
 
+  const defaultBenchmarkColumns = useMemo(() => {
+    return (
+      evaluationsQuery.data?.defaultBenchmarkColumns ??
+      DEFAULT_BENCHMARK_COLUMNS
+    );
+  }, [evaluationsQuery.data]);
+
   const selectedBenchmarkIds = useMemo(() => {
     const ids = queryParams.benchmarks ? queryParams.benchmarks.split(',') : [];
 
@@ -68,12 +75,12 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
       ? queryParams.columns.split(',')
       : selectedBenchmarkIds.length > 0
         ? []
-        : STANDARD_BENCHMARK_COLUMNS;
+        : defaultBenchmarkColumns;
 
     columns.sort();
 
     return columns;
-  }, [queryParams.columns, selectedBenchmarkIds]);
+  }, [defaultBenchmarkColumns, queryParams.columns, selectedBenchmarkIds]);
 
   const selectedBenchmarks = useMemo(() => {
     return benchmarksQuery.data?.filter((entry) =>
@@ -130,7 +137,7 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
 
   const { sorted, ...tableProps } = useTable({
     data: searched,
-    sortColumn: STANDARD_BENCHMARK_COLUMNS[0]!,
+    sortColumn: defaultBenchmarkColumns[0]!,
     sortOrder: 'DESCENDING',
   });
 
@@ -347,61 +354,63 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
             </>
           ) : (
             <Table.Root {...tableProps}>
-              <Table.Head>
-                <Table.Row>
-                  <Table.HeadCell column="provider" sortable>
-                    Provider
-                  </Table.HeadCell>
+              {sorted && (
+                <Table.Head>
+                  <Table.Row>
+                    <Table.HeadCell column="provider" sortable>
+                      Provider
+                    </Table.HeadCell>
 
-                  <Table.HeadCell
-                    column="model"
-                    sortable
-                    style={{ minWidth: '12rem' }}
-                  >
-                    Model
-                  </Table.HeadCell>
+                    <Table.HeadCell
+                      column="model"
+                      sortable
+                      style={{ minWidth: '12rem' }}
+                    >
+                      Model
+                    </Table.HeadCell>
 
-                  <Table.HeadCell
-                    column="agentId"
-                    sortable
-                    style={{ minWidth: '15rem' }}
-                  >
-                    Agent
-                  </Table.HeadCell>
+                    <Table.HeadCell
+                      column="agentId"
+                      sortable
+                      style={{ minWidth: '15rem' }}
+                    >
+                      Agent
+                    </Table.HeadCell>
 
-                  {selectedBenchmarkColumns.map((column) => (
-                    <Table.HeadCell column={column} sortable key={column}>
-                      <Flex
-                        as="span"
-                        direction="column"
-                        style={{ textTransform: 'none' }}
-                      >
-                        {column.includes('/') && (
+                    {selectedBenchmarkColumns.map((column) => (
+                      <Table.HeadCell column={column} sortable key={column}>
+                        <Flex
+                          as="span"
+                          direction="column"
+                          style={{ textTransform: 'none' }}
+                        >
+                          {column.includes('/') && (
+                            <Text
+                              as="span"
+                              size="text-2xs"
+                              color="current"
+                              style={{
+                                marginBottom: '-0.1rem',
+                                display: 'inline-block',
+                              }}
+                            >
+                              {column.split('/').slice(0, -1).join('/')}/
+                            </Text>
+                          )}
                           <Text
                             as="span"
-                            size="text-2xs"
+                            size="text-s"
+                            weight={600}
                             color="current"
-                            style={{
-                              marginBottom: '-0.1rem',
-                              display: 'inline-block',
-                            }}
                           >
-                            {column.split('/').slice(0, -1).join('/')}/
+                            {column.split('/').at(-1)}
                           </Text>
-                        )}
-                        <Text
-                          as="span"
-                          size="text-s"
-                          weight={600}
-                          color="current"
-                        >
-                          {column.split('/').at(-1)}
-                        </Text>
-                      </Flex>
-                    </Table.HeadCell>
-                  ))}
-                </Table.Row>
-              </Table.Head>
+                        </Flex>
+                      </Table.HeadCell>
+                    ))}
+                  </Table.Row>
+                </Table.Head>
+              )}
 
               <Table.Body>
                 {!sorted && <Table.PlaceholderRows />}
