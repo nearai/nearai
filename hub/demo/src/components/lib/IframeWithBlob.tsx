@@ -4,6 +4,34 @@ import { useDebouncedFunction } from '~/hooks/debounce';
 
 import s from './IframeWithBlob.module.scss';
 
+function extendHtml(html: string) {
+  let htmlWithBodyTag = html;
+
+  if (!html.includes('</body>')) {
+    htmlWithBodyTag = `<html><body>${html}</body></html>`;
+  }
+
+  const script = `
+    <script>
+      function postMessage() {
+        window.parent.postMessage({
+          type: "SET_HEIGHT",
+          height: document.body.scrollHeight
+        }, '*');
+      }
+
+      const resizeObserver = new ResizeObserver(postMessage);
+      resizeObserver.observe(document.body);
+      
+      postMessage();
+    </script>
+  `;
+
+  const extended = htmlWithBodyTag.replace('</body>', `${script}</body>`);
+
+  return extended;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type IframePostMessageEventHandler<T = any> = (
   event: Omit<MessageEvent, 'data'> & {
@@ -24,9 +52,6 @@ export const IframeWithBlob = ({
   postMessage,
   ...props
 }: Props) => {
-  const hiddenHeightCalculationIframeRef = useRef<HTMLIFrameElement | null>(
-    null,
-  );
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [dataUrl, setDataUrl] = useState('');
   const [height, setHeight] = useState(0);
@@ -41,17 +66,12 @@ export const IframeWithBlob = ({
     */
   }, 10);
 
-  const resizeIframe = () => {
-    const iframe = hiddenHeightCalculationIframeRef.current;
-    setHeight((iframe?.contentWindow?.document.body.scrollHeight ?? 0) + 1);
-  };
-
   useEffect(() => {
-    const blob = new Blob([html], { type: 'text/html;charset=UTF-8' });
+    const extendedHtml = extendHtml(html);
+    const blob = new Blob([extendedHtml], { type: 'text/html;charset=UTF-8' });
     const url = URL.createObjectURL(blob);
 
     setDataUrl(url);
-    resizeIframe();
 
     return () => {
       URL.revokeObjectURL(url);
@@ -59,19 +79,25 @@ export const IframeWithBlob = ({
   }, [html]);
 
   useEffect(() => {
-    function resizeListener() {
-      resizeIframe();
-    }
-    window.addEventListener('resize', resizeListener);
-    () => {
-      window.removeEventListener('resize', resizeListener);
-    };
-  }, []);
-
-  useEffect(() => {
     function messageListener(event: MessageEvent) {
       if (event.source !== iframeRef.current?.contentWindow) return;
-      console.log('Received postMessage from <IframeWithBlob />', event.data);
+      const data: unknown = event.data;
+      console.log('Received postMessage from <IframeWithBlob />', data);
+
+      if (data && typeof data === 'object') {
+        if ('type' in data) {
+          if (
+            data.type === 'SET_HEIGHT' &&
+            'height' in data &&
+            typeof data.height === 'number'
+          ) {
+            const height = data.height || 0;
+            setHeight(height);
+            return;
+          }
+        }
+      }
+
       onPostMessage?.(event);
     }
 
@@ -104,15 +130,6 @@ export const IframeWithBlob = ({
 
   return (
     <div className={s.iframeWrapper}>
-      <iframe
-        height={0}
-        ref={hiddenHeightCalculationIframeRef}
-        src={dataUrl}
-        onLoad={resizeIframe}
-        sandbox="allow-same-origin"
-        className={s.hiddenHeightCalculationIframe}
-      />
-
       <iframe
         height={height}
         ref={iframeRef}
