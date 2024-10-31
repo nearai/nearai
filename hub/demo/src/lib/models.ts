@@ -115,6 +115,7 @@ export const entryDetailsModel = z.intersection(
     .object({
       agent: z
         .object({
+          initial_user_message: z.string(),
           welcome: z
             .object({
               title: z.string(),
