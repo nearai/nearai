@@ -15,7 +15,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Controller, type SubmitHandler } from 'react-hook-form';
+import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import { type z } from 'zod';
 
 import { AgentPermissionsModal } from '~/components/AgentPermissionsModal';
@@ -43,10 +43,9 @@ import {
   useCurrentEntry,
   useCurrentEntryEnvironmentVariables,
 } from '~/hooks/entries';
-import { useZodForm } from '~/hooks/form';
 import { useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
-import { chatWithAgentModel, type threadMessageModel } from '~/lib/models';
+import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
 import { returnOptimisticThreadMessage } from '~/lib/thread';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
@@ -64,6 +63,11 @@ type Props = {
   version: string;
   showLoadingPlaceholder?: boolean;
 };
+
+type FormSchema = Pick<
+  z.infer<typeof chatWithAgentModel>,
+  'max_iterations' | 'new_message'
+>;
 
 export const AgentRunner = ({
   namespace,
@@ -101,8 +105,10 @@ export const AgentRunner = ({
     onIframePostMessage,
   } = useAgentRequestsWithIframe(currentEntry, chatMutation, threadId);
 
-  const form = useZodForm(chatWithAgentModel, {
-    defaultValues: { agent_id: agentId, max_iterations: 1 },
+  const form = useForm<FormSchema>({
+    defaultValues: {
+      max_iterations: 1,
+    },
   });
 
   const [htmlOutput, setHtmlOutput] = useState('');
@@ -158,15 +164,27 @@ export const AgentRunner = ({
     [updateQueryPath],
   );
 
-  const onSubmit: SubmitHandler<z.infer<typeof chatWithAgentModel>> = async (
-    data,
-  ) => {
+  const submitMessage = async (data: FormSchema) => {
+    const response = await chatMutation.mutateAsync({
+      ...data,
+      thread_id: threadId || undefined,
+      agent_id: agentId,
+      agent_env_vars: entryEnvironmentVariables.metadataVariablesByKey,
+      user_env_vars: entryEnvironmentVariables.urlVariablesByKey,
+    });
+
+    if (response.threadId === threadId) {
+      await threadQuery.refetch();
+    } else {
+      updateQueryPath({ threadId: response.threadId }, 'replace', false);
+    }
+
+    void threadsQuery.refetch();
+  };
+
+  const onSubmit: SubmitHandler<FormSchema> = async (data) => {
     try {
       if (!data.new_message.trim()) return;
-
-      if (threadId) {
-        data.thread_id = threadId;
-      }
 
       utils.hub.thread.setData(
         {
@@ -184,18 +202,7 @@ export const AgentRunner = ({
 
       form.setValue('new_message', '');
 
-      data.agent_env_vars = entryEnvironmentVariables.metadataVariablesByKey;
-      data.user_env_vars = entryEnvironmentVariables.urlVariablesByKey;
-
-      const response = await chatMutation.mutateAsync(data);
-
-      if (response.threadId === threadId) {
-        await threadQuery.refetch();
-      } else {
-        updateQueryPath({ threadId: response.threadId }, 'replace', false);
-      }
-
-      void threadsQuery.refetch();
+      await submitMessage(data);
     } catch (error) {
       handleClientError({ error, title: 'Failed to communicate with agent' });
     }
@@ -261,8 +268,34 @@ export const AgentRunner = ({
   }, [threadId, currentEntry, isAuthenticated, form]);
 
   useEffect(() => {
+    form.reset();
+  }, [agentId, form]);
+
+  useEffect(() => {
+    if (currentEntry && !form.formState.isDirty) {
+      const maxIterations =
+        currentEntry.details.agent?.defaults?.max_iterations ?? 1;
+      form.setValue('max_iterations', maxIterations);
+    }
+  }, [currentEntry, form]);
+
+  useEffect(() => {
     setThreadsOpenForSmallScreens(false);
   }, [threadId]);
+
+  useEffect(() => {
+    const agentDetails = currentEntry?.details.agent;
+    const initialUserMessage = agentDetails?.initial_user_message;
+    const maxIterations = agentDetails?.defaults?.max_iterations ?? 1;
+
+    if (initialUserMessage && !threadId && !chatMutation.isPending) {
+      void submitMessage({
+        max_iterations: maxIterations,
+        new_message: initialUserMessage,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEntry, threadId, chatMutation]);
 
   if (!currentEntry) {
     if (showLoadingPlaceholder) return <PlaceholderSection />;

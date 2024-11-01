@@ -289,6 +289,7 @@ class Environment(object):
 
     def read_file(self, filename: str):
         """Reads a file from the environment or thread."""
+        file_content = None
         # First try to read from local filesystem
         local_path = os.path.join(self.get_primary_agent_temp_dir(), filename)
         if os.path.exists(local_path):
@@ -304,7 +305,7 @@ class Environment(object):
                 break
 
         if not file_content:
-            return None
+            raise Exception(f"failed to read file: {filename}")
 
         # Write the file content to the local filesystem
         with open(local_path, "w") as local_file:
@@ -569,7 +570,7 @@ class Environment(object):
         model: str = "",
         tools: Optional[List] = None,
         add_responses_to_messages: bool = True,
-        agent_role_name="agent",
+        agent_role_name="assistant",
         tool_role_name="tool",
         **kwargs: Any,
     ) -> ModelResponse:
@@ -765,6 +766,17 @@ class Environment(object):
         self.add_system_log("Environment run completed", logging.INFO)
         return res
 
+    def mark_failed(self) -> Run:
+        """Marks the environment run as failed."""
+        self._done = True
+        self.add_system_log("Environment run failed", logging.ERROR)
+        res = self._hub_client.beta.threads.runs.update(
+            thread_id=self._thread_id,
+            run_id=self._run_id,
+            extra_body={"status": "failed", "failed_at": datetime.now().isoformat()},
+        )
+        return res
+
     def create_snapshot(self) -> bytes:
         """Create an in memory snapshot."""
         with tempfile.NamedTemporaryFile(suffix=".tar.gz") as f:
@@ -870,8 +882,18 @@ class Environment(object):
 
         while iteration < max_iterations and not self.is_done() and self.get_next_actor() != "user":
             iteration += 1
-            print([x.identifier for x in self._agents])
-            self._agents[0].run(self, task=new_message)
+            self.add_system_log(
+                f"Running agent {self._agents[0].identifier}, iteration {iteration}/{max_iterations}",
+                logging.INFO,
+            )
+            try:
+                self._agents[0].run(self, task=new_message)
+            except Exception as e:
+                self.add_system_log(f"Environment run failed: {e}", logging.ERROR)
+                self.mark_failed()
+                raise e
+
+        self.mark_done()
 
         return run_id
 

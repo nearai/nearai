@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import re
@@ -281,6 +282,7 @@ class EntryInformation(BaseModel):
     namespace: str
     name: str
     version: str
+    updated: datetime.datetime
     category: str
     description: str
     details: Dict[str, Any]
@@ -365,7 +367,7 @@ def list_entries(
                 GROUP BY namespace, name
             )
             SELECT registry.id, registry.namespace, registry.name, registry.version,
-            registry.category, registry.description, registry.details,
+            registry.category, registry.description, registry.details, registry.time,
             CountedStars.num_stars, CountedStars.starred_by_pov
             FROM registry_entry registry
             LEFT JOIN CountedStars
@@ -415,7 +417,7 @@ def list_entries(
                     )
 
                     SELECT registry.id, registry.namespace, registry.name, registry.version,
-                           registry.category, registry.description, registry.details,
+                           registry.category, registry.description, registry.details, registry.time,
                            ranked.num_stars, ranked.starred_by_pov
                     FROM RankedRegistry ranked
                     JOIN registry_entry registry ON ranked.id = registry.id
@@ -429,7 +431,7 @@ def list_entries(
             bind_params["tags"] = tags_list
             bind_params["ntags"] = len(tags_list)
 
-        for id, namespace_, name, version, category_, description, details, num_stars, pov in session.exec(
+        for id, namespace_, name, version, category_, description, details, timestamp, num_stars, pov in session.exec(
             text(query_text).bindparams(**bind_params)
         ).all():  # type: ignore
             print(namespace_, name, version, num_stars)
@@ -439,6 +441,7 @@ def list_entries(
                     namespace=namespace_,
                     name=name,
                     version=version,
+                    updated=timestamp.replace(tzinfo=datetime.timezone.utc),
                     category=category_,
                     description=description,
                     details=json.loads(details),

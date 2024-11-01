@@ -17,6 +17,12 @@ export const messageModel = z.object({
   content: z.string(),
 });
 
+export const runModel = z.object({
+  id: z.string(),
+  thread_id: z.string(),
+  status: z.string(),
+});
+
 export const chatWithAgentModel = z.object({
   agent_id: z.string(),
   new_message: z.string(),
@@ -115,6 +121,12 @@ export const entryDetailsModel = z.intersection(
     .object({
       agent: z
         .object({
+          defaults: z
+            .object({
+              max_iterations: z.number(),
+            })
+            .partial(),
+          initial_user_message: z.string(),
           welcome: z
             .object({
               title: z.string(),
@@ -143,6 +155,7 @@ export const entryModel = z.object({
   namespace: z.string(),
   name: z.string(),
   version: z.string(),
+  updated: z.string().datetime(),
   description: z.string().default(''),
   tags: z.string().array().default([]),
   show_entry: z.boolean().default(true),

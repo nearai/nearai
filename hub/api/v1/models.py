@@ -141,7 +141,7 @@ class Message(SQLModel, table=True):
 
     def __init__(self, **data):  # noqa: D107
         super().__init__(**data)
-        if not is_valid_message_role(self.role):
+        if not is_valid_thread_message_role(self.role):
             raise ValueError(f"Invalid role: {self.role}")
         if not is_valid_message_status(self.status):
             raise ValueError(f"Invalid status: {self.status}")
@@ -318,8 +318,8 @@ SUPPORTED_MIME_TYPES = {
 SUPPORTED_TEXT_ENCODINGS = ["utf-8", "utf-16", "ascii"]
 
 
-# Add type checking functions
-def is_valid_message_role(role: str) -> bool:
+def is_valid_thread_message_role(role: str) -> bool:
+    # Only "user" and "assistant" are allowed: https://platform.openai.com/docs/api-reference/messages/createMessage
     return role in ("user", "assistant")
 
 

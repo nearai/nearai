@@ -27,6 +27,7 @@ import {
 } from '~/server/api/trpc';
 import { loadEntriesFromDirectory } from '~/server/utils/data-source';
 import { loadAttachmentFilesForMessages } from '~/server/utils/files';
+import { runMessageOnAgentThread } from '~/server/utils/threads';
 
 const fetchWithZod = createZodFetcher();
 
@@ -34,26 +35,18 @@ export const hubRouter = createTRPCRouter({
   chatWithAgent: protectedProcedure
     .input(chatWithAgentModel)
     .mutation(async ({ ctx, input }) => {
-      const url = `${env.ROUTER_URL}/agent/runs`;
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: ctx.authorization,
-        },
-        body: JSON.stringify(input),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to run agent, status: ${response.status}`);
+      try {
+        const { threadId } = await runMessageOnAgentThread(
+          ctx.authorization,
+          input,
+        );
+        return {
+          threadId,
+        };
+      } catch (error) {
+        console.error(error);
+        throw error;
       }
-
-      const threadId = (await response.text()).replace(/"/g, '');
-
-      return {
-        threadId,
-      };
     }),
 
   chatWithModel: protectedProcedure

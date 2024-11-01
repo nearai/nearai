@@ -24,6 +24,7 @@ import { type EntryCategory } from '~/lib/models';
 import { api } from '~/trpc/react';
 
 import { StarButton } from './StarButton';
+import { format, formatDistanceToNow } from 'date-fns';
 
 type Props = {
   category: EntryCategory;
@@ -85,6 +86,9 @@ export const EntriesTable = ({ category, title }: Props) => {
               Creator
             </Table.HeadCell>
             <Table.HeadCell>Version</Table.HeadCell>
+            <Table.HeadCell column="updated" sortable>
+              Updated
+            </Table.HeadCell>
             <Table.HeadCell>Tags</Table.HeadCell>
             <Table.HeadCell
               column="num_stars"
@@ -131,6 +135,14 @@ export const EntriesTable = ({ category, title }: Props) => {
 
               <Table.Cell>
                 <Text size="text-s">{entry.version}</Text>
+              </Table.Cell>
+
+              <Table.Cell>
+                <Text size="text-s">
+                  <Tooltip content={format(entry.updated, 'PPpp')}>
+                    <span>{formatDistanceToNow(entry.updated, { addSuffix: true })}</span>
+                  </Tooltip>
+                </Text>
               </Table.Cell>
 
               <Table.Cell style={{ maxWidth: '14rem', overflow: 'hidden' }}>
