@@ -17,6 +17,12 @@ export const messageModel = z.object({
   content: z.string(),
 });
 
+export const runModel = z.object({
+  id: z.string(),
+  thread_id: z.string(),
+  status: z.string(),
+});
+
 export const chatWithAgentModel = z.object({
   agent_id: z.string(),
   new_message: z.string(),
