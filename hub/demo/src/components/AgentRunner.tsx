@@ -268,16 +268,29 @@ export const AgentRunner = ({
   }, [threadId, currentEntry, isAuthenticated, form]);
 
   useEffect(() => {
+    form.reset();
+  }, [agentId, form]);
+
+  useEffect(() => {
+    if (currentEntry && !form.formState.isDirty) {
+      const maxIterations =
+        currentEntry.details.agent?.defaults?.max_iterations ?? 1;
+      form.setValue('max_iterations', maxIterations);
+    }
+  }, [currentEntry, form]);
+
+  useEffect(() => {
     setThreadsOpenForSmallScreens(false);
   }, [threadId]);
 
   useEffect(() => {
-    const initialUserMessage =
-      currentEntry?.details.agent?.initial_user_message;
+    const agentDetails = currentEntry?.details.agent;
+    const initialUserMessage = agentDetails?.initial_user_message;
+    const maxIterations = agentDetails?.defaults?.max_iterations ?? 1;
 
     if (initialUserMessage && !threadId && !chatMutation.isPending) {
       void submitMessage({
-        max_iterations: 1,
+        max_iterations: maxIterations,
         new_message: initialUserMessage,
       });
     }

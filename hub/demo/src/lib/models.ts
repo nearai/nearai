@@ -115,6 +115,11 @@ export const entryDetailsModel = z.intersection(
     .object({
       agent: z
         .object({
+          defaults: z
+            .object({
+              max_iterations: z.number(),
+            })
+            .partial(),
           initial_user_message: z.string(),
           welcome: z
             .object({
