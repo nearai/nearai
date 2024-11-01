@@ -7,6 +7,7 @@ import {
   type AgentRequest,
   checkAgentPermissions,
 } from '~/components/AgentPermissionsModal';
+import { type AgentRunnerFormSchema } from '~/components/AgentRunner';
 import { type IframePostMessageEventHandler } from '~/components/lib/IframeWithBlob';
 import {
   agentWalletAccountRequestModel,
@@ -21,7 +22,6 @@ import { api } from '~/trpc/react';
 import { unreachable } from '~/utils/unreachable';
 
 import { useQueryParams } from './url';
-import { AgentRunnerFormSchema } from '~/components/AgentRunner';
 
 const PENDING_TRANSACTION_KEY = 'agent-transaction-request-pending-connection';
 

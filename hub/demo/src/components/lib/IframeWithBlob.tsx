@@ -80,7 +80,7 @@ export const IframeWithBlob = ({
     return () => {
       window.removeEventListener('message', messageListener);
     };
-  }, [onPostMessage]);
+  }, [onPostMessage, minimumHeight]);
 
   useEffect(() => {
     if (postMessage) {
