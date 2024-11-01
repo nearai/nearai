@@ -5,29 +5,78 @@ import { useDebouncedFunction } from '~/hooks/debounce';
 import s from './IframeWithBlob.module.scss';
 
 function extendHtml(html: string) {
-  let htmlWithBodyTag = html;
+  let wrappedHtml = html;
 
   if (!html.includes('</body>')) {
-    htmlWithBodyTag = `<html><body>${html}</body></html>`;
+    wrappedHtml = `<html><body>${html}</body></html>`;
   }
 
   const script = `
-    <script>
-      function postMessage() {
-        window.parent.postMessage({
-          type: "SET_HEIGHT",
-          height: document.body.scrollHeight
-        }, '*');
+    <style>
+      html, body {
+        margin: 0 !important;
+        overflow: hidden !important;
       }
 
-      const resizeObserver = new ResizeObserver(postMessage);
+      body :first-child, #iframe-height-calculator :first-child {
+        margin-top: 0 !important;
+      }
+
+      #iframe-height-calculator {
+        overflow: hidden;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        z-index: -1;
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
+
+    <script>
+      let isCalculatingHeight = false;
+
+      function setHeight() {
+        isCalculatingHeight = true;
+
+        const calculator = document.createElement('div');
+        calculator.id = 'iframe-height-calculator';
+        calculator.innerHTML = document.body.innerHTML;
+        document.body.append(calculator);
+        const height = calculator.offsetHeight;
+        calculator.remove();
+
+        window.parent.postMessage({
+          type: "SET_HEIGHT",
+          height
+        }, '*');
+
+        setTimeout(() => {
+          isCalculatingHeight = false;
+        });
+      }
+
+      const mutationObserver = new MutationObserver((mutations) => {
+        if (!isCalculatingHeight) setHeight();
+      });
+      mutationObserver.observe(document.body, {
+        attributes: true,
+        childList: true,
+        subtree: true
+      });
+
+      const resizeObserver = new ResizeObserver(() => setHeight());
       resizeObserver.observe(document.body);
       
-      postMessage();
+      setHeight();
+
+      const paragraphs = document.querySelectorAll('p');
+      paragraphs.forEach((p) => p.addEventListener('click', () => p.remove()));
     </script>
   `;
 
-  const extended = htmlWithBodyTag.replace('</body>', `${script}</body>`);
+  const extended = wrappedHtml.replace('</body>', `${script}</body>`);
 
   return extended;
 }
@@ -136,7 +185,7 @@ export const IframeWithBlob = ({
         src={dataUrl}
         sandbox="allow-scripts allow-popups"
         className={`${s.visibleIframe} ${className}`}
-        data-loading={height < 10}
+        data-loading={height < 1}
         {...props}
       />
     </div>
