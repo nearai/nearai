@@ -303,7 +303,7 @@ class Environment(object):
                 break
 
         if not file_content:
-            return None
+            raise Exception(f"failed to read file: {filename}")
 
         # Write the file content to the local filesystem
         with open(local_path, "w") as local_file:
