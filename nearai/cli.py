@@ -512,7 +512,7 @@ class AgentCli:
                 extra_body={"delegate_execution": True},
             )
             params = {
-                "max_iterations": 3,
+                "max_iterations": 1,
                 "record_run": True,
                 "api_url": CONFIG.api_url,
                 "tool_resources": run.tools,
