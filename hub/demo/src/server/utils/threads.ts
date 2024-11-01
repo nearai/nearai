@@ -73,12 +73,12 @@ export async function runMessageOnAgentThread(
       maxAttempts: 400,
       // 2 minutes of polling...
     },
-    async (response) => {
+    async (response, currentAttempt) => {
       const data = (await response.json()) as unknown;
 
       if (env.NODE_ENV === 'development') {
         // When running locally, this log statement can be useful
-        console.log('Polling thread run', data);
+        console.log(`Polling thread run - attempt ${currentAttempt}`, data);
       }
 
       const run = runModel.parse(data);

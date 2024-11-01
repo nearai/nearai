@@ -35,18 +35,14 @@ export const hubRouter = createTRPCRouter({
   chatWithAgent: protectedProcedure
     .input(chatWithAgentModel)
     .mutation(async ({ ctx, input }) => {
-      try {
-        const { threadId } = await runMessageOnAgentThread(
-          ctx.authorization,
-          input,
-        );
-        return {
-          threadId,
-        };
-      } catch (error) {
-        console.error(error);
-        throw error;
-      }
+      const { threadId } = await runMessageOnAgentThread(
+        ctx.authorization,
+        input,
+      );
+
+      return {
+        threadId,
+      };
     }),
 
   chatWithModel: protectedProcedure
