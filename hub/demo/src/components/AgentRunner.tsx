@@ -43,7 +43,6 @@ import {
   useCurrentEntry,
   useCurrentEntryEnvironmentVariables,
 } from '~/hooks/entries';
-import { useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
 import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
 import { returnOptimisticThreadMessage } from '~/lib/thread';
@@ -64,7 +63,7 @@ type Props = {
   showLoadingPlaceholder?: boolean;
 };
 
-type FormSchema = Pick<
+export type AgentRunnerFormSchema = Pick<
   z.infer<typeof chatWithAgentModel>,
   'max_iterations' | 'new_message'
 >;
@@ -94,18 +93,9 @@ export const AgentRunner = ({
   );
   const threadId = queryParams.threadId ?? '';
   const chatMutation = api.hub.chatWithAgent.useMutation();
-  const { threadsQuery } = useThreads();
   const utils = api.useUtils();
 
-  const {
-    agentRequestsNeedingPermissions,
-    setAgentRequestsNeedingPermissions,
-    conditionallyProcessAgentRequests,
-    iframePostMessage,
-    onIframePostMessage,
-  } = useAgentRequestsWithIframe(currentEntry, chatMutation, threadId);
-
-  const form = useForm<FormSchema>({
+  const form = useForm<AgentRunnerFormSchema>({
     defaultValues: {
       max_iterations: 1,
     },
@@ -124,7 +114,7 @@ export const AgentRunner = ({
       threadId,
     },
     {
-      enabled: false,
+      enabled: !!threadId,
     },
   );
   const thread = threadQuery.data;
@@ -145,6 +135,34 @@ export const AgentRunner = ({
     }
   }
 
+  const submitMessage = async (data: AgentRunnerFormSchema) => {
+    const response = await chatMutation.mutateAsync({
+      ...data,
+      thread_id: threadId || undefined,
+      agent_id: agentId,
+      agent_env_vars: entryEnvironmentVariables.metadataVariablesByKey,
+      user_env_vars: entryEnvironmentVariables.urlVariablesByKey,
+    });
+
+    if (response.threadId === threadId) {
+      await threadQuery.refetch();
+    } else {
+      updateQueryPath({ threadId: response.threadId }, 'replace', false);
+    }
+
+    void utils.hub.threads.invalidate();
+  };
+
+  const {
+    agentRequestsNeedingPermissions,
+    setAgentRequestsNeedingPermissions,
+    conditionallyProcessAgentRequests,
+    iframePostMessage,
+    onIframePostMessage,
+  } = useAgentRequestsWithIframe(currentEntry, submitMessage, threadId);
+
+  const isSendingMessage = chatMutation.isPending || threadQuery.isRefetching;
+
   const [__view, __setView] = useState<RunView>();
   const view = (queryParams.view as RunView) ?? __view;
   const setView = useCallback(
@@ -164,25 +182,7 @@ export const AgentRunner = ({
     [updateQueryPath],
   );
 
-  const submitMessage = async (data: FormSchema) => {
-    const response = await chatMutation.mutateAsync({
-      ...data,
-      thread_id: threadId || undefined,
-      agent_id: agentId,
-      agent_env_vars: entryEnvironmentVariables.metadataVariablesByKey,
-      user_env_vars: entryEnvironmentVariables.urlVariablesByKey,
-    });
-
-    if (response.threadId === threadId) {
-      await threadQuery.refetch();
-    } else {
-      updateQueryPath({ threadId: response.threadId }, 'replace', false);
-    }
-
-    void threadsQuery.refetch();
-  };
-
-  const onSubmit: SubmitHandler<FormSchema> = async (data) => {
+  const onSubmit: SubmitHandler<AgentRunnerFormSchema> = async (data) => {
     try {
       if (!data.new_message.trim()) return;
 
@@ -239,12 +239,6 @@ export const AgentRunner = ({
       setView('conversation');
     }
   }, [threadQuery, htmlOutput, agentId, setView]);
-
-  useEffect(() => {
-    if (threadId && threadId !== thread?.id) {
-      void threadQuery.refetch();
-    }
-  }, [thread, threadId, threadQuery]);
 
   useEffect(() => {
     if (!threadId) {
@@ -316,13 +310,16 @@ export const AgentRunner = ({
             <>
               <IframeWithBlob
                 html={htmlOutput}
+                minimumHeight={
+                  currentEntry.details.agent?.html_minimum_height_pixels
+                }
                 onPostMessage={onIframePostMessage}
                 postMessage={iframePostMessage}
               />
 
               {latestAssistantMessages.length > 0 && (
                 <Messages
-                  loading={threadQuery.isLoading}
+                  loading={threadQuery.isPending}
                   messages={latestAssistantMessages}
                   threadId={threadId}
                 />
@@ -330,7 +327,7 @@ export const AgentRunner = ({
             </>
           ) : (
             <Messages
-              loading={threadQuery.isLoading}
+              loading={threadQuery.isPending}
               messages={thread?.messages ?? []}
               threadId={threadId}
               welcomeMessage={<AgentWelcome details={currentEntry.details} />}
@@ -405,7 +402,7 @@ export const AgentRunner = ({
                     type="submit"
                     icon={<ArrowRight weight="bold" />}
                     size="small"
-                    loading={form.formState.isSubmitting}
+                    loading={isSendingMessage}
                   />
                 </Flex>
               ) : (
@@ -495,6 +492,7 @@ export const AgentRunner = ({
       </Sidebar.Root>
 
       <AgentPermissionsModal
+        agent={currentEntry}
         onAllow={(requests) =>
           conditionallyProcessAgentRequests(requests, true)
         }

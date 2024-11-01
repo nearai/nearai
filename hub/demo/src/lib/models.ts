@@ -126,6 +126,7 @@ export const entryDetailsModel = z.intersection(
               max_iterations: z.number(),
             })
             .partial(),
+          html_minimum_height_pixels: z.number(),
           initial_user_message: z.string(),
           welcome: z
             .object({
