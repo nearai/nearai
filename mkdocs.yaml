@@ -138,6 +138,9 @@ nav:
     - Login with NEAR: 'login.md'
     - Secrets: 'hub_secrets.md'
     - Contributing: 'contributing.md'
+  - Assistants:
+    - Overview: 'assistants/overview.md'
+    - Integrate: 'assistants/integrate.md'
 plugins:
   - social
   - autorefs
