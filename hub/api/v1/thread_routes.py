@@ -18,6 +18,7 @@ from openai.types.beta.threads.run_create_params import AdditionalMessage, Trunc
 from pydantic import Field
 from shared.auth_data import AuthData
 from shared.client_config import DEFAULT_PROVIDER_MODEL, ClientConfig
+from sqlalchemy.orm.attributes import flag_modified
 from sqlmodel import asc, desc, select
 
 from hub.api.v1.agent_routes import (
@@ -308,10 +309,17 @@ def update_thread_topic(thread_id: str, auth: AuthData):
             model=DEFAULT_PROVIDER_MODEL,
         )
 
+    with get_session() as session:
+        thread = session.get(ThreadModel, thread_id)
+
+        if thread is None:
+            raise HTTPException(status_code=404, detail="Thread not found")
+
         if thread.meta_data is None:
             thread.meta_data = {}
+
         thread.meta_data["topic"] = completion.choices[0].message.content
-        session.add(thread)
+        flag_modified(thread, "meta_data")  # SQLAlchemy is not detecting changes in the dict, forcing a commit.
         session.commit()
 
 
@@ -486,7 +494,10 @@ async def create_run(
             thread_model.meta_data["agent_ids"] = []
         if run.assistant_id not in thread_model.meta_data["agent_ids"]:
             thread_model.meta_data["agent_ids"].append(run.assistant_id)
-            session.add(thread_model)
+            flag_modified(
+                thread_model, "meta_data"
+            )  # SQLAlchemy is not detecting changes in the dict, forcing a commit.
+            session.commit()
 
         if run.additional_messages:
             messages = []
