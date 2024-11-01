@@ -657,6 +657,7 @@ async def get_run(
 class RunUpdateParams(BaseModel):
     status: Optional[Literal["requires_action", "failed", "expired", "completed"]] = None
     completed_at: Optional[datetime] = None
+    failed_at: Optional[datetime] = None
     metadata: Optional[dict] = None
 
 
@@ -678,6 +679,8 @@ async def update_run(
             run_model.completed_at = run.completed_at
         if run.metadata:
             run_model.meta_data = run.metadata
+        if run.failed_at:
+            run_model.failed_at = run.failed_at
 
         session.add(run_model)
         session.commit()
