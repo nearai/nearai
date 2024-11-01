@@ -851,6 +851,8 @@ class Environment(object):
             print([x.identifier for x in self._agents])
             self._agents[0].run(self, task=new_message)
 
+        self.mark_done()
+
         return run_id
 
     def generate_folder_hash_id(self, path: str) -> str:
