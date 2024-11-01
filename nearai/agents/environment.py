@@ -287,6 +287,7 @@ class Environment(object):
 
     def read_file(self, filename: str):
         """Reads a file from the environment or thread."""
+        file_content = None
         # First try to read from local filesystem
         local_path = os.path.join(self.get_primary_agent_temp_dir(), filename)
         if os.path.exists(local_path):
