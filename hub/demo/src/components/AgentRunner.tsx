@@ -126,8 +126,9 @@ export const AgentRunner = ({
   const latestAssistantMessages: z.infer<typeof threadMessageModel>[] = [];
   if (thread) {
     for (let i = thread.messages.length - 1; i >= 0; i--) {
-      const message = thread.messages[i];
-      if (message?.role === 'assistant' && message.metadata?.message_type) {
+      const message = thread.messages[i]!;
+      const messageType = message.metadata?.message_type ?? '';
+      if (message.role === 'assistant' && !messageType.startsWith('system:')) {
         latestAssistantMessages.push(message);
       } else {
         break;
