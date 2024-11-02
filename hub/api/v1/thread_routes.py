@@ -60,7 +60,7 @@ SUMMARY_PROMPT = """You are an expert at summarizing conversations in a maximum 
 
 
 @threads_router.post("/threads")
-async def create_thread(
+def create_thread(
     thread: ThreadCreateParams = Body(...),
     auth: AuthToken = Depends(revokable_auth),
 ) -> Thread:
@@ -77,7 +77,7 @@ async def create_thread(
 
 
 @threads_router.get("/threads")
-async def list_threads(
+def list_threads(
     auth: AuthToken = Depends(revokable_auth),
 ) -> List[Thread]:
     with get_session() as session:
@@ -86,7 +86,7 @@ async def list_threads(
 
 
 @threads_router.get("/threads/{thread_id}")
-async def get_thread(
+def get_thread(
     thread_id: str,
     auth: AuthToken = Depends(revokable_auth),
 ) -> Thread:
@@ -109,7 +109,7 @@ class ThreadUpdateParams(BaseModel):
 
 
 @threads_router.post("/threads/{thread_id}")
-async def update_thread(
+def update_thread(
     thread_id: str,
     thread: ThreadUpdateParams = Body(...),
     auth: AuthToken = Depends(revokable_auth),
@@ -140,7 +140,7 @@ class ThreadDeletionStatus(BaseModel):
 
 
 @threads_router.delete("/threads/{thread_id}")
-async def delete_thread(
+def delete_thread(
     thread_id: str,
     auth: AuthToken = Depends(revokable_auth),
 ) -> ThreadDeletionStatus:
@@ -198,7 +198,7 @@ class ThreadForkResponse(BaseModel):
 
 
 @threads_router.post("/threads/{thread_id}/fork")
-async def fork_thread(
+def fork_thread(
     thread_id: str,
     auth: AuthToken = Depends(revokable_auth),
 ) -> ThreadForkResponse:
@@ -248,7 +248,7 @@ async def fork_thread(
 
 
 @threads_router.post("/threads/{thread_id}/messages")
-async def create_message(
+def create_message(
     thread_id: str,
     background_tasks: BackgroundTasks,
     message: MessageCreateParams = Body(...),
@@ -332,7 +332,7 @@ class ListMessagesResponse(BaseModel):
 
 
 @threads_router.get("/threads/{thread_id}/messages")
-async def list_messages(
+def list_messages(
     thread_id: str,
     after: str = Query(
         None, description="A cursor for use in pagination. `after` is an object ID that defines your place in the list."
@@ -407,7 +407,7 @@ async def list_messages(
 
 
 @threads_router.patch("/threads/{thread_id}/messages/{message_id}")
-async def modify_message(
+def modify_message(
     thread_id: str,
     message_id: str,
     message: MessageUpdateParams = Body(...),
@@ -475,7 +475,7 @@ class RunCreateParamsBase(BaseModel):
 
 
 @threads_router.post("/threads/{thread_id}/runs")
-async def create_run(
+def create_run(
     thread_id: str,
     background_tasks: BackgroundTasks,
     run: RunCreateParamsBase = Body(...),
@@ -673,7 +673,7 @@ class RunUpdateParams(BaseModel):
 
 
 @threads_router.post("/threads/{thread_id}/runs/{run_id}")
-async def update_run(
+def update_run(
     thread_id: str,
     run_id: str,
     run: RunUpdateParams = Body(...),
