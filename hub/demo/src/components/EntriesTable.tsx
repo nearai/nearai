@@ -138,7 +138,7 @@ export const EntriesTable = ({ category, title }: Props) => {
               </Table.Cell>
 
               <Table.Cell>
-                <Text size="text-s">
+                <Text size="text-xs">
                   <Tooltip content={format(entry.updated, 'PPpp')}>
                     <span>
                       {formatDistanceToNow(entry.updated, { addSuffix: true })}

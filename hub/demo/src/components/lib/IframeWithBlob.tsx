@@ -13,7 +13,7 @@ export type IframePostMessageEventHandler<T = any> = (
 
 type Props = ComponentProps<'iframe'> & {
   html: string;
-  minimumHeight?: number;
+  minHeight?: string;
   onPostMessage?: IframePostMessageEventHandler;
   postMessage?: unknown;
 };
@@ -21,14 +21,14 @@ type Props = ComponentProps<'iframe'> & {
 export const IframeWithBlob = ({
   className = '',
   html,
-  minimumHeight = 0,
+  minHeight = '50vh',
   onPostMessage,
   postMessage,
   ...props
 }: Props) => {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [dataUrl, setDataUrl] = useState('');
-  const [height, setHeight] = useState(minimumHeight);
+  const [height, setHeight] = useState(0);
 
   const executePostMessage = useDebouncedFunction((message: unknown) => {
     console.log('Sending postMessage to <IframeWithBlob />', message);
@@ -56,7 +56,6 @@ export const IframeWithBlob = ({
     function messageListener(event: MessageEvent) {
       if (event.source !== iframeRef.current?.contentWindow) return;
       const data: unknown = event.data;
-      console.log('Received postMessage from <IframeWithBlob />', data);
 
       if (data && typeof data === 'object') {
         if ('type' in data) {
@@ -66,12 +65,13 @@ export const IframeWithBlob = ({
             typeof data.height === 'number'
           ) {
             const height = data.height || 0;
-            setHeight(Math.max(height, minimumHeight));
+            setHeight(height);
             return;
           }
         }
       }
 
+      console.log('Received postMessage from <IframeWithBlob />', data);
       onPostMessage?.(event);
     }
 
@@ -80,7 +80,7 @@ export const IframeWithBlob = ({
     return () => {
       window.removeEventListener('message', messageListener);
     };
-  }, [onPostMessage, minimumHeight]);
+  }, [onPostMessage]);
 
   useEffect(() => {
     if (postMessage) {
@@ -103,13 +103,13 @@ export const IframeWithBlob = ({
   */
 
   return (
-    <div className={s.iframeWrapper}>
+    <div className={s.iframeWrapper} style={{ minHeight }}>
       <iframe
         height={height}
         ref={iframeRef}
         src={dataUrl}
         sandbox="allow-scripts allow-popups"
-        className={`${s.visibleIframe} ${className}`}
+        className={`${s.iframe} ${className}`}
         data-loading={height < 1}
         {...props}
       />
@@ -125,66 +125,55 @@ function extendHtml(html: string) {
   }
 
   const script = `
-    <style>
-      html, body {
-        margin: 0 !important;
-      }
-
-      body :first-child, #iframe-height-calculator :first-child {
-        margin-top: 0 !important;
-      }
-
-      #iframe-height-calculator {
-        overflow: hidden;
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        z-index: -1;
-        opacity: 0;
-        pointer-events: none;
-      }
-    </style>
-
     <script>
-      let isCalculatingHeight = false;
-
       function setHeight() {
-        isCalculatingHeight = true;
+        document.body.style.height = '1px';
+        document.body.style.display = 'block';
+        document.body.style.overflow = 'auto';
 
-        const calculator = document.createElement('div');
-        calculator.id = 'iframe-height-calculator';
-        calculator.innerHTML = document.body.innerHTML;
-        document.body.append(calculator);
-        const height = calculator.offsetHeight;
-        calculator.remove();
+        const bodyStyle = getComputedStyle(document.body, null);
+        const bodyPaddingBottom = parseInt(bodyStyle.getPropertyValue('padding-bottom').replace('px', ''));
+        const bodyMarginBottom = parseInt(bodyStyle.getPropertyValue('margin-bottom').replace('px', ''));
+
+        let height = 0;
+        const ignoreTags = ['SCRIPT', 'STYLE'];
+        const ignorePositions = ['fixed', 'absolute'];
+
+        for (let i = document.body.children.length; i >= 0; i--) {
+          const child = document.body.children[i];
+          if (child && !ignoreTags.includes(child.tagName)) {
+            const style = getComputedStyle(child, null);
+            const position = style.getPropertyValue('position');
+            const display = style.getPropertyValue('display');
+            if (display !== 'none' && ![ignorePositions].includes(position)) {
+              height = child.getBoundingClientRect().bottom + window.scrollY + bodyPaddingBottom + bodyMarginBottom;
+              break;
+            }
+          }
+        }
 
         window.parent.postMessage({
           type: "SET_HEIGHT",
           height
         }, '*');
-
-        setTimeout(() => {
-          isCalculatingHeight = false;
-        });
       }
 
-      const mutationObserver = new MutationObserver((mutations) => {
-        if (!isCalculatingHeight) setHeight();
-      });
+      const mutationObserver = new MutationObserver(setHeight);
       mutationObserver.observe(document.body, {
         attributes: true,
         childList: true,
         subtree: true
       });
 
-      const resizeObserver = new ResizeObserver(() => setHeight());
+      const resizeObserver = new ResizeObserver(setHeight);
       resizeObserver.observe(document.body);
 
       setHeight();
 
       const paragraphs = document.querySelectorAll('p');
       paragraphs.forEach((p) => p.addEventListener('click', () => p.remove()));
+
+      window.addEventListener('load', setHeight);
     </script>
   `;
 

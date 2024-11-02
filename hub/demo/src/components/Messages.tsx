@@ -12,13 +12,12 @@ import { copyTextToClipboard } from '~/utils/clipboard';
 import { Button } from './lib/Button';
 import { Card } from './lib/Card';
 import { Flex } from './lib/Flex';
-import { PlaceholderCard } from './lib/Placeholder';
 import { Text } from './lib/Text';
 import { Tooltip } from './lib/Tooltip';
 import s from './Messages.module.scss';
 
 type Props = {
-  loading?: boolean;
+  grow?: boolean;
   messages:
     | z.infer<typeof messageModel>[]
     | z.infer<typeof threadMessageModel>[];
@@ -27,7 +26,7 @@ type Props = {
 };
 
 export const Messages = ({
-  loading,
+  grow = true,
   messages,
   threadId,
   welcomeMessage,
@@ -79,59 +78,55 @@ export const Messages = ({
     },
   );
 
-  if (isAuthenticated && loading) {
-    return <PlaceholderCard style={{ marginBottom: 'auto' }} />;
+  if (!isAuthenticated) {
+    return (
+      <div className={s.wrapper} data-grow={grow}>
+        {welcomeMessage}
+      </div>
+    );
   }
 
   return (
-    <div className={s.wrapper}>
+    <div className={s.wrapper} data-grow={grow}>
       {welcomeMessage}
-      {isAuthenticated && (
-        <div className={s.messages} ref={messagesRef}>
-          {normalizedMessages.map((message, index) => (
-            <Fragment key={index}>
-              {message.role === 'user' ? (
-                <Card
-                  animateIn
-                  background="sand-2"
-                  style={{ alignSelf: 'end' }}
-                >
-                  <Text color="sand-11">{message.content}</Text>
-                </Card>
-              ) : (
-                <Card animateIn>
-                  <Text color="sand-12">{message.content}</Text>
 
-                  <Flex align="center" gap="m">
-                    <Text
-                      size="text-xs"
-                      style={{
-                        textTransform: 'capitalize',
-                        marginRight: 'auto',
-                      }}
-                    >
-                      - {message.role}
-                    </Text>
+      <div className={s.messages} ref={messagesRef}>
+        {normalizedMessages.map((message, index) => (
+          <Fragment key={index + message.content}>
+            {message.role === 'user' ? (
+              <Card animateIn background="sand-2" style={{ alignSelf: 'end' }}>
+                <Text color="sand-11">{message.content}</Text>
+              </Card>
+            ) : (
+              <Card animateIn>
+                <Text color="sand-12">{message.content}</Text>
 
-                    <Tooltip
-                      asChild
-                      content="Copy message content to clipboard"
-                    >
-                      <Button
-                        label="Copy message to clipboard"
-                        icon={<Copy />}
-                        size="small"
-                        fill="ghost"
-                        onClick={() => copyTextToClipboard(message.content)}
-                      />
-                    </Tooltip>
-                  </Flex>
-                </Card>
-              )}
-            </Fragment>
-          ))}
-        </div>
-      )}
+                <Flex align="center" gap="m">
+                  <Text
+                    size="text-xs"
+                    style={{
+                      textTransform: 'capitalize',
+                      marginRight: 'auto',
+                    }}
+                  >
+                    - {message.role}
+                  </Text>
+
+                  <Tooltip asChild content="Copy message content to clipboard">
+                    <Button
+                      label="Copy message to clipboard"
+                      icon={<Copy />}
+                      size="small"
+                      fill="ghost"
+                      onClick={() => copyTextToClipboard(message.content)}
+                    />
+                  </Tooltip>
+                </Flex>
+              </Card>
+            )}
+          </Fragment>
+        ))}
+      </div>
     </div>
   );
 };

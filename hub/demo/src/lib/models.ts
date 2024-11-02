@@ -126,7 +126,7 @@ export const entryDetailsModel = z.intersection(
               max_iterations: z.number(),
             })
             .partial(),
-          html_minimum_height_pixels: z.number(),
+          html_minimum_height: z.string(),
           initial_user_message: z.string(),
           welcome: z
             .object({
@@ -244,6 +244,15 @@ export const threadModel = z.object({
 
 export const threadsModel = threadModel.array();
 
+export const threadMessageMetadataModel = z.intersection(
+  z
+    .object({
+      message_type: z.string(),
+    })
+    .partial(),
+  z.record(z.string(), z.unknown()),
+);
+
 export const threadMessageModel = z.object({
   id: z.string(),
   assistant_id: z.unknown(),
@@ -267,7 +276,7 @@ export const threadMessageModel = z.object({
     .array(),
   incomplete_at: z.number().nullable(),
   incomplete_details: z.unknown().nullable(),
-  metadata: z.unknown(),
+  metadata: threadMessageMetadataModel.nullish(),
   object: z.string(),
   role: z.enum(['user', 'assistant', 'system']),
   run_id: z.string().nullable(),

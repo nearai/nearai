@@ -41,9 +41,12 @@ export const hubRouter = createTRPCRouter({
         input,
       );
 
-      return {
+      const thread = await fetchThreadMessagesAndFiles(
+        ctx.authorization,
         threadId,
-      };
+      );
+
+      return thread;
     }),
 
   chatWithModel: protectedProcedure

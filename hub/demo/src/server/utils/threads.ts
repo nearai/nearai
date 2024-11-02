@@ -98,9 +98,9 @@ export async function runMessageOnAgentThread(
       },
     },
     {
-      attemptDelayMs: 300,
-      maxAttempts: 400,
-      // 2 minutes of polling...
+      attemptDelayMs: 1000,
+      maxAttempts: 60,
+      // 1 minute of polling...
     },
     async (response, currentAttempt) => {
       const data = (await response.json()) as unknown;
