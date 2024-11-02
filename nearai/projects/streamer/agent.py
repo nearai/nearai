@@ -3,8 +3,7 @@ from typing import List, cast
 import litellm
 from litellm.types.completion import ChatCompletionMessageParam
 
-from nearai.agents.environment import Environment
-
+from shared.agents.environment import Environment
 
 class StreamerAgent(object):
     def run(self, env: Environment, task: str) -> None:  # noqa: D102

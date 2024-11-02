@@ -64,8 +64,8 @@ Example:
 nearai agent interactive example_agent --local
 ```
 
-* The agent can save temporary files to track the progress of a task from the user in case the dialogue execution is interrupted. By default, the entire message history is stored in a file named `chat.txt`. The agent can add messages there by using [`env.add_reply()`](api.md#nearai.agents.environment.Environment.add_message). Learn more about [the environment API](#the-environment-api).
-* During its operation, the agent creates a file named `.next_agent`, which stores the role of the next participant expected in the dialogue (either `user` or `agent`) during the next iteration of the loop. The agent can control this value using [`env.set_next_actor()`](api.md#nearai.agents.environment.Environment.set_next_actor).
+* The agent can save temporary files to track the progress of a task from the user in case the dialogue execution is interrupted. By default, the entire message history is stored in a file named `chat.txt`. The agent can add messages there by using [`env.add_reply()`](api.md#shared.agents.environment.Environment.add_message). Learn more about [the environment API](#the-environment-api).
+* During its operation, the agent creates a file named `.next_agent`, which stores the role of the next participant expected in the dialogue (either `user` or `agent`) during the next iteration of the loop. The agent can control this value using [`env.set_next_actor()`](api.md#shared.agents.environment.Environment.set_next_actor).
 * The agent can use local imports from the home folder or its subfolders. It is executed from a temporary folder within a temporary environment.
 
 
@@ -132,9 +132,9 @@ env.add_reply(agent_response)
 
 Your agent will receive an `env` object that has the following methods:
 
-  * [`request_user_input`](api.md#nearai.agents.environment.Environment.request_user_input): 
+  * [`request_user_input`](api.md#shared.agents.environment.Environment.request_user_input): 
 tell the agent that it is the user's turn, stop iterating.
-  * [`completion`](api.md#nearai.agents.environment.Environment.completion): request inference completions from a provider and model.
+  * [`completion`](api.md#shared.agents.environment.Environment.completion): request inference completions from a provider and model.
 The model format can be either `PROVIDER::MODEL` or simply `MODEL`. 
 By default the provider is `fireworks` and the model is `llama-v3p1-405b-instruct-long`. 
 The model can be passed into `completion` function or as an agent metadata:
@@ -151,28 +151,28 @@ The model can be passed into `completion` function or as an agent metadata:
      }
    }
    ```
-  * [`list_messages`](api.md#nearai.agents.environment.Environment.list_messages): returns the list of messages in the conversation.
+  * [`list_messages`](api.md#shared.agents.environment.Environment.list_messages): returns the list of messages in the conversation.
 
 ### Additional environment methods
 There are several variations for completions:
 
- * [`completions`](api.md#nearai.agents.environment.Environment.completions): returns the full llm response for more control
+ * [`completions`](api.md#shared.agents.environment.Environment.completions): returns the full llm response for more control
  * for tool calling completions see the [Tool registry and function Tool Calling](#tool-registry-and-function-tool-calling) section below.
 
 For working with files and running commands the following methods are also available on `env`. You may call these
 directly or use them through the tool_registry and passing them to a completions method.
 
- * [`list_terminal_commands`](api.md#nearai.agents.environment.Environment.list_terminal_commands): list the history of terminal commands
- * [`list_files`](api.md#nearai.agents.environment.Environment.list_files): list the files in the current directory
- * [`get_path`](api.md#nearai.agents.environment.Environment.get_system_path): get the path of the current directory
- * [`read_file`](api.md#nearai.agents.environment.Environment.read_file): read a file
- * [`write_file`](api.md#nearai.agents.environment.Environment.write_file): write to a file
- * [`exec_command`](api.md#nearai.agents.environment.Environment.exec_command): execute a terminal command
- * [`query_vector_store`](api.md#nearai.agents.environment.Environment.query_vector_store): query a vector store
+ * [`list_terminal_commands`](api.md#shared.agents.environment.Environment.list_terminal_commands): list the history of terminal commands
+ * [`list_files`](api.md#shared.agents.environment.Environment.list_files): list the files in the current directory
+ * [`get_path`](api.md#shared.agents.environment.Environment.get_system_path): get the path of the current directory
+ * [`read_file`](api.md#shared.agents.environment.Environment.read_file): read a file
+ * [`write_file`](api.md#shared.agents.environment.Environment.write_file): write to a file
+ * [`exec_command`](api.md#shared.agents.environment.Environment.exec_command): execute a terminal command
+ * [`query_vector_store`](api.md#shared.agents.environment.Environment.query_vector_store): query a vector store
 
 ### Logging
-* [`add_system_log`](api.md#nearai.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".
-* [`add_agent_log`](api.md#nearai.agents.environment.Environment.add_system_log): any agent logs may go here. Saved into "agent_log.txt".
+* [`add_system_log`](api.md#shared.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".
+* [`add_agent_log`](api.md#shared.agents.environment.Environment.add_system_log): any agent logs may go here. Saved into "agent_log.txt".
 
 
 ### Tool registry and function Tool Calling
@@ -185,8 +185,8 @@ using `<function>` tags.
 
 To tell the LLM about your tools and automatically execute them when selected by the LLM, call one of these environment methods:
 
-* [`completion_and_run_tools`](api.md#nearai.agents.environment.Environment.completion_and_run_tools): Allows tools to be passed and processes any returned tool_calls by running the tool
-* [`completions_and_run_tools`](api.md#nearai.agents.environment.Environment.completions_and_run_tools): Handles tool calls and returns the full llm response.
+* [`completion_and_run_tools`](api.md#shared.agents.environment.Environment.completion_and_run_tools): Allows tools to be passed and processes any returned tool_calls by running the tool
+* [`completions_and_run_tools`](api.md#shared.agents.environment.Environment.completions_and_run_tools): Handles tool calls and returns the full llm response.
 
 By default, these methods will add both the LLM response and tool invocation responses to the message list. 
 You do not need to call `env.add_message` for these responses.
@@ -194,9 +194,9 @@ This behavior allows the LLM to see its call then tool responses in the message 
 This can be disabled by passing `add_to_messages=False` to the method.
 
 
- * [`get_tool_registry`](api.md#nearai.agents.environment.Environment.get_tool_registry): returns the tool registry, a dictionary of tools that can be called by the agent. By default
-it is populated with the tools listed above for working with files and commands plus [`request_user_input`](api.md#nearai.agents.environment.Environment.request_user_input). To register a function as
-a new tool, call [`register_tool`](api.md#nearai.agents.tool_registry.ToolRegistry.register_tool) on the tool registry, passing it your function. 
+ * [`get_tool_registry`](api.md#shared.agents.environment.Environment.get_tool_registry): returns the tool registry, a dictionary of tools that can be called by the agent. By default
+it is populated with the tools listed above for working with files and commands plus [`request_user_input`](api.md#shared.agents.environment.Environment.request_user_input). To register a function as
+a new tool, call [`register_tool`](api.md#shared.agents.tool_registry.ToolRegistry.register_tool) on the tool registry, passing it your function. 
 ```python
 def my_tool():
     """A simple tool that returns a string. This docstring helps the LLM know when to call the tool."""

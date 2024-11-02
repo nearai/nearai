@@ -20,6 +20,7 @@ from openapi_client.api.default_api import DefaultApi
 from openapi_client.api.evaluation_api import EvaluationApi
 from openapi_client.api.jobs_api import JobsApi
 from openapi_client.api.permissions_api import PermissionsApi
+from shared.agents.agent_runner import run_with_environment, start_with_environment
 from shared.client_config import (
     DEFAULT_MODEL,
     DEFAULT_MODEL_MAX_TOKENS,
@@ -31,7 +32,6 @@ from shared.naming import NamespacedName, create_registry_name
 from shared.provider_models import ProviderModels, get_provider_namespaced_model
 from tabulate import tabulate
 
-from nearai.agents.local_runner import LocalRunner
 from nearai.config import (
     CONFIG,
     get_hub_client,
@@ -77,13 +77,16 @@ class RegistryCli:
 
         metadata_path = path / "metadata.json"
 
-        # Get the name of the folder
-        folder_name = path.name
+        version = path.name
+        pattern = r"^[0-9]+(?:\.[0-9]+)*$"
+        assert re.match(pattern, version), f"Invalid version format: {version}"
+        name = path.parent.name
+        assert not re.match(pattern, name), f"Invalid agent name: {name}"
 
         with open(metadata_path, "w") as f:
             metadata: Dict[str, Any] = {
-                "name": folder_name,
-                "version": "0.0.1",
+                "name": name,
+                "version": version,
                 "description": description,
                 "category": category,
                 "tags": [],
@@ -93,12 +96,18 @@ class RegistryCli:
 
             if category == "agent":
                 metadata["details"]["agent"] = {}
+                metadata["details"]["agent"]["welcome"] = {
+                    "title": name,
+                    "description": description,
+                }
                 metadata["details"]["agent"]["defaults"] = {
                     "model": DEFAULT_MODEL,
                     "model_provider": DEFAULT_PROVIDER,
                     "model_temperature": DEFAULT_MODEL_TEMPERATURE,
                     "model_max_tokens": DEFAULT_MODEL_MAX_TOKENS,
+                    "max_iterations": 1,
                 }
+                metadata["details"]["agent"]["framework"] = "base"
 
             json.dump(metadata, f, indent=2)
 
@@ -431,25 +440,71 @@ class AgentCli:
     ) -> None:
         """Runs agent interactively."""
         last_message_id = None
-        while True:
-            new_message = input("> ")
-            if new_message.lower() == "exit":
-                break
+        if not local:
+            while True:
+                new_message = input("> ")
+                if new_message.lower() == "exit":
+                    break
 
-            last_message_id = self._task(
-                agents=agents,
-                task=new_message,
-                thread_id=thread_id,
-                tool_resources=tool_resources,
-                record_run=False,
-                last_message_id=last_message_id,
-                local=local,
-                env_vars=env_vars,
+                last_message_id = self._task(
+                    agents=agents,
+                    task=new_message,
+                    thread_id=thread_id,
+                    tool_resources=tool_resources,
+                    last_message_id=last_message_id,
+                    local=local,
+                    env_vars=env_vars,
+                )
+
+                # Update thread_id for the next iteration
+                if thread_id is None:
+                    thread_id = self.last_thread_id
+        else:
+            # local
+            hub_client = get_hub_client()
+            if thread_id:
+                thread = hub_client.beta.threads.retrieve(thread_id)
+            else:
+                thread = hub_client.beta.threads.create(
+                    tool_resources=tool_resources,
+                )
+            run = hub_client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id=agents,
+                extra_body={"delegate_execution": True},
             )
+            params = {
+                "api_url": CONFIG.api_url,
+                "tool_resources": run.tools,
+                "data_source": "local_files",
+                "user_env_vars": env_vars,
+                "agent_env_vars": {},
+            }
+            auth = CONFIG.auth
+            assert auth is not None
+            env_run = start_with_environment(
+                agents, auth, thread.id, run.id, additional_path=agents, params=params, print_system_log=True
+            )
+            first_run = True
+            while True:
+                # List new messages
+                messages = hub_client.beta.threads.messages.list(
+                    thread_id=thread.id, after=last_message_id, order="asc"
+                )
+                message_list = list(messages)
+                if message_list:
+                    for msg in message_list:
+                        if msg.role == "user" and not first_run:
+                            continue
+                        print(f"{msg.role}: {msg.content[0].text.value}")
+                    last_message_id = message_list[-1].id
 
-            # Update thread_id for the next iteration
-            if thread_id is None:
-                thread_id = self.last_thread_id
+                new_message = input("> ")
+                if new_message.lower() == "exit":
+                    break
+                env_run.run(new_message)
+
+                first_run = False
 
     def task(
         self,
@@ -466,7 +521,6 @@ class AgentCli:
             task=task,
             thread_id=thread_id,
             tool_resources=tool_resources,
-            record_run=True,
             local=local,
             env_vars=env_vars,
         )
@@ -480,7 +534,6 @@ class AgentCli:
         task: str,
         thread_id: Optional[str] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
-        record_run: bool = True,
         last_message_id: Optional[str] = None,
         local: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
@@ -511,23 +564,18 @@ class AgentCli:
             run = hub_client.beta.threads.runs.create(
                 thread_id=thread.id,
                 assistant_id=agents,
-                instructions="You are a helpful assistant. Complete the given task.",
-                model="fireworks::accounts/fireworks/models/llama-v3p1-405b-instruct",
                 extra_body={"delegate_execution": True},
             )
             params = {
-                "max_iterations": 1,
-                "record_run": True,
                 "api_url": CONFIG.api_url,
                 "tool_resources": run.tools,
                 "data_source": "local_files",
-                "model": run.model,
                 "user_env_vars": env_vars,
                 "agent_env_vars": {},
             }
             auth = CONFIG.auth
             assert auth is not None
-            LocalRunner(agents, agents, thread.id, run.id, auth, params)
+            run_with_environment(agents, auth, thread.id, run.id, params=params)
 
         # List new messages
         messages = hub_client.beta.threads.messages.list(thread_id=thread.id, after=last_message_id, order="asc")

@@ -4,7 +4,6 @@ from os import getenv
 from typing import Any, Dict, Iterable, List, Literal, Optional, Union
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
-from nearai.agents.local_runner import LocalRunner
 from nearai.config import CONFIG, load_config_file
 from openai import BaseModel
 from openai.types.beta.assistant_response_format_option_param import AssistantResponseFormatOptionParam
@@ -16,6 +15,7 @@ from openai.types.beta.threads.message_update_params import MessageUpdateParams
 from openai.types.beta.threads.run import Run as OpenAIRun
 from openai.types.beta.threads.run_create_params import AdditionalMessage, TruncationStrategy
 from pydantic import Field
+from shared.agents.agent_runner import run_with_environment
 from shared.auth_data import AuthData
 from shared.client_config import DEFAULT_PROVIDER_MODEL, ClientConfig
 from sqlalchemy.orm.attributes import flag_modified
@@ -424,9 +424,8 @@ async def modify_message(
 
 class RunCreateParamsBase(BaseModel):
     assistant_id: str = Field(..., description="The ID of the assistant to use to execute this run.")
-    model: Optional[str] = Field(
-        default=DEFAULT_PROVIDER_MODEL, description="The ID of the Model to be used to execute this run."
-    )
+    # Overrides model in agent metadata.
+    model: Optional[str] = Field(None, description="The ID of the Model to be used to execute this run.")
     instructions: Optional[str] = Field(
         None,
         description=(
@@ -444,9 +443,11 @@ class RunCreateParamsBase(BaseModel):
     additional_messages: Optional[List[AdditionalMessage]] = Field(
         None, description="Adds additional messages to the thread before creating the run."
     )
+    # Ignored
     max_completion_tokens: Optional[int] = Field(
         None, description="The maximum number of completion tokens that may be used over the course of the run."
     )
+    # Ignored
     max_prompt_tokens: Optional[int] = Field(
         None, description="The maximum number of prompt tokens that may be used over the course of the run."
     )
@@ -457,9 +458,11 @@ class RunCreateParamsBase(BaseModel):
         None, description="Specifies the format that the model must output."
     )
     temperature: Optional[float] = Field(None, description="What sampling temperature to use, between 0 and 2.")
+    # Ignored
     tool_choice: Optional[Union[str, dict]] = Field(
         None, description="Controls which (if any) tool is called by the model."
     )
+    # Ignored
     top_p: Optional[float] = Field(
         None, description="An alternative to sampling with temperature, called nucleus sampling."
     )
@@ -593,12 +596,12 @@ def run_agent(thread_id: str, run_id: str, auth: AuthToken = Depends(revokable_a
             user_env_vars = {**user_secrets, **user_env_vars}
 
         params = {
-            "max_iterations": 1,
             "record_run": True,
             "api_url": agent_api_url,
             "tool_resources": run_model.tools,
             "data_source": data_source,
             "model": run_model.model,
+            "temperature": run_model.temperature,
             "user_env_vars": user_env_vars,
             "agent_env_vars": agent_env_vars,
         }
@@ -625,13 +628,12 @@ def run_agent(thread_id: str, run_id: str, auth: AuthToken = Depends(revokable_a
 
             params["api_url"] = load_config_file()["api_url"]
 
-            LocalRunner(
-                None,
+            run_with_environment(
                 run_model.assistant_id,
+                AuthData(**auth.model_dump()),  # TODO: https://github.com/nearai/nearai/issues/421
                 thread_id,
                 run_id,
-                AuthData(**auth.model_dump()),  # TODO: https://github.com/nearai/nearai/issues/421
-                params,
+                params=params,
             )
         else:
             function_name = f"{runner}-{framework.lower()}"

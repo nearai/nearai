@@ -12,6 +12,9 @@ from openapi_client.api.agents_assistants_api import AgentsAssistantsApi
 from openapi_client.api.registry_api import RegistryApi
 from openapi_client.api_client import ApiClient
 from openapi_client.configuration import Configuration
+from openapi_client.models.entry_location import EntryLocation
+from openapi_client.models.entry_metadata_input import EntryMetadataInput
+
 from shared.auth_data import AuthData
 
 ENVIRONMENT_FILENAME = "environment.tar.gz"
@@ -46,14 +49,15 @@ class PartialNearClient:
     def get_file_from_registry(self, entry_location: dict, path: str):
         """Fetches a file from NearAI registry."""
         api_instance = RegistryApi(self._client)
-        result = api_instance.download_file_v1_registry_download_file_post(
-            BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
-                dict(
-                    entry_location=entry_location,
-                    path=path,
-                )
+        body = BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
+            dict(
+                entry_location=entry_location,
+                path=path,
             )
         )
+        if body is None:
+            raise Exception("Failed to create request body from provided parameters")
+        result = api_instance.download_file_v1_registry_download_file_post(body)
         return result
 
     def list_files(self, entry_location: dict) -> List[str]:
@@ -62,9 +66,10 @@ class PartialNearClient:
         Return the relative paths to all files with respect to the root of the entry.
         """
         api_instance = RegistryApi(self._client)
-        result = api_instance.list_files_v1_registry_list_files_post(
-            BodyListFilesV1RegistryListFilesPost.from_dict(dict(entry_location=entry_location))
-        )
+        body = BodyListFilesV1RegistryListFilesPost.from_dict(dict(entry_location=entry_location))
+        if body is None:
+            raise Exception("Failed to create request body from provided parameters")
+        result = api_instance.list_files_v1_registry_list_files_post(body)
         return [file.filename for file in result]
 
     def get_files_from_registry(self, entry_location: dict):
@@ -75,14 +80,15 @@ class PartialNearClient:
         results = []
 
         for path in files:
-            result = api_instance.download_file_v1_registry_download_file_post(
-                BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
-                    dict(
-                        entry_location=entry_location,
-                        path=path,
-                    )
+            body = BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
+                dict(
+                    entry_location=entry_location,
+                    path=path,
                 )
             )
+            if body is None:
+                raise Exception("Failed to create request body from provided parameters")
+            result = api_instance.download_file_v1_registry_download_file_post(body)
             results.append({"filename": path, "content": result})
         return results
 
@@ -90,9 +96,10 @@ class PartialNearClient:
         """Fetches metadata for an agent from NearAI registry."""
         api_instance = RegistryApi(self._client)
         entry_location = self.parse_location(identifier)
-        result = api_instance.download_metadata_v1_registry_download_metadata_post(
-            BodyDownloadMetadataV1RegistryDownloadMetadataPost.from_dict(dict(entry_location=entry_location))
-        )
+        body = BodyDownloadMetadataV1RegistryDownloadMetadataPost.from_dict(dict(entry_location=entry_location))
+        if body is None:
+            raise Exception("Failed to create request body from provided parameters")
+        result = api_instance.download_metadata_v1_registry_download_metadata_post(body)
         return result.to_dict()
 
     def get_agent(self, identifier):
@@ -105,13 +112,16 @@ class PartialNearClient:
         """Fetches an environment from NearAI registry."""
         entry_location = self.parse_location(env_id)
         api_instance = AgentsAssistantsApi(self._client)
+        body = BodyDownloadEnvironmentV1DownloadEnvironmentPost.from_dict(
+            dict(
+                entry_location=entry_location,
+                path=ENVIRONMENT_FILENAME,
+            )
+        )
+        if body is None:
+            raise Exception("Failed to create request body from provided parameters")
         result = api_instance.download_environment_v1_download_environment_post(
-            BodyDownloadEnvironmentV1DownloadEnvironmentPost.from_dict(
-                dict(
-                    entry_location=entry_location,
-                    path=ENVIRONMENT_FILENAME,
-                )
-            ),
+            body,
             _headers={"Accept": "application/gzip"},
         )
         return result
@@ -120,18 +130,21 @@ class PartialNearClient:
         """Saves an environment to NearAI registry."""
         api_instance = RegistryApi(self._client)
 
-        author = self.auth.account_id
-        name = metadata.get("name")
-        entry_location = {"namespace": author, "name": name, "version": "0"}
-        api_instance.upload_metadata_v1_registry_upload_metadata_post(
-            BodyUploadMetadataV1RegistryUploadMetadataPost(metadata=metadata, entry_location=entry_location)
+        author = str(self.auth.account_id)
+        name = str(metadata.get("name", ""))
+        entry_location = EntryLocation(namespace=author, name=name, version="0")
+        body = BodyUploadMetadataV1RegistryUploadMetadataPost(
+            metadata=EntryMetadataInput(**metadata), entry_location=entry_location
         )
+        if body is None:
+            raise Exception("Failed to create request body from provided parameters")
+        api_instance.upload_metadata_v1_registry_upload_metadata_post(body)
 
         api_instance.upload_file_v1_registry_upload_file_post(
             path=ENVIRONMENT_FILENAME,
             file=file,
-            namespace=entry_location["namespace"],
-            name=entry_location["name"],
-            version=entry_location["version"],
+            namespace=entry_location.namespace,
+            name=entry_location.name,
+            version=entry_location.version,
         )
         return f"{author}/{name}/0"

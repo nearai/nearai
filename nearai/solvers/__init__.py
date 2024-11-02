@@ -1,17 +1,14 @@
-import os
-import random
-import time
 from abc import ABC, ABCMeta, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from litellm import Choices, ModelResponse
 from litellm.types.completion import ChatCompletionMessageParam
+from shared.agents.agent import Agent
 from shared.client_config import ClientConfig
 from shared.inference_client import InferenceClient
 from shared.provider_models import get_provider_namespaced_model
 
-from nearai.agents.agent import Agent
 from nearai.config import CONFIG
 
 
@@ -46,38 +43,23 @@ class SolverInferenceSession:
         self.model_full_path = model_full_path
         self.client = client
         self.evaluation_name = evaluation_name
-        self.path = ""
-        self.runner = None
         self.messages: List[ChatCompletionMessageParam] = []
 
-    def start_inference_session(self, task_id: str) -> "SolverInferenceSession":
-        if self.agent:
-            self.path = os.path.join(
-                "/tmp",
-                self.evaluation_name,
-                task_id,
-                str(int(time.time() * 1000)),
-                str(random.randint(0, 1000)),
-            )
+    def start_inference_session(self, _task_id: str) -> "SolverInferenceSession":
         return self
 
     def add_system_message(self, message: str) -> None:
-        if self.runner:
-            self.client.threads_messages_create(thread_id=self.run.thread_id, content=message, role="assistant")
-        else:
-            self.messages.append({"role": "system", "content": message})
+        self.messages.append({"role": "system", "content": message})
 
     def run_task(self, task: str) -> str:
-        if self.runner:
-            self.run = self.client.threads_create_and_run_poll(
-                self.agent, self.model_full_path, [{"role": "user", "content": task}]
-            )
-            output = ""
-            messages = self.client.threads_list_messages(self.run.thread_id)
-            for m in messages:
-                if m.role == "assistant":
-                    output += m.content
-            return output
+        if self.agent:
+            raise NotImplementedError()
+            # output = ""
+            # messages = self.client.threads_list_messages(self.run.thread_id)
+            # for m in messages:
+            #     if m.role == "assistant":
+            #         output += m.content
+            # return output
         else:
             self.messages.append({"role": "user", "content": task})
             completion_response = cast(

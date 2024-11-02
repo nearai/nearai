@@ -9,7 +9,7 @@ RUN pip install -r requirements${FRAMEWORK}.txt
 
 RUN mkdir ${LAMBDA_TASK_ROOT}/aws_runner
 RUN mkdir ${LAMBDA_TASK_ROOT}/nearai
-COPY aws_runner/service.py aws_runner/partial_near_client.py ${LAMBDA_TASK_ROOT}/aws_runner/
+COPY aws_runner/service.py ${LAMBDA_TASK_ROOT}/aws_runner/
 COPY nearai/agents ${LAMBDA_TASK_ROOT}/nearai/agents
 COPY openapi_client ${LAMBDA_TASK_ROOT}/openapi_client
 COPY shared ${LAMBDA_TASK_ROOT}/shared

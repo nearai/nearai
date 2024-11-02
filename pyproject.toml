@@ -129,7 +129,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
-src = ["nearai"]
+src = ["nearai", "shared"]
 exclude = [
     ".git",
     ".git-rewrite",

@@ -5,9 +5,9 @@ from typing import Any, Dict, Optional, Union
 import boto3
 import requests
 from fastapi import APIRouter, Body, Depends, HTTPException, Response
-from nearai.agents.local_runner import LocalRunner
 from nearai.clients.lambda_client import LambdaWrapper
 from pydantic import BaseModel, Field
+from shared.agents.agent_runner import run_with_environment
 from shared.auth_data import AuthData
 
 from hub.api.v1.auth import AuthToken, revokable_auth
@@ -211,13 +211,12 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
         elif runner == "local_runner":
             """Runs agents directly from the local machine."""
 
-            LocalRunner(
-                None,
+            run_with_environment(
                 agents,
+                AuthData(**auth.model_dump()),  # TODO: https://github.com/nearai/nearai/issues/421
                 thread_id,
                 run_id,
-                AuthData(**auth.model_dump()),  # TODO: https://github.com/nearai/nearai/issues/421
-                params,
+                params=params,
             )
         else:
             function_name = f"{runner}-{framework.lower()}"
