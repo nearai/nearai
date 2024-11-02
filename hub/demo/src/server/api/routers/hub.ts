@@ -25,6 +25,7 @@ import {
   publicProcedure,
 } from '~/server/api/trpc';
 import { loadEntriesFromDirectory } from '~/server/utils/data-source';
+import { conditionallyIncludeAuthorizationHeader } from '~/server/utils/headers';
 import {
   fetchThreadMessagesAndFiles,
   runMessageOnAgentThread,
@@ -177,13 +178,13 @@ export const hubRouter = createTRPCRouter({
         version: z.string(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const response = await fetch(`${env.ROUTER_URL}/registry/download_file`, {
         method: 'POST',
-        headers: {
+        headers: conditionallyIncludeAuthorizationHeader(ctx.authorization, {
           Accept: 'binary/octet-stream',
           'Content-Type': 'application/json',
-        },
+        }),
         body: JSON.stringify({
           entry_location: {
             namespace: input.namespace,
@@ -214,15 +215,15 @@ export const hubRouter = createTRPCRouter({
         version: z.string(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const files = await fetchWithZod(
         filesModel,
         `${env.ROUTER_URL}/registry/list_files`,
         {
           method: 'POST',
-          headers: {
+          headers: conditionallyIncludeAuthorizationHeader(ctx.authorization, {
             'Content-Type': 'application/json',
-          },
+          }),
           body: JSON.stringify({
             entry_location: {
               namespace: input.namespace,

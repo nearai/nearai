@@ -9,7 +9,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { headers } from 'next/headers';
 import superjson from 'superjson';
-import { ZodError } from 'zod';
+import { type z, ZodError } from 'zod';
 
 import { authorizationModel } from '~/lib/models';
 
@@ -86,26 +86,23 @@ export const createTRPCRouter = t.router;
  * are logged in.
  */
 const userMightBeAuthenticated = t.middleware(({ ctx, next }) => {
-  if (ctx.authorization?.includes('Bearer')) {
-    try {
-      const auth: unknown = JSON.parse(
-        ctx.authorization.replace('Bearer ', ''),
-      );
-      const sig = authorizationModel.parse(auth);
+  const authorization = ctx.authorization;
+  let signature: z.infer<typeof authorizationModel> | undefined;
 
-      return next({
-        ctx: {
-          authorization: ctx.authorization,
-          signature: sig,
-        },
-      });
+  if (authorization?.includes('Bearer')) {
+    try {
+      const auth: unknown = JSON.parse(authorization.replace('Bearer ', ''));
+      signature = authorizationModel.parse(auth);
     } catch (error) {
       console.error(error);
     }
   }
 
   return next({
-    ctx: {},
+    ctx: {
+      authorization,
+      signature,
+    },
   });
 });
 export const publicProcedure = t.procedure.use(userMightBeAuthenticated);
