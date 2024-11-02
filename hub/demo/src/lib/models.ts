@@ -140,6 +140,7 @@ export const entryDetailsModel = z.intersection(
       primary_agent_name: z.string(),
       primary_agent_namespace: z.string(),
       primary_agent_version: z.string(),
+      private_source: z.boolean().default(false),
       base_id: z.string().or(z.null()),
       icon: z.string(),
       run_id: z.coerce.string(),

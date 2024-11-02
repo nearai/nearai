@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Folder } from '@phosphor-icons/react';
+import { Copy, Folder, LockKey } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 
@@ -18,8 +18,13 @@ import { Text } from '~/components/lib/Text';
 import { useEntryParams } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
 import { type entryModel } from '~/lib/models';
+import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
+
+import { Container } from './lib/Container';
+import { Section } from './lib/Section';
+import { SvgIcon } from './lib/SvgIcon';
 
 const METADATA_FILE_PATH = 'metadata.json';
 
@@ -28,19 +33,27 @@ type Props = {
 };
 
 export const EntrySource = ({ entry }: Props) => {
+  const accountId = useAuthStore((store) => store.auth?.account_id);
+  const isPermittedToViewSource =
+    !entry.details.private_source || accountId === entry.namespace;
   const { createQueryPath, queryParams } = useQueryParams(['file']);
   const params = useEntryParams();
-  const filePathsQuery = api.hub.filePaths.useQuery(params);
+
+  const filePathsQuery = api.hub.filePaths.useQuery(params, {
+    enabled: isPermittedToViewSource,
+  });
   const activeFilePath = queryParams.file ?? filePathsQuery.data?.[0] ?? '';
   const activeFileIsCompressed =
     activeFilePath.endsWith('.zip') || activeFilePath.endsWith('.tar');
+
   const fileQuery = api.hub.file.useQuery(
     { ...params, filePath: activeFilePath },
     {
       enabled:
         !!activeFilePath &&
         activeFilePath !== METADATA_FILE_PATH &&
-        !activeFileIsCompressed,
+        !activeFileIsCompressed &&
+        isPermittedToViewSource,
     },
   );
 
@@ -66,6 +79,23 @@ export const EntrySource = ({ entry }: Props) => {
   useEffect(() => {
     setSidebarOpenForSmallScreens(false);
   }, [queryParams.file]);
+
+  if (!isPermittedToViewSource) {
+    return (
+      <Section grow="available">
+        <Container size="s" style={{ margin: 'auto', textAlign: 'center' }}>
+          <Flex direction="column" gap="m" align="center">
+            <SvgIcon icon={<LockKey />} size="l" color="amber-11" />
+            <Text size="text-xl">Private Source Code</Text>
+            <Text>
+              You {`don't`} have permission to view the source code for this{' '}
+              {entry.category}.
+            </Text>
+          </Flex>
+        </Container>
+      </Section>
+    );
+  }
 
   return (
     <>
