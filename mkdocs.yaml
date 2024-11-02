@@ -138,6 +138,7 @@ nav:
     - Login with NEAR: 'login.md'
     - Secrets: 'hub_secrets.md'
     - Contributing: 'contributing.md'
+    - Decentralization: 'decentralization.md'
 plugins:
   - social
   - autorefs
