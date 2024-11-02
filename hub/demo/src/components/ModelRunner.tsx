@@ -224,7 +224,7 @@ export const ModelRunner = () => {
 
           <Controller
             control={form.control}
-            defaultValue="fireworks::accounts/fireworks/models/mixtral-8x22b-instruct"
+            defaultValue="fireworks::accounts/fireworks/models/qwen2p5-72b-instruct"
             name="model"
             render={({ field }) => (
               <Combobox label="Model" items={modelOptions} {...field} />
@@ -258,12 +258,12 @@ export const ModelRunner = () => {
 
           <Controller
             control={form.control}
-            defaultValue={128}
+            defaultValue={1024}
             name="max_tokens"
             render={({ field }) => (
               <Slider
                 label="Max Tokens"
-                max={2048}
+                max={8192}
                 min={1}
                 step={1}
                 assistive="The maximum number of tokens to generate"
