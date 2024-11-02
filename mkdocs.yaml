@@ -130,7 +130,7 @@ nav:
   - Getting Started: 
     - Welcome To NearAI Docs: 'index.md'
     - Agents: 'agents.md'
-    - Uploading Agents to Agent Hub: 'agents/index.html#uploading-an-agent'
+    - Uploading Agents to Agent Hub: 'agents.md#uploading-an-agent'
     - Benchmarks and Evaluations: 'benchmarks_and_evaluations.md'
     - Inference (OpenAI compatible): 'inference.md'
     - Fine-tuning: 'fine_tuning.md'
