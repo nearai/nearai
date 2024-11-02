@@ -170,9 +170,6 @@ function extendHtml(html: string) {
 
       setHeight();
 
-      const paragraphs = document.querySelectorAll('p');
-      paragraphs.forEach((p) => p.addEventListener('click', () => p.remove()));
-
       window.addEventListener('load', setHeight);
     </script>
   `;
