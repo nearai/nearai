@@ -126,6 +126,7 @@ export const entryDetailsModel = z.intersection(
               max_iterations: z.number(),
             })
             .partial(),
+          html_minimum_height: z.string(),
           initial_user_message: z.string(),
           welcome: z
             .object({
@@ -139,6 +140,7 @@ export const entryDetailsModel = z.intersection(
       primary_agent_name: z.string(),
       primary_agent_namespace: z.string(),
       primary_agent_version: z.string(),
+      private_source: z.boolean().default(false),
       base_id: z.string().or(z.null()),
       icon: z.string(),
       run_id: z.coerce.string(),
@@ -155,7 +157,7 @@ export const entryModel = z.object({
   namespace: z.string(),
   name: z.string(),
   version: z.string(),
-  updated: z.string().datetime(),
+  updated: z.string().datetime().default(new Date().toISOString()),
   description: z.string().default(''),
   tags: z.string().array().default([]),
   show_entry: z.boolean().default(true),
@@ -203,25 +205,102 @@ export const entrySecretModel = z.object({
   category: z.string().optional(),
 });
 
-export const agentWalletTransactionRequestModel = z.object({
-  deposit: z.string(),
-  gas: z.string(),
-  method: z.string(),
-  params: z.record(z.string(), z.unknown()).default({}),
-  recipient: z.string(),
-  requestId: z.string().nullable().default(''),
+const walletTransactionActionModel = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('AddKey'),
+    params: z.object({
+      publicKey: z.string(),
+      accessKey: z.object({
+        nonce: z.number().optional(),
+        permission: z.object({
+          receiverId: z.string(),
+          allowance: z.string().optional(),
+          methodNames: z.string().array().optional(),
+        }),
+      }),
+    }),
+  }),
+  z.object({
+    type: z.literal('CreateAccount'),
+  }),
+  z.object({
+    type: z.literal('DeleteAccount'),
+    params: z.object({
+      beneficiaryId: z.string(),
+    }),
+  }),
+  z.object({
+    type: z.literal('DeleteKey'),
+    params: z.object({
+      publicKey: z.string(),
+    }),
+  }),
+  z.object({
+    type: z.literal('DeployContract'),
+    params: z.object({
+      code: z.instanceof(Uint8Array),
+    }),
+  }),
+  z.object({
+    type: z.literal('FunctionCall'),
+    params: z.object({
+      methodName: z.string(),
+      args: z.record(z.string(), z.unknown()).default({}),
+      gas: z.string(),
+      deposit: z.string(),
+    }),
+  }),
+  z.object({
+    type: z.literal('Stake'),
+    params: z.object({
+      stake: z.string(),
+      publicKey: z.string(),
+    }),
+  }),
+  z.object({
+    type: z.literal('Transfer'),
+    params: z.object({
+      deposit: z.string(),
+    }),
+  }),
+]);
+
+export const agentWalletTransactionsRequestModel = z.object({
+  transactions: z
+    .object({
+      signerId: z.string().optional(),
+      receiverId: z.string(),
+      actions: walletTransactionActionModel.array(),
+    })
+    .array(),
+  requestId: z.string().nullish(),
 });
 
 export const agentWalletViewRequestModel = z.object({
-  method: z.string(),
-  params: z.record(z.string(), z.unknown()).default({}),
-  recipient: z.string(),
-  requestId: z.string().nullable().default(''),
+  contractId: z.string(),
+  methodName: z.string(),
+  args: z.record(z.string(), z.unknown()).optional(),
+  requestId: z.string().nullish(),
+  blockQuery: z
+    .object({
+      blockId: z.string().or(z.number()),
+    })
+    .or(
+      z.object({
+        finality: z.enum(['optimistic', 'near-final', 'final']),
+      }),
+    )
+    .or(
+      z.object({
+        sync_checkpoint: z.enum(['genesis', 'earliest_available']),
+      }),
+    )
+    .optional(),
 });
 
 export const agentWalletAccountRequestModel = z.object({
   accountId: z.string().nullable().default(''),
-  requestId: z.string().nullable().default(''),
+  requestId: z.string().nullish(),
 });
 
 export const threadMetadataModel = z.intersection(
@@ -242,6 +321,15 @@ export const threadModel = z.object({
 });
 
 export const threadsModel = threadModel.array();
+
+export const threadMessageMetadataModel = z.intersection(
+  z
+    .object({
+      message_type: z.string(),
+    })
+    .partial(),
+  z.record(z.string(), z.unknown()),
+);
 
 export const threadMessageModel = z.object({
   id: z.string(),
@@ -266,7 +354,7 @@ export const threadMessageModel = z.object({
     .array(),
   incomplete_at: z.number().nullable(),
   incomplete_details: z.unknown().nullable(),
-  metadata: z.unknown(),
+  metadata: threadMessageMetadataModel.nullish(),
   object: z.string(),
   role: z.enum(['user', 'assistant', 'system']),
   run_id: z.string().nullable(),

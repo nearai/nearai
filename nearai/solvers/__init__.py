@@ -1,18 +1,16 @@
-import os
-import random
-import time
 from abc import ABC, ABCMeta, abstractmethod
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
+from aws_runner.service import EnvironmentRun, start_with_environment
 from litellm import Choices, ModelResponse
 from litellm.types.completion import ChatCompletionMessageParam
-from shared.client_config import ClientConfig
 from shared.inference_client import InferenceClient
 from shared.provider_models import get_provider_namespaced_model
 
 from nearai.agents.agent import Agent
-from nearai.config import CONFIG
+from nearai.config import CONFIG, get_hub_client
 
 
 class SolverScoringMethod(Enum):
@@ -41,43 +39,50 @@ class SolverStrategyMeta(ABCMeta):
 
 
 class SolverInferenceSession:
-    def __init__(self, agent_obj, model_full_path, client: InferenceClient, evaluation_name):
-        self.agent = agent_obj
+    def __init__(self, agent, agent_params, model_full_path, client: InferenceClient, evaluation_name):
+        self.agent = agent
+        self.agent_params = agent_params
         self.model_full_path = model_full_path
         self.client = client
         self.evaluation_name = evaluation_name
-        self.path = ""
-        self.runner = None
         self.messages: List[ChatCompletionMessageParam] = []
+        self.hub_client = get_hub_client()
+        self.env_run: Optional[EnvironmentRun] = None
 
     def start_inference_session(self, task_id: str) -> "SolverInferenceSession":
         if self.agent:
-            self.path = os.path.join(
-                "/tmp",
-                self.evaluation_name,
-                task_id,
-                str(int(time.time() * 1000)),
-                str(random.randint(0, 1000)),
+            thread = self.hub_client.beta.threads.create()
+            run = self.hub_client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id=self.agent,
+                extra_body={"delegate_execution": True},
             )
+            auth = CONFIG.auth
+            assert auth
+            self.env_run = start_with_environment(
+                self.agent,
+                auth,
+                thread.id,
+                run.id,
+                additional_path=self.agent,
+                params=self.agent_params,
+                print_system_log=False,
+            )
+            # Set an inference client with a cli client config.
+            # This is needed to pass num_inference_retries.
+            self.env_run.env.client = self.client
         return self
 
     def add_system_message(self, message: str) -> None:
-        if self.runner:
-            self.client.threads_messages_create(thread_id=self.run.thread_id, content=message, role="assistant")
-        else:
-            self.messages.append({"role": "system", "content": message})
+        if self.agent:
+            raise NotImplementedError("system messages for agent are not supported")
+        self.messages.append({"role": "system", "content": message})
 
     def run_task(self, task: str) -> str:
-        if self.runner:
-            self.run = self.client.threads_create_and_run_poll(
-                self.agent, self.model_full_path, [{"role": "user", "content": task}]
-            )
-            output = ""
-            messages = self.client.threads_list_messages(self.run.thread_id)
-            for m in messages:
-                if m.role == "assistant":
-                    output += m.content
-            return output
+        if self.agent:
+            assert self.env_run
+            self.env_run.run(task)
+            return self.env_run.env.get_last_message(role="assistant")
         else:
             self.messages.append({"role": "user", "content": task})
             completion_response = cast(
@@ -98,8 +103,8 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
 
     def __init__(self, model: str = "", agent: str = "") -> None:
         CONFIG.confirm_commands = False
-        client_config = ClientConfig(base_url=CONFIG.nearai_hub.base_url, auth=CONFIG.auth)
-        self.client = InferenceClient(client_config)
+        self.client_config = CONFIG.get_client_config()
+        self.client = InferenceClient(self.client_config)
         assert model != "" or agent != ""
 
         self.provider = ""
@@ -112,15 +117,17 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
             self.model_namespace = namespaced_model.namespace
             self.model_name = namespaced_model.name
 
-        self.agent_obj = None
-        if agent != "":
-            self.agent_obj = Agent.load_agent(agent, client_config)
-
-            self.agent_obj.model_temperature = 0.0
-            if self.model_full_path != "":
-                self.agent_obj.model = self.model_full_path
-            if self.provider != "":
-                self.agent_obj.model_provider = self.provider
+        self.agent = agent
+        self.agent_params = {
+            "api_url": CONFIG.api_url,
+            "data_source": "local_files",
+            "temperature": 0.0,
+            "record_run": False,
+            "verbose": False,
+            "change_to_agent_temp_dir": False,
+        }
+        if self.model_full_path:
+            self.agent_params["model"] = self.model_full_path
 
     @property
     def name(self) -> str:
@@ -141,29 +148,35 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
         """Returns the list of datasets that the solver strategy is compatible with."""
         ...
 
-    def model_metadata(self) -> Optional[Dict[str, Any]]:
-        """Returns model metadata that is evaluated or used by an agent."""
-        if self.model_name != "":
-            return {"name": self.model_name}
-        return {"name": cast(Agent, self.agent_obj).model}
+    def agent_name(self) -> str:
+        """Returns agent name that is evaluated."""
+        if not self.agent:
+            return ""
+        path = Path(self.agent)
+        return path.parent.name
 
-    def agent_metadata(self) -> Optional[Dict[str, Any]]:
-        """Returns agent metadata that is evaluated."""
-        if self.agent_obj:
-            return cast(Agent, self.agent_obj).metadata
-        return None
+    def agent_version(self) -> str:
+        """Returns agent name that is evaluated."""
+        if not self.agent:
+            return ""
+        path = Path(self.agent)
+        return path.name
 
     def evaluated_entry_namespace(self) -> str:
         """Returns namespace of a model or agent to be evaluated."""
-        if self.agent_obj:
-            return self.agent_obj.namespace
+        if self.agent:
+            path = Path(self.agent)
+            return path.parent.parent.name
         return self.model_namespace
 
     def model_provider(self) -> str:
         """Returns model provider."""
         if self.provider != "":
             return self.provider
-        return cast(Agent, self.agent_obj).model_provider
+        if self.agent != "":
+            agent_obj = Agent.load_agent(self.agent, self.client_config)
+            return agent_obj.model_provider
+        return ""
 
     @abstractmethod
     def solve(self, datum: dict) -> Union[bool, Tuple[bool, Any]]:
@@ -188,7 +201,7 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
 
     def start_inference_session(self, task_id: str) -> SolverInferenceSession:
         return SolverInferenceSession(
-            self.agent_obj, self.model_full_path, self.client, self.evaluation_name()
+            self.agent, self.agent_params, self.model_full_path, self.client, self.evaluation_name()
         ).start_inference_session(task_id)
 
 

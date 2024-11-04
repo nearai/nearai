@@ -4,21 +4,10 @@
   flex-grow: 1;
 }
 
-.hiddenHeightCalculationIframe {
-  height: 0;
-  width: 100%;
-  border: none;
-  opacity: 0;
-  overflow: hidden;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-}
-
-.visibleIframe {
+.iframe {
   border: none;
   width: 100%;
+  min-height: 100%;
   box-shadow: var(--shadow-card-with-outline);
   outline: none;
   transition: opacity 300ms;

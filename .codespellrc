@@ -1,4 +1,4 @@
 [codespell]
-skip = .git,target,*.bpe,*.json,*.jsonl,*.txt,*.lock,node_modules,venv
+skip = .git,target,*.bpe,*.json,*.jsonl,*.txt,*.lock,node_modules,venv,site
 ignore-words = codespell_ignore.txt
 builtin = clear,rare

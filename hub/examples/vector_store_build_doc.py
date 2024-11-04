@@ -124,7 +124,7 @@ def generate_llm_response(messages, processed_results):
     Use the provided vector store results to inform your response, but don't mention the vector store directly.
     """
 
-    model = "llama-v3p1-405b-instruct"
+    model = "qwen2p5-72b-instruct"
 
     vs_results = "\n=========\n".join(
         [f"{result.get('chunk_text', 'No text available')}" for result in processed_results]

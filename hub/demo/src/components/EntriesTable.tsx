@@ -1,6 +1,7 @@
 'use client';
 
 import { ChatCircleDots, CodeBlock, Play } from '@phosphor-icons/react';
+import { format, formatDistanceToNow } from 'date-fns';
 
 import { Badge } from '~/components/lib/Badge';
 import { Button } from '~/components/lib/Button';
@@ -24,7 +25,6 @@ import { type EntryCategory } from '~/lib/models';
 import { api } from '~/trpc/react';
 
 import { StarButton } from './StarButton';
-import { format, formatDistanceToNow } from 'date-fns';
 
 type Props = {
   category: EntryCategory;
@@ -138,9 +138,11 @@ export const EntriesTable = ({ category, title }: Props) => {
               </Table.Cell>
 
               <Table.Cell>
-                <Text size="text-s">
+                <Text size="text-xs">
                   <Tooltip content={format(entry.updated, 'PPpp')}>
-                    <span>{formatDistanceToNow(entry.updated, { addSuffix: true })}</span>
+                    <span>
+                      {formatDistanceToNow(entry.updated, { addSuffix: true })}
+                    </span>
                   </Tooltip>
                 </Text>
               </Table.Cell>

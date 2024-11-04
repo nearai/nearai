@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 ## check for connection to db
 max_attempts=60
@@ -11,7 +12,7 @@ while [ $attempt -lt $max_attempts ]; do
     else
         echo "Waiting for database connection... (Attempt $((attempt+1))/$max_attempts)"
         attempt=$((attempt+1))
-        sleep 2
+        sleep 1
     fi
 done
 
@@ -20,6 +21,6 @@ if [ $attempt -eq $max_attempts ]; then
     exit 1
 fi
 
-sleep 15
+sleep 3
 alembic upgrade head
 fastapi run app.py --port 8081

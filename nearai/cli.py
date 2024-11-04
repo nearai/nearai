@@ -1,21 +1,26 @@
 import importlib.metadata
+import io
 import json
 import os
 import re
 import runpy
 import sys
+import tarfile
 from collections import OrderedDict
 from dataclasses import asdict
 from pathlib import Path
 from textwrap import fill
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import boto3
 import fire
+from openai.types.beta.threads.message import Attachment
 from openapi_client import EntryLocation, EntryMetadataInput
 from openapi_client.api.benchmark_api import BenchmarkApi
 from openapi_client.api.default_api import DefaultApi
 from openapi_client.api.evaluation_api import EvaluationApi
+from openapi_client.api.jobs_api import JobsApi
+from openapi_client.api.permissions_api import PermissionsApi
 from shared.client_config import (
     DEFAULT_MODEL,
     DEFAULT_MODEL_MAX_TOKENS,
@@ -396,7 +401,7 @@ class EvaluationCli:
         from nearai.evaluation import print_evaluation_table
 
         api = EvaluationApi()
-        table = api.get_evaluation_table_v1_evaluation_table_get()
+        table = api.table_v1_evaluation_table_get()
 
         print_evaluation_table(
             table.rows,
@@ -437,7 +442,6 @@ class AgentCli:
                 task=new_message,
                 thread_id=thread_id,
                 tool_resources=tool_resources,
-                record_run=False,
                 last_message_id=last_message_id,
                 local=local,
                 env_vars=env_vars,
@@ -453,6 +457,7 @@ class AgentCli:
         task: str,
         thread_id: Optional[str] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
+        file_ids: Optional[List[str]] = None,
         local: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -462,7 +467,7 @@ class AgentCli:
             task=task,
             thread_id=thread_id,
             tool_resources=tool_resources,
-            record_run=True,
+            file_ids=file_ids,
             local=local,
             env_vars=env_vars,
         )
@@ -476,7 +481,7 @@ class AgentCli:
         task: str,
         thread_id: Optional[str] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
-        record_run: bool = True,
+        file_ids: Optional[List[str]] = None,
         last_message_id: Optional[str] = None,
         local: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
@@ -494,30 +499,24 @@ class AgentCli:
             thread_id=thread.id,
             role="user",
             content=task,
+            attachments=[Attachment(file_id=file_id) for file_id in file_ids] if file_ids else None,
         )
 
         if not local:
             hub_client.beta.threads.runs.create_and_poll(
                 thread_id=thread.id,
                 assistant_id=agents,
-                instructions="You are a helpful assistant. Complete the given task.",
-                model="fireworks::accounts/fireworks/models/llama-v3p1-405b-instruct",
             )
         else:
             run = hub_client.beta.threads.runs.create(
                 thread_id=thread.id,
                 assistant_id=agents,
-                instructions="You are a helpful assistant. Complete the given task.",
-                model="fireworks::accounts/fireworks/models/llama-v3p1-405b-instruct",
                 extra_body={"delegate_execution": True},
             )
             params = {
-                "max_iterations": 1,
-                "record_run": True,
                 "api_url": CONFIG.api_url,
                 "tool_resources": run.tools,
                 "data_source": "local_files",
-                "model": run.model,
                 "user_env_vars": env_vars,
                 "agent_env_vars": {},
             }
@@ -847,6 +846,19 @@ class LoginCLI:
             print("Missing data")
 
 
+class PermissionCli:
+    def __init__(self) -> None:  # noqa: D107
+        self.client = PermissionsApi()
+
+    def grant(self, account_id: str, permission: str):
+        """Grant permission to an account."""
+        self.client.grant_permission_v1_permissions_grant_permission_post(account_id, permission)
+
+    def revoke(self, account_id: str, permission: str = ""):
+        """Revoke permission from an account. If permission is empty all permissions are revoked."""
+        self.client.revoke_permission_v1_permissions_revoke_permission_post(account_id, permission)
+
+
 class CLI:
     def __init__(self) -> None:  # noqa: D107
         self.registry = RegistryCli()
@@ -861,6 +873,20 @@ class CLI:
         self.finetune = FinetuneCli()
         self.tensorboard = TensorboardCli()
         self.vllm = VllmCli()
+        self.permission = PermissionCli()
+
+    def submit(self, path: Optional[str] = None):
+        """Submit a task to be executed by a worker."""
+        if path is None:
+            path = os.getcwd()
+
+        tar_stream = io.BytesIO()
+        with tarfile.open(fileobj=tar_stream, mode="w:gz") as tar:
+            tar.add(path, arcname=os.path.basename(path))
+        tar_stream.seek(0)
+
+        client = JobsApi()
+        client.add_job_v1_jobs_add_job_post(tar_stream.read())
 
     def location(self) -> None:  # noqa: D102
         """Show location where nearai is installed."""

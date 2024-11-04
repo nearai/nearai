@@ -1,4 +1,3 @@
-import json
 import re
 from functools import cached_property
 from typing import Dict, List, Optional, Tuple, cast
@@ -62,31 +61,21 @@ class ProviderModels:
     @cached_property
     def provider_models(self) -> Dict[NamespacedName, Dict[str, str]]:
         """Returns a mapping canonical->provider->model_full_name."""
-        base_url = self._config.base_url
-        auth = self._auth
-
-        bearer_data = {
-            key: getattr(auth, key)
-            for key in ["account_id", "public_key", "signature", "callback_url", "message", "nonce", "recipient"]
-        }
-        auth_bearer_token = json.dumps(bearer_data)
-
-        headers = {"Authorization": f"Bearer {auth_bearer_token}"}
+        client = self._config.get_hub_client()
 
         try:
-            response = requests.get(f"{base_url}/models", headers=headers)
-            response.raise_for_status()  # This will raise an HTTPError for bad responses
+            models = client.models.list()
 
-            models = response.json()
+            assert len(models.data) > 0
             result: Dict[NamespacedName, Dict[str, str]] = {}
-            for model in models["data"]:
-                provider, namespaced_model = get_provider_namespaced_model(model["id"])
+            for model in models.data:
+                provider, namespaced_model = get_provider_namespaced_model(model.id)
                 namespaced_model = namespaced_model.canonical()
                 if namespaced_model not in result:
                     result[namespaced_model] = {}
                 if provider in result[namespaced_model]:
                     raise ValueError(f"Duplicate entry for provider {provider} and model {namespaced_model}")
-                result[namespaced_model][provider] = model["id"]
+                result[namespaced_model][provider] = model.id
             return result
 
         except requests.RequestException as e:

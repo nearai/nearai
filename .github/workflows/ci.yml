@@ -97,8 +97,11 @@ jobs:
     - name: Exec Integration Tests
       run: |
         sleep 60
-        docker compose -f .docker/compose-e2e.yml logs
         docker exec docker-ci-1 poetry run pytest -m integration ./e2e/
     
     - name: Stop Docker Compose
       run: docker compose -f .docker/compose-e2e.yml down
+    
+    - name: Docker Compose Logs
+      if: ${{ always() }}
+      run: docker compose -f .docker/compose-e2e.yml logs

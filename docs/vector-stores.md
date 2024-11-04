@@ -106,7 +106,7 @@ def generate_llm_response(messages, processed_results) -> str:
             "content": f"User query: {messages[-1]['content']}\n\nRelevant information:\n{vs_results}",
         },
     ]
-    return inference.completions(model="llama-v3p1-405b-instruct", messages=messages, max_tokens=16000)
+    return inference.completions(model="qwen2p5-72b-instruct", messages=messages, max_tokens=16000)
 
 # Get an LLM response using the vector store
 search_query = "example search query"

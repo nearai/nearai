@@ -86,7 +86,6 @@ class DDOTSEnvironment(Environment):
             self.hub_client,
             thread.id,
             "todo",
-            "todo",
             approvals={"confirm_execution": lambda _: False},
         )
 

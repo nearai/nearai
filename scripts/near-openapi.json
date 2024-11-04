@@ -22,6 +22,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/EmbeddingsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ImageGenerationRequest"
                   }
                 ],
                 "title": "Request"
@@ -74,6 +77,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/EmbeddingsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ImageGenerationRequest"
                   }
                 ],
                 "title": "Request"
@@ -142,6 +148,9 @@
                   },
                   {
                     "$ref": "#/components/schemas/EmbeddingsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ImageGenerationRequest"
                   }
                 ],
                 "title": "Request"
@@ -282,6 +291,61 @@
         }
       }
     },
+    "/v1/images/generations": {
+      "post": {
+        "summary": "Generate Images",
+        "operationId": "generate_images_v1_images_generations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ChatCompletionsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CompletionsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/EmbeddingsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ImageGenerationRequest"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/registry/upload_file": {
       "post": {
         "tags": [
@@ -362,7 +426,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/registry/upload_metadata": {
@@ -447,7 +516,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/registry/list_files": {
@@ -456,7 +530,7 @@
           "registry"
         ],
         "summary": "List Files",
-        "description": "List all files that belong to a entry.",
+        "description": "Lists all files that belong to a entry.",
         "operationId": "list_files_v1_registry_list_files_post",
         "requestBody": {
           "content": {
@@ -493,7 +567,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/registry/list_entries": {
@@ -765,7 +844,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/benchmark/create": {
@@ -1144,37 +1228,6 @@
         }
       }
     },
-    "/v1/evaluation/table": {
-      "get": {
-        "tags": [
-          "evaluation"
-        ],
-        "summary": "Get Evaluation Table",
-        "operationId": "get_evaluation_table_v1_evaluation_table_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EvaluationTable"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/stars/add_star": {
       "post": {
         "tags": [
@@ -1263,6 +1316,451 @@
         ]
       }
     },
+    "/v1/create_hub_secret": {
+      "post": {
+        "tags": [
+          "Hub Secrets"
+        ],
+        "summary": "Create Hub Secret",
+        "description": "Create a hub secret.",
+        "operationId": "create_hub_secret_v1_create_hub_secret_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHubSecretRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/remove_hub_secret": {
+      "post": {
+        "tags": [
+          "Hub Secrets"
+        ],
+        "summary": "Remove Hub Secret",
+        "description": "Remove a hub secret.",
+        "operationId": "remove_hub_secret_v1_remove_hub_secret_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveHubSecretRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/get_user_secrets": {
+      "get": {
+        "tags": [
+          "Hub Secrets"
+        ],
+        "summary": "Get User Secrets",
+        "description": "Get hub secrets for a given user.",
+        "operationId": "get_user_secrets_v1_get_user_secrets_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Limit of the results",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Limit of the results"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Offset for pagination",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Offset for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/add_job": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Add Job",
+        "operationId": "add_job_v1_jobs_add_job_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_job_v1_jobs_add_job_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/jobs/get_pending_job": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Get Pending Job",
+        "operationId": "get_pending_job_v1_jobs_get_pending_job_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "worker_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Worker Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectedJob"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/update_job": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Update Job",
+        "operationId": "update_job_v1_jobs_update_job_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": -1,
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "result_json",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Result Json"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/permissions/grant_permission": {
+      "post": {
+        "tags": [
+          "permissions"
+        ],
+        "summary": "Grant Permission",
+        "operationId": "grant_permission_v1_permissions_grant_permission_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "permission",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Permission"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/permissions/revoke_permission": {
+      "post": {
+        "tags": [
+          "permissions"
+        ],
+        "summary": "Revoke Permission",
+        "operationId": "revoke_permission_v1_permissions_revoke_permission_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "permission",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Permission"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/evaluation/table": {
+      "get": {
+        "tags": [
+          "evaluation"
+        ],
+        "summary": "Table",
+        "operationId": "table_v1_evaluation_table_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationTable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -1348,35 +1846,19 @@
         ],
         "title": "BenchmarkResultOutput"
       },
-      "EvaluationTable": {
+      "Body_add_job_v1_jobs_add_job_post": {
         "properties": {
-          "rows": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "propertyNames": {
-                "type": "string"
-              },
-              "additionalProperties": {
-                "type": "string"
-              }
-            }
-          },
-          "columns": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "important_columns": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
           }
         },
-        "required": ["rows", "columns", "important_columns"],
-        "title": "EvaluationTable"
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_add_job_v1_jobs_add_job_post"
       },
       "Body_add_star_v1_stars_add_star_post": {
         "properties": {
@@ -1623,6 +2105,19 @@
             "title": "Stream",
             "default": false
           },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools",
+            "default": []
+          },
           "messages": {
             "items": {
               "$ref": "#/components/schemas/Message"
@@ -1739,6 +2234,19 @@
             "title": "Stream",
             "default": false
           },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools",
+            "default": []
+          },
           "prompt": {
             "type": "string",
             "title": "Prompt"
@@ -1750,6 +2258,71 @@
         ],
         "title": "CompletionsRequest",
         "description": "Request for completions."
+      },
+      "CreateHubSecretRequest": {
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "title": "Namespace"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category",
+            "default": "agent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "namespace",
+          "name",
+          "version",
+          "description",
+          "key",
+          "value"
+        ],
+        "title": "CreateHubSecretRequest",
+        "description": "Request model for creating a new hub secret."
       },
       "CreateThreadAndRunRequest": {
         "properties": {
@@ -1789,7 +2362,7 @@
             "title": "Environment Id",
             "description": "The ID of the environment to use to as a base for this run. If not provided, a new environment will be created."
           },
-          "thread": {
+          "thread_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -1798,7 +2371,7 @@
                 "type": "null"
               }
             ],
-            "title": "Thread",
+            "title": "Thread Id",
             "description": "An OpenAI compatibility alias for environment. If no thread is provided, an empty thread will be created."
           },
           "new_message": {
@@ -1862,18 +2435,6 @@
             ],
             "title": "User Env Vars",
             "description": "Env vars provided by the user"
-          },
-          "agent_env_vars": {
-            "anyOf": [
-              {
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Env Vars",
-            "description": "Env vars provided by the agent"
           }
         },
         "type": "object",
@@ -1952,6 +2513,11 @@
             "type": "string",
             "title": "Version"
           },
+          "updated": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated"
+          },
           "category": {
             "type": "string",
             "title": "Category"
@@ -1986,6 +2552,7 @@
           "namespace",
           "name",
           "version",
+          "updated",
           "category",
           "description",
           "details",
@@ -2100,6 +2667,41 @@
         ],
         "title": "EntryMetadataInput"
       },
+      "EvaluationTable": {
+        "properties": {
+          "rows": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns"
+          },
+          "important_columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Important Columns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rows",
+          "columns",
+          "important_columns"
+        ],
+        "title": "EvaluationTable"
+      },
       "Filename": {
         "properties": {
           "filename": {
@@ -2126,6 +2728,36 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "ImageGenerationRequest": {
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "default": "fireworks::accounts/fireworks/models/playground-v2-5-1024px-aesthetic"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt"
+        ],
+        "title": "ImageGenerationRequest",
+        "description": "Request for image generation."
+      },
       "Message": {
         "properties": {
           "role": {
@@ -2143,6 +2775,53 @@
           "content"
         ],
         "title": "Message"
+      },
+      "RemoveHubSecretRequest": {
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "title": "Namespace"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category",
+            "default": "agent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "namespace",
+          "name",
+          "version",
+          "key"
+        ],
+        "title": "RemoveHubSecretRequest"
       },
       "ResponseFormat": {
         "properties": {
@@ -2182,6 +2861,48 @@
           "nonce"
         ],
         "title": "RevokeNonce"
+      },
+      "SelectedJob": {
+        "properties": {
+          "selected": {
+            "type": "boolean",
+            "title": "Selected"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "registry_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registry Path"
+          },
+          "info": {
+            "type": "string",
+            "title": "Info"
+          }
+        },
+        "type": "object",
+        "required": [
+          "selected",
+          "job_id",
+          "registry_path",
+          "info"
+        ],
+        "title": "SelectedJob"
       },
       "ValidationError": {
         "properties": {

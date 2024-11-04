@@ -37,7 +37,7 @@ class EvaluationApi:
 
 
     @validate_call
-    def get_evaluation_table_v1_evaluation_table_get(
+    def table_v1_evaluation_table_get(
         self,
         _request_timeout: Union[
             None,
@@ -52,7 +52,7 @@ class EvaluationApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> EvaluationTable:
-        """Get Evaluation Table
+        """Table
 
 
         :param _request_timeout: timeout setting for this request. If one
@@ -77,7 +77,7 @@ class EvaluationApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._get_evaluation_table_v1_evaluation_table_get_serialize(
+        _param = self._table_v1_evaluation_table_get_serialize(
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -86,7 +86,6 @@ class EvaluationApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "EvaluationTable",
-            '422': "HTTPValidationError",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -100,7 +99,7 @@ class EvaluationApi:
 
 
     @validate_call
-    def get_evaluation_table_v1_evaluation_table_get_with_http_info(
+    def table_v1_evaluation_table_get_with_http_info(
         self,
         _request_timeout: Union[
             None,
@@ -115,7 +114,7 @@ class EvaluationApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> ApiResponse[EvaluationTable]:
-        """Get Evaluation Table
+        """Table
 
 
         :param _request_timeout: timeout setting for this request. If one
@@ -140,7 +139,7 @@ class EvaluationApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._get_evaluation_table_v1_evaluation_table_get_serialize(
+        _param = self._table_v1_evaluation_table_get_serialize(
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -149,7 +148,6 @@ class EvaluationApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "EvaluationTable",
-            '422': "HTTPValidationError",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -163,7 +161,7 @@ class EvaluationApi:
 
 
     @validate_call
-    def get_evaluation_table_v1_evaluation_table_get_without_preload_content(
+    def table_v1_evaluation_table_get_without_preload_content(
         self,
         _request_timeout: Union[
             None,
@@ -178,7 +176,7 @@ class EvaluationApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> RESTResponseType:
-        """Get Evaluation Table
+        """Table
 
 
         :param _request_timeout: timeout setting for this request. If one
@@ -203,7 +201,7 @@ class EvaluationApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._get_evaluation_table_v1_evaluation_table_get_serialize(
+        _param = self._table_v1_evaluation_table_get_serialize(
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -212,7 +210,6 @@ class EvaluationApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "EvaluationTable",
-            '422': "HTTPValidationError",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -221,7 +218,7 @@ class EvaluationApi:
         return response_data.response
 
 
-    def _get_evaluation_table_v1_evaluation_table_get_serialize(
+    def _table_v1_evaluation_table_get_serialize(
         self,
         _request_auth,
         _content_type,

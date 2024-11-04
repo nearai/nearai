@@ -29,14 +29,13 @@ class CreateThreadAndRunRequest(BaseModel):
     agent_id: Optional[StrictStr] = None
     assistant_id: Optional[StrictStr] = None
     environment_id: Optional[StrictStr] = None
-    thread: Optional[StrictStr] = None
+    thread_id: Optional[StrictStr] = None
     new_message: Optional[StrictStr] = None
     max_iterations: Optional[StrictInt] = None
     record_run: Optional[StrictBool] = None
     tool_resources: Optional[Dict[str, Any]] = None
     user_env_vars: Optional[Dict[str, Any]] = None
-    agent_env_vars: Optional[Dict[str, Any]] = None
-    __properties: ClassVar[List[str]] = ["agent_id", "assistant_id", "environment_id", "thread", "new_message", "max_iterations", "record_run", "tool_resources", "user_env_vars", "agent_env_vars"]
+    __properties: ClassVar[List[str]] = ["agent_id", "assistant_id", "environment_id", "thread_id", "new_message", "max_iterations", "record_run", "tool_resources", "user_env_vars"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -92,10 +91,10 @@ class CreateThreadAndRunRequest(BaseModel):
         if self.environment_id is None and "environment_id" in self.model_fields_set:
             _dict['environment_id'] = None
 
-        # set to None if thread (nullable) is None
+        # set to None if thread_id (nullable) is None
         # and model_fields_set contains the field
-        if self.thread is None and "thread" in self.model_fields_set:
-            _dict['thread'] = None
+        if self.thread_id is None and "thread_id" in self.model_fields_set:
+            _dict['thread_id'] = None
 
         # set to None if new_message (nullable) is None
         # and model_fields_set contains the field
@@ -122,11 +121,6 @@ class CreateThreadAndRunRequest(BaseModel):
         if self.user_env_vars is None and "user_env_vars" in self.model_fields_set:
             _dict['user_env_vars'] = None
 
-        # set to None if agent_env_vars (nullable) is None
-        # and model_fields_set contains the field
-        if self.agent_env_vars is None and "agent_env_vars" in self.model_fields_set:
-            _dict['agent_env_vars'] = None
-
         return _dict
 
     @classmethod
@@ -142,13 +136,12 @@ class CreateThreadAndRunRequest(BaseModel):
             "agent_id": obj.get("agent_id"),
             "assistant_id": obj.get("assistant_id"),
             "environment_id": obj.get("environment_id"),
-            "thread": obj.get("thread"),
+            "thread_id": obj.get("thread_id"),
             "new_message": obj.get("new_message"),
             "max_iterations": obj.get("max_iterations"),
             "record_run": obj.get("record_run"),
             "tool_resources": obj.get("tool_resources"),
-            "user_env_vars": obj.get("user_env_vars"),
-            "agent_env_vars": obj.get("agent_env_vars")
+            "user_env_vars": obj.get("user_env_vars")
         })
         return _obj
 

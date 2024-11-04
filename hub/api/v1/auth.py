@@ -38,7 +38,7 @@ class AuthToken(BaseModel):
         return validate_nonce(value)
 
 
-async def get_auth(token: HTTPAuthorizationCredentials = Depends(bearer)):
+def get_auth(token: HTTPAuthorizationCredentials = Depends(bearer)):
     if token.credentials == "":
         raise HTTPException(status_code=401, detail="Invalid token")
     if token.scheme.lower() != "bearer":
@@ -51,7 +51,7 @@ async def get_auth(token: HTTPAuthorizationCredentials = Depends(bearer)):
         raise TokenValidationError(detail=str(e)) from None
 
 
-async def validate_signature(auth: AuthToken = Depends(get_auth)):
+def validate_signature(auth: AuthToken = Depends(get_auth)):
     logging.debug(f"account_id {auth.account_id}: verifying signature")
     is_valid = verify_signed_message(
         auth.account_id,
@@ -71,7 +71,7 @@ async def validate_signature(auth: AuthToken = Depends(get_auth)):
     return auth
 
 
-async def revokable_auth(auth: AuthToken = Depends(validate_signature)):
+def revokable_auth(auth: AuthToken = Depends(validate_signature)):
     logger.debug(f"Validating auth token: {auth}")
 
     user_nonce = db.get_account_nonce(auth.account_id, auth.nonce)
