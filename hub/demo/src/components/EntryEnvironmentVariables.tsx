@@ -1,5 +1,7 @@
 import {
   CodeBlock,
+  Eye,
+  EyeSlash,
   LinkSimple,
   LockKey,
   Pencil,
@@ -45,6 +47,17 @@ export const EntryEnvironmentVariables = ({
   const [selectedVariable, setSelectedVariable] =
     useState<EntryEnvironmentVariable | null>(null);
   const [secretModalIsOpen, setSecretModalIsOpen] = useState(false);
+  const [revealedSecretKeys, setRevealedSecretKeys] = useState<string[]>([]);
+
+  const toggleRevealSecret = (key: string) => {
+    const revealed = revealedSecretKeys.find((k) => k === key);
+    setRevealedSecretKeys((keys) => {
+      if (!revealed) {
+        return [...keys, key];
+      }
+      return keys.filter((k) => k !== key);
+    });
+  };
 
   const descriptionForMetadataValue = (variable: EntryEnvironmentVariable) => {
     let description = `Value provided by ${entry.category} metadata (details.env_vars).`;
@@ -110,24 +123,50 @@ export const EntryEnvironmentVariables = ({
                     </Text>
                   </Tooltip>
 
-                  <Tooltip asChild content="Configure Secret">
-                    <Button
-                      label="Configure Secret"
-                      icon={<Pencil />}
-                      size="x-small"
-                      fill="ghost"
-                      variant="primary"
-                      onClick={() => {
-                        setSelectedVariable(variable);
-                        setSecretModalIsOpen(true);
-                      }}
-                      style={{
-                        position: 'relative',
-                        top: '0.15rem',
-                        marginLeft: 'auto',
-                      }}
-                    />
-                  </Tooltip>
+                  <Flex
+                    gap="xs"
+                    style={{
+                      position: 'relative',
+                      top: '0.15rem',
+                      marginLeft: 'auto',
+                    }}
+                  >
+                    <Tooltip
+                      asChild
+                      content={`${revealedSecretKeys.includes(variable.key) ? 'Hide' : 'Show'} Secret`}
+                    >
+                      <Button
+                        label="Show/Hide Secret"
+                        icon={
+                          revealedSecretKeys.includes(variable.key) ? (
+                            <EyeSlash />
+                          ) : (
+                            <Eye />
+                          )
+                        }
+                        size="x-small"
+                        fill="ghost"
+                        variant="primary"
+                        onClick={() => {
+                          toggleRevealSecret(variable.key);
+                        }}
+                      />
+                    </Tooltip>
+
+                    <Tooltip asChild content="Configure Secret">
+                      <Button
+                        label="Configure Secret"
+                        icon={<Pencil />}
+                        size="x-small"
+                        fill="ghost"
+                        variant="primary"
+                        onClick={() => {
+                          setSelectedVariable(variable);
+                          setSecretModalIsOpen(true);
+                        }}
+                      />
+                    </Tooltip>
+                  </Flex>
                 </Flex>
 
                 {variable.metadataValue && (
@@ -225,7 +264,9 @@ export const EntryEnvironmentVariables = ({
                           copyTextToClipboard(variable.secret?.value ?? '')
                         }
                       >
-                        {variable.secret.value}
+                        {revealedSecretKeys.includes(variable.key)
+                          ? variable.secret.value
+                          : '*****'}
                       </Text>
                     </Tooltip>
                   </Flex>
