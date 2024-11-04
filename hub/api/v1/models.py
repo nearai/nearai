@@ -296,7 +296,7 @@ class Run(SQLModel, table=True):
 
 
 db_url = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
-engine = create_engine(db_url)
+engine = create_engine(db_url, pool_size=100)
 
 
 @contextmanager
