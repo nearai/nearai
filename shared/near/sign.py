@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import logging
 import time
 from enum import Enum
 from typing import Any, List, Optional, Union
@@ -8,9 +9,11 @@ import base58
 import nacl.signing
 import requests
 
+from shared.cache import mem_cache_with_timeout
 from shared.near.serializer import BinarySerializer
 
 ED_PREFIX = "ed25519:"  # noqa: N806
+logger = logging.getLogger(__name__)
 
 
 class Payload:
@@ -119,9 +122,11 @@ def verify_signed_message(
     return SignatureVerificationResult.FALSE
 
 
+@mem_cache_with_timeout(300)
 def verify_access_key_owner(public_key, account_id) -> SignatureVerificationResult:
     """Verifies if a given public key belongs to a specified account ID using FastNEAR API."""
     try:
+        logger.info(f"Verifying access key owner for public key: {public_key}, account_id: {account_id}")
         url = f"https://api.fastnear.com/v0/public_key/{public_key}"
         response = requests.get(url)
         response.raise_for_status()
@@ -129,12 +134,12 @@ def verify_access_key_owner(public_key, account_id) -> SignatureVerificationResu
         account_ids = content.get("account_ids", [])
         key_owner_verified = account_id in account_ids
         if not key_owner_verified:
-            print("Key's owner verification failed. Only NEAR Mainnet accounts are supported.")
+            logger.info("Key's owner verification failed. Only NEAR Mainnet accounts are supported.")
         return SignatureVerificationResult.from_bool(key_owner_verified)
     except requests.exceptions.HTTPError as http_err:
-        print(f"HTTP error occurred: {http_err}")
+        logger.error(f"HTTP error occurred: {http_err}")
     except Exception as err:
-        print(f"Other error occurred: {err}")
+        logger.error(f"Other error occurred: {err}")
 
     return SignatureVerificationResult.VERIFY_ACCESS_KEY_OWNER_SERVICE_NOT_AVAILABLE
 
