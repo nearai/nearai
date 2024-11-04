@@ -24,6 +24,7 @@ DB_USER = getenv("DATABASE_USER")
 DB_PASSWORD = getenv("DATABASE_PASSWORD")
 DB_NAME = getenv("DATABASE_NAME")
 STORAGE_TYPE = getenv("STORAGE_TYPE", "file")
+DB_POOL_SIZE = int(getenv("DATABASE_POOL_SIZE", 10))
 
 
 class RegistryEntry(SQLModel, table=True):
@@ -296,7 +297,7 @@ class Run(SQLModel, table=True):
 
 
 db_url = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
-engine = create_engine(db_url, pool_size=100)
+engine = create_engine(db_url, pool_size=DB_POOL_SIZE)
 
 
 @contextmanager
