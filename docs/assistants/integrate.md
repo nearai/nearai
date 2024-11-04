@@ -58,7 +58,7 @@ In JavaScript:
 import OpenAI from "openai";
 const openai = new OpenAI({
     baseURL: "https://api.near.ai/v1",
-    apiKey: "YOUR_NEARAI_SIGNATURE",
+    apiKey: `Bearer ${JSON.stringify(auth)}`,
 });
 
 const thread = await openai.beta.threads.create();
