@@ -57,6 +57,10 @@ class RegistryEntry(SQLModel, table=True):
             key = f"{key}/{object}"
         return key
 
+    def is_private(self) -> bool:
+        """Check if the entry is private."""
+        return self.details.get("private_source", False)
+
 
 class HubSecrets(SQLModel, table=True):
     """Encrypted hub secrets stored in the registry."""
@@ -99,6 +103,22 @@ class Stars(SQLModel, table=True):
     account_id: str = Field(primary_key=True)
     namespace: str = Field(primary_key=True)
     name: str = Field(primary_key=True)
+
+
+class Jobs(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
+    registry_path: str = Field(nullable=False)
+    account_id: str = Field(nullable=False)
+    status: str = Field(nullable=False)
+    worker_id: Optional[str] = Field(default=None)
+    info: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    result: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class Permissions(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
+    account_id: str = Field(nullable=False)
+    permission: str = Field(nullable=False)
 
 
 class Benchmark(SQLModel, table=True):

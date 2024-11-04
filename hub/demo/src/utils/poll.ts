@@ -11,7 +11,10 @@ export async function poll<T>(
     maxAttempts: number;
     attemptDelayMs: number;
   },
-  shouldTerminateAndReturn: (response: Response) => Promise<T>,
+  shouldTerminateAndReturn: (
+    response: Response,
+    currentAttempt?: number,
+  ) => Promise<T>,
 ) {
   let attempts = 0;
   let response: Response | null = null;
@@ -25,7 +28,7 @@ export async function poll<T>(
         cache: 'no-store',
       });
 
-      const result = await shouldTerminateAndReturn(response);
+      const result = await shouldTerminateAndReturn(response, attempts);
 
       if (result) {
         return result;

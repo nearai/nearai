@@ -40,8 +40,9 @@ class ChatCompletionsRequest(BaseModel):
     stop: Optional[Stop] = None
     response_format: Optional[ResponseFormat] = None
     stream: Optional[StrictBool] = False
+    tools: Optional[List[Any]] = None
     messages: List[Message]
-    __properties: ClassVar[List[str]] = ["model", "provider", "max_tokens", "logprobs", "temperature", "top_p", "frequency_penalty", "n", "stop", "response_format", "stream", "messages"]
+    __properties: ClassVar[List[str]] = ["model", "provider", "max_tokens", "logprobs", "temperature", "top_p", "frequency_penalty", "n", "stop", "response_format", "stream", "tools", "messages"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -125,6 +126,11 @@ class ChatCompletionsRequest(BaseModel):
         if self.response_format is None and "response_format" in self.model_fields_set:
             _dict['response_format'] = None
 
+        # set to None if tools (nullable) is None
+        # and model_fields_set contains the field
+        if self.tools is None and "tools" in self.model_fields_set:
+            _dict['tools'] = None
+
         return _dict
 
     @classmethod
@@ -148,6 +154,7 @@ class ChatCompletionsRequest(BaseModel):
             "stop": Stop.from_dict(obj["stop"]) if obj.get("stop") is not None else None,
             "response_format": ResponseFormat.from_dict(obj["response_format"]) if obj.get("response_format") is not None else None,
             "stream": obj.get("stream") if obj.get("stream") is not None else False,
+            "tools": obj.get("tools"),
             "messages": [Message.from_dict(_item) for _item in obj["messages"]] if obj.get("messages") is not None else None
         })
         return _obj

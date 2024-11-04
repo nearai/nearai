@@ -57,7 +57,8 @@ export const ThreadsSidebar = ({
   const filteredThreads = threads?.filter(
     (thread) => !removedThreadIds.includes(thread.id),
   );
-  const isViewingAgent = pathname.startsWith('/agents');
+  const isViewingAgent =
+    pathname.startsWith('/agents') || env.NEXT_PUBLIC_CONSUMER_MODE;
   const removeMutation = api.hub.removeThread.useMutation();
 
   const currentThreadIdMatchesThread =
@@ -240,7 +241,7 @@ export const ThreadsSidebar = ({
         <>
           {filteredThreads ? (
             <Text size="text-s">
-              You {`haven't`} started any agent threads yet.{' '}
+              You {`haven't`} started any threads yet.{' '}
               {isViewingAgent ? (
                 <>Submit a message to start your first thread.</>
               ) : (

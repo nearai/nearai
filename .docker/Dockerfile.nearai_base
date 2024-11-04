@@ -23,7 +23,8 @@ RUN groupadd --gid $USER_GID $USER \
     && apt-get update \
     && apt-get install -y sudo \
     && echo $USER ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USER \
-    && chmod 0440 /etc/sudoers.d/$USER
+    && chmod 0440 /etc/sudoers.d/$USER \
+    && chown -R $USER:$USER /home/$USER
 
 USER ${USER}
 RUN python3 -m pip install --user poetry
@@ -31,5 +32,5 @@ WORKDIR /home/${USER}/
 ENV PATH="/home/${USER}/.local/bin:${PATH}"
 COPY poetry.lock pyproject.toml poetry.toml ./
 RUN python3 -m poetry install --extras "hub" --no-root
-COPY . .
+COPY --chown=${USER_UID}:${USER_GID} . .
 RUN python3 -m poetry install --extras "hub"

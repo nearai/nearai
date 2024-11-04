@@ -16,7 +16,7 @@ from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import RegistryEntry, get_session
 from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
-from hub.api.v1.registry import S3_BUCKET, get
+from hub.api.v1.registry import S3_BUCKET, get, get_read_access
 from hub.api.v1.sql import SqlClient
 
 S3_ENDPOINT = getenv("S3_ENDPOINT")
@@ -239,7 +239,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(revokab
     "/download_environment",
     responses={200: {"content": {"application/gzip": {"schema": {"type": "string", "format": "binary"}}}}},
 )
-def download_environment(entry: RegistryEntry = Depends(get), path: str = Body()):
+def download_environment(entry: RegistryEntry = Depends(get_read_access), path: str = Body()):
     assert isinstance(S3_BUCKET, str)
     file = s3.get_object(Bucket=S3_BUCKET, Key=entry.get_key(path))
     headers = {"Content-Disposition": "attachment; filename=environment.tar.gz"}
@@ -256,7 +256,7 @@ def _runner_for_env():
         return runner_env
 
 
-def get_agent_entry(agent, data_source: str, account_id: str) -> Union[RegistryEntry, None]:
+def get_agent_entry(agent, data_source: str, account_id: str) -> Optional[RegistryEntry]:
     if data_source == "registry":
         return get(EntryLocation.from_str(agent))
     elif data_source == "local_files":

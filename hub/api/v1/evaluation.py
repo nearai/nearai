@@ -9,7 +9,7 @@ from nearai.registry import get_registry_folder
 from pydantic import BaseModel
 
 from hub.api.v1.entry_location import EntryLocation
-from hub.api.v1.registry import download_file, download_metadata, get, list_entries, list_files
+from hub.api.v1.registry import download_file_inner, download_metadata_inner, get, list_entries_inner, list_files_inner
 
 load_dotenv()
 
@@ -44,7 +44,7 @@ async def table() -> EvaluationTable:
 
 def evaluation_table() -> Tuple[Dict[tuple[tuple[str, Any], ...], Dict[str, str]], List[str], List[str]]:
     """Returns rows, columns, and important columns."""
-    entries = list_entries(
+    entries = list_entries_inner(
         namespace="",
         category="evaluation",
         tags="",
@@ -104,7 +104,7 @@ def download_evaluation(entry_location: EntryLocation) -> Path:
     entry = get(entry_location)
 
     metadata_path = download_path / "metadata.json"
-    metadata = download_metadata(entry)
+    metadata = download_metadata_inner(entry)
     if metadata is None:
         raise ValueError(f"Entry {entry_location} not found.")
     if download_path.exists():
@@ -116,10 +116,10 @@ def download_evaluation(entry_location: EntryLocation) -> Path:
     with open(metadata_path, "w") as f:
         f.write(metadata.model_dump_json(indent=2))
 
-    files = [file.filename for file in list_files(entry)]
+    files = [file.filename for file in list_files_inner(entry)]
     for file in files:
         local_path = download_path / file
-        result = download_file(entry, file)
+        result = download_file_inner(entry, file)
         local_path.parent.mkdir(parents=True, exist_ok=True)
         with open(local_path, "wb") as f:
             for chunk in result.iter_chunks():

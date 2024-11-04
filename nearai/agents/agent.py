@@ -1,7 +1,6 @@
 import io
 import json
 import os
-import runpy
 import shutil
 import sys
 import tempfile
@@ -15,7 +14,9 @@ AGENT_FILENAME = "agent.py"
 
 
 class Agent(object):
-    def __init__(self, identifier: str, agent_files: Union[List, Path], metadata: Dict):  # noqa: D107
+    def __init__(  # noqa: D107
+        self, identifier: str, agent_files: Union[List, Path], metadata: Dict, change_to_temp_dir: bool = True
+    ):  # noqa: D107
         self.identifier = identifier
         name_parts = identifier.split("/")
         self.namespace = name_parts[0]
@@ -29,6 +30,7 @@ class Agent(object):
         self.model_provider = ""
         self.model_temperature: Optional[float] = None
         self.model_max_tokens: Optional[int] = None
+        self.max_iterations = 1
         self.welcome_title: Optional[str] = None
         self.welcome_description: Optional[str] = None
 
@@ -37,6 +39,7 @@ class Agent(object):
         self.original_cwd = os.getcwd()
 
         self.temp_dir = self.write_agent_files_to_temp(agent_files)
+        self.change_to_temp_dir = change_to_temp_dir
 
     @staticmethod
     def write_agent_files_to_temp(agent_files):
@@ -102,12 +105,14 @@ class Agent(object):
                 self.model_provider = defaults.get("model_provider", self.model_provider)
                 self.model_temperature = defaults.get("model_temperature", self.model_temperature)
                 self.model_max_tokens = defaults.get("model_max_tokens", self.model_max_tokens)
+                self.max_iterations = defaults.get("max_iterations", self.max_iterations)
 
         if not self.version or not self.name:
             raise ValueError("Both 'version' and 'name' must be non-empty in metadata.")
 
     def run(self, env: Any, task: Optional[str] = None) -> None:  # noqa: D102
-        if not os.path.exists(os.path.join(self.temp_dir, AGENT_FILENAME)):
+        agent_filename = os.path.join(self.temp_dir, AGENT_FILENAME)
+        if not os.path.exists(agent_filename):
             raise ValueError(f"Agent run error: {AGENT_FILENAME} does not exist")
 
         # combine agent.env_vars and env.env_vars
@@ -118,15 +123,29 @@ class Agent(object):
         # save env.env_vars
         env.env_vars = total_env_vars
 
-        context = {"env": env, "agent": self, "task": task}
+        namespace = {
+            "env": env,
+            "agent": self,
+            "task": task,
+            "__name__": "__main__",
+            "__file__": agent_filename,
+        }
 
         try:
-            os.chdir(self.temp_dir)
+            if self.change_to_temp_dir:
+                os.chdir(self.temp_dir)
             sys.path.insert(0, self.temp_dir)
-            runpy.run_path(AGENT_FILENAME, init_globals=context, run_name="__main__")
+            # NOTE: runpy.run_path does not work in a multithreaded environment when running benchmark.
+            #       The performance of runpy.run_path may also change depending on a system, e.g. it may
+            #       work on Linux but not work on Mac.
+            #       `compile` and `exec` have been tested to work properly in a multithreaded environment.
+            with open(agent_filename, "r") as f:
+                code = compile(f.read(), agent_filename, "exec")
+                exec(code, namespace)
         finally:
-            os.chdir(self.original_cwd)
-            sys.path.pop(0)
+            sys.path.remove(self.temp_dir)
+            if self.change_to_temp_dir:
+                os.chdir(self.original_cwd)
 
     @staticmethod
     def load_agents(agents: str, config: ClientConfig, local: bool = False):

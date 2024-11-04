@@ -17,6 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List
 from typing import Optional, Set
@@ -30,13 +31,14 @@ class EntryInformation(BaseModel):
     namespace: StrictStr
     name: StrictStr
     version: StrictStr
+    updated: datetime
     category: StrictStr
     description: StrictStr
     details: Dict[str, Any]
     tags: List[StrictStr]
     num_stars: StrictInt
     starred_by_point_of_view: StrictBool
-    __properties: ClassVar[List[str]] = ["id", "namespace", "name", "version", "category", "description", "details", "tags", "num_stars", "starred_by_point_of_view"]
+    __properties: ClassVar[List[str]] = ["id", "namespace", "name", "version", "updated", "category", "description", "details", "tags", "num_stars", "starred_by_point_of_view"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -93,6 +95,7 @@ class EntryInformation(BaseModel):
             "namespace": obj.get("namespace"),
             "name": obj.get("name"),
             "version": obj.get("version"),
+            "updated": obj.get("updated"),
             "category": obj.get("category"),
             "description": obj.get("description"),
             "details": obj.get("details"),

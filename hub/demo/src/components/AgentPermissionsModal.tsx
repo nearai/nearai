@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import { type z } from 'zod';
 
-import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
+import { useEntryParams } from '~/hooks/entries';
 import { idForEntry } from '~/lib/entries';
 import {
-  type agentWalletTransactionRequestModel,
+  type agentWalletTransactionsRequestModel,
   type chatWithAgentModel,
   type entryModel,
 } from '~/lib/models';
@@ -22,9 +22,10 @@ import { SignInPrompt } from './SignInPrompt';
 
 export type AgentRequest =
   | z.infer<typeof chatWithAgentModel>
-  | z.infer<typeof agentWalletTransactionRequestModel>;
+  | z.infer<typeof agentWalletTransactionsRequestModel>;
 
 type Props = {
+  agent: z.infer<typeof entryModel>;
   requests: AgentRequest[] | null;
   clearRequests: () => unknown;
   onAllow: (requests: AgentRequest[]) => unknown;
@@ -62,21 +63,18 @@ export function checkAgentPermissions(
 }
 
 export const AgentPermissionsModal = ({
+  agent,
   requests,
   clearRequests,
   onAllow,
 }: Props) => {
   const auth = useAuthStore((store) => store.auth);
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
-  const { currentEntry } = useCurrentEntry('agent');
   const { id: agentId } = useEntryParams();
   const setAgentSettings = useAgentSettingsStore(
     (store) => store.setAgentSettings,
   );
-  const check =
-    currentEntry && requests
-      ? checkAgentPermissions(currentEntry, requests)
-      : undefined;
+  const check = requests ? checkAgentPermissions(agent, requests) : undefined;
   const otherAgentId = requests?.find(
     (request) => 'agent_id' in request,
   )?.agent_id;
@@ -86,22 +84,22 @@ export const AgentPermissionsModal = ({
   };
 
   const allow = () => {
-    if (!currentEntry || !requests) return;
+    if (!requests) return;
     clearRequests();
     onAllow(requests);
   };
 
   const alwaysAllow = () => {
-    if (!currentEntry || !requests) return;
+    if (!requests) return;
 
     if (!check?.permissions.allowRemoteRunCallsToOtherAgents) {
-      setAgentSettings(currentEntry, {
+      setAgentSettings(agent, {
         allowRemoteRunCallsToOtherAgents: true,
       });
     }
 
     if (!check?.permissions.allowWalletTransactionRequests) {
-      setAgentSettings(currentEntry, {
+      setAgentSettings(agent, {
         allowWalletTransactionRequests: true,
       });
     }

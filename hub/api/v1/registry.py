@@ -121,6 +121,12 @@ def get(entry_location: EntryLocation = Body()) -> RegistryEntry:
         return entry
 
 
+def get_read_access(entry: RegistryEntry = Depends(get), auth: AuthToken = Depends(revokable_auth)) -> RegistryEntry:
+    if entry.is_private() and entry.namespace != auth.account_id:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    return entry
+
+
 class EntryMetadataInput(BaseModel):
     category: str
     description: str
@@ -163,14 +169,14 @@ async def upload_file(
 
 
 @v1_router.post("/download_file")
-async def download_file_async(
-    entry: RegistryEntry = Depends(get),
+def download_file(
+    entry: RegistryEntry = Depends(get_read_access),
     path: str = Body(),
 ):
-    return StreamingResponse(download_file(entry, path).iter_chunks())
+    return StreamingResponse(download_file_inner(entry, path).iter_chunks())
 
 
-def download_file(
+def download_file_inner(
     entry: RegistryEntry,
     path: str = Body(),
 ):
@@ -224,11 +230,11 @@ async def upload_metadata(registry_entry_id: int = Depends(get_or_create), metad
 
 
 @v1_router.post("/download_metadata")
-async def download_metadata_async(entry: RegistryEntry = Depends(get)) -> EntryMetadata:
-    return download_metadata(entry)
+def download_metadata(entry: RegistryEntry = Depends(get_read_access)) -> EntryMetadata:
+    return download_metadata_inner(entry)
 
 
-def download_metadata(entry: RegistryEntry) -> EntryMetadata:
+def download_metadata_inner(entry: RegistryEntry) -> EntryMetadata:
     with get_session() as session:
         q_tags = select(Tags).where(Tags.registry_id == entry.id)
         tags = [tag.tag for tag in session.exec(q_tags).all()]
@@ -249,13 +255,13 @@ class Filename(BaseModel):
 
 
 @v1_router.post("/list_files")
-async def list_files_async(entry: RegistryEntry = Depends(get)) -> List[Filename]:
+def list_files(entry: RegistryEntry = Depends(get_read_access)) -> List[Filename]:
     """Lists all files that belong to a entry."""
     logger.info(f"Listing files for entry: {entry}")
-    return list_files(entry)
+    return list_files_inner(entry)
 
 
-def list_files(entry: RegistryEntry) -> List[Filename]:
+def list_files_inner(entry: RegistryEntry) -> List[Filename]:
     """Lists all files that belong to a entry."""
     source = entry.details.get("_source")
 
@@ -292,7 +298,7 @@ class EntryInformation(BaseModel):
 
 
 @v1_router.post("/list_entries")
-async def list_entries_async(
+def list_entries(
     namespace: str = "",
     category: str = "",
     tags: str = "",
@@ -303,12 +309,12 @@ async def list_entries_async(
     starred_by: str = "",
     star_point_of_view: str = "",
 ) -> List[EntryInformation]:
-    return list_entries(
+    return list_entries_inner(
         namespace, category, tags, total, offset, show_hidden, show_latest_version, starred_by, star_point_of_view
     )
 
 
-def list_entries(
+def list_entries_inner(
     namespace: str = "",
     category: str = "",
     tags: str = "",

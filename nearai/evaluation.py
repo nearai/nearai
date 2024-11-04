@@ -29,14 +29,9 @@ def record_evaluation_metrics(
     model = ""
     agent = ""
     version = ""
-
-    if model_metadata := solver_strategy.model_metadata():
-        model = model_metadata.get("name", "")
-        version = model_metadata.get("version", "")
-
-    if agent_metadata := solver_strategy.agent_metadata():
-        agent = agent_metadata.get("name", "")
-        version = agent_metadata.get("version", "")
+    model = solver_strategy.model_name
+    agent = solver_strategy.agent_name()
+    version = solver_strategy.agent_version()
 
     upload_evaluation(
         evaluation_name,

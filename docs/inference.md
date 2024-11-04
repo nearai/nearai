@@ -75,7 +75,7 @@ To create a chat completion, use the `chat.completions.create()` method. Here's 
 
 ```python
 completion = client.chat.completions.create(
-  model="fireworks::accounts/fireworks/models/llama-v3p1-405b-instruct-long",
+  model="fireworks::accounts/fireworks/models/qwen2p5-72b-instruct",
   messages=[
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "Hello, how are you?"}
@@ -94,7 +94,7 @@ When using the API, it's important to handle potential errors. Here's an example
 ```python
 try:
   completion = client.chat.completions.create(
-    model="fireworks::accounts/fireworks/models/llama-v3p1-405b-instruct-long",
+    model="fireworks::accounts/fireworks/models/qwen2p5-72b-instruct",
     messages=[
       {"role": "system", "content": "You are a helpful assistant."},
       {"role": "user", "content": "Hello, how are you?"}

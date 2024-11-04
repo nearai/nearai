@@ -72,6 +72,11 @@ services:
   nearaihub:
     depends_on:
       - nearai_base
+      - vllm
+      - singlestore
+      - minio
+      - minio_make_bucket
+    restart: unless-stopped
     build:
       context: ..
       dockerfile: .docker/Dockerfile.hub
@@ -88,17 +93,29 @@ services:
       DATABASE_USER: root
       DATABASE_PASSWORD: change-me
       DATABASE_NAME: hub
+      STORAGE_TYPE: s3
       PROVIDER_LOCAL_BASE_URL: http://vllm:8000/v1
       PROVIDER_LOCAL_API_KEY: n/a
+      CUSTOM_RUNNER_URL: http://agent_runner:8080/2015-03-31/functions/function/invocations
+      RUNNER_ENVIRONMENT: custom_runner
+      API_URL: http://nearaihub:8081
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 10s
       timeout: 5s
       retries: 5
   
+  agent_runner:
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.agent_runner
+      args:
+        FRAMEWORK: -base
+  
   ci:
     depends_on:
       - nearai_base
+      - nearaihub
     build:
       context: ..
       dockerfile: .docker/Dockerfile.ci

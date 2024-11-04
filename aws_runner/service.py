@@ -14,6 +14,7 @@ from shared.auth_data import AuthData
 from shared.client_config import ClientConfig
 from shared.inference_client import InferenceClient
 from shared.near.sign import SignatureVerificationResult, verify_signed_message
+from shared.provider_models import PROVIDER_MODEL_SEP
 
 cloudwatch = boto3.client("cloudwatch", region_name="us-east-2")
 
@@ -76,7 +77,7 @@ def handler(event, context):
     return new_environment_registry_id
 
 
-def write_metric(metric_name, value, unit="Milliseconds"):
+def write_metric(metric_name, value, unit="Milliseconds", verbose=True):
     if os.environ.get("AWS_ACCESS_KEY_ID"):  # running in lambda or locally passed credentials
         cloudwatch.put_metric_data(
             Namespace="NearAI",
@@ -91,18 +92,20 @@ def write_metric(metric_name, value, unit="Milliseconds"):
                 }
             ],
         )
-    else:
+    elif verbose:
         print(f"Would have written metric {metric_name} with value {value} to cloudwatch")
 
 
-def load_agent(client, agent, params: dict, account_id: str = "local", additional_path: str = "") -> Agent:
+def load_agent(
+    client, agent, params: dict, account_id: str = "local", additional_path: str = "", verbose=True
+) -> Agent:
     agent_metadata = None
 
     if params["data_source"] == "registry":
         start_time = time.perf_counter()
         agent_files = client.get_agent(agent)
         stop_time = time.perf_counter()
-        write_metric("GetAgentFromRegistry_Duration", stop_time - start_time)
+        write_metric("GetAgentFromRegistry_Duration", stop_time - start_time, verbose=verbose)
         agent_metadata = client.get_agent_metadata(agent)
     elif params["data_source"] == "local_files":
         agent_files = get_local_agent_files(agent, additional_path)
@@ -110,26 +113,30 @@ def load_agent(client, agent, params: dict, account_id: str = "local", additiona
         for file in agent_files:
             if os.path.basename(file["filename"]) == "metadata.json":
                 agent_metadata = json.loads(file["content"])
-                print(f"Loaded {agent_metadata} agents from {agent}")
+                if verbose:
+                    print(f"Loaded {agent_metadata} agents from {agent}")
                 break
 
     if not agent_metadata:
         print(f"Missing metadata for {agent}")
 
-    return Agent(agent, agent_files, agent_metadata or {})
+    return Agent(
+        agent, agent_files, agent_metadata or {}, change_to_temp_dir=params.get("change_to_agent_temp_dir", True)
+    )
 
 
-def clear_temp_agent_files(agents):
+def clear_temp_agent_files(agents, verbose=True):
     for agent in agents:
         if agent.temp_dir and os.path.exists(agent.temp_dir):
-            print("removed agent.temp_dir", agent.temp_dir)
+            if verbose:
+                print("removed agent.temp_dir", agent.temp_dir)
             shutil.rmtree(agent.temp_dir)
 
 
-def save_environment(env, client, run_id, base_id, metric_function=None) -> str:
+def save_environment(env, client, base_id, metric_function=None) -> str:
     save_start_time = time.perf_counter()
     snapshot = env.create_snapshot()
-    metadata = env.environment_run_info(run_id, base_id, "remote run")
+    metadata = env.environment_run_info(base_id, "remote run")
     name = metadata["name"]
     request_start_time = time.perf_counter()
     registry_id = client.save_environment(snapshot, metadata)
@@ -146,40 +153,83 @@ def save_environment(env, client, run_id, base_id, metric_function=None) -> str:
     return registry_id
 
 
-def run_with_environment(
+class EnvironmentRun:
+    def __init__(  # noqa: D107
+        self,
+        near_client: PartialNearClient,
+        agents: list[Agent],
+        env: Environment,
+        thread_id,
+        record_run: bool,
+        verbose: bool,
+    ) -> None:
+        self.near_client = near_client
+        self.agents = agents
+        self.env = env
+        self.thread_id = thread_id
+        self.record_run = record_run
+        self.verbose = verbose
+
+    def __del__(self) -> None:  # noqa: D105
+        clear_temp_agent_files(self.agents, verbose=self.verbose)
+
+    def run(self, new_message: str = "") -> Optional[str]:  # noqa: D102
+        start_time = time.perf_counter()
+        self.env.run(new_message, self.agents[0].max_iterations)
+        stop_time = time.perf_counter()
+        write_metric("ExecuteAgentDuration", stop_time - start_time, verbose=self.verbose)
+        new_environment = (
+            save_environment(self.env, self.near_client, self.thread_id, write_metric) if self.record_run else None
+        )
+        return new_environment
+
+
+def start_with_environment(
     agents: str,
     auth: AuthData,
     thread_id,
     run_id,
     additional_path: str = "",
-    new_message: str = None,
-    params: dict = None,
-) -> Optional[str]:
-    """Runs agent against environment fetched from id, optionally passing a new message to the environment."""
-    print(
-        f"Running with:\nagents: {agents}\nnew_message: {new_message}\nparams: {params}"
-        f"\nthread_id: {thread_id}\nrun_id: {run_id}\nauth: {auth}"
-    )
+    params: Optional[dict] = None,
+    print_system_log: bool = False,
+) -> EnvironmentRun:
+    """Initializes environment for agent runs."""
+    verbose: bool = params.get("verbose", True)
+    if verbose:
+        print(
+            f"Running with:\nagents: {agents}\nparams: {params}"
+            f"\nthread_id: {thread_id}\nrun_id: {run_id}\nauth: {auth}"
+        )
     params = params or {}
-    max_iterations = int(params.get("max_iterations", 2))
-    record_run = bool(params.get("record_run", True))
     api_url = str(params.get("api_url", DEFAULT_API_URL))
     user_env_vars: dict = params.get("user_env_vars", {})
     agent_env_vars: dict = params.get("agent_env_vars", {})
-    model: str = params.get("model", "")
 
-    if api_url != DEFAULT_API_URL:
+    if api_url != DEFAULT_API_URL and verbose:
         print(f"WARNING: Using custom API URL: {api_url}")
 
     near_client = PartialNearClient(api_url, auth)
 
-    loaded_agents = []
-
+    loaded_agents: list[Agent] = []
     for agent_name in agents.split(","):
-        agent = load_agent(near_client, agent_name, params, auth.account_id, additional_path)
+        agent = load_agent(near_client, agent_name, params, auth.account_id, additional_path, verbose=verbose)
         # agents secrets has higher priority then agent metadata's env_vars
         agent.env_vars = {**agent.env_vars, **agent_env_vars.get(agent_name, {})}
         loaded_agents.append(agent)
+
+    agent = loaded_agents[0]
+    if "provider" in params:
+        agent.model_provider = params["provider"]
+    if "model" in params:
+        agent.model = params["model"]
+        if "provider" not in params and PROVIDER_MODEL_SEP in agent.model:
+            agent.model_provider = ""
+    if "temperature" in params:
+        agent.model_temperature = params["temperature"]
+    if "max_tokens" in params:
+        agent.model_max_tokens = params["max_tokens"]
+    if "max_iterations" in params:
+        agent.max_iterations = params["max_iterations"]
 
     client_config = ClientConfig(
         base_url=api_url + "/v1",
@@ -194,17 +244,30 @@ def run_with_environment(
         hub_client,
         thread_id,
         run_id,
-        model,
         env_vars=user_env_vars,
+        print_system_log=print_system_log,
     )
-    start_time = time.perf_counter()
+    if agent.welcome_title:
+        print(agent.welcome_title)
+    if agent.welcome_description:
+        print(agent.welcome_description)
     env.add_agent_start_system_log(agent_idx=0)
-    run_id = env.run(new_message, max_iterations)
-    new_environment = save_environment(env, near_client, run_id, thread_id, write_metric) if record_run else None
-    clear_temp_agent_files(loaded_agents)
-    stop_time = time.perf_counter()
-    write_metric("ExecuteAgentDuration", stop_time - start_time)
-    return new_environment
+    return EnvironmentRun(near_client, loaded_agents, env, thread_id, params.get("record_run", True), verbose=verbose)
+
+
+def run_with_environment(
+    agents: str,
+    auth: AuthData,
+    thread_id,
+    run_id,
+    additional_path: str = "",
+    new_message: str = "",
+    params: Optional[dict] = None,
+    print_system_log: bool = False,
+) -> Optional[str]:
+    """Runs agent against environment fetched from id, optionally passing a new message to the environment."""
+    environment_run = start_with_environment(agents, auth, thread_id, run_id, additional_path, params, print_system_log)
+    return environment_run.run(new_message)
 
 
 def get_local_agent_files(agent_identifier: str, additional_path: str = ""):
