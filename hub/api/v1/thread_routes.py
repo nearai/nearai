@@ -32,6 +32,7 @@ from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
 from hub.api.v1.models import get_session
+from hub.api.v1.routes import get_models_inner
 from hub.api.v1.scheduler import get_scheduler
 from hub.api.v1.sql import SqlClient
 
@@ -297,22 +298,21 @@ def update_thread_topic(thread_id: str, auth: AuthData):
         client = ClientConfig(base_url=CONFIG.nearai_hub.base_url, auth=auth).get_hub_client()
 
         # Determine default model
-        default_model = DEFAULT_PROVIDER_MODEL
-        available_models = list(map(lambda m: m.id, client.models.list().data))
-        if DEFAULT_PROVIDER_MODEL not in available_models:
-            default_model = available_models[0]
+        models = [m["id"] for m in get_models_inner()]
+        model = DEFAULT_PROVIDER_MODEL
+        if DEFAULT_PROVIDER_MODEL not in models:
+            model = models[0]
 
-        # TODO(#436): Once thread forking is implemented.
-        # Fork the thread and use agent: agentic.near/summary/0.0.3/source. (Same prompt as SUMMARY_PROMPT)
+        messages = [
+            {
+                "role": "system",
+                "content": SUMMARY_PROMPT,
+            }
+        ] + [message.to_completions_model() for message in messages]
+
         completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": SUMMARY_PROMPT,
-                }
-            ]
-            + [message.to_completions_model() for message in messages],
-            model=default_model,
+            messages=messages,
+            model=model,
         )
 
     with get_session() as session:

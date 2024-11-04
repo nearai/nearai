@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel, field_validator
-from shared.cache import async_mem_cache_with_timeout
+from shared.cache import mem_cache_with_timeout
 from shared.provider_models import PROVIDER_MODEL_SEP, get_provider_model
 
 from hub.api.v1.auth import AuthToken, revokable_auth, validate_signature
@@ -118,9 +118,7 @@ def convert_request(request: ChatCompletionsRequest | CompletionsRequest | Embed
 
 
 @v1_router.post("/completions")
-async def completions(
-    request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(revokable_auth)
-):
+def completions(request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(revokable_auth)):
     logger.info(f"Received completions request: {request.model_dump()}")
 
     try:
@@ -133,7 +131,7 @@ async def completions(
     model = request.model_dump(exclude={"provider", "response_format"})
     model.pop("tools", None)
 
-    resp = await llm.completions.create(**model)
+    resp = llm.completions.create(**model)
 
     if request.stream:
 
@@ -153,7 +151,7 @@ async def completions(
 
 
 @v1_router.post("/chat/completions")
-async def chat_completions(
+def chat_completions(
     request: ChatCompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(revokable_auth)
 ):
     logger.info(f"Received chat completions request: {request.model_dump()}")
@@ -165,7 +163,7 @@ async def chat_completions(
         raise HTTPException(status_code=400, detail="Provider not supported") from None
 
     try:
-        resp = await llm.chat.completions.create(**request.model_dump(exclude={"provider"}))
+        resp = llm.chat.completions.create(**request.model_dump(exclude={"provider"}))
     except Exception as e:
         error_message = str(e)
         if "Error code: 404" in error_message and "Model not found, inaccessible, and/or not deployed" in error_message:
@@ -202,8 +200,8 @@ async def chat_completions(
         return JSONResponse(content=json.loads(c))
 
 
-@async_mem_cache_with_timeout(300)
-async def get_models_inner():
+@mem_cache_with_timeout(300)
+def get_models_inner():
     """Get all models from all providers.
 
     This function is cached.
@@ -213,7 +211,8 @@ async def get_models_inner():
 
     for p in Provider:
         try:
-            provider_models = await get_llm_ai(p.value).models.list()
+            client = get_llm_ai(p.value)
+            provider_models = client.models.list()
             for model in provider_models.data:
                 model_dict = model.model_dump()
                 model_dict["id"] = f"{p.value}{PROVIDER_MODEL_SEP}{model_dict['id']}"
@@ -231,14 +230,14 @@ async def get_models_inner():
 
 
 @v1_router.get("/models")
-async def get_models() -> JSONResponse:
+def get_models() -> JSONResponse:
     logger.debug("Getting models")
-    all_models = await get_models_inner()
+    all_models = get_models_inner()
     return JSONResponse(content={"object": "list", "data": all_models})
 
 
 @v1_router.post("/embeddings")
-async def embeddings(request: EmbeddingsRequest = Depends(convert_request), auth: AuthToken = Depends(revokable_auth)):
+def embeddings(request: EmbeddingsRequest = Depends(convert_request), auth: AuthToken = Depends(revokable_auth)):
     logger.info(f"Received embeddings request: {request.model_dump()}")
 
     try:
@@ -247,7 +246,7 @@ async def embeddings(request: EmbeddingsRequest = Depends(convert_request), auth
     except NotImplementedError:
         raise HTTPException(status_code=400, detail="Provider not supported") from None
 
-    resp = await llm.embeddings.create(**request.model_dump(exclude={"provider"}))
+    resp = llm.embeddings.create(**request.model_dump(exclude={"provider"}))
 
     c = json.dumps(resp.model_dump())
     db.add_user_usage(auth.account_id, str(request.input), c, request.model, request.provider, "/embeddings")
@@ -268,33 +267,33 @@ class RevokeNonce(BaseModel):
 
 
 @v1_router.post("/nonce/revoke")
-async def revoke_nonce(nonce: RevokeNonce, auth: AuthToken = Depends(validate_signature)):
+def revoke_nonce(nonce: RevokeNonce, auth: AuthToken = Depends(validate_signature)):
     """Revoke a nonce for the account."""
     logger.info(f"Received request to revoke nonce {nonce} for account {auth.account_id}")
     if auth.message != REVOKE_MESSAGE:
         raise HTTPException(status_code=401, detail="Invalid nonce revoke message")
 
-    await verify_revoke_nonce(auth)
+    verify_revoke_nonce(auth)
 
     db.revoke_nonce(auth.account_id, nonce.nonce)
     return JSONResponse(content={"message": f"Nonce {nonce} revoked"})
 
 
 @v1_router.post("/nonce/revoke/all")
-async def revoke_all_nonces(auth: AuthToken = Depends(validate_signature)):
+def revoke_all_nonces(auth: AuthToken = Depends(validate_signature)):
     """Revoke all nonces for the account."""
     logger.info(f"Received request to revoke all nonces for account {auth.account_id}")
     if auth.message != REVOKE_ALL_MESSAGE:
         raise HTTPException(status_code=401, detail="Invalid nonce revoke message")
 
-    await verify_revoke_nonce(auth)
+    verify_revoke_nonce(auth)
 
     db.revoke_all_nonces(auth.account_id)
     return JSONResponse(content={"message": "All nonces revoked"})
 
 
 @v1_router.get("/nonce/list")
-async def list_nonces(auth: AuthToken = Depends(revokable_auth)):
+def list_nonces(auth: AuthToken = Depends(revokable_auth)):
     """List all nonces for the account."""
     nonces = db.get_account_nonces(auth.account_id)
     res = nonces.model_dump_json()
@@ -302,7 +301,7 @@ async def list_nonces(auth: AuthToken = Depends(revokable_auth)):
     return JSONResponse(content=json.loads(res))
 
 
-async def verify_revoke_nonce(auth):
+def verify_revoke_nonce(auth):
     """If signature is too old, request will be rejected."""
     ts = int(auth.nonce)
     now = int(time.time() * 1000)
@@ -311,7 +310,7 @@ async def verify_revoke_nonce(auth):
 
 
 @v1_router.get("/version")
-async def version() -> str:
+def version() -> str:
     return importlib.metadata.version("nearai")
 
 

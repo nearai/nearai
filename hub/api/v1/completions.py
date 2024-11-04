@@ -4,7 +4,7 @@ from os import getenv
 from typing import Callable
 
 from dotenv import load_dotenv
-from openai import AsyncOpenAI
+from openai import OpenAI
 from pydantic import BaseModel
 from shared.client_config import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
 
@@ -32,23 +32,23 @@ async def handle_stream(resp_stream, add_usage_callback: Callable):
     add_usage_callback(full_response_text)
 
 
-def get_llm_ai(provider: str) -> AsyncOpenAI:
+def get_llm_ai(provider: str) -> OpenAI:
     if provider == "hyperbolic":
-        return AsyncOpenAI(
+        return OpenAI(
             base_url="https://api.hyperbolic.xyz/v1",
             api_key=getenv("HYPERBOLIC_API_KEY"),
             timeout=DEFAULT_TIMEOUT,
             max_retries=DEFAULT_MAX_RETRIES,
         )
     elif provider == "fireworks":
-        return AsyncOpenAI(
+        return OpenAI(
             base_url="https://api.fireworks.ai/inference/v1",
             api_key=getenv("FIREWORKS_API_KEY"),
             timeout=DEFAULT_TIMEOUT,
             max_retries=DEFAULT_MAX_RETRIES,
         )
     elif provider == "local":
-        return AsyncOpenAI(
+        return OpenAI(
             base_url=getenv("PROVIDER_LOCAL_BASE_URL"),
             api_key=getenv("PROVIDER_LOCAL_API_KEY"),
             timeout=DEFAULT_TIMEOUT,

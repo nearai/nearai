@@ -203,7 +203,6 @@ class Message(SQLModel, table=True):
         """Transform to a model compatible with OpenAI completions API."""
         print("self.content", self.content)
         return {
-            "id": self.id,
             "content": "\n".join([c["text"]["value"] for c in self.content]),
             "role": self.role,
         }

@@ -23,26 +23,3 @@ def mem_cache_with_timeout(timeout: int):
         return wrapper
 
     return decorator
-
-
-def async_mem_cache_with_timeout(timeout: int):
-    """Decorator to cache async function results for a specified timeout period."""
-
-    def decorator(func):
-        cache = {}
-
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            now = time.time()
-            key = (args, frozenset(kwargs.items()))
-            if key in cache:
-                result, timestamp = cache[key]
-                if now - timestamp < timeout:
-                    return result
-            result = await func(*args, **kwargs)
-            cache[key] = (result, now)
-            return result
-
-        return wrapper
-
-    return decorator
