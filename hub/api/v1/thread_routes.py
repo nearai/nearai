@@ -5,7 +5,7 @@ from typing import Any, Dict, Iterable, List, Literal, Optional, Union
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
 from nearai.agents.local_runner import LocalRunner
-from nearai.config import CONFIG, load_config_file
+from nearai.config import load_config_file
 from openai import BaseModel
 from openai.types.beta.assistant_response_format_option_param import AssistantResponseFormatOptionParam
 from openai.types.beta.thread import Thread
@@ -17,7 +17,7 @@ from openai.types.beta.threads.run import Run as OpenAIRun
 from openai.types.beta.threads.run_create_params import AdditionalMessage, TruncationStrategy
 from pydantic import Field
 from shared.auth_data import AuthData
-from shared.client_config import DEFAULT_PROVIDER_MODEL, ClientConfig
+from shared.client_config import DEFAULT_PROVIDER_MODEL
 from sqlalchemy.orm.attributes import flag_modified
 from sqlmodel import asc, desc, select
 
@@ -32,7 +32,7 @@ from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
 from hub.api.v1.models import get_session
-from hub.api.v1.routes import get_models_inner
+from hub.api.v1.routes import ChatCompletionsRequest, chat_completions, get_models_inner
 from hub.api.v1.scheduler import get_scheduler
 from hub.api.v1.sql import SqlClient
 
@@ -295,8 +295,6 @@ def update_thread_topic(thread_id: str, auth: AuthData):
             .limit(1)
         ).all()
 
-        client = ClientConfig(base_url=CONFIG.nearai_hub.base_url, auth=auth).get_hub_client()
-
         # Determine default model
         models = [m["id"] for m in get_models_inner()]
         model = DEFAULT_PROVIDER_MODEL
@@ -310,9 +308,11 @@ def update_thread_topic(thread_id: str, auth: AuthData):
             }
         ] + [message.to_completions_model() for message in messages]
 
-        completion = client.chat.completions.create(
-            messages=messages,
-            model=model,
+        completion = chat_completions(
+            ChatCompletionsRequest(
+                messages=messages,
+                model=model,
+            )
         )
 
     with get_session() as session:
