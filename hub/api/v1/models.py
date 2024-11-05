@@ -260,6 +260,8 @@ class Run(SQLModel, table=True):
     response_format: Optional[str] = Field(default=None)
     tool_choice: Optional[str] = Field(default=None)
     parallel_tool_calls: bool = Field(default=False)
+    parent_run_id: Optional[str] = Field(default=None)
+    child_run_ids: List[str] = Field(default=[], sa_column=Column(JSON))
 
     def __init__(self, **data):  # noqa: D107
         super().__init__(**data)

@@ -8,6 +8,7 @@ from litellm import CustomStreamWrapper, ModelResponse
 from litellm import completion as litellm_completion
 from litellm.types.completion import ChatCompletionMessageParam
 from openai import NOT_GIVEN, NotGiven
+from openai.types.beta.thread import Thread
 from openai.types.beta.vector_store import VectorStore
 from openai.types.beta.vector_stores import VectorStoreFile
 from openai.types.file_object import FileObject
@@ -227,3 +228,20 @@ class InferenceClient(object):
     def threads_list_messages(self, thread_id: str, order: Literal["asc", "desc"] = "asc"):
         """List messages in a thread."""
         return self.client.beta.threads.messages.list(thread_id=thread_id, order=order)
+
+    def threads_fork(self, thread_id: str):
+        """Fork a thread."""
+        forked_thread = self.client.post(path=f"{self._config.base_url}/threads/{thread_id}/fork", cast_to=Thread)
+        return forked_thread
+
+    def threads_runs_create(self, thread_id: str, assistant_id: str, model: str):
+        """Create a run in a thread."""
+        return self.client.beta.threads.runs.create(thread_id=thread_id, assistant_id=assistant_id, model=model)
+
+    def run_agent(self, current_run_id: str, child_thread_id: str, assistant_id: str):
+        """Starts a child agent run from a parent agent run."""
+        return self.client.beta.threads.runs.create(
+            thread_id=child_thread_id,
+            assistant_id=assistant_id,
+            extra_body={"parent_run_id": current_run_id},
+        )

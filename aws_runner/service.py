@@ -28,7 +28,6 @@ def handler(event, context):
     required_params = ["agents", "auth"]
     agents = event.get("agents")
     auth = event.get("auth")
-    print(f"access token in handler: {auth}")
     if not agents or not auth:
         missing = list(filter(lambda x: event.get(x) is (None or ""), required_params))
         return f"Missing required parameters: {missing}"

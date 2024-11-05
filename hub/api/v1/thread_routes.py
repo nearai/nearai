@@ -480,8 +480,8 @@ class RunCreateParamsBase(BaseModel):
 
     # Custom fields
     schedule_at: Optional[datetime] = Field(None, description="The time at which the run should be scheduled.")
-
     delegate_execution: bool = Field(False, description="Whether to delegate execution to an external actor.")
+    parent_run_id: Optional[str] = Field(None, description="The ID of the run that this run is triggered by.")
 
 
 @threads_router.post("/threads/{thread_id}/runs")
@@ -542,6 +542,8 @@ def create_run(
             top_p=run.top_p,
             truncation_strategy=run.truncation_strategy,
             status="queued",
+            parent_run_id=run.parent_run_id,
+            child_run_ids=[],
         )
 
         session.add(run_model)
@@ -554,7 +556,7 @@ def create_run(
 
         # Queue the run
         if not run.schedule_at:
-            background_tasks.add_task(run_agent, thread_id, run_model.id, auth)
+            background_tasks.add_task(run_agent, thread_id, run_model.id, background_tasks, auth)
         else:
             logger.info(f"Scheduling run to run at {run.schedule_at}")
             scheduler.add_job(
@@ -568,7 +570,9 @@ def create_run(
         return run_model.to_openai()
 
 
-def run_agent(thread_id: str, run_id: str, auth: AuthToken = Depends(revokable_auth)) -> OpenAIRun:
+def run_agent(
+    thread_id: str, run_id: str, background_tasks: BackgroundTasks, auth: AuthToken = Depends(revokable_auth)
+) -> OpenAIRun:
     """Task to run an agent in the background."""
     logger.info(f"Running agent for run: {run_id} on thread: {thread_id}")
 
@@ -576,7 +580,6 @@ def run_agent(thread_id: str, run_id: str, auth: AuthToken = Depends(revokable_a
         run_model = session.get(RunModel, run_id)
         if run_model is None:
             raise HTTPException(status_code=404, detail="Run not found")
-
         agent_api_url = getenv("API_URL", "https://api.near.ai")
         data_source = getenv("DATA_SOURCE", "registry")
 
@@ -621,7 +624,6 @@ def run_agent(thread_id: str, run_id: str, auth: AuthToken = Depends(revokable_a
 
         run_model.status = "in_progress"
         run_model.started_at = datetime.now()
-        session.add(run_model)
         session.commit()
 
         if runner == "custom_runner":
@@ -653,12 +655,22 @@ def run_agent(thread_id: str, run_id: str, auth: AuthToken = Depends(revokable_a
                 f"thread_id={thread_id}, run_id={run_id}"
             )
             invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth, "", params)
+        # with get_session() as session:
+        if run_model.parent_run_id:
+            parent_run = session.get(RunModel, run_model.parent_run_id)
+
+            if parent_run:
+                parent_run.child_run_ids.append(run_id)
+                flag_modified(parent_run, "child_run_ids")  # SQLAlchemy is not detecting changes...
+                session.commit()
+                logger.info(f"Calling parent run: {parent_run.id}, after child run: {run_id}")
+                background_tasks.add_task(run_agent, parent_run.thread_id, parent_run.id, background_tasks, auth)
 
         return run_model.to_openai()
 
 
 @threads_router.get("/threads/{thread_id}/runs/{run_id}")
-async def get_run(
+def get_run(
     thread_id: str = Path(..., description="The ID of the thread"),
     run_id: str = Path(..., description="The ID of the run"),
     auth: AuthToken = Depends(revokable_auth),
