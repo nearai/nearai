@@ -88,6 +88,7 @@ class Environment(object):
         self._path = path
         self._agents = agents
         self._done = False
+        self._pending_ext_agent = False
         self.client = client
         self._tools = ToolRegistry()
         self.register_standard_tools()
@@ -279,12 +280,12 @@ class Environment(object):
             messages = [
                 m
                 for m in messages
-                if not (m.metadata and m.metadata.get("message_type") in ["system:log", "agent:log"])
+                if not (m.metadata and m.metadata["message_type"] in ["system:log", "agent:log"])  # type: ignore
             ]
         legacy_messages = [
             {
                 "id": m.id,
-                "content": "\n".join([c.text.value for c in m.content]),
+                "content": "\n".join([c.text.value for c in m.content]),  # type: ignore
                 "role": m.role,
             }
             for m in messages
@@ -882,9 +883,6 @@ class Environment(object):
     def __str__(self) -> str:  # noqa: D105
         return f"Environment({self._path})"
 
-    def run_agent(self, task: Optional[str]) -> None:  # noqa: D102
-        self._agents[0].run(self, task=task)
-
     def request_user_input(self) -> Run:
         """Must be called to request input from the user."""
         return self._hub_client.beta.threads.runs.update(
@@ -943,7 +941,10 @@ class Environment(object):
                 self.mark_failed()
                 raise e
 
-        # self.mark_done()
+        if not self._pending_ext_agent:
+            # If no external agent was called, mark the whole run as done.
+            # Else this environment will stop for now but this run will be continued later.
+            self.mark_done()
 
     def generate_folder_hash_id(self, path: str) -> str:
         """Returns hash based on files and their contents in path, including subfolders."""  # noqa: E501
@@ -958,7 +959,7 @@ class Environment(object):
 
         return hash_obj.hexdigest()
 
-    def run_agent_api(
+    def run_agent(
         self,
         owner: str,
         agent_name: str,
@@ -968,7 +969,6 @@ class Environment(object):
         fork_thread: bool = True,
     ):
         """Runs a child agent on the thread."""
-
         child_thread_id = self._thread_id
         if fork_thread:
             child_thread_id = self.client.threads_fork(self._thread_id).id
@@ -985,5 +985,6 @@ class Environment(object):
             child_thread_id=child_thread_id,
             assistant_id=assistant_id,
         )
+        self._pending_ext_agent = True
 
         return child_thread_id
