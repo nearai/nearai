@@ -69,115 +69,119 @@ export const EntryDetailsLayout = ({
 
   return (
     <>
-      <Section background="sand-0" bleed gap="m" tabs={!!tabs}>
-        <Flex
-          align="center"
-          gap="m"
-          phone={{ direction: 'column', align: 'start', gap: 'l' }}
-        >
+      {!env.NEXT_PUBLIC_CONSUMER_MODE && (
+        <Section background="sand-0" bleed gap="m" tabs={!!tabs}>
           <Flex
             align="center"
             gap="m"
-            style={{ width: '100%' }}
-            phone={{ justify: 'space-between' }}
+            phone={{ direction: 'column', align: 'start', gap: 'l' }}
           >
-            <Flex align="center" gap="m">
-              <ImageIcon
-                size="l"
-                src={currentEntry?.details.icon}
-                alt={name}
-                fallbackIcon={ENTRY_CATEGORY_LABELS[category].icon}
-              />
+            <Flex
+              align="center"
+              gap="m"
+              style={{ width: '100%' }}
+              phone={{ justify: 'space-between' }}
+            >
+              <Flex align="center" gap="m">
+                <ImageIcon
+                  size="l"
+                  src={currentEntry?.details.icon}
+                  alt={name}
+                  fallbackIcon={ENTRY_CATEGORY_LABELS[category].icon}
+                />
 
-              <Flex gap="none" direction="column" align="start">
-                <Flex align="center" gap="m">
-                  <Link href={baseUrl}>
-                    <Text as="h1" size="text-l" weight={600} color="sand-12">
-                      {name}
+                <Flex gap="none" direction="column" align="start">
+                  <Flex align="center" gap="m">
+                    <Link href={baseUrl}>
+                      <Text as="h1" size="text-l" weight={600} color="sand-12">
+                        {name}
+                      </Text>
+                    </Link>
+
+                    <Dropdown.Root>
+                      <Dropdown.Trigger asChild>
+                        <Badge
+                          button
+                          label={version}
+                          iconRight={<CaretDown />}
+                          variant="neutral"
+                        />
+                      </Dropdown.Trigger>
+
+                      <Dropdown.Content>
+                        <Dropdown.Section>
+                          <Dropdown.SectionContent>
+                            <Text size="text-xs" weight={600} uppercase>
+                              Versions
+                            </Text>
+                          </Dropdown.SectionContent>
+
+                          {currentVersions?.map((entry) => (
+                            <Dropdown.Item
+                              href={`${baseUrl}/${entry.version}`}
+                              key={entry.version}
+                            >
+                              {entry.version}
+                            </Dropdown.Item>
+                          ))}
+                        </Dropdown.Section>
+                      </Dropdown.Content>
+                    </Dropdown.Root>
+
+                    {!env.NEXT_PUBLIC_CONSUMER_MODE && (
+                      <Tooltip
+                        asChild
+                        content={`Copy ${category} path to clipboard`}
+                      >
+                        <Button
+                          label="Copy"
+                          icon={<Copy />}
+                          size="x-small"
+                          variant="secondary"
+                          fill="ghost"
+                          onClick={() =>
+                            copyTextToClipboard(
+                              `${namespace}/${name}/${version}`,
+                            )
+                          }
+                        />
+                      </Tooltip>
+                    )}
+                  </Flex>
+
+                  <Link
+                    href={`/profiles/${namespace}`}
+                    style={{ marginTop: '-0.1rem' }}
+                  >
+                    <Text size="text-s" weight={500}>
+                      @{namespace}
                     </Text>
                   </Link>
-
-                  <Dropdown.Root>
-                    <Dropdown.Trigger asChild>
-                      <Badge
-                        button
-                        label={version}
-                        iconRight={<CaretDown />}
-                        variant="neutral"
-                      />
-                    </Dropdown.Trigger>
-
-                    <Dropdown.Content>
-                      <Dropdown.Section>
-                        <Dropdown.SectionContent>
-                          <Text size="text-xs" weight={600} uppercase>
-                            Versions
-                          </Text>
-                        </Dropdown.SectionContent>
-
-                        {currentVersions?.map((entry) => (
-                          <Dropdown.Item
-                            href={`${baseUrl}/${entry.version}`}
-                            key={entry.version}
-                          >
-                            {entry.version}
-                          </Dropdown.Item>
-                        ))}
-                      </Dropdown.Section>
-                    </Dropdown.Content>
-                  </Dropdown.Root>
-
-                  {!env.NEXT_PUBLIC_CONSUMER_MODE && (
-                    <Tooltip
-                      asChild
-                      content={`Copy ${category} path to clipboard`}
-                    >
-                      <Button
-                        label="Copy"
-                        icon={<Copy />}
-                        size="x-small"
-                        variant="secondary"
-                        fill="ghost"
-                        onClick={() =>
-                          copyTextToClipboard(`${namespace}/${name}/${version}`)
-                        }
-                      />
-                    </Tooltip>
-                  )}
                 </Flex>
-
-                <Link
-                  href={`/profiles/${namespace}`}
-                  style={{ marginTop: '-0.1rem' }}
-                >
-                  <Text size="text-s" weight={500}>
-                    @{namespace}
-                  </Text>
-                </Link>
               </Flex>
             </Flex>
+
+            <StarButton entry={currentEntry} variant="detailed" />
           </Flex>
 
-          <StarButton entry={currentEntry} variant="detailed" />
-        </Flex>
-
-        {tabs && (
-          <Tabs.Root value={activeTabPath}>
-            <Tabs.List>
-              {tabs.map((tab) => (
-                <Tabs.Trigger
-                  href={`${baseUrl}/${version}${tab.path}`}
-                  value={tab.path}
-                  key={tab.path}
-                >
-                  <SvgIcon icon={tab.icon} />
-                  {tab.label}
-                </Tabs.Trigger>
-              ))}
-            </Tabs.List>
-          </Tabs.Root>
-        )}
-      </Section>
+          {tabs && (
+            <Tabs.Root value={activeTabPath}>
+              <Tabs.List>
+                {tabs.map((tab) => (
+                  <Tabs.Trigger
+                    href={`${baseUrl}/${version}${tab.path}`}
+                    value={tab.path}
+                    key={tab.path}
+                  >
+                    <SvgIcon icon={tab.icon} />
+                    {tab.label}
+                  </Tabs.Trigger>
+                ))}
+              </Tabs.List>
+            </Tabs.Root>
+          )}
+        </Section>
+      )}
 
       {(!currentEntry || shouldRedirectToDefaultConsumerPath) && (
         <PlaceholderSection />
