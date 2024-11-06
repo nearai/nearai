@@ -2,6 +2,15 @@
   width: 100%;
   position: relative;
   flex-grow: 1;
+
+  [data-placeholder] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 1;
+  }
 }
 
 .iframe {
@@ -11,8 +20,10 @@
   box-shadow: var(--shadow-card-with-outline);
   outline: none;
   transition: opacity 300ms;
+  position: relative;
+  z-index: 5;
 
-  &[data-loading='true'] {
+  [data-loading='true'] & {
     opacity: 0;
   }
 }

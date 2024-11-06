@@ -49,8 +49,6 @@ export const useThreadsStore = create<ThreadsStore>((set, get) => ({
       ? threadsById[currentThreadId]
       : undefined;
 
-    console.log(existingThread);
-
     const optimisticMessages = [...get().optimisticMessages];
     const messages = existingThread
       ? Object.values(existingThread.messagesById)
@@ -82,8 +80,6 @@ export const useThreadsStore = create<ThreadsStore>((set, get) => ({
         },
       });
     });
-
-    console.log(optimisticMessages);
 
     set({ optimisticMessages });
   },
@@ -118,7 +114,7 @@ export const useThreadsStore = create<ThreadsStore>((set, get) => ({
 
     const optimisticMessages: ThreadsStore['optimisticMessages'] = [];
     get().optimisticMessages.forEach((message) => {
-      if (message.index > allMessages.length) {
+      if (message.index >= allMessages.length) {
         optimisticMessages.push(message);
       }
     });

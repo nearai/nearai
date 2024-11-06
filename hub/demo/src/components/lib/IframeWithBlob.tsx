@@ -3,6 +3,7 @@ import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import { useDebouncedFunction } from '~/hooks/debounce';
 
 import s from './IframeWithBlob.module.scss';
+import { Placeholder } from './Placeholder';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type IframePostMessageEventHandler<T = any> = (
@@ -29,6 +30,7 @@ export const IframeWithBlob = ({
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [dataUrl, setDataUrl] = useState('');
   const [height, setHeight] = useState(0);
+  const isLoading = !height;
 
   const executePostMessage = useDebouncedFunction((message: unknown) => {
     console.log('Sending postMessage to <IframeWithBlob />', message);
@@ -103,14 +105,19 @@ export const IframeWithBlob = ({
   */
 
   return (
-    <div className={s.iframeWrapper} style={{ minHeight }}>
+    <div
+      className={s.iframeWrapper}
+      style={{ minHeight }}
+      data-loading={isLoading}
+    >
+      {isLoading && <Placeholder />}
+
       <iframe
         height={height}
         ref={iframeRef}
         src={dataUrl}
         sandbox="allow-scripts allow-popups"
         className={`${s.iframe} ${className}`}
-        data-loading={height < 1}
         {...props}
       />
     </div>

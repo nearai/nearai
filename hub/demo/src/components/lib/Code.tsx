@@ -33,6 +33,7 @@ export type CodeLanguage =
 type Props = {
   bleed?: boolean;
   language: CodeLanguage;
+  showCopyButton?: boolean;
   showLineNumbers?: boolean;
   source: string | undefined | null;
 };
@@ -55,7 +56,12 @@ function normalizeLanguage(input: string | null | undefined) {
   return value;
 }
 
-export const Code = ({ bleed, showLineNumbers = true, ...props }: Props) => {
+export const Code = ({
+  bleed,
+  showCopyButton = true,
+  showLineNumbers = true,
+  ...props
+}: Props) => {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const language = normalizeLanguage(props.language);
@@ -72,25 +78,27 @@ export const Code = ({ bleed, showLineNumbers = true, ...props }: Props) => {
 
   return (
     <div className={s.code} data-bleed={bleed} data-language={language}>
-      <Tooltip asChild content="Copy to clipboard">
-        <Button
-          label="Copy code to clipboard"
-          icon={<Copy />}
-          variant="secondary"
-          size="small"
-          fill="ghost"
-          onClick={() => source && copyTextToClipboard(source)}
-          className={s.copyButton}
-          tabIndex={-1}
-        />
-      </Tooltip>
+      {showCopyButton && (
+        <Tooltip asChild content="Copy to clipboard">
+          <Button
+            label="Copy code to clipboard"
+            icon={<Copy />}
+            variant="secondary"
+            size="small"
+            fill="ghost"
+            onClick={() => source && copyTextToClipboard(source)}
+            className={s.copyButton}
+            tabIndex={-1}
+          />
+        </Tooltip>
+      )}
 
       {source && (
         <SyntaxHighlighter
           PreTag="div"
           language={language ?? ''}
           style={style}
-          showLineNumbers={language === 'markdown' ? false : showLineNumbers}
+          showLineNumbers={showLineNumbers}
         >
           {source}
         </SyntaxHighlighter>

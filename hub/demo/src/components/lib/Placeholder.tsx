@@ -10,7 +10,7 @@ type Props = {
 };
 
 export const Placeholder = (props: Props) => {
-  return <span className={s.placeholder} {...props} />;
+  return <span className={s.placeholder} data-placeholder {...props} />;
 };
 
 export const PlaceholderStack = (props: Props) => {
