@@ -95,7 +95,7 @@ export const Messages = ({
 
       <div className={s.messages} ref={messagesRef}>
         {normalizedMessages.map((message, index) => (
-          <Fragment key={index + message.content}>
+          <Fragment key={index + message.role}>
             {message.role === 'user' ? (
               <Card animateIn background="sand-2" style={{ alignSelf: 'end' }}>
                 {renderAsMarkdown ? (

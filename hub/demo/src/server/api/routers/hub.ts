@@ -1,6 +1,5 @@
 import path from 'path';
 import { z } from 'zod';
-import { createZodFetcher } from 'zod-fetch';
 
 import { env } from '~/env';
 import {
@@ -16,7 +15,10 @@ import {
   modelsModel,
   noncesModel,
   revokeNonceModel,
+  threadMessageModel,
   threadMetadataModel,
+  threadModel,
+  threadRunModel,
   threadsModel,
 } from '~/lib/models';
 import {
@@ -26,30 +28,12 @@ import {
 } from '~/server/api/trpc';
 import { loadEntriesFromDirectory } from '~/server/utils/data-source';
 import { conditionallyIncludeAuthorizationHeader } from '~/server/utils/headers';
-import {
-  fetchThreadMessagesAndFiles,
-  runMessageOnAgentThread,
-} from '~/server/utils/threads';
+import { fetchThreadContents } from '~/server/utils/threads';
+import { createZodFetcher } from '~/utils/zod-fetch';
 
 const fetchWithZod = createZodFetcher();
 
 export const hubRouter = createTRPCRouter({
-  chatWithAgent: protectedProcedure
-    .input(chatWithAgentModel)
-    .mutation(async ({ ctx, input }) => {
-      const { threadId } = await runMessageOnAgentThread(
-        ctx.authorization,
-        input,
-      );
-
-      const thread = await fetchThreadMessagesAndFiles(
-        ctx.authorization,
-        threadId,
-      );
-
-      return thread;
-    }),
-
   chatWithModel: protectedProcedure
     .input(chatWithModelModel)
     .mutation(async ({ ctx, input }) => {
@@ -421,15 +405,98 @@ export const hubRouter = createTRPCRouter({
   thread: protectedProcedure
     .input(
       z.object({
+        afterMessageId: z.string().optional(),
+        runId: z.string().optional(),
         threadId: z.string(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const thread = await fetchThreadMessagesAndFiles(
-        ctx.authorization,
-        input.threadId,
+      const contents = await fetchThreadContents({
+        ...input,
+        authorization: ctx.authorization,
+      });
+
+      return contents;
+    }),
+
+  chatWithAgent: protectedProcedure
+    .input(chatWithAgentModel)
+    .mutation(async ({ ctx, input }) => {
+      const thread = input.thread_id
+        ? await fetchWithZod(
+            threadModel,
+            `${env.ROUTER_URL}/threads/${input.thread_id}`,
+            {
+              headers: {
+                Authorization: ctx.authorization,
+              },
+            },
+          )
+        : await fetchWithZod(threadModel, `${env.ROUTER_URL}/threads`, {
+            method: 'POST',
+            headers: {
+              Authorization: ctx.authorization,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({}),
+          });
+
+      const message = await fetchWithZod(
+        threadMessageModel,
+        `${env.ROUTER_URL}/threads/${thread.id}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: ctx.authorization,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: input.new_message,
+            role: 'user',
+          }),
+        },
       );
-      return thread;
+
+      const run = await fetchWithZod(
+        threadRunModel,
+        `${env.ROUTER_URL}/threads/${thread.id}/runs`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: ctx.authorization,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            agent_env_vars: input.agent_env_vars,
+            assistant_id: input.agent_id,
+            max_iterations: input.max_iterations,
+            thread_id: thread.id,
+            user_env_vars: input.user_env_vars,
+          }),
+        },
+      );
+
+      return {
+        thread,
+        message,
+        run,
+      };
+    }),
+
+  threadContents: protectedProcedure
+    .input(
+      z.object({
+        afterMessageId: z.string().optional(),
+        threadId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const contents = await fetchThreadContents({
+        ...input,
+        authorization: ctx.authorization,
+      });
+
+      return contents;
     }),
 
   threads: protectedProcedure.query(async ({ ctx }) => {

@@ -17,12 +17,6 @@ export const messageModel = z.object({
   content: z.string(),
 });
 
-export const runModel = z.object({
-  id: z.string(),
-  thread_id: z.string(),
-  status: z.string(),
-});
-
 export const chatWithAgentModel = z.object({
   agent_id: z.string(),
   new_message: z.string(),
@@ -321,6 +315,22 @@ export const threadModel = z.object({
 });
 
 export const threadsModel = threadModel.array();
+
+export const threadRunModel = z.object({
+  id: z.string(),
+  thread_id: z.string(),
+  status: z.enum([
+    'queued',
+    'in_progress',
+    'requires_action',
+    'cancelling',
+    'cancelled',
+    'failed',
+    'completed',
+    'incomplete',
+    'expired',
+  ]),
+});
 
 export const threadMessageMetadataModel = z.intersection(
   z

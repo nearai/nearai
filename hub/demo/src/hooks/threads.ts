@@ -5,7 +5,7 @@ import { type threadModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { api, type RouterOutputs } from '~/trpc/react';
 
-export type Thread = z.infer<typeof threadModel> & {
+export type ThreadSummary = z.infer<typeof threadModel> & {
   agent: {
     name: string;
     namespace: string;
@@ -47,7 +47,7 @@ export function useThreads() {
     if (!accountId) return [];
     if (!threadsQuery.data) return;
 
-    const result: Thread[] = [];
+    const result: ThreadSummary[] = [];
 
     for (const data of threadsQuery.data) {
       const rootAgentId = data.metadata.agent_ids?.[0];

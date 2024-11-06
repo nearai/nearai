@@ -6,6 +6,7 @@ import {
   type KeyboardEventHandler,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -39,8 +40,8 @@ import {
 } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
 import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
-import { returnOptimisticThreadMessage } from '~/lib/thread';
 import { useAuthStore } from '~/stores/auth';
+import { useThreadsStore } from '~/stores/threads';
 import { api } from '~/trpc/react';
 import { handleClientError } from '~/utils/error';
 import { formatBytes } from '~/utils/number';
@@ -104,58 +105,76 @@ export const AgentRunner = ({
     useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
 
+  const addOptimisticMessages = useThreadsStore(
+    (store) => store.addOptimisticMessages,
+  );
+  const optimisticMessages = useThreadsStore(
+    (store) => store.optimisticMessages,
+  );
+  const resetThreadsStore = useThreadsStore((store) => store.reset);
+  const setThread = useThreadsStore((store) => store.setThread);
+  const threadsById = useThreadsStore((store) => store.threadsById);
+  const thread = threadsById[threadId];
+  const openedFile = openedFileId ? thread?.filesById[openedFileId] : undefined;
+
   const threadQuery = api.hub.thread.useQuery(
     {
+      afterMessageId: thread?.latestMessageId,
+      runId: thread?.run?.id,
       threadId,
     },
     {
-      enabled: false,
+      enabled: isAuthenticated && !!threadId,
     },
   );
-  const thread = threadQuery.data;
 
-  const openedFile = openedFileId
-    ? thread?.files?.find((file) => file.id === openedFileId)
-    : undefined;
+  const messages = useMemo(() => {
+    return [
+      ...(thread ? Object.values(thread.messagesById) : []),
+      ...optimisticMessages.map((message) => message.data),
+    ];
+  }, [thread, optimisticMessages]);
+
+  const files = useMemo(() => {
+    return thread ? Object.values(thread.filesById) : [];
+  }, [thread]);
 
   const latestAssistantMessages: z.infer<typeof threadMessageModel>[] = [];
-  if (thread) {
-    for (let i = thread.messages.length - 1; i >= 0; i--) {
-      const message = thread.messages[i]!;
-      const messageType = message.metadata?.message_type ?? '';
-      if (message.role === 'assistant' && !messageType.startsWith('system:')) {
-        latestAssistantMessages.push(message);
-      } else {
-        break;
-      }
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]!;
+    const messageType = message.metadata?.message_type ?? '';
+    if (message.role === 'assistant' && !messageType.startsWith('system:')) {
+      latestAssistantMessages.push(message);
+    } else {
+      break;
     }
   }
 
-  const chatMutationThreadId = useRef('');
   const _chatMutation = api.hub.chatWithAgent.useMutation();
   const chatMutation = useMutation({
     mutationFn: async (data: AgentChatMutationInput) => {
       try {
-        const updatedThread = await _chatMutation.mutateAsync({
+        const input = {
           thread_id: threadId || undefined,
           agent_id: agentId,
           agent_env_vars: entryEnvironmentVariables.metadataVariablesByKey,
           user_env_vars: entryEnvironmentVariables.urlVariablesByKey,
           ...data,
+        };
+
+        addOptimisticMessages(threadId, [input]);
+        const response = await _chatMutation.mutateAsync(input);
+
+        setThread({
+          ...response.thread,
+          files: [],
+          messages: [response.message],
+          run: response.run,
         });
 
-        chatMutationThreadId.current = updatedThread.id;
+        updateQueryPath({ threadId: response.thread.id }, 'replace', false);
 
-        utils.hub.thread.setData(
-          {
-            threadId: updatedThread.id,
-          },
-          updatedThread,
-        );
-
-        updateQueryPath({ threadId: updatedThread.id }, 'replace', false);
-
-        void utils.hub.threads.invalidate();
+        await utils.hub.threads.refetch();
       } catch (error) {
         handleClientError({ error, title: 'Failed to run agent' });
       }
@@ -170,7 +189,12 @@ export const AgentRunner = ({
     onIframePostMessage,
   } = useAgentRequestsWithIframe(currentEntry, chatMutation, threadId);
 
-  const isLoading = threadQuery.isLoading && !chatMutation.isPending;
+  const isRunning =
+    chatMutation.isPending ||
+    thread?.run?.status === 'queued' ||
+    thread?.run?.status === 'in_progress';
+
+  const isLoading = !!threadId && !thread && !isRunning;
 
   const [__view, __setView] = useState<RunView>();
   const view = (queryParams.view as RunView) ?? __view;
@@ -192,24 +216,7 @@ export const AgentRunner = ({
   );
 
   const onSubmit: SubmitHandler<FormSchema> = async (data) => {
-    if (!data.new_message.trim()) return;
-
-    utils.hub.thread.setData(
-      {
-        threadId,
-      },
-      {
-        id: threadId,
-        files: thread?.files ?? [],
-        messages: [
-          ...(thread?.messages ?? []),
-          returnOptimisticThreadMessage(threadId, data.new_message),
-        ],
-      },
-    );
-
     form.setValue('new_message', '');
-
     await chatMutation.mutateAsync(data);
   };
 
@@ -229,19 +236,27 @@ export const AgentRunner = ({
   };
 
   useEffect(() => {
-    if (
-      isAuthenticated &&
-      threadId &&
-      threadId !== thread?.id &&
-      threadId !== chatMutationThreadId.current
-    ) {
-      void threadQuery.refetch({ cancelRefetch: true });
-    }
-  }, [isAuthenticated, thread, threadId, threadQuery]);
+    const timeout = setTimeout(() => {
+      const run = thread?.run ?? threadQuery.data?.run;
+      if (
+        (run?.status === 'queued' || run?.status === 'in_progress') &&
+        !threadQuery.isFetching
+      ) {
+        void threadQuery.refetch({ cancelRefetch: true });
+      }
+    }, 1000);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [thread?.run, threadQuery, threadQuery.data]);
 
   useEffect(() => {
-    const files = threadQuery?.data?.files;
-    const htmlFile = files?.find((file) => file.filename === 'index.html');
+    if (threadQuery.data) setThread(threadQuery.data);
+  }, [setThread, threadQuery.data]);
+
+  useEffect(() => {
+    const htmlFile = files.find((file) => file.filename === 'index.html');
 
     if (htmlFile) {
       const htmlContent = htmlFile.content.replaceAll(
@@ -254,28 +269,17 @@ export const AgentRunner = ({
       setHtmlOutput('');
       setView('conversation');
     }
-  }, [threadQuery, htmlOutput, agentId, setView]);
-
-  useEffect(() => {
-    if (!threadId) {
-      utils.hub.thread.setData(
-        {
-          threadId: '',
-        },
-        {
-          files: [],
-          messages: [],
-          id: '',
-        },
-      );
-    }
-  }, [threadId, utils]);
+  }, [files, htmlOutput, agentId, setView]);
 
   useEffect(() => {
     if (currentEntry && isAuthenticated) {
       form.setFocus('new_message');
     }
   }, [threadId, currentEntry, isAuthenticated, form]);
+
+  useEffect(() => {
+    resetThreadsStore();
+  }, [threadId, resetThreadsStore]);
 
   useEffect(() => {
     form.reset();
@@ -344,7 +348,7 @@ export const AgentRunner = ({
                 </>
               ) : (
                 <Messages
-                  messages={thread?.messages ?? []}
+                  messages={messages}
                   threadId={threadId}
                   welcomeMessage={
                     <AgentWelcome details={currentEntry.details} />
@@ -422,7 +426,7 @@ export const AgentRunner = ({
                     type="submit"
                     icon={<ArrowRight weight="bold" />}
                     size="small"
-                    loading={chatMutation.isPending}
+                    loading={isRunning}
                   />
                 </Flex>
               ) : (
@@ -442,9 +446,9 @@ export const AgentRunner = ({
                 Output
               </Text>
 
-              {thread?.files && Object.keys(thread.files).length ? (
+              {files.length ? (
                 <CardList>
-                  {Object.values(thread.files).map((file) => (
+                  {files.map((file) => (
                     <Card
                       padding="s"
                       gap="s"
@@ -524,7 +528,7 @@ export const AgentRunner = ({
         open={openedFileId !== null}
         onOpenChange={() => setOpenedFileId(null)}
       >
-        <Dialog.Content title={openedFileId} size="l">
+        <Dialog.Content title={openedFile?.filename ?? 'File'} size="l">
           <Code
             bleed
             source={openedFile?.content}

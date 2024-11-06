@@ -24,7 +24,7 @@ import { SvgIcon } from '~/components/lib/SvgIcon';
 import { Text } from '~/components/lib/Text';
 import { Tooltip } from '~/components/lib/Tooltip';
 import { env } from '~/env';
-import { type Thread, useThreads } from '~/hooks/threads';
+import { type ThreadSummary, useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
@@ -64,7 +64,7 @@ export const ThreadsSidebar = ({
   const currentThreadIdMatchesThread =
     !threadId || !!filteredThreads?.find((thread) => thread.id === threadId);
 
-  const removeThread = async (thread: Thread) => {
+  const removeThread = async (thread: ThreadSummary) => {
     try {
       if (threadId === thread.id) {
         updateQueryPath({ threadId: undefined });

@@ -28,7 +28,12 @@ const PENDING_TRANSACTION_KEY = 'agent-transaction-request-pending-connection';
 
 export function useAgentRequestsWithIframe(
   currentEntry: z.infer<typeof entryModel> | undefined,
-  chatMutation: UseMutationResult<void, Error, AgentChatMutationInput, unknown>,
+  chatMutation: UseMutationResult<
+    unknown,
+    Error,
+    AgentChatMutationInput,
+    unknown
+  >,
   threadId: string | null | undefined,
 ) {
   const { queryParams, updateQueryPath } = useQueryParams([

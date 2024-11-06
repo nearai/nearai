@@ -1,122 +1,70 @@
 import { type z } from 'zod';
-import { createZodFetcher } from 'zod-fetch';
 
 import { env } from '~/env';
 import {
-  type chatWithAgentModel,
-  runModel,
   threadFileModel,
   threadMessagesModel,
   threadModel,
+  threadRunModel,
 } from '~/lib/models';
-import { poll } from '~/utils/poll';
+import { createZodFetcher } from '~/utils/zod-fetch';
 
 const fetchWithZod = createZodFetcher();
 
-export async function fetchThreadMessagesAndFiles(
-  authorization: string,
-  threadId: string,
-) {
-  const url = new URL(`${env.ROUTER_URL}/threads/${threadId}/messages`);
-  url.searchParams.append('limit', '1000');
-  url.searchParams.append('order', 'asc');
-
-  const messages = await fetchWithZod(threadMessagesModel, url.toString(), {
-    headers: {
-      Authorization: authorization,
+export async function fetchThreadContents({
+  afterMessageId,
+  authorization,
+  runId,
+  threadId,
+}: {
+  afterMessageId?: string;
+  authorization: string;
+  runId?: string;
+  threadId: string;
+}) {
+  const thread = await fetchWithZod(
+    threadModel,
+    `${env.ROUTER_URL}/threads/${threadId}`,
+    {
+      headers: {
+        Authorization: authorization,
+      },
     },
-  });
+  );
 
-  const files = await fetchFilesAttachedToMessages(authorization, messages);
-
-  return {
-    id: threadId,
-    files,
-    messages: messages.data,
-  };
-}
-
-export async function runMessageOnAgentThread(
-  authorization: string,
-  input: z.infer<typeof chatWithAgentModel>,
-) {
-  const thread = input.thread_id
+  const run = runId
     ? await fetchWithZod(
-        threadModel,
-        `${env.ROUTER_URL}/threads/${input.thread_id}`,
+        threadRunModel,
+        `${env.ROUTER_URL}/threads/${threadId}/runs/${runId}`,
         {
           headers: {
             Authorization: authorization,
           },
         },
       )
-    : await fetchWithZod(threadModel, `${env.ROUTER_URL}/threads`, {
-        method: 'POST',
-        headers: {
-          Authorization: authorization,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      });
+    : undefined;
 
-  await fetch(`${env.ROUTER_URL}/threads/${thread.id}/messages`, {
-    method: 'POST',
-    headers: {
-      Authorization: authorization,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      content: input.new_message,
-      role: 'user',
-    }),
-  });
-
-  const createdRun = await fetchWithZod(
-    runModel,
-    `${env.ROUTER_URL}/threads/${thread.id}/runs`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: authorization,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        thread_id: thread.id,
-        assistant_id: input.agent_id,
-      }),
-    },
-  );
-
-  await poll(
-    `${env.ROUTER_URL}/threads/${thread.id}/runs/${createdRun.id}`,
+  const messagesUrl = new URL(`${env.ROUTER_URL}/threads/${threadId}/messages`);
+  messagesUrl.searchParams.append('limit', '1000');
+  messagesUrl.searchParams.append('order', 'asc');
+  if (afterMessageId) messagesUrl.searchParams.append('after', afterMessageId);
+  const messages = await fetchWithZod(
+    threadMessagesModel,
+    messagesUrl.toString(),
     {
       headers: {
         Authorization: authorization,
-        'Content-Type': 'application/json',
       },
     },
-    {
-      attemptDelayMs: 1000,
-      maxAttempts: 60,
-      // 1 minute of polling...
-    },
-    async (response, currentAttempt) => {
-      const data = (await response.json()) as unknown;
-
-      if (env.NODE_ENV === 'development') {
-        // When running locally, this log statement can be useful
-        console.log(`Polling thread run - attempt ${currentAttempt}`, data);
-      }
-
-      const run = runModel.parse(data);
-      if (run.status !== 'in_progress' && run.status !== 'queued') {
-        return run;
-      }
-    },
   );
+
+  const files = await fetchFilesAttachedToMessages(authorization, messages);
 
   return {
-    threadId: thread.id,
+    ...thread,
+    run,
+    messages: messages.data,
+    files,
   };
 }
 
