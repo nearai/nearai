@@ -2,7 +2,7 @@ import importlib.metadata
 import json
 import logging
 import time
-from typing import Dict, Iterable, List, Optional, Union
+from typing import Annotated, Dict, Iterable, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -17,9 +17,16 @@ from hub.api.v1.images import get_images_ai
 from hub.api.v1.sql import SqlClient
 
 v1_router = APIRouter()
-db = SqlClient()
 logger = logging.getLogger(__name__)
 security = HTTPBearer()
+
+
+def get_db() -> SqlClient:
+    """Get a thread-local database connection."""
+    return SqlClient()
+
+
+DatabaseSession = Annotated[SqlClient, Depends(get_db)]
 
 
 REVOKE_MESSAGE = "Are you sure? Revoking a nonce"
@@ -118,7 +125,9 @@ def convert_request(request: ChatCompletionsRequest | CompletionsRequest | Embed
 
 
 @v1_router.post("/completions")
-def completions(request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth)):
+def completions(
+    db: DatabaseSession, request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth)
+):
     logger.info(f"Received completions request: {request.model_dump()}")
 
     try:
@@ -151,7 +160,11 @@ def completions(request: CompletionsRequest = Depends(convert_request), auth: Au
 
 
 @v1_router.post("/chat/completions")
-def chat_completions(request: ChatCompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth)):
+def chat_completions(
+    db: DatabaseSession,
+    request: ChatCompletionsRequest = Depends(convert_request),
+    auth: AuthToken = Depends(get_auth),
+):
     logger.info(f"Received chat completions request: {request.model_dump()}")
 
     try:
@@ -186,14 +199,17 @@ def chat_completions(request: ChatCompletionsRequest = Depends(convert_request),
 
     else:
         c = json.dumps(resp.model_dump())
-        db.add_user_usage(
-            auth.account_id,
-            json.dumps([x.model_dump() for x in request.messages]),
-            c,
-            request.model,
-            request.provider,
-            "/chat/completions",
-        )
+        try:
+            db.add_user_usage(
+                auth.account_id,
+                json.dumps([x.model_dump() for x in request.messages]),
+                c,
+                request.model,
+                request.provider,
+                "/chat/completions",
+            )
+        except Exception as e:
+            logger.error(f"Error adding usage to database: {e}")
 
         return JSONResponse(content=json.loads(c))
 
@@ -235,7 +251,9 @@ def get_models() -> JSONResponse:
 
 
 @v1_router.post("/embeddings")
-def embeddings(request: EmbeddingsRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth)):
+def embeddings(
+    db: DatabaseSession, request: EmbeddingsRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth)
+):
     logger.info(f"Received embeddings request: {request.model_dump()}")
 
     try:
@@ -265,7 +283,7 @@ class RevokeNonce(BaseModel):
 
 
 @v1_router.post("/nonce/revoke")
-def revoke_nonce(nonce: RevokeNonce, auth: AuthToken = Depends(validate_signature)):
+def revoke_nonce(db: DatabaseSession, nonce: RevokeNonce, auth: AuthToken = Depends(validate_signature)):
     """Revoke a nonce for the account."""
     logger.info(f"Received request to revoke nonce {nonce} for account {auth.account_id}")
     if auth.message != REVOKE_MESSAGE:
@@ -278,7 +296,7 @@ def revoke_nonce(nonce: RevokeNonce, auth: AuthToken = Depends(validate_signatur
 
 
 @v1_router.post("/nonce/revoke/all")
-def revoke_all_nonces(auth: AuthToken = Depends(validate_signature)):
+def revoke_all_nonces(db: DatabaseSession, auth: AuthToken = Depends(validate_signature)):
     """Revoke all nonces for the account."""
     logger.info(f"Received request to revoke all nonces for account {auth.account_id}")
     if auth.message != REVOKE_ALL_MESSAGE:
@@ -291,7 +309,7 @@ def revoke_all_nonces(auth: AuthToken = Depends(validate_signature)):
 
 
 @v1_router.get("/nonce/list")
-def list_nonces(auth: AuthToken = Depends(get_auth)):
+def list_nonces(db: DatabaseSession, auth: AuthToken = Depends(get_auth)):
     """List all nonces for the account."""
     nonces = db.get_account_nonces(auth.account_id)
     res = nonces.model_dump_json()
@@ -313,7 +331,9 @@ def version() -> str:
 
 
 @v1_router.post("/images/generations")
-def generate_images(request: ImageGenerationRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth)):
+def generate_images(
+    db: DatabaseSession, request: ImageGenerationRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth)
+):
     logger.info(f"Received image generation request: {request.model_dump()}")
 
     try:
