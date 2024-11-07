@@ -1,14 +1,16 @@
+import {
+  Badge,
+  Button,
+  Dropdown,
+  Flex,
+  SvgIcon,
+  Table,
+  Text,
+  Timestamp,
+} from '@near-pagoda/ui';
 import { DotsThree, Prohibit } from '@phosphor-icons/react';
 import { useEffect } from 'react';
 
-import { Badge } from '~/components/lib/Badge';
-import { Button } from '~/components/lib/Button';
-import { Dropdown } from '~/components/lib/Dropdown';
-import { Flex } from '~/components/lib/Flex';
-import { SvgIcon } from '~/components/lib/SvgIcon';
-import { Table } from '~/components/lib/Table';
-import { Text } from '~/components/lib/Text';
-import { Timestamp } from '~/components/lib/Timestamp';
 import { RECIPIENT, REVOKE_ALL_MESSAGE, REVOKE_MESSAGE } from '~/lib/auth';
 import {
   extractSignatureFromHashParams,

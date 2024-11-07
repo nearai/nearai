@@ -1,21 +1,22 @@
 'use client';
 
+import {
+  Badge,
+  Button,
+  Card,
+  ConditionalLink,
+  Flex,
+  ImageIcon,
+  Text,
+  Tooltip,
+} from '@near-pagoda/ui';
 import { CodeBlock, Play } from '@phosphor-icons/react';
 import { type ReactNode } from 'react';
 import { type z } from 'zod';
 
-import { Badge } from '~/components/lib/Badge';
-import { Button } from '~/components/lib/Button';
-import { Card } from '~/components/lib/Card';
-import { Flex } from '~/components/lib/Flex';
-import { Text } from '~/components/lib/Text';
-import { Tooltip } from '~/components/lib/Tooltip';
 import { StarButton } from '~/components/StarButton';
 import { ENTRY_CATEGORY_LABELS, primaryUrlForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
-
-import { ConditionalLink } from './lib/ConditionalLink';
-import { ImageIcon } from './lib/ImageIcon';
 
 type Props = {
   entry: z.infer<typeof entryModel>;

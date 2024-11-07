@@ -1,11 +1,8 @@
 'use client';
 
+import { Flex, Section, SvgIcon, Text } from '@near-pagoda/ui';
 import { Gear } from '@phosphor-icons/react';
 
-import { Flex } from '~/components/lib/Flex';
-import { Section } from '~/components/lib/Section';
-import { SvgIcon } from '~/components/lib/SvgIcon';
-import { Text } from '~/components/lib/Text';
 import { SignInPromptSection } from '~/components/SignInPrompt';
 import { useAuthStore } from '~/stores/auth';
 

@@ -1,9 +1,9 @@
+import { Placeholder } from '@near-pagoda/ui';
 import { type ComponentProps, useEffect, useRef, useState } from 'react';
 
 import { useDebouncedFunction } from '~/hooks/debounce';
 
 import s from './IframeWithBlob.module.scss';
-import { Placeholder } from './Placeholder';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type IframePostMessageEventHandler<T = any> = (

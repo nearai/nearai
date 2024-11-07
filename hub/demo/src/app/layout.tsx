@@ -1,11 +1,16 @@
+'use client';
+
 import '~/styles/globals.scss';
+import '@near-pagoda/ui/styles.css';
 import '@near-wallet-selector/modal-ui/styles.css';
 
-import { ThemeProvider } from 'next-themes';
+import { PagodaUiProvider } from '@near-pagoda/ui';
+import { Toaster } from '@near-pagoda/ui';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { type ReactNode } from 'react';
 
 import { Footer } from '~/components/Footer';
-import { Toaster } from '~/components/lib/Toast';
 import { Navigation } from '~/components/Navigation';
 import { NearInitializer } from '~/components/NearInitializer';
 import { ZustandHydration } from '~/components/ZustandHydration';
@@ -35,7 +40,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
 
       <body>
-        <ThemeProvider attribute="class">
+        <PagodaUiProvider
+          value={{
+            Link,
+            useRouter,
+          }}
+        >
           <TRPCReactProvider>
             <NearInitializer />
             <ZustandHydration />
@@ -47,7 +57,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <Footer conditional />
             </div>
           </TRPCReactProvider>
-        </ThemeProvider>
+        </PagodaUiProvider>
       </body>
     </html>
   );

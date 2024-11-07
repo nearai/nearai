@@ -1,6 +1,20 @@
 'use client';
 
 import {
+  Button,
+  Card,
+  CardList,
+  Dialog,
+  Dropdown,
+  Flex,
+  Form,
+  Input,
+  PlaceholderStack,
+  SvgIcon,
+  Text,
+  Tooltip,
+} from '@near-pagoda/ui';
+import {
   DotsThree,
   Lightbulb,
   Link as LinkIcon,
@@ -14,15 +28,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 
-import { Button } from '~/components/lib/Button';
-import { Card, CardList } from '~/components/lib/Card';
-import { Dropdown } from '~/components/lib/Dropdown';
-import { Flex } from '~/components/lib/Flex';
-import { PlaceholderStack } from '~/components/lib/Placeholder';
 import { Sidebar } from '~/components/lib/Sidebar';
-import { SvgIcon } from '~/components/lib/SvgIcon';
-import { Text } from '~/components/lib/Text';
-import { Tooltip } from '~/components/lib/Tooltip';
 import { env } from '~/env';
 import { type ThreadSummary, useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
@@ -30,10 +36,6 @@ import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
 import { handleClientError } from '~/utils/error';
-
-import { Dialog } from './lib/Dialog';
-import { Form } from './lib/Form';
-import { Input } from './lib/Input';
 
 type Props = {
   onRequestNewThread: () => unknown;

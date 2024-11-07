@@ -1,3 +1,4 @@
+import { Button, Dialog, Flex, SvgIcon, Text } from '@near-pagoda/ui';
 import { Check, Prohibit } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useEffect } from 'react';
@@ -13,11 +14,6 @@ import {
 import { useAgentSettingsStore } from '~/stores/agent-settings';
 import { useAuthStore } from '~/stores/auth';
 
-import { Button } from './lib/Button';
-import { Dialog } from './lib/Dialog';
-import { Flex } from './lib/Flex';
-import { SvgIcon } from './lib/SvgIcon';
-import { Text } from './lib/Text';
 import { SignInPrompt } from './SignInPrompt';
 
 export type AgentRequest =

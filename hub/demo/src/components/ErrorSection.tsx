@@ -1,10 +1,5 @@
+import { Button, Container, Flex, Section, Text } from '@near-pagoda/ui';
 import { ArrowRight } from '@phosphor-icons/react';
-
-import { Button } from './lib/Button';
-import { Container } from './lib/Container';
-import { Flex } from './lib/Flex';
-import { Section } from './lib/Section';
-import { Text } from './lib/Text';
 
 type Props = {
   error: '404' | 'unknown';

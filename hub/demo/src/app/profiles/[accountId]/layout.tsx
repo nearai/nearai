@@ -1,16 +1,18 @@
 'use client';
 
+import {
+  Badge,
+  Flex,
+  ImageIcon,
+  Section,
+  SvgIcon,
+  Tabs,
+  Text,
+} from '@near-pagoda/ui';
 import { Cube, Star, User } from '@phosphor-icons/react';
 import { usePathname } from 'next/navigation';
 import { type ReactNode } from 'react';
 
-import { Badge } from '~/components/lib/Badge';
-import { Flex } from '~/components/lib/Flex';
-import { ImageIcon } from '~/components/lib/ImageIcon';
-import { Section } from '~/components/lib/Section';
-import { SvgIcon } from '~/components/lib/SvgIcon';
-import { Tabs } from '~/components/lib/Tabs';
-import { Text } from '~/components/lib/Text';
 import { useProfileParams } from '~/hooks/profile';
 import { useAuthStore } from '~/stores/auth';
 

@@ -1,12 +1,9 @@
 'use client';
 
+import { Container, Flex, Text } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
 import { type entryModel } from '~/lib/models';
-
-import { Container } from './lib/Container';
-import { Flex } from './lib/Flex';
-import { Text } from './lib/Text';
 
 type Props = {
   details: z.infer<typeof entryModel>['details'];

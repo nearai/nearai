@@ -1,4 +1,4 @@
-import { openToast } from '~/components/lib/Toast';
+import { openToast } from '@near-pagoda/ui';
 
 export async function copyTextToClipboard(
   content: string,

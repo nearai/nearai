@@ -1,5 +1,16 @@
 'use client';
 
+import {
+  BreakpointDisplay,
+  Button,
+  Combobox,
+  type ComboboxOption,
+  Flex,
+  Form,
+  InputTextarea,
+  Slider,
+  Text,
+} from '@near-pagoda/ui';
 import { ArrowRight, ChatCircleText, Gear } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -12,15 +23,7 @@ import {
 import { Controller, type SubmitHandler } from 'react-hook-form';
 import { type z } from 'zod';
 
-import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
-import { Button } from '~/components/lib/Button';
-import { Combobox, type ComboboxOption } from '~/components/lib/Combobox';
-import { Flex } from '~/components/lib/Flex';
-import { Form } from '~/components/lib/Form';
-import { InputTextarea } from '~/components/lib/InputTextarea';
 import { Sidebar } from '~/components/lib/Sidebar';
-import { Slider } from '~/components/lib/Slider';
-import { Text } from '~/components/lib/Text';
 import { Messages } from '~/components/Messages';
 import { SignInPrompt } from '~/components/SignInPrompt';
 import { ThreadsSidebar } from '~/components/ThreadsSidebar';

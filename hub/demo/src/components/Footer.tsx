@@ -1,11 +1,10 @@
 'use client';
 
+import { Flex, Text } from '@near-pagoda/ui';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import s from './Footer.module.scss';
-import { Flex } from './lib/Flex';
-import { Text } from './lib/Text';
 
 type Props = {
   conditional?: boolean;

@@ -1,9 +1,8 @@
 'use client';
 
-import { Badge } from '~/components/lib/Badge';
-import { Flex } from '~/components/lib/Flex';
+import { Badge, Flex, Section } from '@near-pagoda/ui';
+
 import { Markdown } from '~/components/lib/Markdown';
-import { Section } from '~/components/lib/Section';
 import { useCurrentEntry } from '~/hooks/entries';
 
 export default function EntryDetailsPage() {

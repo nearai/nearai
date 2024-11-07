@@ -1,29 +1,30 @@
 'use client';
 
+import {
+  Badge,
+  Button,
+  Dropdown,
+  Flex,
+  ImageIcon,
+  PlaceholderSection,
+  Section,
+  SvgIcon,
+  Tabs,
+  Text,
+  Tooltip,
+} from '@near-pagoda/ui';
 import { CaretDown, Copy } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactElement, type ReactNode, useEffect } from 'react';
 
 import { ErrorSection } from '~/components/ErrorSection';
-import { Badge } from '~/components/lib/Badge';
-import { Button } from '~/components/lib/Button';
-import { Dropdown } from '~/components/lib/Dropdown';
-import { Flex } from '~/components/lib/Flex';
-import { ImageIcon } from '~/components/lib/ImageIcon';
-import { PlaceholderSection } from '~/components/lib/Placeholder';
-import { Section } from '~/components/lib/Section';
-import { SvgIcon } from '~/components/lib/SvgIcon';
-import { Tabs } from '~/components/lib/Tabs';
-import { Text } from '~/components/lib/Text';
 import { StarButton } from '~/components/StarButton';
 import { env } from '~/env';
 import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
 import { copyTextToClipboard } from '~/utils/clipboard';
-
-import { Tooltip } from './lib/Tooltip';
 
 type Props = {
   category: EntryCategory;

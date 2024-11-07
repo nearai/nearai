@@ -1,11 +1,11 @@
 'use client';
 
+import { Tooltip } from '@near-pagoda/ui';
 import React, { type ReactNode } from 'react';
 
 import { copyTextToClipboard } from '~/utils/clipboard';
 
 import s from './InlineCode.module.scss';
-import { Tooltip } from './Tooltip';
 
 type Props = {
   children?: ReactNode;

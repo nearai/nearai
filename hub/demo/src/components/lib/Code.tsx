@@ -2,8 +2,9 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
+import { useTheme } from '@near-pagoda/ui';
+import { Button, Tooltip } from '@near-pagoda/ui';
 import { Copy } from '@phosphor-icons/react';
-import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import {
@@ -13,9 +14,7 @@ import {
 
 import { copyTextToClipboard } from '~/utils/clipboard';
 
-import { Button } from './Button';
 import s from './Code.module.scss';
-import { Tooltip } from './Tooltip';
 
 export type CodeLanguage =
   | 'css'

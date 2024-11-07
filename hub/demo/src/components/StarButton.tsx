@@ -1,3 +1,4 @@
+import { Button, openToast, SvgIcon, Tooltip } from '@near-pagoda/ui';
 import { Star } from '@phosphor-icons/react';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { type z } from 'zod';
@@ -7,10 +8,6 @@ import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
 
-import { Button } from './lib/Button';
-import { SvgIcon } from './lib/SvgIcon';
-import { openToast } from './lib/Toast';
-import { Tooltip } from './lib/Tooltip';
 import s from './StarButton.module.scss';
 
 type Props = {

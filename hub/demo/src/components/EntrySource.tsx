@@ -1,29 +1,29 @@
 'use client';
 
+import {
+  BreakpointDisplay,
+  Button,
+  Card,
+  CardList,
+  Container,
+  Flex,
+  PlaceholderCard,
+  PlaceholderStack,
+  Section,
+  SvgIcon,
+  Text,
+} from '@near-pagoda/ui';
 import { Folder, LockKey } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 
-import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
-import { Button } from '~/components/lib/Button';
-import { Card, CardList } from '~/components/lib/Card';
 import { Code, filePathToCodeLanguage } from '~/components/lib/Code';
-import { Flex } from '~/components/lib/Flex';
-import {
-  PlaceholderCard,
-  PlaceholderStack,
-} from '~/components/lib/Placeholder';
 import { Sidebar } from '~/components/lib/Sidebar';
-import { Text } from '~/components/lib/Text';
 import { useEntryParams } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
-
-import { Container } from './lib/Container';
-import { Section } from './lib/Section';
-import { SvgIcon } from './lib/SvgIcon';
 
 const METADATA_FILE_PATH = 'metadata.json';
 

@@ -1,4 +1,17 @@
 import {
+  Button,
+  Card,
+  CardList,
+  Dialog,
+  Flex,
+  Form,
+  Input,
+  InputTextarea,
+  SvgIcon,
+  Text,
+  Tooltip,
+} from '@near-pagoda/ui';
+import {
   CodeBlock,
   Eye,
   EyeSlash,
@@ -22,17 +35,7 @@ import { api } from '~/trpc/react';
 import { copyTextToClipboard } from '~/utils/clipboard';
 import { handleClientError } from '~/utils/error';
 
-import { Button } from './lib/Button';
-import { Card, CardList } from './lib/Card';
-import { Dialog } from './lib/Dialog';
-import { Flex } from './lib/Flex';
-import { Form } from './lib/Form';
-import { Input } from './lib/Input';
-import { InputTextarea } from './lib/InputTextarea';
 import { Sidebar } from './lib/Sidebar';
-import { SvgIcon } from './lib/SvgIcon';
-import { Text } from './lib/Text';
-import { Tooltip } from './lib/Tooltip';
 import { SignInPrompt } from './SignInPrompt';
 
 type Props = {

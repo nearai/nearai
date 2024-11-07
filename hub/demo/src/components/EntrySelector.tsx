@@ -1,21 +1,24 @@
 'use client';
 
+import {
+  Button,
+  Card,
+  CardList,
+  Flex,
+  Input,
+  PlaceholderStack,
+  Text,
+} from '@near-pagoda/ui';
 import { Minus, Plus } from '@phosphor-icons/react';
 import { useEffect, useRef } from 'react';
 import { type z } from 'zod';
 
-import { Flex } from '~/components/lib/Flex';
-import { Input } from '~/components/lib/Input';
 import { useEntriesSearch } from '~/hooks/entries';
 import { idForEntry } from '~/lib/entries';
 import { type EntryCategory, type entryModel } from '~/lib/models';
 import { api } from '~/trpc/react';
 
 import { EntryCard } from './EntryCard';
-import { Button } from './lib/Button';
-import { Card, CardList } from './lib/Card';
-import { PlaceholderStack } from './lib/Placeholder';
-import { Text } from './lib/Text';
 
 export type EntrySelectorOnSelectHandler = (
   item: z.infer<typeof entryModel>,

@@ -1,3 +1,10 @@
+import {
+  Button,
+  Dialog,
+  Flex,
+  PlaceholderStack,
+  Tooltip,
+} from '@near-pagoda/ui';
 import { Copy, Eye, MarkdownLogo } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';
@@ -5,13 +12,8 @@ import { type z } from 'zod';
 import { type threadFileModel } from '~/lib/models';
 import { copyTextToClipboard } from '~/utils/clipboard';
 
-import { Button } from './lib/Button';
 import { Code, filePathToCodeLanguage } from './lib/Code';
-import { Dialog } from './lib/Dialog';
-import { Flex } from './lib/Flex';
 import { Markdown } from './lib/Markdown';
-import { PlaceholderStack } from './lib/Placeholder';
-import { Tooltip } from './lib/Tooltip';
 
 type Props = {
   filesById?: Record<string, z.infer<typeof threadFileModel>>;

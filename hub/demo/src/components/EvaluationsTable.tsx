@@ -1,5 +1,22 @@
 'use client';
 
+import {
+  BreakpointDisplay,
+  Button,
+  Card,
+  CardList,
+  Checkbox,
+  CheckboxGroup,
+  Dialog,
+  Flex,
+  Grid,
+  Input,
+  PlaceholderStack,
+  Table,
+  Text,
+  Tooltip,
+  useTable,
+} from '@near-pagoda/ui';
 import { Eye, Minus, Plus, Table as TableIcon } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { type ChangeEventHandler, useEffect, useMemo, useState } from 'react';
@@ -9,20 +26,7 @@ import {
   EntrySelector,
   type EntrySelectorOnSelectHandler,
 } from '~/components/EntrySelector';
-import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
-import { Button } from '~/components/lib/Button';
-import { Card, CardList } from '~/components/lib/Card';
-import { Checkbox, CheckboxGroup } from '~/components/lib/Checkbox';
-import { Dialog } from '~/components/lib/Dialog';
-import { Flex } from '~/components/lib/Flex';
-import { Grid } from '~/components/lib/Grid';
-import { Input } from '~/components/lib/Input';
-import { PlaceholderStack } from '~/components/lib/Placeholder';
 import { Sidebar } from '~/components/lib/Sidebar';
-import { Table } from '~/components/lib/Table';
-import { useTable } from '~/components/lib/Table/hooks';
-import { Text } from '~/components/lib/Text';
-import { Tooltip } from '~/components/lib/Tooltip';
 import { useDebouncedValue } from '~/hooks/debounce';
 import { useQueryParams } from '~/hooks/url';
 import { DEFAULT_BENCHMARK_COLUMNS } from '~/lib/benchmarks';

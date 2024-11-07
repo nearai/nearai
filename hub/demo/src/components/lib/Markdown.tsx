@@ -1,3 +1,4 @@
+import { Table } from '@near-pagoda/ui';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { visit } from 'unist-util-visit';
@@ -5,7 +6,6 @@ import { visit } from 'unist-util-visit';
 import { Code } from './Code';
 import { InlineCode } from './InlineCode';
 import s from './Markdown.module.scss';
-import { Table } from './Table';
 
 type Props = {
   content: string | null | undefined;

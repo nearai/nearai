@@ -1,5 +1,20 @@
 'use client';
 
+import {
+  BreakpointDisplay,
+  Button,
+  Card,
+  CardList,
+  Flex,
+  Form,
+  InputTextarea,
+  PlaceholderCard,
+  PlaceholderSection,
+  PlaceholderStack,
+  Slider,
+  Text,
+  Tooltip,
+} from '@near-pagoda/ui';
 import { ArrowRight, Chats, Eye, Gear, List } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import {
@@ -16,17 +31,8 @@ import { type z } from 'zod';
 import { AgentPermissionsModal } from '~/components/AgentPermissionsModal';
 import { AgentWelcome } from '~/components/AgentWelcome';
 import { EntryEnvironmentVariables } from '~/components/EntryEnvironmentVariables';
-import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
-import { Button } from '~/components/lib/Button';
-import { Card, CardList } from '~/components/lib/Card';
-import { Flex } from '~/components/lib/Flex';
-import { Form } from '~/components/lib/Form';
 import { IframeWithBlob } from '~/components/lib/IframeWithBlob';
-import { InputTextarea } from '~/components/lib/InputTextarea';
 import { Sidebar } from '~/components/lib/Sidebar';
-import { Slider } from '~/components/lib/Slider';
-import { Text } from '~/components/lib/Text';
-import { Tooltip } from '~/components/lib/Tooltip';
 import { Messages } from '~/components/Messages';
 import { SignInPrompt } from '~/components/SignInPrompt';
 import { ThreadsSidebar } from '~/components/ThreadsSidebar';
@@ -44,11 +50,6 @@ import { api } from '~/trpc/react';
 import { handleClientError } from '~/utils/error';
 import { formatBytes } from '~/utils/number';
 
-import {
-  PlaceholderCard,
-  PlaceholderSection,
-  PlaceholderStack,
-} from './lib/Placeholder';
 import { ThreadFileModal } from './ThreadFileModal';
 
 type RunView = 'conversation' | 'output' | undefined;

@@ -1,5 +1,15 @@
 'use client';
 
+import { useTheme } from '@near-pagoda/ui';
+import {
+  BreakpointDisplay,
+  Button,
+  Dropdown,
+  Flex,
+  SvgIcon,
+  Text,
+  Tooltip,
+} from '@near-pagoda/ui';
 import {
   BookOpenText,
   ChatCircleDots,
@@ -14,7 +24,6 @@ import {
 } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 import { env } from '~/env';
@@ -23,13 +32,6 @@ import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { useAuthStore } from '~/stores/auth';
 import { useWalletStore } from '~/stores/wallet';
 
-import { BreakpointDisplay } from './lib/BreakpointDisplay';
-import { Button } from './lib/Button';
-import { Dropdown } from './lib/Dropdown';
-import { Flex } from './lib/Flex';
-import { SvgIcon } from './lib/SvgIcon';
-import { Text } from './lib/Text';
-import { Tooltip } from './lib/Tooltip';
 import s from './Navigation.module.scss';
 
 const navItems = [
