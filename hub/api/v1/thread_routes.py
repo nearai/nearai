@@ -310,10 +310,11 @@ def update_thread_topic(thread_id: str, auth: AuthData):
         ] + [message.to_completions_model() for message in messages]
 
         completion = chat_completions(
-            ChatCompletionsRequest(
+            db=SqlClient(),
+            request=ChatCompletionsRequest(
                 messages=messages,
                 model=model,
-            )
+            ),
         )
 
     with get_session() as session:
