@@ -12,7 +12,7 @@ import { type RouterOutputs } from '~/trpc/react';
 
 type Thread = z.infer<typeof threadModel> & {
   run?: z.infer<typeof threadRunModel>;
-  filesById: Record<string, z.infer<typeof threadFileModel>>;
+  filesByName: Record<string, z.infer<typeof threadFileModel>>;
   messagesById: Record<string, z.infer<typeof threadMessageModel>>;
   latestMessageId?: string;
   latestRunId?: string;
@@ -99,14 +99,14 @@ export const useThreadsStore = create<ThreadsStore>((set, get) => ({
       object: '',
       ...data,
       run: run ?? existingThread?.run,
-      filesById: existingThread?.filesById ?? {},
+      filesByName: existingThread?.filesByName ?? {},
       messagesById: existingThread?.messagesById ?? {},
     };
     messages?.forEach((message) => {
       updatedThread.messagesById[message.id] = message;
     });
     files?.forEach((file) => {
-      updatedThread.filesById[file.id] = file;
+      updatedThread.filesByName[file.filename] = file;
     });
 
     const allMessages = Object.values(updatedThread.messagesById);

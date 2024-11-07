@@ -16,25 +16,26 @@ import { Code, filePathToCodeLanguage } from './lib/Code';
 import { Markdown } from './lib/Markdown';
 
 type Props = {
-  filesById?: Record<string, z.infer<typeof threadFileModel>>;
-  openedFileId: string | null;
-  setOpenedFileId: (id: string | null) => void;
+  filesByName?: Record<string, z.infer<typeof threadFileModel>>;
+  openedFileName: string | null;
+  setOpenedFileName: (id: string | null) => void;
 };
 
 export const ThreadFileModal = ({
-  filesById,
-  openedFileId,
-  setOpenedFileId,
+  filesByName,
+  openedFileName,
+  setOpenedFileName,
 }: Props) => {
-  const file = filesById && openedFileId ? filesById[openedFileId] : undefined;
+  const file =
+    filesByName && openedFileName ? filesByName[openedFileName] : undefined;
   const language = file && filePathToCodeLanguage(file.filename);
   const isMarkdown = language === 'markdown';
   const [renderAsMarkdown, setRenderAsMarkdown] = useState(isMarkdown);
 
   return (
     <Dialog.Root
-      open={openedFileId !== null}
-      onOpenChange={() => setOpenedFileId(null)}
+      open={openedFileName !== null}
+      onOpenChange={() => setOpenedFileName(null)}
     >
       <Dialog.Content
         title={file?.filename ?? '...'}

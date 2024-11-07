@@ -102,7 +102,7 @@ export const AgentRunner = ({
   });
 
   const [htmlOutput, setHtmlOutput] = useState('');
-  const [openedFileId, setOpenedFileId] = useState<string | null>(null);
+  const [openedFileName, setOpenedFileName] = useState<string | null>(null);
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
   const [threadsOpenForSmallScreens, setThreadsOpenForSmallScreens] =
@@ -175,7 +175,7 @@ export const AgentRunner = ({
   }, [thread, optimisticMessages]);
 
   const files = useMemo(() => {
-    return thread ? Object.values(thread.filesById) : [];
+    return thread ? Object.values(thread.filesByName) : [];
   }, [thread]);
 
   const latestAssistantMessages: z.infer<typeof threadMessageModel>[] = [];
@@ -244,11 +244,11 @@ export const AgentRunner = ({
   };
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    const timeout = setTimeout(async () => {
       /*
-        This logic will poll every 750ms after the last refetch has finished.
+        This logic will poll every 1 second after the last refetch has finished.
         If an average refetch takes 250ms to finish, the real time that elapses
-        between the start of each refetch will be roughly 1 second total.
+        between the start of each refetch will be roughly 1.25 seconds total.
       */
 
       const run = thread?.run ?? threadQuery.data?.run;
@@ -256,9 +256,27 @@ export const AgentRunner = ({
         (run?.status === 'queued' || run?.status === 'in_progress') &&
         !threadQuery.isFetching
       ) {
-        void threadQuery.refetch({ cancelRefetch: false });
+        const refetch = async () => {
+          await threadQuery.refetch({ cancelRefetch: false });
+
+          const now = new Date();
+          const elapsedSecondsSinceRunStart = chatMutationStartedAt.current
+            ? (now.getTime() - chatMutationStartedAt.current.getTime()) / 1000
+            : null;
+
+          console.log(
+            `Thread polling fetch responded at: ${now.toLocaleTimeString()}`,
+            {
+              data: threadQuery.data,
+              error: threadQuery.error,
+              elapsedSecondsSinceRunStart,
+            },
+          );
+        };
+
+        void refetch();
       }
-    }, 750);
+    }, 1000);
 
     return () => {
       clearTimeout(timeout);
@@ -268,19 +286,7 @@ export const AgentRunner = ({
   useEffect(() => {
     if (threadQuery.data) {
       setThread(threadQuery.data);
-
-      const now = new Date();
-      const elapsedSecondsSinceRunStart = chatMutationStartedAt.current
-        ? (now.getTime() - chatMutationStartedAt.current.getTime()) / 1000
-        : null;
-
-      console.log(`Thread fetch responded at: ${now.toLocaleTimeString()}`, {
-        data: threadQuery.data,
-        error: threadQuery.error,
-        elapsedSecondsSinceRunStart,
-      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setThread, threadQuery.data]);
 
   useEffect(() => {
@@ -491,7 +497,7 @@ export const AgentRunner = ({
                           key={file.id}
                           background="sand-2"
                           onClick={() => {
-                            setOpenedFileId(file.id);
+                            setOpenedFileName(file.id);
                           }}
                         >
                           <Flex align="center" gap="s">
@@ -565,9 +571,9 @@ export const AgentRunner = ({
       />
 
       <ThreadFileModal
-        filesById={thread?.filesById}
-        openedFileId={openedFileId}
-        setOpenedFileId={setOpenedFileId}
+        filesByName={thread?.filesByName}
+        openedFileName={openedFileName}
+        setOpenedFileName={setOpenedFileName}
       />
     </Form>
   );

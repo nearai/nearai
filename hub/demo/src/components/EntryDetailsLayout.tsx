@@ -93,7 +93,7 @@ export const EntryDetailsLayout = ({
 
                 <Flex gap="none" direction="column" align="start">
                   <Flex align="center" gap="m">
-                    <Link href={baseUrl}>
+                    <Link href={`${baseUrl}/${version}`}>
                       <Text as="h1" size="text-l" weight={600} color="sand-12">
                         {name}
                       </Text>
