@@ -18,7 +18,7 @@ class LocalRunner:
         auth: AuthData,
         params: dict,
     ) -> None:
-        print(
+        logging.info(
             f"Initializing LocalRunner with path: {path}, agents: {agents}, thread_id: {thread_id},"
             f"run_id: {run_id}, auth: {auth}, params: {params}"
         )

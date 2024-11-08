@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import logging
 import os
 import shutil
 import time
@@ -143,7 +144,7 @@ def save_environment(env, client, base_id, metric_function=None) -> str:
     request_stop_time = time.perf_counter()
     if metric_function:
         metric_function("SaveEnvironmentToRegistry_Duration", request_stop_time - request_start_time)
-    print(
+    logging.info(
         f"Saved environment {registry_id} to registry. To load use flag `--load-env={registry_id}`. "
         f"or `--load-env={name}`"
     )

@@ -188,7 +188,7 @@ class Environment(object):
         logger = logging.getLogger("system_logger")
         if not logger.handlers:
             # Configure the logger if it hasn't been set up yet
-            logger.setLevel(logging.DEBUG)
+            #logger.setLevel(logging.DEBUG)
             file_handler = logging.FileHandler(os.path.join(self._path, SYSTEM_LOG_FILENAME))
             formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
             file_handler.setFormatter(formatter)

@@ -1,6 +1,7 @@
 import importlib.metadata
 import io
 import json
+import logging
 import os
 import re
 import runpy
@@ -428,6 +429,7 @@ class AgentCli:
         thread_id: Optional[str] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
         local: bool = False,
+        log_level: str = "ERROR",
         env_vars: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Runs agent interactively."""
@@ -445,6 +447,7 @@ class AgentCli:
                 last_message_id=last_message_id,
                 local=local,
                 env_vars=env_vars,
+                log_level=log_level,
             )
 
             # Update thread_id for the next iteration
@@ -460,6 +463,7 @@ class AgentCli:
         file_ids: Optional[List[str]] = None,
         local: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
+        log_level: str = "ERROR",
     ) -> None:
         """CLI wrapper for the _task method."""
         last_message_id = self._task(
@@ -470,6 +474,7 @@ class AgentCli:
             file_ids=file_ids,
             local=local,
             env_vars=env_vars,
+            log_level=log_level,
         )
         if last_message_id:
             print(f"Task completed. Thread ID: {self.last_thread_id}")
@@ -485,6 +490,7 @@ class AgentCli:
         last_message_id: Optional[str] = None,
         local: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
+        log_level: str = "ERROR",
     ) -> Optional[str]:
         """Runs agent non-interactively with a single task."""
         hub_client = get_hub_client()
@@ -494,6 +500,10 @@ class AgentCli:
             thread = hub_client.beta.threads.create(
                 tool_resources=tool_resources,
             )
+
+        # set log_level
+        logger = logging.getLogger("system_logger")
+        logger.setLevel(getattr(logging, log_level.upper()))
 
         hub_client.beta.threads.messages.create(
             thread_id=thread.id,
