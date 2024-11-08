@@ -18,7 +18,6 @@ import {
   useTable,
 } from '@near-pagoda/ui';
 import { Eye, Minus, Plus, Table as TableIcon } from '@phosphor-icons/react';
-import Link from 'next/link';
 import { type ChangeEventHandler, useEffect, useMemo, useState } from 'react';
 import { type z } from 'zod';
 
@@ -260,9 +259,14 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
                         <Text size="text-s" weight={500} color="sand-12">
                           {benchmark.name} {benchmark.version}
                         </Text>
-                        <Link href={`/profiles/${benchmark.namespace}`}>
-                          <Text size="text-xs">@{benchmark.namespace}</Text>
-                        </Link>
+                        <Text
+                          size="text-xs"
+                          color="sand-11"
+                          href={`/profiles/${benchmark.namespace}`}
+                          decoration="none"
+                        >
+                          @{benchmark.namespace}
+                        </Text>
                       </Flex>
 
                       <Tooltip asChild content="Toggle all columns">

@@ -41,25 +41,29 @@ export const EntryCard = ({ entry, linksOpenNewTab, footer }: Props) => {
         </ConditionalLink>
 
         <Flex gap="none" direction="column">
-          <ConditionalLink
+          <Text
             href={primaryUrl}
             target={target}
             style={{ zIndex: 1, position: 'relative' }}
+            size="text-base"
+            weight={600}
+            color="sand-12"
+            decoration="none"
           >
-            <Text size="text-base" weight={600} color="sand-12">
-              {entry.name}
-            </Text>
-          </ConditionalLink>
+            {entry.name}
+          </Text>
 
-          <ConditionalLink
+          <Text
             href={`/profiles/${entry.namespace}`}
             target={target}
             style={{ marginTop: '-0.1rem' }}
+            size="text-xs"
+            weight={400}
+            color="sand-11"
+            decoration="none"
           >
-            <Text size="text-xs" weight={400}>
-              @{entry.namespace}
-            </Text>
-          </ConditionalLink>
+            @{entry.namespace}
+          </Text>
         </Flex>
       </Flex>
 

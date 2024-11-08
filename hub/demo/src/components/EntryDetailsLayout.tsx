@@ -14,7 +14,6 @@ import {
   Tooltip,
 } from '@near-pagoda/ui';
 import { CaretDown, Copy } from '@phosphor-icons/react';
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactElement, type ReactNode, useEffect } from 'react';
 
@@ -93,11 +92,15 @@ export const EntryDetailsLayout = ({
 
                 <Flex gap="none" direction="column" align="start">
                   <Flex align="center" gap="m">
-                    <Link href={`${baseUrl}/${version}`}>
-                      <Text as="h1" size="text-l" weight={600} color="sand-12">
-                        {name}
-                      </Text>
-                    </Link>
+                    <Text
+                      href={`${baseUrl}/${version}`}
+                      size="text-l"
+                      weight={600}
+                      color="sand-12"
+                      decoration="none"
+                    >
+                      {name}
+                    </Text>
 
                     <Dropdown.Root>
                       <Dropdown.Trigger asChild>
@@ -150,14 +153,15 @@ export const EntryDetailsLayout = ({
                     )}
                   </Flex>
 
-                  <Link
+                  <Text
                     href={`/profiles/${namespace}`}
-                    style={{ marginTop: '-0.1rem' }}
+                    size="text-s"
+                    color="sand-11"
+                    decoration="none"
+                    weight={500}
                   >
-                    <Text size="text-s" weight={500}>
-                      @{namespace}
-                    </Text>
-                  </Link>
+                    @{namespace}
+                  </Text>
                 </Flex>
               </Flex>
             </Flex>

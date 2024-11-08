@@ -23,7 +23,6 @@ import {
   Trash,
 } from '@phosphor-icons/react';
 import { usePrevious } from '@uidotdev/usehooks';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
@@ -249,16 +248,9 @@ export const ThreadsSidebar = ({
               ) : (
                 <>
                   <br />
-                  <Link href="/agents">
-                    <Text
-                      as="span"
-                      size="text-s"
-                      color="violet-11"
-                      weight={500}
-                    >
-                      Select an agent
-                    </Text>
-                  </Link>{' '}
+                  <Text href="/agents" size="text-s">
+                    Select an agent
+                  </Text>{' '}
                   to start your first thread.
                 </>
               )}
