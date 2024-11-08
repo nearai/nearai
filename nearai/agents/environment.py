@@ -989,6 +989,7 @@ class Environment(object):
 
         return child_thread_id
 
+    # TODO(https://github.com/nearai/nearai/issues/549): Allow only a subset of agents to access/update user memory.
     def add_user_memory(self, memory: str):
         """Add user memory."""
         return self.client.add_user_memory(memory)
