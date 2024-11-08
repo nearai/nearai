@@ -803,7 +803,6 @@ class Environment(object):
 
     def mark_done(self) -> Run:  # noqa: D102
         self._done = True
-        self.add_system_log("Marking environment run as completed", logging.INFO)
         res = self._hub_client.beta.threads.runs.update(
             thread_id=self._thread_id,
             run_id=self._run_id,
@@ -812,7 +811,6 @@ class Environment(object):
                 "completed_at": datetime.now().isoformat(),
             },
         )
-        self.add_system_log("Environment run completed", logging.INFO)
         return res
 
     def mark_failed(self) -> Run:
@@ -930,10 +928,11 @@ class Environment(object):
 
         while iteration < max_iterations and not self.is_done() and self.get_next_actor() != "user":
             iteration += 1
-            self.add_system_log(
-                f"Running agent {self._agents[0].identifier}, iteration {iteration}/{max_iterations}",
-                logging.INFO,
-            )
+            if max_iterations > 1:
+                self.add_system_log(
+                    f"Running agent, iteration {iteration}/{max_iterations}",
+                    logging.INFO,
+                )
             try:
                 self._agents[0].run(self, task=new_message)
             except Exception as e:
