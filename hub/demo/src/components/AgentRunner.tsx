@@ -497,7 +497,7 @@ export const AgentRunner = ({
                           key={file.id}
                           background="sand-2"
                           onClick={() => {
-                            setOpenedFileName(file.id);
+                            setOpenedFileName(file.filename);
                           }}
                         >
                           <Flex align="center" gap="s">
