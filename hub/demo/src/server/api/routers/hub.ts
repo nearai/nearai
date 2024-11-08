@@ -3,9 +3,7 @@ import { z } from 'zod';
 
 import { env } from '~/env';
 import {
-  chatResponseModel,
   chatWithAgentModel,
-  chatWithModelModel,
   type entriesModel,
   entryCategory,
   entryModel,
@@ -34,26 +32,6 @@ import { createZodFetcher } from '~/utils/zod-fetch';
 const fetchWithZod = createZodFetcher();
 
 export const hubRouter = createTRPCRouter({
-  chatWithModel: protectedProcedure
-    .input(chatWithModelModel)
-    .mutation(async ({ ctx, input }) => {
-      const url = `${env.ROUTER_URL}/chat/completions`;
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: ctx.authorization,
-        },
-        body: JSON.stringify(input),
-      });
-
-      const data: unknown = await response.json();
-      if (!response.ok) throw data;
-
-      return chatResponseModel.parse(data);
-    }),
-
   entries: publicProcedure
     .input(
       z.object({

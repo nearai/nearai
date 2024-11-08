@@ -6,7 +6,7 @@ import { usePrevious } from '@uidotdev/usehooks';
 import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react';
 import { type z } from 'zod';
 
-import { type messageModel, type threadMessageModel } from '~/lib/models';
+import { type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { copyTextToClipboard } from '~/utils/clipboard';
 
@@ -15,9 +15,7 @@ import s from './Messages.module.scss';
 
 type Props = {
   grow?: boolean;
-  messages:
-    | z.infer<typeof messageModel>[]
-    | z.infer<typeof threadMessageModel>[];
+  messages: z.infer<typeof threadMessageModel>[];
   threadId: string;
   welcomeMessage?: ReactNode;
 };
@@ -63,18 +61,12 @@ export const Messages = ({
     scroll();
   }, [threadId, previousMessages, messages]);
 
-  const normalizedMessages: z.infer<typeof messageModel>[] = messages.map(
-    (message) => {
-      if ('thread_id' in message) {
-        return {
-          content: message.content[0]?.text.value ?? '',
-          role: message.role,
-        };
-      }
-
-      return message;
-    },
-  );
+  const normalizedMessages = messages.map((message) => {
+    return {
+      content: message.content[0]?.text.value ?? '',
+      role: message.role,
+    };
+  });
 
   if (!isAuthenticated) {
     return (
