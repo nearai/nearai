@@ -13,7 +13,11 @@ from openai.types.beta.vector_store import VectorStore
 from openai.types.beta.vector_stores import VectorStoreFile
 from openai.types.file_object import FileObject
 
-from shared.client_config import DEFAULT_MODEL_MAX_TOKENS, DEFAULT_MODEL_TEMPERATURE, ClientConfig
+from shared.client_config import (
+    DEFAULT_MODEL_MAX_TOKENS,
+    DEFAULT_MODEL_TEMPERATURE,
+    ClientConfig,
+)
 from shared.models import (
     AutoFileChunkingStrategyParam,
     ChunkingStrategy,
@@ -100,7 +104,10 @@ class InferenceClient(object):
 
         auth_bearer_token = self._auth
 
-        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {auth_bearer_token}"}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {auth_bearer_token}",
+        }
 
         data = {"query": query}
 
@@ -244,4 +251,20 @@ class InferenceClient(object):
             thread_id=child_thread_id,
             assistant_id=assistant_id,
             extra_body={"parent_run_id": current_run_id},
+        )
+
+    def query_user_memory(self, query: str):
+        """Query the user memory."""
+        return self.client.post(
+            path=f"{self._config.base_url}/vector_stores/memory/query",
+            body={"query": query},
+            cast_to=str,
+        )
+
+    def add_user_memory(self, memory: str):
+        """Add user memory."""
+        return self.client.post(
+            path=f"{self._config.base_url}/vector_stores/memory",
+            body={"memory": memory},
+            cast_to=str,
         )

@@ -444,7 +444,6 @@ def list_entries_inner(
         for id, namespace_, name, version, category_, description, details, timestamp, num_stars, pov in session.exec(
             text(query_text).bindparams(**bind_params)
         ).all():  # type: ignore
-            print(namespace_, name, version, num_stars)
             entries_info.append(
                 EntryInformation(
                     id=id,

@@ -14,6 +14,8 @@ from openai.types.beta.threads.text import Text
 from openai.types.beta.threads.text_content_block import TextContentBlock
 from sqlmodel import JSON, Column, Field, Session, SQLModel, create_engine
 
+from hub.api.v1.entry_location import EntryLocation
+
 load_dotenv()
 
 S3_ENDPOINT = getenv("S3_ENDPOINT")
@@ -57,6 +59,10 @@ class RegistryEntry(SQLModel, table=True):
         if object is not None:
             key = f"{key}/{object}"
         return key
+
+    def to_location(self) -> EntryLocation:
+        """Convert to EntryLocation."""
+        return EntryLocation(namespace=self.namespace, name=self.name, version=self.version)
 
     def is_private(self) -> bool:
         """Check if the entry is private."""

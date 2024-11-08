@@ -35,6 +35,10 @@ class EntryLocation(BaseModel):
             version=match.group("version"),
         )
 
+    def to_str(self) -> str:
+        """Returns the location as a string in the format namespace/name/version."""
+        return f"{self.namespace}/{self.name}/{self.version}"
+
     @classmethod
     def as_form(cls, namespace: str = Form(...), name: str = Form(...), version: str = Form(...)):
         """Creates a location from form data."""
