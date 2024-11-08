@@ -336,7 +336,7 @@ SUPPORTED_MIME_TYPES = {
     "text/csv": [".csv"],
     "text/html": [".html"],
     "text/x-java": [".java"],
-    "text/javascript": [".js"],
+    "text/javascript": [".js", ".jsx", ".tsx"],
     "text/markdown": [".md"],
     "text/x-php": [".php"],
     "text/x-python": [".py"],
