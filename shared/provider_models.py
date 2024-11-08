@@ -61,8 +61,6 @@ class ProviderModels:
     def provider_models(self) -> Dict[NamespacedName, Dict[str, str]]:
         """Returns a mapping canonical->provider->model_full_name."""
         client = self._config.get_hub_client()
-        print(client.api_key)
-        print(client.base_url)
 
         try:
             models = client.models.list()

@@ -216,11 +216,19 @@ from nearai.solvers.mbpp_solver import MBPPSolverStrategy  # noqa: E402
 from nearai.solvers.mmlu_solver import MMLUSolverStrategy  # noqa: E402
 
 __all__ = [
-    "SolverStrategyRegistry",
     "DDOTSV0Solver",
+    "GSM8KSolverStrategy",
+    "HellaswagSolverStrategy",
+    "LeanSolverStrategy",
+    "LiveBenchSolverStrategy",
     "MBPPSolverStrategy",
     "MMLUSolverStrategy",
-    "HellaswagSolverStrategy",
-    "LiveBenchSolverStrategy",
-    "GSM8KSolverStrategy",
+    "SolverStrategyRegistry",
 ]
+
+try:
+    from nearai.solvers.lean_solver import LeanSolverStrategy  # noqa: E402
+
+    __all__.append("LeanSolverStrategy")
+except ImportError:
+    LeanSolverStrategy = None  # type: ignore
