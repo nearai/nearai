@@ -23,7 +23,6 @@ import {
   Trash,
 } from '@phosphor-icons/react';
 import { usePrevious } from '@uidotdev/usehooks';
-import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 
@@ -47,7 +46,6 @@ export const ThreadsSidebar = ({
   openForSmallScreens,
   setOpenForSmallScreens,
 }: Props) => {
-  const pathname = usePathname();
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const { updateQueryPath, queryParams } = useQueryParams(['threadId']);
   const threadId = queryParams.threadId ?? '';
@@ -58,8 +56,6 @@ export const ThreadsSidebar = ({
   const filteredThreads = threads?.filter(
     (thread) => !removedThreadIds.includes(thread.id),
   );
-  const isViewingAgent =
-    pathname.startsWith('/agents') || env.NEXT_PUBLIC_CONSUMER_MODE;
   const removeMutation = api.hub.removeThread.useMutation();
 
   const currentThreadIdMatchesThread =
@@ -241,20 +237,18 @@ export const ThreadsSidebar = ({
       ) : (
         <>
           {filteredThreads ? (
-            <Text size="text-s">
-              You {`haven't`} started any threads yet.{' '}
-              {isViewingAgent ? (
-                <>Submit a message to start your first thread.</>
-              ) : (
-                <>
-                  <br />
-                  <Text href="/agents" size="text-s">
-                    Select an agent
-                  </Text>{' '}
-                  to start your first thread.
-                </>
-              )}
-            </Text>
+            <>
+              <Text size="text-s">
+                Submit a message to start your first thread.
+              </Text>
+
+              <Button
+                label="Browse Agents"
+                href="/agents"
+                size="small"
+                variant="secondary"
+              />
+            </>
           ) : (
             <PlaceholderStack />
           )}
@@ -302,7 +296,7 @@ const EditThreadForm = ({ threadThreadId, onFinish }: EditThreadFormProps) => {
   }, [form, thread]);
 
   const onSubmit: SubmitHandler<EditThreadFormSchema> = async (data) => {
-    // This submit handler optimistically updates environment data to make the update feel instant
+    // This submit handler optimistically updates thread data to make the update feel instant
 
     try {
       if (!thread) return;

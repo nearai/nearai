@@ -988,3 +988,12 @@ class Environment(object):
         self._pending_ext_agent = True
 
         return child_thread_id
+
+    # TODO(https://github.com/nearai/nearai/issues/549): Allow only a subset of agents to access/update user memory.
+    def add_user_memory(self, memory: str):
+        """Add user memory."""
+        return self.client.add_user_memory(memory)
+
+    def query_user_memory(self, query: str):
+        """Query user memory."""
+        return self.client.query_user_memory(query)

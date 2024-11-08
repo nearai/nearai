@@ -1490,7 +1490,7 @@
         "operationId": "add_job_v1_jobs_add_job_post",
         "requestBody": {
           "content": {
-            "multipart/form-data": {
+            "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Body_add_job_v1_jobs_add_job_post"
               }
@@ -2061,15 +2061,13 @@
       },
       "Body_add_job_v1_jobs_add_job_post": {
         "properties": {
-          "file": {
-            "type": "string",
-            "format": "binary",
-            "title": "File"
+          "entry_location": {
+            "$ref": "#/components/schemas/EntryLocation"
           }
         },
         "type": "object",
         "required": [
-          "file"
+          "entry_location"
         ],
         "title": "Body_add_job_v1_jobs_add_job_post"
       },

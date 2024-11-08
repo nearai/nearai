@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 import openai
+import urllib3
 from openapi_client import ApiClient, Configuration
 from pydantic import BaseModel
 from shared.auth_data import AuthData
@@ -77,6 +78,7 @@ class Config(BaseModel):
     api_url: Optional[str] = "https://api.near.ai"
     inference_url: str = "http://localhost:5000/v1/"
     inference_api_key: str = "n/a"
+    scheduler_account_id: str = "nearaischeduler.near"
     nearai_hub: NearAiHubConfig = NearAiHubConfig()
     confirm_commands: bool = True
     auth: Optional[AuthData] = None
@@ -126,6 +128,8 @@ def setup_api_client():
         kwargs["access_token"] = f"Bearer {CONFIG.auth.model_dump_json()}"
     configuration = Configuration(**kwargs)
     client = ApiClient(configuration)
+    if "http_proxy" in os.environ:
+        client.rest_client.pool_manager = urllib3.ProxyManager(proxy_url=os.environ["http_proxy"])
     ApiClient.set_default(client)
 
 

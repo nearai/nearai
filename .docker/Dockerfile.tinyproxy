@@ -1,0 +1,31 @@
+FROM docker.io/kalaksi/tinyproxy:latest
+
+RUN mkdir -p /etc/tinyproxy/ && \
+    cat <<EOF > /etc/tinyproxy/whitelist
+.*.near.ai
+.near.ai
+EOF
+
+RUN mkdir -p /etc/tinyproxy/conf/ && \
+    cat <<EOF > /etc/tinyproxy/tinyproxy.default.conf
+User nobody
+Group nogroup
+Port 8888
+Timeout 600
+LogLevel Info
+MaxClients 100
+StartServers 1
+MinSpareServers 1
+MaxSpareServers 5
+MaxRequestsPerChild 0
+Allow 127.0.0.1
+
+# Enable filtering
+FilterDefaultDeny Yes
+FilterExtended On
+FilterURLs On
+Filter "/etc/tinyproxy/whitelist"
+
+# Disable via header for privacy
+DisableViaHeader Yes
+EOF

@@ -12,11 +12,6 @@ export const authorizationModel = z.object({
   nonce: z.string().regex(/^\d{32}$/), // String containing exactly 32 digits
 });
 
-export const messageModel = z.object({
-  role: z.enum(['user', 'assistant', 'system']),
-  content: z.string(),
-});
-
 export const chatWithAgentModel = z.object({
   agent_id: z.string(),
   new_message: z.string(),
@@ -24,38 +19,6 @@ export const chatWithAgentModel = z.object({
   max_iterations: z.number(),
   user_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
   agent_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
-});
-
-export const chatWithModelModel = z.object({
-  max_tokens: z.number().default(64),
-  temperature: z.number().default(0.1),
-  frequency_penalty: z.number().default(0),
-  n: z.number().default(1),
-  messages: z.array(messageModel),
-  model: z.string(),
-  provider: z.string(),
-  stop: z.array(z.string()).default([]),
-});
-
-export const chatResponseModel = z.object({
-  id: z.string(),
-  choices: z.array(
-    z.object({
-      finish_reason: z.string(),
-      index: z.number(),
-      logprobs: z.unknown().nullable(),
-      message: messageModel,
-    }),
-  ),
-  created: z.number(),
-  model: z.string(),
-  object: z.string(),
-  system_fingerprint: z.unknown().nullable(),
-  usage: z.object({
-    completion_tokens: z.number(),
-    prompt_tokens: z.number(),
-    total_tokens: z.number(),
-  }),
 });
 
 export const listModelsModel = z.object({

@@ -14,9 +14,9 @@ from hub.api.v1.sql import SqlClient
 
 bearer = HTTPBearer(auto_error=False)
 logger = logging.getLogger(__name__)
-db = SqlClient()
 
 
+# TODO: This code is duplicated from shared/auth_data.py (remove duplication)
 class AuthToken(BaseModel):
     """Model for auth callback."""
 
@@ -58,7 +58,7 @@ class RawAuthToken(AuthToken):
         )
 
 
-async def parse_auth(token: Optional[HTTPAuthorizationCredentials] = Depends(bearer)):
+def parse_auth(token: Optional[HTTPAuthorizationCredentials] = Depends(bearer)):
     if token is None:
         return None
 
@@ -74,7 +74,7 @@ async def parse_auth(token: Optional[HTTPAuthorizationCredentials] = Depends(bea
         raise TokenValidationError(detail=str(e)) from None
 
 
-async def validate_signature(auth: Optional[RawAuthToken] = Depends(parse_auth)):
+def validate_signature(auth: Optional[RawAuthToken] = Depends(parse_auth)):
     if auth is None:
         return None
 
@@ -121,12 +121,13 @@ async def validate_signature(auth: Optional[RawAuthToken] = Depends(parse_auth))
     return auth.unwrap()
 
 
-async def revokable_auth(auth: Optional[AuthToken] = Depends(validate_signature)):
+def revokable_auth(auth: Optional[AuthToken] = Depends(validate_signature)):
     if auth is None:
         return None
 
     logger.debug(f"Validating auth token: {auth}")
 
+    db = SqlClient()  # TODO(https://github.com/nearai/nearai/issues/545): Use SQLAlchemy
     user_nonce = db.get_account_nonce(auth.account_id, auth.nonce)
 
     if user_nonce and user_nonce.is_revoked():
@@ -139,7 +140,7 @@ async def revokable_auth(auth: Optional[AuthToken] = Depends(validate_signature)
     return auth
 
 
-async def get_optional_auth(auth: Optional[AuthToken] = Depends(revokable_auth)):
+def get_optional_auth(auth: Optional[AuthToken] = Depends(revokable_auth)):
     """Returns the validated auth token in case it was provided, otherwise returns None."""
     # This method is the last layer of the middleware the builds the auth token, it
     # should be used instead of any previous method in the chain (e.g. `revokable_auth`).
@@ -149,7 +150,7 @@ async def get_optional_auth(auth: Optional[AuthToken] = Depends(revokable_auth))
     return auth
 
 
-async def get_auth(auth: Optional[AuthToken] = Depends(get_optional_auth)):
+def get_auth(auth: Optional[AuthToken] = Depends(get_optional_auth)):
     if auth is None:
         raise HTTPException(status_code=403, detail="Authorization required")
     return auth

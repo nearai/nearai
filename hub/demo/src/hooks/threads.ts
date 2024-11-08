@@ -64,7 +64,6 @@ export function useThreads() {
         ...data,
         metadata: {
           ...data.metadata,
-          // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
           topic: data.metadata.topic || name,
         },
         agent: {

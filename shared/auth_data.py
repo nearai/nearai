@@ -28,3 +28,13 @@ class AuthData(BaseModel):
         bearer_data = {key: getattr(self, key) for key in required_keys}
 
         return json.dumps(bearer_data)
+
+    @property
+    def namespace(self):
+        """Get the account ID for the auth data.
+
+        In case you are running a request on behalf of another account, this will return the account ID of the account.
+        """
+        if self.on_behalf_of is not None:
+            return self.on_behalf_of
+        return self.account_id

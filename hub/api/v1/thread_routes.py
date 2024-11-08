@@ -315,6 +315,7 @@ def update_thread_topic(thread_id: str, auth: AuthData):
                 messages=messages,
                 model=model,
             ),
+            auth=AuthToken(**auth.model_dump()),
         )
 
     with get_session() as session:

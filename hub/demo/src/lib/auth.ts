@@ -1,5 +1,8 @@
+import { env } from '~/env';
 import { useAuthStore } from '~/stores/auth';
 import { getHashParams } from '~/utils/url';
+
+const AUTH_NEAR_URL = env.NEXT_PUBLIC_AUTH_URL;
 
 export const RECIPIENT = 'ai.near';
 export const MESSAGE = 'Welcome to NEAR AI Hub!';
@@ -27,7 +30,6 @@ export function returnSignInCallbackUrl() {
 }
 
 export function returnUrlToRestoreAfterSignIn() {
-  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
   const url = localStorage.getItem(SIGN_IN_RESTORE_URL_KEY) || '/';
   if (url === '/sign-in/callback') return '/';
   return url;
@@ -46,7 +48,7 @@ export function createAuthNearLink(
     callbackUrl,
   });
 
-  return `https://auth.near.ai/?${urlParams.toString()}`;
+  return `${AUTH_NEAR_URL}/?${urlParams.toString()}`;
 }
 
 export function redirectToAuthNearLink(
