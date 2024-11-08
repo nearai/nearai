@@ -336,7 +336,7 @@ SUPPORTED_MIME_TYPES = {
     "text/csv": [".csv"],
     "text/html": [".html"],
     "text/x-java": [".java"],
-    "text/javascript": [".js", ".jsx", ".tsx"],
+    "text/javascript": [".js", ".jsx"],
     "text/markdown": [".md"],
     "text/x-php": [".php"],
     "text/x-python": [".py"],
@@ -350,7 +350,7 @@ SUPPORTED_MIME_TYPES = {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
     "application/json": [".json"],
     "application/pdf": [".pdf"],
-    "application/typescript": [".ts"],
+    "application/typescript": [".ts", ".tsx"],
     "application/yaml": [".yaml"],
 }
 
