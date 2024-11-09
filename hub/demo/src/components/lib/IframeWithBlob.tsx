@@ -22,7 +22,7 @@ type Props = ComponentProps<'iframe'> & {
 export const IframeWithBlob = ({
   className = '',
   html,
-  minHeight = '50vh',
+  minHeight,
   onPostMessage,
   postMessage,
   ...props
