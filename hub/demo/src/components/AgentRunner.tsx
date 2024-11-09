@@ -130,6 +130,8 @@ export const AgentRunner = ({
     },
     {
       enabled: isAuthenticated && !!threadId,
+      refetchInterval: 1500,
+      retry: false,
     },
   );
 
@@ -244,44 +246,24 @@ export const AgentRunner = ({
   };
 
   useEffect(() => {
-    const timeout = setTimeout(async () => {
-      /*
-        This logic will poll every 1 second after the last refetch has finished.
-        If an average refetch takes 250ms to finish, the real time that elapses
-        between the start of each refetch will be roughly 1.25 seconds total.
-      */
+    // This logic simply provides helpful logs for debugging in production
 
-      const run = thread?.run ?? threadQuery.data?.run;
-      if (
-        (run?.status === 'queued' || run?.status === 'in_progress') &&
-        !threadQuery.isFetching
-      ) {
-        const refetch = async () => {
-          await threadQuery.refetch({ cancelRefetch: false });
+    if (!threadQuery.isFetching) {
+      const now = new Date();
+      const elapsedSecondsSinceRunStart = chatMutationStartedAt.current
+        ? (now.getTime() - chatMutationStartedAt.current.getTime()) / 1000
+        : null;
 
-          const now = new Date();
-          const elapsedSecondsSinceRunStart = chatMutationStartedAt.current
-            ? (now.getTime() - chatMutationStartedAt.current.getTime()) / 1000
-            : null;
-
-          console.log(
-            `Thread polling fetch responded at: ${now.toLocaleTimeString()}`,
-            {
-              data: threadQuery.data,
-              error: threadQuery.error,
-              elapsedSecondsSinceRunStart,
-            },
-          );
-        };
-
-        void refetch();
-      }
-    }, 1000);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [thread?.run, threadQuery, threadQuery.data]);
+      console.log(
+        `Thread polling fetch responded at: ${now.toLocaleTimeString()}`,
+        {
+          data: threadQuery.data,
+          error: threadQuery.error,
+          elapsedSecondsSinceRunStart,
+        },
+      );
+    }
+  }, [threadQuery.data, threadQuery.error, threadQuery.isFetching]);
 
   useEffect(() => {
     if (threadQuery.data) {
