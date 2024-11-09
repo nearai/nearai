@@ -191,7 +191,6 @@ export function useAgentRequestsWithIframe(
           console.error('Missing data read `near_account`');
         }
       } else if (action === 'refresh_thread_id') {
-        console.log('hi');
         const chat = chatWithAgentModel.partial().parse(event.data.data);
         if (chat.thread_id) {
           void utils.hub.thread.invalidate();

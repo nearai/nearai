@@ -110,18 +110,9 @@ export const IframeWithBlob = ({
       style={{ minHeight }}
       data-loading={isLoading}
     >
-      {isLoading && (
-        <Placeholder
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            height: '100%',
-            width: '100%',
-            zIndex: 10,
-          }}
-        />
-      )}
+      <div className={s.placeholder}>
+        <Placeholder />
+      </div>
 
       <iframe
         height={height}
@@ -137,6 +128,8 @@ export const IframeWithBlob = ({
 
 function extendHtml(html: string) {
   let wrappedHtml = html;
+  const bodyStyle = getComputedStyle(document.body, null);
+  const bodyBackgroundColor = bodyStyle.getPropertyValue('background-color');
 
   if (!html.includes('</body>')) {
     wrappedHtml = `<html><body>${html}</body></html>`;
@@ -144,9 +137,13 @@ function extendHtml(html: string) {
 
   const script = `
     <script>
+      let hasLoaded = false;
+      document.documentElement.style.background = '${bodyBackgroundColor}';
+
       function setHeight() {
-        document.body.style.height = '1px';
-        document.body.style.display = 'block';
+        if (!hasLoaded) return;
+
+        document.documentElement.style.height = '100%';
         document.body.style.overflow = 'auto';
 
         const bodyStyle = getComputedStyle(document.body, null);
@@ -186,9 +183,10 @@ function extendHtml(html: string) {
       const resizeObserver = new ResizeObserver(setHeight);
       resizeObserver.observe(document.body);
 
-      setHeight();
-
-      window.addEventListener('load', setHeight);
+      window.addEventListener('load', () => {
+        hasLoaded = true;
+        setHeight();
+      });
     </script>
   `;
 
