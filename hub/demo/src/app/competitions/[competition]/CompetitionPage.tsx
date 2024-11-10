@@ -35,7 +35,7 @@ const CompetitionPage = ({
 
       <Section>
         <EvaluationsTable
-          title="Leaderboard"
+          title="Entries"
           showSidebar={false}
           onlyShowEvaluationsWithMatchingBenchmark
         />
