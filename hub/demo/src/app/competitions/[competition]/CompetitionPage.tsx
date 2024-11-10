@@ -36,7 +36,6 @@ const CompetitionPage = ({
       <Section>
         <EvaluationsTable
           title="Leaderboard"
-          benchmarkColumns={['live_bench/average']}
           showSidebar={false}
           onlyShowEvaluationsWithMatchingBenchmark
         />
