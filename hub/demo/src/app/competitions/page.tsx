@@ -195,7 +195,7 @@ const CompetitionsPage = () => {
               title: 'Community',
               description: 'Connect with other researchers',
               link: 'Join',
-              href: 'https://t.me/+CcjoSO0ZnlM0ZmJh',
+              href: 'https://t.me/nearaialpha',
             },
           ].map((resource, index) => (
             <Card key={index} padding="l">
