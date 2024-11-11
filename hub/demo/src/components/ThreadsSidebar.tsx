@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Badge,
   Button,
   Card,
   CardList,
@@ -20,6 +21,7 @@ import {
   Link as LinkIcon,
   Pencil,
   Plus,
+  Tag,
   Trash,
 } from '@phosphor-icons/react';
 import { usePrevious } from '@uidotdev/usehooks';
@@ -151,13 +153,23 @@ export const ThreadsSidebar = ({
 
                 <Flex align="center" gap="s">
                   <Text
-                    size="text-xs"
+                    size="text-2xs"
                     clampLines={1}
                     style={{ marginRight: 'auto' }}
                   >
-                    {thread.agent.namespace}/{thread.agent.name}/
-                    {thread.agent.version}
+                    {thread.agent.namespace}/{thread.agent.name}
                   </Text>
+
+                  {thread.agent.version !== 'latest' && (
+                    <Tooltip content="This thread is fixed to a specific agent version.">
+                      <Badge
+                        size="small"
+                        iconLeft={<Tag />}
+                        label={thread.agent.version}
+                        variant="warning"
+                      />
+                    </Tooltip>
+                  )}
 
                   <Dropdown.Root>
                     <Dropdown.Trigger asChild>
