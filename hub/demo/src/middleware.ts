@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { env } from '~/env';
 
 const defaultRoute = env.NEXT_PUBLIC_CONSUMER_MODE ? '/chat' : '/competitions';
+const agentWithoutVersionRegex = /^\/agents\/[^\/]+\/[^\/]+$/;
 
 function redirectUrlPath(path: string, request: NextRequest) {
   return new URL(
@@ -14,6 +15,13 @@ function redirectUrlPath(path: string, request: NextRequest) {
 export function middleware(request: NextRequest) {
   if (request.nextUrl.pathname === '/') {
     return NextResponse.redirect(redirectUrlPath(defaultRoute, request));
+  }
+
+  if (agentWithoutVersionRegex.test(request.nextUrl.pathname)) {
+    // Redirect "/agents/account.near/cool-agent" to "/agents/account.near/cool-agent/latest"
+    return NextResponse.redirect(
+      redirectUrlPath(`${request.nextUrl.pathname}/latest`, request),
+    );
   }
 
   return NextResponse.next();

@@ -50,19 +50,19 @@ export function primaryUrlForEntry(entry: z.infer<typeof entryModel>) {
 
   switch (entry.category as EntryCategory) {
     case 'agent':
-      url = `/agents/${entry.namespace}/${entry.name}/${entry.version}`;
+      url = `/agents/${entry.namespace}/${entry.name}/latest`;
       break;
 
     case 'benchmark':
-      url = `/benchmarks/${entry.namespace}/${entry.name}/${entry.version}`;
+      url = `/benchmarks/${entry.namespace}/${entry.name}/latest`;
       break;
 
     case 'dataset':
-      url = `/datasets/${entry.namespace}/${entry.name}/${entry.version}`;
+      url = `/datasets/${entry.namespace}/${entry.name}/latest`;
       break;
 
     case 'model':
-      url = `/models/${entry.namespace}/${entry.name}/${entry.version}`;
+      url = `/models/${entry.namespace}/${entry.name}/latest`;
       break;
   }
 

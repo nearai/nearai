@@ -211,7 +211,7 @@ export const EntriesTable = ({ category, title }: Props) => {
                         }
                         size="small"
                         fill="ghost"
-                        href={`/agents/${entry.namespace}/${entry.name}/${entry.version}/run`}
+                        href={`${primaryUrlForEntry(entry)}/run`}
                       />
                     </Tooltip>
                   )}

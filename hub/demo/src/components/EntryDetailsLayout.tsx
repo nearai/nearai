@@ -56,6 +56,7 @@ export const EntryDetailsLayout = ({
     env.NEXT_PUBLIC_CONSUMER_MODE &&
     defaultConsumerModePath &&
     !pathname.includes(defaultConsumerPath);
+  const isLatestVersion = version === 'latest';
 
   useEffect(() => {
     if (shouldRedirectToDefaultConsumerPath) {
@@ -107,12 +108,32 @@ export const EntryDetailsLayout = ({
                         <Badge
                           button
                           label={
-                            version === 'latest'
-                              ? `Latest (${currentVersions?.[0]?.version})`
-                              : version
+                            isLatestVersion ? (
+                              <Flex as="span" align="center" gap="s">
+                                Latest
+                                <Text
+                                  size="text-2xs"
+                                  color="sand-10"
+                                  weight={500}
+                                >
+                                  {currentVersions?.[0]?.version}
+                                </Text>
+                              </Flex>
+                            ) : (
+                              <Flex as="span" align="center" gap="s">
+                                Fixed
+                                <Text
+                                  size="text-2xs"
+                                  color="amber-11"
+                                  weight={500}
+                                >
+                                  {version}
+                                </Text>
+                              </Flex>
+                            )
                           }
                           iconRight={<CaretDown />}
-                          variant="neutral"
+                          variant={isLatestVersion ? 'neutral' : 'warning'}
                         />
                       </Dropdown.Trigger>
 
@@ -124,14 +145,14 @@ export const EntryDetailsLayout = ({
                             </Text>
                           </Dropdown.SectionContent>
                           <Dropdown.Item
-                            href={`${baseUrl}/latest`}
+                            href={`${baseUrl}/latest${activeTabPath}`}
                             key="latest"
                           >
                             Latest
                           </Dropdown.Item>
                           {currentVersions?.map((entry) => (
                             <Dropdown.Item
-                              href={`${baseUrl}/${entry.version}`}
+                              href={`${baseUrl}/${entry.version}${activeTabPath}`}
                               key={entry.version}
                             >
                               {entry.version}
