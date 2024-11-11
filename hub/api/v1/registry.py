@@ -105,9 +105,9 @@ def get_or_create(entry_location: EntryLocation = Depends(with_write_access())) 
 
 def get(entry_location: EntryLocation = Body()) -> RegistryEntry:
     logger.debug(f"Getting entry: {entry_location}")
-    
+
     if entry_location.version == 'latest':
-        return latest_version(entry_location);
+        return latest_version(entry_location)
 
     with get_session() as session:
         entry = session.exec(
