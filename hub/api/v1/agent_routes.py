@@ -16,7 +16,7 @@ from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import RegistryEntry, get_session
 from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
-from hub.api.v1.registry import S3_BUCKET, get, get_read_access, latest_version
+from hub.api.v1.registry import S3_BUCKET, get, get_read_access
 from hub.api.v1.sql import SqlClient
 
 S3_ENDPOINT = getenv("S3_ENDPOINT")
