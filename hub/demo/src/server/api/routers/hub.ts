@@ -1,3 +1,4 @@
+import path from 'path';
 import { z } from 'zod';
 
 import { env } from '~/env';
@@ -23,6 +24,7 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '~/server/api/trpc';
+import { loadEntriesFromDirectory } from '~/server/utils/data-source';
 import { conditionallyIncludeAuthorizationHeader } from '~/server/utils/headers';
 import { fetchThreadContents } from '~/server/utils/threads';
 import { createZodFetcher } from '~/utils/zod-fetch';
@@ -56,6 +58,15 @@ export const hubRouter = createTRPCRouter({
         url.searchParams.append('namespace', input.namespace);
 
       if (input.tags) url.searchParams.append('tags', input.tags.join(','));
+
+      if (input.category == 'agent' && env.DATA_SOURCE == 'local_files') {
+        if (!env.HOME)
+          throw new Error(
+            'Missing required HOME environment variable for serving local files',
+          );
+        const registryPath = path.join(env.HOME, '.nearai', 'registry');
+        return await loadEntriesFromDirectory(registryPath);
+      }
 
       if (input.starredBy) {
         url.searchParams.append('starred_by', input.starredBy);
