@@ -57,6 +57,7 @@ export const Sidebar = ({
             icon={<X weight="bold" />}
             onClick={() => setOpenForSmallScreens(false)}
             className={s.sidebarCloseButton}
+            fill="ghost"
             size="x-small"
           />
 

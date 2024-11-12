@@ -75,113 +75,30 @@ export const EntryDetailsLayout = ({
           <Flex
             align="center"
             gap="m"
-            phone={{ direction: 'column', align: 'start', gap: 'l' }}
+            phone={{ direction: 'column', align: 'stretch', gap: 'l' }}
           >
-            <Flex
-              align="center"
-              gap="m"
-              style={{ width: '100%' }}
-              phone={{ justify: 'space-between' }}
-            >
-              <Flex align="center" gap="m">
-                <ImageIcon
-                  size="l"
-                  src={currentEntry?.details.icon}
-                  alt={name}
-                  fallbackIcon={ENTRY_CATEGORY_LABELS[category].icon}
-                />
+            <Flex align="center" gap="m" style={{ marginRight: 'auto' }}>
+              <ImageIcon
+                size="l"
+                src={currentEntry?.details.icon}
+                alt={name}
+                fallbackIcon={ENTRY_CATEGORY_LABELS[category].icon}
+              />
 
-                <Flex gap="none" direction="column" align="start">
-                  <Flex align="center" gap="m">
-                    <Text
-                      href={`${baseUrl}/${version}`}
-                      size="text-l"
-                      weight={600}
-                      color="sand-12"
-                      decoration="none"
-                    >
-                      {name}
-                    </Text>
-
-                    <Dropdown.Root>
-                      <Dropdown.Trigger asChild>
-                        <Badge
-                          button
-                          label={
-                            isLatestVersion ? (
-                              <Flex as="span" align="center" gap="s">
-                                Latest
-                                <Text
-                                  size="text-2xs"
-                                  color="sand-10"
-                                  weight={500}
-                                >
-                                  {currentVersions?.[0]?.version}
-                                </Text>
-                              </Flex>
-                            ) : (
-                              <Flex as="span" align="center" gap="s">
-                                Fixed
-                                <Text
-                                  size="text-2xs"
-                                  color="amber-11"
-                                  weight={500}
-                                >
-                                  {version}
-                                </Text>
-                              </Flex>
-                            )
-                          }
-                          iconRight={<CaretDown />}
-                          variant={isLatestVersion ? 'neutral' : 'warning'}
-                        />
-                      </Dropdown.Trigger>
-
-                      <Dropdown.Content>
-                        <Dropdown.Section>
-                          <Dropdown.SectionContent>
-                            <Text size="text-xs" weight={600} uppercase>
-                              Versions
-                            </Text>
-                          </Dropdown.SectionContent>
-                          <Dropdown.Item
-                            href={`${baseUrl}/latest${activeTabPath}`}
-                            key="latest"
-                          >
-                            Latest
-                          </Dropdown.Item>
-                          {currentVersions?.map((entry) => (
-                            <Dropdown.Item
-                              href={`${baseUrl}/${entry.version}${activeTabPath}`}
-                              key={entry.version}
-                            >
-                              {entry.version}
-                            </Dropdown.Item>
-                          ))}
-                        </Dropdown.Section>
-                      </Dropdown.Content>
-                    </Dropdown.Root>
-
-                    {!env.NEXT_PUBLIC_CONSUMER_MODE && (
-                      <Tooltip
-                        asChild
-                        content={`Copy ${category} path to clipboard`}
-                      >
-                        <Button
-                          label="Copy"
-                          icon={<Copy />}
-                          size="x-small"
-                          variant="secondary"
-                          fill="ghost"
-                          onClick={() =>
-                            copyTextToClipboard(
-                              `${namespace}/${name}/${version}`,
-                            )
-                          }
-                        />
-                      </Tooltip>
-                    )}
-                  </Flex>
+              <Flex
+                align="baseline"
+                gap="m"
+                phone={{ direction: 'column', align: 'start', gap: 'xs' }}
+              >
+                <Flex gap="none" direction="column">
+                  <Text
+                    href={`${baseUrl}/${version}`}
+                    size="text-l"
+                    color="sand-12"
+                    decoration="none"
+                  >
+                    {name}
+                  </Text>
 
                   <Text
                     href={`/profiles/${namespace}`}
@@ -192,6 +109,87 @@ export const EntryDetailsLayout = ({
                   >
                     @{namespace}
                   </Text>
+                </Flex>
+
+                <Flex align="center" gap="xs">
+                  <Dropdown.Root>
+                    <Dropdown.Trigger asChild>
+                      <Badge
+                        button
+                        label={
+                          isLatestVersion ? (
+                            <Flex as="span" align="center" gap="s">
+                              Latest
+                              <Text
+                                size="text-2xs"
+                                color="sand-10"
+                                weight={500}
+                                clampLines={1}
+                                style={{ maxWidth: '3rem' }}
+                              >
+                                {currentVersions?.[0]?.version}
+                              </Text>
+                            </Flex>
+                          ) : (
+                            <Flex as="span" align="center" gap="s">
+                              Fixed
+                              <Text
+                                size="text-2xs"
+                                color="amber-11"
+                                weight={500}
+                                clampLines={1}
+                                style={{ maxWidth: '3rem' }}
+                              >
+                                {version}
+                              </Text>
+                            </Flex>
+                          )
+                        }
+                        iconRight={<CaretDown />}
+                        variant={isLatestVersion ? 'neutral' : 'warning'}
+                      />
+                    </Dropdown.Trigger>
+
+                    <Dropdown.Content>
+                      <Dropdown.Section>
+                        <Dropdown.SectionContent>
+                          <Text size="text-xs" weight={600} uppercase>
+                            Versions
+                          </Text>
+                        </Dropdown.SectionContent>
+                        <Dropdown.Item
+                          href={`${baseUrl}/latest${activeTabPath}`}
+                          key="latest"
+                        >
+                          Latest
+                        </Dropdown.Item>
+                        {currentVersions?.map((entry) => (
+                          <Dropdown.Item
+                            href={`${baseUrl}/${entry.version}${activeTabPath}`}
+                            key={entry.version}
+                          >
+                            {entry.version}
+                          </Dropdown.Item>
+                        ))}
+                      </Dropdown.Section>
+                    </Dropdown.Content>
+                  </Dropdown.Root>
+
+                  <Tooltip
+                    asChild
+                    content={`Copy ${category} path to clipboard`}
+                  >
+                    <Button
+                      label="Copy"
+                      icon={<Copy />}
+                      size="x-small"
+                      variant="secondary"
+                      fill="ghost"
+                      onClick={() =>
+                        copyTextToClipboard(`${namespace}/${name}/${version}`)
+                      }
+                    />
+                  </Tooltip>
                 </Flex>
               </Flex>
             </Flex>
