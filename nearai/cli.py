@@ -80,13 +80,16 @@ class RegistryCli:
 
         metadata_path = path / "metadata.json"
 
-        # Get the name of the folder
-        folder_name = path.name
+        version = path.name
+        pattern = r"^[0-9]+(?:\.[0-9]+)*$"
+        assert re.match(pattern, version), f"Invalid version format: {version}"
+        name = path.parent.name
+        assert not re.match(pattern, name), f"Invalid agent name: {name}"
 
         with open(metadata_path, "w") as f:
             metadata: Dict[str, Any] = {
-                "name": folder_name,
-                "version": "0.0.1",
+                "name": name,
+                "version": version,
                 "description": description,
                 "category": category,
                 "tags": [],
@@ -96,12 +99,18 @@ class RegistryCli:
 
             if category == "agent":
                 metadata["details"]["agent"] = {}
+                metadata["details"]["agent"]["welcome"] = {
+                    "title": name,
+                    "description": description,
+                }
                 metadata["details"]["agent"]["defaults"] = {
                     "model": DEFAULT_MODEL,
                     "model_provider": DEFAULT_PROVIDER,
                     "model_temperature": DEFAULT_MODEL_TEMPERATURE,
                     "model_max_tokens": DEFAULT_MODEL_MAX_TOKENS,
+                    "max_iterations": 1,
                 }
+                metadata["details"]["agent"]["framework"] = "base"
 
             json.dump(metadata, f, indent=2)
 

@@ -23,14 +23,18 @@ def test_registry():
     registry = Registry()
 
     tmp_dir = tempfile.TemporaryDirectory()
+    name = "test_entry"
+    version = "0"
+
+    # Create nested directory structure
+    entry_dir = Path(tmp_dir.name) / name / version
+    entry_dir.mkdir(parents=True)
 
     registry_cli = RegistryCli()
-    registry_cli.metadata_template(local_path=Path(tmp_dir.name))
+    registry_cli.metadata_template(local_path=entry_dir)
 
-    registry.upload(Path(tmp_dir.name))
-    assert Path(tmp_dir.name).name in map(
-        lambda x: x.name, registry.list_all_visible()
-    ), f"Registry should contain {Path(tmp_dir.name).name}"
+    registry.upload(entry_dir)
+    assert name in map(lambda x: x.name, registry.list_all_visible()), f"Registry should contain {name}"
 
 
 @pytest.mark.integration
