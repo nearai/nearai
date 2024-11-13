@@ -281,10 +281,13 @@ def run_with_environment(
 
 def get_local_agent_files(agent_identifier: str, additional_path: str = ""):
     """Fetches an agent from local filesystem."""
-    # base_path = os.path.join("/root/.nearai/registry", agent_identifier)
-    # os.path.expanduser(f"/root/.nearai/registry/{agent_identifier}")
-    # base_path = os.path.expanduser(f"/nearai_registry/{agent_identifier}")
     base_path = os.path.expanduser(f"~/.nearai/registry/{agent_identifier}")
+
+    if agent_identifier.endswith("latest"):
+        base_path = os.path.dirname(base_path.replace("latest", ""))
+        versions = os.listdir(base_path)
+        versions.sort()
+        base_path = os.path.join(base_path, versions[-1])
 
     paths = [base_path]
     if additional_path:

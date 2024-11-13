@@ -359,7 +359,7 @@ def list_messages(
     run_id: str = Query(None, description="Filter messages by the run ID that generated them."),
     auth: AuthToken = Depends(get_auth),
 ) -> ListMessagesResponse:
-    logger.info(f"Listing messages for thread: {thread_id}")
+    logger.debug(f"Listing messages for thread: {thread_id}")
     with get_session() as session:
         statement = select(MessageModel).where(MessageModel.thread_id == thread_id)
 
@@ -390,10 +390,10 @@ def list_messages(
         statement = statement.limit(limit)
 
         # Print the SQL query
-        print("SQL Query:", statement.compile(compile_kwargs={"literal_binds": True}))
+        logger.debug("SQL Query:", statement.compile(compile_kwargs={"literal_binds": True}))
 
         messages = session.exec(statement).all()
-        logger.info(
+        logger.debug(
             f"Found {len(messages)} messages with filter: after={after}, run_id={run_id}, limit={limit}, order={order}"
         )
 
