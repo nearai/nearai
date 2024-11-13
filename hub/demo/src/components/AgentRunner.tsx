@@ -15,15 +15,7 @@ import {
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
-import {
-  ArrowRight,
-  Chats,
-  Eye,
-  Folder,
-  Gear,
-  Info,
-  List,
-} from '@phosphor-icons/react';
+import { ArrowRight, Eye, Folder, Info, List } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import {
   type KeyboardEventHandler,
