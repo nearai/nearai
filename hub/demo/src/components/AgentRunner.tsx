@@ -15,7 +15,15 @@ import {
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
-import { ArrowRight, Chats, Eye, Gear, List } from '@phosphor-icons/react';
+import {
+  ArrowRight,
+  Chats,
+  Eye,
+  Folder,
+  Gear,
+  Info,
+  List,
+} from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import {
   type KeyboardEventHandler,
@@ -83,6 +91,7 @@ export const AgentRunner = ({
 
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const { queryParams, updateQueryPath } = useQueryParams([
+    'showLogs',
     'threadId',
     'view',
     'transactionHashes',
@@ -94,6 +103,7 @@ export const AgentRunner = ({
   );
   const utils = api.useUtils();
   const threadId = queryParams.threadId ?? '';
+  const showLogs = queryParams.showLogs === 'true';
 
   const form = useForm<FormSchema>({
     defaultValues: {
@@ -169,30 +179,40 @@ export const AgentRunner = ({
     },
   });
 
+  const logMessages = useMemo(() => {
+    const result = (thread ? Object.values(thread.messagesById) : []).filter(
+      (message) => message.metadata?.message_type?.startsWith('system:'),
+    );
+    return result;
+  }, [thread]);
+
   const messages = useMemo(() => {
     const result = [
       ...(thread ? Object.values(thread.messagesById) : []),
       ...optimisticMessages.map((message) => message.data),
     ].filter(
-      (message) => message.metadata?.message_type !== 'system:file_write',
+      (message) =>
+        showLogs || !message.metadata?.message_type?.startsWith('system:'),
     );
     return result;
-  }, [thread, optimisticMessages]);
+  }, [thread, optimisticMessages, showLogs]);
 
   const files = useMemo(() => {
     return thread ? Object.values(thread.filesByName) : [];
   }, [thread]);
 
-  const latestAssistantMessages: z.infer<typeof threadMessageModel>[] = [];
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const message = messages[i]!;
-    const messageType = message.metadata?.message_type ?? '';
-    if (message.role === 'assistant' && !messageType.startsWith('system:')) {
-      latestAssistantMessages.push(message);
-    } else {
-      break;
+  const latestAssistantMessages = useMemo(() => {
+    const result: z.infer<typeof threadMessageModel>[] = [];
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i]!;
+      if (message.role === 'assistant') {
+        result.push(message);
+      } else {
+        break;
+      }
     }
-  }
+    return result;
+  }, [messages]);
 
   const {
     agentRequestsNeedingPermissions,
@@ -391,58 +411,100 @@ export const AgentRunner = ({
               />
 
               {isAuthenticated ? (
-                <Flex align="start" gap="m">
-                  <Text size="text-xs" style={{ marginRight: 'auto' }}>
-                    <b>Shift + Enter</b> to add a new line
-                  </Text>
+                <Flex align="start" gap="m" justify="space-between">
+                  <BreakpointDisplay
+                    show="larger-than-phone"
+                    style={{ marginRight: 'auto' }}
+                  >
+                    <Text size="text-xs">
+                      <b>Shift + Enter</b> to add a new line
+                    </Text>
+                  </BreakpointDisplay>
 
-                  <Flex align="start" gap="xs">
+                  <Flex
+                    align="start"
+                    gap="s"
+                    style={{ paddingRight: '0.15rem' }}
+                  >
                     <BreakpointDisplay show="sidebar-small-screen">
-                      <Button
-                        label="Select Thread"
-                        icon={<List />}
-                        size="small"
-                        fill="ghost"
-                        onClick={() => setThreadsOpenForSmallScreens(true)}
-                      />
+                      <Tooltip asChild content="View all threads">
+                        <Button
+                          label="Select Thread"
+                          icon={<List />}
+                          size="small"
+                          fill="ghost"
+                          onClick={() => setThreadsOpenForSmallScreens(true)}
+                        />
+                      </Tooltip>
                     </BreakpointDisplay>
 
                     <BreakpointDisplay show="sidebar-small-screen">
-                      <Button
-                        label="Edit Parameters"
-                        icon={<Gear />}
-                        size="small"
-                        fill="ghost"
-                        onClick={() => setParametersOpenForSmallScreens(true)}
-                      />
+                      <Tooltip asChild content="View files & settings">
+                        <Button
+                          label={files.length.toString()}
+                          iconLeft={<Folder />}
+                          size="small"
+                          variant="secondary"
+                          fill="ghost"
+                          style={{ paddingInline: '0.5rem' }}
+                          onClick={() => setParametersOpenForSmallScreens(true)}
+                        />
+                      </Tooltip>
                     </BreakpointDisplay>
+
+                    {htmlOutput && (
+                      <Tooltip
+                        asChild
+                        content={
+                          view === 'output'
+                            ? 'View conversation'
+                            : 'View rendered output'
+                        }
+                      >
+                        <Button
+                          label="Toggle View"
+                          icon={
+                            <Eye
+                              weight={view === 'output' ? 'fill' : 'regular'}
+                            />
+                          }
+                          size="small"
+                          variant="secondary"
+                          fill="ghost"
+                          onClick={() =>
+                            view === 'output'
+                              ? setView('conversation', true)
+                              : setView('output', true)
+                          }
+                        />
+                      </Tooltip>
+                    )}
+
+                    <Tooltip
+                      asChild
+                      content={
+                        showLogs ? 'Hide system logs' : 'Show system logs'
+                      }
+                    >
+                      <Button
+                        label={logMessages.length.toString()}
+                        iconLeft={
+                          <Info weight={showLogs ? 'fill' : 'regular'} />
+                        }
+                        size="small"
+                        variant="secondary"
+                        fill="ghost"
+                        style={{ paddingInline: '0.5rem' }}
+                        onClick={() =>
+                          updateQueryPath(
+                            { showLogs: showLogs ? undefined : 'true' },
+                            'replace',
+                            false,
+                          )
+                        }
+                      />
+                    </Tooltip>
                   </Flex>
-
-                  {htmlOutput && (
-                    <>
-                      {view === 'output' ? (
-                        <Tooltip asChild content="Switch to conversation view">
-                          <Button
-                            label="Toggle View"
-                            icon={<Chats />}
-                            size="small"
-                            variant="secondary"
-                            onClick={() => setView('conversation', true)}
-                          />
-                        </Tooltip>
-                      ) : (
-                        <Tooltip asChild content="Switch to output view">
-                          <Button
-                            label="Toggle View"
-                            icon={<Eye />}
-                            size="small"
-                            variant="secondary"
-                            onClick={() => setView('output', true)}
-                          />
-                        </Tooltip>
-                      )}
-                    </>
-                  )}
 
                   <Button
                     label="Send Message"
