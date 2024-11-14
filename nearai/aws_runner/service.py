@@ -133,26 +133,6 @@ def clear_temp_agent_files(agents, verbose=True):
             shutil.rmtree(agent.temp_dir)
 
 
-def save_environment(env, client, base_id, metric_function=None) -> str:
-    save_start_time = time.perf_counter()
-    snapshot = env.create_snapshot()
-    metadata = env.environment_run_info(base_id, "remote run")
-    name = metadata["name"]
-    request_start_time = time.perf_counter()
-    registry_id = client.save_environment(snapshot, metadata)
-    request_stop_time = time.perf_counter()
-    if metric_function:
-        metric_function("SaveEnvironmentToRegistry_Duration", request_stop_time - request_start_time)
-    print(
-        f"Saved environment {registry_id} to registry. To load use flag `--load-env={registry_id}`. "
-        f"or `--load-env={name}`"
-    )
-    save_stop_time = time.perf_counter()
-    if metric_function:
-        metric_function("SaveEnvironment_Duration", save_stop_time - save_start_time)
-    return registry_id
-
-
 class EnvironmentRun:
     def __init__(  # noqa: D107
         self,
@@ -178,10 +158,7 @@ class EnvironmentRun:
         self.env.run(new_message, self.agents[0].max_iterations)
         stop_time = time.perf_counter()
         write_metric("ExecuteAgentDuration", stop_time - start_time, verbose=self.verbose)
-        new_environment = (
-            save_environment(self.env, self.near_client, self.thread_id, write_metric) if self.record_run else None
-        )
-        return new_environment
+        return self.thread_id
 
 
 def start_with_environment(
