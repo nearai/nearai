@@ -97,7 +97,7 @@ def write_metric(metric_name, value, unit="Milliseconds", verbose=True):
 
 
 def load_agent(
-    client, agent, params: dict, account_id: str = "local", additional_path: str = "", verbose=True
+    client, agent, params: dict, additional_path: str = "", verbose=True
 ) -> Agent:
     agent_metadata = None
 
@@ -212,7 +212,7 @@ def start_with_environment(
 
     loaded_agents: list[Agent] = []
     for agent_name in agents.split(","):
-        agent = load_agent(near_client, agent_name, params, auth.account_id, additional_path, verbose=verbose)
+        agent = load_agent(near_client, agent_name, params, additional_path, verbose=verbose)
         # agents secrets has higher priority then agent metadata's env_vars
         agent.env_vars = {**agent.env_vars, **agent_env_vars.get(agent_name, {})}
         loaded_agents.append(agent)

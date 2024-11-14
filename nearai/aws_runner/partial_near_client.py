@@ -73,24 +73,28 @@ class PartialNearClient:
 
     def get_files_from_registry(self, entry_location: dict):
         """Fetches all files from NearAI registry."""
+        from concurrent.futures import ThreadPoolExecutor, as_completed
         api_instance = RegistryApi(self._client)
 
         files = self.list_files(entry_location)
         results = []
 
-        for path in files:
-            body = BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
-                dict(
-                    entry_location=entry_location,
-                    path=path,
-                )
-            )
-            assert (
-                body is not None
-            ), f"Unable to create request body for file download. Entry location: {entry_location}, Path: {path}"
-            result = api_instance.download_file_v1_registry_download_file_post(body)
-            results.append({"filename": path, "content": result})
-        return results
+        with ThreadPoolExecutor() as executor:
+            future_to_path = {
+                executor.submit(
+                    api_instance.download_file_v1_registry_download_file_post,
+                    BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
+                        dict(entry_location=entry_location, path=path)
+                    ),
+                ): path
+                for path in files
+            }
+
+            for future in as_completed(future_to_path):
+                path = future_to_path[future]
+                result = future.result()
+                results.append({"filename": path, "content": result})
+            return results
 
     def get_agent_metadata(self, identifier: str) -> dict:
         """Fetches metadata for an agent from NearAI registry."""
