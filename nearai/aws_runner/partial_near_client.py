@@ -80,18 +80,23 @@ class PartialNearClient:
         results = []
 
         with ThreadPoolExecutor() as executor:
-            future_to_path = {
-                executor.submit(
+            tasks = {}
+            for path in files:
+                if path is None:
+                    continue
+                body = BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
+                    dict(entry_location=entry_location, path=path)
+                )
+                if body is None:
+                    continue
+                future = executor.submit(
                     api_instance.download_file_v1_registry_download_file_post,
-                    BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
-                        dict(entry_location=entry_location, path=path)
-                    ),
-                ): path
-                for path in files
-            }
+                    body,
+                )
+                tasks[future] = path
 
-            for future in as_completed(future_to_path):
-                path = future_to_path[future]
+            for future in as_completed(tasks):
+                path = tasks[future]
                 result = future.result()
                 results.append({"filename": path, "content": result})
             return results
