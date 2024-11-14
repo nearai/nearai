@@ -1,4 +1,5 @@
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List
 
 from nearai.openapi_client import (
@@ -73,7 +74,6 @@ class PartialNearClient:
 
     def get_files_from_registry(self, entry_location: dict):
         """Fetches all files from NearAI registry."""
-        from concurrent.futures import ThreadPoolExecutor, as_completed
         api_instance = RegistryApi(self._client)
 
         files = self.list_files(entry_location)

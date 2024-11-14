@@ -96,9 +96,7 @@ def write_metric(metric_name, value, unit="Milliseconds", verbose=True):
         print(f"Would have written metric {metric_name} with value {value} to cloudwatch")
 
 
-def load_agent(
-    client, agent, params: dict, additional_path: str = "", verbose=True
-) -> Agent:
+def load_agent(client, agent, params: dict, additional_path: str = "", verbose=True) -> Agent:
     agent_metadata = None
 
     if params["data_source"] == "registry":
