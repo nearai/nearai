@@ -1,4 +1,6 @@
 .iframeWrapper {
+  display: flex;
+  align-items: center;
   width: 100%;
   position: relative;
   flex-grow: 1;
@@ -29,7 +31,6 @@
 .iframe {
   border: none;
   width: 100%;
-  min-height: 100%;
   outline: none;
   position: relative;
   z-index: 5;

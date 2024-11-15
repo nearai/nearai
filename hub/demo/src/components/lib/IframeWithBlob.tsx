@@ -14,7 +14,6 @@ export type IframePostMessageEventHandler<T = any> = (
 
 type Props = ComponentProps<'iframe'> & {
   html: string;
-  minHeight?: string;
   onPostMessage?: IframePostMessageEventHandler;
   postMessage?: unknown;
 };
@@ -22,14 +21,14 @@ type Props = ComponentProps<'iframe'> & {
 export const IframeWithBlob = ({
   className = '',
   html,
-  minHeight,
   onPostMessage,
   postMessage,
   ...props
 }: Props) => {
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [dataUrl, setDataUrl] = useState('');
-  const previousHeightDiffRef = useRef(0);
+  const previousHeightRef = useRef(0);
   const previousHeightChangeUnixTimestampRef = useRef(0);
   const shouldClampHeightRef = useRef(false);
   const [height, __setHeight] = useState(0);
@@ -46,8 +45,9 @@ export const IframeWithBlob = ({
   }, 10);
 
   const setHeight = useDebouncedFunction((height: number) => {
-    __setHeight((previousHeight) => {
-      const previousHeightDiff = previousHeightDiffRef.current;
+    __setHeight(() => {
+      const previousHeight = previousHeightRef.current;
+      const previousHeightDiff = height - previousHeight;
       const previousHeightChangeUnixTimestamp =
         previousHeightChangeUnixTimestampRef.current;
       const heightDiff = height - previousHeight;
@@ -57,12 +57,12 @@ export const IframeWithBlob = ({
       if (
         previousHeight > 0 &&
         heightDiff > 0 &&
-        elapsedMsSinceLastChange < 25 &&
+        elapsedMsSinceLastChange < 50 &&
         previousHeightDiff === heightDiff
       ) {
         /*
-          At this point we've detected an infinite loop where the iframe is 
-          consistently growing in height. This is caused by an element inside 
+          NOTE: At this point we've detected an infinite loop where the iframe 
+          is consistently growing in height. This is caused by an element inside 
           the iframe using viewport relative units like "vh" or "svh". To exit 
           this loop, we'll need to clamp the iframe height.
         */
@@ -70,7 +70,7 @@ export const IframeWithBlob = ({
       }
 
       previousHeightChangeUnixTimestampRef.current = Date.now();
-      previousHeightDiffRef.current = heightDiff;
+      previousHeightRef.current = height;
 
       if (shouldClampHeightRef.current) {
         return Math.min(height, window.innerHeight);
@@ -78,7 +78,7 @@ export const IframeWithBlob = ({
 
       return height;
     });
-  }, 5);
+  }, 10);
 
   useEffect(() => {
     shouldClampHeightRef.current = false;
@@ -143,11 +143,7 @@ export const IframeWithBlob = ({
   */
 
   return (
-    <div
-      className={s.iframeWrapper}
-      style={{ minHeight }}
-      data-loading={isLoading}
-    >
+    <div className={s.iframeWrapper} data-loading={isLoading} ref={wrapperRef}>
       <div className={s.placeholder}>
         <Placeholder />
       </div>
@@ -180,6 +176,7 @@ function extendHtml(html: string) {
       function setStyles() {
         document.documentElement.style.height = '100%';
         document.documentElement.style.background = '${bodyBackgroundColor}';
+        document.body.style.height = 'auto';
         document.body.style.margin = '0px';
         document.body.style.overflow = 'auto';
       }

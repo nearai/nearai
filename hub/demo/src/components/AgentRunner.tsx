@@ -8,7 +8,6 @@ import {
   Flex,
   Form,
   InputTextarea,
-  PlaceholderCard,
   PlaceholderSection,
   PlaceholderStack,
   Slider,
@@ -368,7 +367,6 @@ export const AgentRunner = ({
                 <>
                   <IframeWithBlob
                     html={htmlOutput}
-                    minHeight={currentEntry.details.agent?.html_minimum_height}
                     onPostMessage={onIframePostMessage}
                     postMessage={iframePostMessage}
                   />
