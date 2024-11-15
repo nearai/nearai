@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { type z } from 'zod';
 
 import { useEntryParams } from '~/hooks/entries';
-import { idForEntry } from '~/lib/entries';
+import { idMatchesEntry } from '~/lib/entries';
 import {
   type agentWalletTransactionsRequestModel,
   type chatWithAgentModel,
@@ -37,7 +37,7 @@ export function checkAgentPermissions(
   requests.forEach((request) => {
     if ('agent_id' in request) {
       allowRemoteRunCallsToOtherAgents =
-        request.agent_id === idForEntry(agent) ||
+        idMatchesEntry(request.agent_id, agent) ||
         !!settings.allowRemoteRunCallsToOtherAgents;
     } else {
       allowWalletTransactionRequests =

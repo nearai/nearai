@@ -119,6 +119,10 @@ export function idForEntry(entry: z.infer<typeof entryModel>) {
   return `${entry.namespace}/${entry.name}/${entry.version}`;
 }
 
+export function idMatchesEntry(id: string, entry: z.infer<typeof entryModel>) {
+  return id.startsWith(`${entry.namespace}/${entry.name}`);
+}
+
 export function parseEntryId(id: string) {
   const segments = id.split('/');
   const namespace = segments[0];
