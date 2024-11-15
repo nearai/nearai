@@ -10,6 +10,13 @@ class SimilaritySearch(BaseModel):
     distance: float
 
 
+class SimilaritySearchFile(BaseModel):
+    file_id: str
+    file_content: str
+    distance: float
+    filename: str
+
+
 class StaticFileChunkingStrategyParam(TypedDict, total=False):
     chunk_overlap_tokens: Required[int]
     """The number of tokens that overlap between chunks. The default value is `400`.
