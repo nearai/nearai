@@ -8,7 +8,6 @@ import {
   Flex,
   Form,
   InputTextarea,
-  PlaceholderCard,
   PlaceholderSection,
   PlaceholderStack,
   Slider,
@@ -198,7 +197,7 @@ export const AgentRunner = ({
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i]!;
       if (message.role === 'assistant') {
-        result.push(message);
+        result.unshift(message);
       } else {
         break;
       }
@@ -361,14 +360,13 @@ export const AgentRunner = ({
 
         <Sidebar.Main>
           {isLoading ? (
-            <PlaceholderCard style={{ marginTop: 'auto' }} />
+            <PlaceholderStack style={{ marginBottom: 'auto' }} />
           ) : (
             <>
               {view === 'output' ? (
                 <>
                   <IframeWithBlob
                     html={htmlOutput}
-                    minHeight={currentEntry.details.agent?.html_minimum_height}
                     onPostMessage={onIframePostMessage}
                     postMessage={iframePostMessage}
                   />
@@ -377,6 +375,7 @@ export const AgentRunner = ({
                     <Messages
                       grow={false}
                       messages={latestAssistantMessages}
+                      scrollTo={false}
                       threadId={threadId}
                     />
                   )}

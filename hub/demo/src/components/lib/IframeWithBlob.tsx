@@ -14,7 +14,6 @@ export type IframePostMessageEventHandler<T = any> = (
 
 type Props = ComponentProps<'iframe'> & {
   html: string;
-  minHeight?: string;
   onPostMessage?: IframePostMessageEventHandler;
   postMessage?: unknown;
 };
@@ -22,14 +21,17 @@ type Props = ComponentProps<'iframe'> & {
 export const IframeWithBlob = ({
   className = '',
   html,
-  minHeight,
   onPostMessage,
   postMessage,
   ...props
 }: Props) => {
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [dataUrl, setDataUrl] = useState('');
-  const [height, setHeight] = useState(0);
+  const previousHeightRef = useRef(0);
+  const previousHeightChangeUnixTimestampRef = useRef(0);
+  const shouldClampHeightRef = useRef(false);
+  const [height, __setHeight] = useState(0);
   const isLoading = !height;
 
   const executePostMessage = useDebouncedFunction((message: unknown) => {
@@ -42,7 +44,44 @@ export const IframeWithBlob = ({
     */
   }, 10);
 
+  const setHeight = useDebouncedFunction((height: number) => {
+    __setHeight(() => {
+      const previousHeight = previousHeightRef.current;
+      const previousHeightDiff = height - previousHeight;
+      const previousHeightChangeUnixTimestamp =
+        previousHeightChangeUnixTimestampRef.current;
+      const heightDiff = height - previousHeight;
+      const elapsedMsSinceLastChange =
+        Date.now() - previousHeightChangeUnixTimestamp;
+
+      if (
+        previousHeight > 0 &&
+        heightDiff > 0 &&
+        elapsedMsSinceLastChange < 50 &&
+        previousHeightDiff === heightDiff
+      ) {
+        /*
+          NOTE: At this point we've detected an infinite loop where the iframe 
+          is consistently growing in height. This is caused by an element inside 
+          the iframe using viewport relative units like "vh" or "svh". To exit 
+          this loop, we'll need to clamp the iframe height.
+        */
+        shouldClampHeightRef.current = true;
+      }
+
+      previousHeightChangeUnixTimestampRef.current = Date.now();
+      previousHeightRef.current = height;
+
+      if (shouldClampHeightRef.current) {
+        return Math.min(height, window.innerHeight);
+      }
+
+      return height;
+    });
+  }, 10);
+
   useEffect(() => {
+    shouldClampHeightRef.current = false;
     const extendedHtml = extendHtml(html);
     const blob = new Blob([extendedHtml], { type: 'text/html;charset=UTF-8' });
     const url = URL.createObjectURL(blob);
@@ -66,8 +105,7 @@ export const IframeWithBlob = ({
             'height' in data &&
             typeof data.height === 'number'
           ) {
-            const height = data.height || 0;
-            setHeight(height);
+            setHeight(data.height || 0);
             return;
           }
         }
@@ -82,7 +120,7 @@ export const IframeWithBlob = ({
     return () => {
       window.removeEventListener('message', messageListener);
     };
-  }, [onPostMessage]);
+  }, [onPostMessage, setHeight]);
 
   useEffect(() => {
     if (postMessage) {
@@ -105,11 +143,7 @@ export const IframeWithBlob = ({
   */
 
   return (
-    <div
-      className={s.iframeWrapper}
-      style={{ minHeight }}
-      data-loading={isLoading}
-    >
+    <div className={s.iframeWrapper} data-loading={isLoading} ref={wrapperRef}>
       <div className={s.placeholder}>
         <Placeholder />
       </div>
@@ -138,40 +172,30 @@ function extendHtml(html: string) {
   const script = `
     <script>
       let hasLoaded = false;
-      document.documentElement.style.background = '${bodyBackgroundColor}';
+      
+      function setStyles() {
+        document.documentElement.style.height = '100%';
+        document.documentElement.style.background = '${bodyBackgroundColor}';
+        document.body.style.height = 'auto';
+        document.body.style.margin = '0px';
+        document.body.style.overflow = 'auto';
+      }
 
       function setHeight() {
         if (!hasLoaded) return;
 
-        document.documentElement.style.height = '100%';
-        document.body.style.overflow = 'auto';
-
-        const bodyStyle = getComputedStyle(document.body, null);
-        const bodyPaddingBottom = parseInt(bodyStyle.getPropertyValue('padding-bottom').replace('px', ''));
-        const bodyMarginBottom = parseInt(bodyStyle.getPropertyValue('margin-bottom').replace('px', ''));
+        setStyles();
 
         let height = 0;
-        const ignoreTags = ['SCRIPT', 'STYLE'];
-        const ignorePositions = ['fixed', 'absolute'];
-
-        for (let i = document.body.children.length; i >= 0; i--) {
-          const child = document.body.children[i];
-          if (child && !ignoreTags.includes(child.tagName)) {
-            const style = getComputedStyle(child, null);
-            const position = style.getPropertyValue('position');
-            const display = style.getPropertyValue('display');
-            if (display !== 'none' && ![ignorePositions].includes(position)) {
-              height = child.getBoundingClientRect().bottom + window.scrollY + bodyPaddingBottom + bodyMarginBottom;
-              break;
-            }
-          }
-        }
+        height = document.body.scrollHeight;
 
         window.parent.postMessage({
           type: "SET_HEIGHT",
           height
         }, '*');
       }
+
+      setStyles();
 
       const mutationObserver = new MutationObserver(setHeight);
       mutationObserver.observe(document.body, {

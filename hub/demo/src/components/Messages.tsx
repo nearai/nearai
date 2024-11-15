@@ -16,6 +16,7 @@ import s from './Messages.module.scss';
 type Props = {
   grow?: boolean;
   messages: z.infer<typeof threadMessageModel>[];
+  scrollTo?: boolean;
   threadId: string;
   welcomeMessage?: ReactNode;
 };
@@ -23,6 +24,7 @@ type Props = {
 export const Messages = ({
   grow = true,
   messages,
+  scrollTo = true,
   threadId,
   welcomeMessage,
 }: Props) => {
@@ -52,14 +54,14 @@ export const Messages = ({
           });
         }
 
-        setTimeout(() => {
-          scrolledToThreadId.current = threadId;
-        }, 1000);
+        scrolledToThreadId.current = threadId;
       }, 10);
     }
 
-    scroll();
-  }, [threadId, previousMessages, messages]);
+    if (scrollTo) {
+      scroll();
+    }
+  }, [threadId, previousMessages, messages, scrollTo]);
 
   const normalizedMessages = messages.map((message) => {
     return {
