@@ -361,7 +361,7 @@ export const AgentRunner = ({
 
         <Sidebar.Main>
           {isLoading ? (
-            <PlaceholderCard style={{ marginTop: 'auto' }} />
+            <PlaceholderStack style={{ marginBottom: 'auto' }} />
           ) : (
             <>
               {view === 'output' ? (
