@@ -198,7 +198,7 @@ export const AgentRunner = ({
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i]!;
       if (message.role === 'assistant') {
-        result.push(message);
+        result.unshift(message);
       } else {
         break;
       }
@@ -377,6 +377,7 @@ export const AgentRunner = ({
                     <Messages
                       grow={false}
                       messages={latestAssistantMessages}
+                      scrollTo={false}
                       threadId={threadId}
                     />
                   )}
