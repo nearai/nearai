@@ -129,31 +129,31 @@ const CompetitionsPage = () => {
     </Section>
   );
 
-  const otherCompetitions = (
-    <Section padding="hero" gap="l">
-      {/* Other Competitions */}
-      <Flex direction="column" gap="m">
-        <Text as="h2" size="text-2xl" weight="600">
-          Other Active Competitions
-        </Text>
-      </Flex>
+  // const otherCompetitions = (
+  //   <Section padding="hero" gap="l">
+  //     {/* Other Competitions */}
+  //     <Flex direction="column" gap="m">
+  //       <Text as="h2" size="text-2xl" weight="600">
+  //         Other Active Competitions
+  //       </Text>
+  //     </Flex>
 
-      <Card padding="l">
-        <Grid columns="1fr auto" gap="xl" phone={{ columns: '1fr' }}>
-          <Flex direction="column" gap="m">
-            <Text size="text-xl" weight="600" decoration="none">
-              Lean Benchmark Challenge
-            </Text>
-            <Text color="sand-11">
-              Deadline: <b>Nov 30 @ 11:59 PM UTC</b>
-            </Text>
-          </Flex>
+  //     <Card padding="l">
+  //       <Grid columns="1fr auto" gap="xl" phone={{ columns: '1fr' }}>
+  //         <Flex direction="column" gap="m">
+  //           <Text size="text-xl" weight="600" decoration="none">
+  //             Lean Benchmark Challenge
+  //           </Text>
+  //           <Text color="sand-11">
+  //             Deadline: <b>Nov 30 @ 11:59 PM UTC</b>
+  //           </Text>
+  //         </Flex>
 
-          <Button label="Begins November 11" variant="primary" disabled />
-        </Grid>
-      </Card>
-    </Section>
-  );
+  //         <Button label="Begins November 11" variant="primary" disabled />
+  //       </Grid>
+  //     </Card>
+  //   </Section>
+  // );
 
   const resources = (
     <Section padding="hero">
@@ -224,7 +224,7 @@ const CompetitionsPage = () => {
     <>
       {visionStuff}
       <ModelTrainingSeries />
-      {otherCompetitions}
+      {/* {otherCompetitions} */}
       {resources}
     </>
   );
