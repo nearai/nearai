@@ -120,7 +120,7 @@ export function idForEntry(entry: z.infer<typeof entryModel>) {
 }
 
 export function idMatchesEntry(id: string, entry: z.infer<typeof entryModel>) {
-  return id.startsWith(`${entry.namespace}/${entry.name}`);
+  return id.startsWith(`${entry.namespace}/${entry.name}/`);
 }
 
 export function parseEntryId(id: string) {
