@@ -14,7 +14,14 @@ import {
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
-import { ArrowRight, Eye, Folder, Info, List } from '@phosphor-icons/react';
+import {
+  ArrowRight,
+  CodeBlock,
+  Eye,
+  Folder,
+  Info,
+  List,
+} from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import {
   type KeyboardEventHandler,
@@ -42,6 +49,7 @@ import {
   useCurrentEntryEnvironmentVariables,
 } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
+import { sourceUrlForEntry } from '~/lib/entries';
 import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { useThreadsStore } from '~/stores/threads';
@@ -423,6 +431,7 @@ export const AgentRunner = ({
                           label="Select Thread"
                           icon={<List />}
                           size="small"
+                          variant="secondary"
                           fill="ghost"
                           onClick={() => setThreadsOpenForSmallScreens(true)}
                         />
@@ -430,7 +439,10 @@ export const AgentRunner = ({
                     </BreakpointDisplay>
 
                     <BreakpointDisplay show="sidebar-small-screen">
-                      <Tooltip asChild content="View files & settings">
+                      <Tooltip
+                        asChild
+                        content="View output files & agent settings"
+                      >
                         <Button
                           label={files.length.toString()}
                           iconLeft={<Folder />}
@@ -495,6 +507,18 @@ export const AgentRunner = ({
                         }
                       />
                     </Tooltip>
+
+                    {env.NEXT_PUBLIC_CONSUMER_MODE && (
+                      <Tooltip asChild content="Inspect agent source">
+                        <Button
+                          label="Agent Source"
+                          icon={<CodeBlock />}
+                          size="small"
+                          fill="ghost"
+                          href={`https://app.near.ai${sourceUrlForEntry(currentEntry)}`}
+                        />
+                      </Tooltip>
+                    )}
                   </Flex>
 
                   <Button
@@ -541,8 +565,7 @@ export const AgentRunner = ({
                           <Flex align="center" gap="s">
                             <Text
                               size="text-s"
-                              color="violet-11"
-                              clickableHighlight
+                              color="sand-12"
                               weight={500}
                               clampLines={1}
                               style={{ marginRight: 'auto' }}

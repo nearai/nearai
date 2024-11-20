@@ -112,12 +112,7 @@ export const EntriesTable = ({ category, title }: Props) => {
                 style={{ minWidth: '10rem', maxWidth: '20rem' }}
               >
                 <Flex direction="column">
-                  <Text
-                    size="text-s"
-                    weight={500}
-                    color="sand-12"
-                    clickableHighlight
-                  >
+                  <Text size="text-s" weight={600} color="sand-12">
                     {entry.name}
                   </Text>
                   <Text size="text-xs" clampLines={1}>
@@ -130,7 +125,7 @@ export const EntriesTable = ({ category, title }: Props) => {
                 href={`/profiles/${entry.namespace}`}
                 style={{ minWidth: '8rem', maxWidth: '12rem' }}
               >
-                <Text size="text-s" weight={500} clampLines={1}>
+                <Text size="text-s" color="sand-12" clampLines={1}>
                   {entry.namespace}
                 </Text>
               </Table.Cell>

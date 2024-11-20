@@ -34,6 +34,7 @@ export const EntryCard = ({ entry, linksOpenNewTab, footer }: Props) => {
       <Flex gap="s" align="center">
         <ConditionalLink href={primaryUrl}>
           <ImageIcon
+            indicateParentClickable
             src={entry.details.icon}
             alt={entry.name}
             fallbackIcon={icon}

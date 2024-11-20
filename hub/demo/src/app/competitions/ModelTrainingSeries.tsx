@@ -249,7 +249,7 @@ const ModelTrainingSeries = () => {
 
                   <Text
                     size="text-xl"
-                    clickableHighlight
+                    indicateParentClickable
                     color={model.status === 'planned' ? 'sand-11' : undefined}
                   >
                     {model.size}

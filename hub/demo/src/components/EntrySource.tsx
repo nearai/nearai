@@ -121,8 +121,7 @@ export const EntrySource = ({ entry }: Props) => {
                   >
                     <Text
                       size="text-s"
-                      color="violet-11"
-                      clickableHighlight
+                      color="sand-12"
                       weight={500}
                       clampLines={1}
                     >

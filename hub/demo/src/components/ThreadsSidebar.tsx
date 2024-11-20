@@ -131,7 +131,6 @@ export const ThreadsSidebar = ({
                       size="text-s"
                       weight={500}
                       color="sand-12"
-                      clickableHighlight
                       clampLines={1}
                       style={{ marginRight: 'auto' }}
                     >
