@@ -481,7 +481,7 @@ class SqlClient:
 
         Returns:
         -------
-            List[SimilaritySearch]: A list of similarity search results where chunk_text contains the full file.
+            List[SimilaritySearchFile]: A list of similarity search results where file_content contains the full file.
 
         """
         query = """
