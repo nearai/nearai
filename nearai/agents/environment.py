@@ -412,13 +412,13 @@ class Environment(object):
         )
         return file
 
-    def query_vector_store(self, vector_store_id: str, query: str):
+    def query_vector_store(self, vector_store_id: str, query: str, full_files: bool = False):
         """Queries a vector store.
 
         vector_store_id: The id of the vector store to query.
         query: The query to search for.
         """
-        return self.client.query_vector_store(vector_store_id, query)
+        return self.client.query_vector_store(vector_store_id, query, full_files)
 
     def upload_file(
         self,

@@ -341,6 +341,7 @@ class QueryVectorStoreRequest(BaseModel):
     """Request model for querying a vector store."""
 
     query: str
+    full_files: bool = False
     """Text to run similarity search on."""
 
 
@@ -371,10 +372,10 @@ async def query_vector_store(vector_store_id: str, request: QueryVectorStoreRequ
             raise HTTPException(status_code=404, detail="Vector store not found")
 
         emb = await generate_embedding(request.query, query=True)
-        results = sql.similarity_search(vector_store_id, emb)
-
-        logger.info(f"Similarity search completed for vector store: {vector_store_id}")
-        return results
+        if request.full_files:
+            return sql.similarity_search_full_files(vector_store_id, emb)
+        else:
+            return sql.similarity_search(vector_store_id, emb)
     except Exception as e:
         logger.error(f"Error querying vector store: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to query vector store") from None

@@ -469,7 +469,7 @@ class SqlClient:
         return results
 
     def similarity_search_full_files(
-        self, vector_store_id: str, query_embedding: List[float], limit: int = 10
+        self, vector_store_id: str, query_embedding: List[float], limit: int = 1
     ) -> List[SimilaritySearchFile]:
         """Perform a similarity search in the vector store and return full files.
 
@@ -477,7 +477,7 @@ class SqlClient:
         ----
             vector_store_id (str): The ID of the vector store to search in.
             query_embedding (List[float]): The query embedding vector.
-            limit (int, optional): The maximum number of results to return. Defaults to 10.
+            limit (int, optional): The maximum number of results to return. Defaults to 1.
 
         Returns:
         -------
@@ -504,7 +504,8 @@ class SqlClient:
         """
         query_embedding_json = json.dumps(query_embedding)
         results = [
-            SimilaritySearchFile(**res) for res in self.__fetch_all(query, (query_embedding_json, vector_store_id, limit))
+            SimilaritySearchFile(**res)
+            for res in self.__fetch_all(query, (query_embedding_json, vector_store_id, limit, vector_store_id))
         ]
         return results
 

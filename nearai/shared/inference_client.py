@@ -21,6 +21,7 @@ from nearai.shared.models import (
     GitHubSource,
     GitLabSource,
     SimilaritySearch,
+    SimilaritySearchFile,
     StaticFileChunkingStrategyParam,
 )
 from nearai.shared.provider_models import ProviderModels
@@ -93,7 +94,9 @@ class InferenceClient(object):
 
         return result
 
-    def query_vector_store(self, vector_store_id: str, query: str) -> List[SimilaritySearch]:
+    def query_vector_store(
+        self, vector_store_id: str, query: str, full_files: bool = False
+    ) -> Union[List[SimilaritySearch], List[SimilaritySearchFile]]:
         """Query a vector store."""
         if self._config is None:
             raise ValueError("Missing NearAI Hub config")
@@ -105,7 +108,7 @@ class InferenceClient(object):
             "Authorization": f"Bearer {auth_bearer_token}",
         }
 
-        data = {"query": query}
+        data = {"query": query, "full_files": full_files}
 
         endpoint = f"{self._config.base_url}/vector_stores/{vector_store_id}/search"
 
