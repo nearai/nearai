@@ -46,8 +46,10 @@ const createStore: StateCreator<AgentSettingsStore> = (set, get) => ({
   },
 });
 
+const name = 'AgentSettingsStore';
+
 export const useAgentSettingsStore = create<AgentSettingsStore>()(
-  devtools(
-    persist(createStore, { name: 'agent-settings', skipHydration: true }),
-  ),
+  devtools(persist(createStore, { name, skipHydration: true }), {
+    name,
+  }),
 );

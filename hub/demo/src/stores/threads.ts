@@ -1,5 +1,6 @@
 import { type z } from 'zod';
-import { create } from 'zustand';
+import { create, type StateCreator } from 'zustand';
+import { devtools } from 'zustand/middleware';
 
 import {
   type chatWithAgentModel,
@@ -36,7 +37,7 @@ type ThreadsStore = {
   ) => void;
 };
 
-export const useThreadsStore = create<ThreadsStore>((set, get) => ({
+const store: StateCreator<ThreadsStore> = (set, get) => ({
   optimisticMessages: [],
   threadsById: {},
 
@@ -127,4 +128,12 @@ export const useThreadsStore = create<ThreadsStore>((set, get) => ({
 
     set({ threadsById, optimisticMessages });
   },
-}));
+});
+
+const name = 'ThreadsStore';
+
+export const useThreadsStore = create<ThreadsStore>()(
+  devtools(store, {
+    name,
+  }),
+);

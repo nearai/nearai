@@ -6,7 +6,8 @@ import type {
 } from '@near-wallet-selector/core';
 import type { SignMessageMethod } from '@near-wallet-selector/core/src/lib/wallet';
 import type { WalletSelectorModal } from '@near-wallet-selector/modal-ui';
-import { create } from 'zustand';
+import { create, type StateCreator } from 'zustand';
+import { devtools } from 'zustand/middleware';
 
 type WalletStore = {
   account: AccountState | null;
@@ -25,7 +26,7 @@ type WalletStore = {
   setWallet: (wallet: (Wallet & SignMessageMethod) | null) => void;
 };
 
-export const useWalletStore = create<WalletStore>((set) => ({
+const store: StateCreator<WalletStore> = (set) => ({
   account: null,
   hasResolved: false,
   selector: null,
@@ -42,4 +43,12 @@ export const useWalletStore = create<WalletStore>((set) => ({
     return set({ state });
   },
   setWallet: (wallet) => set({ wallet }),
-}));
+});
+
+const name = 'WalletStore';
+
+export const useWalletStore = create<WalletStore>()(
+  devtools(store, {
+    name,
+  }),
+);

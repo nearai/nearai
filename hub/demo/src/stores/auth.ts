@@ -16,7 +16,7 @@ type AuthStore = {
   toBearer: () => string;
 };
 
-const createStore: StateCreator<AuthStore> = (set, get) => ({
+const store: StateCreator<AuthStore> = (set, get) => ({
   auth: null,
   currentNonce: null,
   isAuthenticated: false,
@@ -49,6 +49,10 @@ const createStore: StateCreator<AuthStore> = (set, get) => ({
   },
 });
 
+const name = 'AuthStore';
+
 export const useAuthStore = create<AuthStore>()(
-  devtools(persist(createStore, { name: 'store', skipHydration: true })),
+  devtools(persist(store, { name, skipHydration: true }), {
+    name,
+  }),
 );
