@@ -39,7 +39,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     ROUTER_URL: process.env.ROUTER_URL,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_VERCEL_URL
-      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/`
+      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
       : process.env.NEXT_PUBLIC_BASE_URL,
     DATA_SOURCE: process.env.DATA_SOURCE,
     HOME: process.env.HOME,
