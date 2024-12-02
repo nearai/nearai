@@ -333,16 +333,6 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
 
   const onSubmit: SubmitHandler<SecretFormSchema> = async (data) => {
     try {
-      if (existingVariable?.secret) {
-        await removeMutation.mutateAsync({
-          category: entry.category,
-          key: existingVariable.key,
-          name: entry.name,
-          namespace: entry.namespace,
-          version: entry.version,
-        });
-      }
-
       await addMutation.mutateAsync({
         category: entry.category,
         key: data.key,

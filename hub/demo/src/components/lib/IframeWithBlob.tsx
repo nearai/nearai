@@ -12,8 +12,9 @@ export type IframePostMessageEventHandler<T = any> = (
   },
 ) => unknown;
 
-type Props = ComponentProps<'iframe'> & {
+type Props = Omit<ComponentProps<'iframe'>, 'nonce'> & {
   html: string;
+  nonce?: number | null;
   onPostMessage?: IframePostMessageEventHandler;
   postMessage?: unknown;
 };
@@ -21,6 +22,7 @@ type Props = ComponentProps<'iframe'> & {
 export const IframeWithBlob = ({
   className = '',
   html,
+  nonce,
   onPostMessage,
   postMessage,
   ...props
@@ -88,10 +90,12 @@ export const IframeWithBlob = ({
 
     setDataUrl(url);
 
+    console.log(url);
+
     return () => {
       URL.revokeObjectURL(url);
     };
-  }, [html]);
+  }, [html, nonce]);
 
   useEffect(() => {
     function messageListener(event: MessageEvent) {
