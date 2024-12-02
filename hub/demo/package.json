@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "npm": ">=10",
+    "node": ">=18"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev",
@@ -70,6 +74,5 @@
   },
   "ct3aMetadata": {
     "initVersion": "7.34.0"
-  },
-  "packageManager": "npm@9.6.6"
+  }
 }
