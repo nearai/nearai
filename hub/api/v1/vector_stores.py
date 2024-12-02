@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 import boto3
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -59,7 +60,7 @@ async def create_vector_store(
         name=request.name,
         file_ids=request.file_ids or [],
         expires_after=dict(request.expires_after) if request.expires_after else None,
-        chunking_strategy=request.chunking_strategy if request.chunking_strategy else None,
+        chunking_strategy=dict[str, Any](request.chunking_strategy) if request.chunking_strategy else None,
         metadata=request.metadata,
     )
 
