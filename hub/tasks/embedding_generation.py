@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 import uuid
-from typing import List
+from typing import List, Optional
 
 import openai
 from docx import Document
@@ -60,19 +60,23 @@ async def generate_embeddings_for_vector_store(vector_store_id: str):
         logger.error(f"Vector store with id {vector_store_id} not found")
         raise ValueError(f"Vector store with id {vector_store_id} not found")
 
-    tasks = [generate_embeddings_for_file(file_id, vector_store_id) for file_id in vector_store.file_ids]
+    tasks = [
+        generate_embeddings_for_file(file_id, vector_store_id, vector_store.chunking_strategy)
+        for file_id in vector_store.file_ids
+    ]
     await asyncio.gather(*tasks)
 
     logger.info(f"Finished embedding generation for vector store: {vector_store_id}")
 
 
-async def generate_embeddings_for_file(file_id: str, vector_store_id: str):
+async def generate_embeddings_for_file(file_id: str, vector_store_id: str, chunking_strategy: Optional[dict] = None):
     """Generate embeddings for a specific file and store them in the vector store.
 
     Args:
     ----
         file_id (str): The ID of the file to generate embeddings for.
         vector_store_id (str): The ID of the vector store to associate the embeddings with.
+        chunking_strategy (dict, optional): Chunking strategy to use for splitting the file content.
 
     Raises:
     ------
@@ -88,7 +92,7 @@ async def generate_embeddings_for_file(file_id: str, vector_store_id: str):
         raise ValueError(f"File with id {file_id} not found")
 
     content = await get_file_content(file_details)
-    chunks = create_chunks(content)
+    chunks = create_chunks(content, chunking_strategy)
     logger.debug(f"Created {len(chunks)} chunks for file: {file_id}")
 
     embedding_tasks = [generate_embedding(chunk) for chunk in chunks]
@@ -117,19 +121,26 @@ async def generate_embeddings_for_file(file_id: str, vector_store_id: str):
     logger.info(f"Finished embedding generation for file: {file_id}")
 
 
-def create_chunks(text: str) -> List[str]:
+def create_chunks(text: str, chunking_strategy=None) -> List[str]:
     """Split the input text into chunks of appropriate size for embedding generation.
 
     Args:
     ----
         text (str): The input text to be split into chunks.
+        chunking_strategy (ChunkingStrategy): Optional strategy to use for splitting the file content.
 
     Returns:
     -------
         List[str]: A list of text chunks.
 
     """
-    chunks = recursive_split(text, CHUNK_SIZE, CHUNK_OVERLAP)
+    chunk_size = CHUNK_SIZE
+    chunk_overlap = CHUNK_OVERLAP
+    if chunking_strategy:
+        chunk_size = chunking_strategy.get("max_chunk_size_tokens", CHUNK_SIZE)
+        chunk_overlap = chunking_strategy.get("chunk_overlap_tokens", CHUNK_OVERLAP)
+
+    chunks = recursive_split(text, chunk_size, chunk_overlap)
     logger.debug(f"Created {len(chunks)} chunks, sizes: {[len(chunk) for chunk in chunks]}")
     return chunks
 

@@ -66,7 +66,7 @@ class ExpiresAfter(TypedDict, total=False):
 class CreateVectorStoreRequest(BaseModel):
     """Request model for creating a new vector store."""
 
-    chunking_strategy: Optional[ChunkingStrategy] = None
+    chunking_strategy: Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam, None] = None
     """The chunking strategy to use for the vector store."""
     expires_after: Optional[ExpiresAfter] = None
     """The expiration time for the vector store."""
