@@ -177,7 +177,7 @@ def start_with_environment(
     verbose: bool = params.get("verbose", True)
     if verbose:
         print(
-            f"Running with:\nagents: {agents}\nparams: {params}"
+            f"Running with:\nagents: {agents}\nparams: {params.keys()}"
             f"\nthread_id: {thread_id}\nrun_id: {run_id}\nauth: {auth}"
         )
     api_url = str(params.get("api_url", DEFAULT_API_URL))

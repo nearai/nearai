@@ -9,6 +9,7 @@ typing-extensions >= 4.7.1
 psutil >= 5.9.5
 boto3 >= 1.35.3
 litellm >= 1.41.0
+py-near >= 1.1.50
 
 langgraph >= 0.1.4
 langchain-fireworks >= 0.1.4

@@ -9,8 +9,8 @@ typing-extensions >= 4.7.1
 psutil >= 5.9.5
 boto3 >= 1.35.3
 litellm >= 1.41.0
+py-near >= 1.1.50
 
-openai == 1.47.1
 langchain == 0.3.0
 langgraph == 0.2.26
 openai == 1.51.2
