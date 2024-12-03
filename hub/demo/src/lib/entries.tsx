@@ -9,7 +9,7 @@ import {
 import { type ReactElement } from 'react';
 import { type z } from 'zod';
 
-import { type EntryCategory, type entryModel } from './models';
+import { type EntryCategory, type entryModel, optionalVersion } from './models';
 
 export const ENTRY_CATEGORY_LABELS: Record<
   // eslint-disable-next-line @typescript-eslint/ban-types
@@ -130,7 +130,9 @@ export function parseEntryId(id: string) {
   const segments = id.split('/');
   const namespace = segments[0];
   const name = segments[1];
-  const version = segments[2] || 'latest';
+
+  let version = segments[2] || 'latest';
+  if (version === '*') version = 'latest';
 
   if (!namespace || !name) {
     throw new Error(
@@ -139,4 +141,10 @@ export function parseEntryId(id: string) {
   }
 
   return { namespace, name, version };
+}
+
+export function parseEntryIdWithOptionalVersion(id: string) {
+  const segments = parseEntryId(id);
+  const version = optionalVersion.parse(segments.version);
+  return { ...segments, version };
 }

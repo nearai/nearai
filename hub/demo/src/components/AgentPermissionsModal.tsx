@@ -26,6 +26,7 @@ import {
   ENTRY_CATEGORY_LABELS,
   idForEntry,
   idMatchesEntry,
+  parseEntryIdWithOptionalVersion,
 } from '~/lib/entries';
 import {
   type agentAddSecretsRequestModel,
@@ -329,12 +330,19 @@ const SecretsToAdd = ({
     )
     .filter((value) => !!value)
     .map((secret) => {
-      const variable = variablesByKey[secret.key];
+      const { name, namespace, version } = parseEntryIdWithOptionalVersion(
+        secret.agentId,
+      );
+      const existing = variablesByKey[secret.key]?.secret;
+      const normalizedAgentId = version
+        ? `${namespace}/${name}/${version}`
+        : `${namespace}/${name}`;
 
       return {
         ...secret,
-        existingValue: variable?.secret?.value,
-        isExternalAgent: !idMatchesEntry(secret.agentId, agent),
+        existing,
+        isExternalAgent: !idMatchesEntry(normalizedAgentId, agent),
+        normalizedAgentId,
       };
     });
 
@@ -401,7 +409,7 @@ const SecretsToAdd = ({
               </Flex>
             </Flex>
 
-            {secret.existingValue && (
+            {secret.existing && (
               <Flex align="baseline" gap="s">
                 <Tooltip content="Current secret value">
                   <SvgIcon
@@ -423,10 +431,10 @@ const SecretsToAdd = ({
                     family="monospace"
                     forceWordBreak
                     indicateParentClickable
-                    onClick={() => copyTextToClipboard(secret.existingValue!)}
+                    onClick={() => copyTextToClipboard(secret.existing!.value)}
                   >
                     {revealedSecretKeys.includes(secret.key)
-                      ? secret.existingValue
+                      ? secret.existing.value
                       : '*****'}
                   </Text>
                 </Tooltip>
@@ -491,17 +499,17 @@ const SecretsToAdd = ({
               <Text
                 size="text-xs"
                 color={secret.isExternalAgent ? 'amber-11' : 'sand-11'}
-                href={`/agents/${secret.agentId}`}
+                href={`/agents/${secret.normalizedAgentId}`}
                 target="_blank"
                 decoration="none"
                 forceWordBreak
               >
-                {secret.agentId}
+                {secret.normalizedAgentId}
               </Text>
 
               {secret.isExternalAgent && (
                 <Tooltip
-                  content={`The current agent (${agentId}) wants to update a secret for a different agent (${secret.agentId})`}
+                  content={`The current agent (${agentId}) wants to update a secret for a different agent (${secret.normalizedAgentId})`}
                   asChild
                 >
                   <Badge
