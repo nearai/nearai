@@ -32,7 +32,7 @@ export const defaultFetcher = async (...args: Parameters<typeof fetch>) => {
 
   if (!response.ok) {
     try {
-      const body = await response.json();
+      const body = await response.json().catch(() => response.text());
       console.error(body);
     } catch (error) {}
 

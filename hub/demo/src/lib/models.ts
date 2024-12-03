@@ -73,6 +73,11 @@ export const entryCategory = z.enum([
 ]);
 export type EntryCategory = z.infer<typeof entryCategory>;
 
+export const optionalVersion = z.preprocess(
+  (value) => (!value || value === 'latest' || value === '*' ? '' : value),
+  z.string(),
+);
+
 export const entryDetailsModel = z.intersection(
   z
     .object({

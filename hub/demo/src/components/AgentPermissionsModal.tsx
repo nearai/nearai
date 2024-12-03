@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Card,
   CardList,
@@ -11,17 +12,21 @@ import {
 } from '@near-pagoda/ui';
 import {
   Check,
-  Copy,
   Eye,
   EyeSlash,
   LockKey,
   Prohibit,
+  WarningDiamond,
 } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 
-import { useEntryParams } from '~/hooks/entries';
-import { idMatchesEntry } from '~/lib/entries';
+import { useEntryEnvironmentVariables } from '~/hooks/entries';
+import {
+  ENTRY_CATEGORY_LABELS,
+  idForEntry,
+  idMatchesEntry,
+} from '~/lib/entries';
 import {
   type agentAddSecretsRequestModel,
   type agentNearSendTransactionsRequestModel,
@@ -100,7 +105,7 @@ export const AgentPermissionsModal = ({
 }: Props) => {
   const auth = useAuthStore((store) => store.auth);
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
-  const { id: agentId } = useEntryParams();
+  const agentId = idForEntry(agent);
   const setAgentSettings = useAgentSettingsStore(
     (store) => store.setAgentSettings,
   );
@@ -155,34 +160,15 @@ export const AgentPermissionsModal = ({
   const requestsThatCanBeAlwaysAllowed =
     requests?.filter(({ action }) => action !== 'add_secrets') ?? [];
 
-  const secretsToAdd = (requests ?? [])
-    .flatMap((request) =>
-      request.action === 'add_secrets' ? request.input.secrets : null,
-    )
-    .filter((value) => !!value);
-
   return (
     <Dialog.Root open={requests !== null} onOpenChange={() => clearRequests()}>
       <Dialog.Content title="Agent Request" size="s">
-        {check && (
+        {check && requests && (
           <>
             {isAuthenticated ? (
               <Flex direction="column" gap="l">
                 {!check.permissions.allowAddSecrets && (
-                  <>
-                    <Text>
-                      The current agent{' '}
-                      <Text href={`/agents/${agentId}`} target="_blank">
-                        {agentId}
-                      </Text>{' '}
-                      wants to save {secretsToAdd.length}
-                      {` secret${secretsToAdd.length === 1 ? '' : 's'}`} to your
-                      account. Secrets are only visible to you and the specified
-                      agent.
-                    </Text>
-
-                    <SecretsToAdd secrets={secretsToAdd} />
-                  </>
+                  <SecretsToAdd agent={agent} requests={requests} />
                 )}
 
                 {!check.permissions.allowRemoteRunCallsToOtherAgents && (
@@ -317,15 +303,15 @@ export const AgentPermissionsModal = ({
 };
 
 const SecretsToAdd = ({
-  secrets,
+  agent,
+  requests,
 }: {
-  secrets: {
-    key: string;
-    value: string;
-    agentId: string;
-  }[];
+  agent: z.infer<typeof entryModel>;
+  requests: AgentRequestWithPermissions[];
 }) => {
+  const agentId = idForEntry(agent);
   const [revealedSecretKeys, setRevealedSecretKeys] = useState<string[]>([]);
+  const { variablesByKey } = useEntryEnvironmentVariables(agent);
 
   const toggleRevealSecret = (key: string) => {
     const revealed = revealedSecretKeys.find((k) => k === key);
@@ -337,90 +323,199 @@ const SecretsToAdd = ({
     });
   };
 
+  const secrets = (requests ?? [])
+    .flatMap((request) =>
+      request.action === 'add_secrets' ? request.input.secrets : null,
+    )
+    .filter((value) => !!value)
+    .map((secret) => {
+      const variable = variablesByKey[secret.key];
+
+      return {
+        ...secret,
+        existingValue: variable?.secret?.value,
+        isExternalAgent: !idMatchesEntry(secret.agentId, agent),
+      };
+    });
+
   if (secrets.length === 0) return null;
 
   return (
-    <CardList>
-      {secrets.map((secret) => (
-        <Card gap="xs" padding="s" key={secret.key} background="sand-2">
-          <Flex align="center" gap="m">
-            <Text size="text-s" weight={500} color="sand-12" forceWordBreak>
-              {secret.key}
-            </Text>
+    <>
+      <Text>
+        The current agent{' '}
+        <Text href={`/agents/${agentId}`} target="_blank">
+          {agentId}
+        </Text>{' '}
+        wants to save {secrets.length}
+        {` secret${secrets.length === 1 ? '' : 's'}`} to your account. Secrets
+        are only visible to you and the specified agent.
+      </Text>
 
-            <Flex
-              gap="xs"
-              style={{
-                position: 'relative',
-                top: '0.15rem',
-                marginLeft: 'auto',
-              }}
-            >
-              <Tooltip
-                asChild
-                content={`${revealedSecretKeys.includes(secret.key) ? 'Hide' : 'Show'} Secret`}
+      <CardList>
+        {secrets.map((secret) => (
+          <Card gap="xs" padding="s" key={secret.key} background="sand-2">
+            <Flex align="center" gap="m">
+              <Tooltip content="Copy to clipboard">
+                <Text
+                  size="text-s"
+                  weight={500}
+                  color="sand-12"
+                  forceWordBreak
+                  indicateParentClickable
+                  onClick={() => copyTextToClipboard(secret.key)}
+                >
+                  {secret.key}
+                </Text>
+              </Tooltip>
+
+              <Flex
+                gap="xs"
+                style={{
+                  position: 'relative',
+                  top: '0.15rem',
+                  marginLeft: 'auto',
+                }}
               >
-                <Button
-                  label="Show/Hide Secret"
-                  icon={
-                    revealedSecretKeys.includes(secret.key) ? (
-                      <EyeSlash />
-                    ) : (
-                      <Eye />
-                    )
-                  }
-                  size="x-small"
-                  fill="ghost"
-                  variant="primary"
-                  onClick={() => {
-                    toggleRevealSecret(secret.key);
+                <Tooltip
+                  asChild
+                  content={`${revealedSecretKeys.includes(secret.key) ? 'Hide' : 'Show'} Secret`}
+                >
+                  <Button
+                    label="Show/Hide Secret"
+                    icon={
+                      revealedSecretKeys.includes(secret.key) ? (
+                        <EyeSlash />
+                      ) : (
+                        <Eye />
+                      )
+                    }
+                    size="x-small"
+                    fill="ghost"
+                    variant="primary"
+                    onClick={() => {
+                      toggleRevealSecret(secret.key);
+                    }}
+                  />
+                </Tooltip>
+              </Flex>
+            </Flex>
+
+            {secret.existingValue && (
+              <Flex align="baseline" gap="s">
+                <Tooltip content="Current secret value">
+                  <SvgIcon
+                    style={{
+                      position: 'relative',
+                      top: '0.15rem',
+                      cursor: 'help',
+                    }}
+                    icon={<WarningDiamond />}
+                    color="sand-10"
+                    size="xs"
+                  />
+                </Tooltip>
+
+                <Tooltip content="Copy to clipboard">
+                  <Text
+                    size="text-xs"
+                    color="red-9"
+                    family="monospace"
+                    forceWordBreak
+                    indicateParentClickable
+                    onClick={() => copyTextToClipboard(secret.existingValue!)}
+                  >
+                    {revealedSecretKeys.includes(secret.key)
+                      ? secret.existingValue
+                      : '*****'}
+                  </Text>
+                </Tooltip>
+
+                <Tooltip
+                  content="The current secret value will be overwritten"
+                  asChild
+                >
+                  <Badge
+                    label="Overwrite"
+                    size="small"
+                    variant="alert"
+                    style={{ cursor: 'help' }}
+                  />
+                </Tooltip>
+              </Flex>
+            )}
+
+            <Flex align="baseline" gap="s">
+              <Tooltip content="New secret value">
+                <SvgIcon
+                  style={{
+                    position: 'relative',
+                    top: '0.15rem',
+                    cursor: 'help',
                   }}
+                  icon={<LockKey />}
+                  color="sand-10"
+                  size="xs"
                 />
               </Tooltip>
 
-              <Tooltip asChild content="Copy to clipboard">
-                <Button
-                  label="Copy to clipboard"
-                  icon={<Copy />}
-                  size="x-small"
-                  fill="ghost"
-                  variant="primary"
+              <Tooltip content="Copy to clipboard">
+                <Text
+                  size="text-xs"
+                  family="monospace"
+                  forceWordBreak
+                  indicateParentClickable
                   onClick={() => copyTextToClipboard(secret.value)}
-                />
+                >
+                  {revealedSecretKeys.includes(secret.key)
+                    ? secret.value
+                    : '*****'}
+                </Text>
               </Tooltip>
             </Flex>
-          </Flex>
 
-          <Flex align="baseline" gap="s">
-            <SvgIcon
-              style={{
-                position: 'relative',
-                top: '0.15rem',
-              }}
-              icon={<LockKey />}
-              color="sand-10"
-              size="xs"
-            />
+            <Flex align="baseline" gap="s">
+              <Tooltip content="Agent scope where this secret will be saved">
+                <SvgIcon
+                  style={{
+                    position: 'relative',
+                    top: '0.15rem',
+                    cursor: 'help',
+                  }}
+                  icon={ENTRY_CATEGORY_LABELS.agent.icon}
+                  color="sand-10"
+                  size="xs"
+                />
+              </Tooltip>
 
-            <Text size="text-xs" family="monospace" forceWordBreak>
-              {revealedSecretKeys.includes(secret.key) ? secret.value : '*****'}
-            </Text>
-          </Flex>
+              <Text
+                size="text-xs"
+                color={secret.isExternalAgent ? 'amber-11' : 'sand-11'}
+                href={`/agents/${secret.agentId}`}
+                target="_blank"
+                decoration="none"
+                forceWordBreak
+              >
+                {secret.agentId}
+              </Text>
 
-          <Tooltip content="This secret will be scoped to this agent" asChild>
-            <Text
-              size="text-2xs"
-              color="sand-10"
-              href={`/agents/${secret.agentId}`}
-              target="_blank"
-              decoration="none"
-              style={{ marginLeft: 'auto' }}
-            >
-              {secret.agentId}
-            </Text>
-          </Tooltip>
-        </Card>
-      ))}
-    </CardList>
+              {secret.isExternalAgent && (
+                <Tooltip
+                  content={`The current agent (${agentId}) wants to update a secret for a different agent (${secret.agentId})`}
+                  asChild
+                >
+                  <Badge
+                    label="External"
+                    size="small"
+                    variant="warning"
+                    style={{ cursor: 'help' }}
+                  />
+                </Tooltip>
+              )}
+            </Flex>
+          </Card>
+        ))}
+      </CardList>
+    </>
   );
 };

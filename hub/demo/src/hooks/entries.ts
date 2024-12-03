@@ -5,6 +5,7 @@ import { type z } from 'zod';
 import {
   type entriesModel,
   type EntryCategory,
+  type entryModel,
   type entrySecretModel,
 } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
@@ -98,12 +99,11 @@ export type EntryEnvironmentVariable = {
   secret?: z.infer<typeof entrySecretModel>;
 };
 
-export function useCurrentEntryEnvironmentVariables(
-  category: EntryCategory,
+export function useEntryEnvironmentVariables(
+  entry: z.infer<typeof entryModel> | undefined,
   excludeQueryParamKeys?: string[],
 ) {
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
-  const { currentEntry } = useCurrentEntry(category);
   const searchParams = useSearchParams();
   const secretsQuery = api.hub.secrets.useQuery(
     {},
@@ -113,7 +113,7 @@ export function useCurrentEntryEnvironmentVariables(
   );
 
   const result = useMemo(() => {
-    const metadataVariablesByKey = currentEntry?.details.env_vars ?? {};
+    const metadataVariablesByKey = entry?.details.env_vars ?? {};
     const urlVariablesByKey: Record<string, string> = {};
 
     searchParams.forEach((value, key) => {
@@ -143,12 +143,12 @@ export function useCurrentEntryEnvironmentVariables(
     });
 
     const secrets = secretsQuery.data?.filter((secret) => {
-      if (!currentEntry) return false;
+      if (!entry) return false;
       return (
-        secret.category === currentEntry.category &&
-        secret.namespace === currentEntry.namespace &&
-        secret.name === currentEntry.name &&
-        secret.version === currentEntry.version
+        secret.category === entry.category &&
+        secret.namespace === entry.namespace &&
+        secret.name === entry.name &&
+        (secret.version === entry.version || !secret.version)
       );
     });
 
@@ -175,7 +175,7 @@ export function useCurrentEntryEnvironmentVariables(
     };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentEntry, searchParams, secretsQuery.data]);
+  }, [entry, searchParams, secretsQuery.data]);
 
   return result;
 }

@@ -44,10 +44,7 @@ import { SignInPrompt } from '~/components/SignInPrompt';
 import { ThreadsSidebar } from '~/components/ThreadsSidebar';
 import { env } from '~/env';
 import { useAgentRequestsWithIframe } from '~/hooks/agent-iframe-requests';
-import {
-  useCurrentEntry,
-  useCurrentEntryEnvironmentVariables,
-} from '~/hooks/entries';
+import { useCurrentEntry, useEntryEnvironmentVariables } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
 import { sourceUrlForEntry } from '~/lib/entries';
 import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
@@ -96,8 +93,8 @@ export const AgentRunner = ({
     'transactionHashes',
     'transactionRequestId',
   ]);
-  const entryEnvironmentVariables = useCurrentEntryEnvironmentVariables(
-    'agent',
+  const entryEnvironmentVariables = useEntryEnvironmentVariables(
+    currentEntry,
     Object.keys(queryParams),
   );
   const utils = api.useUtils();
@@ -595,7 +592,7 @@ export const AgentRunner = ({
               <>
                 <EntryEnvironmentVariables
                   entry={currentEntry}
-                  variables={entryEnvironmentVariables}
+                  excludeQueryParamKeys={Object.keys(queryParams)}
                 />
 
                 <Flex direction="column" gap="m">

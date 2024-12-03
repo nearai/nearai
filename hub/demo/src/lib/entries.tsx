@@ -120,18 +120,21 @@ export function idForEntry(entry: z.infer<typeof entryModel>) {
 }
 
 export function idMatchesEntry(id: string, entry: z.infer<typeof entryModel>) {
-  return id.startsWith(`${entry.namespace}/${entry.name}/`);
+  return (
+    id.startsWith(`${entry.namespace}/${entry.name}/`) ||
+    id === `${entry.namespace}/${entry.name}`
+  );
 }
 
 export function parseEntryId(id: string) {
   const segments = id.split('/');
   const namespace = segments[0];
   const name = segments[1];
-  const version = segments[2];
+  const version = segments[2] || 'latest';
 
-  if (!namespace || !name || !version) {
+  if (!namespace || !name) {
     throw new Error(
-      `Attempted to parse invalid entry ID: ${id} (expected format is "namespace/name/version")`,
+      `Attempted to parse invalid entry ID: ${id} (expected format is "namespace/name" or "namespace/name/version")`,
     );
   }
 

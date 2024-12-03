@@ -12,6 +12,7 @@ import {
   filesModel,
   modelsModel,
   noncesModel,
+  optionalVersion,
   revokeNonceModel,
   threadMessageModel,
   threadMetadataModel,
@@ -81,7 +82,7 @@ export const hubRouter = createTRPCRouter({
         method: 'POST',
       });
 
-      const data: unknown = await response.json();
+      const data: unknown = await response.json().catch(() => response.text());
 
       if (!response.ok || !Array.isArray(data)) throw data;
 
@@ -208,7 +209,7 @@ export const hubRouter = createTRPCRouter({
     const url = `${env.ROUTER_URL}/models`;
 
     const response = await fetch(url);
-    const data: unknown = await response.json();
+    const data: unknown = await response.json().catch(() => response.text());
 
     return modelsModel.parse(data);
   }),
@@ -240,7 +241,7 @@ export const hubRouter = createTRPCRouter({
         body: JSON.stringify({ nonce: input.nonce }),
       });
 
-      const data: unknown = await response.json();
+      const data: unknown = await response.json().catch(() => response.text());
       if (!response.ok) throw data;
 
       return data;
@@ -260,7 +261,7 @@ export const hubRouter = createTRPCRouter({
         method: 'POST',
       });
 
-      const data: unknown = await response.json();
+      const data: unknown = await response.json().catch(() => response.text());
       if (!response.ok) throw data;
 
       return data;
@@ -299,7 +300,7 @@ export const hubRouter = createTRPCRouter({
         name: z.string(),
         namespace: z.string(),
         value: z.string(),
-        version: z.string(),
+        version: optionalVersion,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -323,7 +324,7 @@ export const hubRouter = createTRPCRouter({
         body: JSON.stringify(input),
       });
 
-      const data: unknown = await response.json();
+      const data: unknown = await response.json().catch(() => response.text());
       if (!response.ok) throw data;
 
       return true;
@@ -332,11 +333,11 @@ export const hubRouter = createTRPCRouter({
   removeSecret: protectedProcedure
     .input(
       z.object({
-        category: entryCategory.optional(),
+        category: entryCategory,
         key: z.string(),
         name: z.string(),
         namespace: z.string(),
-        version: z.string().optional(),
+        version: optionalVersion,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -351,7 +352,7 @@ export const hubRouter = createTRPCRouter({
         body: JSON.stringify(input),
       });
 
-      const data: unknown = await response.json();
+      const data: unknown = await response.json().catch(() => response.text());
       if (!response.ok) throw data;
 
       return true;
@@ -382,7 +383,7 @@ export const hubRouter = createTRPCRouter({
         body: formData,
       });
 
-      const data: unknown = await response.json();
+      const data: unknown = await response.json().catch(() => response.text());
       if (!response.ok) throw data;
 
       return true;
@@ -568,7 +569,9 @@ export const hubRouter = createTRPCRouter({
           },
         );
 
-        const data: unknown = await response.json();
+        const data: unknown = await response
+          .json()
+          .catch(() => response.text());
         if (!response.ok) throw data;
 
         return true;

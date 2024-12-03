@@ -27,7 +27,8 @@ import { type z } from 'zod';
 
 import {
   type EntryEnvironmentVariable,
-  type useCurrentEntryEnvironmentVariables,
+  useEntryEnvironmentVariables,
+  useEntryParams,
 } from '~/hooks/entries';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
@@ -40,13 +41,17 @@ import { SignInPrompt } from './SignInPrompt';
 
 type Props = {
   entry: z.infer<typeof entryModel>;
-  variables: ReturnType<typeof useCurrentEntryEnvironmentVariables>;
+  excludeQueryParamKeys?: string[];
 };
 
 export const EntryEnvironmentVariables = ({
   entry,
-  variables: { variables },
+  excludeQueryParamKeys,
 }: Props) => {
+  const { variables } = useEntryEnvironmentVariables(
+    entry,
+    excludeQueryParamKeys,
+  );
   const [selectedVariable, setSelectedVariable] =
     useState<EntryEnvironmentVariable | null>(null);
   const [secretModalIsOpen, setSecretModalIsOpen] = useState(false);
@@ -114,12 +119,13 @@ export const EntryEnvironmentVariables = ({
                 key={variable.key}
               >
                 <Flex align="baseline" gap="s">
-                  <Tooltip content="Copy key to clipboard">
+                  <Tooltip content="Copy to clipboard">
                     <Text
                       size="text-s"
                       weight={500}
                       color="sand-12"
                       forceWordBreak
+                      indicateParentClickable
                       onClick={() => copyTextToClipboard(variable.key)}
                     >
                       {variable.key}
@@ -192,6 +198,7 @@ export const EntryEnvironmentVariables = ({
                         size="text-xs"
                         family="monospace"
                         forceWordBreak
+                        indicateParentClickable
                         onClick={() =>
                           copyTextToClipboard(variable?.metadataValue ?? '')
                         }
@@ -228,6 +235,7 @@ export const EntryEnvironmentVariables = ({
                         size="text-xs"
                         family="monospace"
                         forceWordBreak
+                        indicateParentClickable
                         onClick={() =>
                           copyTextToClipboard(variable?.urlValue ?? '')
                         }
@@ -263,6 +271,7 @@ export const EntryEnvironmentVariables = ({
                         size="text-xs"
                         family="monospace"
                         forceWordBreak
+                        indicateParentClickable
                         onClick={() =>
                           copyTextToClipboard(variable.secret?.value ?? '')
                         }
@@ -314,6 +323,7 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
   const removeMutation = api.hub.removeSecret.useMutation();
   const utils = api.useUtils();
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const params = useEntryParams();
 
   useEffect(() => {
     if (!form.formState.isDirty) {
@@ -339,7 +349,7 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
         name: entry.name,
         namespace: entry.namespace,
         value: data.value,
-        version: entry.version,
+        version: params.version || entry.version,
       });
 
       await utils.hub.secrets.refetch();
@@ -357,11 +367,8 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
       }
 
       await removeMutation.mutateAsync({
+        ...existingVariable.secret,
         category: entry.category,
-        key: existingVariable.key,
-        name: entry.name,
-        namespace: entry.namespace,
-        version: entry.version,
       });
 
       await utils.hub.secrets.refetch();
