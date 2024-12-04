@@ -24,9 +24,11 @@ const CompetitionPage = ({
           <SvgIcon icon={<CalendarDots />} color="sand-10" size="l" />
           <Flex direction="column">
             <Text size="text-xs" weight={600}>
-              Deadline
+              Schedule
             </Text>
-            <Text color="sand-12">November 30, 2024 @ 11:59pm UTC</Text>
+            <Text color="sand-12">
+              Dec 10th - Jan 15th, 2025 @ 11:59 PM UTC
+            </Text>
           </Flex>
         </Flex>
       </Section>

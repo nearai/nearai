@@ -178,10 +178,10 @@ const ModelTrainingSeries = () => {
           />
           <Flex direction="column">
             <Text size="text-s" weight={600}>
-              Monthly Rounds
+              Schedule
             </Text>
             <Text color="sand-11" size="text-s">
-              Current round ends: Nov 30 @ 11:59 PM UTC
+              Dec 10th - Jan 15th, 2025 @ 11:59 PM UTC
             </Text>
           </Flex>
         </Flex>

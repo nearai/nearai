@@ -18,7 +18,7 @@ From your machine you will use \`nearai submit\` to submit your runs. From withi
 To participate in the competition, apply [here](https://docs.google.com/forms/d/e/1FAIpQLScInS4mHyZb_kSkD0-CMPPagyhpBKdutbAyS6YNbHJc9ZgaUw/viewform).
 `;
   return (
-    <CompetitionPage title="0.5B Model Training Competition - November 2024">
+    <CompetitionPage title="0.5B Model Training Competition - January 2025">
       <Markdown content={content} />
     </CompetitionPage>
   );
