@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Union
 
 import boto3
 import requests
-from fastapi import APIRouter, Body, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException
 from nearai.agents.local_runner import LocalRunner
 from nearai.clients.lambda_client import LambdaWrapper
 from nearai.shared.auth_data import AuthData
@@ -16,7 +16,7 @@ from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import RegistryEntry, get_session
 from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
-from hub.api.v1.registry import S3_BUCKET, get, get_read_access
+from hub.api.v1.registry import get
 from hub.api.v1.sql import SqlClient
 
 S3_ENDPOINT = getenv("S3_ENDPOINT")
@@ -41,19 +41,13 @@ class CreateThreadAndRunRequest(BaseModel):
         description="An OpenAI compatibility alias for agent. The ID of the [assistant](/docs/api-reference/assistants)"
         " to use to execute this run.",
     )
-    environment_id: Optional[str] = Field(
-        None,
-        description="The ID of the environment to use to as a base for this run. If not provided, a new environment"
-        " will be created.",
-    )
     thread_id: Optional[str] = Field(
         None,
-        description="An OpenAI compatibility alias for environment. If no thread is provided, an empty thread"
-        " will be created.",
+        description="The thread to write messages to. If no thread is provided, an empty thread will be created.",
     )
     new_message: Optional[str] = Field(
         None,
-        description="A message to add to the environment chat.txt before running the agents.",
+        description="A message to add to the thread before running the agents.",
     )
     max_iterations: Optional[int] = Field(
         10,
@@ -125,9 +119,9 @@ def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: Auth
 @run_agent_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
 @run_agent_router.post("/agent/runs", tags=["Agents", "Assistants"])
 def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_auth)) -> str:
-    """Run an agent against an existing or a new environment.
+    """Run an agent against an existing or a new thread.
 
-    Returns the ID of the new environment resulting from the run.
+    Returns the ID of the new thread resulting from the run.
     """
     if not body.agent_id and not body.assistant_id:
         raise HTTPException(status_code=400, detail="Missing required parameters: agent_id or assistant_id")
@@ -135,7 +129,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
     db = SqlClient()
 
     agents = body.agent_id or body.assistant_id or ""
-    thread_id = body.environment_id or body.thread_id
+    thread_id = body.thread_id
     new_message = body.new_message
 
     runner = _runner_for_env()
@@ -239,17 +233,6 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
             session.commit()
 
     return thread_id
-
-
-@run_agent_router.post(
-    "/download_environment",
-    responses={200: {"content": {"application/gzip": {"schema": {"type": "string", "format": "binary"}}}}},
-)
-def download_environment(entry: RegistryEntry = Depends(get_read_access), path: str = Body()):
-    assert isinstance(S3_BUCKET, str)
-    file = s3.get_object(Bucket=S3_BUCKET, Key=entry.get_key(path))
-    headers = {"Content-Disposition": "attachment; filename=environment.tar.gz"}
-    return Response(file["Body"].read(), headers=headers, media_type="application/gzip")
 
 
 def _runner_for_env():

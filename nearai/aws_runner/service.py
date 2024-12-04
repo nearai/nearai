@@ -53,14 +53,13 @@ def handler(event, context):
         stop_time_val = time.perf_counter()
         write_metric("VerifySignatureDuration", stop_time_val - start_time_val)
 
-    environment_id = event.get("environment_id")
     new_message = event.get("new_message")
     thread_id = event.get("thread_id")
     run_id = event.get("run_id")
 
     params = event.get("params", {})
 
-    new_environment_registry_id = run_with_environment(
+    new_thread_id = run_with_environment(
         agents,
         auth_object,
         thread_id,
@@ -68,14 +67,14 @@ def handler(event, context):
         new_message=new_message,
         params=params,
     )
-    if not new_environment_registry_id:
-        return f"Run not recorded. Ran {agents} agent(s) with generated near client and environment {environment_id}"
+    if not new_thread_id:
+        return f"Run not recorded. Ran {agents} agent(s)."
     stop_time = time.perf_counter()
     write_metric("RunnerExecutionFinishedDuration", stop_time - start_time)
     call("rm -rf /tmp/..?* /tmp/.[!.]* /tmp/*", shell=True)
     stop_time = time.perf_counter()
     write_metric("TotalRunnerDuration", stop_time - start_time)
-    return new_environment_registry_id
+    return new_thread_id
 
 
 def write_metric(metric_name, value, unit="Milliseconds", verbose=True):
