@@ -54,6 +54,10 @@
       padding: 0;
       gap: var(--gap-s);
 
+      @media (max-width: 1300px) {
+        gap: var(--gap-xs);
+      }
+
       > li {
         display: flex;
         align-items: center;
@@ -76,6 +80,10 @@
           padding: 0 16px;
           outline: none;
           position: relative;
+
+          @media (max-width: 1300px) {
+            padding: 0 10px;
+          }
 
           &:hover,
           &:focus-visible {

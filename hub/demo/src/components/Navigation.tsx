@@ -12,7 +12,6 @@ import {
 } from '@near-pagoda/ui';
 import {
   BookOpenText,
-  CaretDown,
   ChatCircleDots,
   Cube,
   Gear,
@@ -43,26 +42,6 @@ const agentsNav = {
   icon: ENTRY_CATEGORY_LABELS.agent.icon,
 };
 
-const resourcesNav = env.NEXT_PUBLIC_CONSUMER_MODE
-  ? null
-  : [
-      {
-        label: 'Datasets',
-        path: '/datasets',
-        icon: ENTRY_CATEGORY_LABELS.dataset.icon,
-      },
-      {
-        label: 'Benchmarks',
-        path: '/benchmarks',
-        icon: ENTRY_CATEGORY_LABELS.benchmark.icon,
-      },
-      {
-        label: 'Evaluations',
-        path: '/evaluations',
-        icon: ENTRY_CATEGORY_LABELS.evaluation.icon,
-      },
-    ];
-
 const hubNavItems = [
   {
     label: 'Competitions',
@@ -79,6 +58,21 @@ const hubNavItems = [
     label: 'Threads',
     path: '/chat',
     icon: <ChatCircleDots />,
+  },
+  {
+    label: 'Datasets',
+    path: '/datasets',
+    icon: ENTRY_CATEGORY_LABELS.dataset.icon,
+  },
+  {
+    label: 'Benchmarks',
+    path: '/benchmarks',
+    icon: ENTRY_CATEGORY_LABELS.benchmark.icon,
+  },
+  {
+    label: 'Evaluations',
+    path: '/evaluations',
+    icon: ENTRY_CATEGORY_LABELS.evaluation.icon,
   },
 ];
 
@@ -139,7 +133,10 @@ export const Navigation = () => {
                 </NavigationMenu.Link>
               </NavigationMenu.Item>
             ))}
-            {resourcesNav ? (
+
+            {/* The following code is left commented out incase we add a nav dropdown again in the near future: */}
+
+            {/* {resourcesNav ? (
               <NavigationMenu.Item>
                 <NavigationMenu.Trigger>
                   Resources
@@ -161,7 +158,7 @@ export const Navigation = () => {
                   ))}
                 </NavigationMenu.Content>
               </NavigationMenu.Item>
-            ) : null}
+            ) : null} */}
           </NavigationMenu.List>
         </NavigationMenu.Root>
       </BreakpointDisplay>
@@ -223,7 +220,10 @@ export const Navigation = () => {
                   </Dropdown.Item>
                 ))}
               </Dropdown.Section>
-              {resourcesNav ? (
+
+              {/* The following code is left commented out incase we add a nav dropdown again in the near future: */}
+
+              {/* {resourcesNav ? (
                 <Dropdown.Section>
                   {resourcesNav.map((item) => (
                     <Dropdown.Item href={item.path} key={item.path}>
@@ -232,7 +232,7 @@ export const Navigation = () => {
                     </Dropdown.Item>
                   ))}
                 </Dropdown.Section>
-              ) : null}
+              ) : null} */}
             </Dropdown.Content>
           </Dropdown.Root>
         </BreakpointDisplay>
