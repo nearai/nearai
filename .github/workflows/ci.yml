@@ -71,6 +71,11 @@ jobs:
     environment: NearAI CI
     steps:
 
+    - name: Install pv
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pv
+
     - name: Checkout code
       uses: actions/checkout@v4
 
@@ -78,14 +83,37 @@ jobs:
       uses: docker/setup-buildx-action@v2
       with:
         driver: docker
-
-    # TODO: remove this step, in order to build the child images
-    # we need to have the base image already built
-    - name: Build nearai_base Image
-      run: docker compose -f .docker/compose-e2e.yml build nearai_base
     
+    - name: Docker Cache
+      uses: actions/cache@v4
+      with:
+        path: /tmp/docker-cache
+        key: ${{ runner.os }}-docker-cache-${{ hashFiles('**/.docker/Dockerfile.*') }}
+        restore-keys: |
+          ${{ runner.os }}-docker-cache-
+    
+    - name: Load Images
+      run: |
+        for tar in /tmp/docker-cache/*.tar; do
+          [ -f "$tar" ] && docker load -i "$tar" || true
+        done
+
+    - name: Build nearai_base Image
+      run: |
+        docker compose -f .docker/compose-e2e.yml build nearai_base
+
+    # - name: Save nearai_base Image
+    #   run: |
+    #     mkdir -p /tmp/docker-cache
+    #     docker save nearai_base | pv -s $(docker image inspect nearai_base --format='{{.Size}}') > /tmp/docker-cache/nearai_base.tar
+    
+    - name: Pull Docker Images
+      run: |
+        docker compose -f .docker/compose-e2e.yml pull
+
     - name: Build Docker Images
-      run: docker compose -f .docker/compose-e2e.yml build
+      run: |
+        docker compose -f .docker/compose-e2e.yml build
       env:
         NEARAICI_SIGNATURE: ${{ secrets.NEARAICI_SIGNATURE }}
 
