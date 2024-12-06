@@ -44,6 +44,9 @@ class TestGetCanonicalName(unittest.TestCase):
     def test_metallama_conversion(self):  # noqa: D102
         self.assertEqual(get_canonical_name("metallama-3b"), "llama3b")
 
+    def test_qwenq_conversion(self):  # noqa: D102
+        self.assertEqual(get_canonical_name("qwen-qwq"), "qwq")
+
     def test_v_digit_conversion(self):  # noqa: D102
         self.assertEqual(get_canonical_name("llama-v2-7b"), "llama2_7b")
         self.assertEqual(get_canonical_name("gpt-v4"), "gpt4")
