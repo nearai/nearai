@@ -25,7 +25,7 @@ we recommend placing it inside your local registry `mkdir -p ~/.nearai/registry/
 
 #### 4. Run your agent locally using the cli and passing it a folder to write output to. 
 ```shell
-nearai agent interactive example_agent /tmp/example_agent_run_1 --local
+nearai agent interactive example_agent --local
 ```
 
 When running the agent locally, session files such as chat history are stored in the `/tmp/nearai/conversations/` folder. 
