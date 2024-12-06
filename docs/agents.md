@@ -23,19 +23,15 @@ we recommend placing it inside your local registry `mkdir -p ~/.nearai/registry/
   * otherwise you can use `nearai registry metadata_template ~/.nearai/registry/example_agent agent "Example agent"` and edit it, as well as a created agent.py, [example of which is below](#example-agentpy) using the [environment API](#the-environment-api).
 
 
-#### 4. Run your agent locally using the cli and passing it a folder to write output to. 
+#### 4. Run your agent locally using the cli. 
 ```shell
-nearai agent interactive example_agent --local
+nearai agent interactive ~/.nearai/registry/example_agent --local
 ```
-
-When running the agent locally, session files such as chat history are stored in the `/tmp/nearai/conversations/` folder. 
-If you want to reset these files and clear the conversation history, you can run the agent with the `--reset` flag. 
-This will remove the existing session data and start a new one.
 
 
 ### Example agent.py
 ```python
-# In local interactive mode, the first user input is collected before the agent runs.
+# In local interactive mode, the welcome message (from metadata) is displayed, then the first user input is collected before the agent runs.
 prompt = {"role": "system", "content": "You are a travel agent that helps users plan trips."}
 result = env.completion([prompt] + env.list_messages())
 env.add_reply(result)
@@ -52,16 +48,15 @@ from other systems such as a scheduler or indexer.
 
 ## Agent Operation and Features:
 * `interactive` mode runs the agent in an infinite loop until: it is terminated by typing "exit" in the chat; is forcibly exited with a code; or stopped by the user with "Ctrl+C".
-* The execution folder is optional; by default, the initial agent's folder may be used instead.
 * If you use a folder other than the local registry, provide the full path to the agent instead of just the agent name.
 
 Command: 
 ```
-nearai agent interactive AGENT [EXECUTION_FOLDER] --local
+nearai agent interactive ABSOLUTE_PATH_TO_AGENT --local
 ```
 Example:
 ```shell
-nearai agent interactive example_agent --local
+nearai agent interactive /Users/jane/agents/example_agent --local
 ```
 
 * The agent can save temporary files to track the progress of a task from the user in case the dialogue execution is interrupted. By default, the entire message history is stored in a file named `chat.txt`. The agent can add messages there by using [`env.add_reply()`](api.md#nearai.agents.environment.Environment.add_message). Learn more about [the environment API](#the-environment-api).
@@ -86,23 +81,36 @@ The `--force` flag allows you to overwrite the local agent with the version from
 ⚠️ Warning: Review the agent code before running it!
 
 ### Running an agent interactively
-Agents can be run interactively. The environment_path should be a folder where the agent chat record (chat.txt) and 
-other files can be written, usually `~/tmp/test-agents/<AGENT_NAME>-run-X`.
+Agents can be run interactively. Downloaded agents can be run by name. Local agents can be run by absolute path.
 
-* command `nearai agent interactive AGENT ENVIRONMENT_PATH`
+* command `nearai agent interactive AGENT_FULL_NAME`
 * example 
 ```shell
-nearai agent interactive flatirons.near/xela-agent/5 /tmp/test-agents/xela-agent-run-1
+nearai agent interactive flatirons.near/xela-agent/5
 ```
+
+* command `nearai agent interactive AGENT_ABSOLUTE_PATH --local`
+* example
+```shell
+nearai agent interactive /Users/jane/agents/example_agent --local
+```
+
 
 ### Running an agent as a task
 To run without user interaction pass the task input to the task
 
-* command `nearai agent task <AGENT> <INPUT> <ENVIRONMENT_PATH>`
+* command `nearai agent task <AGENT_FULL_NAME> <INPUT>`
 * example 
 ```shell
-nearai agent task flatirons.near/xela-agent/5 "Build a command line chess engine" ~/tmp/test-agents/xela-agent/chess-engine
+nearai agent task flatirons.near/xela-agent/5 "Build a command line chess engine"
 ```
+
+* command `nearai agent task <AGENT_ABSOLUTE_PATH> <INPUT> --local`
+* example
+```shell
+nearai agent task /Users/jane/agents/example_agent "Build a command line chess engine"
+```
+
 
 ### Running an agent through AI Hub
 To run an agent in the [AI Hub](https://app.near.ai/agents):
