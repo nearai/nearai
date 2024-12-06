@@ -282,13 +282,13 @@ class Filename(BaseModel):
 
 @v1_router.post("/list_files")
 def list_files(entry: RegistryEntry = Depends(get_read_access)) -> List[Filename]:
-    """Lists all files that belong to a entry."""
+    """Lists all files that belong to an entry."""
     logger.info(f"Listing files for entry: {entry}")
     return list_files_inner(entry)
 
 
 def list_files_inner(entry: RegistryEntry) -> List[Filename]:
-    """Lists all files that belong to a entry."""
+    """Lists all files that belong to an entry."""
     source = entry.details.get("_source")
 
     if source is None:

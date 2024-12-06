@@ -710,7 +710,7 @@
           "Assistants"
         ],
         "summary": "Run Agent",
-        "description": "Run an agent against an existing or a new environment.\n\nReturns the ID of the new environment resulting from the run.",
+        "description": "Run an agent against an existing or a new thread.\n\nReturns the ID of the new thread resulting from the run.",
         "operationId": "run_agent_v1_agent_runs_post",
         "requestBody": {
           "content": {
@@ -760,7 +760,7 @@
           "Assistants"
         ],
         "summary": "Run Agent",
-        "description": "Run an agent against an existing or a new environment.\n\nReturns the ID of the new environment resulting from the run.",
+        "description": "Run an agent against an existing or a new thread.\n\nReturns the ID of the new thread resulting from the run.",
         "operationId": "run_agent_v1_threads_runs_post",
         "requestBody": {
           "content": {
@@ -780,56 +780,6 @@
                 "schema": {
                   "type": "string",
                   "title": "Response Run Agent V1 Threads Runs Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/download_environment": {
-      "post": {
-        "tags": [
-          "agents, assistants"
-        ],
-        "summary": "Download Environment",
-        "operationId": "download_environment_v1_download_environment_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_download_environment_v1_download_environment_post"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              },
-              "application/gzip": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
                 }
               }
             }
@@ -2234,23 +2184,6 @@
         ],
         "title": "Body_add_star_v1_stars_add_star_post"
       },
-      "Body_download_environment_v1_download_environment_post": {
-        "properties": {
-          "path": {
-            "type": "string",
-            "title": "Path"
-          },
-          "entry_location": {
-            "$ref": "#/components/schemas/EntryLocation"
-          }
-        },
-        "type": "object",
-        "required": [
-          "path",
-          "entry_location"
-        ],
-        "title": "Body_download_environment_v1_download_environment_post"
-      },
       "Body_download_file_v1_registry_download_file_post": {
         "properties": {
           "path": {
@@ -2706,18 +2639,6 @@
             "title": "Assistant Id",
             "description": "An OpenAI compatibility alias for agent. The ID of the [assistant](/docs/api-reference/assistants) to use to execute this run."
           },
-          "environment_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Environment Id",
-            "description": "The ID of the environment to use to as a base for this run. If not provided, a new environment will be created."
-          },
           "thread_id": {
             "anyOf": [
               {
@@ -2728,7 +2649,7 @@
               }
             ],
             "title": "Thread Id",
-            "description": "An OpenAI compatibility alias for environment. If no thread is provided, an empty thread will be created."
+            "description": "The thread to write messages to. If no thread is provided, an empty thread will be created."
           },
           "new_message": {
             "anyOf": [
@@ -2740,7 +2661,7 @@
               }
             ],
             "title": "New Message",
-            "description": "A message to add to the environment chat.txt before running the agents."
+            "description": "A message to add to the thread before running the agents."
           },
           "max_iterations": {
             "anyOf": [
