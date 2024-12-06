@@ -161,6 +161,16 @@ The model can be passed into `completion` function or as an agent metadata:
    ```
   * [`list_messages`](api.md#nearai.agents.environment.Environment.list_messages): returns the list of messages in the conversation.
 
+### Calling another agent
+Other agents can be invoked with the `run_agent` method. This method takes as arguments the three parts of an agent name (owner, name, version),
+accepts an optional model and query, and whether to record the agent's results on a new thread. 
+* [`run_agent`](api.md#nearai.agents.environment.Environment.run_agent): call another agent
+
+```
+env.run_agent("flatirons.near", "shopper", "latest", query="NEAR cryptocurrency shirts", fork_thread=False)
+```
+
+
 ### Additional environment methods
 There are several variations for completions:
 
@@ -286,36 +296,38 @@ reprocess the previous response and follow up about travel to Paris.
 ```
 
 ## Running an agent through the API
-Agents can be run through the `/agent/runs` endpoint. 
+Agents can be run through the `/thread/runs`, `/thread/{thread_id}/runs` or  `/agent/runs` endpoints. The /thread syntax
+matches the OpenAI / LangGraph API. The /agent syntax is NearAI specific.
+
 You will need to pass a signed message to authenticate. This example uses the credentials written by `nearai login` to
 your `~/.nearai/config.json` file.
 
 ```shell
 auth_json=$(jq -c '.auth' ~/.nearai/config.json);
 
-curl "https://api.near.ai/v1/agent/runs" \
+curl "https://api.near.ai/v1/threads/runs" \
       -X POST \
       --header 'Content-Type: application/json' \
       --header "Authorization: Bearer $auth_json" \
 -d @- <<'EOF'
   {
-    "agent_id": "flatirons.near/xela-agent/5",
+    "agent_id": "flatirons.near/xela-agent/5.0.1",
     "new_message":"Build a backgammon game",
-    "max_iterations": "2"
+    "max_iterations": "1"
   }
 EOF
 ```
 
-The full message will look like this. An `environment_id` param can also be passed to continue a previous run. 
+The full message will look like this. A `thread_id` param can also be passed to continue a previous conversation. 
 ```shell
-curl "https://api.near.ai/v1/agent/runs" \
+curl "https://api.near.ai/v1/threads/runs" \
       -X POST \
       --header 'Content-Type: application/json' \
       --header 'Authorization: Bearer {"account_id":"your_account.near","public_key":"ed25519:YOUR_PUBLIC_KEY","signature":"A_REAL_SIGNATURE","callback_url":"https://app.near.ai/","message":"Welcome to NEAR AI Hub!","recipient":"ai.near","nonce":"A_UNIQUE_NONCE_FOR_THIS_SIGNATURE"}' \
 -d @- <<'EOF'
   {
-    "agent_id": "flatirons.near/xela-agent/5",
-    "environment_id": "a_previous_environment_id",
+    "agent_id": "flatirons.near/xela-agent/5.0.1",
+    "thread_id": "a_previous_thread_id",
     "new_message":"Build a backgammon game", 
     "max_iterations": "2"
   }
@@ -323,14 +335,11 @@ EOF
 ```
 
 ## Remote results
-The results of both run_remote and the /agent/runs endpoint are either an error or the resulting environment state.
->Agent run finished. New environment is "flatirons.near/environment_run_flatirons.near_example-travel-agent_1_1c82938c55fc43e492882ee938c6356a/0"
+The results of both run_remote and the /agent/runs endpoints are either an error or the resulting thread_id.
+>"thread_579e1cf3f42742c785218106"
 
-To view the resulting state, download the `environment.tar.gz` file from the registry and extract it.
-```shell
-nearai registry download flatirons.near/environment_run_flatirons.near_example-travel-agent_1_1c82938c55fc43e492882ee938c6356a/0
-```
-
+Threads follow the OpenAI / LangGraph api standard. `/threads/{thread_id}/messages` will return the messages on the thread.
+See the full NearAI OpenAPI spec here: [https://api.near.ai/openapi.json](https://api.near.ai/openapi.json)
 
 ### Signed messages
 NearAI authentication is through a Signed Message: a payload signed by a Near Account private key. (How to [Login with NEAR](login.md))
