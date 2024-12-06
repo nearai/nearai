@@ -384,6 +384,17 @@ async def query_vector_store(vector_store_id: str, request: QueryVectorStoreRequ
         raise HTTPException(status_code=500, detail="Failed to query vector store") from None
 
 
+@vector_stores_router.get("/vector_stores/{vector_store_id}/list/files/filename/{filename}")
+async def list_vector_store_files(vector_store_id: str, filename: str, auth: AuthToken = Depends(get_auth)):
+    sql = SqlClient()
+    vector_store = sql.get_vector_store(vector_store_id)
+    if not vector_store:
+        logger.warning(f"Vector store not found: {vector_store_id}")
+        raise HTTPException(status_code=404, detail="Vector store not found")
+
+    return sql.get_file_details_by_filename(vector_store_id, filename)
+
+
 @vector_stores_router.post("/vector_stores/from_source", response_model=VectorStore)
 async def create_vector_store_from_source(
     request: CreateVectorStoreFromSourceRequest,

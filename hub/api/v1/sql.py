@@ -316,6 +316,27 @@ class SqlClient:
         result = cursor.fetchone()
         return VectorStoreFile(**result) if result else None
 
+    def get_file_details_by_filename(self, vector_store_id: str, filename: str) -> Optional[List[VectorStoreFile]]:
+        """Get file details for a specific filename and vector_store_id.
+
+        Args:
+        ----
+            filename (str): The name of the file.
+            vector_store_id (str): The ID of the vector store.
+
+        Returns:
+        -------
+            Optional[List[VectorStoreFile]]: A list of matching file details if found, None otherwise.
+
+        """
+        query = """SELECT * FROM vector_store_files f
+                 INNER JOIN inference_router.vector_store_embeddings e ON f.id = e.file_id
+                 WHERE filename = %s AND e.vector_store_id = %s"""
+        cursor = self.db.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(query, (filename, vector_store_id))
+        result = cursor.fetchall()
+        return [VectorStoreFile(**res) for res in result] if result else None
+
     def get_file_details(self, file_id: str) -> Optional[VectorStoreFile]:
         """Get file details for a specific file.
 
