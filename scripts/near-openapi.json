@@ -1848,6 +1848,18 @@
         ],
         "summary": "Table",
         "operationId": "table_v1_evaluation_table_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Page"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
