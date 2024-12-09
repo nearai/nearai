@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-import { parseStringOrNumber } from '~/utils/number';
-
 export const authorizationModel = z.object({
   account_id: z.string(),
   public_key: z.string(),
@@ -140,15 +138,28 @@ export const evaluationTableRowModel = z.intersection(
   z.object({
     agent: z.string(),
     agentId: z.string().optional(),
+    competition_row_tags: z
+      .enum([
+        'baseline',
+        'reference',
+        'submission',
+        'successful_submission',
+        'disqualified_submission',
+      ])
+      .array()
+      .default([
+        'baseline',
+        'reference',
+        'submission',
+        'successful_submission',
+        'disqualified_submission',
+      ]),
     model: z.string(),
     namespace: z.string(),
     provider: z.string(),
     version: z.string(),
   }),
-  z.record(
-    z.string(),
-    z.preprocess(parseStringOrNumber, z.string().or(z.number())),
-  ),
+  z.record(z.string(), z.string().or(z.number())),
 );
 
 export const evaluationsTableModel = z.object({

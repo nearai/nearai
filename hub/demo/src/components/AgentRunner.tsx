@@ -14,6 +14,7 @@ import {
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
+import { formatBytes, handleClientError } from '@near-pagoda/ui/utils';
 import {
   ArrowRight,
   CodeBlock,
@@ -51,8 +52,6 @@ import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { useThreadsStore } from '~/stores/threads';
 import { api } from '~/trpc/react';
-import { handleClientError } from '~/utils/error';
-import { formatBytes } from '~/utils/number';
 
 import { ThreadFileModal } from './ThreadFileModal';
 

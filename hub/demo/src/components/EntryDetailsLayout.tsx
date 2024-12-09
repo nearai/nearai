@@ -13,6 +13,7 @@ import {
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
+import { copyTextToClipboard } from '@near-pagoda/ui/utils';
 import { CaretDown, Copy } from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactElement, type ReactNode, useEffect } from 'react';
@@ -23,7 +24,6 @@ import { env } from '~/env';
 import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
-import { copyTextToClipboard } from '~/utils/clipboard';
 
 type Props = {
   category: EntryCategory;

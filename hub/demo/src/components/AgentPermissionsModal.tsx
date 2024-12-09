@@ -3,13 +3,13 @@ import {
   Button,
   Card,
   CardList,
-  copyTextToClipboard,
   Dialog,
   Flex,
   SvgIcon,
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
+import { copyTextToClipboard } from '@near-pagoda/ui/utils';
 import {
   Check,
   Eye,

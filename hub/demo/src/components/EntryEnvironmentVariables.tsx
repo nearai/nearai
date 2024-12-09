@@ -11,6 +11,8 @@ import {
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
+import { copyTextToClipboard } from '@near-pagoda/ui/utils';
+import { handleClientError } from '@near-pagoda/ui/utils';
 import {
   CodeBlock,
   Eye,
@@ -33,8 +35,6 @@ import {
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
-import { copyTextToClipboard } from '~/utils/clipboard';
-import { handleClientError } from '~/utils/error';
 
 import { Sidebar } from './lib/Sidebar';
 import { SignInPrompt } from './SignInPrompt';

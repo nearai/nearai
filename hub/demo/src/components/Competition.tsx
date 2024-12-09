@@ -2,21 +2,27 @@
 
 import { Flex, Section, SvgIcon, Text } from '@near-pagoda/ui';
 import { CalendarDots } from '@phosphor-icons/react';
-import React from 'react';
+import { type ReactNode } from 'react';
 
-import { EvaluationsTable } from '~/components/EvaluationsTable';
+import { CompetitionLeaderboardTable } from './CompetitionLeaderboardTable';
 
-const CompetitionPage = ({
+type Props = {
+  competitionId: string;
+  title: string;
+  children: ReactNode;
+  schedule: string;
+};
+
+export const Competition = ({
+  competitionId,
   title,
   children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) => {
+  schedule,
+}: Props) => {
   return (
     <>
       <Section background="sand-0">
-        <Text as="h1" size="text-2xl" weight="600" className="mb-12">
+        <Text as="h1" size="text-2xl" weight="600">
           {title}
         </Text>
 
@@ -26,9 +32,7 @@ const CompetitionPage = ({
             <Text size="text-xs" weight={600}>
               Schedule
             </Text>
-            <Text color="sand-12">
-              Dec 10th - Jan 15th, 2025 @ 11:59 PM UTC
-            </Text>
+            <Text color="sand-12">{schedule}</Text>
           </Flex>
         </Flex>
       </Section>
@@ -36,14 +40,8 @@ const CompetitionPage = ({
       <Section>{children}</Section>
 
       <Section>
-        <EvaluationsTable
-          title="Entries"
-          showSidebar={false}
-          onlyShowEvaluationsWithMatchingBenchmark
-        />
+        <CompetitionLeaderboardTable competitionId={competitionId} />
       </Section>
     </>
   );
 };
-
-export default CompetitionPage;
