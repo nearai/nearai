@@ -90,8 +90,6 @@ export const IframeWithBlob = ({
 
     setDataUrl(url);
 
-    console.log(url);
-
     return () => {
       URL.revokeObjectURL(url);
     };

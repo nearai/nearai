@@ -15,6 +15,8 @@ import {
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
+import { copyTextToClipboard } from '@near-pagoda/ui/utils';
+import { handleClientError } from '@near-pagoda/ui/utils';
 import {
   DotsThree,
   Lightbulb,
@@ -34,8 +36,6 @@ import { type ThreadSummary, useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
-import { copyTextToClipboard } from '~/utils/clipboard';
-import { handleClientError } from '~/utils/error';
 
 type Props = {
   onRequestNewThread: () => unknown;

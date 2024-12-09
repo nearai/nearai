@@ -1,9 +1,8 @@
 'use client';
 
 import { Tooltip } from '@near-pagoda/ui';
+import { copyTextToClipboard } from '@near-pagoda/ui/utils';
 import React, { type ReactNode } from 'react';
-
-import { copyTextToClipboard } from '~/utils/clipboard';
 
 import s from './InlineCode.module.scss';
 

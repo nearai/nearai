@@ -1,3 +1,4 @@
+import { parseStringOrNumber } from '@near-pagoda/ui/utils';
 import path from 'path';
 import { z } from 'zod';
 
@@ -104,34 +105,55 @@ export const hubRouter = createTRPCRouter({
       return list;
     }),
 
-  evaluations: publicProcedure.query(async () => {
-    const evaluations = await fetchWithZod(
-      evaluationsTableModel,
-      `${env.ROUTER_URL}/evaluation/table`,
-    );
+  evaluations: publicProcedure
+    .input(
+      z
+        .object({
+          page: z.string().optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ input }) => {
+      const url = new URL(`${env.ROUTER_URL}/evaluation/table`);
 
-    const infoColumns = ['agent', 'model', 'namespace', 'version', 'provider'];
-    const benchmarkColumns = evaluations.columns.filter(
-      (column) => !infoColumns.includes(column),
-    );
+      if (input?.page) url.searchParams.set('page', input.page);
 
-    evaluations.rows.forEach((row) => {
-      if (row.agent && row.namespace && row.version) {
-        row.agentId = `${row.namespace}/${row.agent}/${row.version}`;
-      }
-    });
+      const evaluations = await fetchWithZod(evaluationsTableModel, url);
 
-    const defaultBenchmarkColumns = evaluations.important_columns.filter(
-      (column) => !infoColumns.includes(column),
-    );
+      const infoColumns = [
+        'agent',
+        'model',
+        'namespace',
+        'version',
+        'provider',
+      ];
+      const benchmarkColumns = evaluations.columns.filter(
+        (column) => !infoColumns.includes(column),
+      );
 
-    return {
-      benchmarkColumns,
-      defaultBenchmarkColumns,
-      infoColumns,
-      results: evaluations.rows,
-    };
-  }),
+      evaluations.rows.forEach((row) => {
+        if (row.agent && row.namespace && row.version) {
+          row.agentId = `${row.namespace}/${row.agent}/${row.version}`;
+        }
+
+        benchmarkColumns.forEach((key) => {
+          if (row[key]) {
+            row[key] = parseStringOrNumber(row[key]);
+          }
+        });
+      });
+
+      const defaultBenchmarkColumns = evaluations.important_columns.filter(
+        (column) => !infoColumns.includes(column),
+      );
+
+      return {
+        benchmarkColumns,
+        defaultBenchmarkColumns,
+        infoColumns,
+        results: evaluations.rows,
+      };
+    }),
 
   file: publicProcedure
     .input(

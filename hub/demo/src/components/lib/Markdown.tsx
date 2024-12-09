@@ -1,3 +1,5 @@
+'use client';
+
 import { Table } from '@near-pagoda/ui';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';

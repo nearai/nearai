@@ -4,6 +4,7 @@
 
 import { useTheme } from '@near-pagoda/ui';
 import { Button, Tooltip } from '@near-pagoda/ui';
+import { copyTextToClipboard } from '@near-pagoda/ui/utils';
 import { Copy } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
@@ -11,8 +12,6 @@ import {
   atomOneDark,
   atomOneLight,
 } from 'react-syntax-highlighter/dist/esm/styles/hljs';
-
-import { copyTextToClipboard } from '~/utils/clipboard';
 
 import s from './Code.module.scss';
 

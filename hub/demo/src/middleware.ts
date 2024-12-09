@@ -24,6 +24,12 @@ export function middleware(request: NextRequest) {
     );
   }
 
+  if (request.nextUrl.pathname === '/competitions/0.5b-november-2024') {
+    return NextResponse.redirect(
+      redirectUrlPath('/competitions/0.5b', request),
+    );
+  }
+
   return NextResponse.next();
 }
 

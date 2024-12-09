@@ -94,6 +94,7 @@ export const EntriesTable = ({ category, title }: Props) => {
             <Table.HeadCell>Tags</Table.HeadCell>
             <Table.HeadCell
               column="num_stars"
+              sortable
               style={{ paddingLeft: '1.4rem' }}
             >
               Stars

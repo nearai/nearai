@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, Card, Dropdown, Flex, SvgIcon, Text } from '@near-pagoda/ui';
+import { copyTextToClipboard } from '@near-pagoda/ui/utils';
 import { Copy, DotsThree, Eye, MarkdownLogo } from '@phosphor-icons/react';
 import { usePrevious } from '@uidotdev/usehooks';
 import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react';
@@ -8,7 +9,6 @@ import { type z } from 'zod';
 
 import { type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { copyTextToClipboard } from '~/utils/clipboard';
 
 import { Markdown } from './lib/Markdown';
 import s from './Messages.module.scss';

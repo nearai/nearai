@@ -1,10 +1,9 @@
-'use client';
+import { type Metadata } from 'next';
 
-import CompetitionPage from '~/app/competitions/[competition]/CompetitionPage';
+import { Competition } from '~/components/Competition';
 import { Markdown } from '~/components/lib/Markdown';
 
-export default function ModelTrainingPage() {
-  const content = `
+const content = `
 Welcome to the first NEAR AI competition.
 
 In this competition, we want the participants to pre-train a 0.5B parameter model that has the lowest perplexity as measured on a hold-out subset of FineWeb.
@@ -17,9 +16,21 @@ From your machine you will use \`nearai submit\` to submit your runs. From withi
 
 To participate in the competition, apply [here](https://docs.google.com/forms/d/e/1FAIpQLScInS4mHyZb_kSkD0-CMPPagyhpBKdutbAyS6YNbHJc9ZgaUw/viewform).
 `;
+
+const title = '0.5B Model Training Competition';
+
+export const metadata: Metadata = {
+  title,
+};
+
+export default function CompetitionPage() {
   return (
-    <CompetitionPage title="0.5B Model Training Competition - January 2025">
+    <Competition
+      competitionId="competition_0.5b"
+      title={title}
+      schedule="Dec 10th - Jan 15th, 2025 @ 11:59 PM UTC"
+    >
       <Markdown content={content} />
-    </CompetitionPage>
+    </Competition>
   );
 }
