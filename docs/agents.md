@@ -407,7 +407,7 @@ To run your agent remotely with a particular framework, set the framework name i
 ```
 For local development, you can install any libraries you would like to use by adding them to top level `pyproject.toml`.
 
-Current frameworks can be found in the repo's [frameworks](https://github.com/nearai/nearai/tree/main/aws_runner/frameworks) folder.
+Current frameworks can be found in the repo's [frameworks](https://github.com/nearai/nearai/tree/main/nearai/aws_runner/frameworks) folder.
 
 ### LangChain / LangGraph
 The example agent [langgraph-min-example](https://app.near.ai/agents/flatirons.near/langgraph-min-example/1.0.1/source)
