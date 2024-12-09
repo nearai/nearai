@@ -32,6 +32,8 @@ def get_canonical_name(name: str) -> str:
     name = re.sub(r"(?<!\d)_|_(?!\d)", "", name)
     # Convert 'metallama' to 'llama'
     name = name.replace("metallama", "llama")
+    # Convert 'qwenq' to 'q'
+    name = name.replace("qwenq", "q")
     return name
 
 
@@ -52,6 +54,9 @@ def create_registry_name(name: str) -> str:
     # Convert 'metallama' or 'meta-llama' to 'llama'
     name = name.replace("metallama", "llama")
     name = name.replace("meta-llama", "llama")
+    # Convert 'qwenq' or 'qwen-q' to 'q'
+    name = name.replace("qwenq", "q")
+    name = name.replace("qwen-q", "q")
     return name
 
 
