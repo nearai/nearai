@@ -147,13 +147,7 @@ export const evaluationTableRowModel = z.intersection(
         'disqualified_submission',
       ])
       .array()
-      .default([
-        'baseline',
-        'reference',
-        'submission',
-        'successful_submission',
-        'disqualified_submission',
-      ]),
+      .default([]),
     model: z.string(),
     namespace: z.string(),
     provider: z.string(),

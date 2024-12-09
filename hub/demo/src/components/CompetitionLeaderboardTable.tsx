@@ -111,7 +111,7 @@ export const CompetitionLeaderboardTable = ({ competitionId }: Props) => {
                 <Table.HeadCell
                   column="model"
                   sortable
-                  style={{ minWidth: '12rem' }}
+                  style={{ minWidth: '16rem' }}
                 >
                   Model
                 </Table.HeadCell>
@@ -124,7 +124,9 @@ export const CompetitionLeaderboardTable = ({ competitionId }: Props) => {
                   Author
                 </Table.HeadCell>
 
-                <Table.HeadCell>Status</Table.HeadCell>
+                <Table.HeadCell style={{ minWidth: '12rem' }}>
+                  Entry Status
+                </Table.HeadCell>
 
                 {selectedBenchmarkColumns.map((column) => (
                   <Table.HeadCell column={column} sortable key={column}>
@@ -181,61 +183,71 @@ export const CompetitionLeaderboardTable = ({ competitionId }: Props) => {
                 </Table.Cell>
 
                 <Table.Cell>
-                  <Flex gap="xs">
-                    {evaluation.competition_row_tags.includes('submission') && (
-                      <Tooltip content="A user's submission to this competition pending review">
-                        <Badge
-                          label="Submitted"
-                          variant="primary"
-                          style={{ cursor: 'help' }}
-                        />
-                      </Tooltip>
-                    )}
+                  {evaluation.competition_row_tags.length > 0 ? (
+                    <Flex gap="xs">
+                      {evaluation.competition_row_tags.includes(
+                        'submission',
+                      ) && (
+                        <Tooltip content="A user's submission to this competition pending review">
+                          <Badge
+                            label="Submitted"
+                            variant="primary"
+                            style={{ cursor: 'help' }}
+                          />
+                        </Tooltip>
+                      )}
 
-                    {evaluation.competition_row_tags.includes('baseline') && (
-                      <Tooltip content="A baseline model and an example of a submission">
-                        <Badge
-                          label="Baseline"
-                          variant="neutral"
-                          style={{ cursor: 'help' }}
-                        />
-                      </Tooltip>
-                    )}
+                      {evaluation.competition_row_tags.includes('baseline') && (
+                        <Tooltip content="A baseline model and an example of a submission">
+                          <Badge
+                            label="Baseline"
+                            variant="neutral"
+                            style={{ cursor: 'help' }}
+                          />
+                        </Tooltip>
+                      )}
 
-                    {evaluation.competition_row_tags.includes('reference') && (
-                      <Tooltip content="Reference metrics for comparison (not a submission)">
-                        <Badge
-                          label="Reference"
-                          variant="neutral"
-                          style={{ cursor: 'help' }}
-                        />
-                      </Tooltip>
-                    )}
+                      {evaluation.competition_row_tags.includes(
+                        'reference',
+                      ) && (
+                        <Tooltip content="Reference metrics for comparison (not a submission)">
+                          <Badge
+                            label="Reference"
+                            variant="neutral"
+                            style={{ cursor: 'help' }}
+                          />
+                        </Tooltip>
+                      )}
 
-                    {evaluation.competition_row_tags.includes(
-                      'successful_submission',
-                    ) && (
-                      <Tooltip content="Submission accepted and validated based on competition requirements">
-                        <Badge
-                          label="Successful"
-                          variant="success"
-                          style={{ cursor: 'help' }}
-                        />
-                      </Tooltip>
-                    )}
+                      {evaluation.competition_row_tags.includes(
+                        'successful_submission',
+                      ) && (
+                        <Tooltip content="Submission accepted and validated based on competition requirements">
+                          <Badge
+                            label="Successful"
+                            variant="success"
+                            style={{ cursor: 'help' }}
+                          />
+                        </Tooltip>
+                      )}
 
-                    {evaluation.competition_row_tags.includes(
-                      'disqualified_submission',
-                    ) && (
-                      <Tooltip content="Submission disqualified for not adhering to competition requirements">
-                        <Badge
-                          label="Disqualified"
-                          variant="alert"
-                          style={{ cursor: 'help' }}
-                        />
-                      </Tooltip>
-                    )}
-                  </Flex>
+                      {evaluation.competition_row_tags.includes(
+                        'disqualified_submission',
+                      ) && (
+                        <Tooltip content="Submission disqualified for not adhering to competition requirements">
+                          <Badge
+                            label="Disqualified"
+                            variant="alert"
+                            style={{ cursor: 'help' }}
+                          />
+                        </Tooltip>
+                      )}
+                    </Flex>
+                  ) : (
+                    <Text size="text-xs" color="sand-8">
+                      --
+                    </Text>
+                  )}
                 </Table.Cell>
 
                 {selectedBenchmarkColumns.map((column) => (
