@@ -168,19 +168,35 @@ export const CompetitionLeaderboardTable = ({ competitionId }: Props) => {
 
             {sorted?.map((evaluation, index) => (
               <Table.Row key={index}>
-                <Table.Cell
-                  href={`/models/${evaluation.namespace}/${evaluation.model}/${evaluation.version || 'latest'}`}
-                >
-                  <Text size="text-s" weight={600} color="sand-12">
-                    {evaluation.model}
-                  </Text>
-                </Table.Cell>
+                {evaluation.provider === 'local' ? (
+                  <Table.Cell
+                    href={`/models/${evaluation.namespace}/${evaluation.model}/${evaluation.version || 'latest'}`}
+                  >
+                    <Text size="text-s" weight={600} color="sand-12">
+                      {evaluation.model}
+                    </Text>
+                  </Table.Cell>
+                ) : (
+                  <Table.Cell>
+                    <Text size="text-s" weight={600} color="sand-12">
+                      {evaluation.model}
+                    </Text>
+                  </Table.Cell>
+                )}
 
-                <Table.Cell href={`/profiles/${evaluation.namespace}`}>
-                  <Text size="text-s" weight={400} color="sand-12">
-                    {evaluation.namespace}
-                  </Text>
-                </Table.Cell>
+                {evaluation.namespace ? (
+                  <Table.Cell href={`/profiles/${evaluation.namespace}`}>
+                    <Text size="text-s" weight={400} color="sand-12">
+                      {evaluation.namespace}
+                    </Text>
+                  </Table.Cell>
+                ) : (
+                  <Table.Cell>
+                    <Text size="text-xs" color="sand-8">
+                      --
+                    </Text>
+                  </Table.Cell>
+                )}
 
                 <Table.Cell>
                   {evaluation.competition_row_tags.length > 0 ? (
