@@ -1,40 +1,54 @@
 # Agents
 
-<b>Quickest start</b>, this script runs the Quickstart commands below.
+<b>Quickest start</b>, run these commands (detailed below).
 ```shell
-docs/agent_quickstart.sh
+pip install nearai
+nearai login 
+nearai agent create --name example_agent --description "Example agent"
+nearai agent interactive ~/.nearai/registry/YOUR_ACCOUNT_NAME/example_agent/0.0.1 --local
 ```
 
 ## QUICKSTART: build and run a python agent on NearAI
-#### 1. [Install](https://github.com/nearai/nearai/#setup) the NearAI CLI.
+#### 0. Requires python 3.9 to 3.11
 
-#### 2. Create a new folder for your agent:
+#### 1. Install the NearAI CLI.
+`pip install nearai`
+or see [Install](https://github.com/nearai/nearai/#setup) for more installation options.
 
-we recommend placing it inside your local registry `mkdir -p ~/.nearai/registry/example_agent`. 
+#### 2. Login
+`nearai login` will print a URL to visit to login. If you don't have a NEAR account, choose Bitte wallet to quickly create one.
 
+Once you have logged in, you will stay logged in and do not need to run this again.
 
 #### 3. Create files for your agent:
 
-  The fastest way to create both your metadata and agent .py file would be the create or clone functions
+  The fastest ways to create both your metadata and agent .py file are the create or clone functions.
 
   * `nearai agent create --name <agent_name> --description <description>` allows you to create clean agent
-  * `nearai agent create --fork <namespace/agent_name/version> [--name <new_agent_name>]` forks an existing codebase 
-  * `nearai registry list` can tell you what agents are forkable.
-  * otherwise you can use `nearai registry metadata_template ~/.nearai/registry/example_agent agent "Example agent"` and edit it, as well as a created agent.py, [example of which is below](#example-agentpy) using the [environment API](#the-environment-api).
+  * Or `nearai agent create --fork <namespace/agent_name/version> [--name <new_agent_name>]` forks an existing codebase 
+    * `nearai registry list` can tell you what agents are forkable.
 
 
 #### 4. Run your agent locally using the cli. 
 ```shell
-nearai agent interactive ~/.nearai/registry/example_agent --local
+nearai agent interactive ~/.nearai/registry/YOUR_ACCOUNT_NAME/example_agent/0.0.1 --local
 ```
 
 
 ### Example agent.py
 ```python
-# In local interactive mode, the welcome message (from metadata) is displayed, then the first user input is collected before the agent runs.
+# Before the agent code is run, the welcome message (from metadata) is displayed, then the first user input is collected before the agent runs.
+
+# A system message guides an agent to solve specific tasks.
 prompt = {"role": "system", "content": "You are a travel agent that helps users plan trips."}
+
+# The completion function can be called with a prompt and the conversation thus far.
 result = env.completion([prompt] + env.list_messages())
+
+# The agent can add a reply to the conversation.
 env.add_reply(result)
+
+# To indicate the user's turn, call request_user_input.
 env.request_user_input()
 ```
 
