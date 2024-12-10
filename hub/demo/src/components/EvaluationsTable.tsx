@@ -397,6 +397,7 @@ export const EvaluationsTable = ({
                               as="span"
                               size="text-2xs"
                               color="current"
+                              noWrap
                               style={{
                                 marginBottom: '-0.1rem',
                                 display: 'inline-block',
@@ -410,6 +411,7 @@ export const EvaluationsTable = ({
                             size="text-s"
                             weight={600}
                             color="current"
+                            noWrap
                           >
                             {column.split('/').at(-1)}
                           </Text>

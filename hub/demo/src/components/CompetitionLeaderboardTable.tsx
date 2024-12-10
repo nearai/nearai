@@ -111,20 +111,12 @@ export const CompetitionLeaderboardTable = ({ competitionId }: Props) => {
                 <Table.HeadCell
                   column="model"
                   sortable
-                  style={{ minWidth: '16rem' }}
+                  style={{ minWidth: '24rem' }}
                 >
                   Model
                 </Table.HeadCell>
 
-                <Table.HeadCell
-                  column="namespace"
-                  sortable
-                  style={{ minWidth: '12rem' }}
-                >
-                  Author
-                </Table.HeadCell>
-
-                <Table.HeadCell style={{ minWidth: '12rem' }}>
+                <Table.HeadCell style={{ minWidth: '10rem' }}>
                   Entry Status
                 </Table.HeadCell>
 
@@ -140,6 +132,7 @@ export const CompetitionLeaderboardTable = ({ competitionId }: Props) => {
                           as="span"
                           size="text-2xs"
                           color="current"
+                          noWrap
                           style={{
                             marginBottom: '-0.1rem',
                             display: 'inline-block',
@@ -153,6 +146,7 @@ export const CompetitionLeaderboardTable = ({ competitionId }: Props) => {
                         size="text-s"
                         weight={600}
                         color="current"
+                        noWrap
                       >
                         {column.split('/').at(-1)}
                       </Text>
@@ -171,27 +165,13 @@ export const CompetitionLeaderboardTable = ({ competitionId }: Props) => {
                 {evaluation.modelId ? (
                   <Table.Cell href={`/models/${evaluation.modelId}`}>
                     <Text size="text-s" weight={600} color="sand-12">
-                      {evaluation.model}
+                      {evaluation.modelId}
                     </Text>
                   </Table.Cell>
                 ) : (
                   <Table.Cell>
-                    <Text size="text-s" weight={600} color="sand-12">
+                    <Text size="text-s" color="sand-12">
                       {evaluation.model}
-                    </Text>
-                  </Table.Cell>
-                )}
-
-                {evaluation.namespace ? (
-                  <Table.Cell href={`/profiles/${evaluation.namespace}`}>
-                    <Text size="text-s" weight={400} color="sand-12">
-                      {evaluation.namespace}
-                    </Text>
-                  </Table.Cell>
-                ) : (
-                  <Table.Cell>
-                    <Text size="text-xs" color="sand-8">
-                      --
                     </Text>
                   </Table.Cell>
                 )}
