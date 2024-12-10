@@ -135,7 +135,7 @@ export const hubRouter = createTRPCRouter({
         if (row.namespace && row.version) {
           if (row.agent) {
             row.agentId = `${row.namespace}/${row.agent}/${row.version}`;
-          } else if (row.model) {
+          } else if (row.model && row.provider === 'local') {
             row.modelId = `${row.namespace}/${row.model}/${row.version}`;
           }
         }
