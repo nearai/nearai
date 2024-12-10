@@ -720,13 +720,12 @@ class AgentCli:
 
 
 def run(env: Environment):
-    env.add_message("assistant", "Hello, world!")
     # Your agent code here
     # Example:
-    # prompt = {"role": "system", "content": "You are a helpful assistant."}
-    # result = env.completion([prompt] + env.list_messages())
-    # env.add_message("assistant", result)
-
+    prompt = {"role": "system", "content": "You are a helpful assistant."}
+    result = env.completion([prompt] + env.list_messages())
+    env.add_reply(result)
+    env.request_user_input()
 
 run(env)
 
@@ -736,8 +735,11 @@ run(env)
             f.write(agent_py_content)
 
         print(f"\nAgent created at: {agent_path}")
+        print("Consider editing:")
+        print(f"\t{agent_path}/agent.py")
+        print(f"\t{agent_path}/metadata.json")
         print("\nUseful commands:")
-        print(f"  > nearai agent interactive {name} --local")
+        print(f"  > nearai agent interactive {agent_path} --local")
         print(f"  > nearai registry upload {agent_path}")
 
     def _fork_agent(self, fork: str, namespace: str, new_name: Optional[str]) -> None:
