@@ -3,6 +3,7 @@ import json
 import os
 import re
 import runpy
+import shutil
 import sys
 from collections import OrderedDict
 from dataclasses import asdict
@@ -474,6 +475,18 @@ class EvaluationCli:
 
 
 class AgentCli:
+    def dev(self) -> None:
+        """Run local UI for development of agents that have their own UI."""
+        if not os.path.exists("hub/demo/.env"):
+            shutil.copy("hub/demo/.env.example", "hub/demo/.env")
+
+        ret_val = os.system("npm install --prefix hub/demo")
+        if ret_val != 0:
+            print("Node.js is required to run the development server.")
+            print("Please install Node.js from https://nodejs.org/")
+        ret_val = os.system("npm run dev --prefix hub/demo")
+        return ret_val
+
     def inspect(self, path: str) -> None:
         """Inspect environment from given path."""
         import subprocess
