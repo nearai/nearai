@@ -35,6 +35,7 @@ export const IframeWithBlob = ({
   const shouldClampHeightRef = useRef(false);
   const [height, __setHeight] = useState(0);
   const isLoading = !height;
+  const wrapperInitialHeight = useRef(0);
 
   const executePostMessage = useDebouncedFunction((message: unknown) => {
     console.log('Sending postMessage to <IframeWithBlob />', message);
@@ -48,11 +49,16 @@ export const IframeWithBlob = ({
 
   const setHeight = useDebouncedFunction((height: number) => {
     __setHeight(() => {
+      if (!wrapperInitialHeight.current) {
+        wrapperInitialHeight.current = wrapperRef.current?.offsetHeight ?? 0;
+      }
+
+      const computedHeight = Math.max(wrapperInitialHeight.current, height);
       const previousHeight = previousHeightRef.current;
-      const previousHeightDiff = height - previousHeight;
+      const previousHeightDiff = computedHeight - previousHeight;
       const previousHeightChangeUnixTimestamp =
         previousHeightChangeUnixTimestampRef.current;
-      const heightDiff = height - previousHeight;
+      const heightDiff = computedHeight - previousHeight;
       const elapsedMsSinceLastChange =
         Date.now() - previousHeightChangeUnixTimestamp;
 
@@ -72,13 +78,13 @@ export const IframeWithBlob = ({
       }
 
       previousHeightChangeUnixTimestampRef.current = Date.now();
-      previousHeightRef.current = height;
+      previousHeightRef.current = computedHeight;
 
       if (shouldClampHeightRef.current) {
-        return Math.min(height, window.innerHeight);
+        return Math.min(computedHeight, window.innerHeight);
       }
 
-      return height;
+      return computedHeight;
     });
   }, 10);
 
@@ -89,8 +95,6 @@ export const IframeWithBlob = ({
     const url = URL.createObjectURL(blob);
 
     setDataUrl(url);
-
-    console.log(url);
 
     return () => {
       URL.revokeObjectURL(url);
@@ -180,7 +184,6 @@ function extendHtml(html: string) {
       function setStyles() {
         document.documentElement.style.height = '100%';
         document.documentElement.style.background = '${bodyBackgroundColor}';
-        document.body.style.height = 'auto';
         document.body.style.margin = '0px';
         document.body.style.overflow = 'auto';
       }
