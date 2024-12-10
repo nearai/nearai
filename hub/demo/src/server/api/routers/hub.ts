@@ -132,8 +132,12 @@ export const hubRouter = createTRPCRouter({
       );
 
       evaluations.rows.forEach((row) => {
-        if (row.agent && row.namespace && row.version) {
-          row.agentId = `${row.namespace}/${row.agent}/${row.version}`;
+        if (row.namespace && row.version) {
+          if (row.agent) {
+            row.agentId = `${row.namespace}/${row.agent}/${row.version}`;
+          } else if (row.model) {
+            row.modelId = `${row.namespace}/${row.model}/${row.version}`;
+          }
         }
 
         benchmarkColumns.forEach((key) => {

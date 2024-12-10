@@ -168,10 +168,8 @@ export const CompetitionLeaderboardTable = ({ competitionId }: Props) => {
 
             {sorted?.map((evaluation, index) => (
               <Table.Row key={index}>
-                {evaluation.provider === 'local' ? (
-                  <Table.Cell
-                    href={`/models/${evaluation.namespace}/${evaluation.model}/${evaluation.version || 'latest'}`}
-                  >
+                {evaluation.modelId ? (
+                  <Table.Cell href={`/models/${evaluation.modelId}`}>
                     <Text size="text-s" weight={600} color="sand-12">
                       {evaluation.model}
                     </Text>
