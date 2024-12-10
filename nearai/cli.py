@@ -720,12 +720,10 @@ class AgentCli:
 
 
 def run(env: Environment):
-    env.add_message("assistant", "Hello, world!")
     # Your agent code here
-    # Example:
-    # prompt = {"role": "system", "content": "You are a helpful assistant."}
-    # result = env.completion([prompt] + env.list_messages())
-    # env.add_message("assistant", result)
+    prompt = {"role": "system", "content": "You are a helpful assistant."}
+    result = env.completion([prompt] + env.list_messages())
+    env.add_message("assistant", result)
 
 
 run(env)
