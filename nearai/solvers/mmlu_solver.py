@@ -26,7 +26,8 @@ class MMLUSolverStrategy(SolverStrategy):
         self.shots = shots
 
     def evaluation_name(self) -> str:  # noqa: D102
-        return f"mmlu_{self.shots}shots"
+        prefix = self.dataset_evaluation_name if self.dataset_evaluation_name else "mmlu"
+        return f"{prefix}_{self.shots}shots"
 
     def compatible_datasets(self) -> List[str]:  # noqa: D102
         return ["mmlu"]
