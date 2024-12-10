@@ -483,7 +483,7 @@ class AgentCli:
 
     def interactive(
         self,
-        agents: str,
+        agent: str,
         thread_id: Optional[str] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
         local: bool = False,
@@ -497,7 +497,7 @@ class AgentCli:
                 break
 
             last_message_id = self._task(
-                agents=agents,
+                agent=agent,
                 task=new_message,
                 thread_id=thread_id,
                 tool_resources=tool_resources,
@@ -512,7 +512,7 @@ class AgentCli:
 
     def task(
         self,
-        agents: str,
+        agent: str,
         task: str,
         thread_id: Optional[str] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
@@ -522,7 +522,7 @@ class AgentCli:
     ) -> None:
         """CLI wrapper for the _task method."""
         last_message_id = self._task(
-            agents=agents,
+            agent=agent,
             task=task,
             thread_id=thread_id,
             tool_resources=tool_resources,
@@ -536,7 +536,7 @@ class AgentCli:
 
     def _task(
         self,
-        agents: str,
+        agent: str,
         task: str,
         thread_id: Optional[str] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
@@ -564,12 +564,12 @@ class AgentCli:
         if not local:
             hub_client.beta.threads.runs.create_and_poll(
                 thread_id=thread.id,
-                assistant_id=agents,
+                assistant_id=agent,
             )
         else:
             run = hub_client.beta.threads.runs.create(
                 thread_id=thread.id,
-                assistant_id=agents,
+                assistant_id=agent,
                 extra_body={"delegate_execution": True},
             )
             params = {
@@ -581,7 +581,7 @@ class AgentCli:
             }
             auth = CONFIG.auth
             assert auth is not None
-            LocalRunner(agents, agents, thread.id, run.id, auth, params)
+            LocalRunner(agent, agent, thread.id, run.id, auth, params)
 
         # List new messages
         messages = hub_client.beta.threads.messages.list(thread_id=thread.id, after=last_message_id, order="asc")
@@ -603,7 +603,7 @@ class AgentCli:
 
     def run_remote(
         self,
-        agents: str,
+        agent: str,
         new_message: str = "",
         environment_id: str = "",
         provider: str = "aws_lambda",
@@ -611,7 +611,7 @@ class AgentCli:
         framework: str = "base",
         environment: str = "production",
     ) -> None:
-        """Invoke a Container based AWS lambda function to run agents on a given environment."""
+        """Invoke a Container based AWS lambda function to run an agent on a given environment."""
         from nearai.clients.lambda_client import LambdaWrapper
 
         if not CONFIG.auth:
@@ -628,7 +628,7 @@ class AgentCli:
             new_environment = wrapper.invoke_function(
                 f"{environment}-agent-runner-{framework}",
                 {
-                    "agents": agents,
+                    "agents": agent,
                     "environment_id": environment_id,
                     "auth": CONFIG.auth.model_dump(),
                     "new_message": new_message,
