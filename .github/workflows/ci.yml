@@ -90,13 +90,12 @@ jobs:
         NEARAICI_SIGNATURE: ${{ secrets.NEARAICI_SIGNATURE }}
 
     - name: Start Docker Compose
-      run: docker compose -f .docker/compose-e2e.yml up -d
+      run: docker compose -f .docker/compose-e2e.yml up -d --wait
       env:
         SINGLESTORE_LICENSE: ${{ secrets.SINGLESTORE_LICENSE }}
 
     - name: Exec Integration Tests
       run: |
-        sleep 60
         docker exec docker-ci-1 poetry run pytest -m integration ./e2e/
     
     - name: Stop Docker Compose
