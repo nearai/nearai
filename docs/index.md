@@ -1,19 +1,20 @@
-# Near AI
+# Near AI: Building a Truly Open AI
 
-See the [Near AI website](https://near.ai) for more on how we will achieve _Open Source and User-owned AGI._.
+Welcome! The [Near AI](https://near.ai) project is a toolkit to help build, measure, and deploy AI systems focused on [agents](agents.md).
 
+Driven by one of the minds to **TensorFlow** and the **Transformer Architecture**, with NEAR AI, your data is yours,
+and your AI works for your. No compromises on privacy or ownership.
 
-# ⚠️ Warning: Alpha software
+!!! warning "Alpha"
 
-NearAI is alpha software. This means that it is not yet ready for production use. We are actively working on improving the software and would love your help.
+    Near AI is currently on its alpha stage. We are actively working on improving the software and would love your help.
 
-If you would like to help build our future, please see our [contributing guide](contributing.md).
+    If you would like to help build our future, please see our [contributing guide](contributing.md).
 
-# About
+---
 
-The NearAI project is a toolkit to help build, measure, and deploy AI systems focused on [agents](agents.md).
-<iframe width="240" height="120" src="https://www.youtube.com/embed/q2nhgj9q2PU" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-<iframe width="240" height="120" src="https://www.youtube.com/embed/fqPRXxj3AoI" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="49%" height="auto" src="https://www.youtube.com/embed/q2nhgj9q2PU" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="49%" height="auto" src="https://www.youtube.com/embed/fqPRXxj3AoI" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 NearAI consists of:
 
