@@ -1,4 +1,5 @@
 import { parseStringOrNumber } from '@near-pagoda/ui/utils';
+import { TRPCError } from '@trpc/server';
 import path from 'path';
 import { z } from 'zod';
 
@@ -413,6 +414,59 @@ export const hubRouter = createTRPCRouter({
       if (!response.ok) throw data;
 
       return true;
+    }),
+
+  forkEntry: protectedProcedure
+    .input(
+      z.object({
+        modifications: z.object({
+          name: z.string(),
+          version: z.string().nullish(),
+          description: z.string().nullish(),
+        }),
+        namespace: z.string(),
+        name: z.string(),
+        version: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const response = await fetch(`${env.ROUTER_URL}/registry/fork`, {
+        method: 'POST',
+        headers: {
+          Authorization: ctx.authorization,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          modifications: input.modifications,
+          entry_location: {
+            namespace: input.namespace,
+            name: input.name,
+            version: input.version,
+          },
+        }),
+      });
+
+      if (response.status === 409) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'Test asdf',
+        });
+      }
+
+      const data: unknown = await response.json().catch(() => response.text());
+      if (!response.ok) throw data;
+
+      return z
+        .object({
+          status: z.string(),
+          entry: z.object({
+            namespace: z.string(),
+            name: z.string(),
+            version: z.string(),
+            category: entryCategory,
+          }),
+        })
+        .parse(data);
     }),
 
   thread: protectedProcedure

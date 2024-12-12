@@ -1,4 +1,5 @@
-import { handleClientError, unreachable } from '@near-pagoda/ui/utils';
+import { handleClientError } from '@near-pagoda/ui';
+import { unreachable } from '@near-pagoda/ui/utils';
 import { type FinalExecutionOutcome } from '@near-wallet-selector/core';
 import { type UseMutationResult } from '@tanstack/react-query';
 import { formatNearAmount } from 'near-api-js/lib/utils/format';

@@ -20,16 +20,22 @@ export function useEntryParams(overrides?: {
   version?: string;
 }) {
   const params = useParams();
-  const namespace = overrides?.namespace ?? params.namespace;
-  const name = overrides?.name ?? params.name;
-  const version = overrides?.version ?? params.version;
-  const id = `${namespace as string}/${name as string}/${version as string}`;
+  const namespace = decodeURIComponent(
+    (overrides?.namespace ?? params.namespace ?? '') as string,
+  );
+  const name = decodeURIComponent(
+    (overrides?.name ?? params.name ?? '') as string,
+  );
+  const version = decodeURIComponent(
+    (overrides?.version ?? params.version ?? '') as string,
+  );
+  const id = `${namespace}/${name}/${version}`;
 
   return {
     id,
-    namespace: namespace as string,
-    name: name as string,
-    version: version as string,
+    namespace,
+    name,
+    version,
   };
 }
 

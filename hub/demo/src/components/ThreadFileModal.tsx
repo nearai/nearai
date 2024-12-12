@@ -1,11 +1,11 @@
 import {
   Button,
+  copyTextToClipboard,
   Dialog,
   Flex,
   PlaceholderStack,
   Tooltip,
 } from '@near-pagoda/ui';
-import { copyTextToClipboard } from '@near-pagoda/ui/utils';
 import { Copy, Eye, MarkdownLogo } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';

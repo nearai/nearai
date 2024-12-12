@@ -5,18 +5,18 @@ import {
   Button,
   Card,
   CardList,
+  copyTextToClipboard,
   Dialog,
   Dropdown,
   Flex,
   Form,
+  handleClientError,
   Input,
   PlaceholderStack,
   SvgIcon,
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
-import { copyTextToClipboard } from '@near-pagoda/ui/utils';
-import { handleClientError } from '@near-pagoda/ui/utils';
 import {
   DotsThree,
   Lightbulb,

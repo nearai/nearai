@@ -498,3 +498,64 @@ def list_entries_inner(
         entries_info.sort(key=lambda x: x.id, reverse=True)
 
         return entries_info
+
+
+class ForkEntryModifications(BaseModel):
+    name: str
+    description: str
+    version: str
+
+
+@v1_router.post("/fork")
+def fork_entry(
+    modifications: ForkEntryModifications = Body(),
+    entry: RegistryEntry = Depends(get_read_access),
+    auth: AuthToken = Depends(get_auth),
+):
+    """Fork an existing registry entry to the current user's namespace."""
+    with get_session() as session:
+        new_entry = RegistryEntry(
+            namespace=auth.account_id,
+            name=modifications.name,
+            version=modifications.version,
+            category=entry.category,
+            description=modifications.description,
+            details=entry.details,
+            show_entry=True,
+        )
+
+        new_entry_collision_check = session.exec(
+            select(RegistryEntry).where(
+                RegistryEntry.category == new_entry.category,
+                RegistryEntry.namespace == new_entry.namespace,
+                RegistryEntry.name == new_entry.name,
+            )
+        ).first()
+
+        if new_entry_collision_check is not None:
+            logger.debug(f"Fork request collides with existing entry: {new_entry_collision_check}")
+            raise HTTPException(
+                status_code=409, detail="Fork request collides with existing entry. Choose a different name."
+            )
+
+        session.add(new_entry)
+        session.commit()
+
+        files = list_files_inner(entry)
+        assert isinstance(S3_BUCKET, str)
+        bucket = S3_BUCKET
+
+        for file in files:
+            key = entry.get_key(file.filename)
+            new_key = new_entry.get_key(file.filename)
+            s3.copy_object(Bucket=bucket, Key=new_key, CopySource={"Bucket": bucket, "Key": key})
+
+        return {
+            "status": "Entry forked and uploaded",
+            "entry": {
+                "namespace": new_entry.namespace,
+                "name": new_entry.name,
+                "version": new_entry.version,
+                "category": new_entry.category,
+            },
+        }

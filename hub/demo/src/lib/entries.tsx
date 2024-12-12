@@ -45,7 +45,9 @@ export const ENTRY_CATEGORY_LABELS: Record<
   },
 };
 
-export function primaryUrlForEntry(entry: z.infer<typeof entryModel>) {
+export function primaryUrlForEntry(
+  entry: Pick<z.infer<typeof entryModel>, 'namespace' | 'name' | 'category'>,
+) {
   let url: string | undefined;
 
   switch (entry.category as EntryCategory) {
@@ -115,7 +117,9 @@ export function sourceUrlForEntry(entry: z.infer<typeof entryModel>) {
   return url;
 }
 
-export function idForEntry(entry: z.infer<typeof entryModel>) {
+export function idForEntry(
+  entry: Pick<z.infer<typeof entryModel>, 'namespace' | 'name' | 'version'>,
+) {
   return `${entry.namespace}/${entry.name}/${entry.version}`;
 }
 

@@ -1,7 +1,14 @@
 'use client';
 
-import { Button, Card, Dropdown, Flex, SvgIcon, Text } from '@near-pagoda/ui';
-import { copyTextToClipboard } from '@near-pagoda/ui/utils';
+import {
+  Button,
+  Card,
+  copyTextToClipboard,
+  Dropdown,
+  Flex,
+  SvgIcon,
+  Text,
+} from '@near-pagoda/ui';
 import { Copy, DotsThree, Eye, MarkdownLogo } from '@phosphor-icons/react';
 import { usePrevious } from '@uidotdev/usehooks';
 import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react';

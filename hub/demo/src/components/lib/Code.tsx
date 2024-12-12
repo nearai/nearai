@@ -3,8 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import { useTheme } from '@near-pagoda/ui';
-import { Button, Tooltip } from '@near-pagoda/ui';
-import { copyTextToClipboard } from '@near-pagoda/ui/utils';
+import { Button, copyTextToClipboard, Tooltip } from '@near-pagoda/ui';
 import { Copy } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import SyntaxHighlighter from 'react-syntax-highlighter';

@@ -2,17 +2,17 @@ import {
   Button,
   Card,
   CardList,
+  copyTextToClipboard,
   Dialog,
   Flex,
   Form,
+  handleClientError,
   Input,
   InputTextarea,
   SvgIcon,
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
-import { copyTextToClipboard } from '@near-pagoda/ui/utils';
-import { handleClientError } from '@near-pagoda/ui/utils';
 import {
   CodeBlock,
   Eye,

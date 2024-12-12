@@ -7,6 +7,7 @@ import {
   CardList,
   Flex,
   Form,
+  handleClientError,
   InputTextarea,
   PlaceholderSection,
   PlaceholderStack,
@@ -14,7 +15,7 @@ import {
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
-import { formatBytes, handleClientError } from '@near-pagoda/ui/utils';
+import { formatBytes } from '@near-pagoda/ui/utils';
 import {
   ArrowRight,
   CodeBlock,

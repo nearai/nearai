@@ -3,6 +3,7 @@
 import {
   Badge,
   Button,
+  copyTextToClipboard,
   Dropdown,
   Flex,
   ImageIcon,
@@ -13,7 +14,6 @@ import {
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
-import { copyTextToClipboard } from '@near-pagoda/ui/utils';
 import { CaretDown, Copy } from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactElement, type ReactNode, useEffect } from 'react';
@@ -24,6 +24,8 @@ import { env } from '~/env';
 import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
+
+import { ForkButton } from './ForkButton';
 
 type Props = {
   category: EntryCategory;
@@ -194,7 +196,11 @@ export const EntryDetailsLayout = ({
               </Flex>
             </Flex>
 
-            <StarButton entry={currentEntry} variant="detailed" />
+            <Flex align="center" gap="s">
+              {/* TODO: Implement github style "code" dropdown with CLI commands and steps to develop locally */}
+              <StarButton entry={currentEntry} variant="detailed" />
+              <ForkButton entry={currentEntry} variant="detailed" />
+            </Flex>
           </Flex>
 
           {tabs && (

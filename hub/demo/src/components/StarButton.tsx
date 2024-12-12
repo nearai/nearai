@@ -74,8 +74,11 @@ export const StarButton = ({ entry, style, variant = 'simple' }: Props) => {
   return (
     <Tooltip
       asChild
-      content={visuallyStarred ? 'Unstar' : 'Star'}
-      disabled={variant === 'detailed' && !visuallyStarred}
+      content={
+        visuallyStarred
+          ? `Unstar this ${entry?.category ?? 'agent'}`
+          : `Star this ${entry?.category ?? 'agent'}`
+      }
     >
       <Button
         label={
@@ -89,12 +92,12 @@ export const StarButton = ({ entry, style, variant = 'simple' }: Props) => {
           visuallyStarred ? (
             <SvgIcon size="xs" icon={<Star weight="fill" />} color="amber-10" />
           ) : (
-            <SvgIcon size="xs" icon={<Star />} color="sand-9" />
+            <SvgIcon size="xs" icon={<Star />} />
           )
         }
         count={variant === 'detailed' ? count : undefined}
         size="small"
-        variant="secondary"
+        variant={variant === 'simple' ? 'secondary' : 'primary'}
         fill={variant === 'simple' ? 'ghost' : 'outline'}
         onClick={toggleStar}
         style={{

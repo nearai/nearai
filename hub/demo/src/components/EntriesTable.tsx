@@ -26,6 +26,7 @@ import {
 import { type EntryCategory } from '~/lib/models';
 import { api } from '~/trpc/react';
 
+import { ForkButton } from './ForkButton';
 import { StarButton } from './StarButton';
 
 type Props = {
@@ -159,12 +160,14 @@ export const EntriesTable = ({ category, title }: Props) => {
 
               <Table.Cell style={{ width: '1px' }}>
                 <Flex align="center" gap="xs">
+                  <ForkButton entry={entry} variant="simple" />
+
                   {!env.NEXT_PUBLIC_CONSUMER_MODE && (
                     <>
                       {benchmarkEvaluationsUrlForEntry(entry) && (
-                        <Tooltip asChild content="View Evaluations">
+                        <Tooltip asChild content="View evaluations">
                           <Button
-                            label="View Evaluations"
+                            label="View evaluations"
                             icon={ENTRY_CATEGORY_LABELS.evaluation.icon}
                             size="small"
                             fill="ghost"
@@ -174,9 +177,9 @@ export const EntriesTable = ({ category, title }: Props) => {
                       )}
 
                       {sourceUrlForEntry(entry) && (
-                        <Tooltip asChild content="View Source">
+                        <Tooltip asChild content="View source">
                           <Button
-                            label="View Source"
+                            label="View source"
                             icon={<CodeBlock weight="duotone" />}
                             size="small"
                             fill="ghost"
@@ -192,12 +195,12 @@ export const EntriesTable = ({ category, title }: Props) => {
                       asChild
                       content={
                         env.NEXT_PUBLIC_CONSUMER_MODE
-                          ? 'Chat With Agent'
-                          : 'Run Agent'
+                          ? 'Chat with agent'
+                          : 'Run agent'
                       }
                     >
                       <Button
-                        label="Run Agent"
+                        label="Run agent"
                         icon={
                           env.NEXT_PUBLIC_CONSUMER_MODE ? (
                             <ChatCircleDots weight="duotone" />
