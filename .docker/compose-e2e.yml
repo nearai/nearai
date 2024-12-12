@@ -1,6 +1,7 @@
 services:
   nearai_base:
     image: nearai_base:latest
+    pull_policy: never
     build:
       context: ..
       dockerfile: .docker/Dockerfile.nearai_base
