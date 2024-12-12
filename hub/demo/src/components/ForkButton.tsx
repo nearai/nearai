@@ -34,9 +34,14 @@ type Props = {
 };
 
 export const ForkButton = ({ entry, style, variant = 'simple' }: Props) => {
+  const accountId = useAuthStore((store) => store.auth?.account_id);
+  const isPermittedToViewSource =
+    !entry?.details.private_source || accountId === entry.namespace;
   const [forkModalIsOpen, setForkModalIsOpen] = useState(false);
 
   const fork = () => setForkModalIsOpen(true);
+
+  if (!isPermittedToViewSource) return null;
 
   return (
     <>

@@ -8,7 +8,6 @@
   > div {
     background: var(--sand-0) !important;
     padding: 1rem !important;
-    padding-right: 2.5rem !important;
   }
 
   :global(.linenumber) {
@@ -24,20 +23,29 @@
       background: transparent !important;
       padding: 0 !important;
     }
+
+    .copyButton {
+      top: 0;
+      right: 0;
+    }
+  }
+
+  &[data-copy='true'] {
+    > div {
+      padding-right: 2.5rem !important;
+    }
   }
 }
 
 .copyButton {
   position: absolute;
-  right: 0;
-  top: 0;
-  border-radius: 0 6px 0 6px;
+  right: var(--gap-xs);
+  top: var(--gap-xs);
+  width: 1.5rem;
+  height: 1.5rem;
   border: none !important;
   z-index: 10;
-
-  &:hover {
-    border: none !important;
-  }
+  backdrop-filter: blur(1px);
 
   svg {
     transition: var(--transitions);
@@ -48,9 +56,21 @@
   &::before {
     content: '';
     position: absolute;
-    inset: -1px;
-    background: var(--sand-0);
-    opacity: 0.8;
-    border-radius: 0 6px 0 6px;
+    background: var(--card-background-color, var(--sand-0));
+    inset: 0;
+    opacity: 0.75;
+    border-radius: 100%;
+    transition: var(--transitions);
+
+    [data-bleed='true'] & {
+      background: var(--card-background-color, var(--sand-1));
+    }
+  }
+
+  &:hover {
+    &::before {
+      opacity: 1;
+      background: var(--sand-5);
+    }
   }
 }

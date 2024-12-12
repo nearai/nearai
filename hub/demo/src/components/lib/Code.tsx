@@ -15,6 +15,7 @@ import {
 import s from './Code.module.scss';
 
 export type CodeLanguage =
+  | 'bash'
   | 'css'
   | 'html'
   | 'javascript'
@@ -74,7 +75,12 @@ export const Code = ({
   if (!mounted) return null;
 
   return (
-    <div className={s.code} data-bleed={bleed} data-language={language}>
+    <div
+      className={s.code}
+      data-bleed={bleed}
+      data-copy={showCopyButton}
+      data-language={language}
+    >
       {showCopyButton && (
         <Tooltip asChild content="Copy to clipboard">
           <Button
