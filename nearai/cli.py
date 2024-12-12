@@ -475,7 +475,7 @@ class EvaluationCli:
 
 
 class AgentCli:
-    def dev(self) -> None:
+    def dev(self) -> int:
         """Run local UI for development of agents that have their own UI."""
         if not os.path.exists("hub/demo/.env"):
             shutil.copy("hub/demo/.env.example", "hub/demo/.env")
