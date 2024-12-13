@@ -449,7 +449,6 @@ export const hubRouter = createTRPCRouter({
       if (response.status === 409) {
         throw new TRPCError({
           code: 'CONFLICT',
-          message: 'Test asdf',
         });
       }
 
