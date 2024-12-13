@@ -81,7 +81,7 @@ export const DevelopButton = ({ entry, style }: Props) => {
                 <Card background="sand-2" padding="s">
                   <Code
                     bleed
-                    language="bash"
+                    language="shell"
                     source={`nearai registry download ${idForEntry(entry)}`}
                     showLineNumbers={false}
                   />
@@ -105,7 +105,7 @@ export const DevelopButton = ({ entry, style }: Props) => {
                 <Card background="sand-2" padding="s">
                   <Code
                     bleed
-                    language="bash"
+                    language="shell"
                     source={`cd ~/.nearai/registry/${idForEntry(entry)}`}
                     showLineNumbers={false}
                   />
@@ -129,7 +129,7 @@ export const DevelopButton = ({ entry, style }: Props) => {
                 <Card background="sand-2" padding="s">
                   <Code
                     bleed
-                    language="bash"
+                    language="shell"
                     source={`nearai registry upload .`}
                     showLineNumbers={false}
                   />

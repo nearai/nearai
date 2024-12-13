@@ -15,7 +15,7 @@ import {
 import s from './Code.module.scss';
 
 export type CodeLanguage =
-  | 'bash'
+  | 'shell'
   | 'css'
   | 'html'
   | 'javascript'
