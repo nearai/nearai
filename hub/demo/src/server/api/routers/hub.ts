@@ -1,5 +1,4 @@
 import { parseStringOrNumber } from '@near-pagoda/ui/utils';
-import { TRPCError } from '@trpc/server';
 import path from 'path';
 import { z } from 'zod';
 
@@ -445,12 +444,6 @@ export const hubRouter = createTRPCRouter({
           },
         }),
       });
-
-      if (response.status === 409) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-        });
-      }
 
       const data: unknown = await response.json().catch(() => response.text());
       if (!response.ok) throw data;

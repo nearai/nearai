@@ -22,7 +22,6 @@ import { idForEntry, primaryUrlForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
-import { isTRPCClientError } from '~/utils/error';
 import { toTitleCase } from '~/utils/string';
 
 import { SignInPrompt } from './SignInPrompt';
@@ -153,16 +152,7 @@ const ForkForm = ({ entry, onFinish }: ForkFormProps) => {
 
       onFinish();
     } catch (error) {
-      if (isTRPCClientError(error) && error.data?.code === 'CONFLICT') {
-        openToast({
-          type: 'error',
-          title: `${toTitleCase(entry.category)} naming conflict`,
-          description: 'Enter a different name for your fork',
-        });
-        void entriesQuery.refetch();
-      } else {
-        handleClientError({ error });
-      }
+      handleClientError({ error });
     }
   };
 
