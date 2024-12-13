@@ -18,7 +18,7 @@ from sqlmodel import col, delete, select, text
 
 from hub.api.v1.auth import AuthToken, get_auth, get_optional_auth
 from hub.api.v1.entry_location import EntryLocation, valid_identifier
-from hub.api.v1.models import RegistryEntry, Tags, get_session
+from hub.api.v1.models import Fork, RegistryEntry, Tags, get_session
 
 DEFAULT_NAMESPACE_WRITE_ACCESS_LIST = [
     "spensa2.near",
@@ -309,6 +309,11 @@ def list_files_inner(entry: RegistryEntry) -> List[Filename]:
     return files
 
 
+class ForkOf(BaseModel):
+    namespace: str
+    name: str
+
+
 class EntryInformation(BaseModel):
     id: int
     namespace: str
@@ -319,8 +324,10 @@ class EntryInformation(BaseModel):
     description: str
     details: Dict[str, Any]
     tags: List[str]
+    num_forks: int
     num_stars: int
     starred_by_point_of_view: bool
+    fork_of: Optional[ForkOf]
 
 
 @v1_router.post("/list_entries")
@@ -397,13 +404,41 @@ def list_entries_inner(
                 CASE WHEN MAX(account_id = :starred_by) THEN 1 ELSE 0 END as starred_by_target
                 FROM stars
                 GROUP BY namespace, name
+            ),
+            CountedForks AS (
+                SELECT
+                    category as counted_forks_category,
+                    from_namespace as counted_forks_from_namespace,
+                    from_name as counted_forks_from_name,
+                    COUNT(to_namespace) as num_forks
+                FROM forks
+                GROUP BY counted_forks_category, counted_forks_from_namespace, counted_forks_from_name
+            ),
+            Fork AS (
+                SELECT
+                    category as fork_category,
+                    from_namespace as fork_from_namespace,
+                    from_name as fork_from_name,
+                    to_namespace as fork_to_namespace,
+                    to_name as fork_to_name
+                FROM forks
             )
-            SELECT registry.id, registry.namespace, registry.name, registry.version,
-            registry.category, registry.description, registry.details, registry.time,
-            CountedStars.num_stars, CountedStars.starred_by_pov
+            SELECT
+                registry.id, registry.namespace, registry.name, registry.version,
+                registry.category, registry.description, registry.details, registry.time,
+                CountedStars.num_stars, CountedStars.starred_by_pov, CountedForks.num_forks,
+                Fork.fork_from_namespace, Fork.fork_from_name
             FROM registry_entry registry
             LEFT JOIN CountedStars
-            ON registry.namespace = CountedStars.namespace AND registry.name = CountedStars.name
+                ON registry.namespace = CountedStars.namespace AND registry.name = CountedStars.name
+            LEFT JOIN CountedForks
+                ON registry.category = CountedForks.counted_forks_category
+                    AND registry.namespace = CountedForks.counted_forks_from_namespace
+                    AND registry.name = CountedForks.counted_forks_from_name
+            LEFT JOIN Fork
+                ON registry.category = Fork.fork_category
+                    AND registry.namespace = Fork.fork_to_namespace
+                    AND registry.name = Fork.fork_to_name
             {latest_version_condition}
             WHERE show_entry >= :show_entry
                 {category_condition}
@@ -428,13 +463,42 @@ def list_entries_inner(
                         FROM stars
                         GROUP BY namespace, name
                     ),
+                    CountedForks AS (
+                        SELECT
+                            category as counted_forks_category,
+                            from_namespace as counted_forks_from_namespace,
+                            from_name as counted_forks_from_name,
+                            COUNT(to_namespace) as num_forks
+                        FROM forks
+                        GROUP BY counted_forks_category, counted_forks_from_namespace, counted_forks_from_name
+                    ),
+                    Fork AS (
+                        SELECT
+                            category as fork_category,
+                            from_namespace as fork_from_namespace,
+                            from_name as fork_from_name,
+                            to_namespace as fork_to_namespace,
+                            to_name as fork_to_name
+                        FROM forks
+                    ),
                     FilteredRegistry AS (
-                        SELECT registry.id, CountedStars.num_stars, CountedStars.starred_by_pov
+                        SELECT
+                            registry.id, CountedStars.num_stars, CountedStars.starred_by_pov,
+                            CountedForks.num_forks, Fork.fork_from_namespace, Fork.fork_from_name
                         FROM registry_entry registry
                         {latest_version_condition}
                         JOIN entry_tags ON registry.id = entry_tags.registry_id
                         LEFT JOIN CountedStars
-                        ON registry.namespace = CountedStars.namespace AND registry.name = CountedStars.name
+                            ON registry.namespace = CountedStars.namespace
+                            AND registry.name = CountedStars.name
+                        LEFT JOIN CountedForks
+                            ON registry.category = CountedForks.counted_forks_category
+                                AND registry.namespace = CountedForks.counted_forks_from_namespace
+                                AND registry.name = CountedForks.counted_forks_from_name
+                        LEFT JOIN Fork
+                            ON registry.category = Fork.fork_category
+                                AND registry.namespace = Fork.fork_to_namespace
+                                AND registry.name = Fork.fork_to_name
                         WHERE show_entry >= :show_entry
                             AND entry_tags.tag IN :tags
                             {category_condition}
@@ -444,13 +508,16 @@ def list_entries_inner(
                         HAVING COUNT(DISTINCT entry_tags.tag) = :ntags
                     ),
                     RankedRegistry AS (
-                        SELECT id, num_stars, starred_by_pov, ROW_NUMBER() OVER (ORDER BY id DESC) AS col_rank
+                        SELECT
+                            id, num_stars, starred_by_pov, num_forks, fork_from_namespace, fork_from_name,
+                            ROW_NUMBER() OVER (ORDER BY id DESC) AS col_rank
                         FROM FilteredRegistry
                     )
 
                     SELECT registry.id, registry.namespace, registry.name, registry.version,
                            registry.category, registry.description, registry.details, registry.time,
-                           ranked.num_stars, ranked.starred_by_pov
+                           ranked.num_stars, ranked.starred_by_pov, num_forks, fork_from_namespace,
+                           fork_from_name
                     FROM RankedRegistry ranked
                     JOIN registry_entry registry ON ranked.id = registry.id
                     WHERE   ranked.col_rank >= :lower_bound AND
@@ -463,9 +530,26 @@ def list_entries_inner(
             bind_params["tags"] = tags_list
             bind_params["ntags"] = len(tags_list)
 
-        for id, namespace_, name, version, category_, description, details, timestamp, num_stars, pov in session.exec(
-            text(query_text).bindparams(**bind_params)
-        ).all():  # type: ignore
+        for (
+            id,
+            namespace_,
+            name,
+            version,
+            category_,
+            description,
+            details,
+            timestamp,
+            num_stars,
+            pov,
+            num_forks,
+            fork_from_namespace,
+            fork_from_name,
+        ) in session.exec(text(query_text).bindparams(**bind_params)).all():  # type: ignore
+            fork_of = None
+
+            if fork_from_namespace and fork_from_name:
+                fork_of = ForkOf(namespace=fork_from_namespace, name=fork_from_name)
+
             entries_info.append(
                 EntryInformation(
                     id=id,
@@ -477,8 +561,10 @@ def list_entries_inner(
                     description=description,
                     details=json.loads(details),
                     tags=[],
+                    num_forks=num_forks or 0,
                     num_stars=num_stars or 0,
                     starred_by_point_of_view=bool(pov),
+                    fork_of=fork_of,
                 )
             )
 
@@ -539,6 +625,17 @@ def fork_entry(
             )
 
         session.add(new_entry)
+
+        session.add(
+            Fork(
+                category=entry.category,
+                from_namespace=entry.namespace,
+                from_name=entry.name,
+                to_namespace=new_entry.namespace,
+                to_name=new_entry.name,
+            )
+        )
+
         session.commit()
 
         files = list_files_inner(entry)

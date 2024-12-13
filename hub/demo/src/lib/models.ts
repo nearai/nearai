@@ -122,8 +122,15 @@ export const entryModel = z.object({
   tags: z.string().array().default([]),
   show_entry: z.boolean().default(true),
   starred_by_point_of_view: z.boolean().default(false),
+  num_forks: z.number().default(0),
   num_stars: z.number().default(0),
   details: entryDetailsModel.default({}),
+  fork_of: z
+    .object({
+      name: z.string(),
+      namespace: z.string(),
+    })
+    .nullish(),
 });
 
 export const entriesModel = z.array(entryModel);

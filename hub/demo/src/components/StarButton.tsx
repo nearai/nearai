@@ -100,10 +100,15 @@ export const StarButton = ({ entry, style, variant = 'simple' }: Props) => {
         variant={variant === 'simple' ? 'secondary' : 'primary'}
         fill={variant === 'simple' ? 'ghost' : 'outline'}
         onClick={toggleStar}
-        style={{
-          ...style,
-          fontVariantNumeric: 'tabular-nums',
-        }}
+        style={
+          variant === 'simple'
+            ? {
+                ...style,
+                fontVariantNumeric: 'tabular-nums',
+                paddingInline: 'var(--gap-s)',
+              }
+            : style
+        }
         className={s.starButton}
         data-clicked={clicked}
         data-starred={visuallyStarred}

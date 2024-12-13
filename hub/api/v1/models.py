@@ -112,6 +112,16 @@ class Stars(SQLModel, table=True):
     name: str = Field(primary_key=True)
 
 
+class Fork(SQLModel, table=True):
+    __tablename__ = "forks"
+
+    category: str = Field(primary_key=True)
+    from_namespace: str = Field(nullable=False)
+    from_name: str = Field(nullable=False)
+    to_namespace: str = Field(primary_key=True)
+    to_name: str = Field(primary_key=True)
+
+
 class Job(SQLModel, table=True):
     __tablename__ = "jobs"
 

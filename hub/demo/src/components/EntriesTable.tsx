@@ -96,9 +96,16 @@ export const EntriesTable = ({ category, title }: Props) => {
             <Table.HeadCell
               column="num_stars"
               sortable
-              style={{ paddingLeft: '1.4rem' }}
+              style={{ paddingLeft: '1rem' }}
             >
               Stars
+            </Table.HeadCell>
+            <Table.HeadCell
+              column="num_forks"
+              sortable
+              style={{ paddingLeft: '1rem' }}
+            >
+              Forks
             </Table.HeadCell>
             <Table.HeadCell />
           </Table.Row>
@@ -159,9 +166,11 @@ export const EntriesTable = ({ category, title }: Props) => {
               </Table.Cell>
 
               <Table.Cell style={{ width: '1px' }}>
-                <Flex align="center" gap="xs">
-                  <ForkButton entry={entry} variant="simple" />
+                <ForkButton entry={entry} variant="simple" />
+              </Table.Cell>
 
+              <Table.Cell style={{ width: '1px' }}>
+                <Flex align="center" gap="xs">
                   {!env.NEXT_PUBLIC_CONSUMER_MODE && (
                     <>
                       {benchmarkEvaluationsUrlForEntry(entry) && (
