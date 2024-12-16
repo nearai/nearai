@@ -341,9 +341,21 @@ def list_entries(
     show_latest_version: bool = True,
     starred_by: str = "",
     star_point_of_view: str = "",
+    fork_of_name: str = "",
+    fork_of_namespace: str = "",
 ) -> List[EntryInformation]:
     return list_entries_inner(
-        namespace, category, tags, total, offset, show_hidden, show_latest_version, starred_by, star_point_of_view
+        namespace,
+        category,
+        tags,
+        total,
+        offset,
+        show_hidden,
+        show_latest_version,
+        starred_by,
+        star_point_of_view,
+        fork_of_name,
+        fork_of_namespace,
     )
 
 
@@ -357,6 +369,8 @@ def list_entries_inner(
     show_latest_version: bool = True,
     starred_by: str = "",
     star_point_of_view: str = "",
+    fork_of_name: str = "",
+    fork_of_namespace: str = "",
 ) -> List[EntryInformation]:
     tags_list = list({tag for tag in tags.split(",") if tag})
 
@@ -377,6 +391,14 @@ def list_entries_inner(
         bind_params["namespace"] = namespace
     else:
         namespace_condition = ""
+
+    if fork_of_name and fork_of_namespace:
+        fork_of_namespace = valid_identifier(fork_of_namespace)
+        fork_of_condition = "AND fork_from_namespace = :fork_of_namespace AND fork_from_name = :fork_of_name"
+        bind_params["fork_of_name"] = fork_of_name
+        bind_params["fork_of_namespace"] = fork_of_namespace
+    else:
+        fork_of_condition = ""
 
     latest_version_condition = (
         """JOIN (SELECT MAX(id) as id FROM registry_entry GROUP BY namespace, name) last_entry
@@ -444,6 +466,7 @@ def list_entries_inner(
                 {category_condition}
                 {namespace_condition}
                 {starred_by_condition}
+                {fork_of_condition}
             ORDER BY registry.id DESC
             LIMIT :total
             OFFSET :offset
@@ -504,6 +527,7 @@ def list_entries_inner(
                             {category_condition}
                             {namespace_condition}
                             {starred_by_condition}
+                            {fork_of_condition}
                         GROUP BY registry.id
                         HAVING COUNT(DISTINCT entry_tags.tag) = :ntags
                     ),

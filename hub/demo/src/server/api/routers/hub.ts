@@ -39,6 +39,12 @@ export const hubRouter = createTRPCRouter({
     .input(
       z.object({
         category: entryCategory.optional(),
+        forkOf: z
+          .object({
+            name: z.string(),
+            namespace: z.string(),
+          })
+          .optional(),
         limit: z.number().default(10_000),
         namespace: z.string().optional(),
         showLatestVersion: z.boolean().default(true),
@@ -71,8 +77,12 @@ export const hubRouter = createTRPCRouter({
         return await loadEntriesFromDirectory(registryPath);
       }
 
-      if (input.starredBy) {
+      if (input.starredBy)
         url.searchParams.append('starred_by', input.starredBy);
+
+      if (input.forkOf) {
+        url.searchParams.append('fork_of_namespace', input.forkOf.namespace);
+        url.searchParams.append('fork_of_name', input.forkOf.name);
       }
 
       if (ctx.signature) {

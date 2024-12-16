@@ -1,10 +1,11 @@
 'use client';
 
-import { Badge, Flex, Grid, Section, Text } from '@near-pagoda/ui';
+import { Badge, Flex, Section, Text } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
 import { type entryModel } from '~/lib/models';
 
+import { EntriesTable } from './EntriesTable';
 import { ForkButton } from './ForkButton';
 import { Markdown } from './lib/Markdown';
 
@@ -14,13 +15,8 @@ type Props = {
 
 export const EntryOverview = ({ entry }: Props) => {
   return (
-    <Grid
-      columns="1fr 1fr"
-      align="stretch"
-      style={{ flexGrow: 1 }}
-      tablet={{ columns: '1fr' }}
-    >
-      <Section background="sand-2" gap="m" bleed>
+    <>
+      <Section background="sand-2">
         <Text size="text-l">Description</Text>
 
         <Markdown
@@ -39,20 +35,20 @@ export const EntryOverview = ({ entry }: Props) => {
         )}
       </Section>
 
-      <Section background="sand-1" gap="m" bleed>
-        <Flex align="center" gap="s">
-          <Text size="text-l">Forks</Text>
-          <ForkButton entry={entry} variant="simple" />
-        </Flex>
-
-        <Text color="sand-10" size="text-s">
-          This {entry.category} {`hasn't`} been forked yet.
-        </Text>
-
-        {/* TODO: Create endpoint for fetching all forks of entry */}
-        {/* TODO: Update all other overview pages for models, datasets, etc */}
-        {/* <EntryCard entry={currentEntry} /> */}
-      </Section>
-    </Grid>
+      <EntriesTable
+        category={entry.category}
+        header={
+          <Flex align="center" gap="s">
+            <Text size="text-l">Forks</Text>
+            <ForkButton entry={entry} variant="simple" />
+          </Flex>
+        }
+        forkOf={{
+          name: entry.name,
+          namespace: entry.namespace,
+        }}
+        title="Forks"
+      />
+    </>
   );
 };
