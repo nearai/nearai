@@ -90,18 +90,24 @@ To preview your changes locally, you will need to install all the dependencies f
 - [`mkdocs-minify-plugin`](https://github.com/byrnereese/mkdocs-minify-plugin)
 - [`mkdocsstrings`](https://mkdocstrings.github.io/)
 
-!!! failure inline end "Cairo Graphics"
+All these dependencies can be easily installed through `pip` or `poetry`:
 
-      If you encounter a problem with `cairo`, please follow the [mkdocs-material Requirements Guide](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/#cairo-graphics)
+=== "pip"
 
-All these dependencies can be installed with `pip`:
+      ```bash
+      pip install mkdocs mkdocs-material mkdocs-autorefs mkdocs-minify-plugin "mkdocstrings[python]" "mkdocs-material[imaging]"
+      ```
 
-```bash
-pip install mkdocs mkdocs-material mkdocs-autorefs mkdocs-minify-plugin "mkdocstrings[python]" "mkdocs-material[imaging]"
-```
+=== "poetry"
+      ```bash
+      poetry install --with docs
+      ```
 
 Then simply test your changes locally using `mkdocs serve`
 
+!!! failure "Cairo Graphics"
+
+      If you encounter a problem with `cairo`, please follow the [mkdocs-material Requirements Guide](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/#cairo-graphics)
 
 
 ## Create a Pull Request
