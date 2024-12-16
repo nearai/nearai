@@ -4,6 +4,7 @@ RUN mkdir -p /etc/tinyproxy/ && \
     cat <<EOF > /etc/tinyproxy/whitelist
 .*.near.ai
 .near.ai
+redacted.api.near.ai
 EOF
 
 RUN mkdir -p /etc/tinyproxy/conf/ && \
