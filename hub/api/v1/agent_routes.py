@@ -67,7 +67,7 @@ class CreateThreadAndRunRequest(BaseModel):
     )
 
 
-def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: AuthToken, new_message, params):
+def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: AuthToken, params):
     auth_data = auth.model_dump()
 
     if auth_data["nonce"]:
@@ -79,7 +79,6 @@ def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: Aut
         "thread_id": thread_id,
         "run_id": run_id,
         "auth": auth_data,
-        "new_message": new_message,
         "params": params,
     }
 
@@ -93,7 +92,7 @@ def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: Aut
         raise Exception(f"Request failed with status code {response.status_code}: {response.text}")
 
 
-def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: AuthToken, new_message, params):
+def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: AuthToken, params):
     wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
     auth_data = auth.model_dump()
 
@@ -108,7 +107,6 @@ def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: Auth
             "thread_id": thread_id,
             "run_id": run_id,
             "auth": auth_data,
-            "new_message": new_message,
             "params": params,
         },
     )
@@ -207,7 +205,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
         if runner == "custom_runner":
             custom_runner_url = getenv("CUSTOM_RUNNER_URL", None)
             if custom_runner_url:
-                invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth, new_message, params)
+                invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth, params)
         elif runner == "local_runner":
             """Runs agents directly from the local machine."""
 
@@ -224,7 +222,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
             if agent_api_url != "https://api.near.ai":
                 print(f"Passing agent API URL: {agent_api_url}")
 
-            invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth, new_message, params)
+            invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth, params)
 
     with get_session() as session:
         completed_run_model = session.get(RunModel, run_id)

@@ -12,7 +12,6 @@ from pathlib import Path
 from textwrap import fill
 from typing import Any, Dict, List, Optional, Union
 
-import boto3
 import fire
 from openai.types.beta.threads.message import Attachment
 from tabulate import tabulate
@@ -613,44 +612,6 @@ class AgentCli:
         self.last_thread_id = thread.id
 
         return last_message_id
-
-    def run_remote(
-        self,
-        agent: str,
-        new_message: str = "",
-        environment_id: str = "",
-        provider: str = "aws_lambda",
-        params: object = None,
-        framework: str = "base",
-        environment: str = "production",
-    ) -> None:
-        """Invoke a Container based AWS lambda function to run an agent on a given environment."""
-        from nearai.clients.lambda_client import LambdaWrapper
-
-        if not CONFIG.auth:
-            print("Please login with `nearai login`")
-            return
-        if provider != "aws_lambda":
-            print(f"Provider {provider} is not supported.")
-            return
-        if not params:
-            params = {"max_iterations": 1}
-
-        wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
-        try:
-            new_environment = wrapper.invoke_function(
-                f"{environment}-agent-runner-{framework}",
-                {
-                    "agents": agent,
-                    "environment_id": environment_id,
-                    "auth": CONFIG.auth.model_dump(),
-                    "new_message": new_message,
-                    "params": params,
-                },
-            )
-            print(f"Agent run finished. New environment is {new_environment}")
-        except Exception as e:
-            print(f"Error running agent remotely: {e}")
 
     def create(self, name: Optional[str] = None, description: Optional[str] = None, fork: Optional[str] = None) -> None:
         """Create a new agent or fork an existing one.

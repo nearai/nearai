@@ -52,7 +52,6 @@ def handler(event, context):
         stop_time_val = time.perf_counter()
         write_metric("VerifySignatureDuration", stop_time_val - start_time_val)
 
-    new_message = event.get("new_message")
     thread_id = event.get("thread_id")
     run_id = event.get("run_id")
 
@@ -63,7 +62,6 @@ def handler(event, context):
         auth_object,
         thread_id,
         run_id,
-        new_message=new_message,
         params=params,
     )
     if not new_thread_id:
