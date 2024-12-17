@@ -35,42 +35,42 @@
       padding-right: 2.5rem !important;
     }
   }
-}
 
-.copyButton {
-  position: absolute;
-  right: var(--gap-xs);
-  top: var(--gap-xs);
-  width: 1.5rem;
-  height: 1.5rem;
-  border: none !important;
-  z-index: 10;
-  backdrop-filter: blur(1px);
-
-  svg {
-    transition: var(--transitions);
-    position: relative;
-    z-index: 15;
-  }
-
-  &::before {
-    content: '';
+  .copyButton {
     position: absolute;
-    background: var(--card-background-color, var(--sand-0));
-    inset: 0;
-    opacity: 0.75;
-    border-radius: 100%;
-    transition: var(--transitions);
+    right: var(--gap-xs);
+    top: var(--gap-xs);
+    width: 1.5rem;
+    height: 1.5rem;
+    border: none !important;
+    z-index: 10;
+    backdrop-filter: blur(1px);
 
-    [data-bleed='true'] & {
-      background: var(--card-background-color, var(--sand-1));
+    svg {
+      transition: var(--transitions);
+      position: relative;
+      z-index: 15;
     }
-  }
 
-  &:hover {
     &::before {
-      opacity: 1;
-      background: var(--sand-5);
+      content: '';
+      position: absolute;
+      background: var(--card-background-color, var(--sand-0));
+      inset: 0;
+      opacity: 0.75;
+      border-radius: 100%;
+      transition: var(--transitions);
+
+      [data-bleed='true'] & {
+        background: var(--card-background-color, var(--sand-1));
+      }
+    }
+
+    &:hover {
+      &::before {
+        opacity: 1;
+        background: var(--sand-5);
+      }
     }
   }
 }
