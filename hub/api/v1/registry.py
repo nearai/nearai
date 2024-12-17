@@ -616,12 +616,17 @@ class ForkEntryModifications(BaseModel):
     version: str
 
 
+class ForkResult(BaseModel):
+    status: str
+    entry: EntryLocation
+
+
 @v1_router.post("/fork")
 def fork_entry(
     modifications: ForkEntryModifications = Body(),
     entry: RegistryEntry = Depends(get_read_access),
     auth: AuthToken = Depends(get_auth),
-):
+) -> ForkResult:
     """Fork an existing registry entry to the current user's namespace."""
     with get_session() as session:
         new_entry = RegistryEntry(
@@ -671,12 +676,9 @@ def fork_entry(
             new_key = new_entry.get_key(file.filename)
             s3.copy_object(Bucket=bucket, Key=new_key, CopySource={"Bucket": bucket, "Key": key})
 
-        return {
-            "status": "Entry forked and uploaded",
-            "entry": {
-                "namespace": new_entry.namespace,
-                "name": new_entry.name,
-                "version": new_entry.version,
-                "category": new_entry.category,
-            },
-        }
+        result = ForkResult(
+            status="Entry forked and uploaded",
+            entry=EntryLocation(name=new_entry.name, namespace=new_entry.namespace, version=new_entry.version),
+        )
+
+        return result

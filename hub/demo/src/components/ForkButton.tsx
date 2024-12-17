@@ -153,7 +153,12 @@ const ForkForm = ({ entry, onFinish }: ForkFormProps) => {
 
       await utils.hub.entries.refetch();
 
-      router.push(primaryUrlForEntry(result.entry)!);
+      const url = primaryUrlForEntry({
+        ...result.entry,
+        category: entry.category,
+      })!;
+
+      router.push(url);
 
       openToast({
         type: 'success',

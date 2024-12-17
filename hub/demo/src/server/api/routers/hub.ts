@@ -465,7 +465,6 @@ export const hubRouter = createTRPCRouter({
             namespace: z.string(),
             name: z.string(),
             version: z.string(),
-            category: entryCategory,
           }),
         })
         .parse(data);
