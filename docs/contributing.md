@@ -9,14 +9,22 @@ about the awesome projects it made possible, or even simply ⭐️ the repositor
 
 **This guide was heavily inspired by the [huggingface transformers guide to contributing](https://github.com/huggingface/transformers/blob/main/CONTRIBUTING.md).**
 
-## Ways to contribute
+---
+
+# Ways to contribute
 
 There are several ways you can contribute to `nearai`:
 
-* Fix outstanding issues with the existing code.
-* Submit issues related to bugs or desired new features.
-* Implement new features (including but not limited to solvers, agents, or benchmarks).
-* Contribute to the examples or to the documentation.
+- [Contribute to `nearai`](#contribute-to-nearai)
+- [Ways to contribute](#ways-to-contribute)
+  - [Fixing outstanding issues](#fixing-outstanding-issues)
+  - [Submitting a bug-related issue or feature request](#submitting-a-bug-related-issue-or-feature-request)
+    - [Did you find a bug?](#did-you-find-a-bug)
+    - [Do you want a new feature?](#do-you-want-a-new-feature)
+  - [Contribute Documentation](#contribute-documentation)
+  - [Create a Pull Request](#create-a-pull-request)
+    - [Pull request checklist](#pull-request-checklist)
+    - [Sync a forked repository with upstream main](#sync-a-forked-repository-with-upstream-main)
 
 ## Fixing outstanding issues
 
@@ -63,6 +71,44 @@ If there is a new feature you'd like to see in `nearai`, please open an issue an
 2. Describe your requested feature in as much detail as possible. The more you can tell us about it, the better we'll be able to help you.
 3. Provide a *code snippet* that demonstrates the feature usage.
 4. If the feature is related to a paper, please include a link.
+
+## Contribute Documentation
+
+If you discover any errors or omissions in our documentation, please open an issue and describe:
+
+* Which explanation or code snippet is incorrect
+* What concept is not clear or missing
+* If you know, what would be the correct explanation or code snippet
+
+If you think you can contribute a fix for the issue, please feel free to open a Pull Request.
+
+To preview your changes locally, you will need to install all the dependencies for the documentation, particularly:
+
+- [`mkdocs`](https://www.mkdocs.org/)
+- [`mkdocs-material`](https://squidfunk.github.io/mkdocs-material/)
+- [`mkdocs-autorefs`](https://pypi.org/project/mkdocs-autorefs/)
+- [`mkdocs-minify-plugin`](https://github.com/byrnereese/mkdocs-minify-plugin)
+- [`mkdocsstrings`](https://mkdocstrings.github.io/)
+
+All these dependencies can be easily installed through `pip` or `poetry`:
+
+=== "pip"
+
+      ```bash
+      pip install mkdocs mkdocs-material mkdocs-autorefs mkdocs-minify-plugin "mkdocstrings[python]" "mkdocs-material[imaging]"
+      ```
+
+=== "poetry"
+      ```bash
+      poetry install --with docs
+      ```
+
+Then simply test your changes locally using `mkdocs serve`
+
+!!! failure "Cairo Graphics"
+
+      If you encounter a problem with `cairo`, please follow the [mkdocs-material Requirements Guide](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/#cairo-graphics)
+
 
 ## Create a Pull Request
 
