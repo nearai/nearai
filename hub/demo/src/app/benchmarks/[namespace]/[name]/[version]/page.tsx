@@ -1,29 +1,12 @@
 'use client';
 
-import { Badge, Flex, Section, Text } from '@near-pagoda/ui';
-
+import { EntryOverview } from '~/components/EntryOverview';
 import { useCurrentEntry } from '~/hooks/entries';
 
-export default function EntryDetailsPage() {
+export default function EntryOverviewPage() {
   const { currentEntry } = useCurrentEntry('benchmark');
 
   if (!currentEntry) return null;
 
-  return (
-    <>
-      <Section>
-        <Text size="text-l">Description</Text>
-
-        <Text>{currentEntry.description || 'No description provided.'}</Text>
-
-        {currentEntry.tags.length > 0 && (
-          <Flex gap="s" wrap="wrap">
-            {currentEntry.tags.map((tag) => (
-              <Badge label={tag} variant="neutral" key={tag} />
-            ))}
-          </Flex>
-        )}
-      </Section>
-    </>
-  );
+  return <EntryOverview entry={currentEntry} />;
 }

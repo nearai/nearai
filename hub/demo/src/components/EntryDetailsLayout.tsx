@@ -12,7 +12,7 @@ import {
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
-import { CaretDown, LockKey } from '@phosphor-icons/react';
+import { CaretDown, GitFork, LockKey } from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactElement, type ReactNode, useEffect } from 'react';
 
@@ -20,7 +20,7 @@ import { ErrorSection } from '~/components/ErrorSection';
 import { StarButton } from '~/components/StarButton';
 import { env } from '~/env';
 import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
-import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
+import { ENTRY_CATEGORY_LABELS, primaryUrlForEntry } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
 
 import { DevelopButton } from './DevelopButton';
@@ -175,6 +175,35 @@ export const EntryDetailsLayout = ({
                       </Dropdown.Section>
                     </Dropdown.Content>
                   </Dropdown.Root>
+
+                  {currentEntry?.fork_of && (
+                    <Tooltip
+                      content={
+                        <Text size="text-xs" color="current">
+                          This {category} is a fork of{' '}
+                          <Text
+                            size="text-xs"
+                            href={primaryUrlForEntry({
+                              category: currentEntry.category,
+                              namespace: currentEntry.fork_of.namespace,
+                              name: currentEntry.fork_of.name,
+                            })}
+                          >
+                            {currentEntry.fork_of.namespace}/
+                            {currentEntry.fork_of.name}
+                          </Text>
+                        </Text>
+                      }
+                      root={{ disableHoverableContent: false }}
+                    >
+                      <SvgIcon
+                        icon={<GitFork weight="fill" />}
+                        size="xs"
+                        color="sand-9"
+                        style={{ cursor: 'help' }}
+                      />
+                    </Tooltip>
+                  )}
 
                   {currentEntry?.details.private_source && (
                     <Tooltip

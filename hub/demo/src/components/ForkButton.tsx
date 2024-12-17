@@ -37,6 +37,7 @@ export const ForkButton = ({ entry, style, variant = 'simple' }: Props) => {
   const isPermittedToViewSource =
     !entry?.details.private_source || accountId === entry.namespace;
   const [forkModalIsOpen, setForkModalIsOpen] = useState(false);
+  const count = entry?.num_forks ?? 0;
 
   const fork = () => setForkModalIsOpen(true);
 
@@ -44,20 +45,29 @@ export const ForkButton = ({ entry, style, variant = 'simple' }: Props) => {
 
   return (
     <>
-      <Tooltip asChild content={`Fork this ${entry?.category ?? 'agent'}`}>
+      <Tooltip
+        asChild
+        content={`Create your own copy of this ${entry?.category ?? 'agent'}`}
+      >
         {variant === 'simple' ? (
           <Button
-            label="Fork"
-            icon={<SvgIcon size="xs" icon={<GitFork weight="duotone" />} />}
+            label={count.toString()}
+            iconLeft={<SvgIcon size="xs" icon={<GitFork weight="duotone" />} />}
             size="small"
+            variant="secondary"
             fill="ghost"
             onClick={fork}
-            style={style}
+            style={{
+              ...style,
+              fontVariantNumeric: 'tabular-nums',
+              paddingInline: 'var(--gap-s)',
+            }}
           />
         ) : (
           <Button
             label="Fork"
             iconLeft={<SvgIcon size="xs" icon={<GitFork />} />}
+            count={count}
             size="small"
             fill="outline"
             onClick={fork}
@@ -142,6 +152,7 @@ const ForkForm = ({ entry, onFinish }: ForkFormProps) => {
       });
 
       await utils.hub.entries.refetch();
+
       router.push(primaryUrlForEntry(result.entry)!);
 
       openToast({
@@ -157,6 +168,7 @@ const ForkForm = ({ entry, onFinish }: ForkFormProps) => {
   };
 
   const findConflictingEntry = (name: string) => {
+    if (form.formState.isSubmitting) return;
     const match = entriesQuery.data?.find((entry) => entry.name === name);
     return match;
   };

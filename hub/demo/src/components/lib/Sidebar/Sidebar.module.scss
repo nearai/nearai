@@ -53,10 +53,7 @@
   max-height: var(--section-fill-height);
   min-height: 0;
   flex-shrink: 0;
-  box-shadow:
-    0 0 1rem rgba(0, 0, 0, 0.1),
-    -1px 0 0 var(--sand-4),
-    1px 0 0 var(--sand-4);
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
 
   @media (max-width: $tabletBreakpointMaxWidth) {
     position: fixed;

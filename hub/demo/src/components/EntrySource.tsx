@@ -7,7 +7,6 @@ import {
   CardList,
   Container,
   Flex,
-  PlaceholderCard,
   PlaceholderStack,
   Section,
   SvgIcon,
@@ -163,7 +162,7 @@ export const EntrySource = ({ entry }: Props) => {
                   language={filePathToCodeLanguage(openedFile.path)}
                 />
               ) : (
-                <PlaceholderCard />
+                <PlaceholderStack />
               )}
             </>
           )}
