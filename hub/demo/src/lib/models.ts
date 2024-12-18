@@ -284,6 +284,7 @@ export const agentAddSecretsRequestModel = z.object({
     .array(),
   requestId: z.string().nullish(),
   reloadAgentOnSuccess: z.boolean().default(true),
+  reloadAgentMessage: z.string().nullish(),
 });
 
 export const threadMetadataModel = z.intersection(

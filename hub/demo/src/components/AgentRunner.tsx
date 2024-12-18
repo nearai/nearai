@@ -214,7 +214,6 @@ export const AgentRunner = ({
     agentRequestsNeedingPermissions,
     setAgentRequestsNeedingPermissions,
     conditionallyProcessAgentRequests,
-    iframeNonce,
     iframePostMessage,
     onIframePostMessage,
   } = useAgentRequestsWithIframe(currentEntry, chatMutation, threadId);
@@ -373,7 +372,6 @@ export const AgentRunner = ({
                 <>
                   <IframeWithBlob
                     html={htmlOutput}
-                    nonce={iframeNonce}
                     onPostMessage={onIframePostMessage}
                     postMessage={iframePostMessage}
                   />
