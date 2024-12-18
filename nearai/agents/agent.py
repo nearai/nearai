@@ -41,6 +41,10 @@ class Agent(object):
         self.temp_dir = self.write_agent_files_to_temp(agent_files)
         self.change_to_temp_dir = change_to_temp_dir
 
+    def get_full_name(self):
+        """Returns full agent name."""
+        return f"{self.namespace}/{self.name}/{self.version}"
+
     @staticmethod
     def write_agent_files_to_temp(agent_files):
         """Write agent files to a temporary directory."""

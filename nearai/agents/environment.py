@@ -45,6 +45,10 @@ from nearai.shared.models import (
     GitLabSource,
     StaticFileChunkingStrategyParam,
 )
+from nearai.shared.near.sign import (
+    CompletionSignaturePayload,
+    validate_completion_signature,
+)
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
@@ -57,6 +61,22 @@ LLAMA_TOOL_FORMAT_PATTERN2 = re.compile(r"(.*)<tool_call>\n(.*)\n</tool_call>(.*
 
 
 default_approvals: Dict[str, Any] = {"confirm_execution": lambda _: True}
+
+
+class InferenceParameters:
+    def __init__(  # noqa: D107
+        self,
+        model: str,
+        messages: Iterable[ChatCompletionMessageParam],
+        stream: bool,
+        temperature=None,
+        max_tokens=None,
+    ):
+        self.model = model
+        self.messages = messages
+        self.stream = stream
+        self.temperature = temperature
+        self.max_tokens = max_tokens
 
 
 class CustomLogHandler(logging.Handler):
@@ -576,14 +596,14 @@ class Environment(object):
         _, model = self.client.provider_models.match_provider_model(model, provider)
         return model
 
-    def _run_inference_completions(
+    def get_inference_parameters(
         self,
         messages: Union[Iterable[ChatCompletionMessageParam], str],
         model: Union[Iterable[ChatCompletionMessageParam], str],
         stream: bool,
         **kwargs: Any,
-    ) -> Union[ModelResponse, CustomStreamWrapper]:
-        """Run inference completions for given parameters."""
+    ) -> Tuple[InferenceParameters, Any]:
+        """Run inference parameters to run completions."""
         if isinstance(messages, str):
             self.add_system_log(
                 "Deprecated completions call. Pass `messages` as a first parameter.",
@@ -604,14 +624,31 @@ class Environment(object):
         temperature = kwargs.pop("temperature", self._agents[0].model_temperature if self._agents else None)
         max_tokens = kwargs.pop("max_tokens", self._agents[0].model_max_tokens if self._agents else None)
 
-        return self.client.completions(
-            model,
-            messages,
+        params = InferenceParameters(
+            model=model,
+            messages=messages,
             stream=stream,
             temperature=temperature,
             max_tokens=max_tokens,
-            **kwargs,
         )
+
+        return params, kwargs
+
+    def _run_inference_completions(
+        self,
+        messages: Union[Iterable[ChatCompletionMessageParam], str],
+        model: Union[Iterable[ChatCompletionMessageParam], str],
+        stream: bool,
+        **kwargs: Any,
+    ) -> Union[ModelResponse, CustomStreamWrapper]:
+        """Run inference completions for given parameters."""
+        params, kwargs = self.get_inference_parameters(messages, model, stream, **kwargs)
+
+        completions = self.client.completions(
+            params.model, params.messages, params.stream, params.temperature, params.max_tokens, **kwargs
+        )
+
+        return completions
 
     # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
     def completions(
@@ -623,6 +660,45 @@ class Environment(object):
     ) -> Union[ModelResponse, CustomStreamWrapper]:
         """Returns all completions for given messages using the given model."""
         return self._run_inference_completions(messages, model, stream, **kwargs)
+
+    def get_agent_public_key(self):
+        """Returns public key of the agent."""
+        agent_name = self.get_primary_agent().get_full_name()
+
+        return self.client.get_agent_public_key(agent_name)
+
+    def verify_signed_message(
+        self,
+        completion: str,
+        messages: Union[Iterable[ChatCompletionMessageParam], str],
+        public_key: Union[str, None] = None,
+        signature: Union[str, None] = None,
+        model: Union[Iterable[ChatCompletionMessageParam], str] = "",
+        **kwargs: Any,
+    ) -> bool:
+        """Verifies a signed message."""
+        if public_key is None or signature is None:
+            return False
+
+        params, _ = self.get_inference_parameters(messages, model, False, **kwargs)
+
+        messages_without_ids = [{k: v for k, v in item.items() if k != "id"} for item in params.messages]
+        ordered_messages_without_ids = [
+            {"role": item["role"], "content": item["content"]} for item in messages_without_ids
+        ]
+
+        return validate_completion_signature(
+            public_key,
+            signature,
+            CompletionSignaturePayload(
+                agent_name=self.get_primary_agent().get_full_name(),
+                completion=completion,
+                model=params.model,
+                messages=json.dumps(ordered_messages_without_ids),
+                temperature=params.temperature,
+                max_tokens=params.max_tokens,
+            ),
+        )
 
     def completions_and_run_tools(
         self,
@@ -774,6 +850,31 @@ class Environment(object):
         response_message = choices[0].message.content
         assert response_message, "No completions returned"
         return response_message
+
+    def signed_completion(
+        self,
+        messages: Union[Iterable[ChatCompletionMessageParam], str],
+        model: Union[Iterable[ChatCompletionMessageParam], str] = "",
+        **kwargs: Any,
+    ) -> Dict[str, str]:
+        """Returns a completion for the given messages using the given model with the agent signature."""
+        agent_name = self.get_primary_agent().get_full_name()
+        raw_response = self.completions(messages, model, agent_name=agent_name, **kwargs)
+        assert isinstance(raw_response, ModelResponse), "Expected ModelResponse"
+        response: ModelResponse = raw_response
+
+        signature_data = json.loads(response.system_fingerprint) if response.system_fingerprint else {}
+
+        assert all(map(lambda choice: isinstance(choice, Choices), response.choices)), "Expected Choices"
+        choices: List[Choices] = response.choices  # type: ignore
+        response_message = choices[0].message.content
+        assert response_message, "No completions returned"
+
+        return {
+            "response": response_message,
+            "signature": signature_data.get("signature", None),
+            "public_key": signature_data.get("public_key", None),
+        }
 
     def completion_and_run_tools(
         self,

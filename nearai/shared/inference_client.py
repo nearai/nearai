@@ -1,9 +1,12 @@
 import io
+import json
+import os
 from typing import Any, Dict, Iterable, List, Literal, Optional, Union
 
 import litellm
 import openai
 import requests
+from dotenv import load_dotenv
 from litellm import CustomStreamWrapper, ModelResponse
 from litellm import completion as litellm_completion
 from litellm.types.completion import ChatCompletionMessageParam
@@ -26,6 +29,8 @@ from nearai.shared.models import (
 )
 from nearai.shared.provider_models import ProviderModels
 
+load_dotenv()
+
 
 class InferenceClient(object):
     def __init__(self, config: ClientConfig) -> None:  # noqa: D107
@@ -43,6 +48,23 @@ class InferenceClient(object):
     def provider_models(self) -> ProviderModels:  # noqa: D102
         return ProviderModels(self._config)
 
+    def get_agent_public_key(self, agent_name: str) -> str:
+        """Request agent public key."""
+        headers = {
+            "Content-Type": "application/json",
+        }
+
+        data = {"agent_name": agent_name}
+
+        endpoint = f"{self._config.base_url}/get_agent_public_key"
+
+        try:
+            response = requests.post(endpoint, headers=headers, params=data)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            raise ValueError(f"Failed to get agent public key: {e}") from None
+
     def completions(
         self,
         model: str,
@@ -50,6 +72,7 @@ class InferenceClient(object):
         stream: bool = False,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        agent_name: Optional[str] = None,
         **kwargs: Any,
     ) -> Union[ModelResponse, CustomStreamWrapper]:
         """Takes a `model` and `messages` and returns completions.
@@ -61,6 +84,11 @@ class InferenceClient(object):
         provider, model = self.provider_models.match_provider_model(model)
 
         auth_bearer_token = self._auth
+        new_token = json.loads(auth_bearer_token)
+        # TODO read RUNNER_API_KEY from secured source instead of env var
+        runner_api_key = os.environ.get("RUNNER_API_KEY", None)
+        new_token["runner_data"] = json.dumps({"agent": agent_name, "runner_api_key": runner_api_key})
+        auth_bearer_token = json.dumps(new_token)
 
         if temperature is None:
             temperature = DEFAULT_MODEL_TEMPERATURE

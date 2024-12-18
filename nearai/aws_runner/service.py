@@ -188,12 +188,19 @@ def start_with_environment(
     near_client = PartialNearClient(api_url, auth)
 
     loaded_agents: list[Agent] = []
+
+    # TODO: Handle the case when multiple agents are provided (comma-separated)
+    if "," in agents:
+        print("Only a single agent run is supported.")
+        agents = agents.split(",")[0]
+
     for agent_name in agents.split(","):
         agent = load_agent(near_client, agent_name, params, additional_path, verbose=verbose)
         # agents secrets has higher priority then agent metadata's env_vars
         agent.env_vars = {**agent.env_vars, **agent_env_vars.get(agent_name, {})}
         loaded_agents.append(agent)
 
+    # TODO: Handle the case when multiple agents are provided (comma-separated)
     agent = loaded_agents[0]
     if params.get("provider", ""):
         agent.model_provider = params["provider"]

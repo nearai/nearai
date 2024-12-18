@@ -4,16 +4,18 @@ import logging
 import time
 from typing import Annotated, Dict, Iterable, List, Optional, Union
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from nearai.shared.cache import mem_cache_with_timeout
+from nearai.shared.near.sign import derive_new_extended_private_key, get_public_key
 from nearai.shared.provider_models import PROVIDER_MODEL_SEP, get_provider_model
 from pydantic import BaseModel, field_validator
 
 from hub.api.v1.auth import AuthToken, get_auth, validate_signature
 from hub.api.v1.completions import Message, Provider, get_llm_ai, handle_stream
 from hub.api.v1.images import get_images_ai
+from hub.api.v1.sign import get_hub_key, get_signed_completion, is_trusted_runner_api_key
 from hub.api.v1.sql import SqlClient
 
 v1_router = APIRouter()
@@ -159,6 +161,11 @@ def completions(
         return JSONResponse(content=json.loads(c))
 
 
+@v1_router.post("/get_agent_public_key")
+def get_agent_public_key(agent_name: str = Query(...)):
+    return get_public_key(derive_new_extended_private_key(get_hub_key(), agent_name))
+
+
 @v1_router.post("/chat/completions")
 def chat_completions(
     db: DatabaseSession,
@@ -181,6 +188,31 @@ def chat_completions(
             raise HTTPException(status_code=400, detail="Model not supported") from None
         else:
             raise HTTPException(status_code=400, detail=error_message) from None
+
+    try:
+        runner_data = json.loads(auth.runner_data or "{}")
+        agent = runner_data.get("agent", None)
+        runner_api_key = runner_data.get("runner_api_key", None)
+        # TODO add signature generation for streams too
+        if not request.stream and agent and is_trusted_runner_api_key(runner_api_key):
+            print(f"Generation signature for {agent}...")
+
+            request_model = f"{request.provider}::{request.model}" if request.provider else request.model
+
+            response_message_text = resp.choices[0].message.content
+            signed_completion = get_signed_completion(
+                agent_name=agent,
+                response_message_text=response_message_text,
+                model=request_model,
+                messages_json=json.dumps([x.model_dump() for x in request.messages]),
+                temperature=float(request.temperature),
+                max_tokens=int(request.max_tokens or 0),
+            )
+
+            resp = resp.model_copy(update={"system_fingerprint": json.dumps(signed_completion)})
+
+    except Exception as e:
+        print(f"Signature generation failed: {e}")
 
     if request.stream:
 

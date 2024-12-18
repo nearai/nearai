@@ -36,6 +36,8 @@ class AuthToken(BaseModel):
     message: str  # noqa: N815
     """The plain message that was signed."""
 
+    runner_data: Optional[str] = None
+
     @field_validator("nonce")
     @classmethod
     def validate_and_convert_nonce(cls, value: str):  # noqa: D102
@@ -60,6 +62,7 @@ class RawAuthToken(AuthToken):
             recipient=self.recipient,
             nonce=self.nonce,
             message=self.message,
+            runner_data=self.runner_data,
         )
 
 

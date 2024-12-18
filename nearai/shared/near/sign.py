@@ -6,6 +6,7 @@ from enum import Enum
 from typing import Any, List, Optional, Union
 
 import base58
+import ed25519
 import nacl.signing
 import requests
 
@@ -187,3 +188,126 @@ def validate_signature(public_key: str, signature: str, payload: Payload):
     except nacl.exceptions.BadSignatureError:
         # print("Signature was forged or corrupt.")
         return False
+
+
+class CompletionSignaturePayload:
+    def __init__(  # noqa: D107
+        self,
+        agent_name: str,
+        completion: str,
+        model: str,
+        messages: str,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ):
+        temperature = round(float(temperature or 0) * 1000)
+
+        self.agent_name = agent_name
+        self.model = model
+        self.messages = messages
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.completion = completion
+
+
+COMPLETION_PAYLOAD_SCHEMA: list[list[Any]] = [
+    [
+        CompletionSignaturePayload,
+        {
+            "kind": "struct",
+            "fields": [
+                ["agent_name", "string"],
+                ["model", "string"],
+                ["messages", "string"],
+                [
+                    "temperature",
+                    {
+                        "kind": "option",
+                        "type": "u32",
+                    },
+                ],
+                [
+                    "max_tokens",
+                    {
+                        "kind": "option",
+                        "type": "u32",
+                    },
+                ],
+                ["completion", "string"],
+            ],
+        },
+    ]
+]
+
+
+def validate_completion_signature(public_key: str, signature: str, payload: CompletionSignaturePayload):
+    """Validates a cryptographic signature for a given payload using a specified public key."""
+    borsh_payload = BinarySerializer(dict(COMPLETION_PAYLOAD_SCHEMA)).serialize(payload)
+    to_sign = hashlib.sha256(borsh_payload).digest()
+    real_signature = base64.b64decode(signature)
+
+    verify_key: nacl.signing.VerifyKey = nacl.signing.VerifyKey(base58.b58decode(public_key[len(ED_PREFIX) :]))
+
+    try:
+        verify_key.verify(to_sign, real_signature)
+        return True
+    except nacl.exceptions.BadSignatureError:
+        return False
+
+
+def derive_new_extended_private_key(extended_private_key: str, addition: str) -> str:
+    private_key_base58 = extended_private_key.replace("ed25519:", "")
+
+    decoded = base58.b58decode(private_key_base58)
+    secret_key = decoded[:32]
+
+    combined = secret_key + addition.encode()
+    derived_secret_key = hashlib.sha256(combined).digest()[:32]  # 32 bytes
+
+    new_signing_key = ed25519.SigningKey(derived_secret_key)
+
+    new_secret_key_bytes = new_signing_key.to_bytes() + new_signing_key.get_verifying_key().to_bytes()
+
+    new_private_key_base58 = base58.b58encode(new_secret_key_bytes[:64]).decode()
+
+    return f"ed25519:{new_private_key_base58}"
+
+
+def create_inference_signature(private_key: str, payload: CompletionSignaturePayload) -> tuple[str, str]:
+    """Creates a cryptographic signature for a given extended inference payload using a specified private key."""
+    borsh_payload = BinarySerializer(dict(COMPLETION_PAYLOAD_SCHEMA)).serialize(payload)
+
+    to_sign = hashlib.sha256(borsh_payload).digest()
+
+    private_key_base58 = private_key[len(ED_PREFIX) :]
+    private_key_bytes = base58.b58decode(private_key_base58)
+
+    if len(private_key_bytes) != 64:
+        raise ValueError("The private key must be exactly 64 bytes long")
+
+    private_key_seed = private_key_bytes[:32]
+
+    signing_key = nacl.signing.SigningKey(private_key_seed)
+    public_key = signing_key.verify_key
+
+    signed = signing_key.sign(to_sign)
+    signature = base64.b64encode(signed.signature).decode("utf-8")
+
+    public_key_base58 = base58.b58encode(public_key.encode()).decode("utf-8")
+    full_public_key = ED_PREFIX + public_key_base58
+
+    return signature, full_public_key
+
+
+def get_public_key(extended_private_key):
+    private_key_base58 = extended_private_key.replace("ed25519:", "")
+
+    decoded = base58.b58decode(private_key_base58)
+    secret_key = decoded[:32]
+
+    signing_key = ed25519.SigningKey(secret_key)
+    verifying_key = signing_key.get_verifying_key()
+
+    base58_public_key = base58.b58encode(verifying_key.to_bytes()).decode()
+
+    return f"ed25519:{base58_public_key}"
