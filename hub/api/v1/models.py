@@ -1,6 +1,6 @@
 import uuid
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from os import getenv
 from typing import Dict, Iterator, List, Optional
 
@@ -67,6 +67,19 @@ class RegistryEntry(SQLModel, table=True):
     def is_private(self) -> bool:
         """Check if the entry is private."""
         return self.details.get("private_source", False)
+
+
+class AgentData(SQLModel, table=True):
+    """Agent key value storage."""
+
+    __tablename__ = "agent_data"
+
+    namespace: str = Field(primary_key=True)
+    name: str = Field(primary_key=True)
+    key: str = Field(primary_key=True)
+    value: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    created_at: datetime = Field(default=datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(default_factory=datetime.now, nullable=False)
 
 
 class HubSecrets(SQLModel, table=True):

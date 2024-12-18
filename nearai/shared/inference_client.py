@@ -271,3 +271,31 @@ class InferenceClient(object):
     def generate_image(self, prompt: str):
         """Generate an image."""
         return self.client.images.generate(prompt=prompt)
+
+    def save_agent_data(self, namespace: str, name: str, key: str, agent_data: Union[str, Dict[str, Any]]):
+        """Save agent data."""
+        data_type = type(agent_data)
+        return self.client.post(
+            path=f"{self._config.base_url}/agent_data/",
+            body={
+                "namespace": namespace,
+                "name": name,
+                "key": key,
+                "value": agent_data,
+            },
+            cast_to=data_type,
+        )
+
+    def get_agent_data(self, namespace: str, name: str):
+        """Get agent data."""
+        return self.client.get(
+            path=f"{self._config.base_url}/agent_data/{namespace}/{name}",
+            cast_to=Dict[str, str],
+        )
+
+    def get_agent_data_by_key(self, namespace: str, name: str, key: str):
+        """Get agent data by key."""
+        return self.client.get(
+            path=f"{self._config.base_url}/agent_data/{namespace}/{name}/{key}",
+            cast_to=Dict[str, str],
+        )

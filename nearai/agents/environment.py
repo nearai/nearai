@@ -1012,3 +1012,21 @@ class Environment(object):
     def generate_image(self, prompt: str):
         """Generate an image."""
         return self.client.generate_image(prompt)
+
+    def save_agent_data(self, key, data: Union[str, Dict[str, Any]]):
+        """Save agent data."""
+        namespace = self._agents[0].namespace
+        name = self._agents[0].name
+        return self.client.save_agent_data(namespace, name, key, data)
+
+    def get_agent_data(self):
+        """Get agent data."""
+        namespace = self._agents[0].namespace
+        name = self._agents[0].name
+        return self.client.get_agent_data(namespace, name)
+
+    def get_agent_data_by_key(self, key):
+        """Get agent data by key."""
+        namespace = self._agents[0].namespace
+        name = self._agents[0].name
+        return self.client.get_agent_data_by_key(namespace, name, key)
