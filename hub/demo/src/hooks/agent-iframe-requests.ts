@@ -61,7 +61,6 @@ export function useAgentRequestsWithIframe(
   const nearViewAccount = useNearStore((store) => store.viewAccount);
   const near = useNearStore((store) => store.near);
   const [iframePostMessage, setIframePostMessage] = useState<unknown>(null);
-  const [iframeNonce, setIframeNonce] = useState<number | null>(null);
   const [agentRequestsNeedingPermissions, setAgentRequestsNeedingPermissions] =
     useState<AgentRequestWithPermissions[] | null>(null);
   const utils = api.useUtils();
@@ -133,6 +132,15 @@ export function useAgentRequestsWithIframe(
             }
           }
 
+          if (input.reloadAgentOnSuccess && addedKeys.length > 0) {
+            await chatMutation.mutateAsync({
+              max_iterations: 1,
+              new_message:
+                input.reloadAgentMessage ||
+                `${addedKeys.length} Secret${addedKeys.length === 1 ? '' : 's'} Saved: ${addedKeys.join(', ')}`,
+            });
+          }
+
           setIframePostMessage({
             action: 'add_secrets_response',
             requestId: input.requestId,
@@ -142,11 +150,7 @@ export function useAgentRequestsWithIframe(
             },
           });
 
-          await utils.hub.secrets.refetch();
-
-          if (input.reloadAgentOnSuccess) {
-            setIframeNonce(Date.now()); // This will trigger the iframe to reload
-          }
+          void utils.hub.secrets.refetch();
         } else if (action === 'remote_agent_run') {
           await chatMutation.mutateAsync(input);
         } else if (action === 'near_send_transactions') {
@@ -309,7 +313,6 @@ export function useAgentRequestsWithIframe(
   return {
     agentRequestsNeedingPermissions,
     conditionallyProcessAgentRequests,
-    iframeNonce,
     iframePostMessage,
     onIframePostMessage,
     setAgentRequestsNeedingPermissions,

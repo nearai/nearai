@@ -322,7 +322,7 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
   const addMutation = api.hub.addSecret.useMutation();
   const removeMutation = api.hub.removeSecret.useMutation();
   const utils = api.useUtils();
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const params = useEntryParams();
 
   useEffect(() => {
@@ -382,7 +382,7 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
   return (
     <Form onSubmit={form.handleSubmit(onSubmit)}>
       <Flex direction="column" gap="l">
-        {isAuthenticated ? (
+        {auth ? (
           <>
             <Flex direction="column" gap="m">
               <Text size="text-s">
@@ -396,6 +396,18 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
                 query parameter variable with the same key.
               </Text>
             </Flex>
+
+            {auth.account_id === entry.namespace && (
+              <Card background="amber-2" border="amber-4">
+                <Text color="amber-11" size="text-s">
+                  You are the owner of this {entry.category}. Any secrets you
+                  save will be inherited (but NOT visible) when other users run
+                  this {entry.category}. Users of your {entry.category} can add
+                  their own secrets to override these default values for
+                  themselves.
+                </Text>
+              </Card>
+            )}
 
             <Input
               label="Key"
