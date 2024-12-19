@@ -1,4 +1,5 @@
-FROM python:3.10-slim
+ARG CUDA_IMAGE="12.2.2-devel-ubuntu22.04"
+FROM --platform=amd64 nvidia/cuda:${CUDA_IMAGE}
 
 ## Top level args / env vars
 ARG USER=user
@@ -16,6 +17,16 @@ RUN apt-get update -y \
     wget \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+## Install python + opencl + blas
+RUN apt-get update && apt-get upgrade -y \
+    && apt-get install -y git build-essential \
+       python3 python3-dev python3-pip python-is-python3 gcc wget \
+       ocl-icd-opencl-dev opencl-headers clinfo \
+       libclblast-dev libopenblas-dev libcairo2-dev \
+       openmpi-bin openmpi-doc libopenmpi-dev \
+       && rm -rf /var/lib/apt/lists/*
+
 
 ## Create unpriv user
 RUN groupadd --gid $USER_GID $USER \
