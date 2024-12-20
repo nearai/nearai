@@ -129,7 +129,10 @@ extra_css:
 nav:
   - Getting Started: 
     - Welcome To NearAI Docs: 'index.md'
-    - Agents: 'agents.md'
+    - Agents Quickstart: 'agents/quickstart.md'
+    - Agents Registry: 'agents/registry.md'
+    - Agents Environment: 'agents/environment.md'
+    - Environment & More: 'agents.md'
     - Benchmarks and Evaluations: 'benchmarks_and_evaluations.md'
     - Inference (OpenAI compatible): 'inference.md'
     - Fine-tuning: 'fine_tuning.md'

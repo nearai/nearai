@@ -1,38 +1,94 @@
-## The Environment API
-This is the api your agent will use to interact with NearAI. For example, to add an agent's response you could call completions and add_message.
+# The Environment
+
+Each time an agents executes it receives an environment, which gives it access to features such as:
+
+* Retrieve messages in the conversation, both from the user and the agent
+* Request input from the user
+* Read and write files on the agent's storage
+* Call other agents
+
+---
+
+## Interaction Messages
+
+The messages from the current session can be accessed using the `list_messages` method:
+
+```python
+messages = env.list_messages()
+print(messages)
 ```
-prompt = {"role": "system", "content": "You are a travel agent that helps users plan trips."}
 
-conversation = env.list_messages() # the user's new message is added to this list by both the remote and local UIs.
+??? note "Example Output"
+    ```python
+    [{'id': 'msg_9b676ae4ad324ca58794739d', 'content': 'Hi', 'role': 'user'},
+      {'id': 'msg_58693367bcee42669a85cb69', 'content': "Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?", 'role': 'assistant'},
+      {'id': 'msg_16acda223c294213bc3c814e', 'content': 'help me decide how to decorate my house!', 'role': 'user'}]
+    ```
 
-agent_response = env.completion([prompt] + conversation)
+Agents can add new messages to the conversation using the `add_reply` method:
 
-env.add_reply(agent_response)
+```python
+env.add_reply("I have finished ")
 ```
 
+---
 
-Your agent will receive an `env` object that has the following methods:
+## Run Input Through a Model
 
-  * [`request_user_input`](api.md#nearai.agents.environment.Environment.request_user_input): 
-tell the agent that it is the user's turn, stop iterating.
-  * [`completion`](api.md#nearai.agents.environment.Environment.completion): request inference completions from a provider and model.
-The model format can be either `PROVIDER::MODEL` or simply `MODEL`. 
-By default the provider is `fireworks` and the model is `qwen2p5-72b-instruct`. 
-The model can be passed into `completion` function or as an agent metadata:
-   ```json
-   "details": {
-     "agent": {
-       "defaults": {
-         // All fields below are optional.
-         "model": "qwen2p5-72b-instruct",
-         "model_max_tokens": 16384,
-         "model_provider": "fireworks",
-         "model_temperature": 1.0
-       }
-     }
-   }
-   ```
-  * [`list_messages`](api.md#nearai.agents.environment.Environment.list_messages): returns the list of messages in the conversation.
+The `completion` method is used to run a prompt on a specific model, using a specific provider.
+
+<!-- Add link to models and providers -->
+
+If only the prompt is provided, the inference will be run on the model and provider specified in the agent's metadata.
+
+```python
+messages = env.list_messages()
+result = env.completion(messages)
+
+print("Messages:", messages)
+print("Result:", result)
+```
+
+??? note "Example Output"
+    ```python
+    Messages: [{'id': 'msg_1149aa85884b4fe8abc7d859', 'content': 'Hello', 'role': 'user'}]
+
+    Result: Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?
+    ```
+
+To run the inference on a model different from the default one, you can pass the `MODEL` or `PROVIDER::MODEL` as second argument:
+
+```python
+messages = env.list_messages()
+result = env.completion([prompt] + messages, "fireworks::qwen2p5-72b-instruct")
+```
+
+??? note "Example Output"
+    ```python
+    Messages: [{'id': 'msg_1149aa85884b4fe8abc7d859', 'content': 'Hello', 'role': 'user'}]
+
+    Result: Hello! How can I assist you today? Is there something specific you'd like to talk about or any questions you have?
+    ```
+
+---
+
+## Read and Write Files
+
+Each time an agent runs,
+Agents have access to the local filesystem, allowing them to create and manipulate files.
+
+* [`write_file(fname, content)`](api.md#nearai.agents.environment.Environment.write_file): writes content to a file in a temporary directory associated with the current conversation thread
+* [`list_files(path)`](api.md#nearai.agents.environment.Environment.list_files): list the files in a path, use `.` to list the files in the agent's directory
+* [`get_system_path()`](api.md#nearai.agents.environment.Environment.get_system_path): get the path of the agent's directory
+* [`read_file(fname)`](api.md#nearai.agents.environment.Environment.read_file): read's a file from the temporary directory associated with the current thread, and returns its content as a string
+
+
+
+
+
+
+ * [`exec_command`](api.md#nearai.agents.environment.Environment.exec_command): execute a terminal command
+
 
 ### Calling another agent
 Other agents can be invoked with the `run_agent` method. This method takes as arguments the three parts of an agent name (owner, name, version),
@@ -54,11 +110,7 @@ For working with files and running commands the following methods are also avail
 directly or use them through the tool_registry and passing them to a completions method.
 
  * [`list_terminal_commands`](api.md#nearai.agents.environment.Environment.list_terminal_commands): list the history of terminal commands
- * [`list_files`](api.md#nearai.agents.environment.Environment.list_files): list the files in the current directory
- * [`get_path`](api.md#nearai.agents.environment.Environment.get_system_path): get the path of the current directory
- * [`read_file`](api.md#nearai.agents.environment.Environment.read_file): read a file
- * [`write_file`](api.md#nearai.agents.environment.Environment.write_file): write to a file
- * [`exec_command`](api.md#nearai.agents.environment.Environment.exec_command): execute a terminal command
+
  * [`query_vector_store`](api.md#nearai.agents.environment.Environment.query_vector_store): query a vector store
 
 ### Logging
