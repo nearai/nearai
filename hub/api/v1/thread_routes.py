@@ -635,7 +635,7 @@ def _run_agent(
         if runner == "custom_runner":
             custom_runner_url = getenv("CUSTOM_RUNNER_URL", None)
             if custom_runner_url:
-                invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth, "", params)
+                invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth, params)
             else:
                 raise HTTPException(status_code=400, detail="Runner invoke URL not set for local runner")
         elif runner == "local_runner":
@@ -660,7 +660,7 @@ def _run_agent(
                 f"assistant_id={run_model.assistant_id}, "
                 f"thread_id={thread_id}, run_id={run_id}"
             )
-            invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth, "", params)
+            invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth, params)
         # with get_session() as session:
         if run_model.parent_run_id:
             parent_run = session.get(RunModel, run_model.parent_run_id)
