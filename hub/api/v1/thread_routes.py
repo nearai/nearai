@@ -33,8 +33,8 @@ from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
 from hub.api.v1.models import get_session
 from hub.api.v1.routes import ChatCompletionsRequest, chat_completions, get_models_inner
-from hub.api.v1.scheduler import get_scheduler
 from hub.api.v1.sql import SqlClient
+from hub.tasks.scheduler import get_scheduler
 
 threads_router = APIRouter(
     tags=["Threads"],

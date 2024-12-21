@@ -12,6 +12,7 @@ litellm >= 1.41.0
 py-near >= 1.1.50
 loguru == 0.7.2
 ed25519 == 1.5
+tweepy >= 4.14.0
 
 langgraph >= 0.1.4
 langchain-fireworks >= 0.1.4

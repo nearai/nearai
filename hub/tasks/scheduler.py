@@ -1,12 +1,20 @@
 import logging
 
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from hub.api.v1.models import engine
 
 scheduler = BackgroundScheduler()
 logging.getLogger("apscheduler").setLevel(logging.DEBUG)
+
+async_scheduler = AsyncIOScheduler()
+
+
+def get_async_scheduler():
+    global async_scheduler
+    return async_scheduler
 
 
 def get_scheduler():
