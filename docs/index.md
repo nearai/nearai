@@ -145,7 +145,6 @@ See the [Agents](agents.md) documentation and How to guide
     * [Additional environment methods](agents.md#additional-environment-methods)
     * [Tool registry](agents.md#tool-registry-and-function-tool-calling)
 * [Uploading an agent](agents.md#uploading-an-agent)
-* [Running an agent remotely through the CLI](agents.md#running-an-agent-remotely-through-the-cli)
 * [Running an agent through the API](agents.md#running-an-agent-through-the-api)
 * [Remote results](agents.md#remote-results)
     * [Signed messages](agents.md#signed-messages)

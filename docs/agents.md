@@ -291,24 +291,6 @@ If you do not want to use the built-in tools, use `get_tool_registry(new=True)`
 
 ⚠️ You can't remove or overwrite a file once it's uploaded, but you can hide the entire agent by setting the `"show_entry": false` field.
 
-## Running an agent remotely through the CLI
-Agents can be run through the CLI using the `nearai agent run_remote` command.
-A new message can be passed with the new_message argument. A starting environment (state) can be passed with the environment_id argument.
-
-```shell
-  nearai agent run_remote flatirons.near/example-travel-agent/1 \
-  new_message="I would like to travel to Brazil"
-```
-
-This environment already contains a request to travel to Paris and an agent response.
-A new_message could be included to further refine the request. In this example without a new_message the agent will
-reprocess the previous response and follow up about travel to Paris.
-
-```shell
-  nearai agent run_remote flatirons.near/example-travel-agent/1 \
-  environment_id="flatirons.near/environment_run_flatirons.near_example-travel-agent_1_1c82938c55fc43e492882ee938c6356a/0"
-```
-
 ## Running an agent through the API
 Agents can be run through the `/thread/runs`, `/thread/{thread_id}/runs` or  `/agent/runs` endpoints. The /thread syntax
 matches the OpenAI / LangGraph API. The /agent syntax is NearAI specific.
