@@ -1,0 +1,73 @@
+.dragonLogo {
+  position: absolute;
+  background: url('/dragon-logo.svg') center center no-repeat;
+  background-size: auto 200%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.1;
+  z-index: 1;
+
+  @media (max-width: 1200px) {
+    position: static;
+    width: 150px;
+    height: 150px;
+    background-size: contain;
+    opacity: 0.5;
+    margin-top: -2rem;
+  }
+}
+
+.heroTitle {
+  position: relative;
+  z-index: 5;
+  text-align: center;
+  text-wrap-style: pretty;
+}
+
+.heroCards {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  backdrop-filter: blur(10px);
+
+  > div {
+    border-radius: 0;
+    background: rgba(0, 0, 0, 0.1);
+
+    :global(.light) & {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    &:first-child {
+      border-top-left-radius: 0.5rem;
+      border-bottom-left-radius: 0.5rem;
+    }
+    &:last-child {
+      border-top-right-radius: 0.5rem;
+      border-bottom-right-radius: 0.5rem;
+    }
+
+    &:not(:last-child) {
+      border-right-width: 0px;
+    }
+  }
+
+  @media (max-width: 1200px) {
+    backdrop-filter: none;
+  }
+
+  @media (max-width: 1000px) {
+    grid-template-columns: 1fr;
+    gap: var(--gap-m);
+
+    > div {
+      border-radius: 0.5rem !important;
+      border-width: 1px !important;
+      background: var(--sand-1);
+    }
+  }
+}

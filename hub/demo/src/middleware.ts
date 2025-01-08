@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { env } from '~/env';
 
-const defaultRoute = env.NEXT_PUBLIC_CONSUMER_MODE ? '/chat' : '/competitions';
+const defaultRoute = env.NEXT_PUBLIC_CONSUMER_MODE ? '/chat' : '/';
 const agentWithoutVersionRegex = /^\/agents\/[^\/]+\/[^\/]+$/;
 
 function redirectUrlPath(path: string, request: NextRequest) {
@@ -13,7 +13,7 @@ function redirectUrlPath(path: string, request: NextRequest) {
 }
 
 export function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname === '/') {
+  if (request.nextUrl.pathname === '/' && defaultRoute != '/') {
     return NextResponse.redirect(redirectUrlPath(defaultRoute, request));
   }
 
@@ -21,12 +21,6 @@ export function middleware(request: NextRequest) {
     // Redirect "/agents/account.near/cool-agent" to "/agents/account.near/cool-agent/latest"
     return NextResponse.redirect(
       redirectUrlPath(`${request.nextUrl.pathname}/latest`, request),
-    );
-  }
-
-  if (request.nextUrl.pathname === '/competitions/0.5b-november-2024') {
-    return NextResponse.redirect(
-      redirectUrlPath('/competitions/0.5b', request),
     );
   }
 

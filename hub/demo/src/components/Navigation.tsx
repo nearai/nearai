@@ -43,11 +43,6 @@ const agentsNav = {
 };
 
 const hubNavItems = [
-  {
-    label: 'Competitions',
-    path: '/competitions',
-    icon: <Trophy />,
-  },
   agentsNav,
   {
     label: 'Models',
