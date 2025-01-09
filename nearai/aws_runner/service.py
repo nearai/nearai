@@ -251,7 +251,7 @@ def start_with_environment(
         base_url=api_url + "/v1",
         auth=auth,
     )
-    inference_client = InferenceClient(client_config, protected_vars.get("RUNNER_API_KEY"))
+    inference_client = InferenceClient(client_config, protected_vars.get("RUNNER_API_KEY"), agent.identifier)
     hub_client = client_config.get_hub_client()
     run_path = (
         additional_path
