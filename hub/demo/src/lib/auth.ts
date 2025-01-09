@@ -58,7 +58,7 @@ export function redirectToAuthNearLink(
   callbackUrl: string,
 ) {
   const url = createAuthNearLink(message, recipient, nonce, callbackUrl);
-  window.location.replace(url);
+  window.location.href = url;
 }
 
 /**
