@@ -37,7 +37,7 @@ export async function loadEntriesFromDirectory(
 
         const filePath = path.join(directoryPath, file.name);
 
-        if (file.isDirectory()) {
+        if (file.isDirectory() || file.isSymbolicLink()) {
           await loadEntriesFromDirectory(
             registryDirectoryPath,
             filePath,

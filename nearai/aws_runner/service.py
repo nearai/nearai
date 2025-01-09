@@ -10,6 +10,7 @@ import boto3
 from nearai.agents.agent import Agent
 from nearai.agents.environment import Environment
 from nearai.aws_runner.partial_near_client import PartialNearClient
+from nearai.registry import get_registry_folder
 from nearai.shared.auth_data import AuthData
 from nearai.shared.client_config import ClientConfig
 from nearai.shared.inference_client import InferenceClient
@@ -21,7 +22,9 @@ DEFAULT_API_URL = "https://api.near.ai"
 
 
 def create_cloudwatch():
-    return boto3.client("cloudwatch", region_name="us-east-2")
+    if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        return boto3.client("cloudwatch", region_name="us-east-2")
+    return None
 
 
 def load_protected_variables():
