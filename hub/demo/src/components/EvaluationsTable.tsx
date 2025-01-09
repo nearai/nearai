@@ -158,7 +158,7 @@ export const EvaluationsTable = ({
 
     const columns = evaluationsQuery.data.benchmarkColumns.filter(
       (column) =>
-        column === benchmark.name || column.startsWith(`${benchmark.name}/`),
+        column === benchmark.name || column.startsWith(`${benchmark.name}`),
     );
 
     if (!columns.length) {
