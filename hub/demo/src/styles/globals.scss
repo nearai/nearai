@@ -5,3 +5,21 @@
     z-index: 10000;
   }
 }
+
+/* Related to "app/page.module.scss" */
+
+@property --gradient-mask-offset-1 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@property --gradient-mask-offset-2 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@property --gradient-mask-offset-3 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
