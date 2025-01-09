@@ -39,9 +39,23 @@
   }
 }
 
-.dragonLogoOutline {
-  /* Default @property values defined in "src/styles/globals.scss" to get around build issue */
+@property --gradient-mask-offset-1 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 100%;
+}
+@property --gradient-mask-offset-2 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 200%;
+}
+@property --gradient-mask-offset-3 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 300%;
+}
 
+.dragonLogoOutline {
   --gradient-mask-offset-1: 100%;
   --gradient-mask-offset-2: 200%;
   --gradient-mask-offset-3: 300%;
