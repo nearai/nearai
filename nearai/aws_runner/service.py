@@ -136,6 +136,7 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
         stop_time = time.perf_counter()
         write_metric("GetMetadataFromRegistry_Duration", stop_time - start_time, verbose=verbose)
     elif params["data_source"] == "local_files":
+        agent = agent.replace(f"{get_registry_folder()}/", "")
         agent_files = get_local_agent_files(agent, additional_path)
 
         for file in agent_files:
