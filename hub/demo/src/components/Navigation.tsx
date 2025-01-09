@@ -19,7 +19,6 @@ import {
   Moon,
   Star,
   Sun,
-  Trophy,
   User,
   X,
 } from '@phosphor-icons/react';
