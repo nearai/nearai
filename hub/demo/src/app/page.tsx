@@ -6,6 +6,8 @@ import {
   Card,
   Flex,
   Grid,
+  HR,
+  IconCircle,
   Section,
   SvgIcon,
   Text,
@@ -17,15 +19,20 @@ import {
   ChartBar,
   ChatCircle,
   Check,
+  CloudCheck,
   CodeBlock,
   Database,
   DownloadSimple,
   GitFork,
   GithubLogo,
+  HandCoins,
+  Handshake,
+  LockKey,
   MagnifyingGlass,
   UserCircle,
 } from '@phosphor-icons/react';
 
+import { env } from '~/env';
 import { signInWithNear } from '~/lib/auth';
 import { useAuthStore } from '~/stores/auth';
 
@@ -36,26 +43,25 @@ export default function HomePage() {
 
   return (
     <>
-      <Section
-        background="sand-0"
-        padding="hero"
-        style={{ position: 'relative' }}
-      >
+      <Section background="sand-0" padding="hero" className={s.heroSection}>
         <Flex direction="column" gap="xl" align="center">
           <div className={s.dragonLogo} />
 
           <Flex
             direction="column"
-            gap="m"
+            gap="l"
             align="center"
             className={s.heroTitle}
           >
             <Text size="text-2xl" weight="600">
-              Build & deploy powerful, user-owned AI agents
+              Build powerful, user-owned AI agents
             </Text>
 
-            <Text size="text-xl" weight="400" color="sand-11">
-              Fork and deploy your first AI agent:
+            <Text size="text-xl" weight="400" color="sand-10">
+              Fork, develop, and deploy with{' '}
+              <Text as="span" size="text-xl" weight="400" color="sand-12">
+                free inference and hosting:
+              </Text>
             </Text>
           </Flex>
 
@@ -67,12 +73,12 @@ export default function HomePage() {
           >
             <Card background="sand-0" padding="l" gap="l">
               <Flex align="center" justify="space-between" gap="m">
-                <Text size="text-l" weight="500" color="sand-10">
+                <Text size="text-l" weight="500" color="sand-11">
                   1. Sign In
                 </Text>
                 <SvgIcon
                   icon={<UserCircle weight="regular" />}
-                  color="violet-10"
+                  color="violet-9"
                   size="m"
                 />
               </Flex>
@@ -102,12 +108,12 @@ export default function HomePage() {
 
             <Card background="sand-0" padding="l" gap="l">
               <Flex align="center" justify="space-between" gap="m">
-                <Text size="text-l" weight="500" color="sand-10">
+                <Text size="text-l" weight="500" color="sand-11">
                   2. Fork & Deploy
                 </Text>
                 <SvgIcon
                   icon={<GitFork weight="regular" />}
-                  color="cyan-10"
+                  color="cyan-9"
                   size="m"
                 />
               </Flex>
@@ -121,7 +127,7 @@ export default function HomePage() {
                 Not sure where to start? View this{' '}
                 <Text
                   size="text-s"
-                  href="/agents/flatirons.near/example-travel-agent"
+                  href={`/agents/${env.NEXT_PUBLIC_EXAMPLE_FORK_AGENT_ID}`}
                 >
                   Example Agent
                 </Text>{' '}
@@ -148,7 +154,7 @@ export default function HomePage() {
 
             <Card background="sand-0" padding="l" gap="l">
               <Flex align="center" justify="space-between" gap="m">
-                <Text size="text-l" weight="500" color="sand-10">
+                <Text size="text-l" weight="500" color="sand-11">
                   3. Develop
                 </Text>
                 <SvgIcon
@@ -193,7 +199,77 @@ export default function HomePage() {
         </Flex>
       </Section>
 
-      <Section padding="hero">
+      <Section padding="hero" background="sand-1">
+        <Flex direction="column" gap="m">
+          <Text
+            as="h2"
+            size="text-2xl"
+            weight="600"
+            style={{ textAlign: 'center' }}
+          >
+            AI Agent Protocol
+          </Text>
+
+          <Text
+            size="text-l"
+            weight="400"
+            style={{ textAlign: 'center' }}
+            color="sand-10"
+          >
+            The open standard for AI agents to connect, act, and transact
+          </Text>
+        </Flex>
+
+        <HR />
+
+        <Grid
+          columns="1fr 1fr 1fr 1fr"
+          tablet={{ columns: '1fr 1fr' }}
+          phone={{ columns: '1fr' }}
+          gap="l"
+          style={{ textAlign: 'center' }}
+        >
+          <Flex direction="column" gap="m" align="center">
+            <IconCircle
+              icon={<CloudCheck weight="duotone" />}
+              color="violet-9"
+            />
+            <Text weight={500} color="sand-12">
+              Free inference and hosting
+            </Text>
+          </Flex>
+
+          <Flex direction="column" gap="m" align="center">
+            <IconCircle icon={<Handshake weight="duotone" />} color="cyan-10" />
+            <Text weight={500} color="sand-12">
+              Connect across Web2 and Web3 services
+            </Text>
+          </Flex>
+
+          <Flex direction="column" gap="m" align="center">
+            <IconCircle icon={<LockKey weight="duotone" />} color="amber-11" />
+            <Text weight={500} color="sand-12">
+              Protect your data and identity
+            </Text>
+          </Flex>
+
+          <Flex direction="column" gap="m" align="center">
+            <IconCircle
+              icon={<HandCoins weight="duotone" />}
+              color="green-10"
+            />
+            <Text weight={500} color="sand-12">
+              Authorize and complete payments seamlessly
+            </Text>
+            <Badge label="Coming Soon" variant="neutral-alpha" />
+          </Flex>
+        </Grid>
+
+        {/* Connect across Web2 and Web3 services Authorize and complete payments
+        seamlessly Protect your data and identity */}
+      </Section>
+
+      <Section padding="hero" background="sand-3">
         <Flex direction="column" gap="l">
           <Flex direction="column" gap="m">
             <Text as="h2" size="text-2xl" weight="600">

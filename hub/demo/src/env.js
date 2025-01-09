@@ -28,6 +28,10 @@ export const env = createEnv({
       .string()
       .regex(/.+\/.+\/.+/)
       .default('zavodil.near/pm-agent/1'),
+    NEXT_PUBLIC_EXAMPLE_FORK_AGENT_ID: z
+      .string()
+      .regex(/.+\/.+\/.+/)
+      .default('zavodil.near/pm-agent/1'),
     NEXT_PUBLIC_AUTH_URL: z.string().url().optional(),
   },
 
@@ -49,6 +53,8 @@ export const env = createEnv({
       process.env.NEXT_PUBLIC_CONSUMER_CHAT_AGENT_ID,
     NEXT_PUBLIC_AUTH_URL:
       process.env.NEXT_PUBLIC_AUTH_URL ?? 'https://auth.near.ai',
+    NEXT_PUBLIC_EXAMPLE_FORK_AGENT_ID:
+      process.env.NEXT_PUBLIC_EXAMPLE_FORK_AGENT_ID,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

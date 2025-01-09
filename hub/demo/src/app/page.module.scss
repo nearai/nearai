@@ -1,3 +1,16 @@
+.heroSection {
+  position: relative;
+  box-shadow:
+    0 0 4px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(0, 0, 0, 0.3);
+
+  :global(.light) & {
+    box-shadow:
+      0 0 4px rgba(0, 0, 0, 0.1),
+      0 0 30px rgba(0, 0, 0, 0.1);
+  }
+}
+
 .dragonLogo {
   position: absolute;
   background: url('/dragon-logo.svg') center center no-repeat;
@@ -31,43 +44,35 @@
   z-index: 5;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 0;
-  backdrop-filter: blur(10px);
+  gap: 1rem;
 
   > div {
-    border-radius: 0;
+    backdrop-filter: blur(15px);
+    border-radius: 1rem;
     background: rgba(0, 0, 0, 0.1);
+    border: none;
+    box-shadow:
+      inset 0 0 2px rgba(255, 255, 255, 0.15),
+      inset 0 0 60px rgba(255, 255, 255, 0.075),
+      var(--shadow-card);
 
     :global(.light) & {
+      box-shadow:
+        inset 0 0 60px rgba(255, 255, 255, 1),
+        0 0 3px rgba(0, 0, 0, 0.1),
+        var(--shadow-card);
       background: rgba(255, 255, 255, 0.1);
-    }
-
-    &:first-child {
-      border-top-left-radius: 0.5rem;
-      border-bottom-left-radius: 0.5rem;
-    }
-    &:last-child {
-      border-top-right-radius: 0.5rem;
-      border-bottom-right-radius: 0.5rem;
-    }
-
-    &:not(:last-child) {
-      border-right-width: 0px;
     }
   }
 
   @media (max-width: 1200px) {
-    backdrop-filter: none;
+    grid-template-columns: 1fr 1fr;
+    > div {
+      backdrop-filter: none;
+    }
   }
 
-  @media (max-width: 1000px) {
+  @media (max-width: 900px) {
     grid-template-columns: 1fr;
-    gap: var(--gap-m);
-
-    > div {
-      border-radius: 0.5rem !important;
-      border-width: 1px !important;
-      background: var(--sand-1);
-    }
   }
 }

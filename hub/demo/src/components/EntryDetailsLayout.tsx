@@ -2,6 +2,8 @@
 
 import {
   Badge,
+  Button,
+  copyTextToClipboard,
   Dropdown,
   Flex,
   ImageIcon,
@@ -12,7 +14,14 @@ import {
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
-import { CaretDown, GitFork, LockKey } from '@phosphor-icons/react';
+import {
+  CaretDown,
+  ChatCircleDots,
+  CodeBlock,
+  GitFork,
+  LockKey,
+  ShareFat,
+} from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactElement, type ReactNode, useEffect } from 'react';
 
@@ -221,10 +230,67 @@ export const EntryDetailsLayout = ({
               </Flex>
             </Flex>
 
-            <Flex align="center" gap="s">
+            <Flex align="center" gap="s" wrap="wrap">
               <DevelopButton entry={currentEntry} />
               <StarButton entry={currentEntry} variant="detailed" />
               <ForkButton entry={currentEntry} variant="detailed" />
+
+              {category === 'agent' ? (
+                <Dropdown.Root>
+                  <Dropdown.Trigger asChild>
+                    <Button
+                      label="Share"
+                      iconLeft={<SvgIcon size="xs" icon={<ShareFat />} />}
+                      size="small"
+                      fill="outline"
+                    />
+                  </Dropdown.Trigger>
+
+                  <Dropdown.Content>
+                    <Dropdown.Section>
+                      <Dropdown.Item
+                        onSelect={() =>
+                          currentEntry &&
+                          copyTextToClipboard(
+                            `https://app.near.ai${primaryUrlForEntry(currentEntry)}`,
+                          )
+                        }
+                        key="latest"
+                      >
+                        <SvgIcon icon={<CodeBlock />} />
+                        Developer URL
+                      </Dropdown.Item>
+
+                      <Dropdown.Item
+                        onSelect={() =>
+                          currentEntry &&
+                          copyTextToClipboard(
+                            `https://chat.near.ai${primaryUrlForEntry(currentEntry)}`,
+                          )
+                        }
+                        key="latest"
+                      >
+                        <SvgIcon icon={<ChatCircleDots />} />
+                        Chat URL
+                      </Dropdown.Item>
+                    </Dropdown.Section>
+                  </Dropdown.Content>
+                </Dropdown.Root>
+              ) : (
+                <Button
+                  label="Share"
+                  iconLeft={<SvgIcon size="xs" icon={<ShareFat />} />}
+                  size="small"
+                  fill="outline"
+                  onClick={() =>
+                    currentEntry &&
+                    copyTextToClipboard(
+                      `https://app.near.ai${primaryUrlForEntry(currentEntry)}`,
+                      `Shareable URL for ${currentEntry.name}`,
+                    )
+                  }
+                />
+              )}
             </Flex>
           </Flex>
 
