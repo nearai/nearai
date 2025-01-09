@@ -1,5 +1,6 @@
 .heroSection {
   position: relative;
+  overflow: hidden;
   box-shadow:
     0 0 4px rgba(0, 0, 0, 0.5),
     0 0 30px rgba(0, 0, 0, 0.3);
@@ -9,26 +10,85 @@
       0 0 4px rgba(0, 0, 0, 0.1),
       0 0 30px rgba(0, 0, 0, 0.1);
   }
+
+  @media (max-width: 1200px) {
+    padding-top: 150px;
+  }
 }
 
-.dragonLogo {
+.dragonLogo,
+.dragonLogoOutline {
   position: absolute;
   background: url('/dragon-logo.svg') center center no-repeat;
-  background-size: auto 200%;
-  top: 0;
+  background-size: auto 100%;
+  top: -50%;
   left: 0;
   right: 0;
-  bottom: 0;
-  opacity: 0.1;
+  bottom: -50%;
+  opacity: 0.08;
   z-index: 1;
 
   @media (max-width: 1200px) {
-    position: static;
+    top: 0;
+    bottom: unset;
+    margin: 0 auto;
     width: 150px;
     height: 150px;
     background-size: contain;
-    opacity: 0.5;
-    margin-top: -2rem;
+    opacity: 0.25;
+  }
+}
+
+@property --gradient-mask-offset-1 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+@property --gradient-mask-offset-2 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+@property --gradient-mask-offset-3 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+.dragonLogoOutline {
+  --gradient-mask-offset-1: 100%;
+  --gradient-mask-offset-2: 200%;
+  --gradient-mask-offset-3: 300%;
+
+  background-image: url('/dragon-logo-outline.svg');
+  opacity: 0.3;
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) var(--gradient-mask-offset-1),
+    rgba(0, 0, 0, 1) var(--gradient-mask-offset-2),
+    rgba(0, 0, 0, 0) var(--gradient-mask-offset-3)
+  );
+  animation: dragonLogoOutline 8s linear infinite;
+
+  @media (max-width: 1200px) {
+    background-image: url('/dragon-logo-outline-thick.svg');
+    opacity: 1;
+    animation-duration: 6s;
+  }
+
+  @keyframes dragonLogoOutline {
+    0% {
+      --gradient-mask-offset-1: 100%;
+      --gradient-mask-offset-2: 200%;
+      --gradient-mask-offset-3: 300%;
+    }
+    100% {
+      --gradient-mask-offset-1: -200%;
+      --gradient-mask-offset-2: -100%;
+      --gradient-mask-offset-3: 0%;
+    }
   }
 }
 
@@ -49,7 +109,7 @@
   > div {
     backdrop-filter: blur(15px);
     border-radius: 1rem;
-    background: rgba(0, 0, 0, 0.1);
+    background: none;
     border: none;
     box-shadow:
       inset 0 0 2px rgba(255, 255, 255, 0.15),
@@ -61,7 +121,6 @@
         inset 0 0 60px rgba(255, 255, 255, 1),
         0 0 3px rgba(0, 0, 0, 0.1),
         var(--shadow-card);
-      background: rgba(255, 255, 255, 0.1);
     }
   }
 

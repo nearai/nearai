@@ -15,7 +15,7 @@ import {
 import {
   ArrowRight,
   ArrowSquareUpRight,
-  Book,
+  BookOpenText,
   ChartBar,
   ChatCircle,
   Check,
@@ -24,7 +24,6 @@ import {
   Database,
   DownloadSimple,
   GitFork,
-  GithubLogo,
   HandCoins,
   Handshake,
   LockKey,
@@ -46,6 +45,7 @@ export default function HomePage() {
       <Section background="sand-0" padding="hero" className={s.heroSection}>
         <Flex direction="column" gap="xl" align="center">
           <div className={s.dragonLogo} />
+          <div className={s.dragonLogoOutline} />
 
           <Flex
             direction="column"
@@ -78,7 +78,7 @@ export default function HomePage() {
                 </Text>
                 <SvgIcon
                   icon={<UserCircle weight="regular" />}
-                  color="violet-9"
+                  color="sand-8"
                   size="m"
                 />
               </Flex>
@@ -113,7 +113,7 @@ export default function HomePage() {
                 </Text>
                 <SvgIcon
                   icon={<GitFork weight="regular" />}
-                  color="cyan-9"
+                  color="sand-8"
                   size="m"
                 />
               </Flex>
@@ -159,7 +159,7 @@ export default function HomePage() {
                 </Text>
                 <SvgIcon
                   icon={<CodeBlock weight="regular" />}
-                  color="green-10"
+                  color="sand-8"
                   size="m"
                 />
               </Flex>
@@ -188,10 +188,9 @@ export default function HomePage() {
                 <Button
                   variant="secondary"
                   fill="outline"
-                  label="Near AI CLI"
-                  href="https://github.com/nearai/nearai"
-                  target="_blank"
-                  iconLeft={<GithubLogo />}
+                  label="View Docs"
+                  href="https://docs.near.ai"
+                  iconLeft={<BookOpenText />}
                 />
               </Flex>
             </Card>
@@ -288,11 +287,11 @@ export default function HomePage() {
           >
             {[
               {
-                icon: <Book weight="duotone" />,
+                icon: <BookOpenText weight="duotone" />,
                 title: 'Documentation',
                 description: 'Get started with our infrastructure',
                 link: 'Learn More',
-                href: 'https://docs.near.ai/',
+                href: 'https://docs.near.ai',
               },
               {
                 icon: <ChartBar weight="duotone" />,
