@@ -233,15 +233,23 @@ class Environment(object):
 
         self.get_vector_store = get_vector_store
 
+        # Save cache of requested models for inference to avoid extra server calls
+        self.cached_models_for_inference: Dict[str, str] = {}
+
         def get_model_for_inference(model: str = "") -> str:
             """Returns 'provider::model_full_path'."""
-            provider = self._agents[0].model_provider if self._agents else ""
-            if model == "":
-                model = self._agents[0].model if self._agents else ""
-            if model == "" or client._config.auth is None:
-                return DEFAULT_PROVIDER_MODEL
-            _, model = client.provider_models.match_provider_model(model, provider)
-            return model
+            if self.cached_models_for_inference.get(model, None) is None:
+                provider = self._agents[0].model_provider if self._agents else ""
+                if model == "":
+                    model = self._agents[0].model if self._agents else ""
+                if model == "":
+                    return DEFAULT_PROVIDER_MODEL
+
+                _, model_for_inference = client.provider_models.match_provider_model(model, provider)
+
+                self.cached_models_for_inference[model] = model_for_inference
+
+            return self.cached_models_for_inference[model]
 
         self.get_model_for_inference = get_model_for_inference
 

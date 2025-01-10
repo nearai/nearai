@@ -142,6 +142,7 @@ mypy = "^1.11.0"
 ruff = "^0.5.2"
 commitizen = "^3.29.0"
 types-openpyxl = "^3.1.5.20240822"
+types-urllib3 = "^1.26.25.14"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.6.0"
@@ -287,7 +288,8 @@ module = [
     "pptx.*",
     "pypdf.*",
     "chardet.*",
-    "botocore.*"
+    "botocore.*",
+    "shortuuid.*"
 ]
 ignore_missing_imports = true
 

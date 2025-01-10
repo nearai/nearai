@@ -1,4 +1,5 @@
 import re
+from functools import cached_property
 from typing import Dict, List, Optional, Tuple, cast
 
 import requests
@@ -55,7 +56,7 @@ class ProviderModels:
     def __init__(self, config: ClientConfig) -> None:  # noqa: D107
         self._config = config
 
-    @property
+    @cached_property
     def provider_models(self) -> Dict[NamespacedName, Dict[str, str]]:
         """Returns a mapping canonical->provider->model_full_name."""
         client = self._config.get_hub_client()
@@ -73,6 +74,7 @@ class ProviderModels:
                 if provider in result[namespaced_model]:
                     raise ValueError(f"Duplicate entry for provider {provider} and model {namespaced_model}")
                 result[namespaced_model][provider] = model.id
+
             return result
 
         except requests.RequestException as e:
