@@ -4,7 +4,6 @@ import { Flex, Text } from '@near-pagoda/ui';
 import { useEffect, useState } from 'react';
 
 import { APP_TITLE } from '~/constants';
-import { env } from '~/env';
 
 import s from './Footer.module.scss';
 
