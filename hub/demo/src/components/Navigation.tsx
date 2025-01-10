@@ -29,6 +29,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { APP_TITLE } from '~/constants';
 import { env } from '~/env';
 import { signInWithNear } from '~/lib/auth';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
@@ -104,8 +105,6 @@ export const Navigation = () => {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
 
-  const title = env.NEXT_PUBLIC_CONSUMER_MODE ? 'Assistant' : 'Developer Hub';
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -122,7 +121,7 @@ export const Navigation = () => {
     <header className={s.navigation}>
       <Link className={s.logo} href="/">
         <span className={s.logoNearAi}>NEAR AI</span>
-        <span className={s.logoTitle}>{title}</span>
+        <span className={s.logoTitle}>{APP_TITLE}</span>
       </Link>
 
       <BreakpointDisplay show="larger-than-tablet" className={s.breakpoint}>

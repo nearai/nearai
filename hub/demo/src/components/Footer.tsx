@@ -3,6 +3,7 @@
 import { Flex, Text } from '@near-pagoda/ui';
 import { useEffect, useState } from 'react';
 
+import { APP_TITLE } from '~/constants';
 import { env } from '~/env';
 
 import s from './Footer.module.scss';
@@ -30,11 +31,6 @@ export const Footer = ({ conditional }: Props) => {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const title = env.NEXT_PUBLIC_CONSUMER_MODE
-    ? 'NEAR AI Assistant'
-    : 'NEAR AI Research Hub';
-
   return (
     <footer
       className={s.footer}
@@ -42,7 +38,7 @@ export const Footer = ({ conditional }: Props) => {
       data-hide={conditional && !mounted}
     >
       <Flex justify="space-between" gap="m" align="center" wrap="wrap">
-        <Text size="text-xs">{title}</Text>
+        <Text size="text-xs">NEAR AI {APP_TITLE}</Text>
 
         <Flex wrap="wrap" gap="m">
           <Text
