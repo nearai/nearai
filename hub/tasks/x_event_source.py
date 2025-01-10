@@ -129,7 +129,7 @@ async def x_events_task(auth_token):
             for tweet in reversed(tweets):
                 tweet_timestamp = int(tweet.created_at.timestamp())
                 #  Check if the tweet is newer than the last processed tweet
-                if not last_tweet_timestamp or tweet_timestamp > int(last_tweet_timestamp):
+                if not last_tweet_timestamp or tweet_timestamp >= int(last_tweet_timestamp):
                     # Ensure the tweet is not already in x_tasks by checking its ID
                     if not any(existing_task.get("tweet").id == tweet.id for existing_task in x_tasks):
                         x_tasks.append({"tweet": tweet, "agents": x_accounts_to_track[user_name]})
