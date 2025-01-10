@@ -384,10 +384,10 @@ export default function HomePage() {
               },
               {
                 icon: <ChartBar weight="duotone" />,
-                title: 'Benchmarks',
+                title: 'Evaluations',
                 description: 'Understand our evaluation metrics',
                 link: 'Explore',
-                href: '/benchmarks',
+                href: '/evaluations',
               },
               {
                 icon: <Database weight="duotone" />,

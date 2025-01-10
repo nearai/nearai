@@ -15,10 +15,9 @@
 
 .logo {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
   text-decoration: none;
-  font: var(--text-l);
-  color: var(--sand-12);
   transition: var(--transitions);
   outline: none;
   white-space: nowrap;
@@ -28,6 +27,19 @@
   &:focus-visible {
     color: var(--violet-10);
   }
+}
+
+.logoNearAi {
+  font: var(--text-2xs);
+  font-weight: 600;
+  color: var(--sand-10);
+}
+
+.logoTitle {
+  font: var(--text-base);
+  font-weight: 600;
+  color: var(--sand-12);
+  margin-top: -0.15rem;
 }
 
 .breakpoint {
