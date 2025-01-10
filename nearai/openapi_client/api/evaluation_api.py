@@ -16,6 +16,8 @@ from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 
+from pydantic import StrictStr
+from typing import Optional
 from nearai.openapi_client.models.evaluation_table import EvaluationTable
 
 from nearai.openapi_client.api_client import ApiClient, RequestSerialized
@@ -39,6 +41,7 @@ class EvaluationApi:
     @validate_call
     def table_v1_evaluation_table_get(
         self,
+        page: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -55,6 +58,8 @@ class EvaluationApi:
         """Table
 
 
+        :param page:
+        :type page: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -78,6 +83,7 @@ class EvaluationApi:
         """ # noqa: E501
 
         _param = self._table_v1_evaluation_table_get_serialize(
+            page=page,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -101,6 +107,7 @@ class EvaluationApi:
     @validate_call
     def table_v1_evaluation_table_get_with_http_info(
         self,
+        page: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -117,6 +124,8 @@ class EvaluationApi:
         """Table
 
 
+        :param page:
+        :type page: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -140,6 +149,7 @@ class EvaluationApi:
         """ # noqa: E501
 
         _param = self._table_v1_evaluation_table_get_serialize(
+            page=page,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -163,6 +173,7 @@ class EvaluationApi:
     @validate_call
     def table_v1_evaluation_table_get_without_preload_content(
         self,
+        page: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -179,6 +190,8 @@ class EvaluationApi:
         """Table
 
 
+        :param page:
+        :type page: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -202,6 +215,7 @@ class EvaluationApi:
         """ # noqa: E501
 
         _param = self._table_v1_evaluation_table_get_serialize(
+            page=page,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -220,6 +234,7 @@ class EvaluationApi:
 
     def _table_v1_evaluation_table_get_serialize(
         self,
+        page,
         _request_auth,
         _content_type,
         _headers,
@@ -240,6 +255,10 @@ class EvaluationApi:
 
         # process the path parameters
         # process the query parameters
+        if page is not None:
+            
+            _query_params.append(('page', page))
+            
         # process the header parameters
         # process the form parameters
         # process the body parameter
