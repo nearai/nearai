@@ -92,12 +92,7 @@ export default function HomePage() {
             </Text>
           </Flex>
 
-          <Grid
-            columns="1fr 1fr 1fr"
-            tablet={{ columns: '1fr 1fr' }}
-            gap="m"
-            className={s.heroCards}
-          >
+          <div className={s.heroCards}>
             <Card background="sand-0" padding="l" gap="l">
               <Flex align="center" justify="space-between" gap="m">
                 <Text size="text-l" weight="500" color="sand-11">
@@ -123,8 +118,6 @@ export default function HomePage() {
                   </Flex>
                 ) : (
                   <Button
-                    fill="outline"
-                    variant="secondary"
                     label="Sign In"
                     onClick={signInWithNear}
                     iconRight={<ArrowRight />}
@@ -170,8 +163,6 @@ export default function HomePage() {
 
               <Flex direction="column" gap="s" style={{ marginTop: 'auto' }}>
                 <Button
-                  variant="secondary"
-                  fill="outline"
                   label="Browse Agents"
                   href="/agents"
                   iconLeft={<MagnifyingGlass />}
@@ -213,19 +204,17 @@ export default function HomePage() {
 
               <Flex direction="column" gap="s" style={{ marginTop: 'auto' }}>
                 <Button
-                  variant="secondary"
-                  fill="outline"
                   label="View Docs"
                   href="https://docs.near.ai"
                   iconLeft={<BookOpenText />}
                 />
               </Flex>
             </Card>
-          </Grid>
+          </div>
 
           <Flex align="center" gap="s" className={s.heroFooter}>
             <SvgIcon icon={<Lightning weight="duotone" />} color="amber-10" />
-            <Text>
+            <Text weight={500} color="sand-12">
               It only takes 5 minutes to{' '}
               <Text
                 href="https://docs.near.ai/agents/#quickstart-build-and-run-a-python-agent-on-nearai"
@@ -290,7 +279,15 @@ export default function HomePage() {
                 <Tooltip asChild content="View an agent integrated with Near">
                   <Button
                     size="small"
-                    icon={<NearLogoIcon />}
+                    icon={
+                      <NearLogoIcon
+                        style={{
+                          width: '80%',
+                          height: '80%',
+                          margin: '10%',
+                        }}
+                      />
+                    }
                     label="Near"
                     href="/agents/zavodil.near/near-agent/latest"
                   />
