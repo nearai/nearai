@@ -6,7 +6,6 @@ import {
   Card,
   Flex,
   Grid,
-  HR,
   IconCircle,
   PlaceholderStack,
   Section,
