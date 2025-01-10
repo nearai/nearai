@@ -333,7 +333,7 @@ export default function HomePage() {
         </Grid>
       </Section>
 
-      <Section padding="hero" background="sand-3">
+      <Section padding="hero" background="primary-gradient">
         <Flex direction="column" gap="m">
           <Text as="h2" size="text-2xl" weight="600">
             Featured Agents
@@ -357,7 +357,7 @@ export default function HomePage() {
         </Grid>
       </Section>
 
-      <Section padding="hero" background="sand-0">
+      <Section padding="hero">
         <Flex direction="column" gap="l">
           <Flex direction="column" gap="m">
             <Text as="h2" size="text-2xl" weight="600">
