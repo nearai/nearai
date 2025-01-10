@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 import openai
-import urllib3  # type: ignore
+import urllib3
 from pydantic import BaseModel
 
 from nearai.openapi_client import ApiClient, Configuration

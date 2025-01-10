@@ -934,15 +934,15 @@ crt = ["awscrt (==0.22.0)"]
 
 [[package]]
 name = "botocore-stubs"
-version = "1.35.96"
+version = "1.35.95"
 description = "Type annotations and code completion for botocore"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 markers = "python_version <= \"3.11\""
 files = [
-    {file = "botocore_stubs-1.35.96-py3-none-any.whl", hash = "sha256:699fd80064e5ae2c25e566e6ebdf235b523aab0f8dbbcb5ae80a7247cbfbce38"},
-    {file = "botocore_stubs-1.35.96.tar.gz", hash = "sha256:a417dcdcf127da644c975963bc7403b188d2ae5a8c1bb907849d4b8681e4fb90"},
+    {file = "botocore_stubs-1.35.95-py3-none-any.whl", hash = "sha256:8b18f5b16df28c501c135f33a25ffdac24a746aac3bbc9357485b75b908057e6"},
+    {file = "botocore_stubs-1.35.95.tar.gz", hash = "sha256:64b8829e6e10722ccc1ab6d68e5e0b1bf3198b3b11be7d1747119d7c5cc39e99"},
 ]
 
 [package.dependencies]
@@ -7707,6 +7707,19 @@ files = [
 ]
 
 [[package]]
+name = "types-urllib3"
+version = "1.26.25.14"
+description = "Typing stubs for urllib3"
+optional = false
+python-versions = "*"
+groups = ["dev"]
+markers = "python_version <= \"3.11\""
+files = [
+    {file = "types-urllib3-1.26.25.14.tar.gz", hash = "sha256:229b7f577c951b8c1b92c1bc2b2fdb0b49847bd2af6d1cc2a2e3dd340f3bda8f"},
+    {file = "types_urllib3-1.26.25.14-py3-none-any.whl", hash = "sha256:9683bbb7fb72e32bfe9d2be6e04875fbe1b3eeec3cbb4ea231435aa7fd6b4f0e"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -8642,4 +8655,4 @@ vllm = ["torch", "vllm"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<3.12"
-content-hash = "409b335053e23437fc0a9d34f00161f59f4501940f014c347bfdaf78ea1067d4"
+content-hash = "b9a71a27b0e74b15abcb83e5976c74ba426ee15c65297e7adc39b5cdf3040ddf"
