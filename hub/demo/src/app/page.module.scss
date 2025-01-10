@@ -27,6 +27,7 @@
   bottom: -50%;
   opacity: 0.08;
   z-index: 1;
+  pointer-events: none;
 
   @media (max-width: 1200px) {
     top: 0;
@@ -131,5 +132,15 @@
 
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
+  }
+}
+
+.heroFooter {
+  position: relative;
+  z-index: 5;
+  text-wrap-style: pretty;
+
+  @media (max-width: 1200px) {
+    padding-top: 2rem;
   }
 }

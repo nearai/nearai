@@ -8,9 +8,11 @@ import {
   Grid,
   HR,
   IconCircle,
+  PlaceholderStack,
   Section,
   SvgIcon,
   Text,
+  Tooltip,
 } from '@near-pagoda/ui';
 import {
   ArrowRight,
@@ -26,19 +28,45 @@ import {
   GitFork,
   HandCoins,
   Handshake,
+  Lightning,
   LockKey,
   MagnifyingGlass,
+  TwitterLogo,
   UserCircle,
+  XLogo,
 } from '@phosphor-icons/react';
+import { useMemo } from 'react';
+import { type z } from 'zod';
 
+import { EntryCard } from '~/components/EntryCard';
 import { env } from '~/env';
 import { signInWithNear } from '~/lib/auth';
+import { idMatchesEntry } from '~/lib/entries';
+import { type entriesModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
+import { api } from '~/trpc/react';
 
+import NearLogoIcon from '../svgs/near-logo-icon.svg';
 import s from './page.module.scss';
 
 export default function HomePage() {
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const agents = api.hub.entries.useQuery({
+    category: 'agent',
+  });
+
+  const featuredAgents = useMemo(() => {
+    const result: z.infer<typeof entriesModel> = [];
+
+    env.NEXT_PUBLIC_FEATURED_AGENT_IDS.forEach((agentId) => {
+      const agent = agents.data?.find((entry) =>
+        idMatchesEntry(agentId, entry),
+      );
+      if (agent) result.push(agent);
+    });
+
+    return result;
+  }, [agents.data]);
 
   return (
     <>
@@ -78,7 +106,7 @@ export default function HomePage() {
                 </Text>
                 <SvgIcon
                   icon={<UserCircle weight="regular" />}
-                  color="sand-8"
+                  color="violet-9"
                   size="m"
                 />
               </Flex>
@@ -113,7 +141,7 @@ export default function HomePage() {
                 </Text>
                 <SvgIcon
                   icon={<GitFork weight="regular" />}
-                  color="sand-8"
+                  color="violet-9"
                   size="m"
                 />
               </Flex>
@@ -155,11 +183,11 @@ export default function HomePage() {
             <Card background="sand-0" padding="l" gap="l">
               <Flex align="center" justify="space-between" gap="m">
                 <Text size="text-l" weight="500" color="sand-11">
-                  3. Develop
+                  3. Build
                 </Text>
                 <SvgIcon
                   icon={<CodeBlock weight="regular" />}
-                  color="sand-8"
+                  color="violet-9"
                   size="m"
                 />
               </Flex>
@@ -195,80 +223,142 @@ export default function HomePage() {
               </Flex>
             </Card>
           </Grid>
+
+          <Flex align="center" gap="s" className={s.heroFooter}>
+            <SvgIcon icon={<Lightning weight="duotone" />} color="amber-10" />
+            <Text>
+              It only takes 5 minutes to{' '}
+              <Text
+                href="https://docs.near.ai/agents/#quickstart-build-and-run-a-python-agent-on-nearai"
+                target="_blank"
+              >
+                deploy your first agent
+              </Text>
+            </Text>
+          </Flex>
         </Flex>
       </Section>
 
-      <Section padding="hero" background="sand-1">
+      <Section padding="hero" background="sand-1" gap="xl">
         <Flex direction="column" gap="m">
-          <Text
-            as="h2"
-            size="text-2xl"
-            weight="600"
-            style={{ textAlign: 'center' }}
-          >
+          <Text as="h2" size="text-2xl" weight="600">
             AI Agent Protocol
           </Text>
 
-          <Text
-            size="text-l"
-            weight="400"
-            style={{ textAlign: 'center' }}
-            color="sand-10"
-          >
+          <Text size="text-l" weight="400" color="sand-10">
             The open standard for AI agents to connect, act, and transact
           </Text>
         </Flex>
 
-        <HR />
-
-        <Grid
-          columns="1fr 1fr 1fr 1fr"
-          tablet={{ columns: '1fr 1fr' }}
-          phone={{ columns: '1fr' }}
-          gap="l"
-          style={{ textAlign: 'center' }}
-        >
-          <Flex direction="column" gap="m" align="center">
+        <Grid gap="xl" columns="1fr 1fr" tablet={{ columns: '1fr' }}>
+          <Flex gap="m" align="center">
             <IconCircle
               icon={<CloudCheck weight="duotone" />}
               color="violet-9"
             />
-            <Text weight={500} color="sand-12">
-              Free inference and hosting
-            </Text>
+
+            <Flex direction="column" gap="xs" align="start">
+              <Text weight={500} color="sand-12">
+                Free inference and hosting
+              </Text>
+              <Text size="text-s">
+                Deploy, build, and grow your agents with peace of mind
+              </Text>
+            </Flex>
           </Flex>
 
-          <Flex direction="column" gap="m" align="center">
-            <IconCircle icon={<Handshake weight="duotone" />} color="cyan-10" />
-            <Text weight={500} color="sand-12">
-              Connect across Web2 and Web3 services
-            </Text>
+          <Flex gap="m" align="center">
+            <IconCircle icon={<Handshake weight="duotone" />} color="cyan-9" />
+
+            <Flex direction="column" gap="xs" align="start">
+              <Text weight={500} color="sand-12">
+                Connect across Web2 and Web3 services
+              </Text>
+              <Flex align="center" gap="s" wrap="wrap">
+                <Tooltip
+                  asChild
+                  content="View an agent integrated with X (Twitter)"
+                >
+                  <Button
+                    size="small"
+                    icon={<XLogo />}
+                    label="Twitter / X"
+                    iconRight={<TwitterLogo />}
+                    href="/agents/flatirons.near/near-secret-agent/latest"
+                  />
+                </Tooltip>
+
+                <Tooltip asChild content="View an agent integrated with Near">
+                  <Button
+                    size="small"
+                    icon={<NearLogoIcon />}
+                    label="Near"
+                    href="/agents/zavodil.near/near-agent/latest"
+                  />
+                </Tooltip>
+
+                <Badge label="More Coming Soon" variant="neutral-alpha" />
+              </Flex>
+            </Flex>
           </Flex>
 
-          <Flex direction="column" gap="m" align="center">
-            <IconCircle icon={<LockKey weight="duotone" />} color="amber-11" />
-            <Text weight={500} color="sand-12">
-              Protect your data and identity
-            </Text>
-          </Flex>
-
-          <Flex direction="column" gap="m" align="center">
+          <Flex gap="m" align="center">
             <IconCircle
               icon={<HandCoins weight="duotone" />}
               color="green-10"
             />
-            <Text weight={500} color="sand-12">
-              Authorize and complete payments seamlessly
-            </Text>
-            <Badge label="Coming Soon" variant="neutral-alpha" />
+
+            <Flex direction="column" gap="xs" align="start">
+              <Text weight={500} color="sand-12">
+                Authorize and complete payments seamlessly
+              </Text>
+              <Text size="text-s">Monetize your agents via fiat or crypto</Text>
+              <Badge label="Coming Soon" variant="neutral-alpha" />
+            </Flex>
+          </Flex>
+
+          <Flex gap="m" align="center">
+            <IconCircle icon={<LockKey weight="duotone" />} color="amber-10" />
+
+            <Flex direction="column" gap="xs" align="start">
+              <Text weight={500} color="sand-12">
+                Protect your data
+              </Text>
+              <Text size="text-s">
+                Run agents and inference in a private, trusted execution
+                environment
+              </Text>
+              <Badge label="Coming Soon" variant="neutral-alpha" />
+            </Flex>
           </Flex>
         </Grid>
-
-        {/* Connect across Web2 and Web3 services Authorize and complete payments
-        seamlessly Protect your data and identity */}
       </Section>
 
       <Section padding="hero" background="sand-3">
+        <Flex direction="column" gap="m">
+          <Text as="h2" size="text-2xl" weight="600">
+            Featured Agents
+          </Text>
+          <Text color="sand-11" size="text-l" weight={400}>
+            Fork any of these agents for a great starting point
+          </Text>
+        </Flex>
+
+        {featuredAgents.length === 0 && <PlaceholderStack />}
+
+        <Grid
+          gap="m"
+          columns="1fr 1fr 1fr"
+          tablet={{ columns: '1fr 1fr' }}
+          phone={{ columns: '1fr' }}
+        >
+          {featuredAgents.map((agent) => (
+            <EntryCard entry={agent} key={agent.id} />
+          ))}
+        </Grid>
+      </Section>
+
+      <Section padding="hero" background="sand-0">
         <Flex direction="column" gap="l">
           <Flex direction="column" gap="m">
             <Text as="h2" size="text-2xl" weight="600">
