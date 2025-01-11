@@ -34,6 +34,13 @@ class InferenceClient(object):
         self._config = config
         self.runner_api_key = runner_api_key
         self.agent_identifier = agent_identifier
+        self._auth = None
+        self.generate_auth_for_current_agent(config, agent_identifier)
+        self.client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
+
+    def generate_auth_for_current_agent(self, config, agent_identifier):
+        """Regenerate auth for the current agent."""
+        self.agent_identifier = agent_identifier
         if config.auth is not None:
             auth_bearer_token = config.auth.generate_bearer_token()
             new_token = json.loads(auth_bearer_token)
@@ -42,7 +49,6 @@ class InferenceClient(object):
             self._auth = auth_bearer_token
         else:
             self._auth = None
-        self.client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
 
     # This makes sense in the CLI where we don't mind doing this request and caching it.
     # In the aws_runner this is an extra request every time we run.

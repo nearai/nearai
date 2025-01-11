@@ -20,6 +20,11 @@ from nearai.shared.provider_models import PROVIDER_MODEL_SEP
 OUTPUT_PATH = "/tmp/nearai-agent-runner"
 DEFAULT_API_URL = "https://api.near.ai"
 
+# Local caches
+inference_client = None
+inference_client_cache_time = None
+local_agent_cache: dict[str, Agent] = {}
+
 
 def create_cloudwatch():
     if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
@@ -127,6 +132,11 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
     agent_metadata = None
 
     if params["data_source"] == "registry":
+        global local_agent_cache
+        if agent in local_agent_cache:
+            print(f"Using {agent} from cache")
+            return local_agent_cache[agent]
+
         start_time = time.perf_counter()
         agent_files = client.get_agent(agent)
         stop_time = time.perf_counter()
@@ -135,6 +145,11 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
         agent_metadata = client.get_agent_metadata(agent)
         stop_time = time.perf_counter()
         write_metric("GetMetadataFromRegistry_Duration", stop_time - start_time, verbose=verbose)
+        full_agent = Agent(
+            agent, agent_files, agent_metadata or {}, change_to_temp_dir=params.get("change_to_agent_temp_dir", True)
+        )
+        local_agent_cache[full_agent.identifier] = full_agent
+        return full_agent
     elif params["data_source"] == "local_files":
         agent = agent.replace(f"{get_registry_folder()}/", "")
         agent_files = get_local_agent_files(agent, additional_path)
@@ -146,12 +161,14 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
                     print(f"Loaded {agent_metadata} agents from {agent}")
                 break
 
-    if not agent_metadata:
-        print(f"Missing metadata for {agent}")
+        if not agent_metadata:
+            print(f"Missing metadata for {agent}")
 
-    return Agent(
-        agent, agent_files, agent_metadata or {}, change_to_temp_dir=params.get("change_to_agent_temp_dir", True)
-    )
+        return Agent(
+            agent, agent_files, agent_metadata or {}, change_to_temp_dir=params.get("change_to_agent_temp_dir", True)
+        )
+    else:
+        raise ValueError("Invalid data_source")
 
 
 def clear_temp_agent_files(agents, verbose=True):
@@ -255,7 +272,13 @@ def start_with_environment(
         base_url=api_url + "/v1",
         auth=auth,
     )
-    inference_client = InferenceClient(client_config, protected_vars.get("RUNNER_API_KEY"), agent.identifier)
+    global inference_client
+    global inference_client_cache_time
+    if not inference_client or (time.time() - inference_client_cache_time > 3600):
+        inference_client = InferenceClient(client_config, protected_vars.get("RUNNER_API_KEY"), agent.identifier)
+        inference_client_cache_time = time.time()
+    else:
+        inference_client.generate_auth_for_current_agent(client_config, agent.identifier)
     hub_client = client_config.get_hub_client()
     run_path = (
         additional_path

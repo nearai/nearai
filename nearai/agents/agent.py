@@ -42,6 +42,7 @@ class Agent(object):
 
         self.temp_dir = self.write_agent_files_to_temp(agent_files)
         self.change_to_temp_dir = change_to_temp_dir
+        self.agent_filename = ""
 
     def get_full_name(self):
         """Returns full agent name."""
@@ -117,10 +118,6 @@ class Agent(object):
             raise ValueError("Both 'version' and 'name' must be non-empty in metadata.")
 
     def run(self, env: Any, task: Optional[str] = None) -> None:  # noqa: D102
-        agent_filename = os.path.join(self.temp_dir, AGENT_FILENAME)
-        if not os.path.exists(agent_filename):
-            raise ValueError(f"Agent run error: {AGENT_FILENAME} does not exist")
-
         # combine agent.env_vars and env.env_vars
         total_env_vars = {**self.env_vars, **env.env_vars}
 
@@ -129,15 +126,24 @@ class Agent(object):
         # save env.env_vars
         env.env_vars = total_env_vars
 
+        if not self.agent_filename:
+            self.agent_filename = os.path.join(self.temp_dir, AGENT_FILENAME)
+            if not os.path.exists(self.agent_filename):
+                raise ValueError(f"Agent run error: {AGENT_FILENAME} does not exist")
+            with open(self.agent_filename, "r") as f:
+                self.code = compile(f.read(), self.agent_filename, "exec")
+        else:
+            print("Using cached agent code")
+
         namespace = {
             "env": env,
             "agent": self,
             "task": task,
             "__name__": "__main__",
-            "__file__": agent_filename,
+            "__file__": self.agent_filename,
         }
 
-        def run_agent_code(agent_filename, namespace):
+        def run_agent_code(namespace):
             # switch to user env.agent_runner_user
             if env.agent_runner_user:
                 user_info = pwd.getpwnam(env.agent_runner_user)
@@ -149,23 +155,24 @@ class Agent(object):
             #       The performance of runpy.run_path may also change depending on a system, e.g. it may
             #       work on Linux but not work on Mac.
             #       `compile` and `exec` have been tested to work properly in a multithreaded environment.
-            with open(agent_filename, "r") as f:
-                code = compile(f.read(), agent_filename, "exec")
-                exec(code, namespace)
+            exec(self.code, namespace)
 
         try:
             if self.change_to_temp_dir:
+                if not os.path.exists(self.temp_dir):
+                    os.makedirs(self.temp_dir, exist_ok=True)
                 os.chdir(self.temp_dir)
             sys.path.insert(0, self.temp_dir)
 
             if env.agent_runner_user:
-                process = multiprocessing.Process(target=run_agent_code, args=(agent_filename, namespace))
+                process = multiprocessing.Process(target=run_agent_code, args=(self.agent_filename, namespace))
                 process.start()
                 process.join()
             else:
-                run_agent_code(agent_filename, namespace)
+                run_agent_code(namespace)
         finally:
-            sys.path.remove(self.temp_dir)
+            if os.path.exists(self.temp_dir):
+                sys.path.remove(self.temp_dir)
             if self.change_to_temp_dir:
                 os.chdir(self.original_cwd)
 
