@@ -27,7 +27,7 @@ Interactive runs execute the agent on a loop, allowing you to chat with it inter
 
 ```bash
 # Download the agent from the registry
-nearai agent download gagdiez.near/hello-ai/latest
+nearai registry download gagdiez.near/hello-ai/latest
 
 # Running the agent by absolute path
 nearai agent interactive ~/.nearai/registry/gagdiez.near/hello-ai/latest --local
