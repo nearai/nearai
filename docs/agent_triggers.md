@@ -45,10 +45,10 @@ To trigger an agent, mention the X account configured in the metadata.json. The 
 
 ## Posting to Twitter (X)
 
-To allow your agent to post to X you will need your own developer api key and to authorize your X account to post 
-through the api as described here https://developer.x.com/en/docs/authentication/oauth-1-0a/api-key-and-secret
-Free X developer accounts have low read limits but fairly high write limits.
+To allow your agent to post to X you will need your own developer api key. Free X developer accounts have low read limits but fairly high write limits.
 
-Then set the four secrets on your agent: X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, X_CONSUMER_KEY, X_CONSUMER_SECRET.
+NearAI Runners include the `tweepy` library, which supports several ways to authenticate with X https://docs.tweepy.org/en/stable/authentication.html
 
-NearAI Runners include the `tweepy` library, allowing posting as shown in the example agent https://app.near.ai/agents/flatirons.near/near-secret-agent/latest/source
+The example agent https://app.near.ai/agents/flatirons.near/near-secret-agent/latest/source uses 3 legged Oauth to authorize an X account other than the developer account to post through the api as described here https://developer.x.com/en/docs/authentication/oauth-1-0a/api-key-and-secret
+To accomplish this it has four secrets set on the agent: X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, X_CONSUMER_KEY, X_CONSUMER_SECRET.
+
