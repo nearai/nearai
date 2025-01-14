@@ -2,8 +2,7 @@
 
 Welcome! [NEAR AI](https://near.ai) is a toolkit to help build, measure, and deploy AI systems focused on [agents](./agents/quickstart.md).
 
-Driven by one of the minds behinds **TensorFlow** and the **Transformer Architecture**, with NEAR AI, your data is yours,
-and your AI works for your. No compromises on privacy or ownership.
+Driven by one of the minds behinds **TensorFlow** and the **Transformer Architecture**, NEAR AI puts you back in control. Your data stays yours, and your AI works for you, with no compromises on privacy or ownership.
 
 ---
 
@@ -56,6 +55,8 @@ and your AI works for your. No compromises on privacy or ownership.
     [:simple-telegram: Community](https://t.me/nearaialpha)
 
 </div>
+
+---
 
 !!! warning "Alpha"
 
