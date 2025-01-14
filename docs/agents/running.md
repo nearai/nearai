@@ -39,7 +39,7 @@ nearai agent interactive ~/.nearai/registry/gagdiez.near/hello-ai/latest --local
 When running an agent as a task, we simply provide an input and let the agent execute it without any user interaction.
 
 ```bash
-nearai agent task ~/.nearai/registry/gagdiez.near/hello-ai/latest "write a poem about the sorrow of loosing oneself, but end on a positive note" --local
+nearai agent task ~/.nearai/registry/gagdiez.near/hello-ai/latest "write a poem about the sorrow of losing oneself, but end on a positive note" --local
 ```
 
 ---

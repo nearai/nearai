@@ -101,7 +101,7 @@ nearai agent create --name hello-ai --description "My First NEAR AI Agent"
 # Agent created at: /Users/user/.nearai/registry/<your-account.near>/hello-ai/0.0.1
 ```
 
-This will create a local folder with some `metadata` that describes the agent, and a python file wit the agent's logic. Let's interact with the agent before we dive into its code!
+This will create a local folder with some `metadata` that describes the agent, and a python file with the agent's logic. Let's interact with the agent before we dive into its code!
 
 Execute the following commands in your terminal:
 
