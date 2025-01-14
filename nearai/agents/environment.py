@@ -421,7 +421,7 @@ class Environment(object):
             messages = hub_client.beta.threads.messages.list(
                 thread_id=thread_id or self._thread_id, limit=limit, order=order
             )
-            self.add_system_log(f"Retrieved {len(messages.data)} messages from NearAI Hub")
+            self.add_system_log(f"Retrieved {len(messages.data)} messages from NEAR AI Hub")
             return messages.data
 
         self._list_messages = _list_messages

@@ -791,12 +791,12 @@ class VllmCli:
 
 class HubCLI:
     def chat(self, **kwargs):
-        """Chat with model from NearAI hub.
+        """Chat with model from NEAR AI hub.
 
         Args:
         ----
             query (str): User's query to model
-            endpoint (str): NearAI HUB's url
+            endpoint (str): NEAR AI HUB's url
             model (str): Name of a model
             provider (str): Name of a provider
             info (bool): Display system info

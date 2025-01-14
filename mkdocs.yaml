@@ -1,5 +1,5 @@
-site_name: NearAI
-site_author: NearAI Team
+site_name: NEAR AI
+site_author: NEAR AI Team
 site_description: A lightweight library for structured outputs with LLMs. 
 repo_name: nearai
 repo_url: https://github.com/nearai/nearai/
@@ -130,7 +130,7 @@ extra_css:
   - docs.css
 nav:
   - Home: 
-    - Welcome To NearAI Docs: 'index.md'
+    - Welcome To NEAR AI Docs: 'index.md'
     - Contributing: 'contributing.md'
     - Decentralization: 'decentralization.md'
   - Agents:

@@ -1,6 +1,6 @@
-# NearAI
+# NEAR AI
 
-NearAI is a project with the goal of making open source and user-owned AGI.
+NEAR AI is a project with the goal of making open source and user-owned AGI.
 
 ## Setup
 
@@ -45,7 +45,7 @@ To perform write operations you will need to log in with your Near account.
 nearai login
 ```
 
-<b>To learn how to use NearAI, please read the [documentation](https://docs.near.ai/).</b>
+<b>To learn how to use NEAR AI, please read the [documentation](https://docs.near.ai/).</b>
 
 
 ## Update
@@ -62,4 +62,4 @@ python3 -m pip install -e .
 
 ## Contributing
 
-To contribute to NearAI, please read the [contributing guide](https://docs.near.ai/contributing/).
+To contribute to NEAR AI, please read the [contributing guide](https://docs.near.ai/contributing/).

@@ -16,7 +16,7 @@ ENVIRONMENT_FILENAME = "environment.tar.gz"
 
 
 class PartialNearClient:
-    """Wrap NearAI api registry methods, uses generated NearAI client."""
+    """Wrap NEAR AI api registry methods, uses generated NEAR AI client."""
 
     def __init__(self, base_url: str, auth: AuthData):  # noqa: D107
         configuration = Configuration(access_token=f"Bearer {auth.model_dump_json()}", host=base_url)
@@ -42,7 +42,7 @@ class PartialNearClient:
         }
 
     def get_file_from_registry(self, entry_location: dict, path: str):
-        """Fetches a file from NearAI registry."""
+        """Fetches a file from NEAR AI registry."""
         api_instance = RegistryApi(self._client)
         body = BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
             dict(
@@ -68,7 +68,7 @@ class PartialNearClient:
         return [file.filename for file in result]
 
     def get_files_from_registry(self, entry_location: dict):
-        """Fetches all files from NearAI registry."""
+        """Fetches all files from NEAR AI registry."""
         api_instance = RegistryApi(self._client)
 
         files = self.list_files(entry_location)
@@ -97,7 +97,7 @@ class PartialNearClient:
             return results
 
     def get_agent_metadata(self, identifier: str) -> dict:
-        """Fetches metadata for an agent from NearAI registry."""
+        """Fetches metadata for an agent from NEAR AI registry."""
         api_instance = RegistryApi(self._client)
         entry_location = self.parse_location(identifier)
         body = BodyDownloadMetadataV1RegistryDownloadMetadataPost.from_dict(dict(entry_location=entry_location))
@@ -106,7 +106,7 @@ class PartialNearClient:
         return result.to_dict()
 
     def get_agent(self, identifier):
-        """Fetches an agent from NearAI registry."""
+        """Fetches an agent from NEAR AI registry."""
         entry_location = self.parse_location(identifier)
         # download all agent files
         return self.get_files_from_registry(entry_location)

@@ -1,4 +1,4 @@
-# NearAI
+# NEAR AI
 
 Manage dataset and model registry.
 Run and explore tasks on the experiment platform.

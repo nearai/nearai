@@ -122,7 +122,7 @@ class InferenceClient(object):
     ) -> Union[List[SimilaritySearch], List[SimilaritySearchFile]]:
         """Query a vector store."""
         if self._config is None:
-            raise ValueError("Missing NearAI Hub config")
+            raise ValueError("Missing NEAR AI Hub config")
 
         auth_bearer_token = self._auth
 
