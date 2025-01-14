@@ -166,6 +166,9 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
     if not agent_entry:
         raise HTTPException(status_code=404, detail=f"Agent '{agent_entry}' not found in the registry.")
 
+    specific_agent_version_to_run = (
+        f"{agent_entry.namespace}/{agent_entry.name}/{agent_entry.version}" if agent_entry else agents
+    )
     entry_details = agent_entry.details
     agent_details = entry_details.get("agent", {})
     framework = agent_details.get("framework", "base")
@@ -205,7 +208,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
         if runner == "custom_runner":
             custom_runner_url = getenv("CUSTOM_RUNNER_URL", None)
             if custom_runner_url:
-                invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth, params)
+                invoke_agent_via_url(custom_runner_url, specific_agent_version_to_run, thread_id, run_id, auth, params)
         elif runner == "local_runner":
             """Runs agents directly from the local machine."""
 
@@ -222,7 +225,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
             if agent_api_url != "https://api.near.ai":
                 print(f"Passing agent API URL: {agent_api_url}")
 
-            invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth, params)
+            invoke_agent_via_lambda(function_name, specific_agent_version_to_run, thread_id, run_id, auth, params)
 
     with get_session() as session:
         completed_run_model = session.get(RunModel, run_id)
