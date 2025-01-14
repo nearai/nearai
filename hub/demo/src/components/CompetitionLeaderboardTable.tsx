@@ -14,7 +14,7 @@ import { useMemo, useState } from 'react';
 
 import { useDebouncedValue } from '~/hooks/debounce';
 import { DEFAULT_BENCHMARK_COLUMNS } from '~/lib/benchmarks';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 import { wordsMatchFuzzySearch } from '~/utils/search';
 
 type Props = {
@@ -24,7 +24,7 @@ type Props = {
 export const CompetitionLeaderboardTable = ({ competitionId }: Props) => {
   const [searchQuery, setSearchQuery] = useState('');
   const searchQueryDebounced = useDebouncedValue(searchQuery, 150);
-  const evaluationsQuery = api.hub.evaluations.useQuery({
+  const evaluationsQuery = trpc.hub.evaluations.useQuery({
     page: competitionId,
   });
 

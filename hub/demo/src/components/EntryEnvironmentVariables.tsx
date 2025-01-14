@@ -34,7 +34,7 @@ import {
 } from '~/hooks/entries';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
 import { Sidebar } from './lib/Sidebar';
 import { SignInPrompt } from './SignInPrompt';
@@ -319,9 +319,9 @@ type SecretFormSchema = {
 
 const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
   const form = useForm<SecretFormSchema>({});
-  const addMutation = api.hub.addSecret.useMutation();
-  const removeMutation = api.hub.removeSecret.useMutation();
-  const utils = api.useUtils();
+  const addMutation = trpc.hub.addSecret.useMutation();
+  const removeMutation = trpc.hub.removeSecret.useMutation();
+  const utils = trpc.useUtils();
   const auth = useAuthStore((store) => store.auth);
   const params = useEntryParams();
 

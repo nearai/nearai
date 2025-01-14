@@ -23,7 +23,7 @@ import {
 } from '~/lib/models';
 import { useNearStore } from '~/stores/near';
 import { useWalletStore } from '~/stores/wallet';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
 import { useQueryParams } from './url';
 
@@ -47,7 +47,7 @@ export function useAgentRequestsWithIframe(
   >,
   threadId: string | null | undefined,
 ) {
-  const addSecretMutation = api.hub.addSecret.useMutation();
+  const addSecretMutation = trpc.hub.addSecret.useMutation();
   const { queryParams, updateQueryPath } = useQueryParams([
     'account_id',
     'threadId',
@@ -63,7 +63,7 @@ export function useAgentRequestsWithIframe(
   const [iframePostMessage, setIframePostMessage] = useState<unknown>(null);
   const [agentRequestsNeedingPermissions, setAgentRequestsNeedingPermissions] =
     useState<AgentRequestWithPermissions[] | null>(null);
-  const utils = api.useUtils();
+  const utils = trpc.useUtils();
 
   const handleWalletTransactionResponse = useCallback(
     (options: {

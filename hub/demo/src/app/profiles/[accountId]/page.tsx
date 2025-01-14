@@ -22,7 +22,7 @@ import { useProfileParams } from '~/hooks/profile';
 import { useQueryParams } from '~/hooks/url';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 import { toTitleCase } from '~/utils/string';
 
 const categories: EntryCategory[] = ['agent', 'benchmark', 'dataset', 'model'];
@@ -36,7 +36,7 @@ export default function ProfilePage() {
   const [sidebarOpenForSmallScreens, setSidebarOpenForSmallScreens] =
     useState(false);
 
-  const entriesQuery = api.hub.entries.useQuery({
+  const entriesQuery = trpc.hub.entries.useQuery({
     namespace: starred ? undefined : accountId,
     starredBy: starred ? accountId : undefined,
   });

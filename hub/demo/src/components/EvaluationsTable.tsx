@@ -31,7 +31,7 @@ import { useQueryParams } from '~/hooks/url';
 import { DEFAULT_BENCHMARK_COLUMNS } from '~/lib/benchmarks';
 import { idForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 import { wordsMatchFuzzySearch } from '~/utils/search';
 
 type Props = {
@@ -56,8 +56,8 @@ export const EvaluationsTable = ({
     useState(false);
   const searchQueryDebounced = useDebouncedValue(searchQuery, 150);
 
-  const evaluationsQuery = api.hub.evaluations.useQuery();
-  const benchmarksQuery = api.hub.entries.useQuery({
+  const evaluationsQuery = trpc.hub.evaluations.useQuery();
+  const benchmarksQuery = trpc.hub.entries.useQuery({
     category: 'benchmark',
   });
 

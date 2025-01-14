@@ -25,7 +25,7 @@ import {
   sourceUrlForEntry,
 } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
 import { ForkButton } from './ForkButton';
 import { StarButton } from './StarButton';
@@ -48,7 +48,7 @@ export const EntriesTable = ({
   header,
   title,
 }: Props) => {
-  const entriesQuery = api.hub.entries.useQuery({ category, forkOf });
+  const entriesQuery = trpc.hub.entries.useQuery({ category, forkOf });
 
   const { searched, searchQuery, setSearchQuery } = useEntriesSearch(
     entriesQuery.data,

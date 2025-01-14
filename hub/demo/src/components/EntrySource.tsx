@@ -22,7 +22,7 @@ import { useEntryParams } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 import { filePathToCodeLanguage } from '~/utils/file';
 
 const METADATA_FILE_PATH = 'metadata.json';
@@ -38,14 +38,14 @@ export const EntrySource = ({ entry }: Props) => {
   const { createQueryPath, queryParams } = useQueryParams(['file']);
   const params = useEntryParams();
 
-  const filePathsQuery = api.hub.filePaths.useQuery(params, {
+  const filePathsQuery = trpc.hub.filePaths.useQuery(params, {
     enabled: isPermittedToViewSource,
   });
   const activeFilePath = queryParams.file ?? filePathsQuery.data?.[0] ?? '';
   const activeFileIsCompressed =
     activeFilePath.endsWith('.zip') || activeFilePath.endsWith('.tar');
 
-  const fileQuery = api.hub.file.useQuery(
+  const fileQuery = trpc.hub.file.useQuery(
     { ...params, filePath: activeFilePath },
     {
       enabled:

@@ -43,14 +43,14 @@ import { signInWithNear } from '~/lib/auth';
 import { idMatchesEntry } from '~/lib/entries';
 import { type entriesModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
 import NearLogoIcon from '../svgs/near-logo-icon.svg';
 import s from './page.module.scss';
 
 export default function HomePage() {
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
-  const agents = api.hub.entries.useQuery({
+  const agents = trpc.hub.entries.useQuery({
     category: 'agent',
   });
 

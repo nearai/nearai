@@ -21,7 +21,7 @@ import { type z } from 'zod';
 import { idForEntry, primaryUrlForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 import { toTitleCase } from '~/utils/string';
 
 import { SignInPrompt } from './SignInPrompt';
@@ -108,13 +108,13 @@ const ForkForm = ({ entry, onFinish }: ForkFormProps) => {
   const form = useForm<ForkFormSchema>({
     mode: 'all',
   });
-  const utils = api.useUtils();
+  const utils = trpc.useUtils();
   const auth = useAuthStore((store) => store.auth);
-  const forkMutation = api.hub.forkEntry.useMutation();
+  const forkMutation = trpc.hub.forkEntry.useMutation();
   const router = useRouter();
   const name = form.watch('name');
 
-  const entriesQuery = api.hub.entries.useQuery(
+  const entriesQuery = trpc.hub.entries.useQuery(
     {
       category: entry.category,
       namespace: auth?.account_id,

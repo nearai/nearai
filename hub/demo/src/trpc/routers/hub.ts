@@ -21,16 +21,13 @@ import {
   threadRunModel,
   threadsModel,
 } from '~/lib/models';
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from '~/server/api/trpc';
-import { loadEntriesFromDirectory } from '~/server/utils/data-source';
-import { conditionallyIncludeAuthorizationHeader } from '~/server/utils/headers';
-import { conditionallyRemoveSecret } from '~/server/utils/secrets';
-import { fetchThreadContents } from '~/server/utils/threads';
+import { loadEntriesFromDirectory } from '~/trpc/utils/data-source';
+import { conditionallyIncludeAuthorizationHeader } from '~/trpc/utils/headers';
+import { conditionallyRemoveSecret } from '~/trpc/utils/secrets';
+import { fetchThreadContents } from '~/trpc/utils/threads';
 import { createZodFetcher } from '~/utils/zod-fetch';
+
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc';
 
 const fetchWithZod = createZodFetcher();
 

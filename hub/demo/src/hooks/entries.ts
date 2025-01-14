@@ -9,7 +9,7 @@ import {
   type entrySecretModel,
 } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 import { wordsMatchFuzzySearch } from '~/utils/search';
 
 import { useDebouncedValue } from './debounce';
@@ -49,7 +49,7 @@ export function useCurrentEntry(
 ) {
   const { id, namespace, name, version } = useEntryParams(overrides);
 
-  const entriesQuery = api.hub.entries.useQuery({
+  const entriesQuery = trpc.hub.entries.useQuery({
     category,
     namespace,
     showLatestVersion: false,
@@ -111,7 +111,7 @@ export function useEntryEnvironmentVariables(
 ) {
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const searchParams = useSearchParams();
-  const secretsQuery = api.hub.secrets.useQuery(
+  const secretsQuery = trpc.hub.secrets.useQuery(
     {},
     {
       enabled: isAuthenticated,

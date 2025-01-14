@@ -3,7 +3,8 @@ import { type z } from 'zod';
 
 import { type threadModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { api, type RouterOutputs } from '~/trpc/react';
+import { type AppRouterOutputs } from '~/trpc/router';
+import { trpc } from '~/trpc/TRPCProvider';
 
 export type ThreadSummary = z.infer<typeof threadModel> & {
   agent: {
@@ -19,14 +20,14 @@ export type ThreadSummary = z.infer<typeof threadModel> & {
 
 export function useThreads() {
   const accountId = useAuthStore((store) => store.auth?.account_id);
-  const utils = api.useUtils();
+  const utils = trpc.useUtils();
 
-  const threadsQuery = api.hub.threads.useQuery(undefined, {
+  const threadsQuery = trpc.hub.threads.useQuery(undefined, {
     enabled: !!accountId,
   });
 
   const setThreadData = useCallback(
-    (id: string, data: Partial<RouterOutputs['hub']['threads'][number]>) => {
+    (id: string, data: Partial<AppRouterOutputs['hub']['threads'][number]>) => {
       const threads = [...(threadsQuery.data ?? [])].map((thread) => {
         if (thread.id === id) {
           return {
