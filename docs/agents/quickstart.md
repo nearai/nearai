@@ -75,7 +75,7 @@ After successfully login, you should see the screen below. Close it and return t
 
 ??? tip Other Login Methods
 
-    If you have already logged in with your NEAR account using the `near-cli`, or you know your account's private key, you can use the following commands:
+    If you have already logged in on `near-cli`, you know your account's private key, or you have the credentials on another device, you can use the following commands to login:
 
     ```bash
     ### Login with NEAR Account ID Only
@@ -83,6 +83,9 @@ After successfully login, you should see the screen below. Close it and return t
 
     ### Login with Account ID and Private Key
     nearai login --accountId name.near --privateKey key
+
+    ### Login Remotely (only displays the login URL)
+    nearai login --remote
   ```
 
 ---
