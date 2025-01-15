@@ -1,6 +1,6 @@
-# NEAR.AI Inference API (OpenAI Compatible)
+# NEAR AI Inference API (OpenAI Compatible)
 
-NEAR.AI provides an OpenAI-compatible API for inference, allowing you to easily integrate powerful language models into your applications. This guide covers the basic endpoints and how to use them.
+NEAR AI provides an OpenAI-compatible API for inference, allowing you to easily integrate powerful language models into your applications. This guide covers the basic endpoints and how to use them.
 
 Other examples available here: [examples](https://github.com/nearai/nearai/tree/main/hub/examples)
 
@@ -109,7 +109,7 @@ except Exception as e:
 
 ## Additional Features
 
-The NEAR.AI Inference API also supports other features such as:
+The NEAR AI Inference API also supports other features such as:
 
 1. Streaming responses
 2. Function calling
@@ -119,4 +119,4 @@ For more information on these features, please refer to the full API documentati
 
 ## Conclusion
 
-This guide covers the basics of using the NEAR.AI Inference API. By following these steps, you should be able to authenticate, list models, and create chat completions. For more advanced usage and detailed information, please refer to the complete API documentation or explore the provided examples.
+This guide covers the basics of using the NEAR AI Inference API. By following these steps, you should be able to authenticate, list models, and create chat completions. For more advanced usage and detailed information, please refer to the complete API documentation or explore the provided examples.

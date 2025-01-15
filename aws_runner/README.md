@@ -1,7 +1,7 @@
-# NearAI AWS Runner
-A docker container that runs on AWS Lambda to run NearAI agents.
- * This is invoked by the NearAI Api server or the NearAI cli agent run_remote command.
- * The runner calls back to the NearAI Api server for inference, to fetch agent code, 
+# NEAR AI AWS Runner
+A docker container that runs on AWS Lambda to run NEAR AI agents.
+ * This is invoked by the NEAR AI Api server or the NEAR AI cli agent run_remote command.
+ * The runner calls back to the NEAR AI Api server for inference, to fetch agent code, 
 and to fetch and store environments. An environment is the files that result from an agent run, which will always
 include chat.txt and system.log.txt files.
 
@@ -51,20 +51,20 @@ CUSTOM_RUNNER_URL=http://localhost:9000/2015-03-31/functions/function/invocation
 API_URL=http://host.docker.internal:8081
 ```
 
-It might be useful to provide `API_URL` into the `docker run` command to use local Hub API instead of NearAI Hub API.
+It might be useful to provide `API_URL` into the `docker run` command to use local Hub API instead of NEAR AI Hub API.
 
 `docker run -e API_URL=http://host.docker.internal:8081 --platform linux/amd64 -p 9009:8080 nearai-runner:test`
 
 
 ### Local data source 
 
-If you want to use local files instead of the NearAI registry to run agents that are not yet published:
+If you want to use local files instead of the NEAR AI registry to run agents that are not yet published:
 
 - mount  `~/.nearai/registry` to the docker image (add `-v ~/.nearai/registry:/root/.nearai/registry` to `docker run` command)
 - specify `DATA_SOURCE="local_files"` in both he Hub environment variables (`hub/.env`) and the Hub UI environment variables (`/hub/demo/.env`)
 
 ## Deployment
-The docker image is built and pushed to the NearAI ECR repository. The image is then deployed to AWS Lambda using the AWS CLI.
+The docker image is built and pushed to the NEAR AI ECR repository. The image is then deployed to AWS Lambda using the AWS CLI.
 
 Deploy a single framework to a single environment.
 ```shell

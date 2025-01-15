@@ -1,8 +1,8 @@
 # Decentralization
 
-This document outlines process of progressive decentralization of `near.ai` capabilities.
+This document outlines process of progressive decentralization of NEAR AI capabilities.
 
-`near.ai` project approaches decentralization in a progressive way, starting with delivering best researcher, developer and user experience possible and progressively decentralizing and enabling privacy and trust features over time.
+NEAR AI project approaches decentralization in a progressive way, starting with delivering best researcher, developer and user experience possible and progressively decentralizing and enabling privacy and trust features over time.
 
 | Component | Objective |
 | - | - |

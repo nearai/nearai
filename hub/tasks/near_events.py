@@ -29,8 +29,13 @@ NUMBER_OF_BLOCKS_TO_READ_IF_NOT_SYNCED = int(os.getenv("NEAR_EVENTS_NUMBER_OF_BL
 
 
 async def async_fetch_json(url: str) -> Any:
+    headers = {}
+    api_key = os.getenv("FASTNEAR_APIKEY")
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
     async with httpx.AsyncClient() as client:
-        response = await client.get(url)
+        response = await client.get(url, headers=headers)
         if response.status_code == 200:
             return response.json()
         else:

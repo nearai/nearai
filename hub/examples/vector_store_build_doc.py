@@ -145,7 +145,7 @@ retrieved_store = client.beta.vector_stores.retrieve(vs_id)
 print(f"Vector Store details: {retrieved_store}")
 
 # Let's run a LLM completions using vector store we just created
-search_query = """Create markdown documentation for the new NearAI feature: Vector Stores. Provide a general
+search_query = """Create markdown documentation for the new NEAR AI feature: Vector Stores. Provide a general
 explanation of what Vector Stores are and how they function.
 - Explain how to create a Vector Store, including uploading files, retrieving them, and deleting them.
 - Describe how to search within the Vector Store.

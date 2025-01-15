@@ -132,6 +132,15 @@ class Environment(object):
             open(os.path.join(self._path, CHAT_FILENAME), "a").close()
         os.chdir(self._path)
 
+        def signer_account_id() -> Optional[str]:
+            """Expose the NEAR account_id of a user that signs this request to run an agent."""
+            try:
+                return client._config.auth.account_id if client._config.auth else None
+            except (AttributeError, TypeError):
+                return None
+
+        self.signer_account_id = signer_account_id()
+
         # Client methods
         def query_vector_store(vector_store_id: str, query: str, full_files: bool = False):
             """Queries a vector store.
@@ -412,7 +421,7 @@ class Environment(object):
             messages = hub_client.beta.threads.messages.list(
                 thread_id=thread_id or self._thread_id, limit=limit, order=order
             )
-            self.add_system_log(f"Retrieved {len(messages.data)} messages from NearAI Hub")
+            self.add_system_log(f"Retrieved {len(messages.data)} messages from NEAR AI Hub")
             return messages.data
 
         self._list_messages = _list_messages

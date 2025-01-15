@@ -1,14 +1,14 @@
-# Integrate NEAR.ai assistant
+# Integrate NEAR AI assistant
 
-NEAR.ai offers a powerful Assistant that answers questions, queries other agents, and more. You can integrate the Assistant into your own applications by using the Assistant API.
+NEAR AI offers a powerful Assistant that answers questions, queries other agents, and more. You can integrate the Assistant into your own applications by using the Assistant API.
 
-NEAR.ai Assistants API is compatible with OpenAI Assistants API.
+NEAR AI Assistants API is compatible with OpenAI Assistants API.
 
 ## Step 0: Login into NEAR account
 
 ### JavaScript, client side. Useful for wallets.
 
-From client side, you can use the following function to sign the message and get the required NEAR.ai authorization token.
+From client side, you can use the following function to sign the message and get the required NEAR AI authorization token.
 
 ```javascript
 async function login(wallet, message, nonce, recipient, callbackUrl) {
@@ -40,7 +40,7 @@ const auth = await login(wallet, "Login to NEAR AI", nonce, recipient, callbackU
 
 ### Python
 
-In Python, we recommend using the `nearai` CLI to login into your NEAR account. More details [here](../login.md).
+In Python, we recommend using the `nearai` CLI to login into your NEAR account. More details [here](../agents/quickstart.md#login-to-near-ai).
 
 ```python
 nearai login

@@ -1,22 +1,33 @@
 # Benchmarks and Evaluations
 
-In the context of software engineering, the purpose of a benchmark is to associate some performance metric (accuracy, latency, memory usage, etc.) with a specific piece of code or a system. This metric is then usually used to compare different implementations of the same functionality in the hopes to improve the metric over time. This is especially important in the context of machine learning systems when measuring functional capabilities on specific tasks.
+`Benchmarks` allow you to compare different agents and solvers on specific tasks, so you can determine which is the best fit for your needs.
 
-To accomplish measuring machine learning systems capabilities, in the context of the `nearai` project, we provide a benchmark tool to compare different agents and solvers on sets of reference evaluations. This tool enables you to do measurement and compare your systems on various sets of reference evaluations, ex: [`mpbb`](https://paperswithcode.com/dataset/mbpp). The core metric for benchmarks like these is "percent true" or *"accuracy"*.
+`Evaluations` are the results of running benchmarks. They are stored in the registry and can be used to compare different agents and solvers.
 
 ## How is a benchmark implemented?
 
-In the `nearai` project, a benchmark is the combination of a dataset and a solver.
+A benchmark is the combination of a dataset and a solver (more on this below). 
+
+Once you have created a dataset and its solver, you can run the benchmark using the `benchmark` command.
+
+For example, to run the `mpbb` benchmark on the `llama v3`, you can use:
+
+```bash
+nearai benchmark run mbpp MBPPSolverStrategy \
+    --model llama-v3-70b-instruct \
+    --subset=train \
+    --max_concurrent=1
+```
 
 ### Adding a benchmark dataset
 
-`nearai` leverages [huggingface datasets](https://huggingface.co/docs/datasets/en/index) as the primitive when operating with datasets + benchmarks (see [`load_dataset`](api.md#nearai.dataset.load_dataset)). This means that to add a new benchmark, you need to create a new dataset and register it with the `nearai` registry (we will go over this in [Implementing the "3 digit addition" benchmark](#implementing-the-3-digit-addition-benchmark)).
+`nearai` leverages [huggingface datasets](https://huggingface.co/docs/datasets/en/index) as the primitive when operating with datasets + benchmarks (see [`load_dataset`](../api.md#nearai.dataset.load_dataset)). This means that to add a new benchmark, you need to create a new dataset and register it with the `nearai` registry (we will go over this in [Implementing the "3 digit addition" benchmark](#implementing-the-3-digit-addition-benchmark)).
 
 There is also a support for datasets of custom format.
 
 ### Adding a solver
 
-To implement a solver, you will need to implement the [SolverStrategy](api.md#nearai.solvers.SolverStrategy) interface under the [`nearai.solvers`](api.md#nearai.solvers) module. The most important method the solver should implement is the [`solve`](api.md#nearai.solvers.SolverStrategy.solve) method. This method should take a datum, run your implementation specific agentic strategy / strategies, and return a result.
+To implement a solver, you will need to implement the [SolverStrategy](../api.md#nearai.solvers.SolverStrategy) interface under the [`nearai.solvers`](../api.md#nearai.solvers) module. The most important method the solver should implement is the [`solve`](../api.md#nearai.solvers.SolverStrategy.solve) method. This method should take a datum, run your implementation specific agentic strategy / strategies, and return a result.
 
 ## Implementing the "3 digit addition" benchmark
 
@@ -67,8 +78,8 @@ To create the solver, we will implement the `SolverStrategy` interface. The solv
 ???+ note "Remember"
     To ensure this solver is registered with `nearai`:
     
-    1. Write this implementation in the [`nearai.solvers`](api.md#nearai.solvers) module.
-    2. Import it in the `__init__.py` file in the [`nearai.solvers`](api.md#nearai.solvers) module.
+    1. Write this implementation in the [`nearai.solvers`](../api.md#nearai.solvers) module.
+    2. Import it in the `__init__.py` file in the [`nearai.solvers`](../api.md#nearai.solvers) module.
 
 ```python
 # ... other imports ...
@@ -183,7 +194,22 @@ $ nearai evaluation table --all_metrics
 
 https://app.near.ai/evaluations has a functionality to choose any columns.
 
-# Issues
+
+## Submit an experiment
+
+To submit a new experiment run:
+
+```
+nearai submit --command <COMMAND> --name <EXPERIMENT_NAME> [--nodes <NUMBER_OF_NODES>] [--cluster <CLUSTER>]
+```
+
+This will submit a new experiment. The command must be executed from a folder that is a git repository (public github repositories, and private github repositories on the same organization as nearai are supported).
+The current commit will be used for running the command so make sure it is already available online. The diff with respect to the current commit will be applied remotely (new files are not included in the diff).
+
+On each node the environment variable `ASSIGNED_SUPERVISORS` will be available with a comma separated list of supervisors that are running the experiment. The current supervisor can be accessed via `nearai.CONFIG.supervisor_id`. See [examples/prepare_data.py](https://github.com/nearai/nearai/blob/main/examples/prepare_data.py) for an example.
+
+
+## Issues
 
 - [Overwriting existing evaluation entry is currently not supported](https://github.com/nearai/nearai/issues/273)
 - [litellm.Timeout errors when running benchmark](https://github.com/nearai/nearai/issues/367)
@@ -192,3 +218,4 @@ https://app.near.ai/evaluations has a functionality to choose any columns.
 - [Feature request: add cost of running benchmark to evaluation results as a separate metric](https://github.com/nearai/nearai/issues/74)
 - [Feature request: hide evaluation results for hidden agents and models](https://github.com/nearai/nearai/issues/373)
 - [Capabilities Benchmarks Tracking: list of benchmarks we want to add](https://github.com/nearai/nearai/issues/57)
+

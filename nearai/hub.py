@@ -27,7 +27,7 @@ class Hub(object):
         self.info = kwargs.get("info", False)
 
     def chat(self, kwargs):
-        """Processes a chat request by sending parameters to the NearAI Hub and printing the response."""
+        """Processes a chat request by sending parameters to the NEAR AI Hub and printing the response."""
         try:
             self.parse_hub_chat_params(kwargs)
 
@@ -59,7 +59,7 @@ class Hub(object):
                     "Authorization": "Bearer {}".format(self._config.nearai_hub.api_key),
                 }
             else:
-                return print("Illegal NearAI Hub Config")
+                return print("Illegal NEAR AI Hub Config")
 
             if self.info:
                 print(f"Requesting hub using NEAR Account {auth.account_id}")

@@ -22,8 +22,8 @@ v1_router = APIRouter(
 def _is_important_metric(metric_name, metrics) -> bool:
     """Simple heuristics to determine if the metric is important."""
     if len(metrics) == 2:
-        # One score and metadata.
-        return True
+        # One score and metadata. Do not include lean benchmarks.
+        return "lean" not in metric_name
     return "coding" in metric_name or "average" in metric_name or "avg" in metric_name
 
 

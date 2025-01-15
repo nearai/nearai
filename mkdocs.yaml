@@ -1,5 +1,5 @@
-site_name: NearAI
-site_author: NearAI Team
+site_name: NEAR AI
+site_author: NEAR AI Team
 site_description: A lightweight library for structured outputs with LLMs. 
 repo_name: nearai
 repo_url: https://github.com/nearai/nearai/
@@ -50,7 +50,7 @@ theme:
     - navigation.instant.prefetch
     - navigation.instant.progress
     - navigation.prune
-    - navigation.sections
+    - navigation.expand
     - navigation.tabs
     # - navigation.tabs.sticky
     - navigation.top
@@ -129,23 +129,36 @@ extra_css:
   - https://unpkg.com/katex@0/dist/katex.min.css
   - docs.css
 nav:
-  - Getting Started: 
-    - Welcome To NearAI Docs: 'index.md'
-    - Agents: 'agents.md'
-    - Benchmarks and Evaluations: 'benchmarks_and_evaluations.md'
-    - Inference (OpenAI compatible): 'inference.md'
-    - Fine-tuning: 'fine_tuning.md'
-    - API Reference: 'api.md'
-    - Vector Stores: 'vector-stores.md'
-    - Login with NEAR: 'login.md'
-    - Secrets: 'hub_secrets.md'
+  - Home: 
+    - Welcome To NEAR AI Docs: 'index.md'
     - Contributing: 'contributing.md'
     - Decentralization: 'decentralization.md'
+  - Agents:
+    - Quickstart: 'agents/quickstart.md'
+    - Registry: 'agents/registry.md'
+    - Local & Remote Runs: 'agents/running.md'
+    - Threads: 'agents/threads.md'
+    - Environment:
+      - 'agents/env/overview.md'
+      - 'agents/env/messages_files.md'
+      - 'agents/env/inference.md'
+      - 'agents/env/calling_other_agents.md'
+      - 'agents/env/tools.md'
+      - 'agents/env/variables.md'
+      - Secrets: 'agents/secrets.md'
+    - Inference (OpenAI): 'inference.md'
+    - Vector Stores (OpenAI): 'vector-stores.md'
+    - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
     - NEAR Event-Triggered Agents: 'near_events.md'
     - Twitter (X) Triggered Agents: 'agent_triggers.md'
+  - Models:
+    - Fine-tuning: 'models/fine_tuning.md'
+    - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
   - Assistants:
     - Overview: 'assistants/overview.md'
     - Integrate: 'assistants/integrate.md'
+  - API: 'api.md'
+
 plugins:
   - social
   - autorefs

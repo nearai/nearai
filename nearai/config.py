@@ -69,7 +69,7 @@ class NearAiHubConfig(BaseModel):
 
     api_key (Optional[str]): The API key to use if Near Auth is not being utilized
 
-    base_url (Optional[str]): NearAI Hub url
+    base_url (Optional[str]): NEAR AI Hub url
 
     default_provider (Optional[str]): Default provider name
 
