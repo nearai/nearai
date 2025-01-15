@@ -143,19 +143,18 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
             if os.path.basename(file["filename"]) == "metadata.json":
                 agent_metadata = json.loads(file["content"])
                 if verbose:
-                    agent_info = (
-                        f"    Name: {agent_metadata['name']}\n"
-                        f"    Version: {agent_metadata['version']}\n"
-                        f"    Description: {agent_metadata['description']}\n"
-                        f"    Category: {agent_metadata['category']}\n"
-                        f"    Tags: {', '.join(agent_metadata['tags']) if agent_metadata['tags'] else 'None'}\n"
-                        f"    Model: {agent_metadata['details']['agent']['defaults']['model']}\n"
-                        f"    Model Provider: {agent_metadata['details']['agent']['defaults']['model_provider']}\n"
-                        "    Model Temperature: "
-                        f"{agent_metadata['details']['agent']['defaults']['model_temperature']}\n"
-                        f"    Model Max Tokens: {agent_metadata['details']['agent']['defaults']['model_max_tokens']}\n"
-                        f"    Show Entry: {agent_metadata['show_entry']}\n"
-                    )
+                    agent_info = f"""
+                        Name: {agent_metadata['name']}
+                        Version: {agent_metadata['version']}
+                        Description: {agent_metadata['description']}
+                        Category: {agent_metadata['category']}
+                        Tags: {', '.join(agent_metadata['tags']) if agent_metadata['tags'] else 'None'}
+                        Model: {agent_metadata['details']['agent']['defaults']['model']}
+                        Model Provider: {agent_metadata['details']['agent']['defaults']['model_provider']}
+                        Model Temperature: {agent_metadata['details']['agent']['defaults']['model_temperature']}
+                        Model Max Tokens: {agent_metadata['details']['agent']['defaults']['model_max_tokens']}
+                        Show Entry: {agent_metadata['show_entry']}
+                        """
                     print(f"Loaded agent:\n{agent_info}\nFrom: {agent}\n")
                 break
 
@@ -217,16 +216,17 @@ def start_with_environment(
     params = params or {}
     verbose: bool = params.get("verbose", True)
     if verbose:
-        print("\n=== Running Agent ===")
-        print(f"Agent(s):     {agents}")
-        print(f"Thread ID:    {thread_id}")
-        print(f"Run ID:       {run_id}")
-        print(f"Auth User:    {auth.account_id}")
+        debug_info = f"""
+            === Running Agent ===
+            Agent(s):     {agents}
+            Thread ID:    {thread_id}
+            Run ID:       {run_id}
+            Auth User:    {auth.account_id}
+            """
         if params:
-            print("\nParameters:")
-            for key in params.keys():
-                print(f"  • {key}")
-        print("==================\n")
+            debug_info += "\nParameters:\n" + "\n".join(f"  • {key}" for key in params.keys())
+            debug_info += "\n==================\n"
+        print(debug_info)
     api_url = str(params.get("api_url", DEFAULT_API_URL))
     user_env_vars: dict = params.get("user_env_vars", {})
     agent_env_vars: dict = params.get("agent_env_vars", {})
