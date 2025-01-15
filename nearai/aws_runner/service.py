@@ -120,7 +120,7 @@ def write_metric(metric_name, value, unit="Milliseconds", verbose=True):
             ],
         )
     elif verbose:
-        print(f"Would have written metric {metric_name} with value {value} to cloudwatch")
+        print(f"[DEBUG] • Would have written metric {metric_name} with value {value} to cloudwatch")
 
 
 def load_agent(client, agent, params: dict, additional_path: str = "", verbose=True) -> Agent:
@@ -143,19 +143,19 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
             if os.path.basename(file["filename"]) == "metadata.json":
                 agent_metadata = json.loads(file["content"])
                 if verbose:
-                    agent_info = f"""
-                        Name: {agent_metadata['name']}
-                        Version: {agent_metadata['version']}
-                        Description: {agent_metadata['description']}
-                        Category: {agent_metadata['category']}
-                        Tags: {', '.join(agent_metadata['tags']) if agent_metadata['tags'] else 'None'}
-                        Model: {agent_metadata['details']['agent']['defaults']['model']}
-                        Model Provider: {agent_metadata['details']['agent']['defaults']['model_provider']}
-                        Model Temperature: {agent_metadata['details']['agent']['defaults']['model_temperature']}
-                        Model Max Tokens: {agent_metadata['details']['agent']['defaults']['model_max_tokens']}
-                        Show Entry: {agent_metadata['show_entry']}
-                        """
-                    print(f"Loaded agent:\n{agent_info}\nFrom: {agent}\n")
+                    agent_info = f"""[DEBUG]   • Name: {agent_metadata['name']}
+[DEBUG]   • Version: {agent_metadata['version']}
+[DEBUG]   • Description: {agent_metadata['description']}
+[DEBUG]   • Category: {agent_metadata['category']}
+[DEBUG]   • Tags: {', '.join(agent_metadata['tags']) if agent_metadata['tags'] else 'None'}
+[DEBUG]   • Model: {agent_metadata['details']['agent']['defaults']['model']}
+[DEBUG]   • Model Provider: {agent_metadata['details']['agent']['defaults']['model_provider']}
+[DEBUG]   • Model Temperature: {agent_metadata['details']['agent']['defaults']['model_temperature']}
+[DEBUG]   • Model Max Tokens: {agent_metadata['details']['agent']['defaults']['model_max_tokens']}
+[DEBUG]   • Show Entry: {agent_metadata['show_entry']}
+[DEBUG]    ----------------------------
+"""
+                    print(f"\n[DEBUG] Loaded agent from {agent}:\n{agent_info}")
                 break
 
     if not agent_metadata:
@@ -170,8 +170,12 @@ def clear_temp_agent_files(agents, verbose=True):
     for agent in agents:
         if agent.temp_dir and os.path.exists(agent.temp_dir):
             if verbose:
-                print("removed agent.temp_dir", agent.temp_dir)
-                print("\n==================\n")
+                debug_info = f"""[DEBUG] • Removed agent.temp_dir {agent.temp_dir}
+[DEBUG]
+[DEBUG]  =======================================
+
+"""
+                print(debug_info)
             shutil.rmtree(agent.temp_dir)
 
 
@@ -217,15 +221,16 @@ def start_with_environment(
     verbose: bool = params.get("verbose", True)
     if verbose:
         debug_info = f"""
-            === Running Agent ===
-            Agent(s):     {agents}
-            Thread ID:    {thread_id}
-            Run ID:       {run_id}
-            Auth User:    {auth.account_id}
-            """
+
+[DEBUG] ==== Running Agent ====
+
+[DEBUG] Agent(s):     {agents}
+[DEBUG] Thread ID:    {thread_id}
+[DEBUG] Run ID:       {run_id}
+[DEBUG] Auth User:    {auth.account_id}
+"""
         if params:
-            debug_info += "\nParameters:\n" + "\n".join(f"  • {key}" for key in params.keys())
-            debug_info += "\n==================\n"
+            debug_info += "\n[DEBUG] Parameters:\n" + "\n".join(f"[DEBUG]   • {key}" for key in params.keys())
         print(debug_info)
     api_url = str(params.get("api_url", DEFAULT_API_URL))
     user_env_vars: dict = params.get("user_env_vars", {})
@@ -265,7 +270,7 @@ def start_with_environment(
         agent.max_iterations = params["max_iterations"]
     if verbose:
         print(
-            f"Agent info: provider: {agent.model_provider} // model: {agent.model} "
+            f"[DEBUG] • Agent info: provider: {agent.model_provider} // model: {agent.model} "
             f"// temperature: {agent.model_temperature} // max_tokens: {agent.model_max_tokens} "
             f"// max_iterations: {agent.max_iterations}"
         )
