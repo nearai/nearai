@@ -166,9 +166,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
     if not agent_entry:
         raise HTTPException(status_code=404, detail=f"Agent '{agent_entry}' not found in the registry.")
 
-    specific_agent_version_to_run = (
-        f"{agent_entry.namespace}/{agent_entry.name}/{agent_entry.version}" if agent_entry else agents
-    )
+    specific_agent_version_to_run = f"{agent_entry.namespace}/{agent_entry.name}/{agent_entry.version}"
     entry_details = agent_entry.details
     agent_details = entry_details.get("agent", {})
     framework = agent_details.get("framework", "base")
