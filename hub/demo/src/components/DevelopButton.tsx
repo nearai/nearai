@@ -72,7 +72,7 @@ export const DevelopButton = ({ entry, style }: Props) => {
                       href="https://github.com/nearai/nearai#nearai"
                       target="_blank"
                     >
-                      Near AI CLI
+                      NEAR AI CLI
                     </Text>
                   </Tooltip>{' '}
                   command to download this {entry.category} locally:

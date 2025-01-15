@@ -21,6 +21,7 @@ import {
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 
+import { APP_TITLE } from '~/constants';
 import { useEntryEnvironmentVariables } from '~/hooks/entries';
 import {
   ENTRY_CATEGORY_LABELS,
@@ -197,8 +198,8 @@ export const AgentPermissionsModal = ({
                           color="green-10"
                         />
                         <Text size="text-s">
-                          Allow the agent to execute actions within the Near AI
-                          Hub.
+                          Allow the agent to execute actions within the NEAR AI
+                          {APP_TITLE}.
                         </Text>
                       </Flex>
 

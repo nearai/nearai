@@ -35,6 +35,9 @@ const globalErrorHandlingLink: TRPCLink<AppRouter> = () => {
   return ({ next, op }) => {
     return observable((observer) => {
       const unsubscribe = next(op).subscribe({
+        next(value) {
+          observer.next(value);
+        },
         error(error) {
           observer.error(error);
 
@@ -46,6 +49,9 @@ const globalErrorHandlingLink: TRPCLink<AppRouter> = () => {
               unauthorizedErrorHasTriggered: true,
             });
           }
+        },
+        complete() {
+          observer.complete();
         },
       });
 

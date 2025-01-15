@@ -4,13 +4,13 @@
 
 import { openToast } from '@near-pagoda/ui';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { type z } from 'zod';
 
-import { signInWithNear } from '~/lib/auth';
-import { type authorizationModel } from '~/lib/models';
+import { SIGN_IN_CALLBACK_PATH, signInWithNear } from '~/lib/auth';
+import { authorizationModel } from '~/lib/models';
 import { useAgentSettingsStore } from '~/stores/agent-settings';
-import { useAuthStore } from '~/stores/auth';
+import { name as authStoreName, useAuthStore } from '~/stores/auth';
 import { trpc } from '~/trpc/TRPCProvider';
 
 function migrateLocalStorageStoreNames() {
@@ -39,9 +39,23 @@ function migrateLocalStorageStoreNames() {
   }
 }
 
+function returnLocalStorageAuthStoreToMigrate() {
+  let auth: z.infer<typeof authorizationModel> | null = null;
+  const raw = localStorage.getItem(authStoreName);
+
+  if (raw) {
+    try {
+      auth = authorizationModel.parse(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        JSON.parse(raw)?.state?.auth,
+      );
+    } catch (error) {}
+  }
+
+  return auth;
+}
+
 export const ZustandHydration = () => {
-  const setAuth = useAuthStore((store) => store.setAuth);
-  const clearAuth = useAuthStore((store) => store.clearAuth);
   const unauthorizedErrorHasTriggered = useAuthStore(
     (store) => store.unauthorizedErrorHasTriggered,
   );
@@ -49,43 +63,25 @@ export const ZustandHydration = () => {
   const saveTokenMutation = trpc.auth.saveToken.useMutation();
   const pathname = usePathname();
   const utils = trpc.useUtils();
-  const [hasRehydrated, setHasRehydrated] = useState(false);
 
   useEffect(() => {
     async function rehydrate() {
       migrateLocalStorageStoreNames();
-
-      await useAuthStore.persist.rehydrate();
       await useAgentSettingsStore.persist.rehydrate();
-
-      /*
-        Make sure `isAuthenticated` stays synced with `auth` in case 
-        an edge case or bug causes them to deviate:
-      */
-
-      const state = useAuthStore.getState();
-      if (state.auth && !state.isAuthenticated) {
-        useAuthStore.setState({
-          isAuthenticated: true,
-        });
-      } else if (!state.auth && state.isAuthenticated) {
-        useAuthStore.setState({
-          isAuthenticated: false,
-        });
-      }
-
-      setHasRehydrated(true);
     }
 
     void rehydrate();
   }, []);
 
   useEffect(() => {
-    // TODO: Test like crazy
+    if (
+      pathname.startsWith(SIGN_IN_CALLBACK_PATH) ||
+      (!getTokenQuery.isSuccess && !getTokenQuery.isError)
+    ) {
+      return;
+    }
 
-    console.log(pathname);
-
-    if (pathname === '/sign-in/callback' || !hasRehydrated) return;
+    const { setAuth, clearAuth } = useAuthStore.getState();
 
     function handleUnauthorized() {
       clearAuth();
@@ -99,50 +95,50 @@ export const ZustandHydration = () => {
       });
     }
 
-    function migrateToCookie(auth: z.infer<typeof authorizationModel>) {
-      /*
-        This function keeps users signed in who had previously signed in 
-        before we switched to using a secure cookie to store their auth token. 
-        We can safely remove this migration logic in a few months after this 
-        code has been deployed to production.
-      */
+    if (getTokenQuery.data && !unauthorizedErrorHasTriggered) {
+      setAuth(getTokenQuery.data);
+      return;
+    }
 
+    /*
+      The following logic keeps users signed in who had previously signed in before 
+      we switched to using a secure cookie to store their auth token. We can safely 
+      remove this migration logic in a few months after this code has been deployed 
+      to production:
+    */
+
+    // Start auth migration logic --------------
+
+    const authToMigrate = returnLocalStorageAuthStoreToMigrate();
+
+    if (authToMigrate) {
       if (!saveTokenMutation.isIdle) return;
 
-      saveTokenMutation.mutate(auth, {
+      saveTokenMutation.mutate(authToMigrate, {
         onError: () => {
           handleUnauthorized();
         },
         onSuccess: () => {
           void utils.invalidate();
         },
+        onSettled: () => {
+          localStorage.removeItem(authStoreName);
+        },
       });
+
+      return;
     }
 
-    const { auth } = useAuthStore.getState();
+    // End auth migration logic --------------
 
-    const shouldMigrateToCookie =
-      auth &&
-      (getTokenQuery.isError ||
-        (getTokenQuery.isSuccess && getTokenQuery.data == null));
-
-    if (getTokenQuery.data) {
-      console.log('Setting auth result from getTokenQuery()');
-      setAuth(getTokenQuery.data);
-    } else if (shouldMigrateToCookie) {
-      console.log('Migrating auth token to cookie');
-      migrateToCookie(auth);
-    } else if (unauthorizedErrorHasTriggered) {
-      console.log('Handling unauthorized error');
+    if (unauthorizedErrorHasTriggered) {
+      utils.auth.getToken.setData(undefined, null);
       handleUnauthorized();
     }
   }, [
-    hasRehydrated,
     utils,
     saveTokenMutation,
     getTokenQuery,
-    setAuth,
-    clearAuth,
     pathname,
     unauthorizedErrorHasTriggered,
   ]);

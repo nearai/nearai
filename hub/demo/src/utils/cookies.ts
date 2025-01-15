@@ -5,8 +5,8 @@ export function parseCookies(str: string) {
     .split(';')
     .map((v) => v.split('='))
     .reduce((result, v) => {
-      const key = v[0];
-      const value = v[1];
+      const key = v[0]?.trim();
+      const value = v[1]?.trim();
 
       if (key && value) {
         result[decodeURIComponent(key)] = decodeURIComponent(value);

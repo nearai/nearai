@@ -89,7 +89,7 @@ const resourcesNavItems = env.NEXT_PUBLIC_CONSUMER_MODE
         icon: <BookOpenText />,
       },
       {
-        label: 'Near AI CLI',
+        label: 'NEAR AI CLI',
         path: 'https://github.com/nearai/nearai',
         target: '_blank',
         icon: <GithubLogo />,

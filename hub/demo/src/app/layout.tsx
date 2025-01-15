@@ -6,11 +6,9 @@ import { type Metadata } from 'next';
 import { type ReactNode } from 'react';
 
 import { Layout } from '~/components/Layout';
-import { env } from '~/env';
+import { APP_TITLE } from '~/constants';
 
-const title = env.NEXT_PUBLIC_CONSUMER_MODE
-  ? 'AI Assistant'
-  : 'AI Research Hub';
+const title = `NEAR AI ${APP_TITLE}`;
 
 export const metadata: Metadata = {
   title: {

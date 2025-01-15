@@ -1,5 +1,4 @@
 import { env } from '~/env';
-import { useAuthStore } from '~/stores/auth';
 import { getHashParams } from '~/utils/url';
 
 const AUTH_NEAR_URL = env.NEXT_PUBLIC_AUTH_URL;
@@ -8,7 +7,9 @@ export const RECIPIENT = 'ai.near';
 export const MESSAGE = 'Welcome to NEAR AI Hub!';
 export const REVOKE_MESSAGE = 'Are you sure? Revoking a nonce';
 export const REVOKE_ALL_MESSAGE = 'Are you sure? Revoking all nonces';
+export const SIGN_IN_CALLBACK_PATH = '/sign-in/callback';
 const SIGN_IN_RESTORE_URL_KEY = 'signInRestoreUrl';
+const SIGN_IN_NONCE_KEY = 'signInNonce';
 
 export function signInWithNear() {
   const nonce = generateNonce();
@@ -18,20 +19,33 @@ export function signInWithNear() {
     `${location.pathname}${location.search}`,
   );
 
-  useAuthStore.setState({
-    currentNonce: nonce,
-  });
+  localStorage.setItem(SIGN_IN_NONCE_KEY, nonce);
 
-  redirectToAuthNearLink(MESSAGE, RECIPIENT, nonce, returnSignInCallbackUrl());
+  setTimeout(() => {
+    redirectToAuthNearLink(
+      MESSAGE,
+      RECIPIENT,
+      nonce,
+      returnSignInCallbackUrl(),
+    );
+  }, 10);
+}
+
+export function returnSignInNonce() {
+  return localStorage.getItem(SIGN_IN_NONCE_KEY);
+}
+
+export function clearSignInNonce() {
+  return localStorage.removeItem(SIGN_IN_NONCE_KEY);
 }
 
 export function returnSignInCallbackUrl() {
-  return location.origin + '/sign-in/callback';
+  return location.origin + SIGN_IN_CALLBACK_PATH;
 }
 
 export function returnUrlToRestoreAfterSignIn() {
   const url = localStorage.getItem(SIGN_IN_RESTORE_URL_KEY) || '/';
-  if (url === '/sign-in/callback') return '/';
+  if (url.startsWith(SIGN_IN_CALLBACK_PATH)) return '/';
   return url;
 }
 

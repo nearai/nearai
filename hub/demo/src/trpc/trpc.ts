@@ -50,44 +50,22 @@ export const createCallerFactory = t.createCallerFactory;
 
 // Public procedures for when a user may or may not be signed in:
 
-const userMightBeAuthenticated = t.middleware(({ ctx, next }) => {
-  const authorization = ctx.authorization;
-  let signature: z.infer<typeof authorizationModel> | undefined;
-
-  if (authorization?.includes('Bearer')) {
-    try {
-      const auth: unknown = JSON.parse(authorization.replace('Bearer ', ''));
-      signature = authorizationModel.parse(auth);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  return next({
-    ctx: {
-      ...ctx,
-      authorization,
-      signature,
-    },
-  });
-});
-
 export const publicProcedure = t.procedure;
 
 // Protected procedures where a user is required to be signed in:
 
-const enforceUserIsAuthenticated = t.middleware(({ ctx, next }) => {
-  if (!ctx.authorization || !ctx.signature) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' });
-  }
+export const protectedProcedure = t.procedure.use(
+  t.middleware(({ ctx, next }) => {
+    if (!ctx.authorization || !ctx.signature) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
 
-  return next({
-    ctx: {
-      ...ctx,
-      authorization: ctx.authorization,
-      signature: ctx.signature,
-    },
-  });
-});
-
-export const protectedProcedure = t.procedure.use(enforceUserIsAuthenticated);
+    return next({
+      ctx: {
+        ...ctx,
+        authorization: ctx.authorization,
+        signature: ctx.signature,
+      },
+    });
+  }),
+);

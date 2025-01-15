@@ -1,5 +1,3 @@
-import { TRPCError } from '@trpc/server';
-
 import { env } from '~/env';
 import { authorizationModel } from '~/lib/models';
 
@@ -13,7 +11,7 @@ export const authRouter = createTRPCRouter({
   saveToken: publicProcedure
     .input(authorizationModel)
     .mutation(({ ctx, input }) => {
-      let authCookie = `${AUTH_COOKIE_NAME}=${JSON.stringify(input)}; Max-Age=${AUTH_COOKIE_MAX_AGE_SECONDS}; HttpOnly; Secure`;
+      let authCookie = `${AUTH_COOKIE_NAME}=${encodeURIComponent(JSON.stringify(input))}; Max-Age=${AUTH_COOKIE_MAX_AGE_SECONDS}; HttpOnly; Secure`;
 
       if (env.AUTH_COOKIE_DOMAIN) {
         /*
@@ -36,17 +34,5 @@ export const authRouter = createTRPCRouter({
   clearToken: publicProcedure.mutation(({ ctx }) => {
     ctx.resHeaders.set('Set-Cookie', AUTH_COOKIE_DELETE);
     return true;
-  }),
-
-  test: publicProcedure.mutation(() => {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-    });
-  }),
-
-  testQuery: publicProcedure.query(() => {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-    });
   }),
 });

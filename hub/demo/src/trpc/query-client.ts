@@ -11,6 +11,7 @@ export function makeQueryClient() {
     defaultOptions: {
       queries: {
         staleTime: 250, // 250 milliseconds seems like a safe default
+        retry: false,
       },
       dehydrate: {
         serializeData: superjson.serialize,
