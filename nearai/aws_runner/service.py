@@ -143,7 +143,19 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
             if os.path.basename(file["filename"]) == "metadata.json":
                 agent_metadata = json.loads(file["content"])
                 if verbose:
-                    print(f"Loaded {agent_metadata} agents from {agent}")
+                    agent_info = (
+                        f"    Name: {agent_metadata['name']}\n"
+                        f"    Version: {agent_metadata['version']}\n"
+                        f"    Description: {agent_metadata['description']}\n"
+                        f"    Category: {agent_metadata['category']}\n"
+                        f"    Tags: {', '.join(agent_metadata['tags']) if agent_metadata['tags'] else 'None'}\n"
+                        f"    Model: {agent_metadata['details']['agent']['defaults']['model']}\n"
+                        f"    Model Provider: {agent_metadata['details']['agent']['defaults']['model_provider']}\n"
+                        f"    Model Temperature: {agent_metadata['details']['agent']['defaults']['model_temperature']}\n"
+                        f"    Model Max Tokens: {agent_metadata['details']['agent']['defaults']['model_max_tokens']}\n"
+                        f"    Show Entry: {agent_metadata['show_entry']}\n"
+                    )
+                    print(f"Loaded agent:\n{agent_info}\nFrom: {agent}\n")
                 break
 
     if not agent_metadata:
@@ -159,6 +171,7 @@ def clear_temp_agent_files(agents, verbose=True):
         if agent.temp_dir and os.path.exists(agent.temp_dir):
             if verbose:
                 print("removed agent.temp_dir", agent.temp_dir)
+                print("\n==================\n")
             shutil.rmtree(agent.temp_dir)
 
 
@@ -203,11 +216,16 @@ def start_with_environment(
     params = params or {}
     verbose: bool = params.get("verbose", True)
     if verbose:
-        print(
-            f"Running with: agents: {agents} // params: {params.keys()} "
-            f"// thread_id: {thread_id} // run_id: {run_id} "
-            f"// auth by {auth.account_id}"
-        )
+        print("\n=== Running Agent ===")
+        print(f"Agent(s):     {agents}")
+        print(f"Thread ID:    {thread_id}")
+        print(f"Run ID:       {run_id}")
+        print(f"Auth User:    {auth.account_id}")
+        if params:
+            print("\nParameters:")
+            for key in params.keys():
+                print(f"  • {key}")
+        print("==================\n")
     api_url = str(params.get("api_url", DEFAULT_API_URL))
     user_env_vars: dict = params.get("user_env_vars", {})
     agent_env_vars: dict = params.get("agent_env_vars", {})
