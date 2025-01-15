@@ -151,7 +151,8 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
                         f"    Tags: {', '.join(agent_metadata['tags']) if agent_metadata['tags'] else 'None'}\n"
                         f"    Model: {agent_metadata['details']['agent']['defaults']['model']}\n"
                         f"    Model Provider: {agent_metadata['details']['agent']['defaults']['model_provider']}\n"
-                        f"    Model Temperature: {agent_metadata['details']['agent']['defaults']['model_temperature']}\n"
+                        "    Model Temperature: "
+                        f"{agent_metadata['details']['agent']['defaults']['model_temperature']}\n"
                         f"    Model Max Tokens: {agent_metadata['details']['agent']['defaults']['model_max_tokens']}\n"
                         f"    Show Entry: {agent_metadata['show_entry']}\n"
                     )
