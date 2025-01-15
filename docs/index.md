@@ -30,7 +30,7 @@ Driven by one of the minds behinds **TensorFlow** and the **Transformer Architec
 
     <span style="display: flex; justify-content: space-between;">
     [:material-chart-areaspline: Benchmarks](./models/benchmarks_and_evaluations.md)
-    [:material-tune: Fine-Tunning](./models/fine_tuning.md)
+    [:material-tune: Fine-Tuning](./models/fine_tuning.md)
     </span>
 
 

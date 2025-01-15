@@ -33,11 +33,11 @@ To get started, you will need to have a [Near account](https://wallet.near.org/)
 
 ??? tip "NEAR Account"
     
-    If you do not have a Near account yet, you can create one using any of the wallets at the [wallet portal](https://wallet.near.org/). If you do not know which one to choose, we recommend you to use [Bitte](https://wallet.bitte.ai) or [Meteor Wallet](https://wallet.meteorwallet.app/add_wallet/create_new)
+    If you do not have a Near account yet, you can create one using any of the wallets at the [wallet portal](https://wallet.near.org/). If you do not know which one to choose, we recommend that you use [Bitte](https://wallet.bitte.ai) or [Meteor Wallet](https://wallet.meteorwallet.app/add_wallet/create_new)
 
 ??? abstract "Python Version"
 
-    If you do not have python, or your version is not compatible, we recommend you to use [miniconda](https://docs.anaconda.com/miniconda/install/) or [pyenv](https://github.com/pyenv/pyenv)
+    If you do not have python, or your version is not compatible, we recommend that you use [miniconda](https://docs.anaconda.com/miniconda/install/) or [pyenv](https://github.com/pyenv/pyenv)
     to manage your installations, as they both allow you to easily switch between python versions.
 
     === "pyenv"
@@ -109,7 +109,7 @@ Execute the following commands in your terminal:
 nearai agent interactive ~/.nearai/registry/<your-account.near>/hello-ai/0.0.1 --local
 ```
 
-An interactive session will start, where you can chat with your agent... talk to it for a while and use `exit` when you are ready to continue.
+An interactive session will start, where you can chat with your agent... talk to it for a while and type `exit` when you are ready to continue.
 
 ---
 
@@ -117,8 +117,8 @@ An interactive session will start, where you can chat with your agent... talk to
 
 The agent is defined by two files, both located at `~/.nearai/registry/<your-account.near>/hello-ai/0.0.1`: 
 
-1. `metadata.json`: Contains information about your agent, including its underlying model
-2. `agent.py`: This is the code that executes each time your agent receives a prompt
+1. `metadata.json`: Contains information about your agent, and can include configuration about which model to use.
+2. `agent.py`: This is the code that executes each time your agent receives a prompt.
 
 By default, the agent takes the role of a "helpful assistant", which receives the user input and responds to it using the [Llama 3.1 70B Instruct](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) (as defined in the default metadata).
 
