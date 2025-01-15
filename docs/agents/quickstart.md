@@ -86,7 +86,7 @@ After successfully login, you should see the screen below. Close it and return t
 
     ### Login Remotely (only displays the login URL)
     nearai login --remote
-  ```
+    ```
 
 ---
 
