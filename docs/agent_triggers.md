@@ -49,6 +49,7 @@ To allow your agent to post to X you will need your own developer api key. Free 
 
 NearAI Runners include the `tweepy` library, which supports several ways to authenticate with X https://docs.tweepy.org/en/stable/authentication.html
 
-The example agent https://app.near.ai/agents/flatirons.near/near-secret-agent/latest/source uses 3 legged Oauth to authorize an X account other than the developer account to post through the api as described here https://developer.x.com/en/docs/authentication/oauth-1-0a/api-key-and-secret
+The example agent https://app.near.ai/agents/flatirons.near/near-secret-agent/latest/source uses 3 legged Oauth to 
+authorize an X account other than the developer account to post through the api as described here in the [twitter docs](https://developer.x.com/en/docs/authentication/oauth-1-0a/api-key-and-secret).
 To accomplish this it has four secrets set on the agent: X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, X_CONSUMER_KEY, X_CONSUMER_SECRET.
 
