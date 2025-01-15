@@ -4,11 +4,13 @@ import {
 } from '@tanstack/react-query';
 import superjson from 'superjson';
 
+// https://tanstack.com/query/v4/docs/reference/QueryCache
+
 export function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 250, // TODO: Determine proper config here. 250 MS seems safe?
+        staleTime: 250, // 250 milliseconds seems like a safe default
       },
       dehydrate: {
         serializeData: superjson.serialize,

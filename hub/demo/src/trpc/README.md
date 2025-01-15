@@ -23,8 +23,8 @@ export const MyClientComponent = () => {
 ```tsx
 import { trpc } from '~/trpc/server';
 
-export const MyServerComponent = () => {
-  const agents = trpc.hub.entries.useQuery({
+export const MyServerComponent = async () => {
+  const agents = await trpc.hub.entries.useQuery({
     category: 'agent',
   });
 

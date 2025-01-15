@@ -119,6 +119,7 @@ export default function HomePage() {
                 ) : (
                   <Button
                     label="Sign In"
+                    fill="outline"
                     onClick={signInWithNear}
                     iconRight={<ArrowRight />}
                   />
@@ -164,6 +165,7 @@ export default function HomePage() {
               <Flex direction="column" gap="s" style={{ marginTop: 'auto' }}>
                 <Button
                   label="Browse Agents"
+                  fill="outline"
                   href="/agents"
                   iconLeft={<MagnifyingGlass />}
                 />
@@ -205,6 +207,7 @@ export default function HomePage() {
               <Flex direction="column" gap="s" style={{ marginTop: 'auto' }}>
                 <Button
                   label="View Docs"
+                  fill="outline"
                   href="https://docs.near.ai"
                   iconLeft={<BookOpenText />}
                 />

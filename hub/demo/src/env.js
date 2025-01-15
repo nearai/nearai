@@ -7,10 +7,11 @@ export const env = createEnv({
    * isn't built with invalid env vars.
    */
   server: {
+    HOME: z.string().optional(),
     NODE_ENV: z.enum(['development', 'test', 'production']),
     ROUTER_URL: z.string().url(),
     DATA_SOURCE: z.enum(['registry', 'local_files']).default('registry'),
-    HOME: z.string().optional(),
+    AUTH_COOKIE_DOMAIN: z.string().optional(),
   },
 
   /**
@@ -71,6 +72,7 @@ export const env = createEnv({
     NEXT_PUBLIC_EXAMPLE_FORK_AGENT_ID:
       process.env.NEXT_PUBLIC_EXAMPLE_FORK_AGENT_ID,
     NEXT_PUBLIC_FEATURED_AGENT_IDS: process.env.NEXT_PUBLIC_FEATURED_AGENT_IDS,
+    AUTH_COOKIE_DOMAIN: process.env.AUTH_COOKIE_DOMAIN,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

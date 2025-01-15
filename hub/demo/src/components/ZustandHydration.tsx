@@ -2,10 +2,16 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { openToast } from '@near-pagoda/ui';
+import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { type z } from 'zod';
 
+import { signInWithNear } from '~/lib/auth';
+import { type authorizationModel } from '~/lib/models';
 import { useAgentSettingsStore } from '~/stores/agent-settings';
 import { useAuthStore } from '~/stores/auth';
+import { trpc } from '~/trpc/TRPCProvider';
 
 function migrateLocalStorageStoreNames() {
   /*
@@ -34,8 +40,19 @@ function migrateLocalStorageStoreNames() {
 }
 
 export const ZustandHydration = () => {
+  const setAuth = useAuthStore((store) => store.setAuth);
+  const clearAuth = useAuthStore((store) => store.clearAuth);
+  const unauthorizedErrorHasTriggered = useAuthStore(
+    (store) => store.unauthorizedErrorHasTriggered,
+  );
+  const getTokenQuery = trpc.auth.getToken.useQuery();
+  const saveTokenMutation = trpc.auth.saveToken.useMutation();
+  const pathname = usePathname();
+  const utils = trpc.useUtils();
+  const [hasRehydrated, setHasRehydrated] = useState(false);
+
   useEffect(() => {
-    const rehydrate = async () => {
+    async function rehydrate() {
       migrateLocalStorageStoreNames();
 
       await useAuthStore.persist.rehydrate();
@@ -56,10 +73,79 @@ export const ZustandHydration = () => {
           isAuthenticated: false,
         });
       }
-    };
+
+      setHasRehydrated(true);
+    }
 
     void rehydrate();
   }, []);
+
+  useEffect(() => {
+    // TODO: Test like crazy
+
+    console.log(pathname);
+
+    if (pathname === '/sign-in/callback' || !hasRehydrated) return;
+
+    function handleUnauthorized() {
+      clearAuth();
+
+      openToast({
+        type: 'error',
+        title: 'Your session has expired',
+        description: 'Please sign in to continue',
+        actionText: 'Sign In',
+        action: signInWithNear,
+      });
+    }
+
+    function migrateToCookie(auth: z.infer<typeof authorizationModel>) {
+      /*
+        This function keeps users signed in who had previously signed in 
+        before we switched to using a secure cookie to store their auth token. 
+        We can safely remove this migration logic in a few months after this 
+        code has been deployed to production.
+      */
+
+      if (!saveTokenMutation.isIdle) return;
+
+      saveTokenMutation.mutate(auth, {
+        onError: () => {
+          handleUnauthorized();
+        },
+        onSuccess: () => {
+          void utils.invalidate();
+        },
+      });
+    }
+
+    const { auth } = useAuthStore.getState();
+
+    const shouldMigrateToCookie =
+      auth &&
+      (getTokenQuery.isError ||
+        (getTokenQuery.isSuccess && getTokenQuery.data == null));
+
+    if (getTokenQuery.data) {
+      console.log('Setting auth result from getTokenQuery()');
+      setAuth(getTokenQuery.data);
+    } else if (shouldMigrateToCookie) {
+      console.log('Migrating auth token to cookie');
+      migrateToCookie(auth);
+    } else if (unauthorizedErrorHasTriggered) {
+      console.log('Handling unauthorized error');
+      handleUnauthorized();
+    }
+  }, [
+    hasRehydrated,
+    utils,
+    saveTokenMutation,
+    getTokenQuery,
+    setAuth,
+    clearAuth,
+    pathname,
+    unauthorizedErrorHasTriggered,
+  ]);
 
   return null;
 };

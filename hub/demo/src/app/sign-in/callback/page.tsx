@@ -1,5 +1,6 @@
 'use client';
 
+import { handleClientError } from '@near-pagoda/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -17,9 +18,18 @@ import { trpc } from '~/trpc/TRPCProvider';
 export default function SignInCallbackPage() {
   const saveTokenMutation = trpc.auth.saveToken.useMutation();
   const currentNonce = useAuthStore((store) => store.currentNonce);
-  // const clearAuth = useAuthStore((store) => store.clearAuth);
-  // const setAuthRaw = useAuthStore((store) => store.setAuthRaw);
+  const setAuth = useAuthStore((store) => store.setAuth);
+  const clearAuth = useAuthStore((store) => store.clearAuth);
   const router = useRouter();
+
+  const testMutation = trpc.auth.test.useMutation();
+  // const testQuery = trpc.auth.testQuery.useQuery();
+
+  useEffect(() => {
+    setTimeout(() => {
+      testMutation.mutate();
+    }, 1000);
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -40,21 +50,24 @@ export default function SignInCallbackPage() {
           nonce: currentNonce,
         });
 
-        // setAuthRaw(`Bearer ${JSON.stringify(auth)}`);
-
         await saveTokenMutation.mutateAsync(auth);
 
-        const url = returnUrlToRestoreAfterSignIn();
-        console.log(url);
-        // router.replace(url);
+        setAuth(auth);
+
+        // router.replace(returnUrlToRestoreAfterSignIn());
       } catch (error) {
-        console.error(error);
-        // clearAuth(); TODO
+        handleClientError({
+          error,
+          title: 'Invalid Token',
+          description: 'Please try signing in again',
+        });
+
+        clearAuth();
       }
     }
 
     void signIn();
-  }, [currentNonce, router, saveTokenMutation]);
+  }, [currentNonce, router, saveTokenMutation, clearAuth, setAuth]);
 
   return null;
 }

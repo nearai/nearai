@@ -4,20 +4,32 @@ import superjson from 'superjson';
 import { type z, ZodError } from 'zod';
 
 import { authorizationModel } from '~/lib/models';
+import { parseCookies } from '~/utils/cookies';
+
+import { AUTH_COOKIE_DELETE, AUTH_COOKIE_NAME } from './routers/auth';
 
 export const createTRPCContext = async (opts: FetchCreateContextFnOptions) => {
+  const cookies = parseCookies(opts.req.headers.get('Cookie') ?? '');
+  const rawAuth = cookies[AUTH_COOKIE_NAME];
+  let authorization: string | null = null;
+  let signature: z.infer<typeof authorizationModel> | null = null;
+
+  if (rawAuth) {
+    try {
+      signature = authorizationModel.parse(JSON.parse(rawAuth));
+      authorization = `Bearer ${JSON.stringify(signature)}`;
+    } catch (error) {
+      console.error(error);
+      opts.resHeaders.set('Set-Cookie', AUTH_COOKIE_DELETE);
+    }
+  }
+
   return {
     ...opts,
-    authorization: opts.req.headers.get('Authorization'), // TODO: This should pull from a cookie
+    authorization,
+    signature,
   };
 };
-
-// export const createTRPCContext = cache(async () => {
-//   /**
-//    * @see: https://trpc.io/docs/server/context
-//    */
-//   return { userId: 'user_123' };
-// });
 
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
@@ -60,23 +72,20 @@ const userMightBeAuthenticated = t.middleware(({ ctx, next }) => {
   });
 });
 
-export const publicProcedure = t.procedure.use(userMightBeAuthenticated);
+export const publicProcedure = t.procedure;
 
 // Protected procedures where a user is required to be signed in:
 
 const enforceUserIsAuthenticated = t.middleware(({ ctx, next }) => {
-  if (!ctx.authorization?.includes('Bearer')) {
+  if (!ctx.authorization || !ctx.signature) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-
-  const auth: unknown = JSON.parse(ctx.authorization.replace('Bearer ', ''));
-  const sig = authorizationModel.parse(auth);
 
   return next({
     ctx: {
       ...ctx,
       authorization: ctx.authorization,
-      signature: sig,
+      signature: ctx.signature,
     },
   });
 });
