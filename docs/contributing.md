@@ -150,16 +150,20 @@ Follow the steps below to start contributing:
 
    As you work on your code, you should make sure it functions as intended.
 
-   `nearai` relies on `ruff` and `mypy` to format and type check its source code
+   `nearai` relies on [`ruff`](https://docs.astral.sh/ruff/) and [`mypy`](https://mypy.readthedocs.io/en/stable/) to format and type check its source code
    consistently. After you make your changes and are ready to PR them, ensure that
    your code is formatted and type-checked by running:
     
    ```bash
-   ./scripts/lint_format.sh
+   ./scripts/format_check.sh
+   ```
+   
+   ```bash
+   ./scripts/lint_check.sh
    ```
 
    ```bash
-   ./scripts/typecheck.sh
+   ./scripts/type_check.sh
    ```
 
    Once you're happy with your changes, add the changed files with `git add` and
