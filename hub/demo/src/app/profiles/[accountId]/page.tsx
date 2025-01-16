@@ -74,7 +74,7 @@ export default function ProfilePage() {
           openForSmallScreens={sidebarOpenForSmallScreens}
           setOpenForSmallScreens={setSidebarOpenForSmallScreens}
         >
-          <CheckboxGroup name="categoryFilter">
+          <CheckboxGroup aria-label="Category Filter">
             <Flex as="label" align="center" gap="s">
               <Checkbox
                 name="categoryFilter"

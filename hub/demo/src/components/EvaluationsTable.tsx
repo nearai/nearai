@@ -292,7 +292,7 @@ export const EvaluationsTable = ({
                       </Tooltip>
                     </Flex>
 
-                    <CheckboxGroup name="columns">
+                    <CheckboxGroup aria-label="Include Evaluation Columns">
                       {columnsForBenchmark(benchmark).map((column) => (
                         <Flex as="label" align="center" gap="s" key={column}>
                           <Checkbox
