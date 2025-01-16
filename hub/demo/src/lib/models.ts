@@ -79,33 +79,21 @@ export const optionalVersion = z.preprocess(
 export const entryDetailsModel = z.intersection(
   z
     .object({
-      agent: z
+      defaults: z
         .object({
-          defaults: z
-            .object({
-              max_iterations: z.number(),
-            })
-            .partial(),
-          html_minimum_height: z.string(),
-          initial_user_message: z.string(),
-          welcome: z
-            .object({
-              title: z.string(),
-              description: z.string(),
-            })
-            .partial(),
+          max_iterations: z.number(),
         })
         .partial(),
       env_vars: z.record(z.string(), z.string()),
-      primary_agent_name: z.string(),
-      primary_agent_namespace: z.string(),
-      primary_agent_version: z.string(),
-      private_source: z.boolean().default(false),
-      base_id: z.string().or(z.null()),
       icon: z.string(),
-      run_id: z.coerce.string(),
-
-      timestamp: z.string(),
+      initial_user_message: z.string(),
+      private_source: z.boolean().default(false),
+      welcome: z
+        .object({
+          title: z.string(),
+          description: z.string(),
+        })
+        .partial(),
     })
     .partial(),
   z.record(z.string(), z.unknown()),

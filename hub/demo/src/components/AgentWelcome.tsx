@@ -10,7 +10,7 @@ type Props = {
 };
 
 export const AgentWelcome = ({ details }: Props) => {
-  const welcome = details.agent?.welcome;
+  const welcome = details?.welcome;
 
   if (!welcome?.title || !welcome?.description) return null;
 

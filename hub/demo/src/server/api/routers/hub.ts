@@ -107,6 +107,17 @@ export const hubRouter = createTRPCRouter({
 
       const list: z.infer<typeof entriesModel> = data
         .map((item) => {
+          /*
+            The following logic maintains backwards compatibility with `details.agent.x` as 
+            we've recently switched to simplifying with `details.x`
+          */
+
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          if (item?.details?.agent) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            Object.assign(item.details, item.details.agent);
+          }
+
           const parsed = entryModel.safeParse(item);
           return parsed.data;
         })

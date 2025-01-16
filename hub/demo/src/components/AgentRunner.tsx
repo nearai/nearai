@@ -328,8 +328,7 @@ export const AgentRunner = ({
 
   useEffect(() => {
     if (currentEntry && !form.formState.isDirty) {
-      const maxIterations =
-        currentEntry.details.agent?.defaults?.max_iterations ?? 1;
+      const maxIterations = currentEntry.details?.defaults?.max_iterations ?? 1;
       form.setValue('max_iterations', maxIterations);
     }
   }, [currentEntry, form]);
@@ -339,9 +338,8 @@ export const AgentRunner = ({
   }, [threadId]);
 
   useEffect(() => {
-    const agentDetails = currentEntry?.details.agent;
-    const initialUserMessage = agentDetails?.initial_user_message;
-    const maxIterations = agentDetails?.defaults?.max_iterations ?? 1;
+    const initialUserMessage = currentEntry?.details?.initial_user_message;
+    const maxIterations = currentEntry?.details?.defaults?.max_iterations ?? 1;
 
     if (initialUserMessage && !threadId && !initialUserMessageSent.current) {
       initialUserMessageSent.current = true;
