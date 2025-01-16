@@ -22,6 +22,7 @@ import { idForEntry, primaryUrlForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { api } from '~/trpc/react';
+import { validateAlphanumericCharacters } from '~/utils/inputs';
 import { toTitleCase } from '~/utils/string';
 
 import { SignInPrompt } from './SignInPrompt';
@@ -201,7 +202,11 @@ const ForkForm = ({ entry, onFinish }: ForkFormProps) => {
               resulting fork below.
             </Text>
 
-            <Grid columns="1fr 1fr 7rem" gap="s">
+            <Grid
+              columns="1fr 1fr 7rem"
+              gap="s"
+              phone={{ columns: '1fr', gap: 'm' }}
+            >
               <Input
                 label="Namespace"
                 name="namespace"
@@ -215,6 +220,7 @@ const ForkForm = ({ entry, onFinish }: ForkFormProps) => {
                 {...form.register('name', {
                   required: 'Please enter a name',
                   validate: {
+                    characters: validateAlphanumericCharacters,
                     conflict: (value) => {
                       if (findConflictingEntry(value)) {
                         return `Conflicts with existing ${entry.category}`;

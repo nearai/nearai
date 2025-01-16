@@ -5,9 +5,17 @@ import { ArrowRight } from '@phosphor-icons/react';
 
 import { signInWithNear } from '~/lib/auth';
 
-export const SignInPrompt = () => {
+type Props = {
+  layout?: 'horizontal-right' | 'horizontal-justified';
+};
+
+export const SignInPrompt = ({ layout = 'horizontal-right' }: Props) => {
   return (
-    <Flex gap="m" align="center" justify="end">
+    <Flex
+      gap="m"
+      align="center"
+      justify={layout === 'horizontal-right' ? 'end' : 'space-between'}
+    >
       <Text size="text-s">
         Please sign in with your NEAR wallet to continue
       </Text>

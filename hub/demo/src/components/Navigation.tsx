@@ -19,6 +19,7 @@ import {
   GithubLogo,
   List,
   Moon,
+  Plus,
   Star,
   Sun,
   User,
@@ -37,6 +38,7 @@ import { useAuthStore } from '~/stores/auth';
 import { useWalletStore } from '~/stores/wallet';
 
 import s from './Navigation.module.scss';
+import { NewAgentButton } from './NewAgentButton';
 
 const agentsNav = {
   label: 'Agents',
@@ -205,6 +207,18 @@ export const Navigation = () => {
               target="_blank"
             />
           </Tooltip>
+
+          <NewAgentButton
+            customButton={
+              <Button
+                label="New Agent"
+                size="small"
+                icon={<Plus weight="bold" />}
+                variant="affirmative"
+                fill="ghost"
+              />
+            }
+          />
         </Flex>
 
         <BreakpointDisplay show="smaller-than-desktop" className={s.breakpoint}>

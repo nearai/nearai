@@ -3,11 +3,16 @@ import {
   Card,
   Dialog,
   Flex,
+  HR,
   SvgIcon,
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
-import { DownloadSimple } from '@phosphor-icons/react';
+import {
+  BookOpenText,
+  DownloadSimple,
+  TerminalWindow,
+} from '@phosphor-icons/react';
 import { type CSSProperties, useState } from 'react';
 import { type z } from 'zod';
 
@@ -50,10 +55,56 @@ export const DevelopButton = ({ entry, style }: Props) => {
       {entry && (
         <Dialog.Root open={forkModalIsOpen} onOpenChange={setForkModalIsOpen}>
           <Dialog.Content
-            title={`Download & Develop ${toTitleCase(entry.category)}`}
+            title={`Develop ${toTitleCase(entry.category)}`}
             size="m"
           >
             <Flex direction="column" gap="l">
+              <Flex direction="column" gap="m">
+                <Flex align="center" gap="s">
+                  <SvgIcon
+                    icon={<TerminalWindow weight="fill" />}
+                    color="cyan-9"
+                  />
+                  <Text color="sand-12" weight={600}>
+                    NEAR AI CLI
+                  </Text>
+                </Flex>
+
+                <Flex
+                  align="center"
+                  gap="l"
+                  phone={{ direction: 'column', align: 'stretch' }}
+                >
+                  <Flex
+                    direction="column"
+                    gap="m"
+                    style={{ marginRight: 'auto' }}
+                  >
+                    <Text>
+                      Develop your {entry.category} locally in your favorite IDE
+                      and deploy via the{' '}
+                      <Tooltip content="View installation instructions">
+                        <Text
+                          href="https://github.com/nearai/nearai"
+                          target="_blank"
+                        >
+                          NEAR AI CLI
+                        </Text>
+                      </Tooltip>
+                    </Text>
+                  </Flex>
+
+                  <Button
+                    label="View Docs"
+                    iconLeft={<BookOpenText />}
+                    href="https://docs.near.ai/agents/quickstart/"
+                    target="_blank"
+                  />
+                </Flex>
+              </Flex>
+
+              <HR />
+
               <Flex direction="column" gap="m">
                 <Text size="text-s">
                   <Text
@@ -65,17 +116,7 @@ export const DevelopButton = ({ entry, style }: Props) => {
                   >
                     1.
                   </Text>{' '}
-                  Run the following{' '}
-                  <Tooltip asChild content="View installation instructions">
-                    <Text
-                      size="text-s"
-                      href="https://github.com/nearai/nearai#nearai"
-                      target="_blank"
-                    >
-                      Near AI CLI
-                    </Text>
-                  </Tooltip>{' '}
-                  command to download this {entry.category} locally:
+                  Download this {entry.category} locally:
                 </Text>
 
                 <Card background="sand-2" padding="s">

@@ -28,6 +28,7 @@ import { type EntryCategory } from '~/lib/models';
 import { api } from '~/trpc/react';
 
 import { ForkButton } from './ForkButton';
+import { NewAgentButton } from './NewAgentButton';
 import { StarButton } from './StarButton';
 
 type Props = {
@@ -66,17 +67,21 @@ export const EntriesTable = ({
         columns="1fr 20rem"
         align="center"
         gap="m"
-        phone={{ columns: '1fr' }}
+        tablet={{ columns: '1fr', align: 'end' }}
       >
         {header || (
-          <Text as="h1" size="text-2xl">
-            {title}{' '}
-            {entriesQuery.data && (
-              <Text as="span" size="text-2xl" color="sand-10" weight={400}>
-                ({entriesQuery.data.length})
-              </Text>
-            )}
-          </Text>
+          <Flex align="center" gap="m" wrap="wrap">
+            <Text as="h1" size="text-2xl" style={{ marginRight: 'auto' }}>
+              {title}{' '}
+              {entriesQuery.data && (
+                <Text as="span" size="text-2xl" color="sand-10" weight={400}>
+                  ({entriesQuery.data.length})
+                </Text>
+              )}
+            </Text>
+
+            {category === 'agent' && <NewAgentButton />}
+          </Flex>
         )}
 
         <Input
