@@ -220,9 +220,11 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
               <CardList>
                 <Card
                   background="sand-2"
-                  style={{ paddingBlock: 'var(--gap-s)' }}
+                  padding="s"
+                  paddingInline="m"
+                  as="label"
                 >
-                  <Flex as="label" align="center" gap="m">
+                  <Flex align="center" gap="m">
                     <Checkbox
                       type="checkbox"
                       {...form.register('tools.near')}
@@ -241,9 +243,11 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
 
                 <Card
                   background="sand-2"
-                  style={{ paddingBlock: 'var(--gap-s)' }}
+                  padding="s"
+                  paddingInline="m"
+                  as="label"
                 >
-                  <Flex as="label" align="center" gap="m">
+                  <Flex align="center" gap="m">
                     <Checkbox
                       type="checkbox"
                       {...form.register('tools.twitter')}
