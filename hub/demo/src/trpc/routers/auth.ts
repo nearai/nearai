@@ -15,7 +15,7 @@ const AUTH_COOKIE_STANDARD_FLAGS = `SameSite=Strict; Path=/; HttpOnly; Secure`;
 const AUTH_COOKIE_FLAGS = env.AUTH_COOKIE_DOMAIN
   ? `${AUTH_COOKIE_STANDARD_FLAGS}; Domain=${env.AUTH_COOKIE_DOMAIN}`
   : AUTH_COOKIE_STANDARD_FLAGS;
-export const AUTH_COOKIE_DELETE = `${AUTH_COOKIE_NAME}=null; Expires=Thu, 01 Jan 1970 00:00:00 GMT; ${AUTH_COOKIE_FLAGS}`;
+export const AUTH_COOKIE_DELETE = `${AUTH_COOKIE_NAME}=null; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age: 0; ${AUTH_COOKIE_FLAGS}`;
 
 export const authRouter = createTRPCRouter({
   saveToken: publicProcedure
