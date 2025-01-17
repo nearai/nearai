@@ -46,7 +46,7 @@ export const Footer = ({ conditional }: Props) => {
             size="text-xs"
             color="sand-11"
           >
-            NEAR.AI
+            NEAR AI
           </Text>
 
           <Text
