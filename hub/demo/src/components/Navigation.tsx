@@ -36,6 +36,7 @@ import { signInWithNear } from '~/lib/auth';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { useAuthStore } from '~/stores/auth';
 import { useWalletStore } from '~/stores/wallet';
+import { trpc } from '~/trpc/TRPCProvider';
 
 import s from './Navigation.module.scss';
 import { NewAgentButton } from './NewAgentButton';
@@ -101,6 +102,7 @@ const resourcesNavItems = env.NEXT_PUBLIC_CONSUMER_MODE
 export const Navigation = () => {
   const auth = useAuthStore((store) => store.auth);
   const clearAuth = useAuthStore((store) => store.clearAuth);
+  const clearTokenMutation = trpc.auth.clearToken.useMutation();
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const wallet = useWalletStore((store) => store.wallet);
   const path = usePathname();
@@ -115,7 +117,7 @@ export const Navigation = () => {
     if (wallet) {
       void wallet.signOut();
     }
-
+    void clearTokenMutation.mutate();
     clearAuth();
   };
 

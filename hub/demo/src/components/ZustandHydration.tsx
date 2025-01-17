@@ -18,17 +18,8 @@ function migrateLocalStorageStoreNames() {
     This function migrates our legacy Zustand local storage keys 
     to our new storage key standard before hydrating:
 
-    "store" => "AuthStore"
     "agent-settings" => "AgentSettingsStore"
   */
-
-  if (!localStorage.getItem('AuthStore')) {
-    const store = localStorage.getItem('store');
-    if (store) {
-      localStorage.setItem('AuthStore', store);
-      localStorage.removeItem('store');
-    }
-  }
 
   if (!localStorage.getItem('AgentSettingsStore')) {
     const store = localStorage.getItem('agent-settings');
@@ -49,6 +40,8 @@ function returnLocalStorageAuthStoreToMigrate() {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         JSON.parse(raw)?.state?.auth,
       );
+
+      localStorage.removeItem(authStoreName);
     } catch (error) {}
   }
 

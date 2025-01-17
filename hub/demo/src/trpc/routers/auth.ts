@@ -5,7 +5,7 @@ import { createTRPCRouter, publicProcedure } from '../trpc';
 
 export const AUTH_COOKIE_NAME = 'auth';
 const AUTH_COOKIE_MAX_AGE_SECONDS = 31536000 * 100; // 100 years
-export const AUTH_COOKIE_DELETE = `${AUTH_COOKIE_NAME}=null; Max-Age=-1`;
+export const AUTH_COOKIE_DELETE = `${AUTH_COOKIE_NAME}=null; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 
 export const authRouter = createTRPCRouter({
   saveToken: publicProcedure
