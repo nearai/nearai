@@ -21,7 +21,7 @@ export const authRouter = createTRPCRouter({
   saveToken: publicProcedure
     .input(authorizationModel)
     .mutation(({ ctx, input }) => {
-      let authCookie = `${AUTH_COOKIE_NAME}=${encodeURIComponent(JSON.stringify(input))}; Max-Age=${AUTH_COOKIE_MAX_AGE_SECONDS}; ${AUTH_COOKIE_FLAGS}`;
+      const authCookie = `${AUTH_COOKIE_NAME}=${encodeURIComponent(JSON.stringify(input))}; Max-Age=${AUTH_COOKIE_MAX_AGE_SECONDS}; ${AUTH_COOKIE_FLAGS}`;
 
       ctx.resHeaders.set('Set-Cookie', authCookie);
 
