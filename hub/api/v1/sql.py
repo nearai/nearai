@@ -480,7 +480,7 @@ class SqlClient:
         SELECT vse.file_id, vse.chunk_text, vse.embedding <-> %s AS distance
         FROM vector_store_embeddings vse
         WHERE vse.vector_store_id = %s
-        ORDER BY distance desc
+        ORDER BY distance
         LIMIT %s
         """
         query_embedding_json = json.dumps(query_embedding)

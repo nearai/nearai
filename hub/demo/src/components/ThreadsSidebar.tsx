@@ -35,7 +35,7 @@ import { env } from '~/env';
 import { type ThreadSummary, useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
 import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
 type Props = {
   onRequestNewThread: () => unknown;
@@ -58,7 +58,7 @@ export const ThreadsSidebar = ({
   const filteredThreads = threads?.filter(
     (thread) => !removedThreadIds.includes(thread.id),
   );
-  const removeMutation = api.hub.removeThread.useMutation();
+  const removeMutation = trpc.hub.removeThread.useMutation();
 
   const currentThreadIdMatchesThread =
     !threadId || !!filteredThreads?.find((thread) => thread.id === threadId);
@@ -300,7 +300,7 @@ const EditThreadForm = ({ threadThreadId, onFinish }: EditThreadFormProps) => {
   const form = useForm<EditThreadFormSchema>({});
   const { setThreadData, threads } = useThreads();
   const thread = threads?.find((t) => t.id === threadThreadId);
-  const updateMutation = api.hub.updateThread.useMutation();
+  const updateMutation = trpc.hub.updateThread.useMutation();
 
   useEffect(() => {
     if (!form.formState.isDirty) {

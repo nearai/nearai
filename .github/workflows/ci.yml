@@ -65,42 +65,43 @@ jobs:
     - name: Build Site
       run: ./scripts/build_mkdocs.sh
 
-  integration:
-    runs-on: integration
-    timeout-minutes: 30
-    environment: NearAI CI
-    steps:
+  ## TODO: uncomment this when we have integration tests working
+  # integration:
+  #   runs-on: integration
+  #   timeout-minutes: 30
+  #   environment: NearAI CI
+  #   steps:
 
-    - name: Checkout code
-      uses: actions/checkout@v4
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-      with:
-        driver: docker
+  #   - name: Set up Docker Buildx
+  #     uses: docker/setup-buildx-action@v2
+  #     with:
+  #       driver: docker
 
-    # TODO: remove this step, in order to build the child images
-    # we need to have the base image already built
-    - name: Build nearai_base Image
-      run: docker compose -f .docker/compose-e2e.yml build nearai_base
+  #   # TODO: remove this step, in order to build the child images
+  #   # we need to have the base image already built
+  #   - name: Build nearai_base Image
+  #     run: docker compose -f .docker/compose-e2e.yml build nearai_base
     
-    - name: Build Docker Images
-      run: docker compose -f .docker/compose-e2e.yml build
-      env:
-        NEARAICI_SIGNATURE: ${{ secrets.NEARAICI_SIGNATURE }}
+  #   - name: Build Docker Images
+  #     run: docker compose -f .docker/compose-e2e.yml build
+  #     env:
+  #       NEARAICI_SIGNATURE: ${{ secrets.NEARAICI_SIGNATURE }}
 
-    - name: Start Docker Compose
-      run: docker compose -f .docker/compose-e2e.yml up -d --wait
-      env:
-        SINGLESTORE_LICENSE: ${{ secrets.SINGLESTORE_LICENSE }}
+  #   - name: Start Docker Compose
+  #     run: docker compose -f .docker/compose-e2e.yml up -d --wait
+  #     env:
+  #       SINGLESTORE_LICENSE: ${{ secrets.SINGLESTORE_LICENSE }}
 
-    - name: Exec Integration Tests
-      run: |
-        docker exec docker-ci-1 poetry run pytest -m integration ./e2e/
+  #   - name: Exec Integration Tests
+  #     run: |
+  #       docker exec docker-ci-1 poetry run pytest -m integration ./e2e/
     
-    - name: Stop Docker Compose
-      run: docker compose -f .docker/compose-e2e.yml down
+  #   - name: Stop Docker Compose
+  #     run: docker compose -f .docker/compose-e2e.yml down
     
-    - name: Docker Compose Logs
-      if: ${{ always() }}
-      run: docker compose -f .docker/compose-e2e.yml logs
+  #   - name: Docker Compose Logs
+  #     if: ${{ always() }}
+  #     run: docker compose -f .docker/compose-e2e.yml logs

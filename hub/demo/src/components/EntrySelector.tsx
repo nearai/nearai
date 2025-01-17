@@ -16,7 +16,7 @@ import { type z } from 'zod';
 import { useEntriesSearch } from '~/hooks/entries';
 import { idForEntry } from '~/lib/entries';
 import { type EntryCategory, type entryModel } from '~/lib/models';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
 import { EntryCard } from './EntryCard';
 
@@ -39,7 +39,7 @@ export const EntrySelector = ({
   onSelect,
 }: Props) => {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const entriesQuery = api.hub.entries.useQuery({ category });
+  const entriesQuery = trpc.hub.entries.useQuery({ category });
 
   const { searched, searchQuery, setSearchQuery } = useEntriesSearch(
     entriesQuery.data,

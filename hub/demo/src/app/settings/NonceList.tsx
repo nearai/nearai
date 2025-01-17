@@ -18,12 +18,12 @@ import {
   redirectToAuthNearLink,
 } from '~/lib/auth';
 import { authorizationModel } from '~/lib/models';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
 export const NonceList = () => {
-  const noncesQuery = api.hub.nonces.useQuery();
-  const revokeNonceMutation = api.hub.revokeNonce.useMutation();
-  const revokeAllNoncesMutation = api.hub.revokeAllNonces.useMutation();
+  const noncesQuery = trpc.hub.nonces.useQuery();
+  const revokeNonceMutation = trpc.hub.revokeNonce.useMutation();
+  const revokeAllNoncesMutation = trpc.hub.revokeAllNonces.useMutation();
 
   const startRevokeNonce = (revokeNonce?: string) => {
     const nonce = generateNonce();

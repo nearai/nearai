@@ -52,7 +52,7 @@ import { sourceUrlForEntry } from '~/lib/entries';
 import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { useThreadsStore } from '~/stores/threads';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
 import { ThreadFileModal } from './ThreadFileModal';
 
@@ -97,7 +97,7 @@ export const AgentRunner = ({
     currentEntry,
     Object.keys(queryParams),
   );
-  const utils = api.useUtils();
+  const utils = trpc.useUtils();
   const threadId = queryParams.threadId ?? '';
   const showLogs = queryParams.showLogs === 'true';
 
@@ -129,7 +129,7 @@ export const AgentRunner = ({
   const threadsById = useThreadsStore((store) => store.threadsById);
   const thread = threadsById[chatMutationThreadId.current || threadId];
 
-  const threadQuery = api.hub.thread.useQuery(
+  const threadQuery = trpc.hub.thread.useQuery(
     {
       afterMessageId: thread?.latestMessageId,
       runId: thread?.run?.id,
@@ -142,7 +142,7 @@ export const AgentRunner = ({
     },
   );
 
-  const _chatMutation = api.hub.chatWithAgent.useMutation();
+  const _chatMutation = trpc.hub.chatWithAgent.useMutation();
   const chatMutation = useMutation({
     mutationFn: async (data: AgentChatMutationInput) => {
       try {

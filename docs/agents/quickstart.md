@@ -20,7 +20,7 @@ To get started, you will need to have a [Near account](https://wallet.near.org/)
 === "pip"
 
     ``` bash
-    python -m pip install nearai
+    python3 -m pip install nearai
     ```
 
 === "local"

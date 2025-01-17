@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode } from 'react';
 
-import { TRPCReactProvider } from '~/trpc/react';
+import { TRPCProvider } from '~/trpc/TRPCProvider';
 
 import { Footer } from './Footer';
 import s from './Layout.module.scss';
@@ -21,7 +21,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         useRouter,
       }}
     >
-      <TRPCReactProvider>
+      <TRPCProvider>
         <NearInitializer />
         <ZustandHydration />
         <Toaster />
@@ -31,7 +31,7 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           <main className={s.main}>{children}</main>
           <Footer conditional />
         </div>
-      </TRPCReactProvider>
+      </TRPCProvider>
     </PagodaUiProvider>
   );
 };

@@ -30,7 +30,7 @@ import { type SubmitHandler, useForm } from 'react-hook-form';
 import { idForEntry, parseEntryId, primaryUrlForEntry } from '~/lib/entries';
 import { useAuthStore } from '~/stores/auth';
 import NearLogoIcon from '~/svgs/near-logo-icon-padding.svg';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 import { validateAlphanumericCharacters } from '~/utils/inputs';
 
 import { SignInPrompt } from './SignInPrompt';
@@ -93,13 +93,13 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
       version: '0.0.1',
     },
   });
-  const utils = api.useUtils();
+  const utils = trpc.useUtils();
   const auth = useAuthStore((store) => store.auth);
-  const forkMutation = api.hub.forkEntry.useMutation();
+  const forkMutation = trpc.hub.forkEntry.useMutation();
   const router = useRouter();
   const name = form.watch('name');
 
-  const entriesQuery = api.hub.entries.useQuery(
+  const entriesQuery = trpc.hub.entries.useQuery(
     {
       category: 'agent',
       namespace: auth?.account_id,

@@ -6,7 +6,7 @@ import { type z } from 'zod';
 import { signInWithNear } from '~/lib/auth';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
 import s from './StarButton.module.scss';
 
@@ -21,7 +21,7 @@ export const StarButton = ({ entry, style, variant = 'simple' }: Props) => {
   const [starred, setStarred] = useState(false);
   const [count, setCount] = useState(0);
   const [clicked, setClicked] = useState(false);
-  const starMutation = api.hub.starEntry.useMutation();
+  const starMutation = trpc.hub.starEntry.useMutation();
   const visuallyStarred = isAuthenticated && starred;
 
   useEffect(() => {

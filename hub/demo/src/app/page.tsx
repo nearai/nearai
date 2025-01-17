@@ -44,13 +44,13 @@ import { idMatchesEntry } from '~/lib/entries';
 import { type entriesModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import NearLogoIcon from '~/svgs/near-logo-icon-padding.svg';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
 import s from './page.module.scss';
 
 export default function HomePage() {
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
-  const agents = api.hub.entries.useQuery({
+  const agentsQuery = trpc.hub.entries.useQuery({
     category: 'agent',
   });
 
@@ -58,14 +58,14 @@ export default function HomePage() {
     const result: z.infer<typeof entriesModel> = [];
 
     env.NEXT_PUBLIC_FEATURED_AGENT_IDS.forEach((agentId) => {
-      const agent = agents.data?.find((entry) =>
+      const agent = agentsQuery.data?.find((entry) =>
         idMatchesEntry(agentId, entry),
       );
       if (agent) result.push(agent);
     });
 
     return result;
-  }, [agents.data]);
+  }, [agentsQuery.data]);
 
   return (
     <>
@@ -100,7 +100,7 @@ export default function HomePage() {
                 </Text>
                 <SvgIcon
                   icon={<UserCircle weight="regular" />}
-                  color="violet-9"
+                  color="sand-8"
                   size="m"
                 />
               </Flex>
@@ -119,6 +119,7 @@ export default function HomePage() {
                 ) : (
                   <Button
                     label="Sign In"
+                    fill="outline"
                     onClick={signInWithNear}
                     iconRight={<ArrowRight />}
                   />
@@ -133,7 +134,7 @@ export default function HomePage() {
                 </Text>
                 <SvgIcon
                   icon={<GitFork weight="regular" />}
-                  color="violet-9"
+                  color="sand-8"
                   size="m"
                 />
               </Flex>
@@ -164,6 +165,7 @@ export default function HomePage() {
               <Flex direction="column" gap="s" style={{ marginTop: 'auto' }}>
                 <Button
                   label="Browse Agents"
+                  fill="outline"
                   href="/agents"
                   iconLeft={<MagnifyingGlass />}
                 />
@@ -177,7 +179,7 @@ export default function HomePage() {
                 </Text>
                 <SvgIcon
                   icon={<CodeBlock weight="regular" />}
-                  color="violet-9"
+                  color="sand-8"
                   size="m"
                 />
               </Flex>
@@ -185,7 +187,7 @@ export default function HomePage() {
               <Text color="sand-12">
                 Use the{' '}
                 <Text href="https://github.com/nearai/nearai" target="_blank">
-                  Near AI CLI
+                  NEAR AI CLI
                 </Text>{' '}
                 to develop and deploy changes to your agent.
               </Text>
@@ -205,6 +207,7 @@ export default function HomePage() {
               <Flex direction="column" gap="s" style={{ marginTop: 'auto' }}>
                 <Button
                   label="View Docs"
+                  fill="outline"
                   href="https://docs.near.ai"
                   iconLeft={<BookOpenText />}
                 />
@@ -276,7 +279,7 @@ export default function HomePage() {
                   />
                 </Tooltip>
 
-                <Tooltip asChild content="View an agent integrated with Near">
+                <Tooltip asChild content="View an agent integrated with NEAR">
                   <Button
                     size="small"
                     icon={<NearLogoIcon />}

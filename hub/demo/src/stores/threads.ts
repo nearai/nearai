@@ -9,7 +9,7 @@ import {
   type threadModel,
   type threadRunModel,
 } from '~/lib/models';
-import { type RouterOutputs } from '~/trpc/react';
+import { type AppRouterOutputs } from '~/trpc/router';
 
 type Thread = z.infer<typeof threadModel> & {
   run?: z.infer<typeof threadRunModel>;
@@ -31,7 +31,7 @@ type ThreadsStore = {
   ) => void;
   reset: () => void;
   setThread: (
-    thread: Partial<Omit<RouterOutputs['hub']['thread'], 'id'>> & {
+    thread: Partial<Omit<AppRouterOutputs['hub']['thread'], 'id'>> & {
       id: string;
     },
   ) => void;

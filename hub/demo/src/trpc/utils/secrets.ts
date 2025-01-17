@@ -1,14 +1,14 @@
 import { env } from 'process';
 
 import { entrySecretModel } from '~/lib/models';
-import { type RouterInputs } from '~/trpc/react';
+import { type AppRouterInputs } from '~/trpc/router';
 import { createZodFetcher } from '~/utils/zod-fetch';
 
 const fetchWithZod = createZodFetcher();
 
 export async function conditionallyRemoveSecret(
   authorization: string,
-  input: RouterInputs['hub']['addSecret'],
+  input: AppRouterInputs['hub']['addSecret'],
 ) {
   try {
     const secretsUrl = new URL(`${env.ROUTER_URL}/get_user_secrets`);
