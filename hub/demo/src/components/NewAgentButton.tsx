@@ -90,7 +90,7 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
     mode: 'all',
     defaultValues: {
       tools: {},
-      version: '0.1.0',
+      version: '0.0.1',
     },
   });
   const utils = api.useUtils();
@@ -158,43 +158,6 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
   return (
     <Form onSubmit={form.handleSubmit(onSubmit)}>
       <Flex direction="column" gap="l">
-        <Flex align="center" gap="s">
-          <SvgIcon icon={<TerminalWindow weight="fill" />} color="cyan-9" />
-          <Text color="sand-12" weight={600}>
-            Deploy via CLI
-          </Text>
-        </Flex>
-
-        <Flex
-          align="center"
-          gap="l"
-          phone={{ direction: 'column', align: 'stretch' }}
-        >
-          <Flex direction="column" gap="m" style={{ marginRight: 'auto' }}>
-            <Text>
-              Develop your agent locally in your favorite IDE and deploy via the{' '}
-              <Tooltip content="View installation instructions">
-                <Text href="https://github.com/nearai/nearai" target="_blank">
-                  NEAR AI CLI
-                </Text>
-              </Tooltip>
-            </Text>
-          </Flex>
-
-          <Button
-            label="View Docs"
-            iconLeft={<BookOpenText />}
-            href="https://docs.near.ai/agents/quickstart/"
-            target="_blank"
-          />
-        </Flex>
-
-        <Flex align="center" gap="m">
-          <HR />
-          <Text size="text-s">OR</Text>
-          <HR />
-        </Flex>
-
         <Flex align="center" gap="s">
           <SvgIcon icon={<Lightning weight="fill" />} color="amber-10" />
           <Text color="sand-12" weight={600}>
@@ -335,6 +298,45 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
         ) : (
           <SignInPrompt layout="horizontal-justified" />
         )}
+
+        <Flex align="center" gap="m">
+          <HR />
+          <Text size="text-s">OR</Text>
+          <HR />
+        </Flex>
+
+        <Flex align="center" gap="s">
+          <SvgIcon icon={<TerminalWindow weight="fill" />} color="cyan-9" />
+          <Text color="sand-12" weight={600}>
+            Deploy via CLI
+          </Text>
+        </Flex>
+
+        <Flex
+          align="center"
+          gap="l"
+          phone={{ direction: 'column', align: 'stretch' }}
+        >
+          <Flex direction="column" gap="m" style={{ marginRight: 'auto' }}>
+            <Text>
+              Develop your agent locally in your favorite IDE and deploy via the{' '}
+              <Tooltip content="View installation instructions">
+                <Text href="https://github.com/nearai/nearai" target="_blank">
+                  NEAR AI CLI
+                </Text>
+              </Tooltip>
+            </Text>
+          </Flex>
+
+          <Button
+            label="View Docs"
+            fill="outline"
+            size="small"
+            iconLeft={<BookOpenText />}
+            href="https://docs.near.ai/agents/quickstart/"
+            target="_blank"
+          />
+        </Flex>
       </Flex>
     </Form>
   );
