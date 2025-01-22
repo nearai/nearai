@@ -547,10 +547,6 @@ class Environment(object):
 
     # end of protected client methods
 
-    def get_agent(self):
-        """Returns the agent that is being run."""
-        return self._agents[0]
-
     def get_tool_registry(self, new: bool = False) -> ToolRegistry:
         """Returns the tool registry, a dictionary of tools that can be called by the agent."""
         if new:
@@ -747,7 +743,7 @@ class Environment(object):
             if not file_content:
                 # Next check agent file cache
                 # Agent output files & thread files take precedence over cached files
-                file_cache = self.get_agent().file_cache
+                file_cache = self.get_primary_agent().file_cache
                 if file_cache:
                     file_content = file_cache.get(filename, None)
 
