@@ -313,8 +313,13 @@ class ApiClient:
                 if content_type is not None:
                     match = re.search(r"charset=([a-zA-Z\-\d]+)[\s;]?", content_type)
                 encoding = match.group(1) if match else "utf-8"
-                response_text = response_data.data.decode(encoding)
-                return_data = self.deserialize(response_text, response_type, content_type)
+
+                try:
+                    response_text = response_data.data.decode(encoding)
+                    return_data = self.deserialize(response_text, response_type, content_type)
+                except UnicodeDecodeError:
+                    # binary response
+                    return_data = response_data.data
         finally:
             if not 200 <= response_data.status <= 299:
                 raise ApiException.from_response(

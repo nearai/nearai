@@ -21,7 +21,7 @@ class Agent(object):
         self, identifier: str, agent_files: Union[List, Path], metadata: Dict, change_to_temp_dir: bool = True
     ):  # noqa: D107
         self.code: Optional[CodeType] = None
-        self.file_cache: dict[str, str] = {}
+        self.file_cache: dict[str, Union[str, bytes]] = {}
         self.identifier = identifier
         name_parts = identifier.split("/")
         self.namespace = name_parts[0]
@@ -133,15 +133,26 @@ class Agent(object):
             self.agent_filename = os.path.join(self.temp_dir, AGENT_FILENAME)
             if not os.path.exists(self.agent_filename):
                 raise ValueError(f"Agent run error: {AGENT_FILENAME} does not exist")
-            with open(self.agent_filename, "r") as f:
-                self.code = compile(f.read(), self.agent_filename, "exec")
+            with open(self.agent_filename, "r") as agent_file:
+                self.code = compile(agent_file.read(), self.agent_filename, "exec")
 
             # cache all agent files in file_cache
             for root, _, files in os.walk(self.temp_dir):
                 for file in files:
                     file_path = os.path.join(root, file)
-                    with open(file_path, "r") as f:
-                        self.file_cache[file] = f.read()
+                    relative_path = os.path.relpath(file_path, self.temp_dir)
+                    try:
+                        with open(file_path, "rb") as f:
+                            content = f.read()
+                            try:
+                                # Try to decode as text
+                                self.file_cache[relative_path] = content.decode("utf-8")
+                            except UnicodeDecodeError:
+                                # If decoding fails, store as binary
+                                self.file_cache[relative_path] = content
+
+                    except Exception as e:
+                        print(f"Error with cache creation {file_path}: {e}")
 
         else:
             print("Using cached agent code")

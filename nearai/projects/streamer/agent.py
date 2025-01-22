@@ -75,7 +75,7 @@ class StreamerAgent(object):
                     command_outcome = "Done"
                 elif command.startswith("read"):
                     filename = command.split("read ")[1]
-                    content = env.read_file(filename)
+                    content = str(env.read_file(filename) or "")
                     command_outcome = f"Read file {filename} with content: {content}"
                 elif command.startswith("list"):
                     path = command.split("list ")[1].strip()

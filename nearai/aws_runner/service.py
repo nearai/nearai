@@ -4,7 +4,7 @@ import os
 import shutil
 import time
 from subprocess import call
-from typing import Optional
+from typing import Optional, Union
 
 import boto3
 from nearai.agents.agent import Agent
@@ -374,11 +374,24 @@ def get_local_agent_files(agent_identifier: str, additional_path: str = ""):
     for path in paths:
         for root, _dirs, files in os.walk(path):
             for file in files:
-                path = os.path.join(root, file)
+                file_path = os.path.join(root, file)
+                relative_path = os.path.relpath(file_path, path)
+
                 try:
-                    with open(path, "r") as f:
-                        result = f.read()
-                    results.append({"filename": os.path.basename(path), "content": result})
+                    content: Optional[Union[str, bytes]] = None
+
+                    with open(file_path, "rb") as f:
+                        file_content = f.read()
+                        try:
+                            # Try to decode as text
+                            content = file_content.decode("utf-8")
+                        except UnicodeDecodeError:
+                            # If decoding fails, store as binary
+                            content = file_content
+
+                    results.append({"filename": relative_path, "content": content})
+
                 except Exception as e:
-                    print(f"Error {path}: {e}")
+                    print(f"Error with cache creation: {e}")
+
     return results
