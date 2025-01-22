@@ -345,9 +345,9 @@ class BenchmarkCli:
         )
 
         solver_strategy_class: Union[SolverStrategy, None] = SolverStrategyRegistry.get(solver_strategy, None)
-        assert (
-            solver_strategy_class
-        ), f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
+        assert solver_strategy_class, (
+            f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
+        )
 
         name = dataset
         if solver_strategy_class.scoring_method == SolverScoringMethod.Custom:
@@ -925,7 +925,7 @@ run(env)
             # Validate name format
             if not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$", name):
                 console.print(
-                    "[red]❌ Invalid name format. " "Please use only letters, numbers, dots, hyphens, or underscores."
+                    "[red]❌ Invalid name format. Please use only letters, numbers, dots, hyphens, or underscores."
                 )
                 continue
             if " " in name:

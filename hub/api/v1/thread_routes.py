@@ -444,8 +444,7 @@ class RunCreateParamsBase(BaseModel):
     instructions: Optional[str] = Field(
         None,
         description=(
-            "Overrides the instructions of the assistant. "
-            "This is useful for modifying the behavior on a per-run basis."
+            "Overrides the instructions of the assistant. This is useful for modifying the behavior on a per-run basis."
         ),
     )
     tools: Optional[List[dict]] = Field(None, description="Override the tools the assistant can use for this run.")
