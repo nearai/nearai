@@ -175,7 +175,12 @@ export const Navigation = () => {
         </NavigationMenu.Root>
       </BreakpointDisplay>
 
-      <Flex align="center" gap="m" style={{ marginLeft: 'auto' }}>
+      <Flex
+        align="center"
+        gap="m"
+        phone={{ gap: 's' }}
+        style={{ marginLeft: 'auto' }}
+      >
         <Flex align="center" gap="xs">
           {mounted && resolvedTheme === 'dark' ? (
             <Tooltip asChild content="Switch to light mode">
@@ -235,7 +240,7 @@ export const Navigation = () => {
               />
             </Dropdown.Trigger>
 
-            <Dropdown.Content>
+            <Dropdown.Content maxHeight="70svh">
               <Dropdown.Section>
                 {navItems.map((item) => (
                   <Dropdown.Item href={item.path} key={item.path}>
@@ -245,18 +250,16 @@ export const Navigation = () => {
                 ))}
               </Dropdown.Section>
 
-              {/* The following code is left commented out in case we add a nav dropdown again in the near future: */}
-
-              {/* {resourcesNav ? (
+              {resourcesNavItems ? (
                 <Dropdown.Section>
-                  {resourcesNav.map((item) => (
+                  {resourcesNavItems.map((item) => (
                     <Dropdown.Item href={item.path} key={item.path}>
                       <SvgIcon icon={item.icon} />
                       {item.label}
                     </Dropdown.Item>
                   ))}
                 </Dropdown.Section>
-              ) : null} */}
+              ) : null}
             </Dropdown.Content>
           </Dropdown.Root>
         </BreakpointDisplay>
