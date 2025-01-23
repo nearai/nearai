@@ -747,7 +747,7 @@ class Environment(object):
                 if file_cache:
                     file_content = file_cache.get(filename, None)
 
-            # Write the file content from the tread or cache to the local filesystem
+            # Write the file content from the thread or cache to the local filesystem
             if file_content:
                 if not os.path.exists(os.path.dirname(local_path)):
                     os.makedirs(os.path.dirname(local_path))
