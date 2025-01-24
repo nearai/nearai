@@ -143,7 +143,7 @@ class Environment(object):
                 threshold: Optional[int] = None,
                 max_retries: int = 3,
             ):
-                """Wrapper for the view method of the Account class, adding multuple retry attempts.
+                """Wrapper for the view method of the Account class, adding multiple retry attempts.
 
                 Parameters
                 ----------
