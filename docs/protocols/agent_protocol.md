@@ -10,3 +10,17 @@ of the OpenAI Thread Message format and may or may not be supported by other
 OpenAI compatible libraries. We recommend you use the `nearai` client to fetch these
 messages if you are interacting with them outside the scope of NEAR AI agents.
 
+## Communicating Capabilities
+An agent or client that supports the protocol communicates this to agents by passing the protocol 
+in the `client_capabilities` metadata when invoking the agent. 
+
+In addition, to aid in Agent discovery, agents should list the protocol in the `client_capabilities`
+field of their `metadata.json` in the agent registry.
+
+### Client Capabilities format
+```
+client_capabilities: [{
+    schema_url: "https://docs.near.ai/v1/agent_protocol.schema.json", 
+    supported: ['request_option'] 
+}]
+```
