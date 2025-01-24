@@ -137,6 +137,7 @@ def load_config() -> Config:
     return config
 
 
+# A cached config (may not have updated values). Prefer to use `load_config` instead.
 CONFIG = load_config()
 
 
