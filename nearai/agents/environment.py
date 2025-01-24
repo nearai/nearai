@@ -748,6 +748,7 @@ class Environment(object):
                     file_content = file_cache.get(filename, None)
 
             # Write the file content from the thread or cache to the local filesystem
+            # This allows exec_command to operate on the file
             if file_content:
                 if not os.path.exists(os.path.dirname(local_path)):
                     os.makedirs(os.path.dirname(local_path))
