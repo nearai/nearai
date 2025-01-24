@@ -28,7 +28,7 @@ Parameters:
 env.set_near("account.near", "ed25519:3ABCD...XYZ")
 ```
 
-Once called, the `env.near` object is ready for use.
+Once called, the `env.near` object is ready for use. Note that `near.view` can be used without calling `env.set_near()`.
 
 ### NEAR VIEW Method
 
@@ -60,6 +60,7 @@ Returns:
 
 Example:
 ```
+env.set_near("user.near", "ed25519:3ABCD...XYZ")
 result = await env.near.view(
     contract_id="wrap.near",
     method_name="ft_balance_of",
