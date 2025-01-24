@@ -1,7 +1,7 @@
 [
   {
     "type": "json",
-    "schema": "https://docs.near.ai/agent_protocol.schema.json",
+    "schema": "https://docs.near.ai/v1/agent_protocol.schema.json",
     "json": [
       {
         "request_choice": {
