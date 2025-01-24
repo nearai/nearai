@@ -171,6 +171,7 @@ class Environment(object):
 
                 """
                 acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                await acc.startup()
                 max_retries = min(max_retries, 10)
 
                 for attempt in range(1, max_retries + 1):
@@ -231,7 +232,7 @@ class Environment(object):
 
                 """
                 acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
-
+                await acc.startup()
                 max_retries = min(max_retries, 10)
 
                 for attempt in range(1, max_retries + 1):
@@ -249,6 +250,30 @@ class Environment(object):
                         if attempt == max_retries:
                             raise
 
+            async def get_balance(self, account_id: Optional[str] = None) -> int:
+                """Retrieves the balance of the specified NEAR account.
+
+                Parameters
+                ----------
+                account_id : Optional[str]
+                    The ID of the account to retrieve the balance for. If not provided, the balance of the current
+                    account is retrieved.
+
+                Returns
+                -------
+                int
+                    The balance of the specified account in yoctoNEAR.
+
+                Raises
+                ------
+                Exception
+                    If there is an error retrieving the balance.
+
+                """
+                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                await acc.startup()
+                return await acc.get_balance(account_id)
+
             def __init__(
                 self,
                 account_id: Optional[str] = None,
@@ -257,10 +282,9 @@ class Environment(object):
             ):
                 self.account_id = account_id
                 self.private_key = private_key
-                return super().__init__(account_id, private_key, rpc_addr)
+                super().__init__(account_id, private_key, rpc_addr)
 
         self.set_near = NearAccount
-        self.near = NearAccount()
 
         self._tools = ToolRegistry()
 

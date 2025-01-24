@@ -10,10 +10,10 @@ The NEAR AI toolkit provides environment methods for interacting with the NEAR b
 ### Setting Up the Near Account
 
 ```
-env.set_near(account_id, private_key)
+near = env.set_near(account_id, private_key)
 ```
 
-This method initializes the env.near object, allowing you to interact with the NEAR blockchain.
+This creates you an Account object from the `py-near` Python library. More details: [py-near Account](https://py-near.readthedocs.io/en/latest/account.html#quick-start)
 
 !!! warning "Important"
     Ensure that the `account_id `and `private_key` are never exposed in plain text within the agent's code. We recommend using [secrets](../secrets.md) to handle these credentials securely.
@@ -25,19 +25,20 @@ Parameters:
 
 - Example:
 ```
-env.set_near("account.near", "ed25519:3ABCD...XYZ")
+near = env.set_near("account.near", "ed25519:3ABCD...XYZ")
 ```
 
-Once called, the `env.near` object is ready for use. Note that `near.view` can be used without calling `env.set_near()`.
+Once called, the `near` object is ready for use. Note that `near.view` can be used without providing to `env.set_near()` `account_id` or `private_key`.
 
 ### NEAR VIEW Method
 
-`env.near.view` performs a read-only operation on the NEAR blockchain. This is used to query the state of a contract without modifying it. Examples include retrieving contract states, or querying other read-only data.
+Performs a read-only operation on the NEAR blockchain. This is used to query the state of a contract without modifying it. Examples include retrieving contract states, or querying other read-only data.
 
 The result object contains the transaction details, including the logs and block hash, and any returned values. For more details on the format of the result object, refer to the [py-near](https://py-near.readthedocs.io/en/latest/) documentation.
 
 ```
-await env.near.view(
+near = env.set_near()
+await near.view(
     contract_id: str,
     method_name: str,
     args: dict,
@@ -60,8 +61,8 @@ Returns:
 
 Example:
 ```
-env.set_near("user.near", "ed25519:3ABCD...XYZ")
-result = await env.near.view(
+near = env.set_near()
+result = await near.view(
     contract_id="wrap.near",
     method_name="ft_balance_of",
     args={
@@ -74,12 +75,13 @@ print("Wrap.NEAR Balance:", result.result)
 
 ### NEAR CALL Method
 
-`near.call` executes a state-changing operation on the NEAR blockchain. This is used to call methods on contracts that can modify state, transfer tokens, or perform other operations requiring gas and/or attached tokens.
+Executes a state-changing operation on the NEAR blockchain. This is used to call methods on contracts that can modify state, transfer tokens, or perform other operations requiring gas and/or attached tokens.
 
 The result object contains the transaction details, including the status, transaction hash, and any returned values. For more details on the format of the result object, refer to the [py-near](https://py-near.readthedocs.io/en/latest/) documentation.
 
 ```
-await env.near.call(
+near = env.set_near("user.near", "ed25519:3ABCD...XYZ")
+await near.call(
     contract_id: str,
     method_name: str,
     args: dict,
@@ -119,4 +121,18 @@ result = await env.near.call(
 
 if "SuccessValue" in result.status:
     print("tx", result.transaction.hash)
+```
+
+### NEAR GET BALANCE
+
+`get_balance` retrieves the NEAR token balance of a given account. 
+
+Parameters:
+- `account_id` : (Optional) The ID of the account to retrieve the balance for. If not provided, the balance of the current account is retrieved.
+
+Example:
+```
+near = env.set_near("alice.near")
+print(await near.get_balance())
+print(await near.get_balance("bob.near"))
 ```
