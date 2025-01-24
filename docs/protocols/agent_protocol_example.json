@@ -1,0 +1,92 @@
+[
+  {
+    "type": "json",
+    "schema": "https://docs.near.ai/agent_protocol.schema.json",
+    "json": [
+      {
+        "request_choice": {
+          "type": "product",
+          "options": [
+            {
+              "id": 1,
+              "image_url": "https://...",
+              "name": "Red Socks",
+              "price": {
+                "usd": 10.5
+              },
+              "url": "https://amazon.com/..."
+            },
+            {
+              "id": 2,
+              "image_url": "https://...",
+              "name": "Blue Socks",
+              "price": {
+                "usd": 9
+              },
+              "url": "https://amazon.com/..."
+            }
+          ]
+        }
+      },
+      {
+        "request_data": {
+          "schema": "https://app.near.ai/agents/near-ai-agents.near/assistant/latest/source?file=shipping_address.schema.json",
+          "fields": [
+            {
+              "name": "first_name",
+              "label": "First Name",
+              "validation": []
+            },
+            {
+              "name": "favorite_color",
+              "options": [
+                {
+                  "label": "Red",
+                  "value": "red"
+                },
+                {
+                  "label": "Blue",
+                  "value": "blue"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "request_payment": {
+          "version": "0.2.2",
+          "payment_request_url": "https://api.example.com/l402/payment-request",
+          "payment_context_token": "pct_abc123xyz",
+          "offers": [
+            {
+              "id": "offer_12345",
+              "title": "One-time Access",
+              "description": "Access to the resource for a single session",
+              "type": "top-up",
+              "balance": 1,
+              "amount": 100,
+              "currency": "USD",
+              "payment_methods": ["lightning", "onchain"]
+            },
+            {
+              "id": "offer_67890",
+              "title": "Monthly Subscription",
+              "description": "Unlimited access for 30 days",
+              "amount": 1500,
+              "currency": "EUR",
+              "type": "subscription",
+              "duration": "1 month",
+              "payment_methods": ["credit_card", "lightning", "onchain"]
+            }
+          ],
+          "terms_url": "https://example.com/terms",
+          "metadata": {
+            "resource_id": "resource_abc",
+            "client_note": "Payment required for premium content"
+          }
+        }
+      }
+    ]
+  }
+]
