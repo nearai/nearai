@@ -51,6 +51,9 @@ dependencies = [
     "uvicorn>=0.32.0,<0.33.0",
     "tweepy>=4.14.0,<5.0.0",
     "rich>=13.7.0",
+    "poetry (>=2.0.1,<3.0.0)",
+    "py-near>=1.1.50,<2.0.0",
+    "loguru>=0.7.2,<0.8.0",
 ]
 
 [tool.poetry.dependencies]
@@ -116,6 +119,8 @@ typer = "^0.12.5"
 uvicorn = "^0.32.0"
 tweepy = { version = "^4.14.0" }
 rich = "^13.7.0"
+py-near = "^1.1.50"
+loguru = "^0.7.2"
 
 [project.optional-dependencies]
 # Experiment platform
@@ -251,6 +256,7 @@ exclude = [
     ".ruff_cache",
     "__pypackages__",
     "nearai/openapi_client",
+    "py_near",
 ]
 
 [[tool.mypy.overrides]]
@@ -291,7 +297,8 @@ module = [
     "pypdf.*",
     "chardet.*",
     "botocore.*",
-    "shortuuid.*"
+    "shortuuid.*",
+    "py_near.*"
 ]
 ignore_missing_imports = true
 

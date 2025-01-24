@@ -145,6 +145,7 @@ nav:
       - 'agents/env/calling_other_agents.md'
       - 'agents/env/tools.md'
       - 'agents/env/variables.md'
+      - 'agents/env/near.md'
       - Secrets: 'agents/secrets.md'
     - Inference (OpenAI): 'inference.md'
     - Vector Stores (OpenAI): 'vector-stores.md'

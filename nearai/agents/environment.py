@@ -30,6 +30,8 @@ from openai.types.beta.threads.message_create_params import Attachment
 from openai.types.beta.threads.run import Run
 from openai.types.beta.vector_store import VectorStore
 from openai.types.file_object import FileObject
+from py_near.account import Account
+from py_near.constants import DEFAULT_ATTACHED_GAS
 
 import nearai.shared.near.sign as near
 from nearai.agents import tool_json_helper
@@ -104,6 +106,7 @@ class Environment(object):
         tool_resources: Optional[Dict[str, Any]] = None,
         print_system_log: bool = False,
         agent_runner_user: Optional[str] = None,
+        fastnear_api_key: Optional[str] = None,
         approvals: Optional[Dict[str, Any]] = default_approvals,
     ) -> None:
         # Warning: never expose `client` or `_hub_client` to agent's environment
@@ -124,6 +127,140 @@ class Environment(object):
         self._thread_id = thread_id
         self._run_id = run_id
         self._debug_mode = True if self.env_vars.get("DEBUG") else False
+
+        if fastnear_api_key:
+            default_mainnet_rpc = f"https://rpc.mainnet.fastnear.com?apiKey={fastnear_api_key}"
+        else:
+            default_mainnet_rpc = "https://rpc.mainnet.near.org"
+
+        class NearAccount(Account):
+            async def view(
+                self,
+                contract_id: str,
+                method_name: str,
+                args: dict,
+                block_id: Optional[int] = None,
+                threshold: Optional[int] = None,
+                max_retries: int = 3,
+            ):
+                """Wrapper for the view method of the Account class, adding multuple retry attempts.
+
+                Parameters
+                ----------
+                contract_id : str
+                    The ID of the contract to call.
+                method_name : str
+                    The name of the method to invoke on the contract.
+                args : dict
+                    The arguments to pass to the contract method.
+                block_id : Optional[int]
+                    The block ID to query at.
+                threshold : Optional[int]
+                    The threshold for the view function.
+                max_retries : int
+                    The maximum number of retry attempts.
+
+                Returns
+                -------
+                The result of the contract method call.
+
+                Raises
+                ------
+                Exception
+                    If all retry attempts fail, the exception is propagated.
+
+                """
+                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                max_retries = min(max_retries, 10)
+
+                for attempt in range(1, max_retries + 1):
+                    try:
+                        # Attempt to read the contract view method
+                        return await acc.view_function(contract_id, method_name, args, block_id, threshold)
+                    except Exception as e:
+                        # Log the error message for the current attempt
+                        print(
+                            f"Attempt {attempt}/{max_retries} to view method '{method_name}' on contract "
+                            f"'{contract_id}' failed with error: {e}"
+                        )
+
+                        # If it's the last attempt, re-raise the exception
+                        if attempt == max_retries:
+                            raise
+
+            async def call(
+                self,
+                contract_id: str,
+                method_name: str,
+                args: dict,
+                gas: int = DEFAULT_ATTACHED_GAS,
+                amount: int = 0,
+                nowait: bool = False,
+                included=False,
+                max_retries: int = 1,
+            ):
+                """Wrapper for the call method of the Account class, adding multiple retry attempts.
+
+                Parameters
+                ----------
+                contract_id : str
+                    The ID of the contract to call.
+                method_name : str
+                    The name of the method to invoke on the contract.
+                args : dict
+                    The arguments to pass to the contract method.
+                gas : int
+                    The amount of gas to attach to the call.
+                amount : int
+                    The amount of tokens to attach to the call.
+                nowait : bool
+                    If True, do not wait for the transaction to be confirmed.
+                included : bool
+                    If True, include the transaction in the block.
+                max_retries : int
+                    The maximum number of retry attempts.
+
+                Returns
+                -------
+                The result of the contract method call.
+
+                Raises
+                ------
+                Exception
+                    If all retry attempts fail, the exception is propagated.
+
+                """
+                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+
+                max_retries = min(max_retries, 10)
+
+                for attempt in range(1, max_retries + 1):
+                    try:
+                        # Attempt to call the contract method
+                        return await acc.function_call(contract_id, method_name, args, gas, amount, nowait, included)
+                    except Exception as e:
+                        # Log the error message for the current attempt
+                        print(
+                            f"Attempt {attempt}/{max_retries} to call method '{method_name}' on contract "
+                            f"'{contract_id}' failed with error: {e}"
+                        )
+
+                        # If it's the last attempt, re-raise the exception
+                        if attempt == max_retries:
+                            raise
+
+            def __init__(
+                self,
+                account_id: Optional[str] = None,
+                private_key: Optional[Union[List[Union[str, bytes]], str, bytes]] = None,
+                rpc_addr: Optional[str] = None,
+            ):
+                self.account_id = account_id
+                self.private_key = private_key
+                return super().__init__(account_id, private_key, rpc_addr)
+
+        self.set_near = NearAccount
+        self.near = NearAccount()
 
         self._tools = ToolRegistry()
 
