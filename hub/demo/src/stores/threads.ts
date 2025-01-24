@@ -67,7 +67,7 @@ const store: StateCreator<ThreadsStore> = (set, get) => ({
                 annotations: [],
                 value: input.new_message,
               },
-              type: '',
+              type: 'text',
             },
           ],
           created_at: Date.now(),

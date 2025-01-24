@@ -41,9 +41,9 @@ import { AgentWelcome } from '~/components/AgentWelcome';
 import { EntryEnvironmentVariables } from '~/components/EntryEnvironmentVariables';
 import { IframeWithBlob } from '~/components/lib/IframeWithBlob';
 import { Sidebar } from '~/components/lib/Sidebar';
-import { Messages } from '~/components/Messages';
 import { SignInPrompt } from '~/components/SignInPrompt';
-import { ThreadsSidebar } from '~/components/ThreadsSidebar';
+import { ThreadMessages } from '~/components/threads/ThreadMessages';
+import { ThreadsSidebar } from '~/components/threads/ThreadsSidebar';
 import { env } from '~/env';
 import { useAgentRequestsWithIframe } from '~/hooks/agent-iframe-requests';
 import { useCurrentEntry, useEntryEnvironmentVariables } from '~/hooks/entries';
@@ -54,7 +54,7 @@ import { useAuthStore } from '~/stores/auth';
 import { useThreadsStore } from '~/stores/threads';
 import { trpc } from '~/trpc/TRPCProvider';
 
-import { ThreadFileModal } from './ThreadFileModal';
+import { ThreadFileModal } from './threads/ThreadFileModal';
 
 type RunView = 'conversation' | 'output' | undefined;
 
@@ -398,7 +398,7 @@ export const AgentRunner = ({
                   />
 
                   {latestAssistantMessages.length > 0 && (
-                    <Messages
+                    <ThreadMessages
                       grow={false}
                       messages={latestAssistantMessages}
                       scrollTo={false}
@@ -407,7 +407,7 @@ export const AgentRunner = ({
                   )}
                 </>
               ) : (
-                <Messages
+                <ThreadMessages
                   messages={messages}
                   threadId={threadId}
                   welcomeMessage={

@@ -331,6 +331,19 @@ export const threadMessageMetadataModel = z.intersection(
   z.record(z.string(), z.unknown()),
 );
 
+export const threadMessageModelContentJson = z.object({
+  type: z.literal('json'),
+  json: z.record(z.string(), z.unknown()),
+});
+
+export const threadMessageModelContentText = z.object({
+  type: z.literal('text'),
+  text: z.object({
+    annotations: z.unknown().array(),
+    value: z.string(),
+  }),
+});
+
 export const threadMessageModel = z.object({
   id: z.string(),
   assistant_id: z.unknown(),
@@ -344,13 +357,10 @@ export const threadMessageModel = z.object({
   created_at: z.number(),
   completed_at: z.number().nullable(),
   content: z
-    .object({
-      text: z.object({
-        annotations: z.unknown().array(),
-        value: z.string(),
-      }),
-      type: z.string(),
-    })
+    .discriminatedUnion('type', [
+      threadMessageModelContentJson,
+      threadMessageModelContentText,
+    ])
     .array(),
   incomplete_at: z.number().nullable(),
   incomplete_details: z.unknown().nullable(),
