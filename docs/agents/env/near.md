@@ -3,7 +3,7 @@
 The NEAR AI toolkit provides an environment methods for interacting with the NEAR blockchain. This framework is designed for seamless integration using a private RPC when running an agent on a NEAR AI hosted runner.
 
 ### Features
-- Private RPC Integration: We provide a private RPC for agents to interact with the NEAR blockchain. This private RPC is optimized for both read operations (e.g., querying contract states) and write operations (e.g., sending transactions or modifying contract state). It ensures secure and reliable communication between hosted agents and the NEAR network, reducing latency and improving overall performance.
+- Private RPC Integration: NEAR AI provides a private RPC for agents to interact with the NEAR blockchain. This private RPC is optimized for both read operations (e.g., querying contract states) and write operations (e.g., sending transactions or modifying contract state). It ensures secure and reliable communication between hosted agents and the NEAR network, reducing latency and improving overall performance.
 - Retry Mechanism: Both view and call methods include a robust retry mechanism to handle transient network or RPC errors.
 
 
