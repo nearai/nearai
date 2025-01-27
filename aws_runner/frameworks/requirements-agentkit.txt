@@ -1,0 +1,4 @@
+cdp-sdk >= 0.15.0
+pydantic >= 2.0
+web3 >= 7.6.0
+cdp-agentkit-core >= 0.0.11
