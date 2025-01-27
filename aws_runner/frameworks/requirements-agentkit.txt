@@ -2,3 +2,6 @@ cdp-sdk >= 0.15.0
 pydantic >= 2.0
 web3 >= 7.6.0
 cdp-agentkit-core >= 0.0.11
+langchain >= 0.3.4
+langchain-openai >= 0.2.4
+langgraph >= 0.2.39
