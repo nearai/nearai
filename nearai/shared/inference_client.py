@@ -16,7 +16,12 @@ from openai.types.beta.vector_store import VectorStore
 from openai.types.beta.vector_stores import VectorStoreFile
 from openai.types.file_object import FileObject
 
-from nearai.shared.client_config import DEFAULT_MODEL_MAX_TOKENS, DEFAULT_MODEL_TEMPERATURE, ClientConfig
+from nearai.shared.client_config import (
+    DEFAULT_MODEL_MAX_TOKENS,
+    DEFAULT_MODEL_TEMPERATURE,
+    DEFAULT_TIMEOUT,
+    ClientConfig,
+)
 from nearai.shared.models import (
     AutoFileChunkingStrategyParam,
     ChunkingStrategy,
@@ -115,6 +120,7 @@ class InferenceClient(object):
                     base_url=self._config.base_url,
                     provider=provider,
                     api_key=self._auth,
+                    timeout=DEFAULT_TIMEOUT,
                     **kwargs,
                 )
                 break

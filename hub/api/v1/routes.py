@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from nearai.shared.cache import mem_cache_with_timeout
+from nearai.shared.client_config import DEFAULT_TIMEOUT
 from nearai.shared.near.sign import derive_new_extended_private_key, get_public_key
 from nearai.shared.provider_models import PROVIDER_MODEL_SEP, get_provider_model
 from pydantic import BaseModel, field_validator
@@ -183,7 +184,7 @@ def chat_completions(
         raise HTTPException(status_code=400, detail="Provider not supported") from None
 
     try:
-        resp = llm.chat.completions.create(**request.model_dump(exclude={"provider"}))
+        resp = llm.chat.completions.create(**request.model_dump(exclude={"provider"}), timeout=DEFAULT_TIMEOUT)
     except Exception as e:
         error_message = str(e)
         if "Error code: 404" in error_message and "Model not found, inaccessible, and/or not deployed" in error_message:

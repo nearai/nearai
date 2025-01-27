@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from nearai.shared.auth_data import AuthData
 
 DEFAULT_TIMEOUT = 60 * 5
-DEFAULT_MAX_RETRIES = 3
+DEFAULT_MAX_RETRIES = 1
 DEFAULT_MODEL_TEMPERATURE = 1.0
 DEFAULT_MODEL_MAX_TOKENS = 16384
 DEFAULT_PROVIDER = "fireworks"
