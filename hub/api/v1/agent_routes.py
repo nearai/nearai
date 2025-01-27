@@ -9,6 +9,8 @@ from nearai.agents.local_runner import LocalRunner
 from nearai.clients.lambda_client import LambdaWrapper
 from nearai.shared.auth_data import AuthData
 from pydantic import BaseModel, Field
+from runners.nearai_cvm.app.main import AssignRequest, RunRequest
+from runners.nearai_cvm.client.client import CvmClient
 
 from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.entry_location import EntryLocation
@@ -112,6 +114,45 @@ def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: Auth
     )
 
     return result
+
+
+def invoke_agent_in_cvm(
+    agent_id: str,
+    thread_id: str,
+    run_id: str,
+    auth: AuthData,
+    api_url: str,
+    provider: str,
+    model: str,
+    temperature: float,
+    max_tokens: int,
+    max_iterations: int,
+):
+    cvm_url = "http://localhost:8000"
+
+    client = CvmClient(cvm_url, auth)
+
+    try:
+        client.assign(
+            AssignRequest(
+                agent_id=agent_id,
+                thread_id=thread_id,
+                api_url=api_url,
+                provider=provider,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                max_iterations=max_iterations,
+                env_vars={"agent_env_vars": "test"},
+            ),
+        )
+        client.run(
+            RunRequest(
+                run_id=run_id,
+            )
+        )
+    except Exception as e:
+        raise Exception("Error invoking agent in CVM") from e
 
 
 @run_agent_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
@@ -240,6 +281,8 @@ def _runner_for_env():
         return "production-agent-runner"
     elif runner_env == "staging":
         return "staging-agent-runner"
+    elif runner_env == "cvm":
+        return "cvm"
     else:
         return runner_env
 

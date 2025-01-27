@@ -2,9 +2,9 @@
 name = "nearai"
 version = "0.1.6"
 description = "Near AI CLI"
-authors = [{name = "Support", email = "support@near.ai"}]
+authors = [{ name = "Support", email = "support@near.ai" }]
 readme = "README.md"
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.10,<3.12"
 
 dependencies = [
     "backoff>=2.2.1,<3.0.0",
@@ -22,7 +22,7 @@ dependencies = [
     "mypy-boto3-s3>=1.34.138,<2.0.0",
     "openai>=1.30.1,<2.0.0",
     "pandas-stubs>=2.2.2.240603,<3.0.0",
-    "peft>=0.10.0,<0.11.0",
+    "peft>=0.10.0,<0.11.0; extra == 'torch'",
     "psutil>=5.9.5,<6.0.0",
     "pydantic>=2.7.1,<3.0.0",
     "pydantic-core>=2.18.4,<3.0.0",
@@ -32,10 +32,10 @@ dependencies = [
     "setuptools>=69.5.1,<70.0.0",
     "tabulate>=0.9.0,<0.10.0",
     "tenacity>=8.2.3,<9.0.0",
-    "tensorboardX>=2.6.2.2,<3.0.0",
-    "torch>=2.2.2,<3.0.0",
+    "tensorboardX>=2.6.2.2,<3.0.0; extra == 'torch'",
+    "torch>=2.2.2,<3.0.0; extra == 'torch'",
     "tqdm>=4.66.4,<5.0.0",
-    "transformers>=4.40.2,<5.0.0",
+    "transformers>=4.40.2,<5.0.0; extra == 'torch'",
     "types-cffi>=1.16.0.20240331,<2.0.0",
     "types-colorama>=0.4.15.20240311,<0.5.0",
     "types-psutil>=6.0.0.20240621,<7.0.0",
@@ -51,10 +51,11 @@ dependencies = [
     "uvicorn>=0.32.0,<0.33.0",
     "tweepy>=4.14.0,<5.0.0",
     "rich>=13.7.0",
+    "dstack-sdk>=0.1.5",
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.10,<3.12"
 backoff = "^2.2.1"
 base58 = "2.1.1"
 boto3 = "^1.35.70"
@@ -133,7 +134,7 @@ hub = [
     "chardet",
     "shortuuid",
     "apscheduler",
-    "tweepy"
+    "tweepy",
 ]
 torch = ["torch", "torchao", "torchtune"]
 vllm = ["vllm", "torch"]
@@ -167,9 +168,7 @@ pytest-xdist = "^3.6.1"
 addopts = "-n auto"
 timeout = 300
 norecursedirs = ["hub", "dist", "docs"]
-markers = [
-  "integration: mark test as integration test",
-]
+markers = ["integration: mark test as integration test"]
 
 
 [project.scripts]
@@ -291,7 +290,7 @@ module = [
     "pypdf.*",
     "chardet.*",
     "botocore.*",
-    "shortuuid.*"
+    "shortuuid.*",
 ]
 ignore_missing_imports = true
 
