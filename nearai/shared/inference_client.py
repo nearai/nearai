@@ -121,6 +121,7 @@ class InferenceClient(object):
                     provider=provider,
                     api_key=self._auth,
                     timeout=DEFAULT_TIMEOUT,
+                    num_retries=1,
                     **kwargs,
                 )
                 break
