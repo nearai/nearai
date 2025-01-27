@@ -7,8 +7,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
+from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI
 from pydantic import BaseModel
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -21,8 +25,14 @@ async def lifespan(app: FastAPI):
     original_dir = os.getcwd()
 
     try:
+        # Get SDK path from environment variable
+        sdk_path = os.getenv("PRIVATE_ML_SDK_PATH")
+        if not sdk_path:
+            logger.error("PRIVATE_ML_SDK_PATH environment variable not set")
+            os._exit(1)
+
         # Navigate to scripts directory
-        scripts_path = Path("private-ml-sdk/meta-dstack-nvidia/scripts/bin")
+        scripts_path = Path(sdk_path) / "meta-dstack-nvidia/scripts/bin"
         if scripts_path.exists():
             # Add scripts directory to PATH
             os.environ["PATH"] = f"{os.path.abspath(scripts_path)}:{os.environ.get('PATH', '')}"

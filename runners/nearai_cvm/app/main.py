@@ -88,7 +88,7 @@ class AppState:
     agent: Agent | None
     auth: AuthData | None
 
-    def __init__(self) -> None:
+    def __init__(self) -> None:  # noqa: D107
         self.agent = None
         self.assignment = None
         self.auth = None
