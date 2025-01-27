@@ -24,3 +24,9 @@ client_capabilities: [{
     supported: ['request_option'] 
 }]
 ```
+
+## Example
+[Agent Protocol Example messages](./v1/agent_protocol_example.json)
+
+## Schema
+[Agent Protocol JSON schema](./v1/agent_protocol.schema.json)

@@ -151,6 +151,8 @@ nav:
     - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
     - NEAR Event-Triggered Agents: 'near_events.md'
     - Twitter (X) Triggered Agents: 'agent_triggers.md'
+  - Protocols:
+    - Agent Protocol: 'protocols/agent_protocol.md'
   - Models:
     - Fine-tuning: 'models/fine_tuning.md'
     - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
