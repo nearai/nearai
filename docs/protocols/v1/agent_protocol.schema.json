@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "array",
-  "items": {
+  "type": "object",
+  "properties": {
     "anyOf": [
       {
         "type": "object",
@@ -9,34 +9,58 @@
           "request_choice": {
             "type": "object",
             "properties": {
-              "type": { "type": "string", "enum": ["product"] },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "product"
+                ]
+              },
               "options": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "properties": {
-                    "id": { "type": "integer" },
-                    "image_url": { "type": "string", "format": "uri" },
-                    "name": { "type": "string" },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "image_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
                     "price": {
                       "type": "object",
                       "properties": {
-                        "properties": {},
-                        "additionalProperties": {
+                        "usd": {
                           "type": "number"
                         }
                       }
                     },
-                    "url": { "type": "string", "format": "uri" }
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
                   },
-                  "required": ["id"]
+                  "required": [
+                    "id",
+                    "name",
+                    "price",
+                    "url"
+                  ]
                 }
               }
             },
-            "required": ["options"]
+            "required": [
+              "type",
+              "options"
+            ]
           }
         },
-        "required": ["request_choice"]
+        "required": [
+          "request_choice"
+        ]
       },
       {
         "type": "object",
@@ -44,35 +68,60 @@
           "request_data": {
             "type": "object",
             "properties": {
-              "schema": { "type": "string", "format": "uri" },
+              "schema": {
+                "type": "string",
+                "format": "uri"
+              },
               "fields": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "properties": {
-                    "name": { "type": "string" },
-                    "label": { "type": "string" },
-                    "validation": { "type": "array", "items": { "type": "string" } },
+                    "name": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "validation": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
                     "options": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
-                          "label": { "type": "string" },
-                          "value": { "type": "string" }
+                          "label": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
                         },
-                        "required": ["value"]
+                        "required": [
+                          "value"
+                        ]
                       }
                     }
                   },
-                  "required": ["name"]
+                  "required": [
+                    "name"
+                  ]
                 }
               }
             },
-            "required": ["schema", "fields"]
+            "required": [
+              "schema",
+              "fields"
+            ]
           }
         },
-        "required": ["request_data"]
+        "required": [
+          "request_data"
+        ]
       },
       {
         "type": "object",
@@ -80,40 +129,82 @@
           "request_payment": {
             "type": "object",
             "properties": {
-              "version": { "type": "string" },
-              "payment_request_url": { "type": "string", "format": "uri" },
-              "payment_context_token": { "type": "string" },
+              "version": {
+                "type": "string"
+              },
+              "payment_request_url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "payment_context_token": {
+                "type": "string"
+              },
               "offers": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "properties": {
-                    "id": { "type": "string" },
-                    "title": { "type": "string" },
-                    "description": { "type": "string" },
-                    "type": { "type": "string" },
-                    "balance": { "type": "number" },
-                    "amount": { "type": "number" },
-                    "currency": { "type": "string" },
+                    "id": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "balance": {
+                      "type": "number"
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
                     "payment_methods": {
                       "type": "array",
-                      "items": { "type": "string" }
+                      "items": {
+                        "type": "string"
+                      }
                     },
-                    "duration": { "type": "string" }
+                    "duration": {
+                      "type": "string"
+                    }
                   },
-                  "required": ["id", "title", "amount", "currency"]
+                  "required": [
+                    "id",
+                    "title",
+                    "amount",
+                    "currency"
+                  ]
                 }
               },
-              "terms_url": { "type": "string", "format": "uri" },
+              "terms_url": {
+                "type": "string",
+                "format": "uri"
+              },
               "metadata": {
                 "type": "object",
-                "additionalProperties": { "type": "string" }
+                "additionalProperties": {
+                  "type": "string"
+                }
               }
             },
-            "required": ["version", "payment_request_url", "payment_context_token", "offers"]
+            "required": [
+              "version",
+              "payment_request_url",
+              "payment_context_token",
+              "offers"
+            ]
           }
         },
-        "required": ["request_payment"]
+        "required": [
+          "request_payment"
+        ]
       }
     ]
   }
