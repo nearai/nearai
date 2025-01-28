@@ -250,6 +250,8 @@ class Registry:
 
         pbar = tqdm(total=total_size, unit="B", unit_scale=True, disable=not show_progress)
         for file, relative, size in all_files:
+            if "__pycache__" in relative.parts:
+                continue
             registry.upload_file(entry_location, file, relative)
             pbar.update(size)
 
