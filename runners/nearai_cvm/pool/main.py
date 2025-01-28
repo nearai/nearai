@@ -127,9 +127,12 @@ class Pool(BaseModel):
         """Get a worker from the pool."""
         for i, worker in enumerate(self.free_workers):
             client = CvmClient(f"http://localhost:{worker.port}")
-            health = client.health()
-            if health.status == HealthStatus.NOT_ASSIGNED:
-                return self.free_workers.pop(i)
+            try:
+                health = client.health()
+                if health.status == HealthStatus.NOT_ASSIGNED:
+                    return self.free_workers.pop(i)
+            except Exception as e:
+                logger.error(f"Failed to get health of worker {worker.runner_id}: {str(e)}")
         return None
 
 
@@ -146,7 +149,7 @@ def root():
 
 
 @app.post("/get_worker")
-def get_worker(background_tasks: BackgroundTasks, pool: Pool = Depends(get_app_state)):
+def get_worker(background_tasks: BackgroundTasks, pool: Pool = Depends(get_app_state)) -> Optional[Worker]:
     # Get a worker from the pool, TODO: auth
     logger.info(f"Getting worker from pool: {pool.free_workers}")
     if not pool.free_workers:
