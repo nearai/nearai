@@ -534,7 +534,7 @@ export const hubRouter = createTRPCRouter({
       const requestChoiceProducts: z.infer<typeof requestChoiceSchema> = {
         request_choice: {
           title: 'Recommended Products',
-          description: `Based on your selected factors, here are the best recommendations.`,
+          description: `Based on your selected factors, here are the best recommendations`,
           type: 'products',
           options: [
             {
@@ -623,6 +623,15 @@ export const hubRouter = createTRPCRouter({
           {
             type: 'json',
             json: requestChoiceConfirmationTwo,
+          },
+          {
+            type: 'json',
+            json: {
+              foo: 123,
+              bar: {
+                baz: true,
+              },
+            },
           },
         ],
         attachments: [],

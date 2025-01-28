@@ -6,7 +6,6 @@ import {
   Card,
   Dialog,
   Flex,
-  HR,
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
@@ -38,23 +37,20 @@ export const RequestChoiceProducts = ({ content }: Props) => {
   return (
     <Card animateIn>
       {(content.title || content.description) && (
-        <>
-          <Flex direction="column" gap="s">
-            {content.title && (
-              <Text size="text-xs" weight={600} uppercase>
-                {content.title}
-              </Text>
-            )}
-            {content.description && (
-              <Text color="sand-12">{content.description}</Text>
-            )}
-          </Flex>
-          <HR />
-        </>
+        <Flex direction="column" gap="s">
+          {content.title && (
+            <Text size="text-xs" weight={600} uppercase>
+              {content.title}
+            </Text>
+          )}
+          {content.description && (
+            <Text color="sand-12">{content.description}</Text>
+          )}
+        </Flex>
       )}
 
       <div className={s.productGrid}>
-        {content.options.map((option, index) => (
+        {content.options?.map((option, index) => (
           <Card
             key={option.name + index}
             background="sand-0"
@@ -107,7 +103,7 @@ export const RequestChoiceProducts = ({ content }: Props) => {
                         )}
                       </Flex>
                     }
-                    variant="neutral"
+                    variant="neutral-alpha"
                   />
                 </Tooltip>
               )}
@@ -138,7 +134,7 @@ export const RequestChoiceProducts = ({ content }: Props) => {
       >
         <Dialog.Content
           title={
-            content.options.find((o) => o.image_url === zoomedImageUrl)?.name
+            content.options?.find((o) => o.image_url === zoomedImageUrl)?.name
           }
           className="light"
           style={{ width: 'fit-content' }}

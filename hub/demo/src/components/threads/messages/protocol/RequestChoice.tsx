@@ -6,7 +6,6 @@ import {
   Checkbox,
   CheckboxGroup,
   Flex,
-  HR,
   Text,
 } from '@near-pagoda/ui';
 import { type z } from 'zod';
@@ -41,19 +40,16 @@ export const RequestChoice = ({ content, id }: Props) => {
     <Card animateIn>
       <Flex direction="column" gap="m" align="start">
         {(content.title || content.description) && (
-          <>
-            <Flex direction="column" gap="s">
-              {content.title && (
-                <Text size="text-xs" weight={600} uppercase>
-                  {content.title}
-                </Text>
-              )}
-              {content.description && (
-                <Text color="sand-12">{content.description}</Text>
-              )}
-            </Flex>
-            <HR />
-          </>
+          <Flex direction="column" gap="s">
+            {content.title && (
+              <Text size="text-xs" weight={600} uppercase>
+                {content.title}
+              </Text>
+            )}
+            {content.description && (
+              <Text color="sand-12">{content.description}</Text>
+            )}
+          </Flex>
         )}
 
         <CheckboxGroup aria-label={content.title || content.description}>

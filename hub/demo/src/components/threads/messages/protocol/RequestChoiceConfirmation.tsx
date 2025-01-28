@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Card, Flex, HR, Text } from '@near-pagoda/ui';
+import { Button, Card, Flex, Text } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
 import { type requestChoiceSchema } from './schema';

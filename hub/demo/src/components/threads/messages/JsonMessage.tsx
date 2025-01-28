@@ -1,6 +1,7 @@
 'use client';
 
 import { Card } from '@near-pagoda/ui';
+import { useRef } from 'react';
 import { type z } from 'zod';
 
 import { Code } from '~/components/lib/Code';
@@ -9,8 +10,8 @@ import {
   type threadMessageModelContentJson,
 } from '~/lib/models';
 
-import { protocolSchema } from './protocol/schema';
 import { RequestChoice } from './protocol/RequestChoice';
+import { protocolSchema } from './protocol/schema';
 
 type Props = {
   id: string;
@@ -20,6 +21,7 @@ type Props = {
 
 export const JsonMessage = ({ content, id }: Props) => {
   const { json } = content;
+  const hasWarned = useRef(false);
 
   const jsonAsString = () => {
     return JSON.stringify(json, null, 2);
@@ -32,10 +34,13 @@ export const JsonMessage = ({ content, id }: Props) => {
       return <RequestChoice content={protocol.data.request_choice} id={id} />;
     }
   } else if (protocol.error) {
-    console.warn(
-      'JSON message failed to match NEAR AI Protocol message. Will render as JSON codeblock.',
-      protocol.error,
-    );
+    if (!hasWarned.current) {
+      console.warn(
+        'JSON message failed to match NEAR AI Protocol message. Will render as JSON codeblock.',
+        protocol.error,
+      );
+      hasWarned.current = true;
+    }
   }
 
   return (
