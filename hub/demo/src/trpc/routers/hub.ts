@@ -574,6 +574,34 @@ export const hubRouter = createTRPCRouter({
         },
       };
 
+      const requestChoiceConfirmation: z.infer<typeof requestChoiceSchema> = {
+        request_choice: {
+          title: 'Please confirm',
+          description: `Would you like to eat all cookies?`,
+          type: 'confirmation',
+        },
+      };
+
+      const requestChoiceConfirmationTwo: z.infer<typeof requestChoiceSchema> =
+        {
+          request_choice: {
+            title: 'Please confirm',
+            description: `Would you like to eat all cookies?`,
+            type: 'confirmation',
+            options: [
+              {
+                name: 'Yes, eat the cookies',
+              },
+              {
+                name: "No, that's not healthy",
+              },
+              {
+                name: 'Something else',
+              },
+            ],
+          },
+        };
+
       contents.messages.push({
         content: [
           {
@@ -587,6 +615,14 @@ export const hubRouter = createTRPCRouter({
           {
             type: 'json',
             json: requestChoiceProducts,
+          },
+          {
+            type: 'json',
+            json: requestChoiceConfirmation,
+          },
+          {
+            type: 'json',
+            json: requestChoiceConfirmationTwo,
           },
         ],
         attachments: [],

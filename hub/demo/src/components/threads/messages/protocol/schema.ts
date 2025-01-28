@@ -4,24 +4,32 @@ export const requestChoiceSchema = z.object({
   request_choice: z.object({
     title: z.string().optional(),
     description: z.string().optional(),
-    type: z.enum(['products', 'checkbox', 'radio']).default('radio'),
+    type: z
+      .enum(['products', 'checkbox', 'radio', 'confirmation'])
+      .default('radio')
+      .optional(),
     options: z
       .object({
         name: z.string(),
-        image_url: z.string().optional(),
+        image_url: z.string().url().optional(),
         description: z.string().optional(),
         price_usd: z.number().optional(),
         reviewsCount: z
           .number()
+          .int()
           .refine((value) => (value ? Math.ceil(value) : value))
           .optional(),
         fiveStarRating: z
           .number()
+          .min(0)
+          .max(5)
           .refine((value) => (value ? Math.min(Math.max(value, 0), 5) : value))
           .optional(),
-        url: z.string().optional(),
+        url: z.string().url().optional(),
       })
-      .array(),
+      .array()
+      .default([])
+      .optional(),
   }),
 });
 

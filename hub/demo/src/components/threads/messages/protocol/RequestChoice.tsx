@@ -11,6 +11,7 @@ import {
 } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
+import { RequestChoiceConfirmation } from './RequestChoiceConfirmation';
 import { RequestChoiceProducts } from './RequestChoiceProducts';
 import { type requestChoiceSchema } from './schema';
 import s from './styles.module.scss';
@@ -23,13 +24,17 @@ type Props = {
 export const RequestChoice = ({ content, id }: Props) => {
   const type = content.type;
 
-  const product = content.options.find(
+  const product = content.options?.find(
     (option) => typeof option.price_usd === 'number',
   );
   if (product) type === 'products';
 
   if (type === 'products') {
     return <RequestChoiceProducts content={content} id={id} />;
+  }
+
+  if (type === 'confirmation') {
+    return <RequestChoiceConfirmation content={content} id={id} />;
   }
 
   return (
@@ -52,7 +57,7 @@ export const RequestChoice = ({ content, id }: Props) => {
         )}
 
         <CheckboxGroup aria-label={content.title || content.description}>
-          {content.options.map((option, index) => (
+          {content.options?.map((option, index) => (
             <Flex as="label" key={option.name + index} gap="s" align="center">
               <Checkbox
                 name={type === 'checkbox' ? option.name + index : id}
@@ -79,14 +84,7 @@ export const RequestChoice = ({ content, id }: Props) => {
           ))}
         </CheckboxGroup>
 
-        <Flex align="center" gap="xs" style={{ width: '100%' }}>
-          <Button
-            label="Submit"
-            variant="affirmative"
-            style={{ marginRight: 'auto' }}
-          />
-          <Button label="Skip" variant="primary" fill="ghost" size="x-small" />
-        </Flex>
+        <Button label="Submit" variant="affirmative" />
       </Flex>
     </Card>
   );

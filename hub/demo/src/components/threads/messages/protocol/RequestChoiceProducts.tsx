@@ -11,11 +11,11 @@ import {
   Tooltip,
 } from '@near-pagoda/ui';
 import { formatDollar } from '@near-pagoda/ui/utils';
-import { ArrowUpRight, Star, StarHalf } from '@phosphor-icons/react';
+import { Star, StarHalf } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';
 
-import { getPrimaryDomainFromUrl as getCompanyNameFromUrl } from '~/utils/url';
+import { getPrimaryDomainFromUrl } from '~/utils/url';
 
 import { type requestChoiceSchema } from './schema';
 import s from './styles.module.scss';
@@ -27,9 +27,9 @@ type Props = {
 
 /*
   TODO:
-  - Hover image popover zoom
   - Variants selection
   - Quantity selection
+  - Fix scroll to message
 */
 
 export const RequestChoiceProducts = ({ content }: Props) => {
@@ -69,58 +69,47 @@ export const RequestChoiceProducts = ({ content }: Props) => {
               />
             )}
 
-            <Flex direction="column" gap="s">
-              <Text weight={600} color="sand-12">
-                {option.name}
-              </Text>
+            <Flex direction="column" gap="s" align="start">
+              <Tooltip
+                content={`View product on ${getPrimaryDomainFromUrl(option.url)}`}
+                asChild
+              >
+                <Text
+                  weight={600}
+                  color={option.url ? undefined : 'sand-12'}
+                  href={option.url}
+                  decoration="none"
+                  target="_blank"
+                >
+                  {option.name}
+                </Text>
+              </Tooltip>
 
-              {(option.fiveStarRating || option.url) && (
-                <Flex align="center" gap="s" wrap="wrap">
-                  {option.fiveStarRating && (
-                    <Tooltip
-                      content={`Average${option.reviewsCount ? ` from ${option.reviewsCount}` : ''} reviews: ${option.fiveStarRating} out of 5 stars`}
-                    >
-                      <Badge
-                        iconRight={
-                          option.fiveStarRating < 3.75 ? (
-                            <StarHalf weight="fill" />
-                          ) : (
-                            <Star weight="fill" />
-                          )
-                        }
-                        label={
-                          <Flex as="span" align="center" gap="xs">
-                            <Text size="text-xs" weight={600} color="current">
-                              {option.fiveStarRating}
-                            </Text>
-                            {option.reviewsCount && (
-                              <Text size="text-xs">
-                                ({option.reviewsCount})
-                              </Text>
-                            )}
-                          </Flex>
-                        }
-                        variant="neutral"
-                      />
-                    </Tooltip>
-                  )}
-
-                  {option.url && (
-                    <Tooltip
-                      content={`View product on ${getCompanyNameFromUrl(option.url)}`}
-                    >
-                      <Button
-                        label={getCompanyNameFromUrl(option.url) ?? 'Open'}
-                        iconRight={<ArrowUpRight />}
-                        variant="primary"
-                        fill="outline"
-                        size="x-small"
-                        href={option.url}
-                        target="_blank"
-                      />
-                    </Tooltip>
-                  )}
-                </Flex>
+              {option.fiveStarRating && (
+                <Tooltip
+                  content={`Average ${option.reviewsCount ? `from ${option.reviewsCount} review${option.reviewsCount !== 1 ? 's' : ''}` : 'review'}: ${option.fiveStarRating} out of 5 stars`}
+                >
+                  <Badge
+                    iconRight={
+                      option.fiveStarRating < 3.75 ? (
+                        <StarHalf weight="fill" />
+                      ) : (
+                        <Star weight="fill" />
+                      )
+                    }
+                    label={
+                      <Flex as="span" align="center" gap="xs">
+                        <Text size="text-xs" weight={600} color="current">
+                          {option.fiveStarRating}
+                        </Text>
+                        {option.reviewsCount && (
+                          <Text size="text-xs">({option.reviewsCount})</Text>
+                        )}
+                      </Flex>
+                    }
+                    variant="neutral"
+                  />
+                </Tooltip>
               )}
 
               {option.description && (

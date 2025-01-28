@@ -1,5 +1,3 @@
-import { toTitleCase } from './string';
-
 export function getHashParams(hash: string) {
   const hashParams = new URLSearchParams(hash.substring(1));
   const params: Record<string, string> = {};
@@ -21,12 +19,12 @@ export function getQueryParams() {
 }
 
 export function getPrimaryDomainFromUrl(str: string | null | undefined) {
-  if (!str) return '';
+  if (!str) return null;
+
   try {
     const url = new URL(str);
-    const segments = url.hostname.split('.');
-    return toTitleCase(segments.at(-2) ?? '');
+    return url.hostname.replace('www.', '');
   } catch (error) {
-    return '';
+    return null;
   }
 }
