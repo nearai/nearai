@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import threading
@@ -120,15 +121,17 @@ async def x_events_task(auth_token):
 
     x_tasks = []
     for user_name in x_accounts_to_track.keys():
-        last_tweet_timestamp = await get_last_tweet_timestamp(user_name)
+        one_week_ago = int((datetime.datetime.now() - datetime.timedelta(weeks=1)).timestamp())
+        last_from_file = await get_last_tweet_timestamp(user_name)
+        last_tweet_timestamp = max(last_from_file or 0, one_week_ago)
 
         # load latest mentions
         tweets = await get_latest_mentions(user_name, last_tweet_timestamp)
 
-        # sort tweets by tweet.created_at ascending
-        tweets = sorted(tweets, key=lambda _tweet: _tweet.created_at)
-
         if tweets:
+            # sort tweets by tweet.created_at ascending
+            tweets = sorted(tweets, key=lambda _tweet: _tweet.created_at)
+
             for tweet in reversed(tweets):
                 tweet_timestamp = int(tweet.created_at.timestamp())
                 #  Check if the tweet is newer than the last processed tweet
