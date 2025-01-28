@@ -107,7 +107,7 @@ class Environment(object):
         print_system_log: bool = False,
         agent_runner_user: Optional[str] = None,
         fastnear_api_key: Optional[str] = None,
-        approvals: Optional[Dict[str, Any]] = default_approvals,
+        approvals=None,
     ) -> None:
         # Warning: never expose `client` or `_hub_client` to agent's environment
 
@@ -123,7 +123,7 @@ class Environment(object):
         self.tool_resources: Dict[str, Any] = tool_resources if tool_resources else {}
         self.print_system_log = print_system_log
         self.agent_runner_user = agent_runner_user
-        self._approvals = approvals
+        self._approvals = approvals if approvals else default_approvals
         self._thread_id = thread_id
         self._run_id = run_id
         self._debug_mode = True if self.env_vars.get("DEBUG") else False
@@ -409,9 +409,9 @@ class Environment(object):
         def get_model_for_inference(model: str = "") -> str:
             """Returns 'provider::model_full_path'."""
             if self.cached_models_for_inference.get(model, None) is None:
-                provider = self._agents[0].model_provider if self._agents else ""
+                provider = self.get_primary_agent().model_provider if self._agents else ""
                 if model == "":
-                    model = self._agents[0].model if self._agents else ""
+                    model = self.get_primary_agent().model if self._agents else ""
                 if model == "":
                     return DEFAULT_PROVIDER_MODEL
 
@@ -524,8 +524,8 @@ class Environment(object):
 
         def get_agent_data_by_key(key, default=None):
             """Get agent data by key."""
-            namespace = self._agents[0].namespace
-            name = self._agents[0].name
+            namespace = self.get_primary_agent().namespace
+            name = self.get_primary_agent().name
             result = client.get_agent_data_by_key(key)
             return (
                 result
@@ -556,7 +556,7 @@ class Environment(object):
                 role="assistant",
                 content=message,
                 extra_body={
-                    "assistant_id": self._agents[0].identifier,
+                    "assistant_id": self.get_primary_agent().identifier,
                     "run_id": self._run_id,
                 },
                 attachments=attachments,
@@ -576,7 +576,7 @@ class Environment(object):
                 role=role,  # type: ignore
                 content=message,
                 extra_body={
-                    "assistant_id": self._agents[0].identifier,
+                    "assistant_id": self.get_primary_agent().identifier,
                     "run_id": self._run_id,
                 },
                 metadata=kwargs,
@@ -856,7 +856,7 @@ class Environment(object):
             signature,
             message,
             nonce,
-            self._agents[0].name,
+            self.get_primary_agent().name,
             callback_url,
         )
 
@@ -1015,8 +1015,8 @@ class Environment(object):
             self._last_used_model = model
             self.add_system_log(f"Connecting to {model}")
 
-        temperature = kwargs.pop("temperature", self._agents[0].model_temperature if self._agents else None)
-        max_tokens = kwargs.pop("max_tokens", self._agents[0].model_max_tokens if self._agents else None)
+        temperature = kwargs.pop("temperature", self.get_primary_agent().model_temperature if self._agents else None)
+        max_tokens = kwargs.pop("max_tokens", self.get_primary_agent().model_max_tokens if self._agents else None)
 
         params = InferenceParameters(
             model=model,
@@ -1282,7 +1282,7 @@ class Environment(object):
 
     def get_primary_agent_temp_dir(self) -> Path:
         """Returns temp dir for primary agent."""
-        return self._agents[0].temp_dir
+        return self.get_primary_agent().temp_dir
 
     def is_done(self) -> bool:  # noqa: D102
         return self._done
@@ -1299,9 +1299,9 @@ class Environment(object):
 
     def environment_run_info(self, base_id, run_type) -> dict:
         """Returns the environment run information."""
-        if not self._agents or not self._agents[0]:
+        if not self._agents or not self.get_primary_agent():
             raise ValueError("Agent not found")
-        primary_agent = self._agents[0]
+        primary_agent = self.get_primary_agent()
 
         full_agent_name = "/".join([primary_agent.namespace, primary_agent.name, primary_agent.version])
         safe_agent_name = full_agent_name.replace("/", "_")
@@ -1391,7 +1391,7 @@ class Environment(object):
                     logging.INFO,
                 )
             try:
-                self._agents[0].run(self, task=new_message)
+                self.get_primary_agent().run(self, task=new_message)
             except Exception as e:
                 self.add_system_log(f"Environment run failed: {e}", logging.ERROR)
                 self.mark_failed()
