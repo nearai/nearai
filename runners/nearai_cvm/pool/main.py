@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
+from app.main import HealthStatus
+from client.client import CvmClient
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI
 from pydantic import BaseModel
@@ -121,6 +123,15 @@ class Pool(BaseModel):
             except Exception as e:
                 logger.error(f"Failed to create worker {runner_id}: {str(e)}")
 
+    def pop_available_worker(self) -> Optional[Worker]:
+        """Get a worker from the pool."""
+        for i, worker in enumerate(self.free_workers):
+            client = CvmClient(f"http://localhost:{worker.port}")
+            health = client.health()
+            if health.status == HealthStatus.NOT_ASSIGNED:
+                return self.free_workers.pop(i)
+        return None
+
 
 app.state.app_state = Pool(free_workers=[], assigned_workers=[], max_pool_size=1)
 
@@ -142,7 +153,10 @@ def get_worker(background_tasks: BackgroundTasks, pool: Pool = Depends(get_app_s
         logger.warning("No free workers available in pool")
         # You might want to add error handling here
 
-    worker = pool.free_workers.pop()
+    worker = pool.pop_available_worker()
+    if worker is None:
+        logger.warning("No free workers available in pool")
+        return None
     worker.assigned_at = datetime.now()
     pool.assigned_workers.append(worker)
 

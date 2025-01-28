@@ -1,6 +1,7 @@
 import io
 import json
 import logging
+from enum import Enum
 from typing import Dict, Optional
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
@@ -198,8 +199,18 @@ def get_logs(
     return {"logs": log_stream.getvalue()}
 
 
+class HealthStatus(Enum):
+    NOT_ASSIGNED = "not_assigned"
+    ASSIGNED = "assigned"
+
+
+class HealthResponse(BaseModel):
+    status: HealthStatus
+
+
 @app.get("/health")
-def health(app_state: AppState = Depends(get_app_state)):
+def health(app_state: AppState = Depends(get_app_state)) -> HealthResponse:
+    status = HealthStatus.ASSIGNED
     if app_state.assignment is None:
-        return {"status": "not_assigned"}
-    return {"status": "assigned"}
+        status = HealthStatus.NOT_ASSIGNED
+    return HealthResponse(status=status)
