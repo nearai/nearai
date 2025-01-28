@@ -11,9 +11,11 @@ import {
   Tooltip,
 } from '@near-pagoda/ui';
 import { formatDollar } from '@near-pagoda/ui/utils';
-import { Star, StarHalf } from '@phosphor-icons/react';
+import { ArrowUpRight, Star, StarHalf } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';
+
+import { getPrimaryDomainFromUrl as getCompanyNameFromUrl } from '~/utils/url';
 
 import { type requestChoiceSchema } from './schema';
 import s from './styles.module.scss';
@@ -68,42 +70,56 @@ export const RequestChoiceProducts = ({ content }: Props) => {
             )}
 
             <Flex direction="column" gap="s">
-              <Text
-                weight={600}
-                color={option.url ? undefined : 'sand-12'}
-                href={option.url}
-                decoration="none"
-                target="_blank"
-              >
+              <Text weight={600} color="sand-12">
                 {option.name}
               </Text>
 
-              {option.fiveStarRating && (
+              {(option.fiveStarRating || option.url) && (
                 <Flex align="center" gap="s" wrap="wrap">
-                  <Tooltip
-                    content={`Average review: ${option.fiveStarRating} out of 5 stars`}
-                  >
-                    <Badge
-                      iconRight={
-                        option.fiveStarRating < 3.75 ? (
-                          <StarHalf weight="fill" />
-                        ) : (
-                          <Star weight="fill" />
-                        )
-                      }
-                      label={
-                        <Flex as="span" align="center" gap="xs">
-                          <Text size="text-xs" weight={600} color="current">
-                            {option.fiveStarRating}
-                          </Text>
-                          {option.reviewsCount && (
-                            <Text size="text-xs">({option.reviewsCount})</Text>
-                          )}
-                        </Flex>
-                      }
-                      variant="neutral"
-                    />
-                  </Tooltip>
+                  {option.fiveStarRating && (
+                    <Tooltip
+                      content={`Average${option.reviewsCount ? ` from ${option.reviewsCount}` : ''} reviews: ${option.fiveStarRating} out of 5 stars`}
+                    >
+                      <Badge
+                        iconRight={
+                          option.fiveStarRating < 3.75 ? (
+                            <StarHalf weight="fill" />
+                          ) : (
+                            <Star weight="fill" />
+                          )
+                        }
+                        label={
+                          <Flex as="span" align="center" gap="xs">
+                            <Text size="text-xs" weight={600} color="current">
+                              {option.fiveStarRating}
+                            </Text>
+                            {option.reviewsCount && (
+                              <Text size="text-xs">
+                                ({option.reviewsCount})
+                              </Text>
+                            )}
+                          </Flex>
+                        }
+                        variant="neutral"
+                      />
+                    </Tooltip>
+                  )}
+
+                  {option.url && (
+                    <Tooltip
+                      content={`View product on ${getCompanyNameFromUrl(option.url)}`}
+                    >
+                      <Button
+                        label={getCompanyNameFromUrl(option.url) ?? 'Open'}
+                        iconRight={<ArrowUpRight />}
+                        variant="primary"
+                        fill="outline"
+                        size="x-small"
+                        href={option.url}
+                        target="_blank"
+                      />
+                    </Tooltip>
+                  )}
                 </Flex>
               )}
 
