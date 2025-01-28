@@ -196,3 +196,10 @@ def get_logs(
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     return {"logs": log_stream.getvalue()}
+
+
+@app.get("/health")
+def health(app_state: AppState = Depends(get_app_state)):
+    if app_state.assignment is None:
+        return {"status": "not_assigned"}
+    return {"status": "assigned"}
