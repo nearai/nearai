@@ -1,11 +1,16 @@
+import logging
 import os
 import time
 from datetime import datetime, timedelta
 
 import tweepy  # type: ignore
 
+logger = logging.getLogger(__name__)
+
 bearer_token = os.getenv("TWITTER_BEARER_TOKEN")
 client = tweepy.Client(bearer_token)
+
+TWEET_LIMIT_PER_RUN = 1000
 
 TWEET_FIELDS = [
     "article",
@@ -45,11 +50,32 @@ async def get_latest_mentions(user_name, timestamp, max_results=10):
         else:
             start_time = datetime.utcfromtimestamp(timestamp).isoformat() + "Z"
 
+        tweets = []
         response = client.search_recent_tweets(
             query=f"@{user_name}", tweet_fields=TWEET_FIELDS, max_results=max_results, start_time=start_time
         )
+        tweets.extend(response.data)
 
-        data = response.data
+        while "next_token" in response.meta:
+            if len(tweets) < TWEET_LIMIT_PER_RUN:
+                logger.error(
+                    f"Reached the limit of {TWEET_LIMIT_PER_RUN} tweets per run. Stopping retrieval until next run."
+                )
+                break
+            try:
+                response = client.search_recent_tweets(
+                    query=f"@{user_name}",
+                    tweet_fields=TWEET_FIELDS,
+                    max_results=max_results,
+                    start_time=start_time,
+                    next_token=response.meta["next_token"],
+                )
+                tweets.extend(response.data)
+            except Exception as e:  # most likely rate limit, but we'll stop on any error
+                logger.error(f"Error fetching tweets during pagination: {e}")
+                break
+
+        data = tweets
         if data:
             return data
         else:
