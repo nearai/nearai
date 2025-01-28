@@ -7,7 +7,8 @@ import { type z } from 'zod';
 import { type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 
-import { ThreadMessage } from './ThreadMessage';
+import { JsonMessage } from './messages/JsonMessage';
+import { TextMessage } from './messages/TextMessage';
 import s from './ThreadMessages.module.scss';
 
 type Props = {
@@ -21,7 +22,9 @@ type Props = {
 function totalMessagesAndContents(
   messages: z.infer<typeof threadMessageModel>[],
 ) {
-  return messages.reduce((total, message) => total + message.content.length, 0);
+  return (
+    messages?.reduce((total, message) => total + message.content.length, 0) ?? 0
+  );
 }
 
 export const ThreadMessages = ({
@@ -84,4 +87,48 @@ export const ThreadMessages = ({
       </div>
     </div>
   );
+};
+
+type ThreadMessageProps = {
+  message: z.infer<typeof threadMessageModel>;
+};
+
+export const ThreadMessage = ({ message }: ThreadMessageProps) => {
+  /*
+    NOTE: A message can have multiple content objects, though its extremely rare.
+    Each content entry should be rendered as a separate message in the UI.
+  */
+
+  return (
+    <>
+      {message.content.map((content, index) => (
+        <ThreadMessageContent
+          content={content}
+          contentIndex={index}
+          message={message}
+          key={index}
+        />
+      ))}
+    </>
+  );
+};
+
+type ThreadMessageContentProps = {
+  content: z.infer<typeof threadMessageModel>['content'][number];
+  contentIndex: number;
+  message: z.infer<typeof threadMessageModel>;
+};
+
+const ThreadMessageContent = ({
+  content,
+  contentIndex,
+  message,
+}: ThreadMessageContentProps) => {
+  const id = `${message.id}_${contentIndex}`;
+
+  if (content.type === 'json') {
+    return <JsonMessage id={id} content={content} role={message.role} />;
+  }
+
+  return <TextMessage id={id} content={content} role={message.role} />;
 };

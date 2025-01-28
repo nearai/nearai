@@ -10,3 +10,7 @@ export function toTitleCase(str: string) {
     (text) => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase(),
   );
 }
+
+export function stringToHtmlAttribute(str: string) {
+  return str.replace(/^[a-zA-Z0-9_.-]*$/, '');
+}

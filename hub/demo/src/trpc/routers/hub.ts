@@ -28,6 +28,7 @@ import { fetchThreadContents } from '~/trpc/utils/threads';
 import { createZodFetcher } from '~/utils/zod-fetch';
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc';
+import { requestChoiceSchema } from '~/components/threads/messages/protocol/schema';
 
 const fetchWithZod = createZodFetcher();
 
@@ -482,6 +483,122 @@ export const hubRouter = createTRPCRouter({
       const contents = await fetchThreadContents({
         ...input,
         authorization: ctx.authorization,
+      });
+
+      const requestChoiceCheckbox: z.infer<typeof requestChoiceSchema> = {
+        request_choice: {
+          title: 'Your Favorite Colors',
+          description: `Which colors are your favorite? This will help refine your product search.`,
+          type: 'checkbox',
+          options: [
+            {
+              name: 'Blue',
+              description: 'A calming color',
+              image_url:
+                'https://media.istockphoto.com/id/959093486/vector/blue-abstract-gradient-mesh-background.jpg?s=612x612&w=0&k=20&c=c6lozNEcfMBlPlZazHJiy4NnviEGkAPPgubKC-9GowI=',
+            },
+            {
+              name: 'Red',
+              description: 'An exciting color',
+              image_url:
+                'https://img.freepik.com/free-vector/dark-deep-red-gradient-background_78370-3496.jpg?semt=ais_hybrid',
+            },
+            {
+              name: 'Green',
+              description: 'An earthy color',
+              image_url:
+                'https://img.freepik.com/free-vector/gradient-background-green-tones_23-2148373477.jpg',
+            },
+          ],
+        },
+      };
+
+      const requestChoiceRadio: z.infer<typeof requestChoiceSchema> = {
+        request_choice: {
+          type: 'radio',
+          description: 'Select your favorite number:',
+          options: [
+            {
+              name: '0',
+            },
+            {
+              name: '7',
+            },
+            {
+              name: '100',
+            },
+          ],
+        },
+      };
+
+      const requestChoiceProducts: z.infer<typeof requestChoiceSchema> = {
+        request_choice: {
+          title: 'Recommended Products',
+          description: `Based on your selected factors, here are the best recommendations.`,
+          type: 'products',
+          options: [
+            {
+              name: 'JBL Tour One M2',
+              description:
+                'A short, summarized description about the headphones',
+              fiveStarRating: 4.2,
+              reviewsCount: 132,
+              price_usd: 199.5,
+              image_url:
+                'https://m.media-amazon.com/images/I/61rJmoiiYHL._AC_SX679_.jpg',
+              url: 'https://www.amazon.com/JBL-Tour-One-Cancelling-Headphones/dp/B0C4JBTM5B',
+            },
+            {
+              name: 'Soundcore by Anker, Space One',
+              fiveStarRating: 3.5,
+              price_usd: 79.99,
+              image_url:
+                'https://m.media-amazon.com/images/I/51EXj4BRQaL._AC_SX679_.jpg',
+              url: 'https://www.amazon.com/Soundcore-Cancelling-Headphones-Reduction-Comfortable/dp/B0C6KKQ7ND',
+            },
+            {
+              name: 'Sony WH-1000XM5',
+              price_usd: 399.99,
+              image_url:
+                'https://m.media-amazon.com/images/I/61eeHPRFQ9L.__AC_SX300_SY300_QL70_FMwebp_.jpg',
+              url: 'https://www.amazon.com/Sony-WH-1000XM5-Headphones-Hands-Free-WH1000XM5/dp/B0BXYCS74H',
+            },
+            {
+              name: 'Edifier STAX Spirit S3',
+              price_usd: 348,
+              image_url:
+                'https://m.media-amazon.com/images/I/61E4YsCrICL.__AC_SX300_SY300_QL70_FMwebp_.jpg',
+              url: 'https://www.amazon.com/Sony-WH-1000XM5-Headphones-Hands-Free-WH1000XM5/dp/B0BXYCS74H',
+            },
+          ],
+        },
+      };
+
+      contents.messages.push({
+        content: [
+          {
+            type: 'json',
+            json: requestChoiceCheckbox,
+          },
+          {
+            type: 'json',
+            json: requestChoiceRadio,
+          },
+          {
+            type: 'json',
+            json: requestChoiceProducts,
+          },
+        ],
+        attachments: [],
+        completed_at: 0,
+        created_at: 0,
+        id: 'abc-123',
+        incomplete_at: 0,
+        object: '',
+        role: 'assistant',
+        run_id: '',
+        status: 'completed',
+        thread_id: input.threadId,
       });
 
       return contents;

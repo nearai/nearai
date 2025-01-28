@@ -13,15 +13,15 @@ import { Copy, DotsThree, Eye, MarkdownLogo } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';
 
+import { Markdown } from '~/components/lib/Markdown';
 import {
   type threadMessageModel,
   type threadMessageModelContentText,
 } from '~/lib/models';
 
-import { Markdown } from '../lib/Markdown';
-
 type Props = {
   content: z.infer<typeof threadMessageModelContentText>;
+  id: string;
   role: z.infer<typeof threadMessageModel>['role'];
 };
 
