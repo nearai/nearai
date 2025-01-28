@@ -1,0 +1,31 @@
+{
+  "near-ai-agents/assistant": {
+    "intent": "The user is looking for a gift for their friend Jane"
+  },
+  "near-ai-agents/expert-shopper": {
+    "shoppingCart": {
+      "items": [
+        {
+          "id": 1,
+          "image_url": "https://...",
+          "name": "Red Socks",
+          "price": {
+            "usd": 10.5
+          },
+          "url": "https://amazon.com/...",
+          "quantity": 2
+        },
+        {
+          "id": 2,
+          "image_url": "https://...",
+          "name": "Blue Socks",
+          "price": {
+            "usd": 9
+          },
+          "url": "https://amazon.com/...",
+          "quantity": 3
+        }
+      ]
+    }
+  }
+}
