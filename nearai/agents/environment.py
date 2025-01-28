@@ -819,17 +819,21 @@ class Environment(object):
         with open(path, "r") as f:
             return [json.loads(message) for message in f.read().split(DELIMITER) if message]
 
-    def list_messages(self, thread_id: Optional[str] = None):
+    def list_messages(
+        self,
+        thread_id: Optional[str] = None,
+        limit: Union[int, NotGiven] = NOT_GIVEN,  # api defaults to 20
+        order: Literal["asc", "desc"] = "asc",
+    ):
         """Backwards compatibility for chat_completions messages."""
-        messages = self._list_messages(thread_id=thread_id)
+        messages = self._list_messages(thread_id=thread_id, limit=limit, order=order)
 
         # Filter out system and agent log messages when running in debug mode. Agent behavior shouldn't change based on logs.  # noqa: E501
-        if self._debug_mode:
-            messages = [
-                m
-                for m in messages
-                if not (m.metadata and m.metadata["message_type"] in ["system:log", "agent:log"])  # type: ignore
-            ]
+        messages = [
+            m
+            for m in messages
+            if not (m.metadata and m.metadata["message_type"] in ["system:log", "agent:log"])  # type: ignore
+        ]
         legacy_messages = [
             {
                 "id": m.id,
