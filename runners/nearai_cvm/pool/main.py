@@ -136,7 +136,7 @@ class Pool(BaseModel):
                 logger.info(
                     f"{type(health.status)} == {type(HealthStatus.NOT_ASSIGNED)}, {health.status == HealthStatus.NOT_ASSIGNED}, {health.status} == {HealthStatus.NOT_ASSIGNED}"
                 )
-                if health.status == HealthStatus.NOT_ASSIGNED:
+                if str(health.status) == str(HealthStatus.NOT_ASSIGNED):
                     logger.info(f"Found available worker {worker.runner_id}")
                     return self.free_workers.pop(i)
             except Exception as e:
