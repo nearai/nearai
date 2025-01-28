@@ -125,12 +125,16 @@ class Pool(BaseModel):
 
     def pop_available_worker(self) -> Optional[Worker]:
         """Get a worker from the pool."""
-        for i, worker in enumerate(self.free_workers):
+        len_free_workers = len(self.free_workers)
+        for i in range(len_free_workers - 1, -1, -1):
+            worker = self.free_workers[i]
+            logger.info(f"Checking health of worker {worker.runner_id}")
             client = CvmClient(f"http://localhost:{worker.port}")
             try:
                 health = client.health()
                 logger.info(f"Health of worker {worker.runner_id}: {health}")
                 if health.status == HealthStatus.NOT_ASSIGNED:
+                    logger.info(f"Found available worker {worker.runner_id}")
                     return self.free_workers.pop(i)
             except Exception as e:
                 logger.error(f"Failed to get health of worker {worker.runner_id}: {str(e)}")
