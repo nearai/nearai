@@ -1,5 +1,6 @@
 dist/
 .vscode/
+.idea/
 __pycache__/
 .nearai/
 /nearai/tests/test-agents/
