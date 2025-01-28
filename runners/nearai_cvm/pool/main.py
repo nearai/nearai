@@ -42,6 +42,8 @@ async def lifespan(app: FastAPI):
             os._exit(1)
         app.state.app_state.update_pool()
 
+        app.state.app_state.update_pool()
+
     finally:
         # Restore original directory
         os.chdir(original_dir)
@@ -81,11 +83,11 @@ class Pool(BaseModel):
                     [
                         "dstack",
                         "new",
-                        os.getenv("PRIVATE_ML_SDK_PATH")+"/runner.yaml",
+                        os.getenv("PRIVATE_ML_SDK_PATH") + "/runner.yaml",
                         "-o",
                         runner_id,
                         "--image",
-                        os.getenv("PRIVATE_ML_SDK_PATH")+"/images/dstack-nvidia-dev-0.3.3",
+                        os.getenv("PRIVATE_ML_SDK_PATH") + "/images/dstack-nvidia-dev-0.3.3",
                         "-c",
                         "2",
                         "-m",
@@ -97,9 +99,9 @@ class Pool(BaseModel):
                         "--port",
                         "tcp:8888:8888",
                         "--port",
-                        f"tcp:{worker.port}:8000"
+                        f"tcp:{worker.port}:8000",
                     ],
-                    check=True
+                    check=True,
                 )
 
                 process = subprocess.Popen(
@@ -110,7 +112,7 @@ class Pool(BaseModel):
                         runner_id,
                     ],
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
+                    stderr=subprocess.PIPE,
                 )
                 logger.info(f"Started worker {runner_id} (PID: {process.pid})")
 
