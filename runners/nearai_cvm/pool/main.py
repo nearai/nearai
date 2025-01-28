@@ -40,6 +40,7 @@ async def lifespan(app: FastAPI):
         else:
             logger.error(f"Scripts path {scripts_path} does not exist")
             os._exit(1)
+        app.state.app_state.update_pool()
 
     finally:
         # Restore original directory
@@ -80,11 +81,11 @@ class Pool(BaseModel):
                     [
                         "dstack",
                         "new",
-                        "runner.yaml",
+                        os.getenv("PRIVATE_ML_SDK_PATH")+"/runner.yaml",
                         "-o",
                         runner_id,
                         "--image",
-                        "images/dstack-nvidia-dev-0.3.3",
+                        os.getenv("PRIVATE_ML_SDK_PATH")+"/images/dstack-nvidia-dev-0.3.3",
                         "-c",
                         "2",
                         "-m",
@@ -96,16 +97,30 @@ class Pool(BaseModel):
                         "--port",
                         "tcp:8888:8888",
                         "--port",
-                        f"tcp:{worker.port}:{worker.port}",
-                    ]
+                        f"tcp:{worker.port}:8000"
+                    ],
+                    check=True
                 )
+
+                process = subprocess.Popen(
+                    [
+                        "sudo",
+                        "dstack",
+                        "run",
+                        runner_id,
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                logger.info(f"Started worker {runner_id} (PID: {process.pid})")
+
                 self.free_workers.append(worker)
                 logger.info(f"Successfully added worker {runner_id} to pool")
             except Exception as e:
                 logger.error(f"Failed to create worker {runner_id}: {str(e)}")
 
 
-app.state.app_state = Pool(free_workers=[], assigned_workers=[], max_pool_size=10)
+app.state.app_state = Pool(free_workers=[], assigned_workers=[], max_pool_size=1)
 
 
 def get_app_state() -> Pool:
