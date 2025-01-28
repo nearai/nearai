@@ -95,9 +95,9 @@ class Pool(BaseModel):
                         "-d",
                         "30G",
                         "--port",
-                        "tcp:10022:22",  # TODO: disable SSH
+                        f"tcp:{worker.port+1}:22",  # TODO: disable SSH
                         "--port",
-                        "tcp:8888:8888",
+                        f"tcp:{worker.port+2}:8888",
                         "--port",
                         f"tcp:{worker.port}:8000",
                     ],
