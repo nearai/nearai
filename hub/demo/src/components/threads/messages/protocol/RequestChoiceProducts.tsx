@@ -1,8 +1,18 @@
 'use client';
 
-import { Badge, Button, Card, Flex, HR, Text, Tooltip } from '@near-pagoda/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  Dialog,
+  Flex,
+  HR,
+  Text,
+  Tooltip,
+} from '@near-pagoda/ui';
 import { formatDollar } from '@near-pagoda/ui/utils';
 import { Star, StarHalf } from '@phosphor-icons/react';
+import { useState } from 'react';
 import { type z } from 'zod';
 
 import { type requestChoiceSchema } from './schema';
@@ -13,7 +23,16 @@ type Props = {
   content: z.infer<typeof requestChoiceSchema>['request_choice'];
 };
 
+/*
+  TODO:
+  - Hover image popover zoom
+  - Variants selection
+  - Quantity selection
+*/
+
 export const RequestChoiceProducts = ({ content }: Props) => {
+  const [zoomedImageUrl, setZoomedImageUrl] = useState('');
+
   return (
     <Card animateIn>
       {(content.title || content.description) && (
@@ -35,7 +54,6 @@ export const RequestChoiceProducts = ({ content }: Props) => {
       <div className={s.productGrid}>
         {content.options.map((option, index) => (
           <Card
-            gap="s"
             key={option.name + index}
             background="sand-0"
             border="sand-0"
@@ -45,49 +63,58 @@ export const RequestChoiceProducts = ({ content }: Props) => {
               <div
                 className={s.productImage}
                 style={{ backgroundImage: `url(${option.image_url})` }}
+                onClick={() => setZoomedImageUrl(option.image_url ?? '')}
               />
             )}
 
-            <Text weight={600} color="sand-12">
-              {option.name}
-            </Text>
+            <Flex direction="column" gap="s">
+              <Text
+                weight={600}
+                color={option.url ? undefined : 'sand-12'}
+                href={option.url}
+                decoration="none"
+                target="_blank"
+              >
+                {option.name}
+              </Text>
 
-            {option.fiveStarRating && (
-              <Flex align="center" gap="s" wrap="wrap">
-                <Tooltip
-                  content={`Average review: ${option.fiveStarRating} out of 5 stars`}
-                >
-                  <Badge
-                    iconRight={
-                      option.fiveStarRating < 3.75 ? (
-                        <StarHalf weight="fill" />
-                      ) : (
-                        <Star weight="fill" />
-                      )
-                    }
-                    label={
-                      <Flex as="span" align="center" gap="xs">
-                        <Text size="text-xs" weight={600} color="current">
-                          {option.fiveStarRating}
-                        </Text>
-                        {option.reviewsCount && (
-                          <Text size="text-xs">({option.reviewsCount})</Text>
-                        )}
-                      </Flex>
-                    }
-                    variant="neutral"
-                  />
-                </Tooltip>
-              </Flex>
-            )}
+              {option.fiveStarRating && (
+                <Flex align="center" gap="s" wrap="wrap">
+                  <Tooltip
+                    content={`Average review: ${option.fiveStarRating} out of 5 stars`}
+                  >
+                    <Badge
+                      iconRight={
+                        option.fiveStarRating < 3.75 ? (
+                          <StarHalf weight="fill" />
+                        ) : (
+                          <Star weight="fill" />
+                        )
+                      }
+                      label={
+                        <Flex as="span" align="center" gap="xs">
+                          <Text size="text-xs" weight={600} color="current">
+                            {option.fiveStarRating}
+                          </Text>
+                          {option.reviewsCount && (
+                            <Text size="text-xs">({option.reviewsCount})</Text>
+                          )}
+                        </Flex>
+                      }
+                      variant="neutral"
+                    />
+                  </Tooltip>
+                </Flex>
+              )}
 
-            {option.description && (
-              <Text size="text-s">{option.description}</Text>
-            )}
+              {option.description && (
+                <Text size="text-s">{option.description}</Text>
+              )}
 
-            <Text size="text-l" style={{ marginRight: 'auto' }}>
-              {formatDollar(option.price_usd)}
-            </Text>
+              {option.price_usd && (
+                <Text size="text-l">{formatDollar(option.price_usd)}</Text>
+              )}
+            </Flex>
 
             <Button
               label="Add to cart"
@@ -97,6 +124,27 @@ export const RequestChoiceProducts = ({ content }: Props) => {
           </Card>
         ))}
       </div>
+
+      <Dialog.Root
+        open={!!zoomedImageUrl}
+        onOpenChange={(open) => {
+          if (!open) setZoomedImageUrl('');
+        }}
+      >
+        <Dialog.Content
+          title={
+            content.options.find((o) => o.image_url === zoomedImageUrl)?.name
+          }
+          className="light"
+          style={{ width: 'fit-content' }}
+        >
+          <img
+            src={zoomedImageUrl}
+            alt="Image of selected product"
+            className={s.zoomedImage}
+          />
+        </Dialog.Content>
+      </Dialog.Root>
     </Card>
   );
 };

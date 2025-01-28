@@ -2,6 +2,7 @@ import { parseStringOrNumber } from '@near-pagoda/ui/utils';
 import path from 'path';
 import { z } from 'zod';
 
+import { type requestChoiceSchema } from '~/components/threads/messages/protocol/schema';
 import { env } from '~/env';
 import {
   chatWithAgentModel,
@@ -28,7 +29,6 @@ import { fetchThreadContents } from '~/trpc/utils/threads';
 import { createZodFetcher } from '~/utils/zod-fetch';
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc';
-import { requestChoiceSchema } from '~/components/threads/messages/protocol/schema';
 
 const fetchWithZod = createZodFetcher();
 
@@ -560,14 +560,14 @@ export const hubRouter = createTRPCRouter({
               name: 'Sony WH-1000XM5',
               price_usd: 399.99,
               image_url:
-                'https://m.media-amazon.com/images/I/61eeHPRFQ9L.__AC_SX300_SY300_QL70_FMwebp_.jpg',
+                'https://m.media-amazon.com/images/I/61eeHPRFQ9L._AC_SX679_.jpg',
               url: 'https://www.amazon.com/Sony-WH-1000XM5-Headphones-Hands-Free-WH1000XM5/dp/B0BXYCS74H',
             },
             {
               name: 'Edifier STAX Spirit S3',
               price_usd: 348,
-              image_url:
-                'https://m.media-amazon.com/images/I/61E4YsCrICL.__AC_SX300_SY300_QL70_FMwebp_.jpg',
+              // image_url:
+              //   'https://m.media-amazon.com/images/I/61E4YsCrICL._AC_SX679_.jpg',
               url: 'https://www.amazon.com/Sony-WH-1000XM5-Headphones-Hands-Free-WH1000XM5/dp/B0BXYCS74H',
             },
           ],

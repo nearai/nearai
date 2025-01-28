@@ -38,13 +38,13 @@
   display: block;
   margin-top: -1rem;
   margin-inline: -1rem;
-  margin-bottom: var(--gap-s);
   height: 10rem;
   flex-shrink: 0;
   background-color: #fff;
   background-position: center center;
   background-size: contain;
   background-repeat: no-repeat;
+  cursor: zoom-in;
 }
 
 .productCard {
@@ -55,4 +55,10 @@
   &:focus-within {
     border-color: var(--sand-10) !important;
   }
+}
+
+.zoomedImage {
+  width: auto;
+  margin: auto;
+  max-width: 100%;
 }
