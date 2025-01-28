@@ -3,7 +3,7 @@ from typing import Optional
 
 import requests
 from nearai.shared.auth_data import AuthData
-from runners.nearai_cvm.app.main import AssignRequest, HealthResponse, RunRequest
+from runners.nearai_cvm.app.main import AssignRequest, IsAssignedResp, RunRequest
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +39,10 @@ class CvmClient:
             raise Exception(f"Request failed with status code {response.status_code}: {response.text}")
         return response.json()
 
-    def health(self) -> HealthResponse:
+    def is_assigned(self) -> IsAssignedResp:
         """Checks the health of the CVM."""
-        response = requests.get(f"{self.url}/health", headers=self.headers)
+        response = requests.get(f"{self.url}/is_assigned", headers=self.headers)
         logger.info(f"Health response: {response.json()}")
 
         response.raise_for_status()
-        return HealthResponse(**response.json())
+        return IsAssignedResp(**response.json())

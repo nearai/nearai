@@ -7,7 +7,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from app.main import HealthStatus
 from client.client import CvmClient
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI
@@ -125,20 +124,17 @@ class Pool(BaseModel):
 
     def pop_available_worker(self) -> Optional[Worker]:
         """Get a worker from the pool."""
-        len_free_workers = len(self.free_workers)
-        for i in range(len_free_workers - 1, -1, -1):
-            worker = self.free_workers[i]
+        for idx, worker in enumerate(self.free_workers):
             logger.info(f"Checking health of worker {worker.runner_id}")
             client = CvmClient(f"http://localhost:{worker.port}")
             try:
-                health = client.health()
+                health = client.is_assigned()
                 logger.info(f"Health of worker {worker.runner_id}: {health}")
-                logger.info(
-                    f"{type(health.status)} == {type(HealthStatus.NOT_ASSIGNED)}, {health.status == HealthStatus.NOT_ASSIGNED}, {health.status} == {HealthStatus.NOT_ASSIGNED}"
-                )
-                if str(health.status) == str(HealthStatus.NOT_ASSIGNED):
+
+                if not health.is_assigned:
                     logger.info(f"Found available worker {worker.runner_id}")
-                    return self.free_workers.pop(i)
+                    return self.free_workers.pop(idx)
+
             except Exception as e:
                 logger.error(f"Failed to get health of worker {worker.runner_id}: {str(e)}")
         return None
