@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 import requests
 from nearai.shared.auth_data import AuthData
@@ -8,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class CvmClient:
-    def __init__(self, url: str, auth: AuthData):
+    def __init__(self, url: str, auth: Optional[AuthData] = None):
         """Initializes the NearAITeeClient.
 
         Args:
@@ -17,7 +18,10 @@ class CvmClient:
 
         """
         self.url = url
-        self.headers = {"Authorization": f"Bearer {auth.model_dump_json()}"}
+        if auth is not None:
+            self.headers = {"Authorization": f"Bearer {auth.model_dump_json()}"}
+        else:
+            self.headers = {}
 
     def assign(self, request: AssignRequest):
         """Assigns an agent to a CVM."""
