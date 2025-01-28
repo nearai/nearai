@@ -42,5 +42,7 @@ class CvmClient:
     def health(self) -> HealthResponse:
         """Checks the health of the CVM."""
         response = requests.get(f"{self.url}/health", headers=self.headers)
+        logger.info(f"Health response: {response.json()}")
+
         response.raise_for_status()
         return HealthResponse(**response.json())

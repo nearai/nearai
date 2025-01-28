@@ -129,6 +129,7 @@ class Pool(BaseModel):
             client = CvmClient(f"http://localhost:{worker.port}")
             try:
                 health = client.health()
+                logger.info(f"Health of worker {worker.runner_id}: {health}")
                 if health.status == HealthStatus.NOT_ASSIGNED:
                     return self.free_workers.pop(i)
             except Exception as e:
