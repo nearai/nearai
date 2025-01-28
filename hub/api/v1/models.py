@@ -215,10 +215,10 @@ class Message(SQLModel, table=True):
             ]
         if self.content:
             if isinstance(self.content, str):
-                content = self.content.encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
+                content = self.content.encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
 
                 # Regular expression to match only valid UTF-8 characters, because we can't support utf8mb4 charset
-                content = re.sub(r'[^\x00-\xFF]', '', content)
+                content = re.sub(r"[^\x00-\xFF]", "", content)
 
                 self.content = [TextContentBlock(text=Text(value=content, annotations=[]), type="text")]
 
