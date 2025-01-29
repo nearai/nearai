@@ -42,7 +42,7 @@ TWEET_FIELDS = [
 ]
 
 
-async def get_latest_mentions(user_name, timestamp, max_results=10):
+async def get_latest_mentions(user_name, timestamp, max_results=10, limit_per_run=TWEET_LIMIT_PER_RUN):
     try:
         if not timestamp:
             timestamp = datetime.utcnow() - timedelta(hours=1)
@@ -57,10 +57,8 @@ async def get_latest_mentions(user_name, timestamp, max_results=10):
         tweets.extend(response.data)
 
         while "next_token" in response.meta:
-            if len(tweets) < TWEET_LIMIT_PER_RUN:
-                logger.error(
-                    f"Reached the limit of {TWEET_LIMIT_PER_RUN} tweets per run. Stopping retrieval until next run."
-                )
+            if len(tweets) >= limit_per_run:
+                logger.error(f"Reached the limit of {limit_per_run} tweets per run. Stopping retrieval until next run.")
                 break
             try:
                 response = client.search_recent_tweets(
