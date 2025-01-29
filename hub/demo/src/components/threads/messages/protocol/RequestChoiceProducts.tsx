@@ -28,7 +28,6 @@ type Props = {
   TODO:
   - Variants selection
   - Quantity selection
-  - Fix scroll to message
 */
 
 export const RequestChoiceProducts = ({ content }: Props) => {

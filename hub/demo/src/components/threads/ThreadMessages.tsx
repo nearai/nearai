@@ -7,6 +7,7 @@ import { type z } from 'zod';
 import { type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 
+import { computeNavigationHeight } from '../Navigation';
 import { JsonMessage } from './messages/JsonMessage';
 import { TextMessage } from './messages/TextMessage';
 import s from './ThreadMessages.module.scss';
@@ -51,12 +52,17 @@ export const ThreadMessages = ({
       setTimeout(() => {
         if (threadId !== scrolledToThreadId.current) {
           window.scrollTo(0, document.body.scrollHeight);
-        } else if (previousCount < count) {
-          const index = previousCount;
-          children[index]?.scrollIntoView({
-            block: 'start',
-            behavior: 'smooth',
-          });
+        } else if (previousCount > 0 && previousCount < count) {
+          const previousChild = children[previousCount - 1];
+
+          if (previousChild) {
+            const offset = computeNavigationHeight();
+            const y =
+              previousChild.getBoundingClientRect().bottom +
+              window.scrollY -
+              offset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          }
         }
 
         scrolledToThreadId.current = threadId;
