@@ -8,6 +8,17 @@
   background-repeat: no-repeat;
 }
 
+.variantOptionImage {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 5px;
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  flex-shrink: 0;
+}
+
 .productGrid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -44,11 +55,12 @@
   background-position: center center;
   background-size: contain;
   background-repeat: no-repeat;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
   cursor: zoom-in;
 }
 
 .productCard {
-  overflow: hidden;
   border: 1px solid var(--sand-5) !important;
 
   &:hover,

@@ -14,12 +14,12 @@ import { RequestChoice } from './protocol/RequestChoice';
 import { protocolSchema } from './protocol/schema';
 
 type Props = {
-  id: string;
+  contentId: string;
   content: z.infer<typeof threadMessageModelContentJson>;
   role: z.infer<typeof threadMessageModel>['role'];
 };
 
-export const JsonMessage = ({ content, id }: Props) => {
+export const JsonMessage = ({ content, contentId }: Props) => {
   const { json } = content;
   const hasWarned = useRef(false);
 
@@ -31,7 +31,12 @@ export const JsonMessage = ({ content, id }: Props) => {
 
   if (protocol.data) {
     if ('request_choice' in protocol.data) {
-      return <RequestChoice content={protocol.data.request_choice} id={id} />;
+      return (
+        <RequestChoice
+          content={protocol.data.request_choice}
+          contentId={contentId}
+        />
+      );
     }
   } else if (protocol.error) {
     if (!hasWarned.current) {

@@ -16,11 +16,11 @@ import { type requestChoiceSchema } from './schema';
 import s from './styles.module.scss';
 
 type Props = {
-  id: string;
+  contentId: string;
   content: z.infer<typeof requestChoiceSchema>['request_choice'];
 };
 
-export const RequestChoice = ({ content, id }: Props) => {
+export const RequestChoice = ({ content, contentId }: Props) => {
   const type = content.type;
 
   const product = content.options?.find(
@@ -29,11 +29,13 @@ export const RequestChoice = ({ content, id }: Props) => {
   if (product) type === 'products';
 
   if (type === 'products') {
-    return <RequestChoiceProducts content={content} id={id} />;
+    return <RequestChoiceProducts content={content} contentId={contentId} />;
   }
 
   if (type === 'confirmation') {
-    return <RequestChoiceConfirmation content={content} id={id} />;
+    return (
+      <RequestChoiceConfirmation content={content} contentId={contentId} />
+    );
   }
 
   return (
@@ -56,7 +58,7 @@ export const RequestChoice = ({ content, id }: Props) => {
           {content.options?.map((option, index) => (
             <Flex as="label" key={option.name + index} gap="s" align="center">
               <Checkbox
-                name={type === 'checkbox' ? option.name + index : id}
+                name={type === 'checkbox' ? option.name + index : contentId}
                 type={type === 'checkbox' ? 'checkbox' : 'radio'}
               />
 

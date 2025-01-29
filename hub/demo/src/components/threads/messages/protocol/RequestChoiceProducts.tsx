@@ -1,11 +1,12 @@
 'use client';
 
 import {
-  Badge,
   Button,
   Card,
   Dialog,
+  Dropdown,
   Flex,
+  SvgIcon,
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
@@ -20,19 +21,11 @@ import { type requestChoiceSchema } from './schema';
 import s from './styles.module.scss';
 
 type Props = {
-  id: string;
   content: z.infer<typeof requestChoiceSchema>['request_choice'];
+  contentId: string;
 };
 
-/*
-  TODO:
-  - Variants selection
-  - Quantity selection
-*/
-
-export const RequestChoiceProducts = ({ content }: Props) => {
-  const [zoomedImageUrl, setZoomedImageUrl] = useState('');
-
+export const RequestChoiceProducts = ({ content, contentId }: Props) => {
   return (
     <Card animateIn>
       {(content.title || content.description) && (
@@ -50,80 +43,163 @@ export const RequestChoiceProducts = ({ content }: Props) => {
 
       <div className={s.productGrid}>
         {content.options?.map((option, index) => (
-          <Card
+          <Product
+            contentId={contentId}
+            index={index}
+            option={option}
             key={option.name + index}
-            background="sand-0"
-            border="sand-0"
-            className={s.productCard}
-          >
-            {option.image_url && (
-              <div
-                className={s.productImage}
-                style={{ backgroundImage: `url(${option.image_url})` }}
-                onClick={() => setZoomedImageUrl(option.image_url ?? '')}
-              />
-            )}
-
-            <Flex direction="column" gap="s" align="start">
-              <Tooltip
-                content={`View product on ${getPrimaryDomainFromUrl(option.url)}`}
-                asChild
-              >
-                <Text
-                  weight={600}
-                  color={option.url ? undefined : 'sand-12'}
-                  href={option.url}
-                  decoration="none"
-                  target="_blank"
-                >
-                  {option.name}
-                </Text>
-              </Tooltip>
-
-              {option.fiveStarRating && (
-                <Tooltip
-                  content={`Average ${option.reviewsCount ? `from ${option.reviewsCount} review${option.reviewsCount !== 1 ? 's' : ''}` : 'review'}: ${option.fiveStarRating} out of 5 stars`}
-                >
-                  <Badge
-                    iconRight={
-                      option.fiveStarRating < 3.75 ? (
-                        <StarHalf weight="fill" />
-                      ) : (
-                        <Star weight="fill" />
-                      )
-                    }
-                    label={
-                      <Flex as="span" align="center" gap="xs">
-                        <Text size="text-xs" weight={600} color="current">
-                          {option.fiveStarRating}
-                        </Text>
-                        {option.reviewsCount && (
-                          <Text size="text-xs">({option.reviewsCount})</Text>
-                        )}
-                      </Flex>
-                    }
-                    variant="neutral-alpha"
-                  />
-                </Tooltip>
-              )}
-
-              {option.description && (
-                <Text size="text-s">{option.description}</Text>
-              )}
-
-              {option.price_usd && (
-                <Text size="text-l">{formatDollar(option.price_usd)}</Text>
-              )}
-            </Flex>
-
-            <Button
-              label="Add to cart"
-              variant="affirmative"
-              style={{ marginTop: 'auto' }}
-            />
-          </Card>
+          />
         ))}
       </div>
+    </Card>
+  );
+};
+
+type Product = {
+  contentId: string;
+  index: number;
+  option: NonNullable<
+    z.infer<typeof requestChoiceSchema>['request_choice']['options']
+  >[number];
+};
+
+const quantities = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+const Product = (props: Product) => {
+  const [zoomedImageUrl, setZoomedImageUrl] = useState('');
+
+  const variants = [...(props.option.variants ?? [])];
+  if (!variants.find((v) => v.name == props.option.name)) {
+    variants.unshift(props.option);
+  }
+  const hasVariants = variants.length >= 2;
+  const [selectedVariantName, setSelectedVariantName] = useState(
+    props.option.name,
+  );
+  const [quantity, setQuantity] = useState(1);
+
+  const option = {
+    ...props.option,
+    ...variants.find((v) => v.name === selectedVariantName),
+  };
+
+  return (
+    <Card background="sand-0" border="sand-0" className={s.productCard}>
+      {option.image_url && (
+        <div
+          className={s.productImage}
+          style={{ backgroundImage: `url(${option.image_url})` }}
+          onClick={() => setZoomedImageUrl(option.image_url ?? '')}
+        />
+      )}
+
+      <Flex direction="column" gap="xs" align="start">
+        <Tooltip
+          content={`View product on ${getPrimaryDomainFromUrl(option.url)}`}
+          asChild
+        >
+          <Text
+            weight={600}
+            color={option.url ? undefined : 'sand-12'}
+            href={option.url}
+            decoration="none"
+            target="_blank"
+            style={{ lineHeight: 1.35 }}
+          >
+            {option.name}
+          </Text>
+        </Tooltip>
+
+        <FiveStarRating option={option} />
+      </Flex>
+
+      {option.description && <Text size="text-s">{option.description}</Text>}
+
+      <Flex direction="column" gap="m" style={{ marginTop: 'auto' }}>
+        {option.price_usd && (
+          <Text
+            size="text-l"
+            style={{ lineHeight: 1, marginBottom: '-0.25rem' }}
+          >
+            {formatDollar(option.price_usd)}
+          </Text>
+        )}
+
+        <Flex align="center" gap="s">
+          {hasVariants && (
+            <Dropdown.Root>
+              <Dropdown.Trigger asChild>
+                <Button
+                  label={option.shortVariantName || option.name}
+                  labelAlignment="left"
+                  variant="secondary"
+                  fill="outline"
+                  iconRight={<Dropdown.Indicator />}
+                  size="small"
+                  style={{ flexGrow: 1, flexShrink: 1 }}
+                />
+              </Dropdown.Trigger>
+
+              <Dropdown.Content style={{ maxWidth: '20rem' }}>
+                <Dropdown.Section>
+                  {variants.map((variant, index) => (
+                    <Dropdown.Item
+                      key={variant.name + index}
+                      onSelect={() => setSelectedVariantName(variant.name)}
+                    >
+                      <Flex align="center" gap="s">
+                        {variant.image_url && (
+                          <div
+                            className={s.variantOptionImage}
+                            style={{
+                              backgroundImage: `url(${variant.image_url})`,
+                            }}
+                          />
+                        )}
+                        {variant.shortVariantName || variant.name}
+                      </Flex>
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Section>
+              </Dropdown.Content>
+            </Dropdown.Root>
+          )}
+
+          <Dropdown.Root>
+            <Dropdown.Trigger asChild>
+              <Button
+                label={
+                  hasVariants ? quantity.toString() : `Quantity: ${quantity}`
+                }
+                labelAlignment="left"
+                variant="secondary"
+                fill="outline"
+                iconRight={<Dropdown.Indicator />}
+                size="small"
+                style={hasVariants ? undefined : { flexGrow: 1 }}
+              />
+            </Dropdown.Trigger>
+
+            <Dropdown.Content>
+              <Dropdown.Section>
+                <Dropdown.SectionContent>
+                  <Text weight={600} size="text-xs" uppercase>
+                    Quantity
+                  </Text>
+                </Dropdown.SectionContent>
+
+                {quantities.map((q) => (
+                  <Dropdown.Item key={q} onSelect={() => setQuantity(q)}>
+                    {q}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Section>
+            </Dropdown.Content>
+          </Dropdown.Root>
+        </Flex>
+
+        <Button label="Add to cart" variant="affirmative" size="small" />
+      </Flex>
 
       <Dialog.Root
         open={!!zoomedImageUrl}
@@ -132,9 +208,7 @@ export const RequestChoiceProducts = ({ content }: Props) => {
         }}
       >
         <Dialog.Content
-          title={
-            content.options?.find((o) => o.image_url === zoomedImageUrl)?.name
-          }
+          title={option.name}
           className="light"
           style={{ width: 'fit-content' }}
         >
@@ -146,5 +220,92 @@ export const RequestChoiceProducts = ({ content }: Props) => {
         </Dialog.Content>
       </Dialog.Root>
     </Card>
+  );
+};
+
+type FiveStarRatingProps = {
+  option: NonNullable<
+    z.infer<typeof requestChoiceSchema>['request_choice']['options']
+  >[number];
+};
+
+const FiveStarRating = ({ option }: FiveStarRatingProps) => {
+  const { fiveStarRating, reviewsCount = 0 } = option;
+
+  if (typeof fiveStarRating != 'number') return null;
+
+  return (
+    <Tooltip
+      content={`Average ${reviewsCount ? `from ${reviewsCount} review${reviewsCount !== 1 ? 's' : ''}` : 'review'}: ${fiveStarRating} out of 5 stars`}
+    >
+      <Flex align="center" gap="xs">
+        <SvgIcon
+          icon={
+            fiveStarRating > 0.95 ? (
+              <Star weight="fill" />
+            ) : fiveStarRating > 0.45 ? (
+              <StarHalf weight="fill" />
+            ) : (
+              <Star weight="light" color="sand-6" />
+            )
+          }
+          size="xs"
+        />
+
+        <SvgIcon
+          icon={
+            fiveStarRating > 1.95 ? (
+              <Star weight="fill" />
+            ) : fiveStarRating > 1.45 ? (
+              <StarHalf weight="fill" />
+            ) : (
+              <Star weight="light" color="sand-6" />
+            )
+          }
+          size="xs"
+        />
+
+        <SvgIcon
+          icon={
+            fiveStarRating > 2.95 ? (
+              <Star weight="fill" />
+            ) : fiveStarRating > 2.45 ? (
+              <StarHalf weight="fill" />
+            ) : (
+              <Star weight="light" color="sand-6" />
+            )
+          }
+          size="xs"
+        />
+
+        <SvgIcon
+          icon={
+            fiveStarRating > 3.95 ? (
+              <Star weight="fill" />
+            ) : fiveStarRating > 3.45 ? (
+              <StarHalf weight="fill" />
+            ) : (
+              <Star weight="light" color="sand-6" />
+            )
+          }
+          size="xs"
+        />
+
+        <SvgIcon
+          icon={
+            fiveStarRating > 4.95 ? (
+              <Star weight="fill" />
+            ) : fiveStarRating > 4.45 ? (
+              <StarHalf weight="fill" />
+            ) : (
+              <Star weight="light" />
+            )
+          }
+          size="xs"
+        />
+
+        {reviewsCount ? <Text size="text-s">({reviewsCount})</Text> : null}
+      </Flex>
+    </Tooltip>
   );
 };

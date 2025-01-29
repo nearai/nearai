@@ -550,11 +550,32 @@ export const hubRouter = createTRPCRouter({
             },
             {
               name: 'Soundcore by Anker, Space One',
+              shortVariantName: 'Space One',
               fiveStarRating: 3.5,
               price_usd: 79.99,
               image_url:
                 'https://m.media-amazon.com/images/I/51EXj4BRQaL._AC_SX679_.jpg',
               url: 'https://www.amazon.com/Soundcore-Cancelling-Headphones-Reduction-Comfortable/dp/B0C6KKQ7ND',
+              variants: [
+                {
+                  name: 'Soundcore by Anker, Jet Black',
+                  shortVariantName: 'Jet Black',
+                  fiveStarRating: 3.75,
+                  price_usd: 89.99,
+                  image_url:
+                    'https://m.media-amazon.com/images/I/51l80KVua0L._AC_SX679_.jpg',
+                  url: 'https://www.amazon.com/Soundcore-Cancelling-Headphones-Reduction-Comfortable/dp/B0C6KFZC9Z',
+                },
+                {
+                  name: 'Soundcore by Anker, Cream',
+                  shortVariantName: 'Cream',
+                  fiveStarRating: 3.75,
+                  price_usd: 74.99,
+                  image_url:
+                    'https://m.media-amazon.com/images/I/51QVszp82CL._AC_SX679_.jpg',
+                  url: 'https://www.amazon.com/Soundcore-Cancelling-Headphones-Reduction-Comfortable/dp/B0C6KJ3R71',
+                },
+              ],
             },
             {
               name: 'Sony WH-1000XM5',
@@ -566,8 +587,8 @@ export const hubRouter = createTRPCRouter({
             {
               name: 'Edifier STAX Spirit S3',
               price_usd: 348,
-              // image_url:
-              //   'https://m.media-amazon.com/images/I/61E4YsCrICL._AC_SX679_.jpg',
+              image_url:
+                'https://m.media-amazon.com/images/I/61E4YsCrICL._AC_SX679_.jpg',
               url: 'https://www.amazon.com/Sony-WH-1000XM5-Headphones-Hands-Free-WH1000XM5/dp/B0BXYCS74H',
             },
           ],

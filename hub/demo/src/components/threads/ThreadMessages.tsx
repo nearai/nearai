@@ -130,11 +130,19 @@ const ThreadMessageContent = ({
   contentIndex,
   message,
 }: ThreadMessageContentProps) => {
-  const id = `${message.id}_${contentIndex}`;
+  const contentId = `${message.id}_${contentIndex}`;
 
   if (content.type === 'json') {
-    return <JsonMessage id={id} content={content} role={message.role} />;
+    return (
+      <JsonMessage
+        contentId={contentId}
+        content={content}
+        role={message.role}
+      />
+    );
   }
 
-  return <TextMessage id={id} content={content} role={message.role} />;
+  return (
+    <TextMessage contentId={contentId} content={content} role={message.role} />
+  );
 };

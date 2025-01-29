@@ -6,7 +6,7 @@ import { type z } from 'zod';
 import { type requestChoiceSchema } from './schema';
 
 type Props = {
-  id: string;
+  contentId: string;
   content: z.infer<typeof requestChoiceSchema>['request_choice'];
 };
 

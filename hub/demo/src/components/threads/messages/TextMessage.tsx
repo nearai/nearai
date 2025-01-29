@@ -21,7 +21,7 @@ import {
 
 type Props = {
   content: z.infer<typeof threadMessageModelContentText>;
-  id: string;
+  contentId: string;
   role: z.infer<typeof threadMessageModel>['role'];
 };
 
