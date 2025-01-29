@@ -52,9 +52,15 @@ nosetests.xml
 coverage.xml
 
 # Virtual environment
-.env
 .venv/
 venv/
+
+
+# Ignore all .env files
+**/.env
+**/.env.*
+.env
+.env.*
 
 # PyCharm
 .idea
