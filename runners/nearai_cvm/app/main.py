@@ -3,7 +3,8 @@ import json
 import logging
 from typing import Dict, Optional
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from nearai.agents.agent import Agent  # type: ignore
 from nearai.agents.environment import Environment  # type: ignore
@@ -15,60 +16,15 @@ from nearai.shared.near.sign import verify_signed_message  # type: ignore
 from pydantic import BaseModel
 
 bearer = HTTPBearer(auto_error=False)
-
 app = FastAPI()
 
-# Configure logging
-log_stream = io.StringIO()  # TODO: use rotating buffer?
-
-
-# class JsonFormatter(logging.Formatter):
-#     def format(self, record):
-#         import json
-#         from datetime import datetime
-
-#         log_data = {
-#             "timestamp": datetime.fromtimestamp(record.created).strftime(
-#                 "%Y-%m-%d %H:%M:%S"
-#             ),
-#             "level": record.levelname,
-#             "message": record.getMessage(),
-#         }
-#         return json.dumps(log_data)
-
-
-stream_handler = logging.StreamHandler(log_stream)
-stream_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-
-# Also log to console with the same JSON format
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-logger.addHandler(stream_handler)
-logger.addHandler(console_handler)
-
-
-def get_auth(auth: Optional[HTTPAuthorizationCredentials] = Depends(bearer)):
-    if auth is None:
-        raise HTTPException(status_code=401, detail="No auth token provided")
-    d = json.loads(auth.credentials)
-    auth_object = AuthData(**d)
-    if not auth_object:
-        raise HTTPException(status_code=401, detail="No auth token provided")
-    verification_result = verify_signed_message(
-        auth_object.account_id,
-        auth_object.public_key,
-        auth_object.signature,
-        auth_object.message,
-        auth_object.nonce,
-        auth_object.recipient,
-        auth_object.callback_url,
-    )
-    if not verification_result:
-        raise HTTPException(status_code=401, detail="Invalid auth token")
-    return auth_object
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class AssignRequest(BaseModel):
@@ -94,11 +50,65 @@ class AppState:
         self.auth = None
 
 
+class RunRequest(BaseModel):
+    run_id: str
+
+
+class IsAssignedResp(BaseModel):
+    is_assigned: bool
+
+
 app.state.app_state = AppState()
 
 
 def get_app_state() -> AppState:
     return app.state.app_state
+
+
+# Configure logging
+log_stream = io.StringIO()  # TODO: use rotating buffer?
+stream_handler = logging.StreamHandler(log_stream)
+stream_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+logger.addHandler(stream_handler)
+logger.addHandler(console_handler)
+
+
+def assert_auth(
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(bearer),
+    app_state: AppState = Depends(get_app_state),
+):
+    if auth is None:
+        raise HTTPException(status_code=401, detail="No auth token provided")
+    d = json.loads(auth.credentials)
+    auth_object = AuthData(**d)
+    if not auth_object:
+        raise HTTPException(status_code=401, detail="No auth token provided")
+    verification_result = verify_signed_message(
+        auth_object.account_id,
+        auth_object.public_key,
+        auth_object.signature,
+        auth_object.message,
+        auth_object.nonce,
+        auth_object.recipient,
+        auth_object.callback_url,
+    )
+    if not verification_result:
+        raise HTTPException(status_code=401, detail="Invalid auth token")
+
+    if app_state.auth is not None:
+        if app_state.auth.account_id != auth_object.account_id:
+            """
+            Ensures that the request is from the user assigned to the runner.
+            """
+            raise HTTPException(status_code=401, detail="Unauthorized")
+
+    return auth_object
 
 
 def init_runner(assignment: AssignRequest, auth: AuthData):
@@ -122,36 +132,28 @@ def init_runner(assignment: AssignRequest, auth: AuthData):
 @app.post("/assign")
 def assign(
     request: AssignRequest,
-    background_tasks: BackgroundTasks,
-    auth: AuthData = Depends(get_auth),
+    auth: AuthData = Depends(assert_auth),
     app_state: AppState = Depends(get_app_state),
 ):
     if app_state.assignment is not None:
         raise HTTPException(status_code=409, detail="runner already assigned")
+
     app_state.assignment = request
     app_state.auth = auth
 
     logger.info(f"New assignment request for user {auth.account_id} with agent {request.agent_id}")
-    background_tasks.add_task(init_runner, request, auth)
+
+    init_runner(request, auth)
+
     return request
-
-
-class RunRequest(BaseModel):
-    run_id: str
 
 
 @app.post("/run")
 def handler(
     request: RunRequest,
-    auth: AuthData = Depends(get_auth),
+    auth: AuthData = Depends(assert_auth),
     app_state: AppState = Depends(get_app_state),
 ):
-    if app_state.auth is None:
-        raise HTTPException(status_code=409, detail="Not assigned")
-
-    if auth.account_id != app_state.auth.account_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
     if app_state.assignment is None:
         raise HTTPException(status_code=409, detail="No runner assigned")
     if app_state.agent is None:
@@ -185,24 +187,13 @@ def handler(
 
 @app.get("/logs")
 def get_logs(
-    auth: AuthData = Depends(get_auth),
-    app_state: AppState = Depends(get_app_state),
+    auth: AuthData = Depends(assert_auth),
 ):
     """Return all logged messages."""
-    if app_state.auth is None:
-        raise HTTPException(status_code=409, detail="Not assigned")
-
-    if auth.account_id != app_state.auth.account_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
     return {"logs": log_stream.getvalue()}
 
 
-class IsAssignedResp(BaseModel):
-    is_assigned: bool
-
-
 @app.get("/is_assigned")
-def is_assigned(app_state: AppState = Depends(get_app_state)) -> IsAssignedResp:
+async def is_assigned(app_state: AppState = Depends(get_app_state)):
     is_assigned = app_state.assignment is not None
     return IsAssignedResp(is_assigned=is_assigned)
