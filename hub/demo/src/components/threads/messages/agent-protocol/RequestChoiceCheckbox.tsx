@@ -10,8 +10,6 @@ import {
 } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
-import { RequestChoiceConfirmation } from './RequestChoiceConfirmation';
-import { RequestChoiceProducts } from './RequestChoiceProducts';
 import { type requestChoiceSchema } from './schema';
 import s from './styles.module.scss';
 
@@ -20,22 +18,12 @@ type Props = {
   content: z.infer<typeof requestChoiceSchema>['request_choice'];
 };
 
-export const RequestChoice = ({ content, contentId }: Props) => {
-  const type = content.type;
-
-  const product = content.options?.find(
-    (option) => typeof option.price_usd === 'number',
-  );
-  if (product) type === 'products';
-
-  if (type === 'products') {
-    return <RequestChoiceProducts content={content} contentId={contentId} />;
-  }
-
-  if (type === 'confirmation') {
-    return (
-      <RequestChoiceConfirmation content={content} contentId={contentId} />
+export const RequestChoiceCheckbox = ({ content, contentId }: Props) => {
+  if (content.type !== 'checkbox' && content.type !== 'radio') {
+    console.error(
+      `Attempted to render <RequestChoiceCheckbox /> with invalid content type: ${content.type}`,
     );
+    return null;
   }
 
   return (
@@ -58,8 +46,10 @@ export const RequestChoice = ({ content, contentId }: Props) => {
           {content.options?.map((option, index) => (
             <Flex as="label" key={option.name + index} gap="s" align="center">
               <Checkbox
-                name={type === 'checkbox' ? option.name + index : contentId}
-                type={type === 'checkbox' ? 'checkbox' : 'radio'}
+                name={
+                  content.type === 'checkbox' ? option.name + index : contentId
+                }
+                type={content.type === 'checkbox' ? 'checkbox' : 'radio'}
               />
 
               {option.image_url && (

@@ -2,7 +2,10 @@ import { parseStringOrNumber } from '@near-pagoda/ui/utils';
 import path from 'path';
 import { z } from 'zod';
 
-import { type requestChoiceSchema } from '~/components/threads/messages/protocol/schema';
+import {
+  type requestChoiceSchema,
+  type requestDataSchema,
+} from '~/components/threads/messages/agent-protocol/schema';
 import { env } from '~/env';
 import {
   chatWithAgentModel,
@@ -541,8 +544,8 @@ export const hubRouter = createTRPCRouter({
               name: 'JBL Tour One M2',
               description:
                 'A short, summarized description about the headphones',
-              fiveStarRating: 4.2,
-              reviewsCount: 132,
+              five_star_rating: 4.2,
+              reviews_count: 132,
               price_usd: 199.5,
               image_url:
                 'https://m.media-amazon.com/images/I/61rJmoiiYHL._AC_SX679_.jpg',
@@ -550,8 +553,8 @@ export const hubRouter = createTRPCRouter({
             },
             {
               name: 'Soundcore by Anker, Space One',
-              shortVariantName: 'Space One',
-              fiveStarRating: 3.5,
+              short_variant_name: 'Space One',
+              five_star_rating: 3.5,
               price_usd: 79.99,
               image_url:
                 'https://m.media-amazon.com/images/I/51EXj4BRQaL._AC_SX679_.jpg',
@@ -559,8 +562,8 @@ export const hubRouter = createTRPCRouter({
               variants: [
                 {
                   name: 'Soundcore by Anker, Jet Black',
-                  shortVariantName: 'Jet Black',
-                  fiveStarRating: 3.75,
+                  short_variant_name: 'Jet Black',
+                  five_star_rating: 3.75,
                   price_usd: 89.99,
                   image_url:
                     'https://m.media-amazon.com/images/I/51l80KVua0L._AC_SX679_.jpg',
@@ -568,8 +571,8 @@ export const hubRouter = createTRPCRouter({
                 },
                 {
                   name: 'Soundcore by Anker, Cream',
-                  shortVariantName: 'Cream',
-                  fiveStarRating: 3.75,
+                  short_variant_name: 'Cream',
+                  five_star_rating: 3.75,
                   price_usd: 74.99,
                   image_url:
                     'https://m.media-amazon.com/images/I/51QVszp82CL._AC_SX679_.jpg',
@@ -600,28 +603,65 @@ export const hubRouter = createTRPCRouter({
           title: 'Please confirm',
           description: `Would you like to eat all cookies?`,
           type: 'confirmation',
+          options: [
+            {
+              name: 'Yes, eat the cookies',
+            },
+            {
+              name: "No, that's not healthy",
+            },
+            {
+              name: 'Something else',
+            },
+          ],
         },
       };
 
-      const requestChoiceConfirmationTwo: z.infer<typeof requestChoiceSchema> =
-        {
-          request_choice: {
-            title: 'Please confirm',
-            description: `Would you like to eat all cookies?`,
-            type: 'confirmation',
-            options: [
-              {
-                name: 'Yes, eat the cookies',
-              },
-              {
-                name: "No, that's not healthy",
-              },
-              {
-                name: 'Something else',
-              },
-            ],
-          },
-        };
+      const requestDataShippingAddressInternationalAndMore: z.infer<
+        typeof requestDataSchema
+      > = {
+        request_data: {
+          title: 'Shipping Info (International + Favorites)',
+          description: `Great! Let's start with your shipping info.`,
+          fillButtonLabel: 'Fill out shipping info',
+          forms: [
+            {
+              json_url:
+                'https://app.near.ai/api/v1/agent_protocol/request_data/forms/shipping_address_international.json',
+            },
+            {
+              description:
+                'Share more info about yourself to improve your shopping experience.',
+              fields: [
+                {
+                  label: 'Favorite Color',
+                  type: 'text',
+                  required: true,
+                },
+                {
+                  label: 'Favorite Number',
+                  type: 'number',
+                  required: false,
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      const requestDataShippingAddressUs: z.infer<typeof requestDataSchema> = {
+        request_data: {
+          title: 'Shipping Info (US)',
+          description: `Great! Let's start with your shipping info.`,
+          fillButtonLabel: 'Fill out shipping info',
+          forms: [
+            {
+              json_url:
+                'https://app.near.ai/api/v1/agent_protocol/request_data/forms/shipping_address_us.json',
+            },
+          ],
+        },
+      };
 
       contents.messages.push({
         content: [
@@ -643,7 +683,11 @@ export const hubRouter = createTRPCRouter({
           },
           {
             type: 'json',
-            json: requestChoiceConfirmationTwo,
+            json: requestDataShippingAddressInternationalAndMore,
+          },
+          {
+            type: 'json',
+            json: requestDataShippingAddressUs,
           },
           {
             type: 'json',

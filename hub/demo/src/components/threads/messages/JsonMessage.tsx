@@ -10,8 +10,12 @@ import {
   type threadMessageModelContentJson,
 } from '~/lib/models';
 
-import { RequestChoice } from './protocol/RequestChoice';
-import { protocolSchema } from './protocol/schema';
+import { RequestChoice } from './agent-protocol/RequestChoice';
+import { RequestData } from './agent-protocol/RequestData';
+import {
+  CURRENT_AGENT_PROTOCOL_SCHEMA,
+  protocolSchema,
+} from './agent-protocol/schema';
 
 type Props = {
   contentId: string;
@@ -38,10 +42,19 @@ export const JsonMessage = ({ content, contentId }: Props) => {
         />
       );
     }
+
+    if ('request_data' in protocol.data) {
+      return (
+        <RequestData
+          content={protocol.data.request_data}
+          contentId={contentId}
+        />
+      );
+    }
   } else if (protocol.error) {
     if (!hasWarned.current) {
       console.warn(
-        'JSON message failed to match NEAR AI Protocol message. Will render as JSON codeblock.',
+        `JSON message failed to match ${CURRENT_AGENT_PROTOCOL_SCHEMA}. Will render as JSON codeblock.`,
         protocol.error,
       );
       hasWarned.current = true;

@@ -26,6 +26,13 @@ type Props = {
 };
 
 export const RequestChoiceProducts = ({ content, contentId }: Props) => {
+  if (content.type !== 'products') {
+    console.error(
+      `Attempted to render <RequestChoiceProducts /> with invalid content type: ${content.type}`,
+    );
+    return null;
+  }
+
   return (
     <Card animateIn>
       {(content.title || content.description) && (
@@ -130,7 +137,7 @@ const Product = (props: Product) => {
             <Dropdown.Root>
               <Dropdown.Trigger asChild>
                 <Button
-                  label={option.shortVariantName || option.name}
+                  label={option.short_variant_name || option.name}
                   labelAlignment="left"
                   variant="secondary"
                   fill="outline"
@@ -156,7 +163,7 @@ const Product = (props: Product) => {
                             }}
                           />
                         )}
-                        {variant.shortVariantName || variant.name}
+                        {variant.short_variant_name || variant.name}
                       </Flex>
                     </Dropdown.Item>
                   ))}
@@ -180,7 +187,7 @@ const Product = (props: Product) => {
               />
             </Dropdown.Trigger>
 
-            <Dropdown.Content>
+            <Dropdown.Content style={{ minWidth: 'auto' }}>
               <Dropdown.Section>
                 <Dropdown.SectionContent>
                   <Text weight={600} size="text-xs" uppercase>
@@ -189,7 +196,11 @@ const Product = (props: Product) => {
                 </Dropdown.SectionContent>
 
                 {quantities.map((q) => (
-                  <Dropdown.Item key={q} onSelect={() => setQuantity(q)}>
+                  <Dropdown.Item
+                    key={q}
+                    onSelect={() => setQuantity(q)}
+                    style={{ justifyContent: 'center' }}
+                  >
                     {q}
                   </Dropdown.Item>
                 ))}
@@ -230,7 +241,8 @@ type FiveStarRatingProps = {
 };
 
 const FiveStarRating = ({ option }: FiveStarRatingProps) => {
-  const { fiveStarRating, reviewsCount = 0 } = option;
+  const { five_star_rating: fiveStarRating, reviews_count: reviewsCount = 0 } =
+    option;
 
   if (typeof fiveStarRating != 'number') return null;
 
