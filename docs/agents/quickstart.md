@@ -15,7 +15,11 @@ In this Quickstart we will build our first agent on NEAR AI, and learn how to in
 
 ## Pre-Requisites
 
-To get started, you will need to have a [Near account](https://wallet.near.org/), and install the [NEAR AI CLI](https://github.com/nearai/nearai/#setup):
+- [NEAR Account](https://wallet.near.org/)
+- [NEAR AI CLI](#installing-near-ai-cli)
+
+
+### Installing NEAR AI CLI
 
 === "pip"
 
@@ -30,10 +34,6 @@ To get started, you will need to have a [Near account](https://wallet.near.org/)
     cd nearai
     pip install -e .
     ```
-
-??? tip "NEAR Account"
-    
-    If you do not have a Near account yet, you can create one using any of the wallets at the [wallet portal](https://wallet.near.org/). If you do not know which one to choose, we recommend that you use [Bitte](https://wallet.bitte.ai) or [Meteor Wallet](https://wallet.meteorwallet.app/add_wallet/create_new)
 
 ??? abstract "Python Version"
 
@@ -58,18 +58,30 @@ To get started, you will need to have a [Near account](https://wallet.near.org/)
 
 ## Login to NEAR AI
 
-To create a new agent, you first need to login using your Near account:
+To create a new agent, first login with a [NEAR Account](https://wallet.near.org/):
+
+``` bash
+nearai login
+```
+
+??? tip "Don't have a NEAR Account?"
+
+    If you do not have a NEAR account, you can create one for free using any of the wallets listed at [wallet.near.org](https://wallet.near.org/). 
+    
+    If you are unsure of which one to choose, try out [Bitte](https://wallet.bitte.ai) or [Meteor Wallet](https://wallet.meteorwallet.app/add_wallet/create_new).
+
+You'll be provided with a URL to login with your NEAR account.
+
+Example:
 
 ``` bash
 $> nearai login
 
-# Example Response:
-# Please visit the following URL to complete the login process: https://auth.near.ai?message=Welcome+to+NEAR+AI&nonce=<xyzxyzxyzxyzx>&recipient=ai.near&callbackUrl=http%3A%2F%2Flocalhost%3A63130%2Fcapture
+Please visit the following URL to complete the login process: https://auth.near.ai?message=Welcome+to+NEAR+AI&nonce=<xyzxyzxyzxyzx>&recipient=ai.near&callbackUrl=http%3A%2F%2Flocalhost%3A63130%2Fcapture
 ```
 
-You'll be prompted to visit a URL to authenticate with your Near account. Select your wallet (if you don't have a wallet, check our [prerequisites](#pre-requisites)), and login with it.
+After successfully logging in, you should see this confirmation screen. Close it and return to your terminal.
 
-After successfully login, you should see the screen below. Close it and return to your terminal.
 
 ![alt text](../assets/agents/quickstart-login.png)
 
