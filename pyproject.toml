@@ -1,11 +1,12 @@
-[project]
+[tool.poetry]
 name = "nearai"
 version = "0.1.6"
 description = "Near AI CLI"
-authors = [{name = "Support", email = "support@near.ai"}]
+authors = ["Support <support@near.ai>"]
 readme = "README.md"
-requires-python = ">=3.9,<3.12"
 
+[project]
+name = "nearai"
 dependencies = [
     "backoff>=2.2.1,<3.0.0",
     "base58==2.1.1",
