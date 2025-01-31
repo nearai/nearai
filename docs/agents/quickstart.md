@@ -161,7 +161,7 @@ This folder contains two files that define your agent:
 
 ### `metadata.json`
 
-This file contains information about your agent including configuration for the model it will use, [Llama 3.1 70B Instruct](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) being the default. To use a different model, select one from [app.near.ai/models](https://app.near.ai/models) and update your JSON file defaults. 
+This file contains information about your agent including optional configuration for the model it will use, [Llama 3.1 70B Instruct](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) being the default. To use a different model, select one from [app.near.ai/models](https://app.near.ai/models) and update your JSON file defaults. To use whichever model is the latest default model at app.near.ai, remove the model defaults from your metadata.json.
 
 Additionally, you can fine tune and serve a model to fit your specific needs. (See [Fine Tuning](../models/fine_tuning.md))
 
