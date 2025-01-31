@@ -218,12 +218,21 @@ run(env)
 
 ## Next Steps
 
-Congratulations! You have created your first agent on NEAR AI. Now you can modify the agent's code to help you solve a specific task. To discover everything an agent can do we recommend you to explore the following sections:
+Now that you have the basics down, here are some key areas to focus on next that will help you better understand what is possible when buidling with NEAR AI:
 
-- [Registry](./registry.md): NEAR AI has an open registry, where you can find agents created by the community and even publish your own.
+### [Explore the Registry →](./registry.md)
+The NEAR AI Registry is your hub for agent discovery and collaboration. Browse community-created agents, learn from examples, and share your own creations with others.
 
-- [Threads](./threads.md): Agents execute in conversation threads, which can contain files, messages, and interactions with other agents.
+### [Master Threads →](./threads.md)
+Threads power agent execution and interaction. Learn to structure conversations, manage file attachments, and create coordinated multi-agent interactions - all within organized conversation threads.
 
-- [The Agent Environment](./env/overview.md): Agents have access to the environment object, which allows them to [interact with the user](./env/messages_files.md), use AI models to make [inferences](./env/inference.md), [call other agents](./env/calling_other_agents.md), use [tools](./env/tools.md), and much more. 
+### [Explore the Environment →](./env/overview.md)
+The environment object unlocks NEAR AI's powerful features:
 
-- [Secrets](./secrets.md): Agents can store secrets to access external services, like APIs, databases, or other services.
+- Create natural conversations with [advanced message handling](./env/messages_files.md)
+- Leverage AI models for [intelligent decision-making](./env/inference.md)
+- Enable [agent-to-agent communication](./env/calling_other_agents.md)
+- Extend capabilities with [custom tools](./env/tools.md)
+
+### [Learn About Secrets →](./secrets.md)
+Keep your agent secure with proper secrets management. Store API keys safely and connect to external services with confidence.
