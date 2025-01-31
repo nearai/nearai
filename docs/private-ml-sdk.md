@@ -1,6 +1,6 @@
 # Private and Verifiable AI
 
-Thanks to a combination of cryptographic techniques and secure hardware, NEAR AI is private and verifiable every step of the way. From interacting with agents, to training your own models, you can be sure that your data is secure and the results are not tampered with.
+Thanks to a combination of cryptographic techniques and secure hardware, NEAR AI is private and verifiable every step of the way. From agent interactions to model training, our infrastructure ensures data privacy and result integrity throughout the entire process.
 
 ![alt text](assets/tee.png)
 <p style="text-align: center; font-size: small; font-style: italic">NEAR AI leverages technology from Intel and NVIDIA to keep your data safe and isolated</p>
