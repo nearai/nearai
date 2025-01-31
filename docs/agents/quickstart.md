@@ -1,15 +1,10 @@
-# Quickstart a Python Agent
+# Quickstart Agent Creation
 
-Welcome! NEAR AI Agents are programs that can act autonomously to solve a task, while adapting and reacting to
-their environment.
+In this Quickstart you will learn how to setup NEAR AI and then use it to build & interact with an AI agent in less than one minute.
 
-NEAR AI agents can use various AI models, store data to remember past interactions, communicate with other agents,
-use tools to interact with the environment, and much more.
-
-In this Quickstart we will build our first agent on NEAR AI, and learn how to interact with it.
-
-<iframe width="49%" height="auto" src="https://www.youtube.com/embed/q2nhgj9q2PU" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-<iframe width="49%" height="auto" src="https://www.youtube.com/embed/fqPRXxj3AoI" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+NEAR AI Agents are programs that can act autonomously to solve a task, while adapting and reacting to their environment. 
+These agents can use various AI models, store data to remember past interactions, communicate with other agents, use tools to 
+interact with the environment, and much more.
 
 ---
 
