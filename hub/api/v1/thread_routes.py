@@ -166,8 +166,8 @@ def delete_thread(
 
 
 class MessageCreateParams(BaseModel):
-    content: Union[str, Iterable[MessageContentPartParam]]
-    """The text contents of the message."""
+    content: Union[str, Iterable[MessageContentPartParam], dict]
+    """The text or json contents of the message."""
 
     role: Literal["user", "assistant", "system"]
     """The role of the entity that is creating the message. Allowed values include:

@@ -544,7 +544,7 @@ class Environment(object):
 
         # HubClient methods
         def add_reply(
-            message: str,
+            message: Union[str, dict],
             attachments: Optional[Iterable[Attachment]] = None,
             message_type: Optional[str] = None,
         ):
