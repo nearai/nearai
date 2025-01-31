@@ -5,23 +5,23 @@ Thanks to a combination of cryptographic techniques and secure hardware, NEAR AI
 ![alt text](assets/tee.png)
 <p style="text-align: center; font-size: small; font-style: italic">NEAR AI leverages technology from Intel and NVIDIA to keep your data safe and isolated</p>
 
-To execute the agent securely, NEAR AI uses Intel TDX technology to create a [Confidential Virtual Machine (CVM)](https://www.intel.com/content/www/us/en/developer/tools/trust-domain-extensions/overview.htmlml), this is, a virtual machine that runs in an isolated environment within the CPU. Within this CVM, a Docker container that has the agent's code and user data is deployed and executed. 
+To execute the agent securely, NEAR AI uses Intel TDX technology to create a [Confidential Virtual Machine (CVM)](https://www.intel.com/content/www/us/en/developer/tools/trust-domain-extensions/overview.htmlml). This CVM is a virtual machine that runs in an isolated environment within the CPU, where a Docker container containing the agent's code and user data is deployed and executed. 
 
-Whenever the agent needs to make an inference, NVIDIA TEE technology is used to create a [Confidential Space within the GPU](https://www.nvidia.com/en-us/data-center/solutions/confidential-computing/) and establish an encrypted channel for communication. The model is loaded into the Confidential Space, where it is executed in an isolated environment.
+For model inference, an encrypted communication channel is established using NVIDIA TEE technology, which creates a [Confidential Space within the GPU](https://www.nvidia.com/en-us/data-center/solutions/confidential-computing/). The model runs in this isolated environment, protected from external access.
 
-It is important to remark that both CPU and GPU Confidential Spaces are **completely isolated** from the rest of the system. Neither the operating system nor the hypervisor (in charge of managing the virtual machines) have access to the code or data being executed.
+It's important to note that the CPU and GPU Confidential Spaces operate in **complete isolation** from the rest of the system - neither the operating system nor the hypervisor (VM manager) can access the code or data being processed.
 
 ??? note "Want to dive deeper?"
 
-    We are open-sourcing the technology that powers NEAR AI. If you are interested in learning more about how we are building this secure and private AI, check out our [Private ML SDK](https://github.com/nearai/private-ml-sdk) on GitHub. 
+    All technology that powers NEAR AI is open-sourced. If you want to dive deeper and learn more about how this secure and private AI is being developed, check out the [Private ML SDK](https://github.com/nearai/private-ml-sdk) on GitHub. 
 
 ---
 
 ## How Can I Trust It?
 
-Before executing in the server, NEAR AI checks that the hardware is properly configured, and that the Docker container has the proper image hash. This ensures that the agent is running in a secure environment, and that the code being executed is the one you expect.
+Before deployment, NEAR AI verifies both proper hardware configuration and Docker container image hash integrity. This ensures a secure runtime environment and that the exact code being executed matches expectations.
 
-After the agent executes, NEAR AI checks its correctness by checking the attestations provided by the TEEs. These attestations are cryptographic proofs that the agent executed in a secure environment, and that the code and data were not tampered with. 
+After execution, NEAR AI validated security through TEE attestations - cryptographic proofs verify both a secure environment and data/code integrity. 
 
 You can view and verify these attestations yourself or publish them on-chain with NEAR Protocol to allow anyone to verify them. This provides a cryptographically verifiable chain of trust through the entire stack from agent to inference to hardware; all the way down to the certifications from the chip manufacturers.
 ---
