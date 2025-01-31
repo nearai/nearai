@@ -114,7 +114,7 @@ Runs are asynchronous, which means you'll want to monitor their status by pollin
 In JavaScript:
 
 ```javascript
-const assistant_id = "near.ai/assistant/0.0.1"
+const assistant_id = "near-ai-agents.near/assistant/latest"
 let run = await openai.beta.threads.runs.createAndPoll(
   thread.id,
   { 
@@ -126,7 +126,7 @@ let run = await openai.beta.threads.runs.createAndPoll(
 In Python:
 
 ```python
-assistant_id = "near.ai/assistant/0.0.1"
+assistant_id = "near-ai-agents.near/assistant/latest"
 run = client.beta.threads.runs.create_and_poll(
     thread_id=thread.id,
     assistant_id=assistant_id,
