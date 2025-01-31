@@ -1,17 +1,25 @@
 console.log("config-man init")
 import {AgentConfig} from './config-types.js'
 import {NearAIClient} from './near-client.js';
-import {createSecureClient} from './near-client.js';
+// import {createSecureClient} from './near-client.js';
 import {SecureHubClient} from "./secure-client.js";
 
 export class AgentRunnerConfig {
     thread_id: string;
     user_auth: string;
+    base_url: string;
+    env_vars: { [key: string]: string };
 
     // init
-    constructor(thread_id: string = "", user_auth: string = "{}") {
+    constructor(thread_id: string = "",
+                user_auth: string = "{}",
+                base_url: string = "https://api.near.ai",
+                env_vars: { [key: string]: string } = {}
+    ) {
         this.thread_id = thread_id;
         this.user_auth = user_auth;
+        this.base_url = base_url;
+        this.env_vars = env_vars;
     }
 }
 
@@ -19,9 +27,9 @@ export class AgentRunnerConfig {
 class ConfigManager {
     private static instance: ConfigManager;
     private config: AgentConfig | null = null;
-    private secureClient: SecureHubClient | null = null;
+    private secureClient: NearAIClient | null = null;
 
-    thread_id: string = "";
+    // thread_id: string = "";
 
     private constructor() {
     }
@@ -45,11 +53,15 @@ class ConfigManager {
             const params = JSON.parse(jsonString);
             this.config = {
                 thread_id: params.thread_id,
-                user_auth: params.user_auth
+                user_auth: params.user_auth,
+                base_url: params.base_url,
+                agent_ts_files_to_transpile: params.agent_ts_files_to_transpile,
+                env_vars: params.env_vars
             };
 
-            this.thread_id = params.thread_id;
-            this.secureClient = createSecureClient(this.config);
+            // this.thread_id = params.thread_id;
+            //this.secureClient = createSecureClient(this.config);
+            this.secureClient = new NearAIClient(this.config);
             console.log("initialize config", this.config);
             return true;
         } catch (error) {
@@ -68,7 +80,9 @@ class ConfigManager {
         if (!this.config) {
             throw new Error('Config not initialized. Call initialize() first.');
         }
-        return this.config;
+        let config = this.config;
+        config.user_auth = "";
+        return config;
     }
 }
 

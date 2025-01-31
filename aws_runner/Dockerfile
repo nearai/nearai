@@ -1,3 +1,4 @@
+# node image public.ecr.aws/lambda/nodejs:22
 FROM public.ecr.aws/lambda/python:3.11
 
 RUN yum install -y gcc libffi-devel openssl-devel shadow-utils acl tar gzip curl
@@ -50,10 +51,12 @@ RUN if [ "$TS_RUNNER" = "True" ]; then \
 # Clear temp folder
 RUN rm -rf /tmp/ts_runner_temp
 
-ARG BUILD_ID
-ENV BUILD_ID=${BUILD_ID}
-RUN echo "Build ID: ${BUILD_ID}" > /build-info.txt
+# Copy build-info.txt to the image
+COPY build-info.txt ${LAMBDA_TASK_ROOT}/
+# Read the build ID from the file and save it to the ENV
+# ENV BUILD_ID=$(cat /var/task/build-info.txt)
+# RUN rm /tmp/build-info.txt
 
-WORKDIR /
+# WORKDIR /
 CMD [ "nearai/aws_runner/service.handler" ]
 

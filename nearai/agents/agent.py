@@ -143,7 +143,7 @@ class Agent(object):
         #       `compile` and `exec` have been tested to work properly in a multithreaded environment.
         exec(self.code, agent_namespace)
 
-    def run_ts_agent(self, thread_id, user_auth):
+    def run_ts_agent(self, agent_filename, env_vars, json_params ):
         print("run_ts_agent", self.ts_runner_dir)
         # real_cwd = os.path.realpath(self.ts_runner_dir)
         print("💡 run_ts_agent CWD:", self.ts_runner_dir)
@@ -164,36 +164,22 @@ class Agent(object):
         os.makedirs("/tmp/npm_cache", exist_ok=True)
         os.makedirs("/tmp/npm_prefix", exist_ok=True)
 
-        print("!!!BUILD: 1")
-        print("!!!BUILD: ", getenv("BUILD_ID"))
+        print("Running ", agent_filename)
+
+        # read file /tmp/build-info.txt if exists
+        if os.path.exists("/var/task/build-info.txt"):
+            with open("/var/task/build-info.txt", "r") as file:
+                print("!!!BUILD ID: ", file.read())
+        print("!!!BUILD env: ", getenv("BUILD_ID"))
 
         # Add debug logging
         print("Directory structure:", os.listdir("/tmp/ts_runner"))
         print("Symlink exists:", os.path.exists("/tmp/ts_runner/node_modules/.bin/tsc"))
         print("Build files exist:", os.path.exists("/tmp/ts_runner/build/sdk/main.js"))
 
-        # build_process = subprocess.Popen(["npm", "--prefix", self.ts_runner_dir, "run", "build"],
-        #                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.ts_runner_dir)
-
-        # build_stdout, build_stderr = build_process.communicate()
-
-        # Добавьте проверку версии TypeScript
-        # version_process = subprocess.Popen(
-        #     ["node", "-e", "console.log(require('typescript').version)"],
-        #     stdout=subprocess.PIPE,
-        #     cwd=self.ts_runner_dir
-        # )
-        # print("TS Version:", version_process.communicate()[0].decode())
-
-        #if build_process.returncode == 0:
         if True:
-            json_params = json.dumps({
-               "thread_id": thread_id,
-               "user_auth": user_auth,
-            })
-
             ts_process = subprocess.Popen(["npm", "--prefix", self.ts_runner_dir, "run", "start", "agents/agent.ts", json_params], stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE, cwd=self.ts_runner_dir)
+                                      stderr=subprocess.PIPE, cwd=self.ts_runner_dir, env=env_vars)
             stdout, stderr = ts_process.communicate()
 
             print("STDOUT:", stdout.decode())
@@ -213,7 +199,7 @@ class Agent(object):
         # save env.env_vars
         env.env_vars = total_env_vars
 
-        agent_file_exists = False
+        agent_ts_files_to_transpile = []
 
         if not self.agent_filename or True:
 
@@ -278,6 +264,11 @@ class Agent(object):
                 for file in files:
                     file_path = os.path.join(root, file)
                     print("agent file", file_path)
+
+                    # get file extension for agent_filename
+                    if file_path.endswith(".ts"):
+                        agent_ts_files_to_transpile.append(file_path)
+
                     relative_path = os.path.relpath(file_path, self.temp_dir)
                     try:
                         with open(file_path, "rb") as f:
@@ -315,7 +306,16 @@ class Agent(object):
 
             if self.agent_language == "ts":
                 print("run_ts_agent try")
-                process = multiprocessing.Process(target=self.run_ts_agent, args=[env._thread_id, user_auth])
+                agent_json_params = json.dumps({
+                    "thread_id": env._thread_id,
+                    "user_auth": user_auth,
+                    "base_url": env.base_url,
+                    "env_vars": env.env_vars,
+                    "agent_ts_files_to_transpile": agent_ts_files_to_transpile
+                })
+
+                process = multiprocessing.Process(target=self.run_ts_agent, args=[
+                    self.agent_filename, env.env_vars, agent_json_params])
                 process.start()
                 process.join()
             else:

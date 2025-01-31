@@ -112,6 +112,7 @@ class Environment(object):
         # Warning: never expose `client` or `_hub_client` to agent's environment
 
         self.user_auth = client._auth
+        self.base_url = client._config.base_url
 
         # Placeholder for solver
         self.client: Optional[InferenceClient] = None

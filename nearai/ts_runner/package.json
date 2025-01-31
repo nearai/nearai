@@ -7,7 +7,10 @@
     "dev": "NODE_OPTIONS='--loader ts-node/esm --experimental-specifier-resolution=node' node sdk/agent-environment.ts"
   },
   "dependencies": {
-    "@types/node": "^20.5.0",
+    "@types/node": "^16.18.125",
+    "@coinbase/cdp-agentkit-core": "^0.0.14",
+    "@coinbase/cdp-langchain": "^0.0.15",
+    "@coinbase/coinbase-sdk": "^0.16.0",
     "openai": "^4.81.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
