@@ -11,7 +11,7 @@ dependencies = [
     "base58==2.1.1",
     "boto3>=1.34.100,<2.0.0",
     "boto3-stubs>=1.34.147,<2.0.0",
-    "cryptography>=43.0.0,<44.0.0",
+    "cryptography>=43.0.0",
     "datasets>=2.20.0,<3.0.0",
     "ed25519>=1.5,<2.0",
     "fastapi>=0.111.0,<0.112.0",
