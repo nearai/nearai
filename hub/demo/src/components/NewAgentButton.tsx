@@ -18,6 +18,7 @@ import {
 } from '@near-pagoda/ui';
 import {
   BookOpenText,
+  FileTs,
   Lightning,
   Plus,
   TerminalWindow,
@@ -39,8 +40,8 @@ import { SignInPrompt } from './SignInPrompt';
 const BASIC_TEMPLATE_AGENT_ID = 'flatirons.near/example-travel-agent/latest';
 const TWITTER_TEMPLATE_AGENT_ID = 'flatirons.near/near-secret-agent/latest';
 const NEAR_TEMPLATE_AGENT_ID = 'zavodil.near/near-agent/latest';
-const AGENT_KIT_TEMPLATE_AGENT_ID =
-  'antonlomonos.near/cdp_langchain_chatbot_example_usage/latest';
+const AGENT_KIT_TEMPLATE_AGENT_ID = 'TODO.near/TODO/latest';
+const TYPESCRIPT_TEMPLATE_AGENT_ID = 'TODO.near/TODO/latest';
 
 type Props = {
   customButton?: ReactNode;
@@ -72,12 +73,50 @@ export const NewAgentButton = ({ customButton }: Props) => {
   );
 };
 
+const templates = [
+  {
+    agentId: NEAR_TEMPLATE_AGENT_ID,
+    icon: <NearLogoIcon />,
+    title: 'NEAR',
+    description: 'View and send transactions on the blockchain',
+  },
+  {
+    agentId: TWITTER_TEMPLATE_AGENT_ID,
+    icon: <XLogo />,
+    title: 'Twitter',
+    description: 'Listen for events and publish tweets',
+  },
+  {
+    agentId: AGENT_KIT_TEMPLATE_AGENT_ID,
+    icon: <Wallet />,
+    title: 'AgentKit by Coinbase',
+    description: (
+      <>
+        Easily take actions onchain with any wallet -{' '}
+        <Text
+          size="text-s"
+          href="https://github.com/coinbase/agentkit"
+          target="_blank"
+        >
+          Learn More
+        </Text>
+      </>
+    ),
+  },
+  {
+    agentId: TYPESCRIPT_TEMPLATE_AGENT_ID,
+    icon: <FileTs />,
+    title: 'TypeScript',
+    description: 'Code using a typed language',
+  },
+];
+
 type NewAgentFormProps = {
   onFinish: () => void;
 };
 
 type NewAgentFormSchema = {
-  toolTemplateAgentId: string;
+  agentId: string;
   description: string;
   name: string;
   version: string;
@@ -111,7 +150,7 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
       if (!auth) return;
 
       const { name, namespace, version } = parseEntryId(
-        data.toolTemplateAgentId || BASIC_TEMPLATE_AGENT_ID,
+        data.agentId || BASIC_TEMPLATE_AGENT_ID,
       );
 
       const result = await forkMutation.mutateAsync({
@@ -174,84 +213,30 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
               </Flex>
 
               <CardList>
-                <Card
-                  background="sand-2"
-                  padding="s"
-                  paddingInline="m"
-                  as="label"
-                >
-                  <Flex align="center" gap="m">
-                    <Checkbox
-                      type="radio"
-                      value={NEAR_TEMPLATE_AGENT_ID}
-                      {...form.register('toolTemplateAgentId')}
-                    />
-                    <SvgIcon icon={<NearLogoIcon />} color="sand-12" size="m" />
-                    <Flex as="span" direction="column">
-                      <Text as="span" color="current" weight={600}>
-                        NEAR
-                      </Text>
-                      <Text size="text-s">
-                        View and send transactions on the blockchain
-                      </Text>
-                    </Flex>
-                  </Flex>
-                </Card>
-
-                <Card
-                  background="sand-2"
-                  padding="s"
-                  paddingInline="m"
-                  as="label"
-                >
-                  <Flex align="center" gap="m">
-                    <Checkbox
-                      type="radio"
-                      value={TWITTER_TEMPLATE_AGENT_ID}
-                      {...form.register('toolTemplateAgentId')}
-                    />
-                    <SvgIcon icon={<XLogo />} color="sand-12" size="m" />
-                    <Flex as="span" direction="column">
-                      <Text as="span" color="current" weight={600}>
-                        Twitter
-                      </Text>
-                      <Text size="text-s">
-                        Listen for events and publish tweets
-                      </Text>
-                    </Flex>
-                  </Flex>
-                </Card>
-
-                <Card
-                  background="sand-2"
-                  padding="s"
-                  paddingInline="m"
-                  as="label"
-                >
-                  <Flex align="center" gap="m">
-                    <Checkbox
-                      type="radio"
-                      value={AGENT_KIT_TEMPLATE_AGENT_ID}
-                      {...form.register('toolTemplateAgentId')}
-                    />
-                    <SvgIcon icon={<Wallet />} color="sand-12" size="m" />
-                    <Flex as="span" direction="column">
-                      <Text as="span" color="current" weight={600}>
-                        AgentKit by Coinbase
-                      </Text>
-                      <Text size="text-s">
-                        Easily take actions onchain with any wallet -{' '}
-                        <Text
-                          size="text-s"
-                          href="https://github.com/coinbase/agentkit"
-                          target="_blank"
-                        >
-                          Learn More
+                {templates.map((template) => (
+                  <Card
+                    background="sand-2"
+                    padding="s"
+                    paddingInline="m"
+                    as="label"
+                    key={template.agentId}
+                  >
+                    <Flex align="center" gap="m">
+                      <Checkbox
+                        type="radio"
+                        value={template.agentId}
+                        {...form.register('agentId')}
+                      />
+                      <SvgIcon icon={template.icon} color="sand-12" size="m" />
+                      <Flex as="span" direction="column">
+                        <Text as="span" color="current" weight={600}>
+                          {template.title}
                         </Text>
-                      </Text>
+                        <Text size="text-s">{template.description}</Text>
+                      </Flex>
                     </Flex>
-                  </Flex>
-                </Card>
+                  </Card>
+                ))}
               </CardList>
             </Flex>
 
