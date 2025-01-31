@@ -21,6 +21,7 @@ import {
   Lightning,
   Plus,
   TerminalWindow,
+  Wallet,
   XLogo,
 } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
@@ -37,9 +38,9 @@ import { SignInPrompt } from './SignInPrompt';
 
 const BASIC_TEMPLATE_AGENT_ID = 'flatirons.near/example-travel-agent/latest';
 const TWITTER_TEMPLATE_AGENT_ID = 'flatirons.near/near-secret-agent/latest';
-const NEAR_TEMPLATE_AGENT_ID = 'zavodil.near/near-agent/latest/source';
-const NEAR_AND_TWITTER_TEMPLATE_AGENT_ID =
-  'agent.raidvault.near/airdrop/latest/source';
+const NEAR_TEMPLATE_AGENT_ID = 'zavodil.near/near-agent/latest';
+const AGENT_KIT_TEMPLATE_AGENT_ID =
+  'antonlomonos.near/cdp_langchain_chatbot_example_usage/latest';
 
 type Props = {
   customButton?: ReactNode;
@@ -76,10 +77,7 @@ type NewAgentFormProps = {
 };
 
 type NewAgentFormSchema = {
-  tools: {
-    near: boolean;
-    twitter: boolean;
-  };
+  toolTemplateAgentId: string;
   description: string;
   name: string;
   version: string;
@@ -89,7 +87,6 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
   const form = useForm<NewAgentFormSchema>({
     mode: 'all',
     defaultValues: {
-      tools: {},
       version: '0.0.1',
     },
   });
@@ -113,13 +110,9 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
     try {
       if (!auth) return;
 
-      let agentId = BASIC_TEMPLATE_AGENT_ID;
-      if (data.tools.near && data.tools.twitter)
-        agentId = NEAR_AND_TWITTER_TEMPLATE_AGENT_ID;
-      else if (data.tools.near) agentId = NEAR_TEMPLATE_AGENT_ID;
-      else if (data.tools.twitter) agentId = TWITTER_TEMPLATE_AGENT_ID;
-
-      const { name, namespace, version } = parseEntryId(agentId);
+      const { name, namespace, version } = parseEntryId(
+        data.toolTemplateAgentId || BASIC_TEMPLATE_AGENT_ID,
+      );
 
       const result = await forkMutation.mutateAsync({
         name,
@@ -189,8 +182,9 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
                 >
                   <Flex align="center" gap="m">
                     <Checkbox
-                      type="checkbox"
-                      {...form.register('tools.near')}
+                      type="radio"
+                      value={NEAR_TEMPLATE_AGENT_ID}
+                      {...form.register('toolTemplateAgentId')}
                     />
                     <SvgIcon icon={<NearLogoIcon />} color="sand-12" size="m" />
                     <Flex as="span" direction="column">
@@ -212,8 +206,9 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
                 >
                   <Flex align="center" gap="m">
                     <Checkbox
-                      type="checkbox"
-                      {...form.register('tools.twitter')}
+                      type="radio"
+                      value={TWITTER_TEMPLATE_AGENT_ID}
+                      {...form.register('toolTemplateAgentId')}
                     />
                     <SvgIcon icon={<XLogo />} color="sand-12" size="m" />
                     <Flex as="span" direction="column">
@@ -222,6 +217,37 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
                       </Text>
                       <Text size="text-s">
                         Listen for events and publish tweets
+                      </Text>
+                    </Flex>
+                  </Flex>
+                </Card>
+
+                <Card
+                  background="sand-2"
+                  padding="s"
+                  paddingInline="m"
+                  as="label"
+                >
+                  <Flex align="center" gap="m">
+                    <Checkbox
+                      type="radio"
+                      value={AGENT_KIT_TEMPLATE_AGENT_ID}
+                      {...form.register('toolTemplateAgentId')}
+                    />
+                    <SvgIcon icon={<Wallet />} color="sand-12" size="m" />
+                    <Flex as="span" direction="column">
+                      <Text as="span" color="current" weight={600}>
+                        AgentKit by Coinbase
+                      </Text>
+                      <Text size="text-s">
+                        Easily take actions onchain with any wallet -{' '}
+                        <Text
+                          size="text-s"
+                          href="https://github.com/coinbase/agentkit"
+                          target="_blank"
+                        >
+                          Learn More
+                        </Text>
                       </Text>
                     </Flex>
                   </Flex>
