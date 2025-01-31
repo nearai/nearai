@@ -13,11 +13,14 @@ In this Quickstart we will build our first agent on NEAR AI, and learn how to in
 
 ---
 
-## Pre-Requisites
+## Setup
+
+### Pre-Requisites
 
 - [NEAR Account](https://wallet.near.org/)
 - [NEAR AI CLI](#installing-near-ai-cli)
 
+---
 
 ### Installing NEAR AI CLI
 
@@ -56,7 +59,7 @@ In this Quickstart we will build our first agent on NEAR AI, and learn how to in
 
 ---
 
-## Login to NEAR AI
+### Login to NEAR AI
 
 To create a new agent, first login with a [NEAR Account](https://wallet.near.org/):
 
@@ -80,7 +83,7 @@ $> nearai login
 Please visit the following URL to complete the login process: https://auth.near.ai?message=Welcome+to+NEAR+AI&nonce=<xyzxyzxyzxyzx>&recipient=ai.near&callbackUrl=http%3A%2F%2Flocalhost%3A63130%2Fcapture
 ```
 
-After successfully logging in, you should see this confirmation screen. Close it and return to your terminal.
+After successfully logging in, you will see a confirmation screen. Close it and return to your terminal.
 
 
 ![alt text](../assets/agents/quickstart-login.png)
@@ -102,44 +105,100 @@ After successfully logging in, you should see this confirmation screen. Close it
 
 ---
 
-## Creating a New Agent
+## Create an Agent
 
-Now that you are logged in, lets create your first AI agent, a simple agent called `hello-ai`:
-
-```bash
-nearai agent create --name hello-ai --description "My First NEAR AI Agent"
-
-# Example Response:
-# Agent created at: /Users/user/.nearai/registry/<your-account.near>/hello-ai/0.0.1
-```
-
-This will create a local folder with some `metadata` that describes the agent, and a python file with the agent's logic. Let's interact with the agent before we dive into its code!
-
-Execute the following commands in your terminal:
+After logging in, you can create a new agent by running the following command:
 
 ```bash
-nearai agent interactive ~/.nearai/registry/<your-account.near>/hello-ai/0.0.1 --local
+nearai agent create
 ```
+You will then be prompted to provide a few details about your agent:
 
-An interactive session will start, where you can chat with your agent... talk to it for a while and type `exit` when you are ready to continue.
+1. The name of your agent.
+2. A short description of your agent.
+3. Initial instructions for the agent (which can be edited later).
+
+![agent-create-prompt](../assets/agents/agent-create-prompt.png)
+
+Once you have complete these three prompts, you'll see a summary to verify the information is correct:
+
+![agent-create-summary](../assets/agents/agent-create-summary.png)
+
+If everything looks good, press `y` to build your agent. Once complete, you should see a confirmation screen similar to this:
+
+![agent-create-success](../assets/agents/agent-create-success.png)
+
+Here you will find:
+
+1. Where the agent was created:
+
+    `/home_directory/.nearai/regsitry/<your-account.near>/<agent-name>/0.0.1`
+
+2. Useful commands to get started interacting with it:
+
+    ```bash
+    # Run agent locally
+    nearai agent interactive <path-to-agent> --local
+
+    # Select from a list of agents you created to run locally
+    nearai agent interactive --local
+    
+    # Upload agent to NEAR AI's public registry
+    nearai registry upload <path-to-agent>
+    ```
+
+Success! You now have a new AI Agent ready to use! :tada: 
 
 ---
 
-## The Agent
+## Agent Files
 
-The agent is defined by two files, both located at `~/.nearai/registry/<your-account.near>/hello-ai/0.0.1`: 
+After successfully creating an agent, `nearai` will create a new folder in your home directory, with the name of your agent:
 
-1. `metadata.json`: Contains information about your agent, and can include configuration about which model to use.
-2. `agent.py`: This is the code that executes each time your agent receives a prompt.
+`/home_directory/.nearai/registry/<your-account.near>/<agent-name>/0.0.1`: 
 
-By default, the agent takes the role of a "helpful assistant", which receives the user input and responds to it using the [Llama 3.1 70B Instruct](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) (as defined in the default metadata).
+This folder contains two files that define your agent:
+
+1. `metadata.json`: Contains information / configuration about your agent.
+2. `agent.py`: Pythoncode that executes each time your agent receives a prompt.
+
+### `metadata.json`
+
+This file contains information about your agent, and can include configuration about which model to use. By default, your agent will use the [Llama 3.1 70B Instruct](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) model.
+```json title="metadata.json"
+
+{
+  "name": "example-agent",
+  "version": "0.0.1",
+  "description": "NEAR AI docs example agent ;)",
+  "category": "agent",
+  "tags": [],
+  "details": {
+    "agent": {
+      "defaults": {
+        "model": "llama-v3p1-70b-instruct",
+        "model_provider": "fireworks",
+        "model_temperature": 1.0,
+        "model_max_tokens": 16384
+      }
+    }
+  },
+  "show_entry": true
+}
+
+```
+
+### `agent.py`
+
+This file contains the code that executes each time your agent receives a prompt. See
 
 ```python title="agent.py"
 from nearai.agents.environment import Environment
 
+
 def run(env: Environment):
     # A system message guides an agent to solve specific tasks.
-    prompt = {"role": "system", "content": "You are a helpful assistant."}
+    prompt = {"role": "system", "content": "You are a helpful agent that will educate users about NEAR AI."}
 
     # Use the model set in the metadata to generate a response
     result = env.completion([prompt] + env.list_messages())
@@ -153,30 +212,6 @@ def run(env: Environment):
 run(env)
 ```
 
-??? example "Default metadata.json"
-
-    By default, agents use the 
-
-    ```json
-    {
-      "name": "hello-ai",
-      "version": "1.0.0",
-      "description": "My First Agent",
-      "category": "agent",
-      "tags": [],
-      "details": {
-        "agent": {
-          "defaults": {
-            "model": "qwen2p5-72b-instruct",
-            "model_provider": "fireworks",
-            "model_temperature": 1.0,
-            "model_max_tokens": 16384
-          }
-        }
-      },
-      "show_entry": false
-    }
-    ```
 
 !!! tip 
     You can change the model used by the agent by modifying the `metadata.json` file, check all the available models in the [NEAR AI Hub](https://app.near.ai/models).
