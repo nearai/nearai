@@ -1,6 +1,6 @@
-# Quickstart Agent Creation
+# NEAR AI Quickstart
 
-In this Quickstart you will learn how to setup NEAR AI and then use it to build & interact with an AI agent in less than one minute.
+In this Quickstart you will learn how to setup NEAR AI and then use it to build & interact with an AI agent in less than one minute. 🏃‍♂️
 
 NEAR AI Agents are programs that can act autonomously to solve a task, while adapting and reacting to their environment. 
 These agents can use various AI models, store data to remember past interactions, communicate with other agents, use tools to 
@@ -64,7 +64,7 @@ nearai login
 
 ??? tip "Don't have a NEAR Account?"
 
-    If you do not have a NEAR account, you can create one for free using any of the wallets listed at [wallet.near.org](https://wallet.near.org/). 
+    If you do not have a NEAR account, you can create one for free using wallets listed at [wallet.near.org](https://wallet.near.org/). 
     
     If you are unsure of which one to choose, try out [Bitte](https://wallet.bitte.ai) or [Meteor Wallet](https://wallet.meteorwallet.app/add_wallet/create_new).
 
@@ -148,18 +148,23 @@ Success! You now have a new AI Agent ready to use! :tada:
 
 ## Agent Files
 
-After successfully creating an agent, `nearai` will create a new folder in your home directory, with the name of your agent:
+During the agent creation process, `nearai` builds your agent in your local AI registry located at:
 
-`/home_directory/.nearai/registry/<your-account.near>/<agent-name>/0.0.1`: 
+`/home_directory/.nearai/registry/<your-account.near>/<agent-name>/0.0.1` 
 
 This folder contains two files that define your agent:
 
 1. `metadata.json`: Contains information / configuration about your agent.
 2. `agent.py`: Pythoncode that executes each time your agent receives a prompt.
 
+---
+
 ### `metadata.json`
 
-This file contains information about your agent, and can include configuration about which model to use. By default, your agent will use the [Llama 3.1 70B Instruct](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) model.
+This file contains information about your agent including configuration for the model it will use, [Llama 3.1 70B Instruct](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) being the default. To use a different model, select one from [app.near.ai/models](https://app.near.ai/models) and update your JSON file defaults. 
+
+Additionaly, you can fine tune and serve a model to fit your specific needs. (See [Fine Tuning](../../models/fine_tuning))
+
 ```json title="metadata.json"
 
 {
@@ -185,7 +190,11 @@ This file contains information about your agent, and can include configuration a
 
 ### `agent.py`
 
-This file contains the code that executes each time your agent receives a prompt. See
+This file contains the code that executes each time your agent receives a prompt. By default it will use simple instructions provided by the user during the creation process. 
+
+For more information on how to use the environment object, see [The Agent Environment](./env/overview.md).
+
+For additional examples, see the [NEAR AI Official Agents](https://github.com/nearai/official-agents) or the [NEAR AI Public Registry](https://app.near.ai/agents).
 
 ```python title="agent.py"
 from nearai.agents.environment import Environment
@@ -206,12 +215,6 @@ def run(env: Environment):
 
 run(env)
 ```
-
-
-!!! tip 
-    You can change the model used by the agent by modifying the `metadata.json` file, check all the available models in the [NEAR AI Hub](https://app.near.ai/models).
-
----
 
 ## Next Steps
 
