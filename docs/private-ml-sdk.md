@@ -23,6 +23,7 @@ Before executing in the server, NEAR AI checks that the hardware is properly con
 
 After the agent executes, NEAR AI checks its correctness by checking the attestations provided by the TEEs. These attestations are cryptographic proofs that the agent executed in a secure environment, and that the code and data were not tampered with. 
 
+You can view and verify these attestations yourself or publish them on-chain with NEAR Protocol to allow anyone to verify them. This provides a cryptographically verifiable chain of trust through the entire stack from agent to inference to hardware; all the way down to the certifications from the chip manufacturers.
 ---
 
 ## How Can I Use it?
