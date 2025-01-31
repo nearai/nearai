@@ -7,7 +7,7 @@ Thanks to a combination of cryptographic techniques and secure hardware, NEAR AI
 
 To execute the agent securely, NEAR AI uses Intel TDX technology to create a [Confidential Virtual Machine (CVM)](https://www.intel.com/content/www/us/en/developer/tools/trust-domain-extensions/overview.htmlml), this is, a virtual machine that runs in an isolated environment within the CPU. Within this CVM, a Docker container that has the agent's code and user data is deployed and executed. 
 
-Whenever the agent needs to make an inference, NVIDIA TEE technology is used to create a [Confidential Space within the GPU]((https://www.nvidia.com/en-us/data-center/solutions/confidential-computing/)) and establish an encrypted channel for communication. The model is loaded into the Confidential Space, where it is executed in an isolated environment.
+Whenever the agent needs to make an inference, NVIDIA TEE technology is used to create a [Confidential Space within the GPU](https://www.nvidia.com/en-us/data-center/solutions/confidential-computing/) and establish an encrypted channel for communication. The model is loaded into the Confidential Space, where it is executed in an isolated environment.
 
 It is important to remark that both CPU and GPU Confidential Spaces are **completely isolated** from the rest of the system. Neither the operating system nor the hypervisor (in charge of managing the virtual machines) have access to the code or data being executed.
 
