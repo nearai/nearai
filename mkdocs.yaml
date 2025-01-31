@@ -133,7 +133,7 @@ nav:
     - Welcome To NEAR AI Docs: 'index.md'
     - Contributing: 'contributing.md'
     - Decentralization: 'decentralization.md'
-    - Private ML SDK: 'private-ml-sdk.md'
+    - Private & Verifiable AI: 'private-ml-sdk.md'
   - Agents:
     - Quickstart: 'agents/quickstart.md'
     - Registry: 'agents/registry.md'
