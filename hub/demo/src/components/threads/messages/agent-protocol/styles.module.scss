@@ -65,7 +65,7 @@
 
   &:hover,
   &:focus-within {
-    border-color: var(--sand-10) !important;
+    border-color: var(--sand-8) !important;
   }
 }
 
@@ -73,4 +73,11 @@
   width: auto;
   margin: auto;
   max-width: 100%;
+}
+
+.formSections {
+  > div:not(:last-child) {
+    border-bottom: 1px solid var(--sand-5);
+    padding-bottom: var(--gap-l);
+  }
 }

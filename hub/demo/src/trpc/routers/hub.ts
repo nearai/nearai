@@ -635,12 +635,14 @@ export const hubRouter = createTRPCRouter({
               fields: [
                 {
                   label: 'Favorite Color',
-                  type: 'text',
+                  type: 'select',
+                  options: ['Blue', 'Orange', 'White'],
                   required: true,
                 },
                 {
                   label: 'Favorite Number',
                   type: 'number',
+                  default_value: '7',
                   required: false,
                 },
               ],

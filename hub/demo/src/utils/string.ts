@@ -12,5 +12,5 @@ export function toTitleCase(str: string) {
 }
 
 export function stringToHtmlAttribute(str: string) {
-  return str.replace(/^[a-zA-Z0-9_.-]*$/, '');
+  return str.replace(/[^a-zA-Z0-9_.-]*/g, '');
 }

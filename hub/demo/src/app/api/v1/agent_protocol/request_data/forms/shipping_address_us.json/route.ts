@@ -4,9 +4,6 @@ import { type requestDataFormSchema } from '~/components/threads/messages/agent-
 
 export async function GET() {
   const form: z.infer<typeof requestDataFormSchema> = {
-    title: 'Shipping Info',
-    description:
-      'Please provide the address where your order should be delivered.',
     fields: [
       {
         label: 'Email Address',

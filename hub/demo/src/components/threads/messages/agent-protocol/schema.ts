@@ -40,11 +40,13 @@ export const requestChoiceSchema = z.object({
 });
 
 export const requestDataFormFieldSchema = z.object({
-  name: z.string().optional(),
   label: z.string(),
   description: z.string().optional(),
   default_value: z.string().optional(),
-  type: z.enum(['text', 'textarea', 'number', 'email']).default('text'),
+  type: z
+    .enum(['text', 'number', 'email', 'textarea', 'select'])
+    .default('text'),
+  options: z.string().array().optional(),
   required: z.boolean().default(false),
   autocomplete: z.string().optional(), // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete
 });
