@@ -123,5 +123,7 @@ jobs:
       if: ${{ github.event.inputs.publish-pypi == 'true' }}
       
     - name: Publish to PyPI
+      env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
       run: poetry publish
       if: ${{ github.event.inputs.publish-pypi == 'true' }}
