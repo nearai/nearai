@@ -254,6 +254,74 @@ def fork_thread(
         )
 
 
+class SubthreadCreateParams(BaseModel):
+    parent_id: int
+    messages_to_copy: Optional[List[int]] = []
+    new_messages: Optional[List[MessageCreateParams]] = []
+
+
+@threads_router.post("/threads/{parent_id}/subthreads")
+def create_subthread(
+    parent_id: int,
+    subthread_params: SubthreadCreateParams = Body(...),
+    auth: AuthToken = Depends(get_auth),
+) -> Thread:
+    with get_session() as session:
+        parent_thread = session.get(ThreadModel, parent_id)
+        if parent_thread is None:
+            raise HTTPException(status_code=404, detail="Parent thread not found")
+
+        if parent_thread.owner_id != auth.account_id:
+            raise HTTPException(
+                status_code=403, detail="You don't have permission to create a subthread for this thread"
+            )
+
+        subthread = ThreadModel(
+            messages=[],
+            meta_data=parent_thread.meta_data,
+            tool_resources=parent_thread.tool_resources,
+            owner_id=auth.account_id,
+            parent_id=parent_id,
+        )
+        session.add(subthread)
+        session.flush()  # Flush to generate the new thread's ID
+
+        # Copy specified messages from the parent thread
+        if subthread_params.messages_to_copy:
+            messages = session.exec(
+                select(MessageModel)
+                .where(MessageModel.id.in_(subthread_params.messages_to_copy))
+                .where(MessageModel.thread_id == parent_id)
+            ).all()
+            for message in messages:
+                new_message = MessageModel(
+                    thread_id=subthread.id,
+                    content=message.content,
+                    role=message.role,
+                    assistant_id=message.assistant_id,
+                    meta_data=message.meta_data,
+                    attachments=message.attachments,
+                    run_id=message.run_id,
+                )
+                session.add(new_message)
+
+        # Add new messages to the subthread
+        for new_message_params in subthread_params.new_messages:
+            new_message = MessageModel(
+                thread_id=subthread.id,
+                content=new_message_params.content,
+                role=new_message_params.role,
+                assistant_id=new_message_params.assistant_id,
+                meta_data=new_message_params.metadata,
+                attachments=new_message_params.attachments,
+                run_id=new_message_params.run_id,
+            )
+            session.add(new_message)
+
+        session.commit()
+        return subthread.to_openai()
+
+
 @threads_router.post("/threads/{thread_id}/messages")
 def create_message(
     thread_id: str,
