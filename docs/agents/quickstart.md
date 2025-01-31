@@ -127,7 +127,7 @@ Here you will find:
 
 1. Where the agent was created:
 
-    `/home_directory/.nearai/regsitry/<your-account.near>/<agent-name>/0.0.1`
+    `/home_directory/.nearai/regisitry/<your-account.near>/<agent-name>/0.0.1`
 
 2. Useful commands to get started interacting with it:
 
@@ -163,7 +163,7 @@ This folder contains two files that define your agent:
 
 This file contains information about your agent including configuration for the model it will use, [Llama 3.1 70B Instruct](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) being the default. To use a different model, select one from [app.near.ai/models](https://app.near.ai/models) and update your JSON file defaults. 
 
-Additionaly, you can fine tune and serve a model to fit your specific needs. (See [Fine Tuning](../../models/fine_tuning))
+Additionally, you can fine tune and serve a model to fit your specific needs. (See [Fine Tuning](../../models/fine_tuning))
 
 ```json title="metadata.json"
 
@@ -218,7 +218,7 @@ run(env)
 
 ## Next Steps
 
-Now that you have the basics down, here are some key areas to focus on next that will help you better understand what is possible when buidling with NEAR AI:
+Now that you have the basics down, here are some key areas to focus on next that will help you better understand what is possible when building with NEAR AI:
 
 ### [Explore the Registry →](./registry.md)
 The NEAR AI Registry is your hub for agent discovery and collaboration. Browse community-created agents, learn from examples, and share your own creations with others.
