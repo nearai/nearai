@@ -123,5 +123,5 @@ jobs:
       if: ${{ github.event.inputs.publish-pypi == 'true' }}
       
     - name: Publish to PyPI
-      run: poetry publish --build
+      run: poetry publish
       if: ${{ github.event.inputs.publish-pypi == 'true' }}
