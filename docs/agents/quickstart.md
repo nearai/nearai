@@ -155,7 +155,7 @@ During the agent creation process, `nearai` builds your agent in your local AI r
 This folder contains two files that define your agent:
 
 1. `metadata.json`: Contains information / configuration about your agent.
-2. `agent.py`: Pythoncode that executes each time your agent receives a prompt.
+2. `agent.py`: Python code that executes each time your agent receives a prompt.
 
 ---
 
