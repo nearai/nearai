@@ -111,6 +111,8 @@ class Environment(object):
     ) -> None:
         # Warning: never expose `client` or `_hub_client` to agent's environment
 
+        self.user_auth = client._auth
+
         # Placeholder for solver
         self.client: Optional[InferenceClient] = None
 

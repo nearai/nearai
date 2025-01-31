@@ -220,7 +220,7 @@ class Message(SQLModel, table=True):
 
                 # Regular expression to match only valid UTF-8 characters, because we can't support utf8mb4 charset
                 # TODO #767: Remove this when we support utf8mb4 charset
-                content = re.sub(r"[^\x00-\xFF]", "", content)
+                content = re.sub(r"[^\x00-\xFF\u0400-\u04FF]", "", content)
 
                 self.content = [TextContentBlock(text=Text(value=content, annotations=[]), type="text")]
 

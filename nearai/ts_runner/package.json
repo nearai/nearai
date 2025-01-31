@@ -1,0 +1,15 @@
+{
+  "type": "module",
+  "scripts": {
+    "build": "tsc --build --force",
+    "start": "node build/sdk/main.js",
+    "go": "npm run build && npm run start agents/demo-agent.ts",
+    "dev": "NODE_OPTIONS='--loader ts-node/esm --experimental-specifier-resolution=node' node sdk/agent-environment.ts"
+  },
+  "dependencies": {
+    "@types/node": "^20.5.0",
+    "openai": "^4.81.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  }
+}

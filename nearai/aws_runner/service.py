@@ -134,7 +134,8 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
 
     if params["data_source"] == "registry":
         global local_agent_cache
-        if agent in local_agent_cache:
+        #TODO !!! fix
+        if agent in local_agent_cache and False:
             print(f"Using {agent} from cache")
             return local_agent_cache[agent]
 
