@@ -41,5 +41,3 @@ class GlobalEnvironment {
 }
 
 export const globalEnv = GlobalEnvironment.getInstance();
-
-console.log("globalEnv in globalEnv", globalEnv)

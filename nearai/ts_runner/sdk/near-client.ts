@@ -120,4 +120,8 @@ export class NearAIClient {
         let messages = await this._listMessages(limit, order, thread_id);
         return messages;
     }
+
+    get_thread_id = (): string => {
+        return this.thread_id;
+    }
 }

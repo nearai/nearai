@@ -1,0 +1,53 @@
+Local Development
+===
+
+Whis process will be simplified in the future. For now, you can follow these steps to run your TypeScript agent locally.
+
+1. Checkout the [ts_runner brunch](https://github.com/nearai/nearai/tree/feat/ts-runner)
+2. Install the dependencies
+```shell
+cd nearai/ts_runner && npm install
+```
+3. Perform `nearai login` to have a valid NEAR signature in `~/.nearai/config.json`.
+
+- Make sure you have a named NEAR Account. You can create one with [Meteor Wallet](https://wallet.meteorwallet.app/). No funds are required.
+- [Install NEAR AI CLI](https://docs.near.ai/agents/quickstart/#installing-near-ai-cli).
+- Run `nearai login`
+
+4. Update the agent code at `/agents/agent.ts` as you need. Keep the first line as `import {env} from "../sdk/agent-shim.js";` and use environment methods to use NEAR AI Agent Framework. 
+5. Run the agent:
+```shell
+npm run build &&  npm run start agents/agent.ts
+```
+
+If you want to provide ENV variables, you can provide them as arguments:
+```shell
+npm run build && CDP_API_KEY_NAME=name CDP_API_KEY_PRIVATE_KEY="key" npm run start agents/agent.ts
+```
+
+How to deploy your TypeScript agent:
+===
+1. [Create a new agent](https://docs.near.ai/agents/quickstart/#creating-a-new-agent)
+2. Copy the `agent.ts` you built to the agent folder
+3. Make sure to set framework to `ts` in the metadata.json
+4. Deploy the agent ([Doc above]((https://docs.near.ai/agents/quickstart/#creating-a-new-agent)) has the details)
+
+---
+Example of the agent: [cdp-agent](https://app.near.ai/agents/zavodil.near/cdp-agent/latest/run)
+
+Metadata example:
+```shell
+{
+  "category": "agent",
+  "name": "cdp-agent",
+  "description": "Coinbase Agent",
+  "tags": ["coinbase", "cdp"],
+  "details": {
+    "agent":{
+      "framework": "ts"
+    }
+  },
+  "show_entry": true,  
+  "version": "0.01"
+}
+```

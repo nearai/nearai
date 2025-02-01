@@ -22,8 +22,6 @@ class Environment {
 
                 let threadFiles = await globalEnv.client.list_files_from_thread();
 
-                console.log("threadFiles", threadFiles)
-
                 let fileContent = "";
                 for (const f of threadFiles) {
                     if (f.filename === filename) {
@@ -90,6 +88,10 @@ class Environment {
         } else {
             return "";
         }
+    }
+
+    get_thread_id(): string {
+        return globalEnv.client.get_thread_id()
     }
 }
 

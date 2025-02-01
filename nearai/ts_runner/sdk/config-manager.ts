@@ -1,4 +1,3 @@
-console.log("config-man init")
 import {AgentConfig} from './config-types.js'
 import {NearAIClient} from './near-client.js';
 // import {createSecureClient} from './near-client.js';
@@ -45,7 +44,7 @@ class ConfigManager {
         if (!jsonString) {
             return false;
         }
-        console.log("jsonString", jsonString)
+        
         try {
             if (this.secureClient) {
                 return false
@@ -59,10 +58,7 @@ class ConfigManager {
                 env_vars: params.env_vars
             };
 
-            // this.thread_id = params.thread_id;
-            //this.secureClient = createSecureClient(this.config);
             this.secureClient = new NearAIClient(this.config);
-            console.log("initialize config", this.config);
             return true;
         } catch (error) {
             throw new Error(`Failed to initialize config: ${error}`);

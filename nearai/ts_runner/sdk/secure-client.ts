@@ -23,4 +23,6 @@ export interface SecureHubClient {
     list_messages(thread_id: string | undefined, limit: number | undefined, order: "asc" | "desc" | undefined): Promise<Array<Message>>
 
     write_file(filename: string, content: string, encoding: string, filetype: string): Promise<FileObject>
+
+    get_thread_id(): string;
 }
