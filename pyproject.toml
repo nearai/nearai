@@ -121,6 +121,8 @@ tweepy = { version = "^4.14.0" }
 rich = "^13.7.0"
 py-near = "^1.1.50"
 loguru = "^0.7.2"
+langchain = "^0.3.4"
+langchain-openai = "^0.2.4"
 
 [project.optional-dependencies]
 # Experiment platform
