@@ -14,16 +14,18 @@ cd nearai/ts_runner && npm install
 - [Install NEAR AI CLI](https://docs.near.ai/agents/quickstart/#installing-near-ai-cli).
 - Run `nearai login`
 
-4. Update the agent code at `/agents/agent.ts` as you need. Keep the first line as `import {env} from "../sdk/agent-shim.js";` and use environment methods to use NEAR AI Agent Framework. 
+4. Update the agent code at `/agents/agent.ts` as you need. Keep the first line as `import {env} from "../sdk/agent-shim.js";` and use methods from the `env` object to use NEAR AI Agent Framework (completions, etc). More methods are coming in the nearest future. 
 5. Run the agent:
 ```shell
 npm run build &&  npm run start agents/agent.ts
 ```
 
-If you want to provide ENV variables, you can provide them as arguments:
+6. If you want to provide ENV variables, you can provide them as arguments:
 ```shell
 npm run build && CDP_API_KEY_NAME=name CDP_API_KEY_PRIVATE_KEY="key" npm run start agents/agent.ts
 ```
+
+(6. is valid only for local development. On NEAR AI Runner we have [NEAR AI HUB secrets](https://docs.near.ai/agents/secrets/) for this purpose.)
 
 How to deploy your TypeScript agent:
 ===
