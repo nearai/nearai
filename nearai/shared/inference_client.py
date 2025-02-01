@@ -22,6 +22,7 @@ from nearai.shared.client_config import (
     DEFAULT_TIMEOUT,
     ClientConfig,
 )
+from nearai.shared.langchain_chat_model import LangchainChatModel
 from nearai.shared.models import (
     AutoFileChunkingStrategyParam,
     ChunkingStrategy,
@@ -371,4 +372,13 @@ class InferenceClient(object):
         return self.client.get(
             path=f"{self._config.base_url}/agent_data/{key}",
             cast_to=Dict[str, str],
+        )
+
+    def create_langchain_chat_model(self, metadata_provider: str, metadata_model: str) -> LangchainChatModel:
+        """Langchain BaseChatModel interface for inference."""
+        return LangchainChatModel(
+            metadata_provider=metadata_provider,
+            metadata_model=metadata_model,
+            config=self._config,
+            auth=self._auth if self._auth else "",
         )
