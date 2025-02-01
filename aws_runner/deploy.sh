@@ -23,8 +23,7 @@ deploy() {
 
   aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 543900120763.dkr.ecr.us-east-2.amazonaws.com
   
-  # Build with no cache
-  docker build --no-cache -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=${FRAMEWORK} -t nearai-runner${FRAMEWORK}:${VERSION} .
+  docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=${FRAMEWORK} -t nearai-runner${FRAMEWORK}:${VERSION} .
   
   # Tag with version and latest
   docker tag nearai-runner${FRAMEWORK}:${VERSION} 543900120763.dkr.ecr.us-east-2.amazonaws.com/nearai-runner${FRAMEWORK}:${VERSION}
