@@ -3,7 +3,6 @@ import {CdpAgentkit} from "@coinbase/cdp-agentkit-core";
 import {Coinbase, Wallet} from "@coinbase/coinbase-sdk";
 import {CdpToolkit} from "@coinbase/cdp-langchain";
 
-const cdpWalletDataFilename = "walletDataStr.txt";
 const apiKeyName = env.env_var("CDP_API_KEY_NAME") || "";
 const privateKey = (env.env_var("CDP_API_KEY_PRIVATE_KEY") ?? "").replaceAll("\\n", "\n");
 
