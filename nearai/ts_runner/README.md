@@ -1,7 +1,7 @@
 Local Development
 ===
 
-Whis process will be simplified in the future. For now, you can follow these steps to run your TypeScript agent locally.
+This process will be simplified in the future. For now, you can follow these steps to run your TypeScript agent locally.
 
 1. Checkout the [ts_runner brunch](https://github.com/nearai/nearai/tree/feat/ts-runner)
 2. Install the dependencies
