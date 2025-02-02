@@ -40,7 +40,8 @@ import { SignInPrompt } from './SignInPrompt';
 const BASIC_TEMPLATE_AGENT_ID = 'flatirons.near/example-travel-agent/latest';
 const TWITTER_TEMPLATE_AGENT_ID = 'flatirons.near/near-secret-agent/latest';
 const NEAR_TEMPLATE_AGENT_ID = 'zavodil.near/near-agent/latest';
-const AGENT_KIT_TEMPLATE_AGENT_ID = 'jayzalowitz.near/cdp_langchain_chatbot_example/latest';
+const AGENT_KIT_TEMPLATE_AGENT_ID =
+  'jayzalowitz.near/cdp_langchain_chatbot_example/latest';
 const TYPESCRIPT_TEMPLATE_AGENT_ID = 'zavodil.near/cdp-agent/latest';
 
 type Props = {
