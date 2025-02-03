@@ -218,7 +218,8 @@ class Message(SQLModel, table=True):
                 # Filter out non-utf8 characters (which shouldn't happen!)
                 content = self.content.encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
 
-                # Regular expression to match only 1- to 3-byte characters, because something is broken in for 4-byte (utf8mb4) characters
+                # Regular expression to match only 1- to 3-byte characters, because something is broken
+                # for 4-byte (utf8mb4) characters
                 # TODO #767: Remove this when we support utf8mb4 charset
                 content = re.sub(r"[\U00010000-\U0010FFFF]", "", content)
 
