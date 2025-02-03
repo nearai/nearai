@@ -68,13 +68,13 @@ class Message(BaseModel):
     @classmethod
     def ensure_string_content(cls, v):
         """Convert None to empty string and ensure content is always a string."""
-        if v is None:
+        if not v:
             return " "
         return str(v)  # Convert any non-None value to string
 
     def model_dump(self, *args, **kwargs):
         """Ensure content is never None when serializing."""
         data = super().model_dump(*args, **kwargs)
-        if data["content"] is None:
+        if not data["content"]:
             data["content"] = " "
         return data
