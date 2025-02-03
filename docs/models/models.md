@@ -1,55 +1,23 @@
-# Getting Started with NEAR AI Models
+# Home
 
-NEAR AI provides access to powerful **open-source AI models** to help you build and deploy AI agents. 
-With **OpenAI-compatible inference**, you can seamlessly integrate models into your applications for **chat completions, structured outputs, and function calling**.
+NEAR AI provides access to powerful **open-source AI models** including **Llama**, **Qwen**, **Deepseek** and **Stable Diffusion**, leveraging various AI providers to deliver high-quality responses.
 
-NEAR AI supports multiple inference providers to optimize performance, ensuring fast and scalable execution of AI models.
+Seamlessly find, tune and integrate models into your applications for **chat completions**, **image creation**, and **function calling**.
 
----
-
-## Understanding how to use Models
-
-The **Models** section is structured as follows:
-
-- **Using Models** – How to interact with available models.
-- **Fine-Tuning** – Customize models for specific use cases.
-- **Benchmarks & Evaluations** – Assess model performance.
-- **Inference API** – Details on running inference and API usage.
-- **Model Providers** – Overview of different model providers available on NEAR AI.
+!!! tip
+    Are you looking to use the model in an agent? Check out the [**Agents Guide**](../agents/quickstart.md).
 
 ---
 
-## Overview of AI Models
+## Prerequisites
 
-NEAR AI offers a range of AI models for different applications, such as **chat completions, structured data processing, and function calling**. These models are accessible via the **NEAR AI Inference API**, ensuring developers can integrate and experiment effortlessly.
-
-```mermaid
-graph TD;
-    A[Create AI Agent] -->|Select Model| B[Available Models];
-    B -->|Use Default or Custom Model| C[Inference API];
-    C -->|Run Inference| D[Get Response];
-    B -->|Fine-Tune| E[Customized Model];
-    E -->|Deploy| F[Optimized Inference];
-    B -->|Benchmark| G[Evaluate Model Performance];
-```
-
----
-
-## Logging into NEAR AI
-
-To use models, first log in to NEAR AI:
-
-```bash
-$> nearai login
-```
-
-You'll be prompted to visit a URL to authenticate with your Near wallet. After successful authentication, close the page and return to your terminal.
+Before you start using NEAR AI models, please make sure you have the [NEAR AI CLI](../cli.md) installed and have logged in with your Near wallet.
 
 ---
 
 ## Listing Available Models
 
-To view all supported models on NEAR AI, run:
+You can find a non-exhaustive list of models available on NEAR AI in the [Web Hub](https://app.near.ai/models). If you want to find all supported models on NEAR AI, run the following Python script:
 
 ```python
 import openai
@@ -66,99 +34,42 @@ models = client.models.list()
 print(models)
 ```
 
-Each model follows the format: `provider::account/model_name/model_version`.
-To list all providers:
+!!! warning
+    Remember to login into NEAR AI before running the script using your Near wallet
+  
+    ```bash
+    $> nearai login
+    ```
 
-```python
-providers = set([model.id.split("::")[0] for model in models])
-print(providers)
-```
 
----
+??? example "Output"
+    ```python
+    {'fireworks': 'fireworks::accounts/yi-01-ai/models/yi-large'}, NamespacedName(name='aiderlm0', namespace='melse0299e'): {'fireworks': 'fireworks::accounts/mels-e0299e/models/aiderlm-v0'}, NamespacedName(name='flux1schnellfp8', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/flux-1-schnell-fp8'}, NamespacedName(name='flux1devfp8', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/flux-1-dev-fp8'}, NamespacedName(name='mistralsmall24binstruct2501', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/mistral-small-24b-instruct-2501'}, NamespacedName(name='deepseekr1', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/deepseek-r1'}, NamespacedName(name='mixtral8x22binstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/mixtral-8x22b-instruct'}, NamespacedName(name='llama3_8binstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/llama-v3-8b-instruct'}, NamespacedName(name='deepseek3', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/deepseek-v3'}, NamespacedName(name='qwq32bpreview', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/qwen-qwq-32b-preview'}, NamespacedName(name='llama3p1_405binstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/llama-v3p1-405b-instruct'}, NamespacedName(name='llama3p1_8binstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/llama-v3p1-8b-instruct'}, NamespacedName(name='llama3_8binstructhf', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/llama-v3-8b-instruct-hf'}, NamespacedName(name='llama3p2_3binstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/llama-v3p2-3b-instruct'}, NamespacedName(name='qwen2p5_72binstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/qwen2p5-72b-instruct'}, NamespacedName(name='llama3p1_405binstructlong', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/llama-v3p1-405b-instruct-long'}, NamespacedName(name='llama3p1_70binstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/llama-v3p1-70b-instruct'}, NamespacedName(name='llama3_70binstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/llama-v3-70b-instruct'}, NamespacedName(name='llama3p2_90bvisioninstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/llama-v3p2-90b-vision-instruct'}, NamespacedName(name='llama3p3_70binstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/llama-v3p3-70b-instruct'}, NamespacedName(name='qwen2p5coder32binstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/qwen2p5-coder-32b-instruct'}, NamespacedName(name='qwen2vl72binstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/qwen2-vl-72b-instruct'}, NamespacedName(name='llama3p2_11bvisioninstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/llama-v3p2-11b-vision-instruct'}, NamespacedName(name='llamaguard3_8b', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/llama-guard-3-8b'}, NamespacedName(name='phi3vision128kinstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/phi-3-vision-128k-instruct'}, NamespacedName(name='dobbyminileashedllama3_18b', namespace='sentientfoundation'): {'fireworks': 'fireworks::accounts/sentientfoundation/models/dobby-mini-leashed-llama-3-1-8b'}, NamespacedName(name='dobbyminiunhingedllama3_18b', namespace='sentientfoundation'): {'fireworks': 'fireworks::accounts/sentientfoundation/models/dobby-mini-unhinged-llama-3-1-8b'}, NamespacedName(name='statetransitionllama3p1', namespace='marco0dece6'): {'fireworks': 'fireworks::accounts/marco-0dece6/models/state-transition-llama3p1'}, NamespacedName(name='mixtral8x7binstruct', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/mixtral-8x7b-instruct'}, NamespacedName(name='mythomaxl2_13b', namespace=''): {'fireworks': 'fireworks::accounts/fireworks/models/mythomax-l2-13b'}, NamespacedName(name='tsr3', namespace='guzmanesneider75_94d6ba'): {'fireworks': 'fireworks::accounts/guzmanesneider75-94d6ba/models/tsr3'}, NamespacedName(name='serviceemergencyclassifierllama3_8binstruct', namespace='carlos0f74b3'): {'fireworks': 'fireworks::accounts/carlos-0f74b3/models/service-emergency-classifier-llama3-8b-instruct'}
+    ```
 
-## Running Inference
+    Each model follows the format: `provider::account/model_name/model_version`. To list all providers:
 
-To run a **prompt** on a specific **model**:
-
-```python
-messages = env.list_messages()
-result = env.completion(messages)
-
-print("Messages:", messages)
-print("Result:", result)
-```
-
-### Overriding the Default Model
-
-To specify a different model, pass `MODEL` or `PROVIDER::MODEL`:
-
-```python
-messages = env.list_messages()
-result = env.completion([prompt] + messages, "provider::model-name")
-```
+    ```python
+    providers = set([model.id.split("::")[0] for model in models])
+    print(providers)
+    ```
 
 ---
 
-## Creating a Chat Completion
+## Working with AI Models
 
-Example request to generate AI responses:
+When working with AI models, you will either want to directly use a model for inference, or fine-tune it for a specific use case.
 
-```python
-completion = client.chat.completions.create(
-model="provider::account/model-name",
-messages=[
-    {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "Hello, how are you?"}
-  ]
-)
+- [**Fine-Tuning**](./fine_tuning.md) – Customize models for specific use cases.
+- [**Benchmarks & Evaluations**](./benchmarks_and_evaluations.md) – Assess model performance.
+- [**Running Inference**](../agents/env/inference.md) – Execute models for AI responses.
 
-print(completion.choices[0].message.content)
+```mermaid
+graph TD;
+    B[Available Models];
+    B -->|Use Model| C[Inference API];
+    C -->|Run Inference| D[Get Response];
+    B -->|Fine-Tune| E[Customized Model];
+    E -->|Deploy| F[Optimized Inference];
+    B -->|Benchmark| G[Evaluate Model Performance];
 ```
-
----
-
-## Next Steps
-
-You are now set up to use different models. Here’s what you can do next:
-
-- **[Create AI Agents](./agents.md)** – Learn how to build and deploy AI-powered agents.
-- **[Explore the Model Registry](./registry.md)** – Browse and select models for your use case.
-- **[Function Calling Guide](./function-calling.md)** – Learn how to structure model outputs for your applications.
-- **[NEAR AI API Reference](https://docs.near.ai/)** – Deep dive into the API functionalities.
-
----
-
-## Frequently Asked Questions
-
-### 🔹 How do you create agents on NEAR AI?
-
-You need to **install NEAR AI**, authenticate with a Near wallet, and use the `nearai` CLI to create an agent.
-
-### 🔹 How can you change models?
-
-Modify the model in API requests or update the **metadata.json** of your agent.
-
-### 🔹 Where does inference happen?
-
-Inference runs on multiple AI providers supported by NEAR AI.
-
-### 🔹 How many models are supported?
-
-NEAR AI supports **multiple open-source models**. Run `client.models.list()` to see the full list.
-
-### 🔹 How can you fine-tune models?
-
-Fine-tuning depends on the model provider. Some providers support **custom fine-tuning** for select models.
-
-### 🔹 Are there token or inference limits?
-
-Yes, limits depend on your **account tier and model specifications**. Check the API documentation for exact quota details.
-
-### 🔹 Do I need a Near wallet to use NEAR AI?
-
-Yes, authentication requires a Near wallet.
-
-### 🔹 How does function calling and structured data work?
-
-NEAR AI **follows OpenAI’s standard** for function calling and structured data processing.
-
