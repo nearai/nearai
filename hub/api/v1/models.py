@@ -215,12 +215,12 @@ class Message(SQLModel, table=True):
             ]
         if self.content:
             if isinstance(self.content, str):
-                # Filter out non-utf8 characters
+                # Filter out non-utf8 characters (which shouldn't happen!)
                 content = self.content.encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
 
-                # Regular expression to match only valid UTF-8 characters, because we can't support utf8mb4 charset
+                # Regular expression to match only 1- to 3-byte characters, because something is broken in for 4-byte (utf8mb4) characters
                 # TODO #767: Remove this when we support utf8mb4 charset
-                content = re.sub(r"[^\x00-\xFF]", "", content)
+                content = re.sub(r"[\U00010000-\U0010FFFF]", "", content)
 
                 self.content = [TextContentBlock(text=Text(value=content, annotations=[]), type="text")]
 
@@ -380,7 +380,6 @@ def get_session() -> Iterator[Session]:
 # Constants for file URI prefixes
 FILE_URI_PREFIX = "file::"
 S3_URI_PREFIX = "s3::"
-
 
 SUPPORTED_MIME_TYPES = {
     "text/x-c": [".c"],
