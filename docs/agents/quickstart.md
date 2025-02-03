@@ -8,15 +8,15 @@ interact with the environment, and much more.
 
 ---
 
-## Prerequisites
+## ⚠️ Prerequisites
 
-Before you start using NEAR AI models, please make sure you have the [NEAR AI CLI](../cli.md) installed and have logged in with your Near wallet.
+Before creating a NEAR AI agent, please make sure you have the [NEAR AI CLI](../cli.md) installed and have logged in with your Near wallet.
 
 ---
 
 ## Create an Agent
 
-After logging in, you can create a new agent by running the following command:
+You can create a new agent by running the following command using the [NEAR AI CLI](../cli.md):
 
 ```bash
 nearai agent create

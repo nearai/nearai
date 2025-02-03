@@ -9,7 +9,7 @@ Seamlessly find, tune and integrate models into your applications for **chat com
 
 ---
 
-## Prerequisites
+## ⚠️ Prerequisites
 
 Before you start using NEAR AI models, please make sure you have the [NEAR AI CLI](../cli.md) installed and have logged in with your Near wallet.
 
@@ -35,7 +35,7 @@ print(models)
 ```
 
 !!! warning
-    Remember to login into NEAR AI before running the script using your Near wallet
+    Remember to use the [NEAR CLI]([NEAR AI CLI](../cli.md)) to login using your [NEAR wallet]([NEAR AI CLI](../cli.md#login-to-near-ai))
   
     ```bash
     $> nearai login
@@ -70,6 +70,6 @@ graph TD;
     B -->|Use Model| C[Inference API];
     C -->|Run Inference| D[Get Response];
     B -->|Fine-Tune| E[Customized Model];
-    E -->|Deploy| F[Optimized Inference];
-    B -->|Benchmark| G[Evaluate Model Performance];
+    E -->|Benchmark| F[Evaluate Performance]; 
+    F ---->|Deploy| B;
 ```
