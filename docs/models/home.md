@@ -35,7 +35,7 @@ print(models)
 ```
 
 !!! warning
-    Remember to use the [NEAR CLI]([NEAR AI CLI](../cli.md)) to login using your [NEAR wallet]([NEAR AI CLI](../cli.md#login-to-near-ai))
+    Remember to use the [NEAR CLI](../cli.md) to login using your [NEAR wallet](../cli.md#login-to-near-ai)
   
     ```bash
     $> nearai login

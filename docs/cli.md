@@ -1,8 +1,11 @@
-# Installing NEAR AI
+# NEAR AI CLI
 
-The NEAR AI CLI allows you to interact with NEAR AI's services to [create agents](../agents/quickstart.md) or [train and test models](../models/quickstart.md). Let's quickly review how to install it and login with your NEAR account.
+The NEAR AI CLI allows you to interact with NEAR AI's services to [create agents](./agents/quickstart.md) or [train and test models](./models/home.md). Let's quickly review how to install it and login with your NEAR account.
 
 !!! tip
+    Do you want to build an agent? Install the CLI, login, and then check our [**Agent Quickstart Guide**](./agents/quickstart.md).
+
+!!! info
     Remember that you can use NEAR AI from the [Web Hub](https://hub.near.ai), the NEAR AI CLI is targeted at developers who want to build their own agents or train models on NEAR AI.
 
 ---
@@ -71,7 +74,7 @@ Please visit the following URL to complete the login process: https://auth.near.
 After successfully logging in, you will see a confirmation screen. Close it and return to your terminal.
 
 
-![alt text](../assets/agents/quickstart-login.png)
+![alt text](./assets/agents/quickstart-login.png)
 
 ??? tip Other Login Methods
 
@@ -92,4 +95,4 @@ After successfully logging in, you will see a confirmation screen. Close it and 
 
 ## Next Steps
 
-That's it! You're now ready to create your first agent. Head over to the [Agents Guide](../agents/quickstart.md) to get started.
+That's it! You're now ready to create your first agent. Head over to the [Agents Guide](./agents/quickstart.md) to get started.
