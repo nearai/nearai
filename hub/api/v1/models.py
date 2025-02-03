@@ -3,16 +3,23 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from os import getenv
-from typing import Dict, Iterator, List, Optional
+from typing import Annotated, Dict, Iterator, List, Literal, Optional, TypeAlias, Union
 
 from dotenv import load_dotenv
+from openai._utils import PropertyInfo
 from openai.types.beta.thread import Thread as OpenAITThread
+from openai.types.beta.threads.annotation import Annotation
 from openai.types.beta.threads.message import Attachment
 from openai.types.beta.threads.message import Message as OpenAITThreadMessage
-from openai.types.beta.threads.message_content import MessageContent
+from openai.types.beta.threads.message_content import (
+    ImageFileContentBlock,
+    ImageURLContentBlock,
+    RefusalContentBlock,
+    TextContentBlock,
+)
 from openai.types.beta.threads.run import Run as OpenAIRun
 from openai.types.beta.threads.text import Text
-from openai.types.beta.threads.text_content_block import TextContentBlock
+from pydantic import BaseModel
 from sqlmodel import JSON, Column, Field, Session, SQLModel, create_engine
 
 from hub.api.v1.entry_location import EntryLocation
@@ -181,6 +188,25 @@ class Log(SQLModel, table=True):
     account_id: str = Field(nullable=False)
     target: str = Field(nullable=False)
     info: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class Json(BaseModel):
+    annotations: List[Annotation]
+
+    value: dict
+    """Json key value pairs"""
+
+
+class JsonContentBlock(BaseModel):
+    json: Json
+
+    type: Literal["json"]
+
+
+MessageContent: TypeAlias = Annotated[
+    Union[ImageFileContentBlock, ImageURLContentBlock, JsonContentBlock, TextContentBlock, RefusalContentBlock],
+    PropertyInfo(discriminator="type"),
+]
 
 
 class Message(SQLModel, table=True):
