@@ -18,14 +18,11 @@ interact with the environment, and much more.
 ---
 
 ### Installing NEAR AI CLI
-    ``` bash
-    pip install langchain_core langchain_openai
-    ```
-
+   
 === "pip"
 
     ``` bash
-    python3 -m pip install nearai
+    python3 -m pip install langchain_core langchain_openai nearai
     ```
 
 === "local"
@@ -33,6 +30,7 @@ interact with the environment, and much more.
     ``` bash
     git clone git@github.com:nearai/nearai.git
     cd nearai
+    pip install langchain_core langchain_openai
     pip install -e .
     ```
 
