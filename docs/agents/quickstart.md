@@ -18,6 +18,9 @@ interact with the environment, and much more.
 ---
 
 ### Installing NEAR AI CLI
+    ``` bash
+    pip install langchain_core langchain_openai
+    ```
 
 === "pip"
 
