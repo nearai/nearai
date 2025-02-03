@@ -1,12 +1,12 @@
 import json
 from enum import Enum
 from os import getenv
-from typing import Callable
+from typing import Callable, Optional
 
 from dotenv import load_dotenv
 from nearai.shared.client_config import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
 from openai import OpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 load_dotenv()
 
@@ -59,5 +59,22 @@ def get_llm_ai(provider: str) -> OpenAI:
 
 
 class Message(BaseModel):
+    """A chat message."""
+
     role: str
-    content: str
+    content: Optional[str] = " "  # Default to single space
+
+    @field_validator("content", mode="before")
+    @classmethod
+    def ensure_string_content(cls, v):
+        """Convert None to empty string and ensure content is always a string."""
+        if v is None:
+            return " "
+        return str(v)  # Convert any non-None value to string
+
+    def model_dump(self, *args, **kwargs):
+        """Ensure content is never None when serializing."""
+        data = super().model_dump(*args, **kwargs)
+        if data["content"] is None:
+            data["content"] = " "
+        return data
