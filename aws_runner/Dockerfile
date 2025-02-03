@@ -9,6 +9,7 @@ ARG FRAMEWORK=""
 
 COPY aws_runner/frameworks/requirements${FRAMEWORK}.txt ${LAMBDA_TASK_ROOT}
 
+RUN pip install --upgrade pip
 RUN pip install -r requirements${FRAMEWORK}.txt
 
 # This will build a smaller container, but takes much longer time to run.
@@ -28,7 +29,7 @@ RUN pip install -r requirements${FRAMEWORK}.txt
 
 ARG AGENT_RUNNER_USER="agent_runner"
 
-CMD /bin/sh -c "echo Setting agent runner user as $AGENT_RUNNER_USER"
+RUN /bin/sh -c "echo Setting agent runner user as $AGENT_RUNNER_USER"
 
 RUN /usr/sbin/groupadd -r $AGENT_RUNNER_USER && \
     /usr/sbin/useradd -r -g $AGENT_RUNNER_USER -m $AGENT_RUNNER_USER
