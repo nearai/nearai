@@ -48,6 +48,7 @@ export const RequestData = ({ content, contentId }: Props) => {
             <RequestDataForm
               content={content}
               contentId={contentId}
+              onCancel={() => setFormIsOpen(false)}
               onValidSubmit={onValidSubmit}
             />
           </Dialog.Content>

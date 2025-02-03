@@ -44,7 +44,7 @@ export const requestDataFormFieldSchema = z.object({
   description: z.string().optional(),
   default_value: z.string().optional(),
   type: z
-    .enum(['text', 'number', 'email', 'textarea', 'select'])
+    .enum(['text', 'number', 'email', 'textarea', 'select', 'combobox', 'tel'])
     .default('text'),
   options: z.string().array().optional(),
   required: z.boolean().default(false),

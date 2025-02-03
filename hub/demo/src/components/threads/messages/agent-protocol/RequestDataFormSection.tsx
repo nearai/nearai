@@ -8,12 +8,14 @@ import {
   openToast,
   PlaceholderStack,
   Text,
+  useComboboxOptionMapper,
 } from '@near-pagoda/ui';
-import { Fragment, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { type z } from 'zod';
 
 import { trpc } from '~/trpc/TRPCProvider';
+import { validateEmail } from '~/utils/inputs';
 import { stringToHtmlAttribute } from '~/utils/string';
 
 import { type RequestDataResult } from './RequestData';
@@ -31,13 +33,6 @@ type Props = {
 };
 
 export const RequestDataFormSection = ({ contentId, ...props }: Props) => {
-  // TODO: Add submit/cancel button
-  // TODO: Form validation (required, email, etc)
-  // TODO: Form default values (useEffect())
-  // TODO: Fix autocomplete form styles
-  // TODO: Fix 1Password button click closing modal bug (the click registers as outside of the modal since the button is fixed outside of the dialog dom node)
-  // TODO: Decide if the UX would be better if the form was simply rendered inline (not inside a modal requiring a click)
-
   const hookForm = useFormContext<RequestDataResult>();
   const { form } = useRequestDataForm(props);
 
@@ -76,61 +71,85 @@ export const RequestDataFormSection = ({ contentId, ...props }: Props) => {
       )}
 
       {form.fields?.map((field, index) => (
-        <Fragment key={index}>
-          {field.type === 'select' && (
-            <Controller
-              control={hookForm.control}
-              name={inputNameForField(contentId, field, index)}
-              rules={{
-                required: field.required ? 'Please select a value' : undefined,
-              }}
-              render={(control) => (
-                <Combobox
-                  label={
-                    field.required ? field.label : `${field.label} (Optional)`
-                  }
-                  items={
-                    field.options?.map((option) => ({ value: option })) ?? []
-                  }
-                  autoComplete={field.autocomplete}
-                  assistive={field.description}
-                  {...control.field}
-                />
-              )}
-            />
-          )}
-
-          {field.type === 'textarea' && (
-            <InputTextarea
-              label={field.required ? field.label : `${field.label} (Optional)`}
-              autoComplete={field.autocomplete}
-              assistive={field.description}
-              {...hookForm.register(
-                inputNameForField(contentId, field, index),
-                {
-                  required: field.required ? 'Please enter a value' : undefined,
-                },
-              )}
-            />
-          )}
-
-          {field.type !== 'select' && field.type !== 'textarea' && (
-            <Input
-              label={field.required ? field.label : `${field.label} (Optional)`}
-              autoComplete={field.autocomplete}
-              assistive={field.description}
-              type={field.type}
-              {...hookForm.register(
-                inputNameForField(contentId, field, index),
-                {
-                  required: field.required ? 'Please enter a value' : undefined,
-                },
-              )}
-            />
-          )}
-        </Fragment>
+        <RequestDataFormInput
+          field={field}
+          contentId={contentId}
+          index={index}
+          key={index}
+        />
       ))}
     </Flex>
+  );
+};
+
+type RequestDataFormInputProps = {
+  contentId: string;
+  field: NonNullable<
+    z.infer<typeof requestDataSchema>['request_data']['forms'][number]['fields']
+  >[number];
+  index: number;
+};
+
+export const RequestDataFormInput = ({
+  contentId,
+  field,
+  index,
+}: RequestDataFormInputProps) => {
+  const hookForm = useFormContext<RequestDataResult>();
+  const name = inputNameForField(contentId, field, index);
+  const comboboxOptions = useComboboxOptionMapper(field.options, (item) => ({
+    value: item,
+  }));
+
+  if (field.type === 'select' || field.type === 'combobox') {
+    return (
+      <Controller
+        control={hookForm.control}
+        name={name}
+        rules={{
+          required: field.required ? 'Please select a value' : undefined,
+        }}
+        render={(control) => (
+          <Combobox
+            label={field.required ? field.label : `${field.label} (Optional)`}
+            options={comboboxOptions}
+            error={control.fieldState.error?.message}
+            autoComplete={field.autocomplete}
+            assistive={field.description}
+            allowCustomInput={field.type === 'combobox'}
+            {...control.field}
+          />
+        )}
+      />
+    );
+  }
+
+  if (field.type === 'textarea') {
+    return (
+      <InputTextarea
+        label={field.required ? field.label : `${field.label} (Optional)`}
+        autoComplete={field.autocomplete}
+        assistive={field.description}
+        error={hookForm.formState.errors[name]?.message}
+        {...hookForm.register(name, {
+          required: field.required ? 'Please enter a value' : undefined,
+        })}
+      />
+    );
+  }
+
+  return (
+    <Input
+      label={field.required ? field.label : `${field.label} (Optional)`}
+      autoComplete={field.autocomplete}
+      assistive={field.description}
+      type={field.type}
+      error={hookForm.formState.errors[name]?.message}
+      {...hookForm.register(name, {
+        required: field.required ? 'Please enter a value' : undefined,
+        ...(field.type === 'email' ? { validate: validateEmail } : undefined),
+      })}
+    />
   );
 };
 

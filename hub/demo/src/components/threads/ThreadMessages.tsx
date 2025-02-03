@@ -1,7 +1,7 @@
 'use client';
 
 import { usePrevious } from '@uidotdev/usehooks';
-import { type ReactNode, useEffect, useRef } from 'react';
+import { memo, type ReactNode, useEffect, useRef } from 'react';
 import { type z } from 'zod';
 
 import { type threadMessageModel } from '~/lib/models';
@@ -125,24 +125,29 @@ type ThreadMessageContentProps = {
   message: z.infer<typeof threadMessageModel>;
 };
 
-const ThreadMessageContent = ({
-  content,
-  contentIndex,
-  message,
-}: ThreadMessageContentProps) => {
-  const contentId = `${message.id}_${contentIndex}`;
+const ThreadMessageContent = memo(
+  ({ content, contentIndex, message }: ThreadMessageContentProps) => {
+    const contentId = `${message.id}_${contentIndex}`;
 
-  if (content.type === 'json') {
+    if (content.type === 'json') {
+      return (
+        <JsonMessage
+          contentId={contentId}
+          content={content}
+          role={message.role}
+        />
+      );
+    }
+
     return (
-      <JsonMessage
+      <TextMessage
         contentId={contentId}
         content={content}
         role={message.role}
       />
     );
-  }
+  },
+  (oldProps, newProps) => oldProps.message.id === newProps.message.id, // https://react.dev/reference/react/memo
+);
 
-  return (
-    <TextMessage contentId={contentId} content={content} role={message.role} />
-  );
-};
+ThreadMessageContent.displayName = 'ThreadMessageContent';
