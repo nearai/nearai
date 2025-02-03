@@ -1,6 +1,6 @@
 # Installing NEAR AI
 
-The NEAR AI CLI is a command-line interface that allows you to interact with NEAR AI's services. This guide will walk you through the process of creating a new agent using the NEAR AI CLI.
+The NEAR AI CLI allows you to interact with NEAR AI's services to [create agents](../agents/quickstart.md) or [train and test models](../models/quickstart.md). Let's quickly review how to install it and login with your NEAR account.
 
 !!! tip
     Remember that you can use NEAR AI from the [Web Hub](https://hub.near.ai), the NEAR AI CLI is targeted at developers who want to build their own agents or train models on NEAR AI.
@@ -87,3 +87,9 @@ After successfully logging in, you will see a confirmation screen. Close it and 
     ### Login Remotely (only displays the login URL)
     nearai login --remote
     ```
+
+---
+
+## Next Steps
+
+That's it! You're now ready to create your first agent. Head over to the [Agents Guide](../agents/quickstart.md) to get started.
