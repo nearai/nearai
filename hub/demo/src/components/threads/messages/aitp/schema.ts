@@ -1,3 +1,5 @@
+// AITP = Agent Interaction & Transaction Protocol
+
 import { z } from 'zod';
 
 export const CURRENT_AGENT_PROTOCOL_SCHEMA =
