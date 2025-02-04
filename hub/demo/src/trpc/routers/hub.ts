@@ -2,10 +2,6 @@ import { parseStringOrNumber } from '@near-pagoda/ui/utils';
 import path from 'path';
 import { z } from 'zod';
 
-import {
-  type requestChoiceSchema,
-  type requestDataSchema,
-} from '~/components/threads/messages/aitp/schema';
 import { env } from '~/env';
 import {
   chatWithAgentModel,
