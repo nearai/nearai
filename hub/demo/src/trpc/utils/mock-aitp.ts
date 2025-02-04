@@ -1,0 +1,235 @@
+import { type z } from 'zod';
+
+import {
+  type requestChoiceSchema,
+  type requestDataSchema,
+} from '~/components/threads/messages/aitp/schema';
+import { type threadMessageModel } from '~/lib/models';
+
+export function generateMockedAITPMessages(threadId: string) {
+  const requestChoiceCheckbox: z.infer<typeof requestChoiceSchema> = {
+    request_choice: {
+      title: 'Your Favorite Colors',
+      description: `Which colors are your favorite? This will help refine your product search.`,
+      type: 'checkbox',
+      options: [
+        {
+          name: 'Blue',
+          description: 'A calming color',
+          image_url:
+            'https://media.istockphoto.com/id/959093486/vector/blue-abstract-gradient-mesh-background.jpg?s=612x612&w=0&k=20&c=c6lozNEcfMBlPlZazHJiy4NnviEGkAPPgubKC-9GowI=',
+        },
+        {
+          name: 'Red',
+          description: 'An exciting color',
+          image_url:
+            'https://img.freepik.com/free-vector/dark-deep-red-gradient-background_78370-3496.jpg?semt=ais_hybrid',
+        },
+        {
+          name: 'Green',
+          description: 'An earthy color',
+          image_url:
+            'https://img.freepik.com/free-vector/gradient-background-green-tones_23-2148373477.jpg',
+        },
+      ],
+    },
+  };
+
+  const requestChoiceRadio: z.infer<typeof requestChoiceSchema> = {
+    request_choice: {
+      type: 'radio',
+      description: 'Select your favorite number:',
+      options: [
+        {
+          name: '0',
+        },
+        {
+          name: '7',
+        },
+        {
+          name: '100',
+        },
+      ],
+    },
+  };
+
+  const requestChoiceProducts: z.infer<typeof requestChoiceSchema> = {
+    request_choice: {
+      title: 'Recommended Products',
+      description: `Based on your selected factors, here are the best recommendations`,
+      type: 'products',
+      options: [
+        {
+          name: 'JBL Tour One M2',
+          description: 'A short, summarized description about the headphones',
+          five_star_rating: 4.2,
+          reviews_count: 132,
+          price_usd: 199.5,
+          image_url:
+            'https://m.media-amazon.com/images/I/61rJmoiiYHL._AC_SX679_.jpg',
+          url: 'https://www.amazon.com/JBL-Tour-One-Cancelling-Headphones/dp/B0C4JBTM5B',
+        },
+        {
+          name: 'Soundcore by Anker, Space One',
+          short_variant_name: 'Space One',
+          five_star_rating: 3.5,
+          price_usd: 79.99,
+          image_url:
+            'https://m.media-amazon.com/images/I/51EXj4BRQaL._AC_SX679_.jpg',
+          url: 'https://www.amazon.com/Soundcore-Cancelling-Headphones-Reduction-Comfortable/dp/B0C6KKQ7ND',
+          variants: [
+            {
+              name: 'Soundcore by Anker, Jet Black',
+              short_variant_name: 'Jet Black',
+              five_star_rating: 3.75,
+              price_usd: 89.99,
+              image_url:
+                'https://m.media-amazon.com/images/I/51l80KVua0L._AC_SX679_.jpg',
+              url: 'https://www.amazon.com/Soundcore-Cancelling-Headphones-Reduction-Comfortable/dp/B0C6KFZC9Z',
+            },
+            {
+              name: 'Soundcore by Anker, Cream',
+              short_variant_name: 'Cream',
+              five_star_rating: 3.75,
+              price_usd: 74.99,
+              image_url:
+                'https://m.media-amazon.com/images/I/51QVszp82CL._AC_SX679_.jpg',
+              url: 'https://www.amazon.com/Soundcore-Cancelling-Headphones-Reduction-Comfortable/dp/B0C6KJ3R71',
+            },
+          ],
+        },
+        {
+          name: 'Sony WH-1000XM5',
+          price_usd: 399.99,
+          image_url:
+            'https://m.media-amazon.com/images/I/61eeHPRFQ9L._AC_SX679_.jpg',
+          url: 'https://www.amazon.com/Sony-WH-1000XM5-Headphones-Hands-Free-WH1000XM5/dp/B0BXYCS74H',
+        },
+        {
+          name: 'Edifier STAX Spirit S3',
+          price_usd: 348,
+          image_url:
+            'https://m.media-amazon.com/images/I/61E4YsCrICL._AC_SX679_.jpg',
+          url: 'https://www.amazon.com/Sony-WH-1000XM5-Headphones-Hands-Free-WH1000XM5/dp/B0BXYCS74H',
+        },
+      ],
+    },
+  };
+
+  const requestChoiceConfirmation: z.infer<typeof requestChoiceSchema> = {
+    request_choice: {
+      title: 'Please confirm',
+      description: `Would you like to eat all cookies?`,
+      type: 'confirmation',
+      options: [
+        {
+          name: 'Yes, eat the cookies',
+        },
+        {
+          name: "No, that's not healthy",
+        },
+        {
+          name: 'Something else',
+        },
+      ],
+    },
+  };
+
+  const requestDataShippingAddressInternationalAndMore: z.infer<
+    typeof requestDataSchema
+  > = {
+    request_data: {
+      title: 'Shipping Info (International + Favorites)',
+      description: `Great! Let's start with your shipping info.`,
+      fillButtonLabel: 'Fill out shipping info',
+      forms: [
+        {
+          json_url:
+            'https://app.near.ai/api/v1/aitp/request_data/forms/shipping_address_international.json',
+        },
+        {
+          description:
+            'Share more info about yourself to improve your shopping experience.',
+          fields: [
+            {
+              label: 'Favorite Color',
+              type: 'select',
+              options: ['Blue', 'Orange', 'White'],
+              required: true,
+            },
+            {
+              label: 'Favorite Number',
+              type: 'number',
+              default_value: '7',
+              required: false,
+            },
+          ],
+        },
+      ],
+    },
+  };
+
+  const requestDataShippingAddressUs: z.infer<typeof requestDataSchema> = {
+    request_data: {
+      title: 'Shipping Info (US)',
+      description: `Great! Let's start with your shipping info.`,
+      fillButtonLabel: 'Fill out shipping info',
+      forms: [
+        {
+          json_url:
+            'https://app.near.ai/api/v1/aitp/request_data/forms/shipping_address_us.json',
+        },
+      ],
+    },
+  };
+
+  const message: z.infer<typeof threadMessageModel> = {
+    content: [
+      {
+        type: 'json',
+        json: requestChoiceCheckbox,
+      },
+      {
+        type: 'json',
+        json: requestChoiceRadio,
+      },
+      {
+        type: 'json',
+        json: requestChoiceProducts,
+      },
+      {
+        type: 'json',
+        json: requestChoiceConfirmation,
+      },
+      {
+        type: 'json',
+        json: requestDataShippingAddressInternationalAndMore,
+      },
+      {
+        type: 'json',
+        json: requestDataShippingAddressUs,
+      },
+      {
+        type: 'json',
+        json: {
+          foo: 123,
+          bar: {
+            baz: true,
+          },
+        },
+      },
+    ],
+    attachments: [],
+    completed_at: 0,
+    created_at: 0,
+    id: 'abc-123',
+    incomplete_at: 0,
+    object: '',
+    role: 'assistant',
+    run_id: '',
+    status: 'completed',
+    thread_id: threadId,
+  };
+
+  return [message];
+}

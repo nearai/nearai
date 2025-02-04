@@ -1,6 +1,6 @@
 import { type z } from 'zod';
 
-import { type requestDataFormSchema } from '~/components/threads/messages/agent-protocol/schema';
+import { type requestDataFormSchema } from '~/components/threads/messages/aitp/schema';
 
 export async function GET() {
   const form: z.infer<typeof requestDataFormSchema> = {

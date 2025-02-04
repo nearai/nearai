@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const CURRENT_AGENT_PROTOCOL_SCHEMA =
-  'https://app.near.ai/api/v1/agent_protocol.schema.json';
+  'https://app.near.ai/api/v1/aitp.schema.json';
 
 const requestChoiceOptionSchema = z.object({
   name: z.string(),
@@ -57,8 +57,8 @@ export const requestDataFormSchema = z.object({
   fields: requestDataFormFieldSchema.array().optional(),
   json_url: z
     .enum([
-      'https://app.near.ai/api/v1/agent_protocol/request_data/forms/shipping_address_international.json',
-      'https://app.near.ai/api/v1/agent_protocol/request_data/forms/shipping_address_us.json',
+      'https://app.near.ai/api/v1/aitp/request_data/forms/shipping_address_international.json',
+      'https://app.near.ai/api/v1/aitp/request_data/forms/shipping_address_us.json',
     ])
     .or(z.string().url())
     .optional(),

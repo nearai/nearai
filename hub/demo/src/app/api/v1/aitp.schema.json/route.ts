@@ -1,6 +1,6 @@
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
-import { protocolSchema } from '~/components/threads/messages/agent-protocol/schema';
+import { protocolSchema } from '~/components/threads/messages/aitp/schema';
 
 export async function GET() {
   const schema = zodToJsonSchema(protocolSchema, {

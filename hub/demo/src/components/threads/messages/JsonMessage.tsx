@@ -10,12 +10,12 @@ import {
   type threadMessageModelContentJson,
 } from '~/lib/models';
 
-import { RequestChoice } from './agent-protocol/RequestChoice';
-import { RequestData } from './agent-protocol/RequestData';
+import { RequestChoice } from './aitp/RequestChoice';
+import { RequestData } from './aitp/RequestData';
 import {
   CURRENT_AGENT_PROTOCOL_SCHEMA,
   protocolSchema,
-} from './agent-protocol/schema';
+} from './aitp/schema';
 
 type Props = {
   contentId: string;

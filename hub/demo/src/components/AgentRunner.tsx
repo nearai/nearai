@@ -94,6 +94,7 @@ export const AgentRunner = ({
     'transactionHashes',
     'transactionRequestId',
     'initialUserMessage',
+    'mockedAitpMessages',
   ]);
   const entryEnvironmentVariables = useEntryEnvironmentVariables(
     currentEntry,
@@ -134,6 +135,7 @@ export const AgentRunner = ({
   const threadQuery = trpc.hub.thread.useQuery(
     {
       afterMessageId: thread?.latestMessageId,
+      mockedAitpMessages: queryParams.mockedAitpMessages === 'true',
       runId: thread?.run?.id,
       threadId,
     },
