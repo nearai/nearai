@@ -9,6 +9,7 @@ import {
   Form,
   handleClientError,
   InputTextarea,
+  openToast,
   PlaceholderSection,
   PlaceholderStack,
   Slider,
@@ -225,7 +226,7 @@ export const AgentRunner = ({
     thread?.run?.status === 'queued' ||
     thread?.run?.status === 'in_progress';
 
-  const isLoading = !!threadId && !thread && !isRunning;
+  const isLoading = isAuthenticated && !!threadId && !thread && !isRunning;
 
   const [__view, __setView] = useState<RunView>();
   const view = (queryParams.view as RunView) ?? __view;
@@ -291,6 +292,17 @@ export const AgentRunner = ({
       setThread(threadQuery.data);
     }
   }, [setThread, threadQuery.data]);
+
+  useEffect(() => {
+    if (threadQuery.error?.data?.code === 'FORBIDDEN') {
+      openToast({
+        type: 'error',
+        title: 'Failed to load thread',
+        description: `Your account doesn't have permission to access requested thread`,
+      });
+      updateQueryPath({ threadId: undefined });
+    }
+  }, [threadQuery.error, updateQueryPath]);
 
   useEffect(() => {
     const htmlFile = files.find((file) => file.filename === 'index.html');

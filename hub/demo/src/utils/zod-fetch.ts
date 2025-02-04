@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { TRPCError } from '@trpc/server';
+
+import { statusCodeToTRPCErrorCode } from './error';
+
 /**
  * A type representing a fetcher function that can be
  * passed to createZodFetcher.
@@ -36,7 +40,10 @@ export const defaultFetcher = async (...args: Parameters<typeof fetch>) => {
       console.error(body);
     } catch (error) {}
 
-    throw new Error(`Request failed with status ${response.status}`);
+    throw new TRPCError({
+      code: statusCodeToTRPCErrorCode(response.status),
+      message: `Request failed with status: ${response.status}`,
+    });
   }
 
   return response.json();
