@@ -128,8 +128,6 @@ class Environment(object):
         self._run_id = run_id
         self._debug_mode = True if self.env_vars.get("DEBUG") else False
 
-        self.langchain_chat_model = client.create_langchain_chat_model(agents[0].model_provider, agents[0].model)
-
         if fastnear_api_key:
             default_mainnet_rpc = f"https://rpc.mainnet.fastnear.com?apiKey={fastnear_api_key}"
         else:
