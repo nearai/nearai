@@ -14,6 +14,7 @@ from nearai.shared.client_config import ClientConfig  # type: ignore
 from nearai.shared.inference_client import InferenceClient  # type: ignore
 from nearai.shared.near.sign import verify_signed_message  # type: ignore
 from pydantic import BaseModel
+from quote.quote import Quote
 
 bearer = HTTPBearer(auto_error=False)
 app = FastAPI()
@@ -43,11 +44,13 @@ class AppState:
     assignment: AssignRequest | None
     agent: Agent | None
     auth: AuthData | None
+    quote: Quote
 
     def __init__(self) -> None:  # noqa: D107
         self.agent = None
         self.assignment = None
         self.auth = None
+        self.quote = Quote()
 
 
 class RunRequest(BaseModel):
@@ -194,6 +197,11 @@ def get_logs(
 
 
 @app.get("/is_assigned")
-async def is_assigned(app_state: AppState = Depends(get_app_state)):
+def is_assigned(app_state: AppState = Depends(get_app_state)):
     is_assigned = app_state.assignment is not None
     return IsAssignedResp(is_assigned=is_assigned)
+
+
+@app.get("/quote")
+def get_quote(app_state: AppState = Depends(get_app_state)):
+    return app_state.quote.get_quote()

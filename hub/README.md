@@ -57,6 +57,13 @@ Start production server with:
 fastapi run app.py --port 8081
 ```
 
+### Publish to Docker Hub
+
+```bash
+export OWNER=plgnai
+docker buildx build --no-cache --load --push --platform linux/amd64 -t ${OWNER}/nearai_cvm_hub:latest -f .docker/Dockerfile.cvm_hub .
+```
+
 ## Frontend
 
 ### Setup

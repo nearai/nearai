@@ -61,7 +61,7 @@ class Worker(BaseModel):
     runner_id: Optional[str]
 
 
-class Pool(BaseModel):
+class State(BaseModel):
     free_workers: List[Worker]
     assigned_workers: List[Worker]
     max_pool_size: int
@@ -140,10 +140,10 @@ class Pool(BaseModel):
         return None
 
 
-app.state.app_state = Pool(free_workers=[], assigned_workers=[], max_pool_size=1)
+app.state.app_state = State(free_workers=[], assigned_workers=[], max_pool_size=1)
 
 
-def get_app_state() -> Pool:
+def get_app_state() -> State:
     return app.state.app_state
 
 
@@ -153,7 +153,7 @@ def root():
 
 
 @app.post("/get_worker")
-def get_worker(background_tasks: BackgroundTasks, pool: Pool = Depends(get_app_state)) -> Optional[Worker]:
+def get_worker(background_tasks: BackgroundTasks, pool: State = Depends(get_app_state)) -> Optional[Worker]:
     # Get a worker from the pool, TODO: auth
     logger.info(f"Getting worker from pool: {pool.free_workers}")
     if not pool.free_workers:
