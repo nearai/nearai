@@ -1,20 +1,31 @@
 [
   {
     "type": "json",
-    "schema": "https://docs.near.ai/protocols/v1/agent_protocol.schema.json",
+    "$schema": "https://docs.near.ai/protocols/v1/agent_protocol.schema.json",
     "json": {
-      "request_choice": {
+      "request_decision": {
         "type": "product",
         "options": [
           {
             "id": 1,
             "image_url": "https://...",
             "name": "Red Socks",
-            "price": {
-              "usd": 10.5
-            },
             "url": "https://amazon.com/..."
-          },
+            "quote": {
+              "type": "Quote",
+              "quote_id": "string",
+              "payee_id": "string",
+              "payment_plans": [
+                {
+            	    "plan_id": "...",
+                  "plan_type": "one-time",
+                  "amount": 123.45,
+                  "currency": "USD"
+                },
+              ],
+              "valid_until": "ISO8601 timestamp"
+            }
+            },
           {
             "id": 2,
             "image_url": "https://...",
