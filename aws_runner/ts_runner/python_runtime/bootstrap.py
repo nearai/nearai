@@ -1,15 +1,9 @@
-"""
-Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-"""
+"""Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved."""
 
-import json
-import logging
 import os
 import site
 import sys
-import time
-import traceback
-import warnings
+
 import awslambdaric.__main__ as awslambdaricmain
 
 
@@ -37,8 +31,8 @@ def set_default_sys_path():
         sys.path.insert(0, get_opt_python_directory())
         sys.path.insert(0, get_opt_site_packages_directory())
     #     'LAMBDA_TASK_ROOT' is function author's working directory
-    #     we add it first in order to mimic the default behavior of populating sys.path and make modules under 'LAMBDA_TASK_ROOT'
-    #     discoverable - https://docs.python.org/3/library/sys.html#sys.path
+    #     we add it first in order to mimic the default behavior of populating sys.path and make modules under
+    #     'LAMBDA_TASK_ROOT' discoverable - https://docs.python.org/3/library/sys.html#sys.path
     sys.path.insert(0, os.environ["LAMBDA_TASK_ROOT"])
 
 
