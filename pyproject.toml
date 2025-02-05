@@ -241,7 +241,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.pydocstyle]
-ignore = ["D200", "D203", "D212", "D213"]
+ignore = []
 match-dir = "(?!aws_runner/ts_runner/python_runtime).*"
 
 [tool.mypy]
