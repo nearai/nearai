@@ -3,16 +3,12 @@ Local Development
 
 This process will be simplified in the future. For now, you can follow these steps to run your TypeScript agent locally.
 
-1. Checkout the [ts_runner brunch](https://github.com/nearai/nearai/tree/feat/ts-runner)
+1. Make sure you installed [NEAR AI CLI](https://docs.near.ai/agents/quickstart/#installing-near-ai-cli) and you have a named NEAR Account. You can create one with [Meteor Wallet](https://wallet.meteorwallet.app/). No funds are required.
 2. Install the dependencies
 ```shell
 cd ts_runner/ts_agent && npm install
 ```
 3. Perform `nearai login` to have a valid NEAR signature in `~/.nearai/config.json`.
-
-- Make sure you have a named NEAR Account. You can create one with [Meteor Wallet](https://wallet.meteorwallet.app/). No funds are required.
-- [Install NEAR AI CLI](https://docs.near.ai/agents/quickstart/#installing-near-ai-cli).
-- Run `nearai login`
 
 4. Update the agent code at `/ts_runner/ts_agent/agents/agent.ts` as you need. Keep the first line as `import {env} from 'ts-agent-runner';` and use methods from the `env` object to use NEAR AI Agent Framework (completions, etc). More methods are coming in the nearest future.
 5Run the agent:
