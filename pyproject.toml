@@ -1,6 +1,6 @@
 [project]
 name = "nearai"
-version = "0.1.6"
+version = "0.1.10"
 description = "Near AI CLI"
 authors = [{name = "Support", email = "support@near.ai"}]
 readme = "README.md"
@@ -11,7 +11,7 @@ dependencies = [
     "base58==2.1.1",
     "boto3>=1.34.100,<2.0.0",
     "boto3-stubs>=1.34.147,<2.0.0",
-    "cryptography>=43.0.0,<44.0.0",
+    "cryptography>=43.0.0",
     "datasets>=2.20.0,<3.0.0",
     "ed25519>=1.5,<2.0",
     "fastapi>=0.111.0,<0.112.0",
@@ -184,7 +184,7 @@ nearai = "nearai.cli:main"
 name = "cz_conventional_commits"
 tag_format = "v$version"
 version_scheme = "semver2"
-version_provider = "poetry"
+version_provider = "pep621"
 update_changelog_on_bump = true
 major_version_zero = true
 
@@ -298,7 +298,10 @@ module = [
     "chardet.*",
     "botocore.*",
     "shortuuid.*",
-    "py_near.*"
+    "py_near.*",
+    "langchain.*",
+    "langchain_core.*",
+    "langchain_openai.*"
 ]
 ignore_missing_imports = true
 

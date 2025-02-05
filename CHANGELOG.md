@@ -1,3 +1,39 @@
+## v0.1.10 (2025-02-01)
+
+### Feat
+
+- update agent quickstart guide (#782)
+
+## v0.1.9 (2025-01-31)
+
+## v0.1.8 (2025-01-31)
+
+## v0.1.7 (2025-01-31)
+
+### Feat
+
+- env methods to interact with NEAR Blockchain (#748)
+- easy agent creation (#723)
+- cli to respect `verbose` param (#716)
+- run_scheduler (#703)
+- format verbose printed statements (#709)
+- Expose user's NEAR account_id to agent (#700)
+- borsh serializer to support dicts (#677)
+- get_signed_completion to use messages as list, not string
+fix: user auth removed from runner's logs
+- hub to derive a private key for every agent and generate a veri… (#662)
+- faster (#665)
+
+### Fix
+
+- set num_retries to avoid extra requests with slow completions (#755)
+- set DEFAULT_TIMEOUT and remove MAX_RETRIES to avoid multiple paid requests on slow completions (#754)
+- add format_check and update lint/type check filename (#710)
+- enable `FASTNEAR_APIKEY` (#699)
+- cached_property for runner properties (#692)
+- add project dependencies section for pip install support (#683)
+- protected auth (#670)
+
 ## v0.1.6 (2024-12-19)
 
 ### Feat

@@ -9328,4 +9328,4 @@ vllm = ["torch", "vllm"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<3.12"
-content-hash = "6eda4353db1876f60c533cfc11fc155386e0e3449aae851b893cc3fbe085152f"
+content-hash = "a3f1cd3be6ddfa534c08d278a1d582e673a77924bdaff728bf68922ea9d522dc"
