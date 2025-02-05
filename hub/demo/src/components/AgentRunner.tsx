@@ -182,7 +182,6 @@ export const AgentRunner = ({
     },
   );
 
-
   const logMessages = useMemo(() => {
     const result = (thread ? Object.values(thread.messagesById) : []).filter(
       (message) => message.metadata?.message_type?.startsWith('system:'),
