@@ -1,10 +1,5 @@
 import {AgentRunnerConfig} from './config-manager.js';
 import {OpenAI, toFile} from "openai";
-import {SecureHubClient} from "./secure-client.js";
-import {AgentConfig} from "./config-types.js";
-import {globalEnv} from "./global-env.js";
-import * as Core from "openai/src/core";
-import {FileCreateParams} from "openai/src/resources/files";
 
 type FileObject = OpenAI.Files.FileObject;
 type ChatCompletionMessageParam = OpenAI.ChatCompletionMessageParam;
@@ -53,7 +48,6 @@ export class NearAIClient {
     }
 
     write_file = async (filename: string, content: string, encoding: string = "utf-8", filetype: string = "text/plain"): Promise<FileObject> => {
-        console.log("write_file", filename, content)
         return this.hub_client.files.create({
             file: await toFile(Buffer.from(content), filename),
             purpose: 'assistants'
@@ -72,8 +66,6 @@ export class NearAIClient {
         let messages = await this.hub_client.beta.threads.messages.list(thread_id || this.thread_id, {
             order: order
         }, {});
-        // console.log("_listMessages", messages)
-        // TODO error handling
         return messages.data;
     };
 

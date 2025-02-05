@@ -14,10 +14,6 @@ class Environment {
 
     async read_file(filename: string): Promise<string> {
         return new Promise(async (resolve, reject) => {
-            // if (!this._nearClient) {
-            //     this._nearClient = configManager.getSecureClient();
-            // }
-
             if (globalEnv.client && "list_files_from_thread" in globalEnv.client && "read_file_by_id" in globalEnv.client) {
 
                 let threadFiles = await globalEnv.client.list_files_from_thread();
@@ -30,7 +26,6 @@ class Environment {
                     }
                 }
 
-                console.log("threadFiles", threadFiles);
                 resolve(fileContent.toString());
             } else {
                 reject("Client not initialized");
@@ -72,7 +67,6 @@ class Environment {
 
     async get_last_message(role: string = "user"): Promise<Message | null> {
         let messages = await this.list_messages();
-        // console.log("messages", messages)
         for (let message of messages.reverse()) {
             if (message.role === role) {
                 return message;

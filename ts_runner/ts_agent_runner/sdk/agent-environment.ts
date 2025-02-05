@@ -20,13 +20,10 @@ export class AgentEnvironment {
     async runAgent(agent_main_ts_filename: string, agent_ts_files_to_transpile: string[]) {
         // TODO agent_main_ts_filename - remove or use
 
-        // console.log("agent_ts_files_to_transpile", agent_ts_files_to_transpile)
-
         let agent_main_js_path = "";
 
         for (let i in agent_ts_files_to_transpile) {
             let agent_ts_path = agent_ts_files_to_transpile[i];
-            // console.log("agent_ts_path", agent_ts_path)
             const agent_js_code = this.transpileCode(agent_ts_path);
 
             // filename only
@@ -34,13 +31,8 @@ export class AgentEnvironment {
                 (agent_ts_path.split('/').pop() || "")
                     .replace(/\.ts$/, ".js")
 
-            if (agent_js_code) {
-                // console.log(`code for ${agent_js_filename} transpiled`)
-            }
-
             if (agent_js_filename) {
                 const agent_js_path = join(__dirname, agent_js_filename);
-                // console.log("Saved to", agent_js_path)
 
                 writeFileSync(agent_js_path, agent_js_code);
 
@@ -50,8 +42,6 @@ export class AgentEnvironment {
             }
         }
 
-        // console.log("agent_main_js_file", agent_main_js_path)
-
         const module = await import(agent_main_js_path);
 
         if (module.default) {
@@ -60,14 +50,11 @@ export class AgentEnvironment {
     }
 
     private transpileCode(tsPath: string): string {
-        // console.log("initial tsPath", tsPath, existsSync(tsPath))
         let fullPath = tsPath;
         // if file exists
         if (!existsSync(tsPath)) {
             fullPath = join(process.cwd(), tsPath);
         }
-
-        // console.log("transpileCode", fullPath)
 
         const tsCode = readFileSync(fullPath, 'utf-8');
         return transpile(tsCode, {
