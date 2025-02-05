@@ -1,0 +1,4 @@
+NAME=Python
+VERSION=3.13.0-6781eef5
+LOGGING=amzn-stdout-tlv
+

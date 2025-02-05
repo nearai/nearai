@@ -11,9 +11,11 @@ __Docker must be run from the root of the repository so the Dockerfile can pull 
 
 Note the dash before the framework name when passing a framework. The deploy script adds the dash but here it must be added manually.
 
-Base framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-base -t nearai-runner:test .`
+Base framework `docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-base -t nearai-runner:test .`
 
-LangGraph framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-langgraph-1-4 -t nearai-runner:test .`
+Typescript framework `docker build -f aws_runner/ts_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-ts -t nearai-runner:test .`
+
+LangGraph framework `docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-langgraph-1-4 -t nearai-runner:test .`
 
 Then `docker run --platform linux/amd64 -p 9001:8080 nearai-runner:test` will start the server on port 9000.
 

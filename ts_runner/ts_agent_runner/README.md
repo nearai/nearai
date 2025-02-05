@@ -6,7 +6,7 @@ This process will be simplified in the future. For now, you can follow these ste
 1. Checkout the [ts_runner brunch](https://github.com/nearai/nearai/tree/feat/ts-runner)
 2. Install the dependencies
 ```shell
-cd nearai/ts_runner && npm install
+cd ts_runner/ts_agent && npm install
 ```
 3. Perform `nearai login` to have a valid NEAR signature in `~/.nearai/config.json`.
 
@@ -14,13 +14,13 @@ cd nearai/ts_runner && npm install
 - [Install NEAR AI CLI](https://docs.near.ai/agents/quickstart/#installing-near-ai-cli).
 - Run `nearai login`
 
-4. Update the agent code at `/agents/agent.ts` as you need. Keep the first line as `import {env} from "../sdk/agent-shim.js";` and use methods from the `env` object to use NEAR AI Agent Framework (completions, etc). More methods are coming in the nearest future. 
-5. Run the agent:
+4. Update the agent code at `/ts_runner/ts_agent/agents/agent.ts` as you need. Keep the first line as `import {env} from 'ts-agent-runner';` and use methods from the `env` object to use NEAR AI Agent Framework (completions, etc). More methods are coming in the nearest future.
+5Run the agent:
 ```shell
 npm run build &&  npm run start agents/agent.ts
 ```
 
-6. If you want to provide ENV variables, you can provide them as arguments:
+6If you want to provide ENV variables, you can provide them as arguments:
 ```shell
 npm run build && CDP_API_KEY_NAME=name CDP_API_KEY_PRIVATE_KEY="key" npm run start agents/agent.ts
 ```
@@ -32,7 +32,7 @@ How to deploy your TypeScript agent:
 1. [Create a new agent](https://docs.near.ai/agents/quickstart/#creating-a-new-agent)
 2. Copy the `agent.ts` you built to the agent folder
 3. Make sure to set framework to `ts` in the metadata.json
-4. Deploy the agent ([Doc above]((https://docs.near.ai/agents/quickstart/#creating-a-new-agent)) has the details)
+4. Deploy the agent ([Doc above](https://docs.near.ai/agents/quickstart/#creating-a-new-agent)) has the details)
 
 ---
 Example of the agent: [cdp-agent](https://app.near.ai/agents/zavodil.near/cdp-agent/latest/run)

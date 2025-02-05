@@ -1,0 +1,21 @@
+{
+    "type": "module",
+    "scripts": {
+        "build": "tsc --build --force",
+        "start": "NODE_NO_WARNINGS=1 node build/main.js",
+        "go": "npm run build && npm run start agents/agent.ts"
+    },
+    "dependencies": {
+        "ts-agent-runner": "^0.0.22"
+    },
+    "devDependencies": {
+        "@types/node": "^20.17.16",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.0.4"
+    },
+    "name": "ts-agent-example",
+    "version": "0.0.1",
+    "author": "",
+    "license": "ISC",
+    "description": ""
+}

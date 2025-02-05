@@ -1,14 +1,16 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    //"module": "NodeNext",
-    //"moduleResolution": "NodeNext",
     "moduleResolution": "node",
     "module": "ESNext",
     "outDir": "./build",
     "strict": true,
     "esModuleInterop": true,
-    "rootDir": ".",
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "ts-agent-runner": ["node_modules/ts-agent-runner"]
+    },
+    "typeRoots": ["node_modules/@types", "node_modules"]
   }
 }

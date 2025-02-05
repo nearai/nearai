@@ -8,11 +8,11 @@ import subprocess
 import sys
 import tempfile
 import uuid
-from dotenv import load_dotenv
-from os import getenv
 from pathlib import Path
 from types import CodeType
 from typing import Any, Dict, List, Optional, Union
+
+from dotenv import load_dotenv
 
 from nearai.shared.client_config import ClientConfig
 
@@ -128,8 +128,8 @@ class Agent(object):
         if not self.version or not self.name:
             raise ValueError("Both 'version' and 'name' must be non-empty in metadata.")
 
-    def run_agent_code(self, agent_namespace, agent_runner_user):
-        print("run_agent_code")
+    def run_python_code(self, agent_namespace, agent_runner_user):
+        """Launch python agent."""
         # switch to user env.agent_runner_user
         if agent_runner_user:
             user_info = pwd.getpwnam(agent_runner_user)
@@ -143,52 +143,63 @@ class Agent(object):
         #       `compile` and `exec` have been tested to work properly in a multithreaded environment.
         exec(self.code, agent_namespace)
 
-    def run_ts_agent(self, agent_filename, env_vars, json_params ):
-        print("run_ts_agent", self.ts_runner_dir)
-        # real_cwd = os.path.realpath(self.ts_runner_dir)
-        print("💡 run_ts_agent CWD:", self.ts_runner_dir)
-        print("💡 Check package.json:", os.path.exists(os.path.join(self.ts_runner_dir, "package.json")))
-
-        # build_process = subprocess.Popen(["npm", "--prefix", self.ts_runner_dir, "run", "build"],
-        #                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.ts_runner_dir)
+    def run_ts_agent(self, agent_filename, env_vars, json_params):
+        """Launch typescript agent."""
+        print(f"Running typescript agent {agent_filename} from {self.ts_runner_dir}")
 
         # Configure npm to use tmp directories
         env = os.environ.copy()
-        env.update({
-            "NPM_CONFIG_CACHE": "/tmp/npm_cache",
-            "NPM_CONFIG_PREFIX": "/tmp/npm_prefix",
-            "HOME": "/tmp"  # Redirect npm home
-        })
+        env.update(
+            {
+                "NPM_CONFIG_CACHE": "/tmp/npm_cache",
+                "NPM_CONFIG_PREFIX": "/tmp/npm_prefix",
+                "HOME": "/tmp",  # Redirect npm home
+                "NPM_CONFIG_LOGLEVEL": "error",  # Suppress warnings, show only errors
+            }
+        )
 
         # Ensure directory structure exists
         os.makedirs("/tmp/npm_cache", exist_ok=True)
         os.makedirs("/tmp/npm_prefix", exist_ok=True)
 
-        print("Running ", agent_filename)
-
         # read file /tmp/build-info.txt if exists
         if os.path.exists("/var/task/build-info.txt"):
             with open("/var/task/build-info.txt", "r") as file:
-                print("!!!BUILD ID: ", file.read())
-        print("!!!BUILD env: ", getenv("BUILD_ID"))
+                print("BUILD ID: ", file.read())
 
-        # Add debug logging
-        print("Directory structure:", os.listdir("/tmp/ts_runner"))
-        print("Symlink exists:", os.path.exists("/tmp/ts_runner/node_modules/.bin/tsc"))
-        print("Build files exist:", os.path.exists("/tmp/ts_runner/build/sdk/main.js"))
+        if env_vars.get("DEBUG"):
+            print("Directory structure:", os.listdir("/tmp/ts_runner"))
+            print("Check package.json:", os.path.exists(os.path.join(self.ts_runner_dir, "package.json")))
+            print("Symlink exists:", os.path.exists("/tmp/ts_runner/node_modules/.bin/tsc"))
+            print("Build files exist:", os.path.exists("/tmp/ts_runner/build/sdk/main.js"))
 
-        if True:
-            ts_process = subprocess.Popen(["npm", "--prefix", self.ts_runner_dir, "run", "start", "agents/agent.ts", json_params], stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE, cwd=self.ts_runner_dir, env=env_vars)
-            stdout, stderr = ts_process.communicate()
+        # Launching a subprocess to run an npm script with specific configurations
+        ts_process = subprocess.Popen(
+            [
+                "npm",  # Command to run Node Package Manager
+                "--loglevel=error",  # Suppress npm warnings and info logs, only show errors
+                "--prefix",
+                self.ts_runner_dir,  # Specifies the directory where npm should look for package.json
+                "run",
+                "start",  # Runs the "start" script defined in package.json, this launches the agent
+                "agents/agent.ts",
+                json_params,  # Arguments passed to the "start" script to configure the agent
+            ],
+            stdout=subprocess.PIPE,  # Captures standard output from the process
+            stderr=subprocess.PIPE,  # Captures standard error
+            cwd=self.ts_runner_dir,  # Sets the current working directory for the process
+            env=env_vars,  # Provides custom environment variables to the subprocess
+        )
 
-            print("STDOUT:", stdout.decode())
-            print("STDERR:", stderr.decode())
+        stdout, stderr = ts_process.communicate()
 
-        else:
-            print("Build failed:")
-            print("build_stdout", build_stdout)
-            print(build_stderr.decode())
+        stdout = stdout.decode().strip()
+        if stdout and env_vars.get("DEBUG"):
+            print(f"TS AGENT STDOUT: {stdout}")
+
+        stderr = stderr.decode().strip()
+        if stderr:
+            print(f"TS AGENT STDERR: {stderr}")
 
     def run(self, env: Any, task: Optional[str] = None) -> None:  # noqa: D102
         # combine agent.env_vars and env.env_vars
@@ -202,68 +213,40 @@ class Agent(object):
         agent_ts_files_to_transpile = []
 
         if not self.agent_filename or True:
-
-            print("self.temp_dir", self.temp_dir)
-
+            # if agent has "agent.py" file, we use python runner
             if os.path.exists(os.path.join(self.temp_dir, AGENT_FILENAME_PY)):
                 self.agent_filename = os.path.join(self.temp_dir, AGENT_FILENAME_PY)
                 self.agent_language = "py"
                 with open(self.agent_filename, "r") as agent_file:
                     self.code = compile(agent_file.read(), self.agent_filename, "exec")
+            # else, if agent has "agent.ts" file, we use python runner
             elif os.path.exists(os.path.join(self.temp_dir, AGENT_FILENAME_TS)):
                 self.agent_filename = os.path.join(self.temp_dir, AGENT_FILENAME_TS)
                 self.agent_language = "ts"
 
                 # copy files from nearai/ts_runner_sdk to self.temp_dir
-                # ts_runner_sdk_dir = "/Users/alice/projects/jasnah-cli/nearai/ts_runner"
                 ts_runner_sdk_dir = "/tmp/ts_runner"
                 ts_runner_agent_dir = os.path.join(ts_runner_sdk_dir, "agents")
 
-                print("tempfile.gettempdir()", tempfile.gettempdir())
-
-                def find_ts_runner(start_path='/'):
-                    for dirpath, dirnames, filenames in os.walk(start_path):
-                        if 'ts_runner' in dirnames:
-                            return os.path.join(dirpath, 'ts_runner')
-                    return None
-
-                ts_runner_actual_path = find_ts_runner()
-
-
-                if ts_runner_actual_path:
-                    print(f"Папка 'ts_runner' найдена по пути: {ts_runner_actual_path}")
-                else:
-                    print("Папка 'ts_runner' не найдена.")
+                ts_runner_actual_path = "/var/task/ts_runner"
 
                 shutil.copytree(ts_runner_actual_path, ts_runner_sdk_dir, symlinks=True, dirs_exist_ok=True)
-                print(f"Папка '{ts_runner_actual_path}' скопирована в '{ts_runner_sdk_dir}'")
 
-
-
-                print("file", os.path.join(self.temp_dir, AGENT_FILENAME_TS))
-                # make dir if not exists
+                # make ts agents dir if not exists
                 if not os.path.exists(ts_runner_agent_dir):
                     os.makedirs(ts_runner_agent_dir, exist_ok=True)
 
+                # copy agents files
                 shutil.copy(os.path.join(self.temp_dir, AGENT_FILENAME_TS), ts_runner_agent_dir)
 
-
-                # self.temp_dir = ts_runner_agent_dir
                 self.ts_runner_dir = ts_runner_sdk_dir
-
-
-
-
             else:
-                raise ValueError(f"Agent run error: {AGENT_FILENAME_PY} does not exist")
-
-            print("self.temp_dir", self.temp_dir)
+                raise ValueError(f"Agent run error: {AGENT_FILENAME_PY} of {AGENT_FILENAME_TS} does not exist")
 
             # cache all agent files in file_cache
             for root, _, files in os.walk(self.temp_dir):
                 for file in files:
                     file_path = os.path.join(root, file)
-                    print("agent file", file_path)
 
                     # get file extension for agent_filename
                     if file_path.endswith(".ts"):
@@ -305,26 +288,30 @@ class Agent(object):
             sys.path.insert(0, self.temp_dir)
 
             if self.agent_language == "ts":
-                print("run_ts_agent try")
-                agent_json_params = json.dumps({
-                    "thread_id": env._thread_id,
-                    "user_auth": user_auth,
-                    "base_url": env.base_url,
-                    "env_vars": env.env_vars,
-                    "agent_ts_files_to_transpile": agent_ts_files_to_transpile
-                })
+                agent_json_params = json.dumps(
+                    {
+                        "thread_id": env._thread_id,
+                        "user_auth": user_auth,
+                        "base_url": env.base_url,
+                        "env_vars": env.env_vars,
+                        "agent_ts_files_to_transpile": agent_ts_files_to_transpile,
+                    }
+                )
 
-                process = multiprocessing.Process(target=self.run_ts_agent, args=[
-                    self.agent_filename, env.env_vars, agent_json_params])
+                process = multiprocessing.Process(
+                    target=self.run_ts_agent, args=[self.agent_filename, env.env_vars, agent_json_params]
+                )
                 process.start()
                 process.join()
             else:
                 if env.agent_runner_user:
-                    process = multiprocessing.Process(target=self.run_agent_code, args=[namespace, env.agent_runner_user])
+                    process = multiprocessing.Process(
+                        target=self.run_python_code, args=[namespace, env.agent_runner_user]
+                    )
                     process.start()
                     process.join()
                 else:
-                    self.run_agent_code(namespace, env.agent_runner_user)
+                    self.run_python_code(namespace, env.agent_runner_user)
         finally:
             if os.path.exists(self.temp_dir):
                 sys.path.remove(self.temp_dir)

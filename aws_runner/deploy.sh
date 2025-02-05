@@ -18,11 +18,12 @@ deploy() {
   FRAMEWORK="-${FRAMEWORK:-"base"}"
   TS_RUNNER=${TS_RUNNER:-"False"}
   ENV="${ENV:-"staging"}-"
+  RUNNER_TYPE=${RUNNER_TYPE:-"py_runner"}
 
   echo "Deploying ${ENV}agent-runner${FRAMEWORK}"
 
   aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 543900120763.dkr.ecr.us-east-2.amazonaws.com
-  docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=${FRAMEWORK} --build-arg TS_RUNNER=${TS_RUNNER} --provenance=false -t nearai-runner${FRAMEWORK} .
+  docker build -f aws_runner/${RUNNER_TYPE}/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=${FRAMEWORK} --build-arg TS_RUNNER=${TS_RUNNER} --provenance=false -t nearai-runner${FRAMEWORK} .
   docker tag nearai-runner${FRAMEWORK}:latest 543900120763.dkr.ecr.us-east-2.amazonaws.com/nearai-runner${FRAMEWORK}:latest
   docker push 543900120763.dkr.ecr.us-east-2.amazonaws.com/nearai-runner${FRAMEWORK}:latest
   aws lambda update-function-code --region us-east-2 \
