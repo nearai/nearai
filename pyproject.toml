@@ -298,10 +298,7 @@ module = [
     "chardet.*",
     "botocore.*",
     "shortuuid.*",
-    "py_near.*",
-    "langchain.*",
-    "langchain_core.*",
-    "langchain_openai.*"
+    "py_near.*"
 ]
 ignore_missing_imports = true
 
