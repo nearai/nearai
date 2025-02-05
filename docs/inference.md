@@ -62,7 +62,7 @@ models = client.models.list()
 print(models)
 ```
 
-Different providers have different models. The format is `<provider>::accounts/<provider>/models/<model_name>`. To get all unique providers, do:
+Different providers have different models. The format is `provider::accounts/namespace/models/model_name`. To get all unique providers, do:
 
 ```python
 providers = set([model.id.split("::")[0] for model in models])
