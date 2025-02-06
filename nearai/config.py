@@ -117,22 +117,28 @@ class Config(BaseModel):
 
     def get_client_config(self) -> ClientConfig:  # noqa: D102
         return ClientConfig(
-            base_url=CONFIG.nearai_hub.base_url,
-            auth=CONFIG.auth,
-            custom_llm_provider=CONFIG.nearai_hub.custom_llm_provider,
-            default_provider=CONFIG.nearai_hub.default_provider,
-            num_inference_retries=CONFIG.num_inference_retries,
+            base_url=self.nearai_hub.base_url,
+            auth=self.auth,
+            custom_llm_provider=self.nearai_hub.custom_llm_provider,
+            default_provider=self.nearai_hub.default_provider,
+            num_inference_retries=self.num_inference_retries,
         )
 
 
-# Load default configs
-CONFIG = Config()
-# Update config from global config file
-CONFIG = CONFIG.update_with(load_config_file(local=False))
-# Update config from local config file
-CONFIG = CONFIG.update_with(load_config_file(local=True))
-# Update config from environment variables
-CONFIG = CONFIG.update_with(dict(os.environ), map_key=str.upper)
+def load_config() -> Config:
+    # Load default configs
+    config = Config()
+    # Update config from global config file
+    config = config.update_with(load_config_file(local=False))
+    # Update config from local config file
+    config = config.update_with(load_config_file(local=True))
+    # Update config from environment variables
+    config = config.update_with(dict(os.environ), map_key=str.upper)
+    return config
+
+
+# A cached config (may not have updated values). Prefer to use `load_config` instead.
+CONFIG = load_config()
 
 
 def setup_api_client():

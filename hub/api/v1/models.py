@@ -1,3 +1,4 @@
+import re
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -214,7 +215,15 @@ class Message(SQLModel, table=True):
             ]
         if self.content:
             if isinstance(self.content, str):
-                self.content = [TextContentBlock(text=Text(value=self.content, annotations=[]), type="text")]
+                # Filter out non-utf8 characters (which shouldn't happen!)
+                content = self.content.encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
+
+                # Regular expression to match only 1- to 3-byte characters, because something is broken
+                # for 4-byte (utf8mb4) characters
+                # TODO #767: Remove this when we support utf8mb4 charset
+                content = re.sub(r"[\U00010000-\U0010FFFF]", "", content)
+
+                self.content = [TextContentBlock(text=Text(value=content, annotations=[]), type="text")]
 
             # Handle both Pydantic models and dictionaries
             self.content = [
@@ -372,7 +381,6 @@ def get_session() -> Iterator[Session]:
 # Constants for file URI prefixes
 FILE_URI_PREFIX = "file::"
 S3_URI_PREFIX = "s3::"
-
 
 SUPPORTED_MIME_TYPES = {
     "text/x-c": [".c"],

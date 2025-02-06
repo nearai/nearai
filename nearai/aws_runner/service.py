@@ -41,6 +41,7 @@ def load_protected_variables():
     keys_to_remove = [
         "AWS_ACCESS_KEY_ID",  # Access key ID for AWS
         "AWS_SECRET_ACCESS_KEY",  # Secret access key for AWS
+        "FASTNEAR_APY_KEY",  # API KEY for FastNear RPC
         "RUNNER_API_KEY",  # API KEY for a NEAR AI Runner
     ]
 
@@ -332,6 +333,7 @@ def start_with_environment(
         env_vars=user_env_vars,
         print_system_log=print_system_log,
         agent_runner_user=protected_vars.get("AGENT_RUNNER_USER"),
+        fastnear_api_key=protected_vars.get("FASTNEAR_APY_KEY"),
     )
     if agent.welcome_title:
         print(agent.welcome_title)

@@ -30,6 +30,8 @@ from openai.types.beta.threads.message_create_params import Attachment
 from openai.types.beta.threads.run import Run
 from openai.types.beta.vector_store import VectorStore
 from openai.types.file_object import FileObject
+from py_near.account import Account
+from py_near.constants import DEFAULT_ATTACHED_GAS
 
 import nearai.shared.near.sign as near
 from nearai.agents import tool_json_helper
@@ -104,7 +106,8 @@ class Environment(object):
         tool_resources: Optional[Dict[str, Any]] = None,
         print_system_log: bool = False,
         agent_runner_user: Optional[str] = None,
-        approvals: Optional[Dict[str, Any]] = default_approvals,
+        fastnear_api_key: Optional[str] = None,
+        approvals=None,
     ) -> None:
         # Warning: never expose `client` or `_hub_client` to agent's environment
 
@@ -120,10 +123,168 @@ class Environment(object):
         self.tool_resources: Dict[str, Any] = tool_resources if tool_resources else {}
         self.print_system_log = print_system_log
         self.agent_runner_user = agent_runner_user
-        self._approvals = approvals
+        self._approvals = approvals if approvals else default_approvals
         self._thread_id = thread_id
         self._run_id = run_id
         self._debug_mode = True if self.env_vars.get("DEBUG") else False
+
+        if fastnear_api_key:
+            default_mainnet_rpc = f"https://rpc.mainnet.fastnear.com?apiKey={fastnear_api_key}"
+        else:
+            default_mainnet_rpc = "https://rpc.mainnet.near.org"
+
+        class NearAccount(Account):
+            async def view(
+                self,
+                contract_id: str,
+                method_name: str,
+                args: dict,
+                block_id: Optional[int] = None,
+                threshold: Optional[int] = None,
+                max_retries: int = 3,
+            ):
+                """Wrapper for the view method of the Account class, adding multiple retry attempts.
+
+                Parameters
+                ----------
+                contract_id : str
+                    The ID of the contract to call.
+                method_name : str
+                    The name of the method to invoke on the contract.
+                args : dict
+                    The arguments to pass to the contract method.
+                block_id : Optional[int]
+                    The block ID to query at.
+                threshold : Optional[int]
+                    The threshold for the view function.
+                max_retries : int
+                    The maximum number of retry attempts.
+
+                Returns
+                -------
+                The result of the contract method call.
+
+                Raises
+                ------
+                Exception
+                    If all retry attempts fail, the exception is propagated.
+
+                """
+                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                await acc.startup()
+                max_retries = min(max_retries, 10)
+
+                for attempt in range(1, max_retries + 1):
+                    try:
+                        # Attempt to read the contract view method
+                        return await acc.view_function(contract_id, method_name, args, block_id, threshold)
+                    except Exception as e:
+                        # Log the error message for the current attempt
+                        print(
+                            f"Attempt {attempt}/{max_retries} to view method '{method_name}' on contract "
+                            f"'{contract_id}' failed with error: {e}"
+                        )
+
+                        # If it's the last attempt, re-raise the exception
+                        if attempt == max_retries:
+                            raise
+
+            async def call(
+                self,
+                contract_id: str,
+                method_name: str,
+                args: dict,
+                gas: int = DEFAULT_ATTACHED_GAS,
+                amount: int = 0,
+                nowait: bool = False,
+                included=False,
+                max_retries: int = 1,
+            ):
+                """Wrapper for the call method of the Account class, adding multiple retry attempts.
+
+                Parameters
+                ----------
+                contract_id : str
+                    The ID of the contract to call.
+                method_name : str
+                    The name of the method to invoke on the contract.
+                args : dict
+                    The arguments to pass to the contract method.
+                gas : int
+                    The amount of gas to attach to the call.
+                amount : int
+                    The amount of tokens to attach to the call.
+                nowait : bool
+                    If True, do not wait for the transaction to be confirmed.
+                included : bool
+                    If True, include the transaction in the block.
+                max_retries : int
+                    The maximum number of retry attempts.
+
+                Returns
+                -------
+                The result of the contract method call.
+
+                Raises
+                ------
+                Exception
+                    If all retry attempts fail, the exception is propagated.
+
+                """
+                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                await acc.startup()
+                max_retries = min(max_retries, 10)
+
+                for attempt in range(1, max_retries + 1):
+                    try:
+                        # Attempt to call the contract method
+                        return await acc.function_call(contract_id, method_name, args, gas, amount, nowait, included)
+                    except Exception as e:
+                        # Log the error message for the current attempt
+                        print(
+                            f"Attempt {attempt}/{max_retries} to call method '{method_name}' on contract "
+                            f"'{contract_id}' failed with error: {e}"
+                        )
+
+                        # If it's the last attempt, re-raise the exception
+                        if attempt == max_retries:
+                            raise
+
+            async def get_balance(self, account_id: Optional[str] = None) -> int:
+                """Retrieves the balance of the specified NEAR account.
+
+                Parameters
+                ----------
+                account_id : Optional[str]
+                    The ID of the account to retrieve the balance for. If not provided, the balance of the current
+                    account is retrieved.
+
+                Returns
+                -------
+                int
+                    The balance of the specified account in yoctoNEAR.
+
+                Raises
+                ------
+                Exception
+                    If there is an error retrieving the balance.
+
+                """
+                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                await acc.startup()
+                return await acc.get_balance(account_id)
+
+            def __init__(
+                self,
+                account_id: Optional[str] = None,
+                private_key: Optional[Union[List[Union[str, bytes]], str, bytes]] = None,
+                rpc_addr: Optional[str] = None,
+            ):
+                self.account_id = account_id
+                self.private_key = private_key
+                super().__init__(account_id, private_key, rpc_addr)
+
+        self.set_near = NearAccount
 
         self._tools = ToolRegistry()
 
@@ -248,9 +409,9 @@ class Environment(object):
         def get_model_for_inference(model: str = "") -> str:
             """Returns 'provider::model_full_path'."""
             if self.cached_models_for_inference.get(model, None) is None:
-                provider = self._agents[0].model_provider if self._agents else ""
+                provider = self.get_primary_agent().model_provider if self._agents else ""
                 if model == "":
-                    model = self._agents[0].model if self._agents else ""
+                    model = self.get_primary_agent().model if self._agents else ""
                 if model == "":
                     return DEFAULT_PROVIDER_MODEL
 
@@ -363,8 +524,8 @@ class Environment(object):
 
         def get_agent_data_by_key(key, default=None):
             """Get agent data by key."""
-            namespace = self._agents[0].namespace
-            name = self._agents[0].name
+            namespace = self.get_primary_agent().namespace
+            name = self.get_primary_agent().name
             result = client.get_agent_data_by_key(key)
             return (
                 result
@@ -395,7 +556,7 @@ class Environment(object):
                 role="assistant",
                 content=message,
                 extra_body={
-                    "assistant_id": self._agents[0].identifier,
+                    "assistant_id": self.get_primary_agent().identifier,
                     "run_id": self._run_id,
                 },
                 attachments=attachments,
@@ -415,7 +576,7 @@ class Environment(object):
                 role=role,  # type: ignore
                 content=message,
                 extra_body={
-                    "assistant_id": self._agents[0].identifier,
+                    "assistant_id": self.get_primary_agent().identifier,
                     "run_id": self._run_id,
                 },
                 metadata=kwargs,
@@ -658,17 +819,21 @@ class Environment(object):
         with open(path, "r") as f:
             return [json.loads(message) for message in f.read().split(DELIMITER) if message]
 
-    def list_messages(self, thread_id: Optional[str] = None):
+    def list_messages(
+        self,
+        thread_id: Optional[str] = None,
+        limit: Union[int, NotGiven] = NOT_GIVEN,  # api defaults to 20
+        order: Literal["asc", "desc"] = "asc",
+    ):
         """Backwards compatibility for chat_completions messages."""
-        messages = self._list_messages(thread_id=thread_id)
+        messages = self._list_messages(thread_id=thread_id, limit=limit, order=order)
 
         # Filter out system and agent log messages when running in debug mode. Agent behavior shouldn't change based on logs.  # noqa: E501
-        if self._debug_mode:
-            messages = [
-                m
-                for m in messages
-                if not (m.metadata and m.metadata["message_type"] in ["system:log", "agent:log"])  # type: ignore
-            ]
+        messages = [
+            m
+            for m in messages
+            if not (m.metadata and m.metadata["message_type"] in ["system:log", "agent:log"])  # type: ignore
+        ]
         legacy_messages = [
             {
                 "id": m.id,
@@ -695,7 +860,7 @@ class Environment(object):
             signature,
             message,
             nonce,
-            self._agents[0].name,
+            self.get_primary_agent().name,
             callback_url,
         )
 
@@ -854,8 +1019,8 @@ class Environment(object):
             self._last_used_model = model
             self.add_system_log(f"Connecting to {model}")
 
-        temperature = kwargs.pop("temperature", self._agents[0].model_temperature if self._agents else None)
-        max_tokens = kwargs.pop("max_tokens", self._agents[0].model_max_tokens if self._agents else None)
+        temperature = kwargs.pop("temperature", self.get_primary_agent().model_temperature if self._agents else None)
+        max_tokens = kwargs.pop("max_tokens", self.get_primary_agent().model_max_tokens if self._agents else None)
 
         params = InferenceParameters(
             model=model,
@@ -1121,7 +1286,7 @@ class Environment(object):
 
     def get_primary_agent_temp_dir(self) -> Path:
         """Returns temp dir for primary agent."""
-        return self._agents[0].temp_dir
+        return self.get_primary_agent().temp_dir
 
     def is_done(self) -> bool:  # noqa: D102
         return self._done
@@ -1138,9 +1303,9 @@ class Environment(object):
 
     def environment_run_info(self, base_id, run_type) -> dict:
         """Returns the environment run information."""
-        if not self._agents or not self._agents[0]:
+        if not self._agents or not self.get_primary_agent():
             raise ValueError("Agent not found")
-        primary_agent = self._agents[0]
+        primary_agent = self.get_primary_agent()
 
         full_agent_name = "/".join([primary_agent.namespace, primary_agent.name, primary_agent.version])
         safe_agent_name = full_agent_name.replace("/", "_")
@@ -1230,7 +1395,7 @@ class Environment(object):
                     logging.INFO,
                 )
             try:
-                self._agents[0].run(self, task=new_message)
+                self.get_primary_agent().run(self, task=new_message)
             except Exception as e:
                 self.add_system_log(f"Environment run failed: {e}", logging.ERROR)
                 self.mark_failed()

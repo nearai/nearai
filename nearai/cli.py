@@ -729,6 +729,7 @@ class AgentCli:
     def _create_new_agent(self, namespace: str, name: Optional[str], description: Optional[str]) -> None:
         """Create a new agent from scratch."""
         # If no name/description provided, use interactive prompts
+        init_instructions = ""
         if name is None and description is None:
             _, name, description, init_instructions = self._prompt_agent_details()
 

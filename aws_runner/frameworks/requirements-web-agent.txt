@@ -15,11 +15,12 @@ bs4
 googlesearch-python >= 1.2.5
 PyPDF2
 youtube_transcript_api >= 0.6.2
-ed25519
-near-api
-py-near==1.1.49
+py-near >= 1.1.50
+loguru == 0.7.2
+ed25519 == 1.5
 py-multibase==1.0.3
 py-multicodec==0.2.1
-loguru==0.7.2
 pydantic==2.9.2
 aiohttp==3.9.3
+borsh-construct
+tweepy >= 4.14.0

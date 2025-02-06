@@ -1,6 +1,6 @@
 site_name: NEAR AI
-site_author: NEAR AI Team
-site_description: A lightweight library for structured outputs with LLMs. 
+site_author: NEAR AI
+site_description: NEAR AI Docs - Quickly build and deploy robust AI agents, models, benchmarks, and more.
 repo_name: nearai
 repo_url: https://github.com/nearai/nearai/
 site_url: https://docs.near.ai/ 
@@ -133,6 +133,7 @@ nav:
     - Welcome To NEAR AI Docs: 'index.md'
     - Contributing: 'contributing.md'
     - Decentralization: 'decentralization.md'
+    - Private & Verifiable AI: 'private-ml-sdk.md'
   - Agents:
     - Quickstart: 'agents/quickstart.md'
     - Registry: 'agents/registry.md'
@@ -145,6 +146,7 @@ nav:
       - 'agents/env/calling_other_agents.md'
       - 'agents/env/tools.md'
       - 'agents/env/variables.md'
+      - 'agents/env/near.md'
       - Secrets: 'agents/secrets.md'
     - Inference (OpenAI): 'inference.md'
     - Vector Stores (OpenAI): 'vector-stores.md'
