@@ -3,11 +3,11 @@
 import { Button, Card, Flex, Text } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
-import { type requestChoiceSchema } from './schema';
+import { type requestDecisionSchema } from './schema';
 
 type Props = {
   contentId: string;
-  content: z.infer<typeof requestChoiceSchema>['request_choice'];
+  content: z.infer<typeof requestDecisionSchema>['request_decision'];
 };
 
 const defaultOptions: Props['content']['options'] = [
@@ -19,12 +19,12 @@ const defaultOptions: Props['content']['options'] = [
   },
 ];
 
-export const RequestChoiceConfirmation = ({ content }: Props) => {
+export const RequestDecisionConfirmation = ({ content }: Props) => {
   const options = content.options?.length ? content.options : defaultOptions;
 
   if (content.type !== 'confirmation') {
     console.error(
-      `Attempted to render <RequestChoiceConfirmation /> with invalid content type: ${content.type}`,
+      `Attempted to render <RequestDecisionConfirmation /> with invalid content type: ${content.type}`,
     );
     return null;
   }

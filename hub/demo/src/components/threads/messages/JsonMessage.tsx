@@ -10,8 +10,8 @@ import {
   type threadMessageModelContentJson,
 } from '~/lib/models';
 
-import { RequestChoice } from './aitp/RequestChoice';
 import { RequestData } from './aitp/RequestData';
+import { RequestDecision } from './aitp/RequestDecision';
 import { CURRENT_AGENT_PROTOCOL_SCHEMA, protocolSchema } from './aitp/schema';
 
 type Props = {
@@ -31,10 +31,10 @@ export const JsonMessage = ({ content, contentId }: Props) => {
   const protocol = protocolSchema.safeParse(json);
 
   if (protocol.data) {
-    if ('request_choice' in protocol.data) {
+    if ('request_decision' in protocol.data) {
       return (
-        <RequestChoice
-          content={protocol.data.request_choice}
+        <RequestDecision
+          content={protocol.data.request_decision}
           contentId={contentId}
         />
       );

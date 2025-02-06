@@ -20,7 +20,7 @@ export const quoteSchema = z.object({
   valid_until: z.string().datetime(),
 });
 
-const requestChoiceOptionSchema = z.object({
+const requestDecisionOptionSchema = z.object({
   name: z.string(),
   short_variant_name: z.string().optional(),
   image_url: z.string().url().optional(),
@@ -40,16 +40,16 @@ const requestChoiceOptionSchema = z.object({
   url: z.string().url().optional(),
 });
 
-export const requestChoiceSchema = z.object({
-  request_choice: z.object({
+export const requestDecisionSchema = z.object({
+  request_decision: z.object({
     title: z.string().optional(),
     description: z.string().optional(),
     type: z
       .enum(['products', 'checkbox', 'radio', 'confirmation'])
       .default('radio'),
-    options: requestChoiceOptionSchema
+    options: requestDecisionOptionSchema
       .extend({
-        variants: requestChoiceOptionSchema.array().optional(),
+        variants: requestDecisionOptionSchema.array().optional(),
       })
       .array()
       .default([]),
@@ -100,4 +100,4 @@ export const requestDataSchema = z.object({
   });
 */
 
-export const protocolSchema = requestChoiceSchema.or(requestDataSchema);
+export const protocolSchema = requestDecisionSchema.or(requestDataSchema);

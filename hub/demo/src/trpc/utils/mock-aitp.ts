@@ -2,8 +2,8 @@ import { type z } from 'zod';
 
 import {
   type quoteSchema,
-  type requestChoiceSchema,
   type requestDataSchema,
+  type requestDecisionSchema,
 } from '~/components/threads/messages/aitp/schema';
 import { type threadMessageModel } from '~/lib/models';
 
@@ -25,8 +25,8 @@ function generateMockedQuote(priceUsd: number): z.infer<typeof quoteSchema> {
 }
 
 export function generateMockedAITPMessages(threadId: string) {
-  const requestChoiceCheckbox: z.infer<typeof requestChoiceSchema> = {
-    request_choice: {
+  const requestDecisionCheckbox: z.infer<typeof requestDecisionSchema> = {
+    request_decision: {
       title: 'Your Favorite Colors',
       description: `Which colors are your favorite? This will help refine your product search.`,
       type: 'checkbox',
@@ -53,8 +53,8 @@ export function generateMockedAITPMessages(threadId: string) {
     },
   };
 
-  const requestChoiceRadio: z.infer<typeof requestChoiceSchema> = {
-    request_choice: {
+  const requestDecisionRadio: z.infer<typeof requestDecisionSchema> = {
+    request_decision: {
       type: 'radio',
       description: 'Select your favorite number:',
       options: [
@@ -71,8 +71,8 @@ export function generateMockedAITPMessages(threadId: string) {
     },
   };
 
-  const requestChoiceProducts: z.infer<typeof requestChoiceSchema> = {
-    request_choice: {
+  const requestDecisionProducts: z.infer<typeof requestDecisionSchema> = {
+    request_decision: {
       title: 'Recommended Products',
       description: `Based on your selected factors, here are the best recommendations`,
       type: 'products',
@@ -134,8 +134,8 @@ export function generateMockedAITPMessages(threadId: string) {
     },
   };
 
-  const requestChoiceConfirmation: z.infer<typeof requestChoiceSchema> = {
-    request_choice: {
+  const requestDecisionConfirmation: z.infer<typeof requestDecisionSchema> = {
+    request_decision: {
       title: 'Please confirm',
       description: `Would you like to eat all cookies?`,
       type: 'confirmation',
@@ -205,19 +205,19 @@ export function generateMockedAITPMessages(threadId: string) {
     content: [
       {
         type: 'json',
-        json: requestChoiceCheckbox,
+        json: requestDecisionCheckbox,
       },
       {
         type: 'json',
-        json: requestChoiceRadio,
+        json: requestDecisionRadio,
       },
       {
         type: 'json',
-        json: requestChoiceProducts,
+        json: requestDecisionProducts,
       },
       {
         type: 'json',
-        json: requestChoiceConfirmation,
+        json: requestDecisionConfirmation,
       },
       {
         type: 'json',

@@ -17,18 +17,18 @@ import { type z } from 'zod';
 
 import { getPrimaryDomainFromUrl } from '~/utils/url';
 
-import { type requestChoiceSchema } from './schema';
+import { type requestDecisionSchema } from './schema';
 import s from './styles.module.scss';
 
 type Props = {
-  content: z.infer<typeof requestChoiceSchema>['request_choice'];
+  content: z.infer<typeof requestDecisionSchema>['request_decision'];
   contentId: string;
 };
 
-export const RequestChoiceProducts = ({ content, contentId }: Props) => {
+export const RequestDecisionProducts = ({ content, contentId }: Props) => {
   if (content.type !== 'products') {
     console.error(
-      `Attempted to render <RequestChoiceProducts /> with invalid content type: ${content.type}`,
+      `Attempted to render <RequestDecisionProducts /> with invalid content type: ${content.type}`,
     );
     return null;
   }
@@ -66,7 +66,7 @@ type Product = {
   contentId: string;
   index: number;
   option: NonNullable<
-    z.infer<typeof requestChoiceSchema>['request_choice']['options']
+    z.infer<typeof requestDecisionSchema>['request_decision']['options']
   >[number];
 };
 
@@ -240,7 +240,7 @@ const Product = (props: Product) => {
 
 type FiveStarRatingProps = {
   option: NonNullable<
-    z.infer<typeof requestChoiceSchema>['request_choice']['options']
+    z.infer<typeof requestDecisionSchema>['request_decision']['options']
   >[number];
 };
 

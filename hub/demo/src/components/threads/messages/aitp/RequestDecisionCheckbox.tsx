@@ -10,18 +10,18 @@ import {
 } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
-import { type requestChoiceSchema } from './schema';
+import { type requestDecisionSchema } from './schema';
 import s from './styles.module.scss';
 
 type Props = {
   contentId: string;
-  content: z.infer<typeof requestChoiceSchema>['request_choice'];
+  content: z.infer<typeof requestDecisionSchema>['request_decision'];
 };
 
-export const RequestChoiceCheckbox = ({ content, contentId }: Props) => {
+export const RequestDecisionCheckbox = ({ content, contentId }: Props) => {
   if (content.type !== 'checkbox' && content.type !== 'radio') {
     console.error(
-      `Attempted to render <RequestChoiceCheckbox /> with invalid content type: ${content.type}`,
+      `Attempted to render <RequestDecisionCheckbox /> with invalid content type: ${content.type}`,
     );
     return null;
   }
