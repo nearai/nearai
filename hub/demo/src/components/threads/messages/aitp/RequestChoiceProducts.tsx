@@ -90,6 +90,10 @@ const Product = (props: Product) => {
     ...variants.find((v) => v.name === selectedVariantName),
   };
 
+  const priceUsd = option.quote?.payment_plans.find(
+    (p) => p.plan_type === 'one-time' && p.currency === 'USD',
+  );
+
   return (
     <Card background="sand-0" border="sand-0" className={s.productCard}>
       {option.image_url && (
@@ -123,12 +127,12 @@ const Product = (props: Product) => {
       {option.description && <Text size="text-s">{option.description}</Text>}
 
       <Flex direction="column" gap="m" style={{ marginTop: 'auto' }}>
-        {option.price_usd && (
+        {priceUsd && (
           <Text
             size="text-l"
             style={{ lineHeight: 1, marginBottom: '-0.25rem' }}
           >
-            {formatDollar(option.price_usd)}
+            {formatDollar(priceUsd.amount)}
           </Text>
         )}
 

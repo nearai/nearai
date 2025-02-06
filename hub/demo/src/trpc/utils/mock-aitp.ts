@@ -1,10 +1,28 @@
 import { type z } from 'zod';
 
 import {
+  type quoteSchema,
   type requestChoiceSchema,
   type requestDataSchema,
 } from '~/components/threads/messages/aitp/schema';
 import { type threadMessageModel } from '~/lib/models';
+
+function generateMockedQuote(priceUsd: number): z.infer<typeof quoteSchema> {
+  return {
+    type: 'Quote',
+    payee_id: 'foobar',
+    quote_id: 'foobar',
+    payment_plans: [
+      {
+        amount: priceUsd,
+        currency: 'USD',
+        plan_id: 'foobar',
+        plan_type: 'one-time',
+      },
+    ],
+    valid_until: '2050-01-01T00:00:00Z',
+  };
+}
 
 export function generateMockedAITPMessages(threadId: string) {
   const requestChoiceCheckbox: z.infer<typeof requestChoiceSchema> = {
@@ -64,7 +82,7 @@ export function generateMockedAITPMessages(threadId: string) {
           description: 'A short, summarized description about the headphones',
           five_star_rating: 4.2,
           reviews_count: 132,
-          price_usd: 199.5,
+          quote: generateMockedQuote(199.5),
           image_url:
             'https://m.media-amazon.com/images/I/61rJmoiiYHL._AC_SX679_.jpg',
           url: 'https://www.amazon.com/JBL-Tour-One-Cancelling-Headphones/dp/B0C4JBTM5B',
@@ -73,7 +91,7 @@ export function generateMockedAITPMessages(threadId: string) {
           name: 'Soundcore by Anker, Space One',
           short_variant_name: 'Space One',
           five_star_rating: 3.5,
-          price_usd: 79.99,
+          quote: generateMockedQuote(79.99),
           image_url:
             'https://m.media-amazon.com/images/I/51EXj4BRQaL._AC_SX679_.jpg',
           url: 'https://www.amazon.com/Soundcore-Cancelling-Headphones-Reduction-Comfortable/dp/B0C6KKQ7ND',
@@ -82,7 +100,7 @@ export function generateMockedAITPMessages(threadId: string) {
               name: 'Soundcore by Anker, Jet Black',
               short_variant_name: 'Jet Black',
               five_star_rating: 3.75,
-              price_usd: 89.99,
+              quote: generateMockedQuote(89.99),
               image_url:
                 'https://m.media-amazon.com/images/I/51l80KVua0L._AC_SX679_.jpg',
               url: 'https://www.amazon.com/Soundcore-Cancelling-Headphones-Reduction-Comfortable/dp/B0C6KFZC9Z',
@@ -91,7 +109,7 @@ export function generateMockedAITPMessages(threadId: string) {
               name: 'Soundcore by Anker, Cream',
               short_variant_name: 'Cream',
               five_star_rating: 3.75,
-              price_usd: 74.99,
+              quote: generateMockedQuote(74.99),
               image_url:
                 'https://m.media-amazon.com/images/I/51QVszp82CL._AC_SX679_.jpg',
               url: 'https://www.amazon.com/Soundcore-Cancelling-Headphones-Reduction-Comfortable/dp/B0C6KJ3R71',
@@ -100,14 +118,14 @@ export function generateMockedAITPMessages(threadId: string) {
         },
         {
           name: 'Sony WH-1000XM5',
-          price_usd: 399.99,
+          quote: generateMockedQuote(399.99),
           image_url:
             'https://m.media-amazon.com/images/I/61eeHPRFQ9L._AC_SX679_.jpg',
           url: 'https://www.amazon.com/Sony-WH-1000XM5-Headphones-Hands-Free-WH1000XM5/dp/B0BXYCS74H',
         },
         {
           name: 'Edifier STAX Spirit S3',
-          price_usd: 348,
+          quote: generateMockedQuote(348),
           image_url:
             'https://m.media-amazon.com/images/I/61E4YsCrICL._AC_SX679_.jpg',
           url: 'https://www.amazon.com/Sony-WH-1000XM5-Headphones-Hands-Free-WH1000XM5/dp/B0BXYCS74H',

@@ -5,12 +5,27 @@ import { z } from 'zod';
 export const CURRENT_AGENT_PROTOCOL_SCHEMA =
   'https://app.near.ai/api/v1/aitp.schema.json';
 
+export const quoteSchema = z.object({
+  type: z.enum(['Quote']),
+  quote_id: z.string(),
+  payee_id: z.string(),
+  payment_plans: z
+    .object({
+      plan_id: z.string(),
+      plan_type: z.enum(['one-time']),
+      amount: z.number(),
+      currency: z.enum(['USD']),
+    })
+    .array(),
+  valid_until: z.string().datetime(),
+});
+
 const requestChoiceOptionSchema = z.object({
   name: z.string(),
   short_variant_name: z.string().optional(),
   image_url: z.string().url().optional(),
   description: z.string().optional(),
-  price_usd: z.number().optional(),
+  quote: quoteSchema.optional(),
   reviews_count: z
     .number()
     .int()
