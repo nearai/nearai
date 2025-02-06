@@ -30,7 +30,7 @@ from nearai.shared.models import (
     GitLabSource,
     SimilaritySearch,
     SimilaritySearchFile,
-    StaticFileChunkingStrategyParam,
+    StaticFileChunkingStrategyObjectParam,
 )
 from nearai.shared.provider_models import ProviderModels
 
@@ -227,7 +227,9 @@ class InferenceClient(object):
         name: str,
         file_ids: List[str],
         expires_after: Union[ExpiresAfter, NotGiven] = NOT_GIVEN,
-        chunking_strategy: Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam, NotGiven] = NOT_GIVEN,
+        chunking_strategy: Union[
+            AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, NotGiven
+        ] = NOT_GIVEN,
         metadata: Optional[Dict[str, str]] = None,
     ) -> VectorStore:
         """Creates Vector Store.

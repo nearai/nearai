@@ -45,7 +45,7 @@ from nearai.shared.models import (
     ExpiresAfter,
     GitHubSource,
     GitLabSource,
-    StaticFileChunkingStrategyParam,
+    StaticFileChunkingStrategyObjectParam,
 )
 from nearai.shared.near.sign import (
     CompletionSignaturePayload,
@@ -368,7 +368,7 @@ class Environment(object):
             file_ids: list,
             expires_after: Union[ExpiresAfter, NotGiven] = NOT_GIVEN,
             chunking_strategy: Union[
-                AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam, NotGiven
+                AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, NotGiven
             ] = NOT_GIVEN,
             metadata: Optional[Dict[str, str]] = None,
         ) -> VectorStore:
