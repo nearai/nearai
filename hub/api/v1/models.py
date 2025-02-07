@@ -13,7 +13,7 @@ from openai.types.beta.threads.message_content import MessageContent
 from openai.types.beta.threads.run import Run as OpenAIRun
 from openai.types.beta.threads.text import Text
 from openai.types.beta.threads.text_content_block import TextContentBlock
-from sqlmodel import JSON, Column, Field, Relationship, Session, SQLModel, create_engine
+from sqlmodel import JSON, Column, Field, Session, SQLModel, create_engine
 
 from hub.api.v1.entry_location import EntryLocation
 
@@ -266,9 +266,8 @@ class Thread(SQLModel, table=True):
     tool_resources: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
     meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", JSON))
     owner_id: str = Field(nullable=False)
-    parent_id: Optional[int] = Field(default=None, foreign_key="thread.id")
-    child_threads: List["Thread"] = Relationship(back_populates="parent_thread")
-    parent_thread: Optional["Thread"] = Relationship(back_populates="child_threads")
+    parent_id: Optional[str] = Field(default=None)
+    child_thread_ids: List[str] = Field(default=[], sa_column=Column(JSON))
 
     def to_openai(self) -> OpenAITThread:
         """Convert to OpenAI Thread."""
