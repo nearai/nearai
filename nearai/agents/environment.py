@@ -832,7 +832,11 @@ class Environment(object):
         messages = [
             m
             for m in messages
-            if not (m.metadata and "message_type" in m.metadata and m.metadata["message_type"] in ["system:log", "agent:log"])  # type: ignore
+            if not (
+                m.metadata
+                and "message_type" in m.metadata
+                and m.metadata["message_type"] in ["system:log", "agent:log"]
+            )  # type: ignore
         ]
         legacy_messages = [
             {
