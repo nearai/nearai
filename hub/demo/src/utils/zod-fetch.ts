@@ -14,9 +14,15 @@ export type AnyFetcher = (...args: any[]) => any;
 /**
  * @internal
  */
-export type Schema<TData> = {
-  parse: (data: unknown) => TData;
-};
+export type Schema<TData> =
+  | {
+      passthrough: () => {
+        parse: (data: unknown) => TData;
+      };
+    }
+  | {
+      parse: (data: unknown) => TData;
+    };
 
 /**
  * A type utility which represents the function returned
@@ -99,6 +105,9 @@ export function createZodFetcher(
 ): ZodFetcher<any> {
   return async (schema, ...args) => {
     const response = await fetcher(...args);
+    if ('passthrough' in schema) {
+      return schema.passthrough().parse(response);
+    }
     return schema.parse(response);
   };
 }

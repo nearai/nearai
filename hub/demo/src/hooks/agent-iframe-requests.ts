@@ -205,9 +205,9 @@ export function useAgentRequestsWithIframe(
       const action = event.data.action;
 
       if (action === 'near_send_transactions') {
-        const input = agentNearSendTransactionsRequestModel.parse(
-          event.data.data,
-        );
+        const input = agentNearSendTransactionsRequestModel
+          .passthrough()
+          .parse(event.data.data);
         void conditionallyProcessAgentRequests([
           {
             action,
@@ -215,7 +215,9 @@ export function useAgentRequestsWithIframe(
           },
         ]);
       } else if (action === 'near_view') {
-        const input = agentNearViewRequestModel.parse(event.data.data);
+        const input = agentNearViewRequestModel
+          .passthrough()
+          .parse(event.data.data);
         const result: unknown = await nearViewAccount!.viewFunction(input);
         setIframePostMessage({
           action: 'near_view_response',
@@ -223,7 +225,9 @@ export function useAgentRequestsWithIframe(
           result,
         });
       } else if (action === 'near_account') {
-        const input = agentNearAccountRequestModel.parse(event.data.data);
+        const input = agentNearAccountRequestModel
+          .passthrough()
+          .parse(event.data.data);
         let accountId = input.accountId;
 
         if (!accountId && selector) {
@@ -250,13 +254,16 @@ export function useAgentRequestsWithIframe(
           console.error('Missing data read `near_account`');
         }
       } else if (action === 'refresh_thread_id') {
-        const input = chatWithAgentModel.partial().parse(event.data.data);
+        const input = chatWithAgentModel
+          .partial()
+          .passthrough()
+          .parse(event.data.data);
         if (input.thread_id) {
           void utils.hub.thread.invalidate();
           updateQueryPath({ threadId: input.thread_id }, 'replace', false);
         }
       } else if (action === 'remote_agent_run') {
-        const input = chatWithAgentModel.parse(event.data.data);
+        const input = chatWithAgentModel.passthrough().parse(event.data.data);
         input.max_iterations = Number(input.max_iterations) || 1;
         input.thread_id = input.thread_id ?? threadId;
         void conditionallyProcessAgentRequests([
@@ -266,7 +273,9 @@ export function useAgentRequestsWithIframe(
           },
         ]);
       } else if (action === 'add_secrets') {
-        const input = agentAddSecretsRequestModel.parse(event.data.data);
+        const input = agentAddSecretsRequestModel
+          .passthrough()
+          .parse(event.data.data);
         void conditionallyProcessAgentRequests([
           {
             action,

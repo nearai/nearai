@@ -111,27 +111,29 @@ export const entryDetailsModel = z.intersection(
   z.record(z.string(), z.unknown()),
 );
 
-export const entryModel = z.object({
-  id: z.number(),
-  category: entryCategory,
-  namespace: z.string(),
-  name: z.string(),
-  version: z.string(),
-  updated: z.string().datetime().default(new Date().toISOString()),
-  description: z.string().default(''),
-  tags: z.string().array().default([]),
-  show_entry: z.boolean().default(true),
-  starred_by_point_of_view: z.boolean().default(false),
-  num_forks: z.number().default(0),
-  num_stars: z.number().default(0),
-  details: entryDetailsModel.default({}),
-  fork_of: z
-    .object({
-      name: z.string(),
-      namespace: z.string(),
-    })
-    .nullish(),
-});
+export const entryModel = z
+  .object({
+    id: z.number(),
+    category: entryCategory,
+    namespace: z.string(),
+    name: z.string(),
+    version: z.string(),
+    updated: z.string().datetime().default(new Date().toISOString()),
+    description: z.string().default(''),
+    tags: z.string().array().default([]),
+    show_entry: z.boolean().default(true),
+    starred_by_point_of_view: z.boolean().default(false),
+    num_forks: z.number().default(0),
+    num_stars: z.number().default(0),
+    details: entryDetailsModel.default({}),
+    fork_of: z
+      .object({
+        name: z.string(),
+        namespace: z.string(),
+      })
+      .nullish(),
+  })
+  .passthrough();
 
 export const entriesModel = z.array(entryModel);
 
