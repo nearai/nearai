@@ -832,7 +832,7 @@ class Environment(object):
         messages = [
             m
             for m in messages
-            if not (m.metadata and m.metadata["message_type"] in ["system:log", "agent:log"])  # type: ignore
+            if not (m.metadata and m.metadata.get("message_type") in ["system:log", "agent:log"])  # type: ignore
         ]
         legacy_messages = [
             {
@@ -1124,14 +1124,19 @@ class Environment(object):
                     function_response = self._tools.call_tool(function_name, **function_args if function_args else {})
 
                     if function_response:
-                        function_response_json = json.dumps(function_response) if function_response else ""
-                        if add_responses_to_messages:
-                            self.add_message(
-                                tool_role_name,
-                                function_response_json,
-                                tool_call_id=tool_call.id,
-                                name=function_name,
-                            )
+                        try:
+                            function_response_json = json.dumps(function_response) if function_response else ""
+                            if add_responses_to_messages:
+                                self.add_message(
+                                    tool_role_name,
+                                    function_response_json,
+                                    tool_call_id=tool_call.id,
+                                    name=function_name,
+                                )
+                        except Exception as e:
+                            # some tool responses may not be serializable
+                            error_message = f"Unable to add tool output as a message {function_name}: {e}"
+                            self.add_system_log(error_message, level=logging.INFO)
                 except Exception as e:
                     error_message = f"Error calling tool {function_name}: {e}"
                     self.add_system_log(error_message, level=logging.ERROR)
