@@ -9,7 +9,10 @@ import { type threadMessageModel } from '~/lib/models';
 
 import { RequestData } from './aitp/RequestData';
 import { RequestDecision } from './aitp/RequestDecision';
-import { CURRENT_AGENT_PROTOCOL_SCHEMA, protocolSchema } from './aitp/schema';
+import {
+  CURRENT_AGENT_PROTOCOL_SCHEMA,
+  parseJsonWithAitpSchema,
+} from './aitp/schema';
 
 type Props = {
   contentId: string;
@@ -19,44 +22,27 @@ type Props = {
 
 export const JsonMessage = ({ content, contentId, role }: Props) => {
   const hasWarned = useRef(false);
+  const aitp = parseJsonWithAitpSchema(content);
 
-  const jsonAsString = () => {
-    return JSON.stringify(content, null, 2);
-  };
+  if ('request_decision' in aitp) {
+    return (
+      <RequestDecision content={aitp.request_decision} contentId={contentId} />
+    );
+  } else if ('request_data' in aitp) {
+    return <RequestData content={aitp.request_data} contentId={contentId} />;
+  }
 
-  const protocol = protocolSchema.safeParse(content);
-
-  if (protocol.data) {
-    if ('request_decision' in protocol.data) {
-      return (
-        <RequestDecision
-          content={protocol.data.request_decision}
-          contentId={contentId}
-        />
-      );
-    }
-
-    if ('request_data' in protocol.data) {
-      return (
-        <RequestData
-          content={protocol.data.request_data}
-          contentId={contentId}
-        />
-      );
-    }
-  } else if (protocol.error) {
-    if (!hasWarned.current) {
-      console.warn(
-        `JSON message failed to match ${CURRENT_AGENT_PROTOCOL_SCHEMA}. Will render as JSON codeblock.`,
-        protocol.error,
-      );
-      hasWarned.current = true;
-    }
+  if (!hasWarned.current) {
+    console.warn(
+      `JSON message failed to match ${CURRENT_AGENT_PROTOCOL_SCHEMA}. Will render as JSON codeblock.`,
+      aitp.error,
+    );
+    hasWarned.current = true;
   }
 
   return (
     <Card animateIn>
-      <Code bleed language="json" source={jsonAsString()} />
+      <Code bleed language="json" source={JSON.stringify(content, null, 2)} />
 
       <Text
         size="text-xs"
