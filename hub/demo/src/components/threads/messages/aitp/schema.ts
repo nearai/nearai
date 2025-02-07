@@ -5,6 +5,10 @@ import { z } from 'zod';
 export const CURRENT_AGENT_PROTOCOL_SCHEMA =
   'https://app.near.ai/api/v1/aitp.schema.json';
 
+const baseSchema = z.object({
+  $schema: z.enum([CURRENT_AGENT_PROTOCOL_SCHEMA]).or(z.string().url()),
+});
+
 export const quoteSchema = z.object({
   type: z.enum(['Quote']),
   quote_id: z.string(),
@@ -40,7 +44,7 @@ const requestDecisionOptionSchema = z.object({
   url: z.string().url().optional(),
 });
 
-export const requestDecisionSchema = z.object({
+export const requestDecisionSchema = baseSchema.extend({
   request_decision: z.object({
     title: z.string().optional(),
     description: z.string().optional(),
@@ -81,7 +85,7 @@ export const requestDataFormSchema = z.object({
     .optional(),
 });
 
-export const requestDataSchema = z.object({
+export const requestDataSchema = baseSchema.extend({
   request_data: z.object({
     title: z.string().optional(),
     description: z.string(),

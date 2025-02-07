@@ -15,19 +15,19 @@ import { type z } from 'zod';
 
 import { Markdown } from '~/components/lib/Markdown';
 import {
+  type threadMessageContentModel,
   type threadMessageModel,
-  type threadMessageModelContentText,
 } from '~/lib/models';
 
 type Props = {
-  content: z.infer<typeof threadMessageModelContentText>;
+  content: NonNullable<z.infer<typeof threadMessageContentModel>['text']>;
   contentId: string;
   role: z.infer<typeof threadMessageModel>['role'];
 };
 
 export const TextMessage = ({ content, role }: Props) => {
   const [renderAsMarkdown, setRenderAsMarkdown] = useState(true);
-  const text = content.text.value;
+  const text = content.value;
 
   return (
     <>

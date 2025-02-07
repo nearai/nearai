@@ -6,10 +6,12 @@ import { type z } from 'zod';
 
 import { type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
+import { stringToPotentialJson } from '~/utils/string';
 
 import { computeNavigationHeight } from '../Navigation';
 import { JsonMessage } from './messages/JsonMessage';
 import { TextMessage } from './messages/TextMessage';
+import { UnknownMessage } from './messages/UnknownMessage';
 import s from './ThreadMessages.module.scss';
 
 type Props = {
@@ -129,18 +131,26 @@ const ThreadMessageContent = memo(
   ({ content, contentIndex, message }: ThreadMessageContentProps) => {
     const contentId = `${message.id}_${contentIndex}`;
 
-    if (content.type === 'json') {
+    const json = content.text?.value
+      ? stringToPotentialJson(content.text.value)
+      : null;
+
+    if (json) {
       return (
-        <JsonMessage
-          contentId={contentId}
-          content={content}
-          role={message.role}
-        />
+        <JsonMessage contentId={contentId} content={json} role={message.role} />
+      );
+    }
+
+    const text = typeof content.text === 'object' ? content.text : null;
+
+    if (text) {
+      return (
+        <TextMessage contentId={contentId} content={text} role={message.role} />
       );
     }
 
     return (
-      <TextMessage
+      <UnknownMessage
         contentId={contentId}
         content={content}
         role={message.role}

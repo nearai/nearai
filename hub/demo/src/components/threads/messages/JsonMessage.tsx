@@ -1,14 +1,11 @@
 'use client';
 
-import { Card } from '@near-pagoda/ui';
+import { Card, Text } from '@near-pagoda/ui';
 import { useRef } from 'react';
 import { type z } from 'zod';
 
 import { Code } from '~/components/lib/Code';
-import {
-  type threadMessageModel,
-  type threadMessageModelContentJson,
-} from '~/lib/models';
+import { type threadMessageModel } from '~/lib/models';
 
 import { RequestData } from './aitp/RequestData';
 import { RequestDecision } from './aitp/RequestDecision';
@@ -16,19 +13,18 @@ import { CURRENT_AGENT_PROTOCOL_SCHEMA, protocolSchema } from './aitp/schema';
 
 type Props = {
   contentId: string;
-  content: z.infer<typeof threadMessageModelContentJson>;
+  content: Record<string, unknown>;
   role: z.infer<typeof threadMessageModel>['role'];
 };
 
-export const JsonMessage = ({ content, contentId }: Props) => {
-  const { json } = content;
+export const JsonMessage = ({ content, contentId, role }: Props) => {
   const hasWarned = useRef(false);
 
   const jsonAsString = () => {
-    return JSON.stringify(json, null, 2);
+    return JSON.stringify(content, null, 2);
   };
 
-  const protocol = protocolSchema.safeParse(json);
+  const protocol = protocolSchema.safeParse(content);
 
   if (protocol.data) {
     if ('request_decision' in protocol.data) {
@@ -61,6 +57,15 @@ export const JsonMessage = ({ content, contentId }: Props) => {
   return (
     <Card animateIn>
       <Code bleed language="json" source={jsonAsString()} />
+
+      <Text
+        size="text-xs"
+        style={{
+          textTransform: 'capitalize',
+        }}
+      >
+        - {role}
+      </Text>
     </Card>
   );
 };

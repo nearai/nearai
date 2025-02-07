@@ -1,6 +1,7 @@
 import { type z } from 'zod';
 
 import {
+  CURRENT_AGENT_PROTOCOL_SCHEMA,
   type quoteSchema,
   type requestDataSchema,
   type requestDecisionSchema,
@@ -26,6 +27,7 @@ function generateMockedQuote(priceUsd: number): z.infer<typeof quoteSchema> {
 
 export function generateMockedAITPMessages(threadId: string) {
   const requestDecisionCheckbox: z.infer<typeof requestDecisionSchema> = {
+    $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
     request_decision: {
       title: 'Your Favorite Colors',
       description: `Which colors are your favorite? This will help refine your product search.`,
@@ -54,6 +56,7 @@ export function generateMockedAITPMessages(threadId: string) {
   };
 
   const requestDecisionRadio: z.infer<typeof requestDecisionSchema> = {
+    $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
     request_decision: {
       type: 'radio',
       description: 'Select your favorite number:',
@@ -72,6 +75,7 @@ export function generateMockedAITPMessages(threadId: string) {
   };
 
   const requestDecisionProducts: z.infer<typeof requestDecisionSchema> = {
+    $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
     request_decision: {
       title: 'Recommended Products',
       description: `Based on your selected factors, here are the best recommendations`,
@@ -135,6 +139,7 @@ export function generateMockedAITPMessages(threadId: string) {
   };
 
   const requestDecisionConfirmation: z.infer<typeof requestDecisionSchema> = {
+    $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
     request_decision: {
       title: 'Please confirm',
       description: `Would you like to eat all cookies?`,
@@ -156,6 +161,7 @@ export function generateMockedAITPMessages(threadId: string) {
   const requestDataShippingAddressInternationalAndMore: z.infer<
     typeof requestDataSchema
   > = {
+    $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
     request_data: {
       title: 'Shipping Info (International + Favorites)',
       description: `Great! Let's start with your shipping info.`,
@@ -188,6 +194,7 @@ export function generateMockedAITPMessages(threadId: string) {
   };
 
   const requestDataShippingAddressUs: z.infer<typeof requestDataSchema> = {
+    $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
     request_data: {
       title: 'Shipping Info (US)',
       description: `Great! Let's start with your shipping info.`,
@@ -204,36 +211,57 @@ export function generateMockedAITPMessages(threadId: string) {
   const message: z.infer<typeof threadMessageModel> = {
     content: [
       {
-        type: 'json',
-        json: requestDecisionCheckbox,
+        type: 'text',
+        text: {
+          annotations: [],
+          value: JSON.stringify(requestDecisionCheckbox),
+        },
       },
       {
-        type: 'json',
-        json: requestDecisionRadio,
+        type: 'text',
+        text: {
+          annotations: [],
+          value: JSON.stringify(requestDecisionRadio),
+        },
       },
       {
-        type: 'json',
-        json: requestDecisionProducts,
+        type: 'text',
+        text: {
+          annotations: [],
+          value: JSON.stringify(requestDecisionProducts),
+        },
       },
       {
-        type: 'json',
-        json: requestDecisionConfirmation,
+        type: 'text',
+        text: {
+          annotations: [],
+          value: JSON.stringify(requestDecisionConfirmation),
+        },
       },
       {
-        type: 'json',
-        json: requestDataShippingAddressInternationalAndMore,
+        type: 'text',
+        text: {
+          annotations: [],
+          value: JSON.stringify(requestDataShippingAddressInternationalAndMore),
+        },
       },
       {
-        type: 'json',
-        json: requestDataShippingAddressUs,
+        type: 'text',
+        text: {
+          annotations: [],
+          value: JSON.stringify(requestDataShippingAddressUs),
+        },
       },
       {
-        type: 'json',
-        json: {
-          foo: 123,
-          bar: {
-            baz: true,
-          },
+        type: 'text',
+        text: {
+          annotations: [],
+          value: JSON.stringify({
+            foo: 123,
+            bar: {
+              baz: true,
+            },
+          }),
         },
       },
     ],
