@@ -96,7 +96,7 @@ const store: StateCreator<ThreadsStore> = (set, get) => ({
 
     const updatedThread: Thread = {
       created_at: 0,
-      metadata: {},
+      metadata: { agent_ids: [], topic: '' },
       object: '',
       ...data,
       run: run ?? existingThread?.run,
