@@ -201,7 +201,7 @@ def recursive_split(text: str, chunk_size: int, chunk_overlap: int) -> List[str]
     return [text[:chunk_size]]
 
 
-async def generate_embedding(text: str, query: bool = False):
+async def generate_embedding(text: str):
     """Generate an embedding for the given text using the Nomic AI model.
 
     Args:

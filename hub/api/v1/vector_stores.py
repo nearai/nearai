@@ -374,7 +374,7 @@ async def query_vector_store(vector_store_id: str, request: QueryVectorStoreRequ
             logger.warning(f"Vector store not found: {vector_store_id}")
             raise HTTPException(status_code=404, detail="Vector store not found")
 
-        emb = await generate_embedding(request.query, query=True)
+        emb = await generate_embedding(request.query)
         if request.full_files:
             return sql.similarity_search_full_files(vector_store_id, emb)
         else:
