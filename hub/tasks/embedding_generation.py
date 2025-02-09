@@ -218,8 +218,8 @@ async def generate_embedding(text: str, query: bool = False):
     client = openai.AsyncOpenAI(
         base_url="https://api.fireworks.ai/inference/v1", api_key=os.getenv("FIREWORKS_API_KEY")
     )
-    prefix = "search_query: " if query else "search_document: "
-    response = await client.embeddings.create(input=prefix + text, model=EMBEDDING_MODEL)
+
+    response = await client.embeddings.create(input=text, model=EMBEDDING_MODEL)
     return response.data[0].embedding
 
 
