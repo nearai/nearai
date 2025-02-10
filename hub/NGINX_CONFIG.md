@@ -1,6 +1,6 @@
 When deploying NEAR AI HUB behind the NGINX proxy, configure the following parameters to ensure smooth operation:
 
-Increase the timeouts to prevent 502 Bad Gateway errors for long-running agent processes
+Increase the timeouts to prevent 502 Bad Gateway errors for long-running agent processes.
 Setting these variables ensures that requests with long processing times (over 60 seconds) are not prematurely terminated:
 
 ```
