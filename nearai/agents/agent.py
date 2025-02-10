@@ -121,7 +121,8 @@ class Agent(object):
         if not self.version or not self.name:
             raise ValueError("Both 'version' and 'name' must be non-empty in metadata.")
 
-    def run(self, env: Any, task: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:  # noqa: D102
+    def run(self, env: Any, task: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+        """Run the agent code. Returns error message and traceback message."""
         # combine agent.env_vars and env.env_vars
         total_env_vars = {**self.env_vars, **env.env_vars}
 
