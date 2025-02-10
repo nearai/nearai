@@ -140,29 +140,36 @@ export const EntryEnvironmentVariables = ({
                       marginLeft: 'auto',
                     }}
                   >
+                    {variable.secret && (
+                      <Tooltip
+                        asChild
+                        content={`${revealedSecretKeys.includes(variable.key) ? 'Hide' : 'Show'} secret`}
+                      >
+                        <Button
+                          label="Show/Hide Secret"
+                          icon={
+                            revealedSecretKeys.includes(variable.key) ? (
+                              <EyeSlash />
+                            ) : (
+                              <Eye />
+                            )
+                          }
+                          size="x-small"
+                          fill="ghost"
+                          variant="primary"
+                          onClick={() => {
+                            toggleRevealSecret(variable.key);
+                          }}
+                        />
+                      </Tooltip>
+                    )}
+
                     <Tooltip
                       asChild
-                      content={`${revealedSecretKeys.includes(variable.key) ? 'Hide' : 'Show'} Secret`}
+                      content={
+                        variable.secret ? 'Edit secret' : 'Configure as secret'
+                      }
                     >
-                      <Button
-                        label="Show/Hide Secret"
-                        icon={
-                          revealedSecretKeys.includes(variable.key) ? (
-                            <EyeSlash />
-                          ) : (
-                            <Eye />
-                          )
-                        }
-                        size="x-small"
-                        fill="ghost"
-                        variant="primary"
-                        onClick={() => {
-                          toggleRevealSecret(variable.key);
-                        }}
-                      />
-                    </Tooltip>
-
-                    <Tooltip asChild content="Configure Secret">
                       <Button
                         label="Configure Secret"
                         icon={<Pencil />}
