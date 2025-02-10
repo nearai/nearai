@@ -12,9 +12,11 @@ type Props = {
 
 const defaultOptions: Props['content']['options'] = [
   {
+    id: 'yes',
     name: 'Yes',
   },
   {
+    id: 'no',
     name: 'No',
   },
 ];
@@ -28,6 +30,13 @@ export const RequestDecisionConfirmation = ({ content }: Props) => {
     );
     return null;
   }
+
+  const submitDecision = async (
+    option: Props['content']['options'][number],
+  ) => {
+    // TODO
+    console.log('Selected option:', option);
+  };
 
   return (
     <Card animateIn>
@@ -49,7 +58,8 @@ export const RequestDecisionConfirmation = ({ content }: Props) => {
           <Button
             label={option.name}
             variant={index === 0 ? 'affirmative' : 'secondary'}
-            key={option.name + index}
+            key={option.id + index}
+            onClick={() => submitDecision(option)}
           />
         ))}
       </Flex>

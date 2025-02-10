@@ -204,5 +204,5 @@ function inputNameForField(
   field: z.infer<typeof requestDataFormFieldSchema>,
   index: number,
 ) {
-  return stringToHtmlAttribute(contentId + field.label + index);
+  return stringToHtmlAttribute(contentId + field.id + index);
 }

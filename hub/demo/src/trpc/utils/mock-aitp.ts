@@ -34,18 +34,21 @@ export function generateMockedAITPMessages(threadId: string) {
       type: 'checkbox',
       options: [
         {
+          id: 'blue',
           name: 'Blue',
           description: 'A calming color',
           image_url:
             'https://media.istockphoto.com/id/959093486/vector/blue-abstract-gradient-mesh-background.jpg?s=612x612&w=0&k=20&c=c6lozNEcfMBlPlZazHJiy4NnviEGkAPPgubKC-9GowI=',
         },
         {
+          id: 'red',
           name: 'Red',
           description: 'An exciting color',
           image_url:
             'https://img.freepik.com/free-vector/dark-deep-red-gradient-background_78370-3496.jpg?semt=ais_hybrid',
         },
         {
+          id: 'green',
           name: 'Green',
           description: 'An earthy color',
           image_url:
@@ -62,12 +65,15 @@ export function generateMockedAITPMessages(threadId: string) {
       description: 'Select your favorite number:',
       options: [
         {
+          id: '0',
           name: '0',
         },
         {
+          id: '7',
           name: '7',
         },
         {
+          id: '100',
           name: '100',
         },
       ],
@@ -82,6 +88,7 @@ export function generateMockedAITPMessages(threadId: string) {
       type: 'products',
       options: [
         {
+          id: 'product_1',
           name: 'JBL Tour One M2',
           description: 'A short, summarized description about the headphones',
           five_star_rating: 4.2,
@@ -92,6 +99,7 @@ export function generateMockedAITPMessages(threadId: string) {
           url: 'https://www.amazon.com/JBL-Tour-One-Cancelling-Headphones/dp/B0C4JBTM5B',
         },
         {
+          id: 'product_2',
           name: 'Soundcore by Anker, Space One',
           short_variant_name: 'Space One',
           five_star_rating: 3.5,
@@ -101,6 +109,7 @@ export function generateMockedAITPMessages(threadId: string) {
           url: 'https://www.amazon.com/Soundcore-Cancelling-Headphones-Reduction-Comfortable/dp/B0C6KKQ7ND',
           variants: [
             {
+              id: 'product_3',
               name: 'Soundcore by Anker, Jet Black',
               short_variant_name: 'Jet Black',
               five_star_rating: 3.75,
@@ -110,6 +119,7 @@ export function generateMockedAITPMessages(threadId: string) {
               url: 'https://www.amazon.com/Soundcore-Cancelling-Headphones-Reduction-Comfortable/dp/B0C6KFZC9Z',
             },
             {
+              id: 'product_4',
               name: 'Soundcore by Anker, Cream',
               short_variant_name: 'Cream',
               five_star_rating: 3.75,
@@ -121,6 +131,7 @@ export function generateMockedAITPMessages(threadId: string) {
           ],
         },
         {
+          id: 'product_5',
           name: 'Sony WH-1000XM5',
           quote: generateMockedQuote(399.99),
           image_url:
@@ -128,6 +139,7 @@ export function generateMockedAITPMessages(threadId: string) {
           url: 'https://www.amazon.com/Sony-WH-1000XM5-Headphones-Hands-Free-WH1000XM5/dp/B0BXYCS74H',
         },
         {
+          id: 'product_5',
           name: 'Edifier STAX Spirit S3',
           quote: generateMockedQuote(348),
           image_url:
@@ -146,12 +158,15 @@ export function generateMockedAITPMessages(threadId: string) {
       type: 'confirmation',
       options: [
         {
+          id: '1',
           name: 'Yes, eat the cookies',
         },
         {
+          id: '2',
           name: "No, that's not healthy",
         },
         {
+          id: '3',
           name: 'Something else',
         },
       ],
@@ -176,12 +191,14 @@ export function generateMockedAITPMessages(threadId: string) {
             'Share more info about yourself to improve your shopping experience.',
           fields: [
             {
+              id: 'favorite_color',
               label: 'Favorite Color',
               type: 'select',
               options: ['Blue', 'Orange', 'White'],
               required: true,
             },
             {
+              id: 'favorite_color',
               label: 'Favorite Number',
               type: 'number',
               default_value: '7',

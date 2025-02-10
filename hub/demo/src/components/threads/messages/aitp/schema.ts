@@ -29,6 +29,7 @@ export const quoteSchema = z
 
 const requestDecisionOptionSchema = z
   .object({
+    id: z.string(),
     name: z.string(),
     short_variant_name: z.string().optional(),
     image_url: z.string().url().optional(),
@@ -69,6 +70,7 @@ export const requestDecisionSchema = baseSchema.extend({
 
 export const requestDataFormFieldSchema = z
   .object({
+    id: z.string(),
     label: z.string(),
     description: z.string().optional(),
     default_value: z.string().optional(),

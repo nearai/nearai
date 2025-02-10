@@ -10,6 +10,8 @@ import {
 } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
+import { stringToHtmlAttribute } from '~/utils/string';
+
 import { type requestDecisionSchema } from './schema';
 import s from './styles.module.scss';
 
@@ -25,6 +27,20 @@ export const RequestDecisionCheckbox = ({ content, contentId }: Props) => {
     );
     return null;
   }
+
+  const inputNameForCheckbox = (
+    option: NonNullable<Props['content']['options']>[number],
+    index: number,
+  ) => {
+    return content.type === 'checkbox'
+      ? stringToHtmlAttribute(contentId + option.id + index)
+      : contentId;
+  };
+
+  const submitDecision = async () => {
+    // TODO
+    console.log(`Selected decision via ${content.type}`);
+  };
 
   return (
     <Card animateIn>
@@ -44,11 +60,9 @@ export const RequestDecisionCheckbox = ({ content, contentId }: Props) => {
 
         <CheckboxGroup aria-label={content.title || content.description}>
           {content.options?.map((option, index) => (
-            <Flex as="label" key={option.name + index} gap="s" align="center">
+            <Flex as="label" key={option.id + index} gap="s" align="center">
               <Checkbox
-                name={
-                  content.type === 'checkbox' ? option.name + index : contentId
-                }
+                name={inputNameForCheckbox(option, index)}
                 type={content.type === 'checkbox' ? 'checkbox' : 'radio'}
               />
 
@@ -72,7 +86,7 @@ export const RequestDecisionCheckbox = ({ content, contentId }: Props) => {
           ))}
         </CheckboxGroup>
 
-        <Button label="Submit" variant="affirmative" />
+        <Button label="Submit" variant="affirmative" onClick={submitDecision} />
       </Flex>
     </Card>
   );

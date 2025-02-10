@@ -6,6 +6,7 @@ export async function GET() {
   const form: z.infer<typeof requestDataFormSchema> = {
     fields: [
       {
+        id: 'email_address',
         label: 'Email Address',
         type: 'email',
         required: true,
@@ -14,12 +15,14 @@ export async function GET() {
         autocomplete: 'email',
       },
       {
+        id: 'full_name',
         label: 'Full Name',
         type: 'text',
         required: true,
         autocomplete: 'name',
       },
       {
+        id: 'address_line_1',
         label: 'Address Line 1',
         type: 'text',
         description: 'Street address, P.O. box, company name, etc',
@@ -27,6 +30,7 @@ export async function GET() {
         required: true,
       },
       {
+        id: 'address_line_2',
         label: 'Address Line 2',
         type: 'text',
         description: 'Apartment, suite, unit, building, floor, etc',
@@ -34,12 +38,14 @@ export async function GET() {
         required: false,
       },
       {
+        id: 'city',
         label: 'City',
         type: 'text',
         autocomplete: 'address-level2',
         required: true,
       },
       {
+        id: 'state',
         label: 'State',
         type: 'combobox',
         autocomplete: 'address-level1',
@@ -99,6 +105,7 @@ export async function GET() {
         ],
       },
       {
+        id: 'zip',
         label: 'ZIP',
         type: 'text',
         autocomplete: 'postal-code',

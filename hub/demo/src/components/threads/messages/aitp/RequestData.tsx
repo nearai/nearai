@@ -19,7 +19,8 @@ export const RequestData = ({ content, contentId }: Props) => {
   const [formIsOpen, setFormIsOpen] = useState(false);
 
   const onValidSubmit = (data: RequestDataResult) => {
-    console.log(data);
+    // TODO
+    console.log('Request data form submit:', data);
     setFormIsOpen(false);
   };
 

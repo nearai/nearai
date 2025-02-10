@@ -94,6 +94,11 @@ const Product = (props: Product) => {
     (p) => p.plan_type === 'one-time' && p.currency === 'USD',
   );
 
+  const addProductToCart = async () => {
+    // TODO
+    console.log(`Selected product with quantity: ${quantity}`, option);
+  };
+
   return (
     <Card background="sand-0" border="sand-0" className={s.productCard}>
       {option.image_url && (
@@ -213,7 +218,12 @@ const Product = (props: Product) => {
           </Dropdown.Root>
         </Flex>
 
-        <Button label="Add to cart" variant="affirmative" size="small" />
+        <Button
+          label="Add to cart"
+          variant="affirmative"
+          size="small"
+          onClick={addProductToCart}
+        />
       </Flex>
 
       <Dialog.Root
