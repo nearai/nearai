@@ -287,15 +287,18 @@ export const agentAddSecretsRequestModel = z.object({
   reloadAgentMessage: z.string().nullish(),
 });
 
-export const threadMetadataModel = z.intersection(
-  z
-    .object({
-      agent_ids: z.string().array().default([]),
-      topic: z.string(),
-    })
-    .partial(),
-  z.record(z.string(), z.unknown()),
-);
+export const threadMetadataModel = z
+  .object({
+    agent_ids: z.preprocess(
+      (val) =>
+        typeof val === 'string'
+          ? val.split(',').map((item) => item.trim())
+          : val,
+      z.array(z.string()).default([]),
+    ),
+    topic: z.string().optional(),
+  })
+  .passthrough();
 
 export const threadModel = z.object({
   id: z.string(),

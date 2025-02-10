@@ -269,6 +269,11 @@ class Thread(SQLModel, table=True):
 
     def to_openai(self) -> OpenAITThread:
         """Convert to OpenAI Thread."""
+        # Assuming agent_ids is a list, join it into a string
+        if self.meta_data and "agent_ids" in self.meta_data:
+            agent_ids = ",".join(self.meta_data["agent_ids"])  # Join the list into a single string
+            self.meta_data["agent_ids"] = agent_ids
+
         return OpenAITThread(
             metadata=self.meta_data,
             tool_resources=None,  # TODO: Implement conversion

@@ -17,6 +17,7 @@ from openai.types.beta.vector_stores import VectorStoreFile
 from openai.types.file_object import FileObject
 
 from nearai.shared.client_config import (
+    DEFAULT_MAX_RETRIES,
     DEFAULT_MODEL_MAX_TOKENS,
     DEFAULT_MODEL_TEMPERATURE,
     DEFAULT_TIMEOUT,
@@ -30,7 +31,7 @@ from nearai.shared.models import (
     GitLabSource,
     SimilaritySearch,
     SimilaritySearchFile,
-    StaticFileChunkingStrategyParam,
+    StaticFileChunkingStrategyObjectParam,
 )
 from nearai.shared.provider_models import ProviderModels
 
@@ -106,6 +107,10 @@ class InferenceClient(object):
         # NOTE(#246): this is to disable "Provider List" messages.
         litellm.suppress_debug_info = True
 
+        # lite_llm uses the openai.request_timeout to set the timeout for the request of "openai" custom provider
+        openai.timeout = DEFAULT_TIMEOUT
+        openai.max_retries = DEFAULT_MAX_RETRIES
+
         for i in range(0, self._config.num_inference_retries):
             try:
                 result: Union[ModelResponse, CustomStreamWrapper] = litellm_completion(
@@ -121,13 +126,17 @@ class InferenceClient(object):
                     provider=provider,
                     api_key=self._auth,
                     timeout=DEFAULT_TIMEOUT,
+                    request_timeout=DEFAULT_TIMEOUT,
                     num_retries=1,
                     **kwargs,
                 )
                 break
             except Exception as e:
+                print("Completions exception:", e)
                 if i == self._config.num_inference_retries - 1:
                     raise ValueError(f"Bad request: {e}") from None
+                else:
+                    print("Retrying...")
 
         return result
 
@@ -227,7 +236,9 @@ class InferenceClient(object):
         name: str,
         file_ids: List[str],
         expires_after: Union[ExpiresAfter, NotGiven] = NOT_GIVEN,
-        chunking_strategy: Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam, NotGiven] = NOT_GIVEN,
+        chunking_strategy: Union[
+            AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, NotGiven
+        ] = NOT_GIVEN,
         metadata: Optional[Dict[str, str]] = None,
     ) -> VectorStore:
         """Creates Vector Store.

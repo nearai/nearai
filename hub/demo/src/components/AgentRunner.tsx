@@ -130,19 +130,6 @@ export const AgentRunner = ({
   const threadsById = useThreadsStore((store) => store.threadsById);
   const thread = threadsById[chatMutationThreadId.current || threadId];
 
-  const threadQuery = trpc.hub.thread.useQuery(
-    {
-      afterMessageId: thread?.latestMessageId,
-      runId: thread?.run?.id,
-      threadId,
-    },
-    {
-      enabled: isAuthenticated && !!threadId,
-      refetchInterval: 1500,
-      retry: false,
-    },
-  );
-
   const _chatMutation = trpc.hub.chatWithAgent.useMutation();
   const chatMutation = useMutation({
     mutationFn: async (data: AgentChatMutationInput) => {
@@ -176,6 +163,24 @@ export const AgentRunner = ({
       }
     },
   });
+
+  const isRunning =
+    _chatMutation.isPending ||
+    thread?.run?.status === 'queued' ||
+    thread?.run?.status === 'in_progress';
+
+  const threadQuery = trpc.hub.thread.useQuery(
+    {
+      afterMessageId: thread?.latestMessageId,
+      runId: thread?.run?.id,
+      threadId,
+    },
+    {
+      enabled: isAuthenticated && !!threadId,
+      refetchInterval: isRunning ? 150 : 1500,
+      retry: false,
+    },
+  );
 
   const logMessages = useMemo(() => {
     const result = (thread ? Object.values(thread.messagesById) : []).filter(
@@ -219,11 +224,6 @@ export const AgentRunner = ({
     iframePostMessage,
     onIframePostMessage,
   } = useAgentRequestsWithIframe(currentEntry, chatMutation, threadId);
-
-  const isRunning =
-    _chatMutation.isPending ||
-    thread?.run?.status === 'queued' ||
-    thread?.run?.status === 'in_progress';
 
   const isLoading = !!threadId && !thread && !isRunning;
 

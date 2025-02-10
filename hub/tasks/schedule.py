@@ -106,17 +106,16 @@ async def lifespan(app):
 
     if read_scheduled_runs:
         job = partial(process_due_tasks, auth_token)
-        await job()
         get_async_scheduler().add_job(job, IntervalTrigger(seconds=1), name="schedule_run")
 
     if read_near_events:
         process_near_events_initial_state()
         job = partial(near_events_task, auth_token)
-        await job()
         get_async_scheduler().add_job(job, IntervalTrigger(seconds=1), name="near_events")
 
     if read_x_events:
         job = partial(x_events_task, auth_token)
+        # immediately run the job instead of waiting for the 2 minutes interval
         await job()
         get_async_scheduler().add_job(job, IntervalTrigger(seconds=120), name="x_events")
 
