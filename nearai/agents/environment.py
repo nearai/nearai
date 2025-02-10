@@ -126,7 +126,11 @@ class Environment(object):
         self._approvals = approvals if approvals else default_approvals
         self._thread_id = thread_id
         self._run_id = run_id
-        self._debug_mode = True if self.env_vars.get("DEBUG") else False
+        self._debug_mode: bool = any(
+            str(value).lower() in ("true", "1", "yes", "on")
+            for key, value in self.env_vars.items()
+            if key.lower() == "debug"
+        )
 
         if fastnear_api_key:
             default_mainnet_rpc = f"https://rpc.mainnet.fastnear.com?apiKey={fastnear_api_key}"
@@ -832,8 +836,12 @@ class Environment(object):
         messages = [
             m
             for m in messages
-            if not (m.metadata and m.metadata.get("message_type") in ["system:log", "agent:log"])  # type: ignore
+            if not (
+                m.metadata
+                and any(m.metadata.get("message_type", "").startswith(prefix) for prefix in ["system:", "agent:"])
+            )
         ]
+
         legacy_messages = [
             {
                 "id": m.id,
@@ -1400,7 +1408,19 @@ class Environment(object):
                     logging.INFO,
                 )
             try:
-                self.get_primary_agent().run(self, task=new_message)
+                error_message, traceback_message = self.get_primary_agent().run(self, task=new_message)
+                if self._debug_mode and (error_message or traceback_message):
+                    if self._debug_mode and (error_message or traceback_message):
+                        message_parts = []
+
+                        if error_message:
+                            message_parts.append(f"Error: \n ```\n{error_message}\n```")
+
+                        if traceback_message:
+                            message_parts.append(f"Error Traceback: \n ```\n{traceback_message}\n```")
+
+                        self.add_reply("\n\n".join(message_parts), message_type="system:debug")
+
             except Exception as e:
                 self.add_system_log(f"Environment run failed: {e}", logging.ERROR)
                 self.mark_failed()
