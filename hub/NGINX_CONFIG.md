@@ -9,7 +9,7 @@ proxy_connect_timeout 600s;       # Set the maximum time NGINX waits to establis
 proxy_send_timeout 600s;          # Set the maximum time NGINX waits to send data to the upstream server
 ```
 
-Disable retries to prevent unnecessary retries and potential cascading failures
+Disable retries to prevent unnecessary retries and potential cascading failures.
 These settings ensure that NGINX will not attempt to forward a request to the next upstream server if the first one fails:
 
 ```
