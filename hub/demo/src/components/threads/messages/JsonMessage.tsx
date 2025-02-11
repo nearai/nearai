@@ -1,33 +1,27 @@
 'use client';
 
-import { Card, Text } from '@near-pagoda/ui';
 import { useRef } from 'react';
-import { type z } from 'zod';
 
 import { Code } from '~/components/lib/Code';
-import { type threadMessageModel } from '~/lib/models';
 
 import { RequestData } from './aitp/RequestData';
 import { RequestDecision } from './aitp/RequestDecision';
 import { parseJsonWithAitpSchema } from './aitp/schema';
 import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './aitp/schema/base';
+import { MessageCard } from './MessageCard';
 
 type Props = {
-  contentId: string;
-  content: Record<string, unknown>;
-  role: z.infer<typeof threadMessageModel>['role'];
+  json: Record<string, unknown>;
 };
 
-export const JsonMessage = ({ content, contentId, role }: Props) => {
+export const JsonMessage = ({ json }: Props) => {
   const hasWarned = useRef(false);
-  const aitp = parseJsonWithAitpSchema(content);
+  const aitp = parseJsonWithAitpSchema(json);
 
   if ('request_decision' in aitp) {
-    return (
-      <RequestDecision content={aitp.request_decision} contentId={contentId} />
-    );
+    return <RequestDecision content={aitp.request_decision} />;
   } else if ('request_data' in aitp) {
-    return <RequestData content={aitp.request_data} contentId={contentId} />;
+    return <RequestData content={aitp.request_data} />;
   }
 
   if (!hasWarned.current) {
@@ -39,17 +33,8 @@ export const JsonMessage = ({ content, contentId, role }: Props) => {
   }
 
   return (
-    <Card animateIn>
-      <Code bleed language="json" source={JSON.stringify(content, null, 2)} />
-
-      <Text
-        size="text-xs"
-        style={{
-          textTransform: 'capitalize',
-        }}
-      >
-        - {role}
-      </Text>
-    </Card>
+    <MessageCard>
+      <Code bleed language="json" source={JSON.stringify(json, null, 2)} />
+    </MessageCard>
   );
 };

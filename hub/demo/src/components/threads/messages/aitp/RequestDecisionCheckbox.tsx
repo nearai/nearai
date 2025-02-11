@@ -2,7 +2,6 @@
 
 import {
   Button,
-  Card,
   Checkbox,
   CheckboxGroup,
   Flex,
@@ -16,6 +15,8 @@ import { type z } from 'zod';
 import { useThreadsStore } from '~/stores/threads';
 import { stringToHtmlAttribute } from '~/utils/string';
 
+import { useThreadMessageContent } from '../../ThreadMessageContentProvider';
+import { AitpMessageCard } from './AitpMessageCard';
 import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './schema/base';
 import {
   type decisionSchema,
@@ -24,13 +25,13 @@ import {
 import s from './styles.module.scss';
 
 type Props = {
-  contentId: string;
   content: z.infer<typeof requestDecisionSchema>['request_decision'];
 };
 
 type FormSchema = Record<string, string | boolean>;
 
-export const RequestDecisionCheckbox = ({ content, contentId }: Props) => {
+export const RequestDecisionCheckbox = ({ content }: Props) => {
+  const { messageContentId } = useThreadMessageContent();
   const hookForm = useForm<FormSchema>();
   const addMessage = useThreadsStore((store) => store.addMessage);
 
@@ -39,8 +40,8 @@ export const RequestDecisionCheckbox = ({ content, contentId }: Props) => {
     index: number,
   ) => {
     return content.type === 'checkbox'
-      ? stringToHtmlAttribute(contentId + option.id + index)
-      : contentId;
+      ? stringToHtmlAttribute(`${messageContentId}_${option.id}_${index}`)
+      : messageContentId;
   };
 
   const onSubmit: SubmitHandler<FormSchema> = async (data) => {
@@ -98,7 +99,7 @@ export const RequestDecisionCheckbox = ({ content, contentId }: Props) => {
   }
 
   return (
-    <Card animateIn>
+    <AitpMessageCard>
       <Form onSubmit={hookForm.handleSubmit(onSubmit)}>
         <Flex direction="column" gap="m" align="start">
           {(content.title || content.description) && (
@@ -146,6 +147,6 @@ export const RequestDecisionCheckbox = ({ content, contentId }: Props) => {
           <Button label="Submit" variant="affirmative" type="submit" />
         </Flex>
       </Form>
-    </Card>
+    </AitpMessageCard>
   );
 };

@@ -186,32 +186,26 @@ export function generateMockedAITPMessages(threadId: string) {
       title: 'Shipping Info (International + Favorites)',
       description: `Great! Let's start with your shipping info.`,
       fillButtonLabel: 'Fill out shipping info',
-      forms: [
-        {
-          json_url:
-            'https://app.near.ai/api/v1/aitp/request_data/forms/shipping_address_international.json',
-        },
-        {
-          description:
-            'Share more info about yourself to improve your shopping experience.',
-          fields: [
-            {
-              id: 'favorite_color',
-              label: 'Favorite Color',
-              type: 'select',
-              options: ['Blue', 'Orange', 'White'],
-              required: true,
-            },
-            {
-              id: 'favorite_number',
-              label: 'Favorite Number',
-              type: 'number',
-              default_value: '7',
-              required: false,
-            },
-          ],
-        },
-      ],
+      form: {
+        json_url:
+          'https://app.near.ai/api/v1/aitp/request_data/forms/shipping_address_international.json',
+        fields: [
+          {
+            id: 'favorite_color',
+            label: 'Favorite Color',
+            type: 'select',
+            options: ['Blue', 'Orange', 'White'],
+            required: true,
+          },
+          {
+            id: 'favorite_number',
+            label: 'Favorite Number',
+            type: 'number',
+            default_value: '7',
+            required: false,
+          },
+        ],
+      },
     },
   };
 
@@ -222,12 +216,10 @@ export function generateMockedAITPMessages(threadId: string) {
       title: 'Shipping Info (US)',
       description: `Great! Let's start with your shipping info.`,
       fillButtonLabel: 'Fill out shipping info',
-      forms: [
-        {
-          json_url:
-            'https://app.near.ai/api/v1/aitp/request_data/forms/shipping_address_us.json',
-        },
-      ],
+      form: {
+        json_url:
+          'https://app.near.ai/api/v1/aitp/request_data/forms/shipping_address_us.json',
+      },
     },
   };
 

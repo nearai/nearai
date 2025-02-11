@@ -18,6 +18,7 @@ import { type z } from 'zod';
 import { useThreadsStore } from '~/stores/threads';
 import { getPrimaryDomainFromUrl } from '~/utils/url';
 
+import { AitpMessageCard } from './AitpMessageCard';
 import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './schema/base';
 import {
   type decisionSchema,
@@ -27,10 +28,9 @@ import s from './styles.module.scss';
 
 type Props = {
   content: z.infer<typeof requestDecisionSchema>['request_decision'];
-  contentId: string;
 };
 
-export const RequestDecisionProducts = ({ content, contentId }: Props) => {
+export const RequestDecisionProducts = ({ content }: Props) => {
   if (content.type !== 'products') {
     console.error(
       `Attempted to render <RequestDecisionProducts /> with invalid content type: ${content.type}`,
@@ -39,7 +39,7 @@ export const RequestDecisionProducts = ({ content, contentId }: Props) => {
   }
 
   return (
-    <Card animateIn>
+    <AitpMessageCard>
       {(content.title || content.description) && (
         <Flex direction="column" gap="s">
           {content.title && (
@@ -57,20 +57,18 @@ export const RequestDecisionProducts = ({ content, contentId }: Props) => {
         {content.options?.map((option, index) => (
           <Product
             content={content}
-            contentId={contentId}
             index={index}
             option={option}
             key={option.id + index}
           />
         ))}
       </div>
-    </Card>
+    </AitpMessageCard>
   );
 };
 
 type Product = {
   content: Props['content'];
-  contentId: string;
   index: number;
   option: NonNullable<
     z.infer<typeof requestDecisionSchema>['request_decision']['options']

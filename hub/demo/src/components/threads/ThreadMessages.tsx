@@ -12,6 +12,7 @@ import { computeNavigationHeight } from '../Navigation';
 import { JsonMessage } from './messages/JsonMessage';
 import { TextMessage } from './messages/TextMessage';
 import { UnknownMessage } from './messages/UnknownMessage';
+import { ThreadMessageContentProvider } from './ThreadMessageContentProvider';
 import s from './ThreadMessages.module.scss';
 
 type Props = {
@@ -112,8 +113,8 @@ export const ThreadMessage = ({ message }: ThreadMessageProps) => {
       {message.content.map((content, index) => (
         <ThreadMessageContent
           content={content}
-          contentIndex={index}
           message={message}
+          messageContentId={`${message.id}_${index}`}
           key={index}
         />
       ))}
@@ -123,13 +124,19 @@ export const ThreadMessage = ({ message }: ThreadMessageProps) => {
 
 type ThreadMessageContentProps = {
   content: z.infer<typeof threadMessageModel>['content'][number];
-  contentIndex: number;
   message: z.infer<typeof threadMessageModel>;
+  messageContentId: string;
 };
 
 const ThreadMessageContent = memo(
-  ({ content, contentIndex, message }: ThreadMessageContentProps) => {
-    const contentId = `${message.id}_${contentIndex}`;
+  ({ content, messageContentId, message }: ThreadMessageContentProps) => {
+    const providerValue = {
+      content,
+      message,
+      messageContentId,
+    };
+
+    const text = typeof content.text === 'object' ? content.text : null;
 
     const json = content.text?.value
       ? stringToPotentialJson(content.text.value)
@@ -137,24 +144,24 @@ const ThreadMessageContent = memo(
 
     if (json) {
       return (
-        <JsonMessage contentId={contentId} content={json} role={message.role} />
+        <ThreadMessageContentProvider value={providerValue}>
+          <JsonMessage json={json} />
+        </ThreadMessageContentProvider>
       );
     }
 
-    const text = typeof content.text === 'object' ? content.text : null;
-
     if (text) {
       return (
-        <TextMessage contentId={contentId} content={text} role={message.role} />
+        <ThreadMessageContentProvider value={providerValue}>
+          <TextMessage text={text} />
+        </ThreadMessageContentProvider>
       );
     }
 
     return (
-      <UnknownMessage
-        contentId={contentId}
-        content={content}
-        role={message.role}
-      />
+      <ThreadMessageContentProvider value={providerValue}>
+        <UnknownMessage />
+      </ThreadMessageContentProvider>
     );
   },
   (oldProps, newProps) => oldProps.message.id === newProps.message.id, // https://react.dev/reference/react/memo

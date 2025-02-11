@@ -9,6 +9,7 @@ import { ErrorMessage } from '~/components/ErrorMessage';
 import { useThreadsStore } from '~/stores/threads';
 import { trpc } from '~/trpc/TRPCProvider';
 
+import { useThreadMessageContent } from '../../ThreadMessageContentProvider';
 import {
   RequestDataFormSection,
   requestDataInputNameForField,
@@ -22,7 +23,6 @@ import {
 import s from './styles.module.scss';
 
 type Props = {
-  contentId: string;
   content: z.infer<typeof requestDataSchema>['request_data'];
   onCancel: () => unknown;
   onValidSubmit: () => unknown;
@@ -32,11 +32,11 @@ export type RequestDataHookFormSchema = Record<string, string>;
 
 export const RequestDataForm = ({
   content,
-  contentId,
   onCancel,
   onValidSubmit,
 }: Props) => {
-  const { forms, isLoading, isError } = useRequestDataForms(content);
+  const { messageContentId } = useThreadMessageContent();
+  const { form, isLoading, isError } = useRequestDataForm(content);
   const hookForm = useForm<RequestDataHookFormSchema>();
   const addMessage = useThreadsStore((store) => store.addMessage);
 
@@ -51,14 +51,12 @@ export const RequestDataForm = ({
       },
     };
 
-    forms?.forEach((form) => {
-      form.fields?.forEach((field, index) => {
-        const name = requestDataInputNameForField(contentId, field, index);
-        result.data.fields.push({
-          id: field.id,
-          label: field.label,
-          value: data[name],
-        });
+    form?.fields?.forEach((field, index) => {
+      const name = requestDataInputNameForField(messageContentId, field, index);
+      result.data.fields.push({
+        id: field.id,
+        label: field.label,
+        value: data[name],
       });
     });
 
@@ -79,20 +77,13 @@ export const RequestDataForm = ({
     );
   }
 
-  if (!forms?.length) return null;
+  if (!form) return null;
 
   return (
     <Form autoComplete="on" onSubmit={hookForm.handleSubmit(onSubmit)}>
       <FormProvider {...hookForm}>
         <Flex direction="column" gap="l" className={s.formSections}>
-          {forms.map((form, index) => (
-            <RequestDataFormSection
-              content={content}
-              contentId={contentId}
-              form={form}
-              key={index}
-            />
-          ))}
+          <RequestDataFormSection content={content} form={form} />
 
           <Flex justify="space-between">
             <Button
@@ -110,29 +101,25 @@ export const RequestDataForm = ({
   );
 };
 
-function useRequestDataForms(content: Props['content']) {
-  const jsonUrls = content.forms
-    .map((f) => f.json_url)
-    .filter((url) => typeof url === 'string');
-
-  const formsQuery = trpc.aitp.loadJson.useQuery(
+function useRequestDataForm(content: Props['content']) {
+  const formQuery = trpc.aitp.loadJson.useQuery(
     {
-      urls: jsonUrls,
+      url: content.form.json_url!,
     },
     {
-      enabled: jsonUrls.length > 0,
+      enabled: !!content.form.json_url,
     },
   );
 
   const [isError, setIsError] = useState(false);
-  const isLoading = formsQuery.isLoading;
+  const isLoading = formQuery.isLoading;
 
   useEffect(() => {
-    if (formsQuery.error) {
-      console.error(formsQuery.error);
+    if (formQuery.error) {
+      console.error(formQuery.error);
       setIsError(true);
     }
-  }, [formsQuery.error]);
+  }, [formQuery.error]);
 
   if (isLoading || isError) {
     return {
@@ -141,40 +128,34 @@ function useRequestDataForms(content: Props['content']) {
     };
   }
 
-  const forms = content.forms
-    .map((form) => {
-      if (!form.json_url) return form;
+  if (!content.form.json_url) {
+    return {
+      form: content.form,
+    };
+  }
 
-      const fetched = formsQuery.data?.find(
-        (data) => data.url === form.json_url,
-      );
+  const parsed = formQuery.data
+    ? requestDataFormSchema.safeParse(formQuery.data)
+    : null;
 
-      const parsed = fetched
-        ? requestDataFormSchema.safeParse(fetched.data)
-        : null;
+  if (parsed?.error) {
+    console.error(
+      `JSON message failed to match ${CURRENT_AGENT_PROTOCOL_SCHEMA} => "request_data"`,
+      formQuery.data,
+      parsed.error,
+    );
+    setIsError(true);
+  }
 
-      if (parsed?.error) {
-        console.error(
-          `JSON message failed to match ${CURRENT_AGENT_PROTOCOL_SCHEMA} => "request_data"`,
-          fetched,
-          parsed.error,
-        );
-        setIsError(true);
+  const fetchedForm = parsed?.data
+    ? {
+        ...parsed.data,
+        ...content.form,
+        fields: [...(parsed.data.fields ?? []), ...(content.form.fields ?? [])],
       }
-
-      const fetchedForm = parsed?.data
-        ? {
-            ...parsed.data,
-            ...form,
-            fields: [...(parsed.data.fields ?? []), ...(form.fields ?? [])],
-          }
-        : null;
-
-      return fetchedForm;
-    })
-    .filter((form) => form !== null);
+    : null;
 
   return {
-    forms,
+    form: fetchedForm,
   };
 }

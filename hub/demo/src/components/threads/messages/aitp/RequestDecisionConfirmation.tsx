@@ -1,10 +1,11 @@
 'use client';
 
-import { Button, Card, Flex, Text } from '@near-pagoda/ui';
+import { Button, Flex, Text } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
 import { useThreadsStore } from '~/stores/threads';
 
+import { AitpMessageCard } from './AitpMessageCard';
 import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './schema/base';
 import {
   type decisionSchema,
@@ -12,7 +13,6 @@ import {
 } from './schema/decision';
 
 type Props = {
-  contentId: string;
   content: z.infer<typeof requestDecisionSchema>['request_decision'];
 };
 
@@ -62,7 +62,7 @@ export const RequestDecisionConfirmation = ({ content }: Props) => {
   };
 
   return (
-    <Card animateIn>
+    <AitpMessageCard>
       {(content.title || content.description) && (
         <Flex direction="column" gap="s">
           {content.title && (
@@ -86,6 +86,6 @@ export const RequestDecisionConfirmation = ({ content }: Props) => {
           />
         ))}
       </Flex>
-    </Card>
+    </AitpMessageCard>
   );
 };

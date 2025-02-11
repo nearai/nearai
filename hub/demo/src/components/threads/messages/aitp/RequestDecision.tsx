@@ -8,22 +8,19 @@ import { RequestDecisionProducts } from './RequestDecisionProducts';
 import { type requestDecisionSchema } from './schema/decision';
 
 type Props = {
-  contentId: string;
   content: z.infer<typeof requestDecisionSchema>['request_decision'];
 };
 
-export const RequestDecision = ({ content, contentId }: Props) => {
+export const RequestDecision = ({ content }: Props) => {
   const type = content.type;
 
   if (type === 'products') {
-    return <RequestDecisionProducts content={content} contentId={contentId} />;
+    return <RequestDecisionProducts content={content} />;
   }
 
   if (type === 'confirmation') {
-    return (
-      <RequestDecisionConfirmation content={content} contentId={contentId} />
-    );
+    return <RequestDecisionConfirmation content={content} />;
   }
 
-  return <RequestDecisionCheckbox content={content} contentId={contentId} />;
+  return <RequestDecisionCheckbox content={content} />;
 };

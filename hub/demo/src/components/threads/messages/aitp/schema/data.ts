@@ -27,8 +27,6 @@ export const requestDataFormFieldSchema = z
 
 export const requestDataFormSchema = z
   .object({
-    title: z.string().optional(),
-    description: z.string().optional(),
     fields: requestDataFormFieldSchema.array().min(1).optional(),
     json_url: z
       .enum([
@@ -47,7 +45,7 @@ export const requestDataSchema = baseSchema.extend({
       title: z.string().optional(),
       description: z.string(),
       fillButtonLabel: z.string().default('Fill out form'),
-      forms: requestDataFormSchema.array().min(1),
+      form: requestDataFormSchema,
     })
     .passthrough(),
 });

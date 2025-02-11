@@ -5,7 +5,6 @@ import {
   Flex,
   Input,
   InputTextarea,
-  Text,
   useComboboxOptionMapper,
 } from '@near-pagoda/ui';
 import { useEffect } from 'react';
@@ -15,6 +14,7 @@ import { type z } from 'zod';
 import { validateEmail } from '~/utils/inputs';
 import { stringToHtmlAttribute } from '~/utils/string';
 
+import { useThreadMessageContent } from '../../ThreadMessageContentProvider';
 import { type RequestDataHookFormSchema } from './RequestDataForm';
 import {
   type requestDataFormFieldSchema,
@@ -23,12 +23,12 @@ import {
 } from './schema/data';
 
 type Props = {
-  contentId: string;
   content: z.infer<typeof requestDataSchema>['request_data'];
   form: z.infer<typeof requestDataFormSchema>;
 };
 
-export const RequestDataFormSection = ({ contentId, form }: Props) => {
+export const RequestDataFormSection = ({ form }: Props) => {
+  const { messageContentId } = useThreadMessageContent();
   const hookForm = useFormContext<RequestDataHookFormSchema>();
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export const RequestDataFormSection = ({ contentId, form }: Props) => {
     form.fields?.forEach((field, index) => {
       if (field.default_value) {
         hookForm.setValue(
-          requestDataInputNameForField(contentId, field, index),
+          requestDataInputNameForField(messageContentId, field, index),
           field.default_value,
           {
             shouldDirty: true,
@@ -45,48 +45,29 @@ export const RequestDataFormSection = ({ contentId, form }: Props) => {
         );
       }
     });
-  }, [contentId, hookForm, form]);
+  }, [messageContentId, hookForm, form]);
 
   return (
     <Flex direction="column" gap="m">
-      {(form.title || form.description) && (
-        <Flex direction="column" gap="s">
-          {form.title && (
-            <Text size="text-xs" weight={600} uppercase>
-              {form.title}
-            </Text>
-          )}
-          {form.description && <Text color="sand-12">{form.description}</Text>}
-        </Flex>
-      )}
-
       {form.fields?.map((field, index) => (
-        <RequestDataFormInput
-          field={field}
-          contentId={contentId}
-          index={index}
-          key={index}
-        />
+        <RequestDataFormInput field={field} index={index} key={index} />
       ))}
     </Flex>
   );
 };
 
 type RequestDataFormInputProps = {
-  contentId: string;
-  field: NonNullable<
-    z.infer<typeof requestDataSchema>['request_data']['forms'][number]['fields']
-  >[number];
+  field: z.infer<typeof requestDataFormFieldSchema>;
   index: number;
 };
 
 export const RequestDataFormInput = ({
-  contentId,
   field,
   index,
 }: RequestDataFormInputProps) => {
+  const { messageContentId } = useThreadMessageContent();
   const hookForm = useFormContext<RequestDataHookFormSchema>();
-  const name = requestDataInputNameForField(contentId, field, index);
+  const name = requestDataInputNameForField(messageContentId, field, index);
   const comboboxOptions = useComboboxOptionMapper(field.options, (item) => ({
     value: item,
   }));
@@ -145,9 +126,9 @@ export const RequestDataFormInput = ({
 };
 
 export function requestDataInputNameForField(
-  contentId: string,
+  messageContentId: string,
   field: z.infer<typeof requestDataFormFieldSchema>,
   index: number,
 ) {
-  return stringToHtmlAttribute(contentId + field.id + index);
+  return stringToHtmlAttribute(`${messageContentId}_${field.id}_${index}`);
 }
