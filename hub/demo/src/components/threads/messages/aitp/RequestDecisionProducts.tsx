@@ -15,9 +15,14 @@ import { Star, StarHalf } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';
 
+import { useThreadsStore } from '~/stores/threads';
 import { getPrimaryDomainFromUrl } from '~/utils/url';
 
-import { type requestDecisionSchema } from './schema/decision';
+import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './schema/base';
+import {
+  type decisionSchema,
+  type requestDecisionSchema,
+} from './schema/decision';
 import s from './styles.module.scss';
 
 type Props = {
@@ -51,6 +56,7 @@ export const RequestDecisionProducts = ({ content, contentId }: Props) => {
       <div className={s.productGrid}>
         {content.options?.map((option, index) => (
           <Product
+            content={content}
             contentId={contentId}
             index={index}
             option={option}
@@ -63,6 +69,7 @@ export const RequestDecisionProducts = ({ content, contentId }: Props) => {
 };
 
 type Product = {
+  content: Props['content'];
   contentId: string;
   index: number;
   option: NonNullable<
@@ -72,7 +79,12 @@ type Product = {
 
 const quantities = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-const Product = (props: Product) => {
+function optionDisplayName(option: Product['option']) {
+  return option.short_variant_name || option.name || option.id;
+}
+
+const Product = ({ content, ...props }: Product) => {
+  const addMessage = useThreadsStore((store) => store.addMessage);
   const [zoomedImageUrl, setZoomedImageUrl] = useState('');
 
   const variants = [...(props.option.variants ?? [])];
@@ -95,11 +107,26 @@ const Product = (props: Product) => {
   );
 
   const addProductToCart = async () => {
-    // TODO
-    console.log(`Selected product with quantity: ${quantity}`, option);
-  };
+    if (!addMessage) return;
 
-  const displayName = option.short_variant_name || option.name || option.id;
+    const result: z.infer<typeof decisionSchema> = {
+      $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
+      decision: {
+        request_decision_id: content.id,
+        options: [
+          {
+            id: option.id,
+            name: option.name,
+            quantity,
+          },
+        ],
+      },
+    };
+
+    void addMessage({
+      new_message: JSON.stringify(result),
+    });
+  };
 
   return (
     <Card background="sand-0" border="sand-0" className={s.productCard}>
@@ -148,7 +175,7 @@ const Product = (props: Product) => {
             <Dropdown.Root>
               <Dropdown.Trigger asChild>
                 <Button
-                  label={displayName}
+                  label={optionDisplayName(option)}
                   labelAlignment="left"
                   variant="secondary"
                   fill="outline"
@@ -174,7 +201,7 @@ const Product = (props: Product) => {
                             }}
                           />
                         )}
-                        {displayName}
+                        {optionDisplayName(variant)}
                       </Flex>
                     </Dropdown.Item>
                   ))}

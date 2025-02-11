@@ -15,8 +15,6 @@ type Props = {
 export const RequestDecision = ({ content, contentId }: Props) => {
   const type = content.type;
 
-  console.log(content);
-
   if (type === 'products') {
     return <RequestDecisionProducts content={content} contentId={contentId} />;
   }

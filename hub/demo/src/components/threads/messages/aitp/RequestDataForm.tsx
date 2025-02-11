@@ -28,7 +28,7 @@ type Props = {
   onValidSubmit: () => unknown;
 };
 
-export type RequestDataFormSchema = Record<string, string>;
+export type RequestDataHookFormSchema = Record<string, string>;
 
 export const RequestDataForm = ({
   content,
@@ -37,10 +37,10 @@ export const RequestDataForm = ({
   onValidSubmit,
 }: Props) => {
   const { forms, isLoading, isError } = useRequestDataForms(content);
-  const hookForm = useForm<RequestDataFormSchema>();
+  const hookForm = useForm<RequestDataHookFormSchema>();
   const addMessage = useThreadsStore((store) => store.addMessage);
 
-  const onSubmit: SubmitHandler<RequestDataFormSchema> = async (data) => {
+  const onSubmit: SubmitHandler<RequestDataHookFormSchema> = async (data) => {
     if (!addMessage) return;
 
     const result: z.infer<typeof dataSchema> = {

@@ -15,7 +15,7 @@ import { type z } from 'zod';
 import { validateEmail } from '~/utils/inputs';
 import { stringToHtmlAttribute } from '~/utils/string';
 
-import { type RequestDataFormSchema } from './RequestDataForm';
+import { type RequestDataHookFormSchema } from './RequestDataForm';
 import {
   type requestDataFormFieldSchema,
   type requestDataFormSchema,
@@ -29,7 +29,7 @@ type Props = {
 };
 
 export const RequestDataFormSection = ({ contentId, form }: Props) => {
-  const hookForm = useFormContext<RequestDataFormSchema>();
+  const hookForm = useFormContext<RequestDataHookFormSchema>();
 
   useEffect(() => {
     if (!hookForm.formState.isDirty) return;
@@ -85,7 +85,7 @@ export const RequestDataFormInput = ({
   field,
   index,
 }: RequestDataFormInputProps) => {
-  const hookForm = useFormContext<RequestDataFormSchema>();
+  const hookForm = useFormContext<RequestDataHookFormSchema>();
   const name = requestDataInputNameForField(contentId, field, index);
   const comboboxOptions = useComboboxOptionMapper(field.options, (item) => ({
     value: item,

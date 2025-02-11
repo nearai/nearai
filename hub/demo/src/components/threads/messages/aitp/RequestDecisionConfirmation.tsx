@@ -3,7 +3,13 @@
 import { Button, Card, Flex, Text } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
-import { type requestDecisionSchema } from './schema/decision';
+import { useThreadsStore } from '~/stores/threads';
+
+import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './schema/base';
+import {
+  type decisionSchema,
+  type requestDecisionSchema,
+} from './schema/decision';
 
 type Props = {
   contentId: string;
@@ -22,6 +28,7 @@ const defaultOptions: Props['content']['options'] = [
 ];
 
 export const RequestDecisionConfirmation = ({ content }: Props) => {
+  const addMessage = useThreadsStore((store) => store.addMessage);
   const options = content.options?.length ? content.options : defaultOptions;
 
   if (content.type !== 'confirmation') {
@@ -34,8 +41,24 @@ export const RequestDecisionConfirmation = ({ content }: Props) => {
   const submitDecision = async (
     option: Props['content']['options'][number],
   ) => {
-    // TODO
-    console.log('Selected option:', option);
+    if (!addMessage) return;
+
+    const result: z.infer<typeof decisionSchema> = {
+      $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
+      decision: {
+        request_decision_id: content.id,
+        options: [
+          {
+            id: option.id,
+            name: option.name,
+          },
+        ],
+      },
+    };
+
+    void addMessage({
+      new_message: JSON.stringify(result),
+    });
   };
 
   return (

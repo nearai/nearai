@@ -142,7 +142,7 @@ export function generateMockedAITPMessages(threadId: string) {
           url: 'https://www.amazon.com/Sony-WH-1000XM5-Headphones-Hands-Free-WH1000XM5/dp/B0BXYCS74H',
         },
         {
-          id: 'product_5',
+          id: 'product_6',
           name: 'Edifier STAX Spirit S3',
           quote: generateMockedQuote(348),
           image_url:
