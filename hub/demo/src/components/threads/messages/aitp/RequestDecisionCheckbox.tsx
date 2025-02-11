@@ -12,7 +12,7 @@ import { type z } from 'zod';
 
 import { stringToHtmlAttribute } from '~/utils/string';
 
-import { type requestDecisionSchema } from './schema';
+import { type requestDecisionSchema } from './schema/decision';
 import s from './styles.module.scss';
 
 type Props = {

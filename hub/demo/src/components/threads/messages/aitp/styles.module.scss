@@ -21,8 +21,12 @@
 
 .productGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
   gap: var(--gap-s);
+
+  @media (max-width: 2100px) {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
 
   @media (max-width: 1550px) {
     grid-template-columns: 1fr 1fr 1fr;

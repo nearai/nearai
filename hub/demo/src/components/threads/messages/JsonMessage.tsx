@@ -9,10 +9,8 @@ import { type threadMessageModel } from '~/lib/models';
 
 import { RequestData } from './aitp/RequestData';
 import { RequestDecision } from './aitp/RequestDecision';
-import {
-  CURRENT_AGENT_PROTOCOL_SCHEMA,
-  parseJsonWithAitpSchema,
-} from './aitp/schema';
+import { parseJsonWithAitpSchema } from './aitp/schema';
+import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './aitp/schema/base';
 
 type Props = {
   contentId: string;

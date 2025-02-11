@@ -5,45 +5,39 @@ import {
   Flex,
   Input,
   InputTextarea,
-  openToast,
-  PlaceholderStack,
   Text,
   useComboboxOptionMapper,
 } from '@near-pagoda/ui';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { type z } from 'zod';
 
-import { trpc } from '~/trpc/TRPCProvider';
 import { validateEmail } from '~/utils/inputs';
 import { stringToHtmlAttribute } from '~/utils/string';
 
-import { type RequestDataResult } from './RequestData';
+import { type RequestDataFormSchema } from './RequestDataForm';
 import {
-  CURRENT_AGENT_PROTOCOL_SCHEMA,
   type requestDataFormFieldSchema,
-  requestDataFormSchema,
+  type requestDataFormSchema,
   type requestDataSchema,
-} from './schema';
+} from './schema/data';
 
 type Props = {
   contentId: string;
   content: z.infer<typeof requestDataSchema>['request_data'];
-  form: z.infer<typeof requestDataSchema>['request_data']['forms'][number];
+  form: z.infer<typeof requestDataFormSchema>;
 };
 
-export const RequestDataFormSection = ({ contentId, ...props }: Props) => {
-  const hookForm = useFormContext<RequestDataResult>();
-  const { form } = useRequestDataForm(props);
+export const RequestDataFormSection = ({ contentId, form }: Props) => {
+  const hookForm = useFormContext<RequestDataFormSchema>();
 
   useEffect(() => {
-    if (!form) return;
     if (!hookForm.formState.isDirty) return;
 
     form.fields?.forEach((field, index) => {
       if (field.default_value) {
         hookForm.setValue(
-          inputNameForField(contentId, field, index),
+          requestDataInputNameForField(contentId, field, index),
           field.default_value,
           {
             shouldDirty: true,
@@ -52,10 +46,6 @@ export const RequestDataFormSection = ({ contentId, ...props }: Props) => {
       }
     });
   }, [contentId, hookForm, form]);
-
-  if (!form) {
-    return <PlaceholderStack />;
-  }
 
   return (
     <Flex direction="column" gap="m">
@@ -95,11 +85,12 @@ export const RequestDataFormInput = ({
   field,
   index,
 }: RequestDataFormInputProps) => {
-  const hookForm = useFormContext<RequestDataResult>();
-  const name = inputNameForField(contentId, field, index);
+  const hookForm = useFormContext<RequestDataFormSchema>();
+  const name = requestDataInputNameForField(contentId, field, index);
   const comboboxOptions = useComboboxOptionMapper(field.options, (item) => ({
     value: item,
   }));
+  const label = field.label || field.id;
 
   if (field.type === 'select' || field.type === 'combobox') {
     return (
@@ -111,7 +102,7 @@ export const RequestDataFormInput = ({
         }}
         render={(control) => (
           <Combobox
-            label={field.required ? field.label : `${field.label} (Optional)`}
+            label={field.required ? label : `${label} (Optional)`}
             options={comboboxOptions}
             error={control.fieldState.error?.message}
             autoComplete={field.autocomplete}
@@ -127,7 +118,7 @@ export const RequestDataFormInput = ({
   if (field.type === 'textarea') {
     return (
       <InputTextarea
-        label={field.required ? field.label : `${field.label} (Optional)`}
+        label={field.required ? label : `${label} (Optional)`}
         autoComplete={field.autocomplete}
         assistive={field.description}
         error={hookForm.formState.errors[name]?.message}
@@ -140,7 +131,7 @@ export const RequestDataFormInput = ({
 
   return (
     <Input
-      label={field.required ? field.label : `${field.label} (Optional)`}
+      label={field.required ? label : `${label} (Optional)`}
       autoComplete={field.autocomplete}
       assistive={field.description}
       type={field.type}
@@ -153,53 +144,7 @@ export const RequestDataFormInput = ({
   );
 };
 
-function useRequestDataForm(props: Pick<Props, 'form'>) {
-  const hasWarned = useRef(false);
-  const jsonUrl = 'json_url' in props.form ? props.form.json_url : null;
-  const formQuery = trpc.protocol.loadJson.useQuery(
-    {
-      url: jsonUrl!,
-    },
-    {
-      enabled: !!jsonUrl,
-    },
-  );
-
-  const parsed = formQuery.data
-    ? requestDataFormSchema.safeParse(formQuery.data)
-    : null;
-
-  const loadedFormWithOverrides = parsed?.data
-    ? {
-        ...parsed.data,
-        ...props.form,
-        fields: [...(parsed.data.fields ?? []), ...(props.form.fields ?? [])],
-      }
-    : null;
-
-  const form = 'json_url' in props.form ? loadedFormWithOverrides : props.form;
-
-  if (parsed?.error && !hasWarned.current) {
-    console.error(
-      `JSON message failed to match ${CURRENT_AGENT_PROTOCOL_SCHEMA} => "request_data"`,
-      parsed.error,
-      parsed.data,
-    );
-    openToast({
-      type: 'error',
-      title: 'Failed to load form',
-      description: 'Please try again later',
-    });
-    hasWarned.current = true;
-  }
-
-  return {
-    form,
-    isError: !!parsed?.error,
-  };
-}
-
-function inputNameForField(
+export function requestDataInputNameForField(
   contentId: string,
   field: z.infer<typeof requestDataFormFieldSchema>,
   index: number,

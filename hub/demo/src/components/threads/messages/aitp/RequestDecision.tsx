@@ -5,7 +5,7 @@ import { type z } from 'zod';
 import { RequestDecisionCheckbox } from './RequestDecisionCheckbox';
 import { RequestDecisionConfirmation } from './RequestDecisionConfirmation';
 import { RequestDecisionProducts } from './RequestDecisionProducts';
-import { type requestDecisionSchema } from './schema';
+import { type requestDecisionSchema } from './schema/decision';
 
 type Props = {
   contentId: string;
@@ -14,6 +14,8 @@ type Props = {
 
 export const RequestDecision = ({ content, contentId }: Props) => {
   const type = content.type;
+
+  console.log(content);
 
   if (type === 'products') {
     return <RequestDecisionProducts content={content} contentId={contentId} />;

@@ -1,7 +1,6 @@
 import { handleClientError } from '@near-pagoda/ui';
 import { unreachable } from '@near-pagoda/ui/utils';
 import { type FinalExecutionOutcome } from '@near-wallet-selector/core';
-import { type UseMutationResult } from '@tanstack/react-query';
 import { formatNearAmount } from 'near-api-js/lib/utils/format';
 import { useCallback, useEffect, useState } from 'react';
 import { type z } from 'zod';
@@ -10,7 +9,6 @@ import {
   type AgentRequestWithPermissions,
   checkAgentPermissions,
 } from '~/components/AgentPermissionsModal';
-import { type AgentChatMutationInput } from '~/components/AgentRunner';
 import { type IframePostMessageEventHandler } from '~/components/lib/IframeWithBlob';
 import { parseEntryId } from '~/lib/entries';
 import {
@@ -22,6 +20,7 @@ import {
   type entryModel,
 } from '~/lib/models';
 import { useNearStore } from '~/stores/near';
+import { useThreadsStore } from '~/stores/threads';
 import { useWalletStore } from '~/stores/wallet';
 import { trpc } from '~/trpc/TRPCProvider';
 
@@ -39,12 +38,6 @@ export type AgentActionType =
 
 export function useAgentRequestsWithIframe(
   currentEntry: z.infer<typeof entryModel> | undefined,
-  chatMutation: UseMutationResult<
-    unknown,
-    Error,
-    AgentChatMutationInput,
-    unknown
-  >,
   threadId: string | null | undefined,
 ) {
   const addSecretMutation = trpc.hub.addSecret.useMutation();
@@ -64,6 +57,7 @@ export function useAgentRequestsWithIframe(
   const [agentRequestsNeedingPermissions, setAgentRequestsNeedingPermissions] =
     useState<AgentRequestWithPermissions[] | null>(null);
   const utils = trpc.useUtils();
+  const addMessage = useThreadsStore((store) => store.addMessage);
 
   const handleWalletTransactionResponse = useCallback(
     (options: {
@@ -101,7 +95,7 @@ export function useAgentRequestsWithIframe(
     requests: AgentRequestWithPermissions[],
     allowedBypass?: boolean,
   ) => {
-    if (!currentEntry) return;
+    if (!currentEntry || !addMessage) return;
 
     const permissionsCheck = checkAgentPermissions(currentEntry, requests);
 
@@ -133,8 +127,7 @@ export function useAgentRequestsWithIframe(
           }
 
           if (input.reloadAgentOnSuccess && addedKeys.length > 0) {
-            await chatMutation.mutateAsync({
-              max_iterations: 1,
+            await addMessage({
               new_message:
                 input.reloadAgentMessage ||
                 `${addedKeys.length} Secret${addedKeys.length === 1 ? '' : 's'} Saved: ${addedKeys.join(', ')}`,
@@ -155,7 +148,7 @@ export function useAgentRequestsWithIframe(
           action === 'remote_agent_run' ||
           action === 'initial_user_message'
         ) {
-          await chatMutation.mutateAsync(input);
+          await addMessage(input);
         } else if (action === 'near_send_transactions') {
           if (wallet) {
             try {

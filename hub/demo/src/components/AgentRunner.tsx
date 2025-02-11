@@ -130,6 +130,7 @@ export const AgentRunner = ({
   const resetThreadsStore = useThreadsStore((store) => store.reset);
   const setThread = useThreadsStore((store) => store.setThread);
   const threadsById = useThreadsStore((store) => store.threadsById);
+  const setAddMessage = useThreadsStore((store) => store.setAddMessage);
   const thread = threadsById[chatMutationThreadId.current || threadId];
 
   const _chatMutation = trpc.hub.chatWithAgent.useMutation();
@@ -228,7 +229,7 @@ export const AgentRunner = ({
     conditionallyProcessAgentRequests,
     iframePostMessage,
     onIframePostMessage,
-  } = useAgentRequestsWithIframe(currentEntry, chatMutation, threadId);
+  } = useAgentRequestsWithIframe(currentEntry, threadId);
 
   const [__view, __setView] = useState<RunView>();
   const view = (queryParams.view as RunView) ?? __view;
@@ -383,6 +384,21 @@ export const AgentRunner = ({
     chatMutation,
     conditionallyProcessAgentRequests,
   ]);
+
+  useEffect(() => {
+    /*
+      This allows child components within <AgentRunner> to add messages to the 
+      current thread via Zustand:
+
+      const addMessage = useThreadsStore((store) => store.addMessage);
+    */
+
+    setAddMessage(chatMutation.mutateAsync);
+
+    () => {
+      setAddMessage(undefined);
+    };
+  }, [chatMutation.mutateAsync, setAddMessage]);
 
   if (!currentEntry) {
     if (showLoadingPlaceholder) return <PlaceholderSection />;

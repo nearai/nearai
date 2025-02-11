@@ -14,7 +14,7 @@ export const chatWithAgentModel = z.object({
   agent_id: z.string(),
   new_message: z.string(),
   thread_id: z.string().nullable().optional(),
-  max_iterations: z.number(),
+  max_iterations: z.number().optional(),
   user_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
   agent_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
 });

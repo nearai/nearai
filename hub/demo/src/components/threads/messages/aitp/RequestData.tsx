@@ -6,9 +6,7 @@ import { useState } from 'react';
 import { type z } from 'zod';
 
 import { RequestDataForm } from './RequestDataForm';
-import { type requestDataSchema } from './schema';
-
-export type RequestDataResult = Record<string, string>;
+import { type requestDataSchema } from './schema/data';
 
 type Props = {
   contentId: string;
@@ -17,12 +15,6 @@ type Props = {
 
 export const RequestData = ({ content, contentId }: Props) => {
   const [formIsOpen, setFormIsOpen] = useState(false);
-
-  const onValidSubmit = (data: RequestDataResult) => {
-    // TODO
-    console.log('Request data form submit:', data);
-    setFormIsOpen(false);
-  };
 
   return (
     <Card animateIn>
@@ -50,7 +42,7 @@ export const RequestData = ({ content, contentId }: Props) => {
               content={content}
               contentId={contentId}
               onCancel={() => setFormIsOpen(false)}
-              onValidSubmit={onValidSubmit}
+              onValidSubmit={() => setFormIsOpen(false)}
             />
           </Dialog.Content>
         </Dialog.Root>

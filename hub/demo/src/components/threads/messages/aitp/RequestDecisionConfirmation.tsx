@@ -3,7 +3,7 @@
 import { Button, Card, Flex, Text } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
-import { type requestDecisionSchema } from './schema';
+import { type requestDecisionSchema } from './schema/decision';
 
 type Props = {
   contentId: string;
@@ -56,7 +56,7 @@ export const RequestDecisionConfirmation = ({ content }: Props) => {
       <Flex align="center" gap="s" wrap="wrap">
         {options.map((option, index) => (
           <Button
-            label={option.name}
+            label={option.name || option.id}
             variant={index === 0 ? 'affirmative' : 'secondary'}
             key={option.id + index}
             onClick={() => submitDecision(option)}

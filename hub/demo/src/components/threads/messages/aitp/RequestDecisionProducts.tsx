@@ -17,7 +17,7 @@ import { type z } from 'zod';
 
 import { getPrimaryDomainFromUrl } from '~/utils/url';
 
-import { type requestDecisionSchema } from './schema';
+import { type requestDecisionSchema } from './schema/decision';
 import s from './styles.module.scss';
 
 type Props = {
@@ -54,7 +54,7 @@ export const RequestDecisionProducts = ({ content, contentId }: Props) => {
             contentId={contentId}
             index={index}
             option={option}
-            key={option.name + index}
+            key={option.id + index}
           />
         ))}
       </div>
@@ -98,6 +98,8 @@ const Product = (props: Product) => {
     // TODO
     console.log(`Selected product with quantity: ${quantity}`, option);
   };
+
+  const displayName = option.short_variant_name || option.name || option.id;
 
   return (
     <Card background="sand-0" border="sand-0" className={s.productCard}>
@@ -146,7 +148,7 @@ const Product = (props: Product) => {
             <Dropdown.Root>
               <Dropdown.Trigger asChild>
                 <Button
-                  label={option.short_variant_name || option.name}
+                  label={displayName}
                   labelAlignment="left"
                   variant="secondary"
                   fill="outline"
@@ -160,7 +162,7 @@ const Product = (props: Product) => {
                 <Dropdown.Section>
                   {variants.map((variant, index) => (
                     <Dropdown.Item
-                      key={variant.name + index}
+                      key={variant.id + index}
                       onSelect={() => setSelectedVariantName(variant.name)}
                     >
                       <Flex align="center" gap="s">
@@ -172,7 +174,7 @@ const Product = (props: Product) => {
                             }}
                           />
                         )}
-                        {variant.short_variant_name || variant.name}
+                        {displayName}
                       </Flex>
                     </Dropdown.Item>
                   ))}

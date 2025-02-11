@@ -1,11 +1,11 @@
 import { type z } from 'zod';
 
+import { CURRENT_AGENT_PROTOCOL_SCHEMA } from '~/components/threads/messages/aitp/schema/base';
+import { type requestDataSchema } from '~/components/threads/messages/aitp/schema/data';
 import {
-  CURRENT_AGENT_PROTOCOL_SCHEMA,
   type quoteSchema,
-  type requestDataSchema,
   type requestDecisionSchema,
-} from '~/components/threads/messages/aitp/schema';
+} from '~/components/threads/messages/aitp/schema/decision';
 import { type threadMessageModel } from '~/lib/models';
 
 function generateMockedQuote(priceUsd: number): z.infer<typeof quoteSchema> {
@@ -29,6 +29,7 @@ export function generateMockedAITPMessages(threadId: string) {
   const requestDecisionCheckbox: z.infer<typeof requestDecisionSchema> = {
     $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
     request_decision: {
+      id: crypto.randomUUID(),
       title: 'Your Favorite Colors',
       description: `Which colors are your favorite? This will help refine your product search.`,
       type: 'checkbox',
@@ -61,6 +62,7 @@ export function generateMockedAITPMessages(threadId: string) {
   const requestDecisionRadio: z.infer<typeof requestDecisionSchema> = {
     $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
     request_decision: {
+      id: crypto.randomUUID(),
       type: 'radio',
       description: 'Select your favorite number:',
       options: [
@@ -83,6 +85,7 @@ export function generateMockedAITPMessages(threadId: string) {
   const requestDecisionProducts: z.infer<typeof requestDecisionSchema> = {
     $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
     request_decision: {
+      id: crypto.randomUUID(),
       title: 'Recommended Products',
       description: `Based on your selected factors, here are the best recommendations`,
       type: 'products',
@@ -153,6 +156,7 @@ export function generateMockedAITPMessages(threadId: string) {
   const requestDecisionConfirmation: z.infer<typeof requestDecisionSchema> = {
     $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
     request_decision: {
+      id: crypto.randomUUID(),
       title: 'Please confirm',
       description: `Would you like to eat all cookies?`,
       type: 'confirmation',
@@ -178,6 +182,7 @@ export function generateMockedAITPMessages(threadId: string) {
   > = {
     $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
     request_data: {
+      id: crypto.randomUUID(),
       title: 'Shipping Info (International + Favorites)',
       description: `Great! Let's start with your shipping info.`,
       fillButtonLabel: 'Fill out shipping info',
@@ -198,7 +203,7 @@ export function generateMockedAITPMessages(threadId: string) {
               required: true,
             },
             {
-              id: 'favorite_color',
+              id: 'favorite_number',
               label: 'Favorite Number',
               type: 'number',
               default_value: '7',
@@ -213,6 +218,7 @@ export function generateMockedAITPMessages(threadId: string) {
   const requestDataShippingAddressUs: z.infer<typeof requestDataSchema> = {
     $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
     request_data: {
+      id: crypto.randomUUID(),
       title: 'Shipping Info (US)',
       description: `Great! Let's start with your shipping info.`,
       fillButtonLabel: 'Fill out shipping info',

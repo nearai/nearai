@@ -6,9 +6,9 @@ import { protocolRouter } from './routers/protocol';
 import { createCallerFactory, createTRPCRouter } from './trpc';
 
 export const appRouter = createTRPCRouter({
+  aitp: protocolRouter,
   auth: authRouter,
   hub: hubRouter,
-  protocol: protocolRouter,
 });
 
 export type AppRouter = typeof appRouter;
