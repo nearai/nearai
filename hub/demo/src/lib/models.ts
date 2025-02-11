@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { stringToPotentialJson } from '~/utils/string';
+
 export const authorizationModel = z.object({
   account_id: z.string(),
   public_key: z.string(),
@@ -338,12 +340,30 @@ export const threadMessageMetadataModel = z.intersection(
 
 export const threadMessageContentModel = z.object({
   type: z.enum(['text']).or(z.string()),
-  text: z
-    .object({
-      annotations: z.unknown().array(),
-      value: z.string(),
-    })
-    .optional(),
+  text: z.preprocess(
+    (text) => {
+      if (!text || typeof text !== 'object') return;
+
+      if ('value' in text && typeof text.value === 'string') {
+        const json = stringToPotentialJson(text.value);
+        if (json) {
+          return {
+            ...text,
+            json,
+          };
+        }
+      }
+
+      return text;
+    },
+    z
+      .object({
+        annotations: z.unknown().array(),
+        json: z.record(z.string(), z.unknown()).optional(),
+        value: z.string(),
+      })
+      .optional(),
+  ),
 });
 
 export const threadMessageModel = z.object({

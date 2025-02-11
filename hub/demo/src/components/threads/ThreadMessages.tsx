@@ -6,7 +6,6 @@ import { type z } from 'zod';
 
 import { type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { stringToPotentialJson } from '~/utils/string';
 
 import { computeNavigationHeight } from '../Navigation';
 import { JsonMessage } from './messages/JsonMessage';
@@ -138,14 +137,10 @@ const ThreadMessageContent = memo(
 
     const text = typeof content.text === 'object' ? content.text : null;
 
-    const json = content.text?.value
-      ? stringToPotentialJson(content.text.value)
-      : null;
-
-    if (json) {
+    if (text?.json) {
       return (
         <ThreadMessageContentProvider value={providerValue}>
-          <JsonMessage json={json} />
+          <JsonMessage json={text.json} />
         </ThreadMessageContentProvider>
       );
     }

@@ -4,6 +4,8 @@ import { useRef } from 'react';
 
 import { Code } from '~/components/lib/Code';
 
+import { Data } from './aitp/Data';
+import { Decision } from './aitp/Decision';
 import { RequestData } from './aitp/RequestData';
 import { RequestDecision } from './aitp/RequestDecision';
 import { parseJsonWithAitpSchema } from './aitp/schema';
@@ -18,11 +20,17 @@ export const JsonMessage = ({ json }: Props) => {
   const hasWarned = useRef(false);
   const aitp = parseJsonWithAitpSchema(json);
 
-  if ('request_decision' in aitp) {
-    return <RequestDecision content={aitp.request_decision} />;
+  if ('data' in aitp) {
+    return <Data content={aitp.data} />;
+  } else if ('decision' in aitp) {
+    return <Decision content={aitp.decision} />;
   } else if ('request_data' in aitp) {
     return <RequestData content={aitp.request_data} />;
+  } else if ('request_decision' in aitp) {
+    return <RequestDecision content={aitp.request_decision} />;
   }
+
+  // TODO: Read only AITP components: Data, Decision
 
   if (!hasWarned.current) {
     console.warn(
