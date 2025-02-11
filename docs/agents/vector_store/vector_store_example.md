@@ -172,7 +172,7 @@ if CONFIG.api_url is None:
 
 # Initialize the NEAR AI client
 base_url = CONFIG.api_url + "/v1"
-client = openai.OpenAI(base_url=base_url, api_key=json.dumps(config_data["auth"]["signature"]))
+client = openai.OpenAI(base_url=base_url, api_key=json.dumps(config_data["auth"]))
 
 # Create a vector store
 vector_store = client.beta.vector_stores.create(name="ML_Tutor_Store")
