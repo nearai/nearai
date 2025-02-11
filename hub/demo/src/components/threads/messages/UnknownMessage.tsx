@@ -3,15 +3,15 @@
 import { Code } from '~/components/lib/Code';
 
 import { useThreadMessageContent } from '../ThreadMessageContentProvider';
-import { MessageCard } from './MessageCard';
+import { Message } from './Message';
 
 export const UnknownMessage = () => {
   const { content } = useThreadMessageContent();
   const contentAsJsonString = JSON.stringify(content, null, 2);
 
   return (
-    <MessageCard>
+    <Message>
       <Code bleed language="json" source={contentAsJsonString} />
-    </MessageCard>
+    </Message>
   );
 };

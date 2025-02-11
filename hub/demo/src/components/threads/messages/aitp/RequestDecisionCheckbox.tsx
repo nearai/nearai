@@ -16,7 +16,7 @@ import { useThreadsStore } from '~/stores/threads';
 import { stringToHtmlAttribute } from '~/utils/string';
 
 import { useThreadMessageContent } from '../../ThreadMessageContentProvider';
-import { AitpMessageCard } from './AitpMessageCard';
+import { Message } from './Message';
 import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './schema/base';
 import {
   type decisionSchema,
@@ -99,7 +99,7 @@ export const RequestDecisionCheckbox = ({ content }: Props) => {
   }
 
   return (
-    <AitpMessageCard>
+    <Message>
       <Form onSubmit={hookForm.handleSubmit(onSubmit)}>
         <Flex direction="column" gap="m" align="start">
           {(content.title || content.description) && (
@@ -147,6 +147,6 @@ export const RequestDecisionCheckbox = ({ content }: Props) => {
           <Button label="Submit" variant="affirmative" type="submit" />
         </Flex>
       </Form>
-    </AitpMessageCard>
+    </Message>
   );
 };

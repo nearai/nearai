@@ -6,13 +6,13 @@ import { type ReactNode } from 'react';
 import { useThreadMessageContent } from '../ThreadMessageContentProvider';
 
 type Props = {
+  actions?: ReactNode;
   children: ReactNode;
-  messageActions?: ReactNode;
 };
 
-export const MessageCard = ({ children, messageActions }: Props) => {
+export const Message = ({ children, actions }: Props) => {
   const { message } = useThreadMessageContent();
-  const showFooter = message.role !== 'user' || messageActions;
+  const showFooter = message.role !== 'user' || actions;
 
   return (
     <Card
@@ -35,9 +35,9 @@ export const MessageCard = ({ children, messageActions }: Props) => {
             </Text>
           )}
 
-          {messageActions && (
+          {actions && (
             <Flex align="center" gap="m" style={{ marginLeft: 'auto' }}>
-              {messageActions}
+              {actions}
             </Flex>
           )}
         </Flex>

@@ -13,13 +13,13 @@ import { Code } from '~/components/lib/Code';
 import { stringToPotentialJson } from '~/utils/string';
 
 import { useThreadMessageContent } from '../../ThreadMessageContentProvider';
-import { MessageCard } from '../MessageCard';
+import { Message as StandardMessage } from '../Message';
 
 type Props = {
   children: ReactNode;
 };
 
-export const AitpMessageCard = ({ children }: Props) => {
+export const Message = ({ children }: Props) => {
   const { content } = useThreadMessageContent();
   const [viewSource, setViewSource] = useState(false);
 
@@ -29,8 +29,8 @@ export const AitpMessageCard = ({ children }: Props) => {
   };
 
   return (
-    <MessageCard
-      messageActions={
+    <StandardMessage
+      actions={
         <Dropdown.Root>
           <Dropdown.Trigger asChild>
             <Button
@@ -71,6 +71,6 @@ export const AitpMessageCard = ({ children }: Props) => {
       ) : (
         children
       )}
-    </MessageCard>
+    </StandardMessage>
   );
 };

@@ -15,7 +15,7 @@ import { Markdown } from '~/components/lib/Markdown';
 import { type threadMessageContentModel } from '~/lib/models';
 
 import { useThreadMessageContent } from '../ThreadMessageContentProvider';
-import { MessageCard } from './MessageCard';
+import { Message } from './Message';
 
 type Props = {
   text: NonNullable<z.infer<typeof threadMessageContentModel>['text']>;
@@ -27,8 +27,8 @@ export const TextMessage = (props: Props) => {
   const text = props.text.value;
 
   return (
-    <MessageCard
-      messageActions={
+    <Message
+      actions={
         message.role !== 'user' ? (
           <Dropdown.Root>
             <Dropdown.Trigger asChild>
@@ -69,6 +69,6 @@ export const TextMessage = (props: Props) => {
       ) : (
         <Markdown content={text} />
       )}
-    </MessageCard>
+    </Message>
   );
 };

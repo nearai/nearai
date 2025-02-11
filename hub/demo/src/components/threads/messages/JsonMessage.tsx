@@ -8,7 +8,7 @@ import { RequestData } from './aitp/RequestData';
 import { RequestDecision } from './aitp/RequestDecision';
 import { parseJsonWithAitpSchema } from './aitp/schema';
 import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './aitp/schema/base';
-import { MessageCard } from './MessageCard';
+import { Message } from './Message';
 
 type Props = {
   json: Record<string, unknown>;
@@ -33,8 +33,8 @@ export const JsonMessage = ({ json }: Props) => {
   }
 
   return (
-    <MessageCard>
+    <Message>
       <Code bleed language="json" source={JSON.stringify(json, null, 2)} />
-    </MessageCard>
+    </Message>
   );
 };

@@ -5,7 +5,7 @@ import { PencilSimple } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';
 
-import { AitpMessageCard } from './AitpMessageCard';
+import { Message } from './Message';
 import { RequestDataForm } from './RequestDataForm';
 import { type requestDataSchema } from './schema/data';
 
@@ -17,7 +17,7 @@ export const RequestData = ({ content }: Props) => {
   const [formIsOpen, setFormIsOpen] = useState(false);
 
   return (
-    <AitpMessageCard>
+    <Message>
       <Flex direction="column" gap="m" align="start">
         <Flex direction="column" gap="s">
           {content.title && (
@@ -46,6 +46,6 @@ export const RequestData = ({ content }: Props) => {
           </Dialog.Content>
         </Dialog.Root>
       </Flex>
-    </AitpMessageCard>
+    </Message>
   );
 };

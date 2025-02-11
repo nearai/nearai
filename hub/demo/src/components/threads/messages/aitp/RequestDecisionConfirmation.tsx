@@ -5,7 +5,7 @@ import { type z } from 'zod';
 
 import { useThreadsStore } from '~/stores/threads';
 
-import { AitpMessageCard } from './AitpMessageCard';
+import { Message } from './Message';
 import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './schema/base';
 import {
   type decisionSchema,
@@ -62,7 +62,7 @@ export const RequestDecisionConfirmation = ({ content }: Props) => {
   };
 
   return (
-    <AitpMessageCard>
+    <Message>
       {(content.title || content.description) && (
         <Flex direction="column" gap="s">
           {content.title && (
@@ -86,6 +86,6 @@ export const RequestDecisionConfirmation = ({ content }: Props) => {
           />
         ))}
       </Flex>
-    </AitpMessageCard>
+    </Message>
   );
 };

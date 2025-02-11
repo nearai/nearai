@@ -18,7 +18,7 @@ import { type z } from 'zod';
 import { useThreadsStore } from '~/stores/threads';
 import { getPrimaryDomainFromUrl } from '~/utils/url';
 
-import { AitpMessageCard } from './AitpMessageCard';
+import { Message } from './Message';
 import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './schema/base';
 import {
   type decisionSchema,
@@ -39,7 +39,7 @@ export const RequestDecisionProducts = ({ content }: Props) => {
   }
 
   return (
-    <AitpMessageCard>
+    <Message>
       {(content.title || content.description) && (
         <Flex direction="column" gap="s">
           {content.title && (
@@ -63,7 +63,7 @@ export const RequestDecisionProducts = ({ content }: Props) => {
           />
         ))}
       </div>
-    </AitpMessageCard>
+    </Message>
   );
 };
 
