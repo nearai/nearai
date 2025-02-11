@@ -52,9 +52,9 @@ export const Decision = ({ content }: Props) => {
           <Flex align="center" gap="s" key={index}>
             <Text color="sand-12">
               {option.name || option.id}{' '}
-              {option.quantity ? (
+              {option.quantity && option.quantity > 1 ? (
                 <Text color="sand-12" as="span">
-                  ({option.quantity})
+                  (x{option.quantity})
                 </Text>
               ) : null}
             </Text>
