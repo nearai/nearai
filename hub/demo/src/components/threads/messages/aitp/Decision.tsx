@@ -6,6 +6,7 @@ import { type z } from 'zod';
 
 import { useQueryParams } from '~/hooks/url';
 import { useThreadsStore } from '~/stores/threads';
+import { stringToPotentialJson } from '~/utils/string';
 
 import { Message } from './Message';
 import {
@@ -77,7 +78,7 @@ function useRequestForDecision(content: Props['content']) {
   let request: z.infer<typeof requestDecisionSchema> | null = null;
   for (const c of allContents) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-    const json = c.text?.json as any;
+    const json = stringToPotentialJson(c.text?.value ?? '') as any;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (json?.request_decision?.id === content.request_decision_id) {
       request = json as z.infer<typeof requestDecisionSchema>;
