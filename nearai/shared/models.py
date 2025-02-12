@@ -32,6 +32,11 @@ class StaticFileChunkingStrategyParam(TypedDict, total=False):
     """
 
 
+class StaticFileChunkingStrategyObjectParam(TypedDict, total=False):
+    static: Required[StaticFileChunkingStrategyParam]
+    type: Required[Literal["static"]]
+
+
 class ChunkingStrategy(BaseModel):
     """Defines the chunking strategy for vector stores."""
 

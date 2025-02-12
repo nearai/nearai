@@ -8,8 +8,8 @@ pydantic >=2.8.2
 typing-extensions >= 4.7.1
 psutil >= 5.9.5
 boto3 >= 1.35.3
-litellm >= 1.41.0
-openai == 1.51.2
+litellm >= 1.60.5
+openai == 1.61.0
 py-near >= 1.1.50
 loguru == 0.7.2
 ed25519 == 1.5

@@ -7,7 +7,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from hub.api.v1.models import engine
 
 scheduler = BackgroundScheduler()
-logging.getLogger("apscheduler").setLevel(logging.DEBUG)
+logging.getLogger("apscheduler").setLevel(logging.WARNING)
 
 async_scheduler = AsyncIOScheduler()
 

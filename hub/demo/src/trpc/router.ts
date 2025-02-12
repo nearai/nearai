@@ -2,9 +2,11 @@ import { type inferRouterInputs, type inferRouterOutputs } from '@trpc/server';
 
 import { authRouter } from './routers/auth';
 import { hubRouter } from './routers/hub';
+import { protocolRouter } from './routers/protocol';
 import { createCallerFactory, createTRPCRouter } from './trpc';
 
 export const appRouter = createTRPCRouter({
+  aitp: protocolRouter,
   auth: authRouter,
   hub: hubRouter,
 });

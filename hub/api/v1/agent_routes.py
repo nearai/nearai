@@ -4,10 +4,12 @@ from typing import Any, Dict, Optional, Union
 
 import boto3
 import requests
+from botocore.config import Config
 from fastapi import APIRouter, Depends, HTTPException
 from nearai.agents.local_runner import LocalRunner
 from nearai.clients.lambda_client import LambdaWrapper
 from nearai.shared.auth_data import AuthData
+from nearai.shared.client_config import DEFAULT_TIMEOUT
 from pydantic import BaseModel, Field
 
 from hub.api.v1.auth import AuthToken, get_auth
@@ -93,7 +95,8 @@ def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: Aut
 
 
 def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: AuthToken, params):
-    wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
+    config = Config(read_timeout=DEFAULT_TIMEOUT, connect_timeout=DEFAULT_TIMEOUT, retries=None)
+    wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2", config=config), thread_id, run_id)
     auth_data = auth.model_dump()
 
     if auth_data["nonce"]:

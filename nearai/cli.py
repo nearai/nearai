@@ -520,6 +520,8 @@ class AgentCli:
             env_vars: Optional environment variables to pass to the agent
 
         """
+        assert_user_auth()
+
         if agent is None:
             # List available agents in the registry folder
             registry_path = Path(get_registry_folder())
@@ -636,6 +638,8 @@ class AgentCli:
         env_vars: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
         """Runs agent non-interactively with a single task."""
+        assert_user_auth()
+
         hub_client = get_hub_client()
         if thread_id:
             thread = hub_client.beta.threads.retrieve(thread_id)
@@ -1183,6 +1187,13 @@ def check_update():
 
     except Exception as _:
         pass
+
+
+def assert_user_auth() -> None:
+    """Ensure the user is authenticated."""
+    if CONFIG.auth is None:
+        print("Please login with `nearai login` first")
+        exit(1)
 
 
 def main() -> None:

@@ -45,7 +45,7 @@ from nearai.shared.models import (
     ExpiresAfter,
     GitHubSource,
     GitLabSource,
-    StaticFileChunkingStrategyParam,
+    StaticFileChunkingStrategyObjectParam,
 )
 from nearai.shared.near.sign import (
     CompletionSignaturePayload,
@@ -126,9 +126,11 @@ class Environment(object):
         self._approvals = approvals if approvals else default_approvals
         self._thread_id = thread_id
         self._run_id = run_id
-        self._debug_mode = True if self.env_vars.get("DEBUG") else False
-
-        self.langchain_chat_model = client.create_langchain_chat_model(agents[0].model_provider, agents[0].model)
+        self._debug_mode: bool = any(
+            str(value).lower() in ("true", "1", "yes", "on")
+            for key, value in self.env_vars.items()
+            if key.lower() == "debug"
+        )
 
         if fastnear_api_key:
             default_mainnet_rpc = f"https://rpc.mainnet.fastnear.com?apiKey={fastnear_api_key}"
@@ -370,7 +372,7 @@ class Environment(object):
             file_ids: list,
             expires_after: Union[ExpiresAfter, NotGiven] = NOT_GIVEN,
             chunking_strategy: Union[
-                AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam, NotGiven
+                AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, NotGiven
             ] = NOT_GIVEN,
             metadata: Optional[Dict[str, str]] = None,
         ) -> VectorStore:
@@ -834,8 +836,12 @@ class Environment(object):
         messages = [
             m
             for m in messages
-            if not (m.metadata and m.metadata["message_type"] in ["system:log", "agent:log"])  # type: ignore
+            if not (
+                m.metadata
+                and any(m.metadata.get("message_type", "").startswith(prefix) for prefix in ["system:", "agent:"])
+            )
         ]
+
         legacy_messages = [
             {
                 "id": m.id,
@@ -1126,14 +1132,19 @@ class Environment(object):
                     function_response = self._tools.call_tool(function_name, **function_args if function_args else {})
 
                     if function_response:
-                        function_response_json = json.dumps(function_response) if function_response else ""
-                        if add_responses_to_messages:
-                            self.add_message(
-                                tool_role_name,
-                                function_response_json,
-                                tool_call_id=tool_call.id,
-                                name=function_name,
-                            )
+                        try:
+                            function_response_json = json.dumps(function_response) if function_response else ""
+                            if add_responses_to_messages:
+                                self.add_message(
+                                    tool_role_name,
+                                    function_response_json,
+                                    tool_call_id=tool_call.id,
+                                    name=function_name,
+                                )
+                        except Exception as e:
+                            # some tool responses may not be serializable
+                            error_message = f"Unable to add tool output as a message {function_name}: {e}"
+                            self.add_system_log(error_message, level=logging.INFO)
                 except Exception as e:
                     error_message = f"Error calling tool {function_name}: {e}"
                     self.add_system_log(error_message, level=logging.ERROR)
@@ -1397,7 +1408,19 @@ class Environment(object):
                     logging.INFO,
                 )
             try:
-                self.get_primary_agent().run(self, task=new_message)
+                error_message, traceback_message = self.get_primary_agent().run(self, task=new_message)
+                if self._debug_mode and (error_message or traceback_message):
+                    if self._debug_mode and (error_message or traceback_message):
+                        message_parts = []
+
+                        if error_message:
+                            message_parts.append(f"Error: \n ```\n{error_message}\n```")
+
+                        if traceback_message:
+                            message_parts.append(f"Error Traceback: \n ```\n{traceback_message}\n```")
+
+                        self.add_reply("\n\n".join(message_parts), message_type="system:debug")
+
             except Exception as e:
                 self.add_system_log(f"Environment run failed: {e}", logging.ERROR)
                 self.mark_failed()

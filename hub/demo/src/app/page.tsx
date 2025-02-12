@@ -22,7 +22,6 @@ import {
   Check,
   CloudCheck,
   CodeBlock,
-  Database,
   DownloadSimple,
   GitFork,
   HandCoins,
@@ -30,6 +29,7 @@ import {
   Lightning,
   LockKey,
   MagnifyingGlass,
+  PaperPlaneTilt,
   TwitterLogo,
   UserCircle,
   XLogo,
@@ -371,28 +371,29 @@ export default function HomePage() {
                 icon: <BookOpenText weight="duotone" />,
                 title: 'Documentation',
                 description: 'Get started with our infrastructure',
-                link: 'Learn More',
+                label: 'Learn More',
                 href: 'https://docs.near.ai',
               },
               {
                 icon: <ChartBar weight="duotone" />,
                 title: 'Evaluations',
                 description: 'Understand our evaluation metrics',
-                link: 'Explore',
+                label: 'Explore',
                 href: '/evaluations',
               },
               {
-                icon: <Database weight="duotone" />,
-                title: 'Datasets',
-                description: 'Contribute to training and evaluation data',
-                link: 'Browse',
-                href: '/datasets',
+                icon: <PaperPlaneTilt weight="duotone" />,
+                title: 'Contact Us',
+                description: 'Let us know how we can support your project',
+                label: 'Get In Touch',
+                href: 'https://airtable.com/appc0ZVhbKj8hMLvH/pag4dQKP3KF3qrTFo/form',
+                target: '_blank',
               },
               {
                 icon: <ChatCircle weight="duotone" />,
                 title: 'Community',
                 description: 'Connect with other researchers',
-                link: 'Join',
+                label: 'Join',
                 href: 'https://t.me/nearaialpha',
                 target: '_blank',
               },
@@ -404,7 +405,7 @@ export default function HomePage() {
                 </Text>
                 <Text color="sand-11">{resource.description}</Text>
                 <Button
-                  label={resource.link}
+                  label={resource.label}
                   variant="secondary"
                   fill="outline"
                   iconRight={
