@@ -1277,7 +1277,7 @@ class Environment(object):
         messages: List[ChatCompletionMessageParam],
         model: str = "",
         **kwargs: Any,
-    ) -> SimpleNamespace():
+    ) -> SimpleNamespace:
         """Returns a completion for the given messages using the given model and runs tools."""
         raw_response = self._run_inference_completions(messages, model, stream=False, **kwargs)
 
