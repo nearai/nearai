@@ -1,9 +1,12 @@
+import hashlib
 import logging
+import subprocess
 from typing import Optional
 
 import requests
+from dcap_qvl import verify_quote  # type: ignore
 from nearai.shared.auth_data import AuthData
-from runners.nearai_cvm.app.main import AssignRequest, IsAssignedResp, RunRequest
+from runners.nearai_cvm.app.main import AssignRequest, IsAssignedResp, QuoteResponse, RunRequest
 
 logger = logging.getLogger(__name__)
 
@@ -46,3 +49,38 @@ class CvmClient:
 
         response.raise_for_status()
         return IsAssignedResp(**response.json())
+
+    def attest(self):
+        """Attests the CVM."""
+        response = requests.get(f"{self.url}/quote", headers=self.headers)
+        if response.status_code != 200:
+            raise Exception(f"Request failed with status code {response.status_code}: {response.text}")
+
+        quote = QuoteResponse(**response.json())
+
+        cmd = f"""echo | openssl s_client -connect {self.url} 2>/dev/null |\
+             openssl x509 -pubkey -noout -outform DER | openssl dgst -sha256"""
+        ssl_pub_key = subprocess.check_output(cmd, shell=True).decode("utf-8").split("= ")[1].strip()
+        report_data = generate_sha512_hash(ssl_pub_key)
+
+        try:
+            verified = verify_quote(quote.quote.encode("utf-8"))
+            if not verified:
+                raise Exception("Quote verification failed")
+            if verified["report"]["TD10"]["report_data"] != report_data:
+                raise Exception("Report data mismatch")
+        except Exception as e:
+            logger.error(f"Quote verification failed: {e}")
+            raise e
+
+        return quote
+
+
+def generate_sha512_hash(report_data: str, prefix: str = "app-data"):
+    # Ensure report_data is properly encoded
+    report_data_bytes = report_data.encode("utf8")
+
+    # Compute SHA-512 hash
+    sha512_hash = hashlib.sha512(f"{prefix}:".encode() + report_data_bytes).hexdigest()
+
+    return sha512_hash

@@ -1,5 +1,6 @@
 import base64
 import hashlib
+from typing import Optional
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -38,16 +39,19 @@ class Quote:
         self.public_key = self.public_key_bytes.hex()
         self.signing_address = "0x" + hashlib.sha3_256(self.public_key_bytes).digest()[-20:].hex()
 
-    def get_quote(self) -> str:
-        """Get a quote for a public key."""
+    def get_quote(self, message: Optional[str] = None) -> str:
+        """Get a quote with a message."""
         # Initialize the client
         client = TappdClient()
 
+        if message is None:
+            message = self.signing_address
+
         # Get quote for a message
-        result = client.tdx_quote(self.public_key)
+        result = client.tdx_quote(message)
         quote = bytes.fromhex(result.quote)
         self.intel_quote = base64.b64encode(quote).decode("utf-8")
-        return self.intel_quote
+        return result.quote
 
     def sign(self, content: str):
         """Sign content using ed25519."""

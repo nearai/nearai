@@ -13,7 +13,7 @@ docker buildx build --no-cache --load --platform linux/amd64 -t nearai_runner:la
 
 ```bash
 export OWNER=plgnai
-docker buildx build --no-cache --load --push --platform linux/amd64 -t ${OWNER}/nearai_runner:latest -f .docker/Dockerfile.cvm_runner .
+docker buildx build --no-cache --load --push --platform linux/amd64 -t ${OWNER}/nearai_cvm_runner:latest -f .docker/Dockerfile.cvm_runner .
 ```
 
 ## Run

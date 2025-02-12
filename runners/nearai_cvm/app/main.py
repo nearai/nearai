@@ -44,13 +44,13 @@ class AppState:
     assignment: AssignRequest | None
     agent: Agent | None
     auth: AuthData | None
-    quote: Quote
+    quote: Quote | None
 
     def __init__(self) -> None:  # noqa: D107
         self.agent = None
         self.assignment = None
         self.auth = None
-        self.quote = Quote()
+        self.quote = None
 
 
 class RunRequest(BaseModel):
@@ -202,6 +202,57 @@ def is_assigned(app_state: AppState = Depends(get_app_state)):
     return IsAssignedResp(is_assigned=is_assigned)
 
 
-@app.get("/quote")
+class QuoteResponse(BaseModel):
+    quote: str
+
+
+@app.get("/quote", response_model=QuoteResponse)
 def get_quote(app_state: AppState = Depends(get_app_state)):
-    return app_state.quote.get_quote()
+    if app_state.quote is None:
+        app_state.quote = Quote()
+    cmd = """echo | openssl s_client -connect localhost:443 2>/dev/null |\
+     openssl x509 -pubkey -noout -outform DER | openssl dgst -sha256"""
+    ssl_pub_key = subprocess.check_output(cmd, shell=True).decode("utf-8").split("= ")[1].strip()
+    print("ssl_pub_key", ssl_pub_key)
+    quote = app_state.quote.get_quote(ssl_pub_key)
+    return QuoteResponse(quote=quote)
+
+
+if __name__ == "__main__":
+    import os
+    import subprocess
+
+    import uvicorn
+
+    certs_dir = "/app/certs"
+    key_path = os.path.join(certs_dir, "key.pem")
+    cert_path = os.path.join(certs_dir, "cert.pem")
+
+    # Ensure the directory exists
+    os.makedirs(certs_dir, exist_ok=True)
+
+    # Generate SSL certificate using OpenSSL
+    openssl_cmd = [
+        "openssl",
+        "req",
+        "-x509",
+        "-newkey",
+        "rsa:4096",
+        "-keyout",
+        key_path,
+        "-out",
+        cert_path,
+        "-days",
+        "365",
+        "-nodes",
+        "-subj",
+        "/CN=nearai-cvm-runner",
+    ]
+    try:
+        subprocess.run(openssl_cmd, check=True)
+        logger.info(f"SSL certificate generated at: {cert_path}")
+        logger.info(f"SSL key generated at: {key_path}")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error generating SSL certificate: {e}")
+
+    uvicorn.run(app, host="0.0.0.0", port=443, ssl_keyfile=key_path, ssl_certfile=cert_path)
