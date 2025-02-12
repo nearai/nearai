@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  nearai-runner:
+    image: nearai-runner:test
+    platform: linux/amd64
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+    ports:
+      - "9009-9011:8080"
+    environment:
+      TZ: Europe/Kiev
+      API_URL: http://host.docker.internal:8081
+    volumes:
+      - ~/.nearai/registry:/root/.nearai/registry

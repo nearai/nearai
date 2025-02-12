@@ -42,6 +42,65 @@ threads_router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
+
+class FilterThreadRequestsLogs(logging.Filter):
+    """Custom logging filter to suppress spammy healthcheck/status requests.
+
+    Attributes
+    ----------
+        target_paths: Tuple of path substrings to match for filtering
+        target_status: HTTP status code to match for filtering (default: 200)
+
+    """
+
+    def filter(self, record: Any) -> bool:
+        """Determine if the specified log record should be logged.
+
+        Args:
+        ----
+            record: LogRecord object containing all log information
+
+        Returns:
+        -------
+            bool: False if record matches spam criteria, True otherwise
+
+        Notes:
+        -----
+            Processes Uvicorn access logs in format:
+            `127.0.0.1:PORT - "METHOD PATH HTTP/VERSION" STATUS`
+
+        """
+        try:
+            log_message = record.getMessage()
+
+            # Early exit for non-request logs
+            if '"' not in log_message:
+                return True
+
+            # Parse log components
+            parts = log_message.split('"')
+            request_section = parts[1].strip()  # "GET /path HTTP/1.1"
+            status_code = int(parts[-1].split()[-1])  # 200
+
+            # Extract request components
+            method, path, _ = request_section.split(" ", 2)
+
+            path_condition = "/v1/threads/thread_" in path
+
+            # Filter condition matching
+            return not (path_condition and status_code == 200)
+
+        except Exception as parsing_error:
+            print(f"Log parsing failed: {parsing_error}")
+            return True
+
+
+# Configure Uvicorn access logs filtering
+if getenv("HIDE_THREADS_REQUEST_LOGS", False):
+    # Uvicorn access logger instance with custom filtering applied
+    logging.getLogger("uvicorn.access").addFilter(FilterThreadRequestsLogs())
+
+
 SUMMARY_PROMPT = """You are an expert at summarizing conversations in a maximum of 5 words.
 
 **Instructions:**

@@ -383,3 +383,11 @@ class InferenceClient(object):
             path=f"{self._config.base_url}/agent_data/{key}",
             cast_to=Dict[str, str],
         )
+
+    def filter_agents(self, owner_id: Optional[str] = None, with_capabilities: Optional[bool] = False):
+        """Filter agents."""
+        return self.client.post(
+            path=f"{self._config.base_url}/filter_agents",
+            body={"owner_id": owner_id, "with_capabilities": with_capabilities},
+            cast_to=List[Any],
+        )

@@ -1,6 +1,8 @@
 import json
+import logging
+from collections import deque
 from os import getenv
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import boto3
 import requests
@@ -11,6 +13,7 @@ from nearai.clients.lambda_client import LambdaWrapper
 from nearai.shared.auth_data import AuthData
 from nearai.shared.client_config import DEFAULT_TIMEOUT
 from pydantic import BaseModel, Field
+from sqlalchemy import inspect, text
 
 from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.entry_location import EntryLocation
@@ -69,12 +72,36 @@ class CreateThreadAndRunRequest(BaseModel):
     )
 
 
+available_local_runners_ports = getenv("AVAILABLE_LOCAL_RUNNER_PORTS", "")
+available_local_runners = deque(
+    [int(port) for port in available_local_runners_ports.split(",") if port.strip().isdigit()]
+)  # Queue of available ports
+agent_runners_ports: dict[str, int] = {}  # Mapping of agents to their assigned ports
+
+
 def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: AuthToken, params):
     auth_data = auth.model_dump()
 
     if auth_data["nonce"]:
         if isinstance(auth_data["nonce"], bytes):
             auth_data["nonce"] = auth_data["nonce"].decode("utf-8")
+
+    logging.info("!!! invoke_agent_via_url")
+    if "%PORT%" in custom_runner_url:
+        # Assign a port to the agent if not already assigned
+        if agents in agent_runners_ports:
+            port = agent_runners_ports[agents]  # Reuse existing port
+        elif available_local_runners:
+            port = available_local_runners.popleft()  # Assign a free port
+            agent_runners_ports[agents] = port
+        else:
+            # If no ports are available, reassign the oldest used agent's port
+            oldest_agent = next(iter(agent_runners_ports))
+            logging.warning(f"No available local runners ports! Reassigning port from agent {oldest_agent}")
+            port = agent_runners_ports[oldest_agent]
+            agent_runners_ports[agents] = port  # Update mapping
+
+        custom_runner_url = custom_runner_url.replace("%PORT%", str(port))
 
     payload = {
         "agents": agents,
@@ -259,3 +286,37 @@ def get_agent_entry(agent, data_source: str) -> Optional[RegistryEntry]:
         )
     else:
         raise HTTPException(status_code=404, detail=f"Illegal data_source '{data_source}'.")
+
+
+class FilterAgentsRequest(BaseModel):
+    owner_id: Optional[str]
+    with_capabilities: Optional[bool] = False
+
+
+@run_agent_router.post("/filter_agents", response_model=List[RegistryEntry])
+def filter_agents(request_data: FilterAgentsRequest, auth: AuthToken = Depends(get_auth)) -> List[RegistryEntry]:
+    """Filter agents based on various parameters."""
+    with get_session() as session:
+        # Start building the base query
+        query = session.query(RegistryEntry)
+
+        # Filter by owner (if specified)
+        if request_data.owner_id is not None:
+            # Get the column for the namespace. This helps mypy to understand the type of the column
+            # inspect uses cached data, so it's not a performance issue, but this can be optimized
+            # by storing the mapper in a variable and reusing it
+            mapper = inspect(RegistryEntry)
+            namespace_column = mapper.columns["namespace"]
+            query = query.filter(namespace_column == request_data.owner_id)
+
+        # Filter by capabilities (if flag is set)
+        if request_data.with_capabilities:
+            query = query.filter(text("JSON_EXTRACT_JSON(details, 'capabilities') IS NOT NULL"))
+
+        # Print the generated SQL query for debugging
+        print(query.statement.compile(compile_kwargs={"literal_binds": True}))
+
+        # Execute query and return results
+        filtered_agents = query.all()
+
+        return filtered_agents

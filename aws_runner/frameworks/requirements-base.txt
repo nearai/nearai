@@ -14,3 +14,4 @@ py-near >= 1.1.50
 loguru == 0.7.2
 ed25519 == 1.5
 tweepy >= 4.14.0
+tenacity == 9.0.0

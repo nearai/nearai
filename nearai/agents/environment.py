@@ -13,6 +13,7 @@ import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
 
 import psutil
@@ -366,6 +367,11 @@ class Environment(object):
             return client.add_file_to_vector_store(vector_store_id, file_id)
 
         self.add_file_to_vector_store = add_file_to_vector_store
+
+        def filter_agents(owner_id: Optional[str] = None, with_capabilities: Optional[bool] = False):
+            return client.filter_agents(owner_id, with_capabilities)
+
+        self.filter_agents = filter_agents
 
         def create_vector_store(
             name: str,
@@ -826,7 +832,7 @@ class Environment(object):
     def list_messages(
         self,
         thread_id: Optional[str] = None,
-        limit: Union[int, NotGiven] = NOT_GIVEN,  # api defaults to 20
+        limit: Union[int, NotGiven] = 200,  # api defaults to 20
         order: Literal["asc", "desc"] = "asc",
     ):
         """Backwards compatibility for chat_completions messages."""
@@ -1162,9 +1168,9 @@ class Environment(object):
     ) -> Tuple[Optional[str], Optional[List[ChatCompletionMessageToolCall]]]:
         if hasattr(response_message, "tool_calls") and response_message.tool_calls:
             return response_message.content, response_message.tool_calls
-        content = response_message.content
-        if content is None:
+        if "content" not in response_message or response_message.content is None:
             return None, None
+        content = response_message.content
         llama_matches = LLAMA_TOOL_FORMAT_PATTERN.findall(content)
         if llama_matches:
             text = ""
@@ -1265,6 +1271,28 @@ class Environment(object):
             "signature": signature_data.get("signature", None),
             "public_key": signature_data.get("public_key", None),
         }
+
+    def completion_and_get_tools_calls(
+        self,
+        messages: List[ChatCompletionMessageParam],
+        model: str = "",
+        **kwargs: Any,
+    ) -> SimpleNamespace():
+        """Returns a completion for the given messages using the given model and runs tools."""
+        raw_response = self._run_inference_completions(messages, model, stream=False, **kwargs)
+
+        assert isinstance(raw_response, ModelResponse), "Expected ModelResponse"
+        response: ModelResponse = raw_response
+        assert all(map(lambda choice: isinstance(choice, Choices), response.choices)), "Expected Choices"
+        choices: List[Choices] = response.choices  # type: ignore
+
+        (message_without_tool_call, tool_calls) = self._parse_tool_call(choices[0].message)
+
+        if message_without_tool_call is None:
+            response_message = choices[0].message.content
+            message_without_tool_call = response_message
+
+        return SimpleNamespace(message=message_without_tool_call, tool_calls=tool_calls)
 
     def completion_and_run_tools(
         self,
