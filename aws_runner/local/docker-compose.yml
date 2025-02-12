@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   nearai-runner:
     image: nearai-runner:test
