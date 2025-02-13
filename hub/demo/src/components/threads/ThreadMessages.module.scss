@@ -26,4 +26,10 @@
   gap: var(--gap-l);
   border-left: 1px solid var(--sand-6);
   padding-left: var(--gap-l);
+  transition: border-left-color var(--transition-speed);
+
+  &:hover,
+  &:focus-within {
+    border-left-color: var(--sand-12);
+  }
 }
