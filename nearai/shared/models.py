@@ -1,7 +1,7 @@
 from typing import Dict, List, Literal, Optional, Union
 
 from openai.types.beta.auto_file_chunking_strategy_param import AutoFileChunkingStrategyParam
-from openai.types.beta.static_file_chunking_strategy_param import StaticFileChunkingStrategyParam
+from openai.types.beta.static_file_chunking_strategy_object_param import StaticFileChunkingStrategyObjectParam
 from pydantic import BaseModel
 from typing_extensions import Required, TypedDict
 
@@ -42,7 +42,7 @@ class ExpiresAfter(TypedDict, total=False):
 class CreateVectorStoreRequest(BaseModel):
     """Request model for creating a new vector store."""
 
-    chunking_strategy: Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam, None] = None
+    chunking_strategy: Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, None] = None
     """The chunking strategy to use for the vector store."""
     expires_after: Optional[ExpiresAfter] = None
     """The expiration time for the vector store."""
@@ -76,7 +76,7 @@ class CreateVectorStoreFromSourceRequest(BaseModel):
     name: str
     source: Union[GitHubSource, GitLabSource]
     source_auth: Optional[str] = None
-    chunking_strategy: Optional[Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam]] = None
+    chunking_strategy: Optional[Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam]] = None
     expires_after: Optional[ExpiresAfter] = None
     metadata: Optional[Dict[str, str]] = None
 

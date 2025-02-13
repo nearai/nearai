@@ -12,7 +12,7 @@ from litellm import completion as litellm_completion
 from litellm.types.completion import ChatCompletionMessageParam
 from openai import NOT_GIVEN, NotGiven
 from openai.types.beta.auto_file_chunking_strategy_param import AutoFileChunkingStrategyParam
-from openai.types.beta.static_file_chunking_strategy_param import StaticFileChunkingStrategyParam
+from openai.types.beta.static_file_chunking_strategy_object_param import StaticFileChunkingStrategyObjectParam
 from openai.types.beta.thread import Thread
 from openai.types.beta.vector_store import VectorStore
 from openai.types.beta.vector_stores import VectorStoreFile
@@ -187,7 +187,7 @@ class InferenceClient(object):
         name: str,
         source: Union[GitHubSource, GitLabSource],
         source_auth: Optional[str] = None,
-        chunking_strategy: Optional[Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam]] = None,
+        chunking_strategy: Optional[Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam]] = None,
         expires_after: Optional[ExpiresAfter] = None,
         metadata: Optional[Dict[str, str]] = None,
     ) -> VectorStore:
@@ -235,7 +235,9 @@ class InferenceClient(object):
         name: str,
         file_ids: List[str],
         expires_after: Union[ExpiresAfter, NotGiven] = NOT_GIVEN,
-        chunking_strategy: Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam, NotGiven] = NOT_GIVEN,
+        chunking_strategy: Union[
+            AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, NotGiven
+        ] = NOT_GIVEN,
         metadata: Optional[Dict[str, str]] = None,
     ) -> VectorStore:
         """Creates Vector Store.

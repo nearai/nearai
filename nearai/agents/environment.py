@@ -27,7 +27,7 @@ from litellm.types.utils import (
 from litellm.utils import CustomStreamWrapper
 from openai import NOT_GIVEN, NotGiven, OpenAI
 from openai.types.beta.auto_file_chunking_strategy_param import AutoFileChunkingStrategyParam
-from openai.types.beta.static_file_chunking_strategy_param import StaticFileChunkingStrategyParam
+from openai.types.beta.static_file_chunking_strategy_object_param import StaticFileChunkingStrategyObjectParam
 from openai.types.beta.threads.message import Message
 from openai.types.beta.threads.message_create_params import Attachment
 from openai.types.beta.threads.run import Run
@@ -340,7 +340,9 @@ class Environment(object):
             name: str,
             source: Union[GitHubSource, GitLabSource],
             source_auth: Optional[str] = None,
-            chunking_strategy: Optional[Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam]] = None,
+            chunking_strategy: Optional[
+                Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam]
+            ] = None,
             expires_after: Optional[ExpiresAfter] = None,
             metadata: Optional[Dict[str, str]] = None,
         ) -> VectorStore:
@@ -382,7 +384,7 @@ class Environment(object):
             file_ids: list,
             expires_after: Union[ExpiresAfter, NotGiven] = NOT_GIVEN,
             chunking_strategy: Union[
-                AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam, NotGiven
+                AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, NotGiven
             ] = NOT_GIVEN,
             metadata: Optional[Dict[str, str]] = None,
         ) -> VectorStore:
@@ -474,15 +476,14 @@ class Environment(object):
             """Runs a child agent on the thread."""
             child_thread_id = self._thread_id
 
-            match thread_mode:
-                case ThreadMode.SAME:
-                    pass
-                case ThreadMode.FORK:
-                    child_thread_id = client.threads_fork(self._thread_id).id
-                    self.add_system_log(f"Forked thread {child_thread_id}", logging.INFO)
-                case ThreadMode.CHILD:
-                    child_thread_id = client.create_subthread(self._thread_id).id
-                    self.add_system_log(f"Created subthread {child_thread_id}", logging.INFO)
+            if thread_mode == ThreadMode.SAME:
+                pass
+            elif thread_mode == ThreadMode.FORK:
+                child_thread_id = client.threads_fork(self._thread_id).id
+                self.add_system_log(f"Forked thread {child_thread_id}", logging.INFO)
+            elif thread_mode == ThreadMode.CHILD:
+                child_thread_id = client.create_subthread(self._thread_id).id
+                self.add_system_log(f"Created subthread {child_thread_id}", logging.INFO)
 
             if query:
                 client.threads_messages_create(thread_id=child_thread_id, content=query, role="user")
