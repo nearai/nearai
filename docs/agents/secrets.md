@@ -46,6 +46,6 @@ In the end, all these data end up in env_vars as a single key-value object. If m
 
 ### Current endpoints 
 
-- api-url/v1/hub_secrets (GET)
+- api-url/v1/get_user_secrets (GET)
 - api-url/v1/create_hub_secret (POST)
 - api-url/v1/remove_hub_secret (POST)

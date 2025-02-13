@@ -6,10 +6,11 @@ import pwd
 import shutil
 import sys
 import tempfile
+import traceback
 import uuid
 from pathlib import Path
 from types import CodeType
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from nearai.shared.client_config import ClientConfig
 
@@ -120,7 +121,8 @@ class Agent(object):
         if not self.version or not self.name:
             raise ValueError("Both 'version' and 'name' must be non-empty in metadata.")
 
-    def run(self, env: Any, task: Optional[str] = None) -> None:  # noqa: D102
+    def run(self, env: Any, task: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+        """Run the agent code. Returns error message and traceback message."""
         # combine agent.env_vars and env.env_vars
         total_env_vars = {**self.env_vars, **env.env_vars}
 
@@ -165,19 +167,30 @@ class Agent(object):
             "__file__": self.agent_filename,
         }
 
-        def run_agent_code(agent_namespace):
-            # switch to user env.agent_runner_user
-            if env.agent_runner_user:
-                user_info = pwd.getpwnam(env.agent_runner_user)
-                os.setgid(user_info.pw_gid)
-                os.setuid(user_info.pw_uid)
+        def run_agent_code(agent_namespace) -> Tuple[Optional[str], Optional[str]]:
+            try:
+                # switch to user env.agent_runner_user
+                if env.agent_runner_user:
+                    user_info = pwd.getpwnam(env.agent_runner_user)
+                    os.setgid(user_info.pw_gid)
+                    os.setuid(user_info.pw_uid)
 
-            # Run the code
-            # NOTE: runpy.run_path does not work in a multithreaded environment when running benchmark.
-            #       The performance of runpy.run_path may also change depending on a system, e.g. it may
-            #       work on Linux but not work on Mac.
-            #       `compile` and `exec` have been tested to work properly in a multithreaded environment.
-            exec(self.code, agent_namespace)
+                # Run the code
+                # NOTE: runpy.run_path does not work in a multithreaded environment when running benchmark.
+                #       The performance of runpy.run_path may also change depending on a system, e.g. it may
+                #       work on Linux but not work on Mac.
+                #       `compile` and `exec` have been tested to work properly in a multithreaded environment.
+                if self.code:
+                    exec(self.code, agent_namespace)
+
+                # If no errors occur, return None
+                return None, None
+
+            except Exception as e:
+                # Return error message and full traceback as strings
+                return str(e), traceback.format_exc()
+
+        error_message, traceback_message = None, None
 
         try:
             if self.change_to_temp_dir:
@@ -191,12 +204,14 @@ class Agent(object):
                 process.start()
                 process.join()
             else:
-                run_agent_code(namespace)
+                error_message, traceback_message = run_agent_code(namespace)
         finally:
             if os.path.exists(self.temp_dir):
                 sys.path.remove(self.temp_dir)
             if self.change_to_temp_dir:
                 os.chdir(self.original_cwd)
+
+        return error_message, traceback_message
 
     @staticmethod
     def load_agents(agents: str, config: ClientConfig, local: bool = False):
