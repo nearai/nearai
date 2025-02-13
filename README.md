@@ -4,17 +4,19 @@
 [![Build Status](https://github.com/nearai/nearai/workflows/CI/badge.svg)](https://github.com/nearai/nearai/actions)
 [![Release](https://img.shields.io/github/v/release/nearai/nearai)](https://github.com/nearai/nearai/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://docs.near.ai/contributing)
-[![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/nearaialpha)
+[![Telegram](https://img.shields.io/badge/Dev_Support-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/nearaialpha)
 
 NEAR AI is a distributed system for building, deploying, and managing AI agents with the goal of making open source and user-owned AGI.
 
 ## NEAR AI Components
 
-- [**NEAR AI Hub**](./hub/README.md): Central HUB for model serving, agent registry, and session management
+- [**NEAR AI Hub**](./hub/README.md): Central HUB for model serving, agent registry, and running agents
+- [**TEE Runner**](https://github.com/nearai/private-ml-sdk): TEE-based execution environment for NEAR AI agents
 - [**AWS Runner**](./aws_runner/README.md): Lambda-based execution environment for NEAR AI agents
 - **Agent System**: Build and run AI agents with built-in tools and environment isolation
 - **Worker System**: Distributed job execution and scheduling
 - **Model Fine-tuning**: Support for fine-tuning LLMs
+
 
 ## Directory Structure
 
