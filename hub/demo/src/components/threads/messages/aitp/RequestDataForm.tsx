@@ -14,8 +14,8 @@ import {
   RequestDataFormSection,
   requestDataInputNameForField,
 } from './RequestDataFormSection';
-import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './schema/base';
 import {
+  CURRENT_AITP_DATA_SCHEMA_URL,
   type dataSchema,
   requestDataFormSchema,
   type requestDataSchema,
@@ -44,7 +44,7 @@ export const RequestDataForm = ({
     if (!addMessage) return;
 
     const result: z.infer<typeof dataSchema> = {
-      $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
+      $schema: CURRENT_AITP_DATA_SCHEMA_URL,
       data: {
         request_data_id: content.id,
         fields: [],
@@ -140,7 +140,7 @@ function useRequestDataForm(content: Props['content']) {
 
   if (parsed?.error) {
     console.error(
-      `JSON message failed to match ${CURRENT_AGENT_PROTOCOL_SCHEMA} => "request_data"`,
+      `The JSON provided by form.json_url (${content.form.json_url}) failed to match the AITP schema`,
       formQuery.data,
       parsed.error,
     );

@@ -40,6 +40,7 @@
     "@uidotdev/usehooks": "^2.4.1",
     "client-only": "^0.0.1",
     "date-fns": "^3.6.0",
+    "json-schema-migrate": "^2.0.0",
     "lodash-es": "^4.17.21",
     "near-api-js": "4.0.3",
     "next": "^14.2.21",

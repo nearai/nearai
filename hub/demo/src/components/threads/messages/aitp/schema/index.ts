@@ -16,18 +16,18 @@ import { decisionSchema, requestDecisionSchema } from './decision';
   aitpSchemaWithoutPassthrough.
 */
 
-export const aitpSchema = z.union([
-  dataSchema.passthrough(),
-  decisionSchema.passthrough(),
-  requestDataSchema.passthrough(),
-  requestDecisionSchema.passthrough(),
-]);
-
-const aitpSchemaWithoutPassthrough = z.union([
+const aitpSchema = z.union([
   dataSchema,
   decisionSchema,
   requestDataSchema,
   requestDecisionSchema,
+]);
+
+const aitpSchemaWithoutPassthrough = z.union([
+  dataSchema.strip(),
+  decisionSchema.strip(),
+  requestDataSchema.strip(),
+  requestDecisionSchema.strip(),
 ]);
 
 type AitpSchema = z.infer<typeof aitpSchemaWithoutPassthrough>;

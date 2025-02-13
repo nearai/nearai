@@ -2,6 +2,9 @@ import { z } from 'zod';
 
 import { baseSchema } from './base';
 
+export const CURRENT_AITP_DATA_SCHEMA_URL =
+  'https://aitp.dev/v1/data/schema.json';
+
 export const requestDataFormFieldSchema = z
   .object({
     id: z.string(),
@@ -28,40 +31,39 @@ export const requestDataFormFieldSchema = z
 export const requestDataFormSchema = z
   .object({
     fields: requestDataFormFieldSchema.array().min(1).optional(),
-    json_url: z
-      .enum([
-        'https://app.near.ai/api/v1/aitp/request_data/forms/shipping_address_international.json',
-        'https://app.near.ai/api/v1/aitp/request_data/forms/shipping_address_us.json',
-      ])
-      .or(z.string().url())
-      .optional(),
+    json_url: z.string().url().optional(),
   })
   .passthrough();
 
-export const requestDataSchema = baseSchema.extend({
-  request_data: z
-    .object({
-      id: z.string(),
-      title: z.string().optional(),
-      description: z.string(),
-      fillButtonLabel: z.string().default('Fill out form'),
-      form: requestDataFormSchema,
-    })
-    .passthrough(),
-});
+export const requestDataSchema = baseSchema
+  .extend({
+    request_data: z
+      .object({
+        id: z.string(),
+        title: z.string().optional(),
+        description: z.string(),
+        fillButtonLabel: z.string().default('Fill out form'),
+        form: requestDataFormSchema,
+      })
+      .passthrough(),
+  })
+  .passthrough();
 
-export const dataSchema = baseSchema.extend({
-  data: z
-    .object({
-      request_data_id: z.string().optional(),
-      fields: z
-        .object({
-          id: z.string(),
-          label: z.string().optional(),
-          value: z.string().optional(),
-        })
-        .array()
-        .min(1),
-    })
-    .passthrough(),
-});
+export const dataSchema = baseSchema
+  .extend({
+    data: z
+      .object({
+        request_data_id: z.string().optional(),
+        fields: z
+          .object({
+            id: z.string(),
+            label: z.string().optional(),
+            value: z.string().optional(),
+          })
+          .passthrough()
+          .array()
+          .min(1),
+      })
+      .passthrough(),
+  })
+  .passthrough();

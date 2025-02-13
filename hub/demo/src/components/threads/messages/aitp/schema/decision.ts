@@ -2,6 +2,9 @@ import { z } from 'zod';
 
 import { baseSchema } from './base';
 
+export const CURRENT_AITP_DECISION_SCHEMA_URL =
+  'https://aitp.dev/v1/decision/schema.json';
+
 export const quoteSchema = z
   .object({
     type: z.enum(['Quote']),
@@ -43,37 +46,41 @@ const requestDecisionOptionSchema = z
   })
   .passthrough();
 
-export const requestDecisionSchema = baseSchema.extend({
-  request_decision: z
-    .object({
-      id: z.string(),
-      title: z.string().optional(),
-      description: z.string().optional(),
-      type: z
-        .enum(['products', 'checkbox', 'radio', 'confirmation'])
-        .default('radio'),
-      options: requestDecisionOptionSchema
-        .extend({
-          variants: requestDecisionOptionSchema.array().optional(),
-        })
-        .array()
-        .min(1),
-    })
-    .passthrough(),
-});
+export const requestDecisionSchema = baseSchema
+  .extend({
+    request_decision: z
+      .object({
+        id: z.string(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        type: z
+          .enum(['products', 'checkbox', 'radio', 'confirmation'])
+          .default('radio'),
+        options: requestDecisionOptionSchema
+          .extend({
+            variants: requestDecisionOptionSchema.array().optional(),
+          })
+          .array()
+          .min(1),
+      })
+      .passthrough(),
+  })
+  .passthrough();
 
-export const decisionSchema = baseSchema.extend({
-  decision: z
-    .object({
-      request_decision_id: z.string().optional(),
-      options: z
-        .object({
-          id: z.string(),
-          name: z.string().optional(),
-          quantity: z.number().optional(),
-        })
-        .array()
-        .min(1),
-    })
-    .passthrough(),
-});
+export const decisionSchema = baseSchema
+  .extend({
+    decision: z
+      .object({
+        request_decision_id: z.string().optional(),
+        options: z
+          .object({
+            id: z.string(),
+            name: z.string().optional(),
+            quantity: z.number().optional(),
+          })
+          .array()
+          .min(1),
+      })
+      .passthrough(),
+  })
+  .passthrough();

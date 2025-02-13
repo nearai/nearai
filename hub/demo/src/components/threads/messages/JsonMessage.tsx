@@ -9,7 +9,6 @@ import { Decision } from './aitp/Decision';
 import { RequestData } from './aitp/RequestData';
 import { RequestDecision } from './aitp/RequestDecision';
 import { parseJsonWithAitpSchema } from './aitp/schema';
-import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './aitp/schema/base';
 import { Message } from './Message';
 
 type Props = {
@@ -34,7 +33,7 @@ export const JsonMessage = ({ json }: Props) => {
 
   if (!hasWarned.current) {
     console.warn(
-      `JSON message failed to match ${CURRENT_AGENT_PROTOCOL_SCHEMA}. Will render as JSON codeblock.`,
+      `JSON message failed to match AITP schema. Will render as JSON codeblock.`,
       aitp.error,
     );
     hasWarned.current = true;

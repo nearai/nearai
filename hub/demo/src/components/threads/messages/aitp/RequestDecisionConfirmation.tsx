@@ -6,8 +6,8 @@ import { type z } from 'zod';
 import { useThreadsStore } from '~/stores/threads';
 
 import { Message } from './Message';
-import { CURRENT_AGENT_PROTOCOL_SCHEMA } from './schema/base';
 import {
+  CURRENT_AITP_DECISION_SCHEMA_URL,
   type decisionSchema,
   type requestDecisionSchema,
 } from './schema/decision';
@@ -44,7 +44,7 @@ export const RequestDecisionConfirmation = ({ content }: Props) => {
     if (!addMessage) return;
 
     const result: z.infer<typeof decisionSchema> = {
-      $schema: CURRENT_AGENT_PROTOCOL_SCHEMA,
+      $schema: CURRENT_AITP_DECISION_SCHEMA_URL,
       decision: {
         request_decision_id: content.id,
         options: [
