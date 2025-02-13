@@ -26,8 +26,6 @@ from litellm.types.utils import (
 )
 from litellm.utils import CustomStreamWrapper
 from openai import NOT_GIVEN, NotGiven, OpenAI
-from openai.types.beta.auto_file_chunking_strategy_param import AutoFileChunkingStrategyParam
-from openai.types.beta.static_file_chunking_strategy_object_param import StaticFileChunkingStrategyObjectParam
 from openai.types.beta.threads.message import Message
 from openai.types.beta.threads.message_create_params import Attachment
 from openai.types.beta.threads.run import Run
@@ -43,9 +41,12 @@ from nearai.agents.tool_registry import ToolRegistry
 from nearai.shared.client_config import DEFAULT_PROVIDER_MODEL
 from nearai.shared.inference_client import InferenceClient
 from nearai.shared.models import (
+    AutoFileChunkingStrategyParam,
+    ChunkingStrategy,
     ExpiresAfter,
     GitHubSource,
     GitLabSource,
+    StaticFileChunkingStrategyObjectParam,
 )
 from nearai.shared.near.sign import (
     CompletionSignaturePayload,
@@ -340,9 +341,7 @@ class Environment(object):
             name: str,
             source: Union[GitHubSource, GitLabSource],
             source_auth: Optional[str] = None,
-            chunking_strategy: Optional[
-                Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam]
-            ] = None,
+            chunking_strategy: Optional[ChunkingStrategy] = None,
             expires_after: Optional[ExpiresAfter] = None,
             metadata: Optional[Dict[str, str]] = None,
         ) -> VectorStore:

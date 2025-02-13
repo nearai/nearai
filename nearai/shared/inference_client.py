@@ -11,8 +11,6 @@ from litellm import CustomStreamWrapper, ModelResponse
 from litellm import completion as litellm_completion
 from litellm.types.completion import ChatCompletionMessageParam
 from openai import NOT_GIVEN, NotGiven
-from openai.types.beta.auto_file_chunking_strategy_param import AutoFileChunkingStrategyParam
-from openai.types.beta.static_file_chunking_strategy_object_param import StaticFileChunkingStrategyObjectParam
 from openai.types.beta.thread import Thread
 from openai.types.beta.vector_store import VectorStore
 from openai.types.beta.vector_stores import VectorStoreFile
@@ -26,11 +24,14 @@ from nearai.shared.client_config import (
     ClientConfig,
 )
 from nearai.shared.models import (
+    AutoFileChunkingStrategyParam,
+    ChunkingStrategy,
     ExpiresAfter,
     GitHubSource,
     GitLabSource,
     SimilaritySearch,
     SimilaritySearchFile,
+    StaticFileChunkingStrategyObjectParam,
 )
 from nearai.shared.provider_models import ProviderModels
 
@@ -187,7 +188,7 @@ class InferenceClient(object):
         name: str,
         source: Union[GitHubSource, GitLabSource],
         source_auth: Optional[str] = None,
-        chunking_strategy: Optional[Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam]] = None,
+        chunking_strategy: Optional[ChunkingStrategy] = None,
         expires_after: Optional[ExpiresAfter] = None,
         metadata: Optional[Dict[str, str]] = None,
     ) -> VectorStore:
