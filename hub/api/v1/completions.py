@@ -1,7 +1,7 @@
 import json
 from enum import Enum
 from os import getenv
-from typing import Callable, Optional
+from typing import Callable
 
 from dotenv import load_dotenv
 from nearai.shared.client_config import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
