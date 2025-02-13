@@ -276,6 +276,11 @@ class Thread(SQLModel, table=True):
             agent_ids = ",".join(self.meta_data["agent_ids"])  # Join the list into a single string
             self.meta_data["agent_ids"] = agent_ids
 
+        self.meta_data = self.meta_data or {}
+        self.meta_data["owner_id"] = self.owner_id
+        self.meta_data["parent_id"] = self.parent_id
+        self.meta_data["child_thread_ids"] = self.child_thread_ids
+
         return OpenAITThread(
             metadata=self.meta_data,
             tool_resources=None,  # TODO: Implement conversion

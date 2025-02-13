@@ -19,7 +19,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column("threads", sa.Column("parent_id", sa.Integer(), nullable=True))
+    op.add_column("threads", sa.Column("parent_id", sa.String(length=50), nullable=True))
     op.add_column("threads", sa.Column("child_thread_ids", sa.JSON, nullable=True))
 
 

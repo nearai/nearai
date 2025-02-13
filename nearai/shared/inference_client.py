@@ -11,6 +11,8 @@ from litellm import CustomStreamWrapper, ModelResponse
 from litellm import completion as litellm_completion
 from litellm.types.completion import ChatCompletionMessageParam
 from openai import NOT_GIVEN, NotGiven
+from openai.types.beta.auto_file_chunking_strategy_param import AutoFileChunkingStrategyParam
+from openai.types.beta.static_file_chunking_strategy_param import StaticFileChunkingStrategyParam
 from openai.types.beta.thread import Thread
 from openai.types.beta.vector_store import VectorStore
 from openai.types.beta.vector_stores import VectorStoreFile
@@ -24,14 +26,11 @@ from nearai.shared.client_config import (
     ClientConfig,
 )
 from nearai.shared.models import (
-    AutoFileChunkingStrategyParam,
-    ChunkingStrategy,
     ExpiresAfter,
     GitHubSource,
     GitLabSource,
     SimilaritySearch,
     SimilaritySearchFile,
-    StaticFileChunkingStrategyObjectParam,
 )
 from nearai.shared.provider_models import ProviderModels
 
@@ -188,7 +187,7 @@ class InferenceClient(object):
         name: str,
         source: Union[GitHubSource, GitLabSource],
         source_auth: Optional[str] = None,
-        chunking_strategy: Optional[ChunkingStrategy] = None,
+        chunking_strategy: Optional[Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam]] = None,
         expires_after: Optional[ExpiresAfter] = None,
         metadata: Optional[Dict[str, str]] = None,
     ) -> VectorStore:
@@ -236,9 +235,7 @@ class InferenceClient(object):
         name: str,
         file_ids: List[str],
         expires_after: Union[ExpiresAfter, NotGiven] = NOT_GIVEN,
-        chunking_strategy: Union[
-            AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, NotGiven
-        ] = NOT_GIVEN,
+        chunking_strategy: Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam, NotGiven] = NOT_GIVEN,
         metadata: Optional[Dict[str, str]] = None,
     ) -> VectorStore:
         """Creates Vector Store.
@@ -270,6 +267,10 @@ class InferenceClient(object):
         """Create a thread."""
         return self.client.beta.threads.create(messages=messages)
 
+    def get_thread(self, thread_id: str):
+        """Get a thread."""
+        return self.client.beta.threads.retrieve(thread_id=thread_id)
+
     def threads_messages_create(self, thread_id: str, content: str, role: Literal["user", "assistant"]):
         """Create a message in a thread."""
         return self.client.beta.threads.messages.create(thread_id=thread_id, content=content, role=role)
@@ -288,16 +289,32 @@ class InferenceClient(object):
         forked_thread = self.client.post(path=f"{self._config.base_url}/threads/{thread_id}/fork", cast_to=Thread)
         return forked_thread
 
+    def create_subthread(
+        self,
+        thread_id: str,
+        messages_to_copy: Optional[List[str]] = None,
+        new_messages: Optional[List[ChatCompletionMessageParam]] = None,
+    ):
+        """Create a subthread."""
+        return self.client.post(
+            path=f"{self._config.base_url}/threads/{thread_id}/subthread",
+            body={messages_to_copy: messages_to_copy, new_messages: new_messages},
+            cast_to=Thread,
+        )
+
     def threads_runs_create(self, thread_id: str, assistant_id: str, model: str):
         """Create a run in a thread."""
         return self.client.beta.threads.runs.create(thread_id=thread_id, assistant_id=assistant_id, model=model)
 
-    def run_agent(self, current_run_id: str, child_thread_id: str, assistant_id: str):
+    def run_agent(self, run_on_thread_id: str, assistant_id: str, parent_run_id: str = ""):
         """Starts a child agent run from a parent agent run."""
+        extra_body = {}
+        if parent_run_id:
+            extra_body["parent_run_id"] = parent_run_id
         return self.client.beta.threads.runs.create(
-            thread_id=child_thread_id,
+            thread_id=run_on_thread_id,
             assistant_id=assistant_id,
-            extra_body={"parent_run_id": current_run_id},
+            extra_body=extra_body,
         )
 
     def schedule_run(

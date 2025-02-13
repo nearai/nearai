@@ -1,5 +1,7 @@
 from typing import Dict, List, Literal, Optional, Union
 
+from openai.types.beta.auto_file_chunking_strategy_param import AutoFileChunkingStrategyParam
+from openai.types.beta.static_file_chunking_strategy_param import StaticFileChunkingStrategyParam
 from pydantic import BaseModel
 from typing_extensions import Required, TypedDict
 
@@ -15,37 +17,6 @@ class SimilaritySearchFile(BaseModel):
     file_content: str
     distance: float
     filename: str
-
-
-class StaticFileChunkingStrategyParam(TypedDict, total=False):
-    chunk_overlap_tokens: Required[int]
-    """The number of tokens that overlap between chunks. The default value is `400`.
-
-    Note that the overlap must not exceed half of `max_chunk_size_tokens`.
-    """
-
-    max_chunk_size_tokens: Required[int]
-    """The maximum number of tokens in each chunk.
-
-    The default value is `800`. The minimum value is `100` and the maximum value is
-    `4096`.
-    """
-
-
-class StaticFileChunkingStrategyObjectParam(TypedDict, total=False):
-    static: Required[StaticFileChunkingStrategyParam]
-    type: Required[Literal["static"]]
-
-
-class ChunkingStrategy(BaseModel):
-    """Defines the chunking strategy for vector stores."""
-
-    pass
-
-
-class AutoFileChunkingStrategyParam(TypedDict, total=False):
-    type: Required[Literal["auto"]]
-    """Always `auto`."""
 
 
 class ExpiresAfter(TypedDict, total=False):
@@ -105,7 +76,7 @@ class CreateVectorStoreFromSourceRequest(BaseModel):
     name: str
     source: Union[GitHubSource, GitLabSource]
     source_auth: Optional[str] = None
-    chunking_strategy: Optional[ChunkingStrategy] = None
+    chunking_strategy: Optional[Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam]] = None
     expires_after: Optional[ExpiresAfter] = None
     metadata: Optional[Dict[str, str]] = None
 

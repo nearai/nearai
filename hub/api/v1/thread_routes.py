@@ -255,14 +255,13 @@ def fork_thread(
 
 
 class SubthreadCreateParams(BaseModel):
-    parent_id: int
     messages_to_copy: Optional[List[int]] = []
     new_messages: Optional[List[MessageCreateParams]] = []
 
 
-@threads_router.post("/threads/{parent_id}/subthreads")
+@threads_router.post("/threads/{parent_id}/subthread")
 def create_subthread(
-    parent_id: int,
+    parent_id: str,
     subthread_params: SubthreadCreateParams = Body(...),
     auth: AuthToken = Depends(get_auth),
 ) -> Thread:
@@ -290,7 +289,7 @@ def create_subthread(
         if subthread_params.messages_to_copy:
             messages = session.exec(
                 select(MessageModel)
-                .where(MessageModel.id.in_(subthread_params.messages_to_copy))
+                .where(MessageModel.id.in_(subthread_params.messages_to_copy))  # type: ignore
                 .where(MessageModel.thread_id == parent_id)
             ).all()
             for message in messages:
@@ -306,17 +305,18 @@ def create_subthread(
                 session.add(new_message)
 
         # Add new messages to the subthread
-        for new_message_params in subthread_params.new_messages:
-            new_message = MessageModel(
-                thread_id=subthread.id,
-                content=new_message_params.content,
-                role=new_message_params.role,
-                assistant_id=new_message_params.assistant_id,
-                meta_data=new_message_params.metadata,
-                attachments=new_message_params.attachments,
-                run_id=new_message_params.run_id,
-            )
-            session.add(new_message)
+        if subthread_params.new_messages:
+            for new_message_params in subthread_params.new_messages:
+                new_message = MessageModel(
+                    thread_id=subthread.id,
+                    content=new_message_params.content,
+                    role=new_message_params.role,
+                    assistant_id=new_message_params.assistant_id,
+                    meta_data=new_message_params.metadata,
+                    attachments=new_message_params.attachments,
+                    run_id=new_message_params.run_id,
+                )
+                session.add(new_message)
 
         session.commit()
         return subthread.to_openai()
@@ -432,10 +432,19 @@ def list_messages(
     ),
     run_id: str = Query(None, description="Filter messages by the run ID that generated them."),
     auth: AuthToken = Depends(get_auth),
+    include_subthreads: bool = True,
 ) -> ListMessagesResponse:
     logger.debug(f"Listing messages for thread: {thread_id}")
     with get_session() as session:
-        statement = select(MessageModel).where(MessageModel.thread_id == thread_id)
+        child_threads = (
+            session.exec(select(ThreadModel.id).where(ThreadModel.parent_id == thread_id)).all()
+            if include_subthreads
+            else []
+        )
+
+        statement = select(MessageModel).where(
+            MessageModel.thread_id.in_([thread_id] + list(child_threads))  # type: ignore
+        )
 
         # Apply filters
         if after:
@@ -747,16 +756,24 @@ def _run_agent(
         # with get_session() as session:
         if run_model.parent_run_id:
             parent_run = session.get(RunModel, run_model.parent_run_id)
-
             if parent_run:
+                # check parent_run_id of the parent for loops
+                if parent_run.parent_run_id:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Parent run cannot have a parent run. "
+                        "Parent run is already a child run of another run.",
+                    )
+
                 parent_run.child_run_ids.append(run_id)
                 flag_modified(parent_run, "child_run_ids")  # SQLAlchemy is not detecting changes...
                 session.commit()
                 logger.info(f"Calling parent run: {parent_run.id}, after child run: {run_id}")
 
                 if background_tasks:
-                    background_tasks.add_task(run_agent, parent_run.thread_id, parent_run.id, background_tasks, auth)
-
+                    background_tasks.add_task(run_agent, thread_id, parent_run.id, background_tasks, auth)
+                else:
+                    _run_agent(thread_id, parent_run.id, background_tasks, auth)
         return run_model.to_openai()
 
 
