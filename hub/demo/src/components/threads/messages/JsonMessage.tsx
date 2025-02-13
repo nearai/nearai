@@ -29,8 +29,6 @@ export const JsonMessage = ({ json }: Props) => {
     return <RequestDecision content={aitp.request_decision} />;
   }
 
-  // TODO: Read only AITP components: Data, Decision
-
   if (!hasWarned.current) {
     console.warn(
       `JSON message failed to match AITP schema. Will render as JSON codeblock.`,
