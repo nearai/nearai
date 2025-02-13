@@ -1278,7 +1278,7 @@ class Environment(object):
         model: str = "",
         **kwargs: Any,
     ) -> SimpleNamespace:
-        """Returns a completion for the given messages using the given model and runs tools."""
+        """Returns a completion for the given messages using the given model and returns tool calls from OpenAI or Llama tool formats."""
         raw_response = self._run_inference_completions(messages, model, stream=False, **kwargs)
 
         assert isinstance(raw_response, ModelResponse), "Expected ModelResponse"
