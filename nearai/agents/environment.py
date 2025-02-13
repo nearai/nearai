@@ -369,6 +369,7 @@ class Environment(object):
         self.add_file_to_vector_store = add_file_to_vector_store
 
         def filter_agents(owner_id: Optional[str] = None, with_capabilities: Optional[bool] = False):
+            """Filter agents based on various parameters."""
             return client.filter_agents(owner_id, with_capabilities)
 
         self.filter_agents = filter_agents
@@ -1278,7 +1279,7 @@ class Environment(object):
         model: str = "",
         **kwargs: Any,
     ) -> SimpleNamespace:
-        """Returns a completion for the given messages using the given model and returns tool calls from OpenAI or Llama tool formats."""
+        """Returns completion message and/or tool calls from OpenAI or Llama tool formats."""
         raw_response = self._run_inference_completions(messages, model, stream=False, **kwargs)
 
         assert isinstance(raw_response, ModelResponse), "Expected ModelResponse"

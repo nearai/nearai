@@ -7,13 +7,14 @@ You can restart the hub to reset the runners/port mappings.
 1. Start local runners. This will start 3 local runners on a 9009-9011 ports
 
 ```bash
-cd aws_runner/local
+cd aws_runner/local_runners
 docker-compose up -d
 ```
 
-2. Add available runner ports to `hub/.env`
+2. Add available runner ports to `hub/.env` and custom runner url with the %PORT% placeholder. For example:
 ```shell
 AVAILABLE_LOCAL_RUNNER_PORTS=9009,9010,9011
+CUSTOM_RUNNER_URL=http://localhost:%PORT%/2015-03-31/functions/function/invocations
 ```
 
 3. Run the hub
@@ -25,5 +26,5 @@ fastapi dev app.py --port 8081
 4. If you want to rebuild the docker image and restart all local runners, you can run the following command:
 
 ```bash
-docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-base -t nearai-runner:test . && cd aws_runner/local &&  docker-compose up -d --force-recreate && cd ../..
+docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-base -t nearai-runner:test . && cd aws_runner/local_runners &&  docker-compose up -d --force-recreate && cd ../..
 ```
