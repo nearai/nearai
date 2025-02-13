@@ -102,7 +102,7 @@ Currently supported NEAR wallets:
 - Bitte
 
 ```bash
-nearai login  # Login with your NEAR account
+nearai login 
 ```
 
 ---
