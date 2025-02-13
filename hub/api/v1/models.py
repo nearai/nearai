@@ -308,9 +308,12 @@ class Thread(SQLModel, table=True):
             self.meta_data["agent_ids"] = agent_ids
 
         self.meta_data = self.meta_data or {}
-        self.meta_data["owner_id"] = self.owner_id
-        self.meta_data["parent_id"] = self.parent_id
-        self.meta_data["child_thread_ids"] = self.child_thread_ids
+        if self.owner_id:
+            self.meta_data["owner_id"] = self.owner_id
+        if self.parent_id:
+            self.meta_data["parent_id"] = self.parent_id
+        if self.child_thread_ids:
+            self.meta_data["child_thread_ids"] = json.dumps(self.child_thread_ids)
 
         return OpenAITThread(
             metadata=self.meta_data,
