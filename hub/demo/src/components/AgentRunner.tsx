@@ -431,7 +431,7 @@ export const AgentRunner = ({
                     <ThreadMessages
                       grow={false}
                       messages={latestAssistantMessages}
-                      scrollTo={false}
+                      scroll={false}
                       threadId={threadId}
                     />
                   )}

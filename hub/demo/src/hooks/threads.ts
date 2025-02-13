@@ -1,10 +1,12 @@
 import { useCallback, useMemo } from 'react';
 import { type z } from 'zod';
 
-import { type threadModel } from '~/lib/models';
+import { type threadMessageModel, type threadModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { type AppRouterOutputs } from '~/trpc/router';
 import { trpc } from '~/trpc/TRPCProvider';
+
+import { useQueryParams } from './url';
 
 export type ThreadSummary = z.infer<typeof threadModel> & {
   agent: {
@@ -86,5 +88,43 @@ export function useThreads() {
     setThreadData,
     threads,
     threadsQuery,
+  };
+}
+
+export type MessageGroup = {
+  isRootThread: boolean;
+  threadId: string;
+  messages: z.infer<typeof threadMessageModel>[];
+};
+
+export function useGroupedThreadMessages(
+  messages: z.infer<typeof threadMessageModel>[],
+) {
+  const { queryParams } = useQueryParams(['threadId']);
+  const rootThreadId = queryParams.threadId!;
+
+  const groupedMessages = useMemo(() => {
+    const result: MessageGroup[] = [];
+
+    messages.forEach((message) => {
+      const latestGroup = result.length > 0 ? result.at(-1) : undefined;
+
+      if (latestGroup?.threadId === message.thread_id) {
+        latestGroup.messages.push(message);
+        return;
+      } else {
+        result.push({
+          isRootThread: message.thread_id === rootThreadId,
+          threadId: message.thread_id,
+          messages: [message],
+        });
+      }
+    });
+
+    return result;
+  }, [messages, rootThreadId]);
+
+  return {
+    groupedMessages,
   };
 }
