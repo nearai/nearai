@@ -228,10 +228,34 @@ if __name__ == "__main__":
     key_path = os.path.join(certs_dir, "key.pem")
     cert_path = os.path.join(certs_dir, "cert.pem")
 
+    # Create a config file for OpenSSL
+    config_content = """[req]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+CN = localhost
+
+[v3_req]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = localhost
+IP.1 = 127.0.0.1
+"""
+
     # Ensure the directory exists
     os.makedirs(certs_dir, exist_ok=True)
 
-    # Generate SSL certificate using OpenSSL
+    # Write the OpenSSL config
+    config_path = os.path.join(certs_dir, "openssl.cnf")
+    with open(config_path, "w") as f:
+        f.write(config_content)
+
+    # Generate SSL certificate using OpenSSL with the config file
     openssl_cmd = [
         "openssl",
         "req",
@@ -245,14 +269,21 @@ if __name__ == "__main__":
         "-days",
         "365",
         "-nodes",
-        "-subj",
-        "/CN=nearai-cvm-runner",
+        "-config",
+        config_path,
     ]
+
     try:
         subprocess.run(openssl_cmd, check=True)
         logger.info(f"SSL certificate generated at: {cert_path}")
         logger.info(f"SSL key generated at: {key_path}")
     except subprocess.CalledProcessError as e:
         logger.error(f"Error generating SSL certificate: {e}")
+
+    # Clean up the config file
+    try:
+        os.remove(config_path)
+    except Exception as e:
+        logger.warning(f"Failed to remove OpenSSL config file: {e}")
 
     uvicorn.run(app, host="0.0.0.0", port=443, ssl_keyfile=key_path, ssl_certfile=cert_path)
