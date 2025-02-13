@@ -28,8 +28,7 @@
   padding-left: var(--gap-l);
   transition: border-left-color var(--transition-speed);
 
-  &:hover,
-  &:focus-within {
+  &:hover {
     border-left-color: var(--sand-12);
   }
 }
