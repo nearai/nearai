@@ -33,7 +33,7 @@ if (!jsonString) {
         };
         jsonString = JSON.stringify({
             user_auth: JSON.stringify(authData.auth),
-            thread_id: "thead_local",
+            thread_id: "thread_local",
             base_url: "https://api.near.ai/v1",
             agent_ts_files_to_transpile: ["agents/agent.ts"],
             env_vars: getEnvVariables(local_deployment_keys)

@@ -38,7 +38,7 @@ const config = {
 
             console.log('Tools available', tool_names);
 
-            if (env.get_thread_id() !== "thead_local") {
+            if (env.get_thread_id() !== "thread_local") {
                 await env.add_reply(`Coinbase Wallet created: \`\`\` \n${wallet}\n \`\`\`\nAgentkit initialized: \`\`\` \n${cdpWalletData}\n \`\`\` \nTools available: \`\`\` \n${tool_names} \n\`\`\``);
             }
         } else {
@@ -60,7 +60,7 @@ const config = {
 
         // inference
         const reply = await env.completion(messages, "llama-v3p1-70b-instruct", 4000, 0.5);
-        if (env.get_thread_id() !== "thead_local") {
+        if (env.get_thread_id() !== "thread_local") {
             await env.add_reply(reply);
         }
 
