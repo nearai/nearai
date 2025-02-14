@@ -579,6 +579,15 @@ class AgentCli:
         print(f"\n=== Starting interactive session with agent: {agent_id} ===")
         print("Type 'exit' to end the session\n")
 
+        # get agent metadata from metadata.json
+        metadata_path = agent_path / "metadata.json"
+        with open(metadata_path) as f:
+            metadata = json.load(f)
+        if metadata.get("agent", {}).get("welcome_title"):
+            print(metadata.agent.welcome_title)
+        if metadata.get("agent", {}).get("description"):
+            print(metadata.agent.welcome_description)
+
         while True:
             new_message = input("> ")
             if new_message.lower() == "exit":
