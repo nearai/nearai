@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
-export AWS_EXECUTION_ENV=AWS_Lambda_python3.13
+export AWS_EXECUTION_ENV=AWS_Lambda_python3.11
 
 if [ -z "$AWS_LAMBDA_EXEC_WRAPPER" ]; then
   exec python /var/runtime/bootstrap.py
