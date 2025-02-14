@@ -5,23 +5,21 @@ This process will be simplified in the future. For now, you can follow these ste
 
 1. Make sure you installed [NEAR AI CLI](https://docs.near.ai/agents/quickstart/#installing-near-ai-cli) and you have a named NEAR Account. You can create one with [Meteor Wallet](https://wallet.meteorwallet.app/). No funds are required.
 2. Install the dependencies
-```shell
-cd ts_runner/ts_agent && npm install
-```
+    ```shell
+    cd ts_runner/ts_agent && npm install
+    ```
 3. Perform `nearai login` to have a valid NEAR signature in `~/.nearai/config.json`.
-
 4. Update the agent code at `/ts_runner/ts_agent/agents/agent.ts` as you need. Keep the first line as `import {env} from 'ts-agent-runner';` and use methods from the `env` object to use NEAR AI Agent Framework (completions, etc). More methods are coming in the nearest future.
-5Run the agent:
-```shell
-npm run build &&  npm run start agents/agent.ts
-```
+5. Run the agent:
+    ```shell
+    npm run build &&  npm run start agents/agent.ts
+    ```
+6. If you want to provide ENV variables, you can provide them as arguments:
+    ```shell
+    npm run build && CDP_API_KEY_NAME=name CDP_API_KEY_PRIVATE_KEY="key" npm run start agents/agent.ts
+    ```
 
-6If you want to provide ENV variables, you can provide them as arguments:
-```shell
-npm run build && CDP_API_KEY_NAME=name CDP_API_KEY_PRIVATE_KEY="key" npm run start agents/agent.ts
-```
-
-(6. is valid only for local development. On NEAR AI Runner we have [NEAR AI HUB secrets](https://docs.near.ai/agents/secrets/) for this purpose.)
+This is valid only for local development. On NEAR AI Runner we have [NEAR AI HUB secrets](https://docs.near.ai/agents/secrets/) for this purpose.
 
 How to deploy your TypeScript agent:
 ===

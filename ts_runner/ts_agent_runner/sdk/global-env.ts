@@ -19,7 +19,7 @@ class GlobalEnvironment {
         return GlobalEnvironment.instance;
     }
 
-    initialize(jsonString: string, agentPath: string) {
+    initialize(jsonString: string) {
         if (this._initialized) return;
 
         configManager.initialize(jsonString);
@@ -28,7 +28,7 @@ class GlobalEnvironment {
 
         const agentEnv = new AgentEnvironment();
         agentEnv
-            .runAgent(agentPath, configManager.getConfig().agent_ts_files_to_transpile)
+            .runAgent(configManager.getConfig().agent_ts_files_to_transpile)
             .catch(err => console.error('Fatal error:', err));
     }
 

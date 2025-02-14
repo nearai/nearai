@@ -54,4 +54,4 @@ if (!jsonString) {
     }
 }
 
-globalEnv.initialize(jsonString, agentPath);
+globalEnv.initialize(jsonString);

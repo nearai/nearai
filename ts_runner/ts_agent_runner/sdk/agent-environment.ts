@@ -1,25 +1,13 @@
-import {spawn} from 'child_process';
 import {readFileSync, writeFileSync, existsSync} from 'fs';
 import {transpile} from 'typescript';
 import {fileURLToPath} from 'url';
 import {dirname, join} from 'path';
-import OpenAI from "openai";
-
-type Message = OpenAI.Beta.Threads.Messages.Message;
-type FileObject = OpenAI.Files.FileObject;
-type ChatCompletionMessageParam = OpenAI.ChatCompletionMessageParam;
-type ChatCompletionCreateParams = OpenAI.ChatCompletionCreateParams;
-type ChatCompletion = OpenAI.ChatCompletion
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// import {configManager} from './config-manager.js';
-
 export class AgentEnvironment {
-    async runAgent(agent_main_ts_filename: string, agent_ts_files_to_transpile: string[]) {
-        // TODO agent_main_ts_filename - remove or use
-
+    async runAgent(agent_ts_files_to_transpile: string[]) {
         let agent_main_js_path = "";
 
         for (let i in agent_ts_files_to_transpile) {
