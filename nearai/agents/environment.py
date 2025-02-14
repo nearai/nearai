@@ -12,7 +12,6 @@ import tempfile
 import threading
 import uuid
 from datetime import datetime, timezone
-from enum import Enum
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
@@ -48,7 +47,9 @@ from nearai.shared.models import (
     ExpiresAfter,
     GitHubSource,
     GitLabSource,
+    RunMode,
     StaticFileChunkingStrategyObjectParam,
+    ThreadMode,
 )
 from nearai.shared.near.sign import (
     CompletionSignaturePayload,
@@ -93,16 +94,6 @@ class CustomLogHandler(logging.Handler):
     def emit(self, record):  # noqa: D102
         log_entry = self.format(record)
         self.add_reply_func(message=log_entry, message_type=f"{self.namespace}:log")
-
-
-class ThreadMode(Enum):
-    SAME = 1
-    FORK = 2
-    CHILD = 3
-
-
-class RunMode(Enum):
-    WITH_CALLBACK = 1
 
 
 class Environment(object):
@@ -500,7 +491,7 @@ class Environment(object):
             query: Optional[str] = None,
             thread_mode: ThreadMode = ThreadMode.FORK,
             additional_subthread_messages: Optional[List[Message]] = None,
-            run_mode: RunMode = RunMode.WITH_CALLBACK,
+            run_mode: RunMode = RunMode.SIMPLE,
         ):
             """Runs a child agent on the thread."""
             child_thread_id = self._thread_id
@@ -518,13 +509,11 @@ class Environment(object):
                 client.threads_messages_create(thread_id=child_thread_id, content=query, role="user")
 
             self.add_system_log(f"Running agent {agent_id}", logging.INFO)
-            parent_run_id = None
-            if run_mode == RunMode.WITH_CALLBACK:
-                parent_run_id = self._run_id
             client.run_agent(
-                parent_run_id=parent_run_id,
+                parent_run_id=self._run_id,
                 run_on_thread_id=child_thread_id,
                 assistant_id=agent_id,
+                run_mode=run_mode,
             )
             self._pending_ext_agent = True
 
