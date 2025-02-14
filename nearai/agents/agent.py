@@ -278,6 +278,8 @@ class Agent(object):
         }
 
         user_auth = env.user_auth
+
+        # clear user_auth we saved before
         env.user_auth = None
 
         try:
