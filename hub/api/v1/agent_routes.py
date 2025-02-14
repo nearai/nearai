@@ -86,7 +86,6 @@ def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: Aut
         if isinstance(auth_data["nonce"], bytes):
             auth_data["nonce"] = auth_data["nonce"].decode("utf-8")
 
-    logging.info("!!! invoke_agent_via_url")
     if "%PORT%" in custom_runner_url:
         # Assign a port to the agent if not already assigned
         if agents in agent_runners_ports:

@@ -30,6 +30,7 @@ from openai.types.beta.threads.message import Message
 from openai.types.beta.threads.message_create_params import Attachment
 from openai.types.beta.threads.run import Run
 from openai.types.beta.vector_store import VectorStore
+from openai.types.beta.vector_stores import VectorStoreFile
 from openai.types.file_object import FileObject
 from py_near.account import Account
 from py_near.constants import DEFAULT_ATTACHED_GAS
@@ -321,11 +322,22 @@ class Environment(object):
         def upload_file(
             file_content: str,
             purpose: Literal["assistants", "batch", "fine-tune", "vision"] = "assistants",
+            encoding: Optional[str] = "utf-8",
+            file_name: Optional[str] = "file.txt",
+            file_type: Optional[str] = "text/plain",
         ):
             """Uploads a file to the registry."""
-            return client.upload_file(file_content, purpose)
+            return client.upload_file(
+                file_content, purpose, encoding=encoding, file_name=file_name, file_type=file_type
+            )
 
         self.upload_file = upload_file
+
+        def remove_file(file_id: str):
+            """Removes a file from the registry."""
+            return client.remove_file(file_id)
+
+        self.remove_file = remove_file
 
         def create_vector_store_from_source(
             name: str,
@@ -408,11 +420,17 @@ class Environment(object):
 
         self.create_vector_store = create_vector_store
 
-        def get_vector_store(self, vector_store_id: str) -> VectorStore:
+        def get_vector_store(vector_store_id: str) -> VectorStore:
             """Gets a vector store by id."""
             return client.get_vector_store(vector_store_id)
 
         self.get_vector_store = get_vector_store
+
+        def get_vector_store_files(vector_store_id: str) -> Optional[List[VectorStoreFile]]:
+            """Gets a list of vector store files."""
+            return client.get_vector_store_files(vector_store_id)
+
+        self.get_vector_store_files = get_vector_store_files
 
         # Save cache of requested models for inference to avoid extra server calls
         self.cached_models_for_inference: Dict[str, str] = {}

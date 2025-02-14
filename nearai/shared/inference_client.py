@@ -169,19 +169,32 @@ class InferenceClient(object):
         self,
         file_content: str,
         purpose: Literal["assistants", "batch", "fine-tune", "vision"],
-        encoding: str = "utf-8",
-        file_name="file.txt",
-        file_type="text/plain",
-    ) -> FileObject:
+        encoding: Optional[str] = "utf-8",
+        file_name: Optional[str] = "file.txt",
+        file_type: Optional[str] = "text/plain",
+    ) -> Optional[FileObject]:
         """Uploads a file."""
         client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
-        file_data = io.BytesIO(file_content.encode(encoding))
-        return client.files.create(file=(file_name, file_data, file_type), purpose=purpose)
+        if file_content:
+            file_data = io.BytesIO(file_content.encode(encoding or "utf-8"))
+            return client.files.create(file=(file_name, file_data, file_type), purpose=purpose)
+        else:
+            return None
+
+    def remove_file(self, file_id: str):
+        """Removes a file."""
+        client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
+        return client.files.delete(file_id=file_id)
 
     def add_file_to_vector_store(self, vector_store_id: str, file_id: str) -> VectorStoreFile:
         """Adds a file to vector store."""
         client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
         return client.beta.vector_stores.files.create(vector_store_id=vector_store_id, file_id=file_id)
+
+    def get_vector_store_files(self, vector_store_id: str) -> Optional[List[VectorStoreFile]]:
+        """Adds a file to vector store."""
+        client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
+        return client.beta.vector_stores.files.list(vector_store_id=vector_store_id).data
 
     def create_vector_store_from_source(
         self,
@@ -262,7 +275,14 @@ class InferenceClient(object):
     def get_vector_store(self, vector_store_id: str) -> VectorStore:
         """Gets a vector store by id."""
         endpoint = f"{self._config.base_url}/vector_stores/{vector_store_id}"
-        response = requests.get(endpoint)
+        auth_bearer_token = self._auth
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {auth_bearer_token}",
+        }
+
+        response = requests.get(endpoint, headers=headers)
         response.raise_for_status()
         return VectorStore(**response.json())
 
