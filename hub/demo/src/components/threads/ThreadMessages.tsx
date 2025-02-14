@@ -84,8 +84,6 @@ export const ThreadMessages = ({
     }
   }, [groupedMessages, threadId, scroll]);
 
-  console.log(groupedMessages);
-
   if (!isAuthenticated) {
     return (
       <div className={s.wrapper} data-grow={grow}>
