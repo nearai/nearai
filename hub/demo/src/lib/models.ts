@@ -14,7 +14,7 @@ export const chatWithAgentModel = z.object({
   agent_id: z.string(),
   new_message: z.string(),
   thread_id: z.string().nullable().optional(),
-  max_iterations: z.number(),
+  max_iterations: z.number().optional(),
   user_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
   agent_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
 });
@@ -111,27 +111,29 @@ export const entryDetailsModel = z.intersection(
   z.record(z.string(), z.unknown()),
 );
 
-export const entryModel = z.object({
-  id: z.number(),
-  category: entryCategory,
-  namespace: z.string(),
-  name: z.string(),
-  version: z.string(),
-  updated: z.string().datetime().default(new Date().toISOString()),
-  description: z.string().default(''),
-  tags: z.string().array().default([]),
-  show_entry: z.boolean().default(true),
-  starred_by_point_of_view: z.boolean().default(false),
-  num_forks: z.number().default(0),
-  num_stars: z.number().default(0),
-  details: entryDetailsModel.default({}),
-  fork_of: z
-    .object({
-      name: z.string(),
-      namespace: z.string(),
-    })
-    .nullish(),
-});
+export const entryModel = z
+  .object({
+    id: z.number(),
+    category: entryCategory,
+    namespace: z.string(),
+    name: z.string(),
+    version: z.string(),
+    updated: z.string().datetime().default(new Date().toISOString()),
+    description: z.string().default(''),
+    tags: z.string().array().default([]),
+    show_entry: z.boolean().default(true),
+    starred_by_point_of_view: z.boolean().default(false),
+    num_forks: z.number().default(0),
+    num_stars: z.number().default(0),
+    details: entryDetailsModel.default({}),
+    fork_of: z
+      .object({
+        name: z.string(),
+        namespace: z.string(),
+      })
+      .nullish(),
+  })
+  .passthrough();
 
 export const entriesModel = z.array(entryModel);
 
@@ -334,6 +336,16 @@ export const threadMessageMetadataModel = z.intersection(
   z.record(z.string(), z.unknown()),
 );
 
+export const threadMessageContentModel = z.object({
+  type: z.enum(['text']).or(z.string()),
+  text: z
+    .object({
+      annotations: z.unknown().array(),
+      value: z.string(),
+    })
+    .optional(),
+});
+
 export const threadMessageModel = z.object({
   id: z.string(),
   assistant_id: z.unknown(),
@@ -346,15 +358,7 @@ export const threadMessageModel = z.object({
     .nullable(),
   created_at: z.number(),
   completed_at: z.number().nullable(),
-  content: z
-    .object({
-      text: z.object({
-        annotations: z.unknown().array(),
-        value: z.string(),
-      }),
-      type: z.string(),
-    })
-    .array(),
+  content: threadMessageContentModel.array(),
   incomplete_at: z.number().nullable(),
   incomplete_details: z.unknown().nullable(),
   metadata: threadMessageMetadataModel.nullish(),

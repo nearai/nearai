@@ -28,6 +28,7 @@ import { fetchThreadContents } from '~/trpc/utils/threads';
 import { createZodFetcher } from '~/utils/zod-fetch';
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc';
+import { generateMockedAITPMessages } from '../utils/mock-aitp';
 
 const fetchWithZod = createZodFetcher();
 
@@ -474,6 +475,7 @@ export const hubRouter = createTRPCRouter({
     .input(
       z.object({
         afterMessageId: z.string().optional(),
+        mockedAitpMessages: z.boolean().default(false),
         runId: z.string().optional(),
         threadId: z.string(),
       }),
@@ -484,12 +486,23 @@ export const hubRouter = createTRPCRouter({
         authorization: ctx.authorization,
       });
 
+      if (input.mockedAitpMessages) {
+        contents.messages = [
+          ...contents.messages,
+          ...generateMockedAITPMessages(input.threadId),
+        ];
+      }
+
       return contents;
     }),
 
   chatWithAgent: protectedProcedure
     .input(chatWithAgentModel)
     .mutation(async ({ ctx, input }) => {
+      if (typeof input.max_iterations !== 'number') {
+        input.max_iterations = 1;
+      }
+
       const thread = input.thread_id
         ? await fetchWithZod(
             threadModel,

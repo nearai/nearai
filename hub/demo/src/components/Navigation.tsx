@@ -99,6 +99,23 @@ const resourcesNavItems = env.NEXT_PUBLIC_CONSUMER_MODE
       },
     ];
 
+export function computeNavigationHeight() {
+  try {
+    const bodyStyle = getComputedStyle(document.body, null);
+    const height = parseInt(
+      bodyStyle.getPropertyValue('--header-height').replace('px', ''),
+    );
+    return height;
+  } catch (error) {
+    console.error(
+      'Failed to compute navigation height in returnNavigationHeight()',
+      error,
+    );
+  }
+
+  return 0;
+}
+
 export const Navigation = () => {
   const auth = useAuthStore((store) => store.auth);
   const clearAuth = useAuthStore((store) => store.clearAuth);

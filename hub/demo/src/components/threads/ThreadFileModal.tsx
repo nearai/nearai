@@ -13,8 +13,8 @@ import { type z } from 'zod';
 import { type threadFileModel } from '~/lib/models';
 import { filePathIsImage, filePathToCodeLanguage } from '~/utils/file';
 
-import { Code } from './lib/Code';
-import { Markdown } from './lib/Markdown';
+import { Code } from '../lib/Code';
+import { Markdown } from '../lib/Markdown';
 
 type Props = {
   filesByName?: Record<string, z.infer<typeof threadFileModel>>;

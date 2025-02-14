@@ -1,7 +1,9 @@
+import { type UseMutateAsyncFunction } from '@tanstack/react-query';
 import { type z } from 'zod';
 import { create, type StateCreator } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
+import { type AgentChatMutationInput } from '~/components/AgentRunner';
 import {
   type chatWithAgentModel,
   type threadFileModel,
@@ -20,6 +22,12 @@ type Thread = z.infer<typeof threadModel> & {
 };
 
 type ThreadsStore = {
+  addMessage?: UseMutateAsyncFunction<
+    void,
+    Error,
+    AgentChatMutationInput,
+    unknown
+  >;
   optimisticMessages: {
     index: number;
     data: z.infer<typeof threadMessageModel>;
@@ -30,6 +38,7 @@ type ThreadsStore = {
     inputs: z.infer<typeof chatWithAgentModel>[],
   ) => void;
   reset: () => void;
+  setAddMessage: (addMessage: ThreadsStore['addMessage']) => void;
   setThread: (
     thread: Partial<Omit<AppRouterOutputs['hub']['thread'], 'id'>> & {
       id: string;
@@ -38,6 +47,7 @@ type ThreadsStore = {
 };
 
 const store: StateCreator<ThreadsStore> = (set, get) => ({
+  addMessage: undefined,
   optimisticMessages: [],
   threadsById: {},
 
@@ -67,7 +77,7 @@ const store: StateCreator<ThreadsStore> = (set, get) => ({
                 annotations: [],
                 value: input.new_message,
               },
-              type: '',
+              type: 'text',
             },
           ],
           created_at: Date.now(),
@@ -86,6 +96,8 @@ const store: StateCreator<ThreadsStore> = (set, get) => ({
   },
 
   reset: () => set({ optimisticMessages: [] }),
+
+  setAddMessage: (addMessage) => set({ addMessage }),
 
   setThread: ({ messages, files, run, ...data }) => {
     const threadsById = {

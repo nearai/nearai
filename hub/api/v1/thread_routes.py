@@ -42,6 +42,65 @@ threads_router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
+
+class FilterThreadRequestsLogs(logging.Filter):
+    """Custom logging filter to suppress spammy healthcheck/status requests.
+
+    Attributes
+    ----------
+        target_paths: Tuple of path substrings to match for filtering
+        target_status: HTTP status code to match for filtering (default: 200)
+
+    """
+
+    def filter(self, record: Any) -> bool:
+        """Determine if the specified log record should be logged.
+
+        Args:
+        ----
+            record: LogRecord object containing all log information
+
+        Returns:
+        -------
+            bool: False if record matches spam criteria, True otherwise
+
+        Notes:
+        -----
+            Processes Uvicorn access logs in format:
+            `127.0.0.1:PORT - "METHOD PATH HTTP/VERSION" STATUS`
+
+        """
+        try:
+            log_message = record.getMessage()
+
+            # Early exit for non-request logs
+            if '"' not in log_message:
+                return True
+
+            # Parse log components
+            parts = log_message.split('"')
+            request_section = parts[1].strip()  # "GET /path HTTP/1.1"
+            status_code = int(parts[-1].split()[-1])  # 200
+
+            # Extract request components
+            method, path, _ = request_section.split(" ", 2)
+
+            path_condition = "/v1/threads/thread_" in path
+
+            # Filter condition matching
+            return not (path_condition and status_code == 200)
+
+        except Exception as parsing_error:
+            print(f"Log parsing failed: {parsing_error}")
+            return True
+
+
+# Configure Uvicorn access logs filtering
+if getenv("HIDE_THREADS_REQUEST_LOGS", False):
+    # Uvicorn access logger instance with custom filtering applied
+    logging.getLogger("uvicorn.access").addFilter(FilterThreadRequestsLogs())
+
+
 SUMMARY_PROMPT = """You are an expert at summarizing conversations in a maximum of 5 words.
 
 **Instructions:**
@@ -254,6 +313,74 @@ def fork_thread(
         )
 
 
+class SubthreadCreateParams(BaseModel):
+    messages_to_copy: Optional[List[int]] = []
+    new_messages: Optional[List[MessageCreateParams]] = []
+
+
+@threads_router.post("/threads/{parent_id}/subthread")
+def create_subthread(
+    parent_id: str,
+    subthread_params: SubthreadCreateParams = Body(...),
+    auth: AuthToken = Depends(get_auth),
+) -> Thread:
+    with get_session() as session:
+        parent_thread = session.get(ThreadModel, parent_id)
+        if parent_thread is None:
+            raise HTTPException(status_code=404, detail="Parent thread not found")
+
+        if parent_thread.owner_id != auth.account_id:
+            raise HTTPException(
+                status_code=403, detail="You don't have permission to create a subthread for this thread"
+            )
+
+        subthread = ThreadModel(
+            messages=[],
+            meta_data=parent_thread.meta_data,
+            tool_resources=parent_thread.tool_resources,
+            owner_id=auth.account_id,
+            parent_id=parent_id,
+        )
+        session.add(subthread)
+        session.flush()  # Flush to generate the new thread's ID
+
+        # Copy specified messages from the parent thread
+        if subthread_params.messages_to_copy:
+            messages = session.exec(
+                select(MessageModel)
+                .where(MessageModel.id.in_(subthread_params.messages_to_copy))  # type: ignore
+                .where(MessageModel.thread_id == parent_id)
+            ).all()
+            for message in messages:
+                new_message = MessageModel(
+                    thread_id=subthread.id,
+                    content=message.content,
+                    role=message.role,
+                    assistant_id=message.assistant_id,
+                    meta_data=message.meta_data,
+                    attachments=message.attachments,
+                    run_id=message.run_id,
+                )
+                session.add(new_message)
+
+        # Add new messages to the subthread
+        if subthread_params.new_messages:
+            for new_message_params in subthread_params.new_messages:
+                new_message = MessageModel(
+                    thread_id=subthread.id,
+                    content=new_message_params.content,
+                    role=new_message_params.role,
+                    assistant_id=new_message_params.assistant_id,
+                    meta_data=new_message_params.metadata,
+                    attachments=new_message_params.attachments,
+                    run_id=new_message_params.run_id,
+                )
+                session.add(new_message)
+
+        session.commit()
+        return subthread.to_openai()
+
+
 @threads_router.post("/threads/{thread_id}/messages")
 def create_message(
     thread_id: str,
@@ -364,10 +491,19 @@ def list_messages(
     ),
     run_id: str = Query(None, description="Filter messages by the run ID that generated them."),
     auth: AuthToken = Depends(get_auth),
+    include_subthreads: bool = True,
 ) -> ListMessagesResponse:
     logger.debug(f"Listing messages for thread: {thread_id}")
     with get_session() as session:
-        statement = select(MessageModel).where(MessageModel.thread_id == thread_id)
+        child_threads = (
+            session.exec(select(ThreadModel.id).where(ThreadModel.parent_id == thread_id)).all()
+            if include_subthreads
+            else []
+        )
+
+        statement = select(MessageModel).where(
+            MessageModel.thread_id.in_([thread_id] + list(child_threads))  # type: ignore
+        )
 
         # Apply filters
         if after:
@@ -679,16 +815,24 @@ def _run_agent(
         # with get_session() as session:
         if run_model.parent_run_id:
             parent_run = session.get(RunModel, run_model.parent_run_id)
-
             if parent_run:
+                # check parent_run_id of the parent for loops
+                if parent_run.parent_run_id:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Parent run cannot have a parent run. "
+                        "Parent run is already a child run of another run.",
+                    )
+
                 parent_run.child_run_ids.append(run_id)
                 flag_modified(parent_run, "child_run_ids")  # SQLAlchemy is not detecting changes...
                 session.commit()
                 logger.info(f"Calling parent run: {parent_run.id}, after child run: {run_id}")
 
                 if background_tasks:
-                    background_tasks.add_task(run_agent, parent_run.thread_id, parent_run.id, background_tasks, auth)
-
+                    background_tasks.add_task(run_agent, thread_id, parent_run.id, background_tasks, auth)
+                else:
+                    _run_agent(thread_id, parent_run.id, background_tasks, auth)
         return run_model.to_openai()
 
 

@@ -1,0 +1,87 @@
+.optionImage {
+  display: block;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 5px;
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.variantOptionImage {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 5px;
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  flex-shrink: 0;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: var(--gap-s);
+
+  @media (max-width: 2100px) {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+
+  @media (max-width: 1550px) {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  @media (max-width: 1250px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: 1000px) {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: 500px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.productImage {
+  display: block;
+  margin-top: -1rem;
+  margin-inline: -1rem;
+  height: 10rem;
+  flex-shrink: 0;
+  background-color: #fff;
+  background-position: center center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  cursor: zoom-in;
+}
+
+.productCard {
+  border: 1px solid var(--sand-5) !important;
+
+  &:hover,
+  &:focus-within {
+    border-color: var(--sand-8) !important;
+  }
+}
+
+.zoomedImage {
+  width: auto;
+  margin: auto;
+  max-width: 100%;
+}
+
+.formSections {
+  > div:not(:last-child) {
+    border-bottom: 1px solid var(--sand-5);
+    padding-bottom: var(--gap-l);
+  }
+}

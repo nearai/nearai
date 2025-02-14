@@ -1,3 +1,13 @@
+## v0.1.11 (2025-02-11)
+
+### Feat
+
+- Ensure the user is authenticated on agent local run (#822)
+
+### Fix
+
+- Removed unnecessary retries in HUB (#827)
+
 ## v0.1.10 (2025-02-01)
 
 ### Feat

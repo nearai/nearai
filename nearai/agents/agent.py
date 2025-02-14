@@ -7,10 +7,11 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import traceback
 import uuid
 from pathlib import Path
 from types import CodeType
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dotenv import load_dotenv
 
@@ -128,20 +129,29 @@ class Agent(object):
         if not self.version or not self.name:
             raise ValueError("Both 'version' and 'name' must be non-empty in metadata.")
 
-    def run_python_code(self, agent_namespace, agent_runner_user):
+    def run_python_code(self, agent_namespace, agent_runner_user) -> Tuple[Optional[str], Optional[str]]:
         """Launch python agent."""
-        # switch to user env.agent_runner_user
-        if agent_runner_user:
-            user_info = pwd.getpwnam(agent_runner_user)
-            os.setgid(user_info.pw_gid)
-            os.setuid(user_info.pw_uid)
+        try:
+            # switch to user env.agent_runner_user
+            if agent_runner_user:
+                user_info = pwd.getpwnam(agent_runner_user)
+                os.setgid(user_info.pw_gid)
+                os.setuid(user_info.pw_uid)
 
-        # Run the code
-        # NOTE: runpy.run_path does not work in a multithreaded environment when running benchmark.
-        #       The performance of runpy.run_path may also change depending on a system, e.g. it may
-        #       work on Linux but not work on Mac.
-        #       `compile` and `exec` have been tested to work properly in a multithreaded environment.
-        exec(self.code, agent_namespace)
+            # Run the code
+            # NOTE: runpy.run_path does not work in a multithreaded environment when running benchmark.
+            #       The performance of runpy.run_path may also change depending on a system, e.g. it may
+            #       work on Linux but not work on Mac.
+            #       `compile` and `exec` have been tested to work properly in a multithreaded environment.
+            if self.code:
+                exec(self.code, agent_namespace)
+
+            # If no errors occur, return None
+            return None, None
+
+        except Exception as e:
+            # Return error message and full traceback as strings
+            return str(e), traceback.format_exc()
 
     def run_ts_agent(self, agent_filename, env_vars, json_params):
         """Launch typescript agent."""
@@ -201,7 +211,8 @@ class Agent(object):
         if stderr:
             print(f"TS AGENT STDERR: {stderr}")
 
-    def run(self, env: Any, task: Optional[str] = None) -> None:  # noqa: D102
+    def run(self, env: Any, task: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+        """Run the agent code. Returns error message and traceback message."""
         # combine agent.env_vars and env.env_vars
         total_env_vars = {**self.env_vars, **env.env_vars}
 
@@ -282,6 +293,8 @@ class Agent(object):
         # clear user_auth we saved before
         env.user_auth = None
 
+        error_message, traceback_message = None, None
+
         try:
             if self.change_to_temp_dir:
                 if not os.path.exists(self.temp_dir):
@@ -313,12 +326,14 @@ class Agent(object):
                     process.start()
                     process.join()
                 else:
-                    self.run_python_code(namespace, env.agent_runner_user)
+                    error_message, traceback_message = self.run_python_code(namespace, env.agent_runner_user)
         finally:
             if os.path.exists(self.temp_dir):
                 sys.path.remove(self.temp_dir)
             if self.change_to_temp_dir:
                 os.chdir(self.original_cwd)
+
+        return error_message, traceback_message
 
     @staticmethod
     def load_agents(agents: str, config: ClientConfig, local: bool = False):

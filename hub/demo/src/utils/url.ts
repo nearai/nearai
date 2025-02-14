@@ -17,3 +17,14 @@ export function getQueryParams() {
 
   return params;
 }
+
+export function getPrimaryDomainFromUrl(str: string | null | undefined) {
+  if (!str) return null;
+
+  try {
+    const url = new URL(str);
+    return url.hostname.replace('www.', '');
+  } catch (error) {
+    return null;
+  }
+}

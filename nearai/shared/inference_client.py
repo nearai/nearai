@@ -169,19 +169,32 @@ class InferenceClient(object):
         self,
         file_content: str,
         purpose: Literal["assistants", "batch", "fine-tune", "vision"],
-        encoding: str = "utf-8",
-        file_name="file.txt",
-        file_type="text/plain",
-    ) -> FileObject:
+        encoding: Optional[str] = "utf-8",
+        file_name: Optional[str] = "file.txt",
+        file_type: Optional[str] = "text/plain",
+    ) -> Optional[FileObject]:
         """Uploads a file."""
         client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
-        file_data = io.BytesIO(file_content.encode(encoding))
-        return client.files.create(file=(file_name, file_data, file_type), purpose=purpose)
+        if file_content:
+            file_data = io.BytesIO(file_content.encode(encoding or "utf-8"))
+            return client.files.create(file=(file_name, file_data, file_type), purpose=purpose)
+        else:
+            return None
+
+    def remove_file(self, file_id: str):
+        """Removes a file."""
+        client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
+        return client.files.delete(file_id=file_id)
 
     def add_file_to_vector_store(self, vector_store_id: str, file_id: str) -> VectorStoreFile:
         """Adds a file to vector store."""
         client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
         return client.beta.vector_stores.files.create(vector_store_id=vector_store_id, file_id=file_id)
+
+    def get_vector_store_files(self, vector_store_id: str) -> Optional[List[VectorStoreFile]]:
+        """Adds a file to vector store."""
+        client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
+        return client.beta.vector_stores.files.list(vector_store_id=vector_store_id).data
 
     def create_vector_store_from_source(
         self,
@@ -262,13 +275,24 @@ class InferenceClient(object):
     def get_vector_store(self, vector_store_id: str) -> VectorStore:
         """Gets a vector store by id."""
         endpoint = f"{self._config.base_url}/vector_stores/{vector_store_id}"
-        response = requests.get(endpoint)
+        auth_bearer_token = self._auth
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {auth_bearer_token}",
+        }
+
+        response = requests.get(endpoint, headers=headers)
         response.raise_for_status()
         return VectorStore(**response.json())
 
     def create_thread(self, messages):
         """Create a thread."""
         return self.client.beta.threads.create(messages=messages)
+
+    def get_thread(self, thread_id: str):
+        """Get a thread."""
+        return self.client.beta.threads.retrieve(thread_id=thread_id)
 
     def threads_messages_create(self, thread_id: str, content: str, role: Literal["user", "assistant"]):
         """Create a message in a thread."""
@@ -288,16 +312,32 @@ class InferenceClient(object):
         forked_thread = self.client.post(path=f"{self._config.base_url}/threads/{thread_id}/fork", cast_to=Thread)
         return forked_thread
 
+    def create_subthread(
+        self,
+        thread_id: str,
+        messages_to_copy: Optional[List[str]] = None,
+        new_messages: Optional[List[ChatCompletionMessageParam]] = None,
+    ):
+        """Create a subthread."""
+        return self.client.post(
+            path=f"{self._config.base_url}/threads/{thread_id}/subthread",
+            body={messages_to_copy: messages_to_copy, new_messages: new_messages},
+            cast_to=Thread,
+        )
+
     def threads_runs_create(self, thread_id: str, assistant_id: str, model: str):
         """Create a run in a thread."""
         return self.client.beta.threads.runs.create(thread_id=thread_id, assistant_id=assistant_id, model=model)
 
-    def run_agent(self, current_run_id: str, child_thread_id: str, assistant_id: str):
+    def run_agent(self, run_on_thread_id: str, assistant_id: str, parent_run_id: str = ""):
         """Starts a child agent run from a parent agent run."""
+        extra_body = {}
+        if parent_run_id:
+            extra_body["parent_run_id"] = parent_run_id
         return self.client.beta.threads.runs.create(
-            thread_id=child_thread_id,
+            thread_id=run_on_thread_id,
             assistant_id=assistant_id,
-            extra_body={"parent_run_id": current_run_id},
+            extra_body=extra_body,
         )
 
     def schedule_run(
@@ -382,4 +422,12 @@ class InferenceClient(object):
         return self.client.get(
             path=f"{self._config.base_url}/agent_data/{key}",
             cast_to=Dict[str, str],
+        )
+
+    def filter_agents(self, owner_id: Optional[str] = None, with_capabilities: Optional[bool] = False):
+        """Filter agents."""
+        return self.client.post(
+            path=f"{self._config.base_url}/filter_agents",
+            body={"owner_id": owner_id, "with_capabilities": with_capabilities},
+            cast_to=List[Any],
         )

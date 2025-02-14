@@ -130,3 +130,7 @@ The folder must contain an `agent.py` file, where the agent's logic is written, 
 
 !!! warning
     You can't remove or overwrite a file once it's uploaded, but you can hide the entire agent by setting the `"show_entry": false` field in the `metadata.json` file
+
+## Find agents from the agent
+
+* [`filter_agents`](../api.md#nearai.agents.environment.Environment.filter_agents): Filter agents based on various parameters.
