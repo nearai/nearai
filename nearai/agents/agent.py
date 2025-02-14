@@ -219,7 +219,7 @@ class Agent(object):
                 self.agent_language = "py"
                 with open(self.agent_filename, "r") as agent_file:
                     self.code = compile(agent_file.read(), self.agent_filename, "exec")
-            # else, if agent has "agent.ts" file, we use python runner
+            # else, if agent has "agent.ts" file, we use typescript runner
             elif os.path.exists(os.path.join(self.temp_dir, AGENT_FILENAME_TS)):
                 self.agent_filename = os.path.join(self.temp_dir, AGENT_FILENAME_TS)
                 self.agent_language = "ts"
