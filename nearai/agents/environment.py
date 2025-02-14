@@ -399,7 +399,7 @@ class Environment(object):
 
         # positional arguments are not allowed because arguments list will be updated
         def find_agents(*, owner_id: Optional[str] = None, with_capabilities: Optional[bool] = False):
-            """Filter agents based on various parameters."""
+            """Find agents based on various parameters."""
             return client.find_agents(owner_id, with_capabilities)
 
         self.find_agents = find_agents
