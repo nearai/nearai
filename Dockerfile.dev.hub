@@ -1,0 +1,50 @@
+FROM python:3.11.6
+
+WORKDIR /app
+
+# Install system dependencies including Rust
+RUN apt-get update && apt-get install -y \
+    python3-dev \
+    gcc \
+    build-essential \
+    curl \
+    pkg-config \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+# Add Cargo to PATH and set PYTHON_SYS_EXECUTABLE
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+RUN rustup target add aarch64-apple-darwin
+# Ensure Rust is available
+RUN cargo --version
+
+# Create python directory that maturin expects
+RUN mkdir -p /app/python
+
+# Copy project files
+COPY pyproject.toml .
+COPY . .
+
+# Install Python dependencies
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install --upgrade maturin
+RUN maturin build --interpreter $(which python3)
+# Install project dependencies
+
+RUN RUSTFLAGS="-C target-cpu=native" pip install --no-deps -e .
+
+RUN rustup show
+RUN cargo --version
+
+RUN export PYTHONHOME=$(python3 -c "import sys; print(sys.prefix)")
+RUN export PYTHONPATH=$(python3 -c "import sys; print(':'.join(sys.path))")
+
+RUN pip install -e .\[hub\]
+RUN pip install "fastapi[standard]"
+RUN pip install alembic
+
+RUN alembic upgrade head
+
+EXPOSE 8081
+
+CMD ["fastapi", "dev", "app.py", "--port", "8081"]

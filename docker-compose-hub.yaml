@@ -1,0 +1,15 @@
+services:
+  hub:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev.hub
+    ports:
+      - "8081:8081"
+    environment:
+      - DATABASE_HOST=localhost
+      - DATABASE_USER=root
+      - DATABASE_PASSWORD=change-me
+      - DATABASE_NAME=hub
+      - RUNNER_ENVIRONMENT=custom_runner
+      - CUSTOM_RUNNER_URL=http://localhost:9009/2015-03-31/functions/function/invocations
+      - API_URL=http://localhost:8081
