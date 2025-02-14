@@ -61,7 +61,9 @@ It might be useful to provide `API_URL` into the `docker run` command to use loc
 If you want to use local files instead of the NEAR AI registry to run agents that are not yet published:
 
 - mount  `~/.nearai/registry` to the docker image (add `-v ~/.nearai/registry:/root/.nearai/registry` to `docker run` command)
-- specify `DATA_SOURCE="local_files"` in both he Hub environment variables (`hub/.env`) and the Hub UI environment variables (`/hub/demo/.env`)
+- specify `DATA_SOURCE="local_files"`:
+  - in the Hub environment variables (`hub/.env`) for runner to use local files 
+  - the Hub UI environment variables (`/hub/demo/.env`) for UI to use local files
 
 ## Deployment
 The docker image is built and pushed to the NEAR AI ECR repository. The image is then deployed to AWS Lambda using the AWS CLI.
