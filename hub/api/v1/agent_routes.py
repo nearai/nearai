@@ -292,9 +292,9 @@ class FilterAgentsRequest(BaseModel):
     with_capabilities: Optional[bool] = False
 
 
-@run_agent_router.post("/filter_agents", response_model=List[RegistryEntry])
-def filter_agents(request_data: FilterAgentsRequest, auth: AuthToken = Depends(get_auth)) -> List[RegistryEntry]:
-    """Filter agents based on various parameters."""
+@run_agent_router.post("/find_agents", response_model=List[RegistryEntry])
+def find_agents(request_data: FilterAgentsRequest, auth: AuthToken = Depends(get_auth)) -> List[RegistryEntry]:
+    """Find agents based on various parameters."""
     with get_session() as session:
         # Start building the base query
         query = session.query(RegistryEntry)
@@ -311,9 +311,6 @@ def filter_agents(request_data: FilterAgentsRequest, auth: AuthToken = Depends(g
         # Filter by capabilities (if flag is set)
         if request_data.with_capabilities:
             query = query.filter(text("JSON_EXTRACT_JSON(details, 'capabilities') IS NOT NULL"))
-
-        # Print the generated SQL query for debugging
-        print(query.statement.compile(compile_kwargs={"literal_binds": True}))
 
         # Execute query and return results
         filtered_agents = query.all()

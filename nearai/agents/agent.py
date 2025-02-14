@@ -252,7 +252,7 @@ class Agent(object):
 
                 self.ts_runner_dir = ts_runner_sdk_dir
             else:
-                raise ValueError(f"Agent run error: {AGENT_FILENAME_PY} of {AGENT_FILENAME_TS} does not exist")
+                raise ValueError(f"Agent run error: {AGENT_FILENAME_PY} or {AGENT_FILENAME_TS} does not exist")
 
             # cache all agent files in file_cache
             for root, _, files in os.walk(self.temp_dir):

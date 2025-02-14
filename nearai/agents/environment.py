@@ -397,11 +397,12 @@ class Environment(object):
 
         self.add_file_to_vector_store = add_file_to_vector_store
 
-        def filter_agents(owner_id: Optional[str] = None, with_capabilities: Optional[bool] = False):
+        # positional arguments are not allowed because arguments list will be updated
+        def find_agents(*, owner_id: Optional[str] = None, with_capabilities: Optional[bool] = False):
             """Filter agents based on various parameters."""
-            return client.filter_agents(owner_id, with_capabilities)
+            return client.find_agents(owner_id, with_capabilities)
 
-        self.filter_agents = filter_agents
+        self.find_agents = find_agents
 
         def create_vector_store(
             name: str,
@@ -495,9 +496,7 @@ class Environment(object):
         self.get_agent_public_key = get_agent_public_key
 
         def run_agent(
-            owner: str,
-            agent_name: str,
-            version: str,
+            agent_id: str,
             query: Optional[str] = None,
             thread_mode: ThreadMode = ThreadMode.FORK,
             additional_subthread_messages: Optional[List[Message]] = None,
@@ -518,15 +517,14 @@ class Environment(object):
             if query:
                 client.threads_messages_create(thread_id=child_thread_id, content=query, role="user")
 
-            assistant_id = f"{owner}/{agent_name}/{version}"
-            self.add_system_log(f"Running agent {assistant_id}", logging.INFO)
+            self.add_system_log(f"Running agent {agent_id}", logging.INFO)
             parent_run_id = None
             if run_mode == RunMode.WITH_CALLBACK:
                 parent_run_id = self._run_id
             client.run_agent(
                 parent_run_id=parent_run_id,
                 run_on_thread_id=child_thread_id,
-                assistant_id=assistant_id,
+                assistant_id=agent_id,
             )
             self._pending_ext_agent = True
 
