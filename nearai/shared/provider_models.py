@@ -46,6 +46,8 @@ def get_provider_namespaced_model(provider_model: str, provider: Optional[str] =
             return provider, NamespacedName(namespace=parts[0], name=parts[1])
         else:
             raise ValueError(f"Invalid model format for Fireworks: {model}")
+    if provider.startswith("https://"):
+        return provider, NamespacedName(name=model)
     if provider == "local":
         model = re.sub(r".*/", "", model)
         return provider, NamespacedName(name=model)
@@ -94,10 +96,13 @@ class ProviderModels:
         4. namespace/model_short_name as used by provider, e.g. "yi-01-ai/yi-large"
         5. model_name as used in registry, e.g. "llama-3-70b-instruct"
         6. namespace/model_name as used in registry, e.g. "near.ai/llama-3-70b-instruct"
+        7. provider base url/model-name, e.g. "https://api.openai.com/v1::gpt-4o"
         """
         if provider == "":
             provider = None
         matched_provider, namespaced_model = get_provider_namespaced_model(model, provider)
+        if matched_provider.startswith('https://'):
+            return matched_provider, namespaced_model.name
         namespaced_model = namespaced_model.canonical()
         if namespaced_model not in self.provider_models:
             raise ValueError(f"Model {namespaced_model} not present in provider models {self.provider_models}")

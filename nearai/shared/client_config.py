@@ -27,7 +27,7 @@ class ClientConfig(BaseModel):
 
     def get_hub_client(self):
         """Get the hub client."""
-        signature = f"Bearer {self.auth.model_dump_json()}"
+        signature = f"Bearer {self.auth.model_dump_json()}" if self.auth else None
         base_url = self.base_url
         return openai.OpenAI(
             base_url=base_url, api_key=signature, timeout=DEFAULT_TIMEOUT, max_retries=DEFAULT_MAX_RETRIES
