@@ -14,13 +14,11 @@ from nearai.shared.client_config import DEFAULT_PROVIDER, DEFAULT_PROVIDER_MODEL
 DATA_FOLDER = Path.home() / ".nearai"
 try:
     DATA_FOLDER.mkdir(parents=True, exist_ok=True)
-except Exception as e:
+except Exception:
     try:
-        print(f"Exception occurred at creating {DATA_FOLDER}", e)
         DATA_FOLDER = Path.cwd() / ".nearai"
         DATA_FOLDER.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        print(f"Exception occurred at creating {DATA_FOLDER}", e)
+    except Exception:
         # only /tmp folder has write access on lambda runner
         DATA_FOLDER = Path("/tmp") / ".nearai"
         DATA_FOLDER.mkdir(parents=True, exist_ok=True)
