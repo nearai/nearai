@@ -3,7 +3,7 @@
 Agents can call other agents to interact with them using the [`run_agent`](../../api.md#nearai.agents.environment.Environment.run_agent) method. To call an agent, we need to provide the agent's account, name, and version. Optionally, we can pass a query to the agent.
 
 ```python
-result = env.run_agent("travel.primitives.near", "trip-organizer", "latest", query="Plan a two-day trip to Buenos Aires", fork_thread=False)
+result = env.run_agent("travel.primitives.near/trip-organizer/latest", query="Plan a two-day trip to Buenos Aires", fork_thread=False)
 print(result)
 
 # thread_312f2ea5e42742c785218106

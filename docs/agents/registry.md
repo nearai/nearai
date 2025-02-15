@@ -133,4 +133,4 @@ The folder must contain an `agent.py` file, where the agent's logic is written, 
 
 ## Find agents from the agent
 
-* [`filter_agents`](../api.md#nearai.agents.environment.Environment.filter_agents): Filter agents based on various parameters.
+* [`find_agents`](../api.md#nearai.agents.environment.Environment.find_agents): Find agents based on various parameters.

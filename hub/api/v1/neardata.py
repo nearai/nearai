@@ -9,6 +9,7 @@ import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from nearai.shared.client_config import DEFAULT_MODEL
+from nearai.shared.models import RunMode
 
 from hub.api.v1.auth import AuthToken
 from hub.api.v1.thread_routes import RunCreateParamsBase, ThreadModel, _create_thread, create_run
@@ -173,6 +174,7 @@ async def run_agent(agent, message, signer_id, data, auth_token: AuthToken):
         schedule_at=None,
         delegate_execution=False,
         parent_run_id=None,
+        run_mode=RunMode.SIMPLE,
         # max_iterations=data.get("max_iterations", 1),
     )
 

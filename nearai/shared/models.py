@@ -1,7 +1,19 @@
+from enum import Enum
 from typing import Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel
 from typing_extensions import Required, TypedDict
+
+
+class ThreadMode(Enum):
+    SAME = 1
+    FORK = 2
+    CHILD = 3
+
+
+class RunMode(Enum):
+    SIMPLE = 0
+    WITH_CALLBACK = 1
 
 
 class SimilaritySearch(BaseModel):
