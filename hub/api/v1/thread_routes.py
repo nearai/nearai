@@ -627,6 +627,7 @@ class RunCreateParamsBase(BaseModel):
     schedule_at: Optional[datetime] = Field(None, description="The time at which the run should be scheduled.")
     delegate_execution: bool = Field(False, description="Whether to delegate execution to an external actor.")
     parent_run_id: Optional[str] = Field(None, description="The ID of the run that this run is triggered by.")
+    run_mode: Optional[RunMode] = Field(RunMode.SIMPLE, description="The mode in which the run should be executed.")
 
 
 @threads_router.post("/threads/{thread_id}/runs")
@@ -685,6 +686,7 @@ def create_run(
             status="queued",
             parent_run_id=run.parent_run_id,
             child_run_ids=[],
+            run_mode=run.run_mode,
         )
 
         session.add(run_model)
@@ -711,17 +713,15 @@ def run_agent(
     thread_id: str,
     run_id: str,
     background_tasks: BackgroundTasks,
-    run_mode: Optional[RunMode] = RunMode.SIMPLE,
     auth: AuthToken = Depends(get_auth),
 ) -> OpenAIRun:
     """Task to run an agent in the background."""
-    return _run_agent(thread_id, run_id, run_mode, background_tasks, auth)
+    return _run_agent(thread_id, run_id, background_tasks, auth)
 
 
 def _run_agent(
     thread_id: str,
     run_id: str,
-    run_mode: Optional[RunMode] = RunMode.SIMPLE,
     background_tasks: Optional[BackgroundTasks] = None,
     auth: AuthToken = Depends(get_auth),
 ) -> OpenAIRun:
@@ -838,13 +838,13 @@ def _run_agent(
                 session.commit()
                 logger.info(f"Calling parent run: {parent_run.id}, after child run: {run_id}")
 
-                if run_mode == RunMode.WITH_CALLBACK:
+                if run_model.run_mode == RunMode.WITH_CALLBACK:
                     if background_tasks:
                         background_tasks.add_task(
-                            run_agent, thread_id, parent_run.id, background_tasks, RunMode.SIMPLE, auth
+                            run_agent, thread_id, parent_run.id, background_tasks, auth
                         )
                     else:
-                        _run_agent(thread_id, parent_run.id, RunMode.SIMPLE, auth=auth)
+                        _run_agent(thread_id, parent_run.id, auth=auth)
         return run_model.to_openai()
 
 

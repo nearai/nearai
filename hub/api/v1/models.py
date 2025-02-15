@@ -18,6 +18,7 @@ from sqlalchemy.types import TypeDecorator
 from sqlmodel import JSON, Column, Field, Session, SQLModel, create_engine
 
 from hub.api.v1.entry_location import EntryLocation
+from nearai.shared.models import RunMode
 
 load_dotenv()
 
@@ -355,6 +356,7 @@ class Run(SQLModel, table=True):
     parallel_tool_calls: bool = Field(default=False)
     parent_run_id: Optional[str] = Field(default=None)
     child_run_ids: List[str] = Field(default=[], sa_column=Column(JSON))
+    run_mode: Optional[RunMode] = Field(default=None)
 
     def __init__(self, **data):  # noqa: D107
         super().__init__(**data)
