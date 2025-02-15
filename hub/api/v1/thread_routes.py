@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime
 from os import getenv
@@ -33,7 +34,7 @@ from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
 from hub.api.v1.models import get_session
-from hub.api.v1.routes import ChatCompletionsRequest, chat_completions, get_models_inner
+from hub.api.v1.routes import ChatCompletionsRequest, chat_completions
 from hub.api.v1.sql import SqlClient
 from hub.tasks.scheduler import get_scheduler
 
@@ -112,11 +113,11 @@ SUMMARY_PROMPT = """You are an expert at summarizing conversations in a maximum 
 
 **Example Responses:**
 
-- "Weather in Tokyo"
-- "Trip to Lisbon"
-- "Career change advice"
-- "Book recommendation request"
-- "Tech support for laptop"
+- Weather in Tokyo
+- Trip to Lisbon
+- Career change advice
+- Book recommendation request
+- Tech support for laptop
 """
 
 
@@ -394,10 +395,6 @@ def create_message(
         if thread is None:
             raise HTTPException(status_code=404, detail="Thread not found")
 
-        # TODO(#529): Fix topic generation
-        # if not thread.meta_data or not thread.meta_data.get("topic"):
-        #     background_tasks.add_task(update_thread_topic, thread_id, AuthData(**auth.model_dump()))
-
         if not message.content:
             message.content = " "  # OpenAI format requires content to be non-empty
 
@@ -413,10 +410,14 @@ def create_message(
         logger.info(f"Created message: {message_model}")
         session.add(message_model)
         session.commit()
+
+        if not thread.meta_data or not thread.meta_data.get("topic"):
+            generate_thread_topic(thread_id, AuthData(**auth.model_dump()))
+
         return message_model.to_openai()
 
 
-def update_thread_topic(thread_id: str, auth: AuthData):
+def generate_thread_topic(thread_id: str, auth: AuthData):
     with get_session() as session:
         thread = session.get(ThreadModel, thread_id)
         if thread is None:
@@ -430,12 +431,6 @@ def update_thread_topic(thread_id: str, auth: AuthData):
             .limit(1)
         ).all()
 
-        # Determine default model
-        models = [m["id"] for m in get_models_inner()]
-        model = DEFAULT_PROVIDER_MODEL
-        if DEFAULT_PROVIDER_MODEL not in models:
-            model = models[0]
-
         messages = [
             {
                 "role": "system",
@@ -446,8 +441,7 @@ def update_thread_topic(thread_id: str, auth: AuthData):
         completion = chat_completions(
             db=SqlClient(),
             request=ChatCompletionsRequest(
-                messages=messages,
-                model=model,
+                messages=messages, model="fireworks::accounts/fireworks/models/qwen2p5-72b-instruct", stream=False
             ),
             auth=AuthToken(**auth.model_dump()),
         )
@@ -461,7 +455,8 @@ def update_thread_topic(thread_id: str, auth: AuthData):
         if thread.meta_data is None:
             thread.meta_data = {}
 
-        thread.meta_data["topic"] = completion.choices[0].message.content
+        data = json.loads(completion.body.decode("utf-8"))
+        thread.meta_data["topic"] = data["choices"][0]["message"]["content"]
         flag_modified(thread, "meta_data")  # SQLAlchemy is not detecting changes in the dict, forcing a commit.
         session.commit()
 
