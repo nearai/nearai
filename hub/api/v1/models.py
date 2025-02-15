@@ -6,6 +6,7 @@ from os import getenv
 from typing import Dict, Iterator, List, Optional
 
 from dotenv import load_dotenv
+from nearai.shared.models import RunMode
 from openai.types.beta.thread import Thread as OpenAITThread
 from openai.types.beta.threads.message import Attachment
 from openai.types.beta.threads.message import Message as OpenAITThreadMessage
@@ -18,7 +19,6 @@ from sqlalchemy.types import TypeDecorator
 from sqlmodel import JSON, Column, Field, Session, SQLModel, create_engine
 
 from hub.api.v1.entry_location import EntryLocation
-from nearai.shared.models import RunMode
 
 load_dotenv()
 

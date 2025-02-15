@@ -840,9 +840,7 @@ def _run_agent(
 
                 if run_model.run_mode == RunMode.WITH_CALLBACK:
                     if background_tasks:
-                        background_tasks.add_task(
-                            run_agent, thread_id, parent_run.id, background_tasks, auth
-                        )
+                        background_tasks.add_task(run_agent, thread_id, parent_run.id, background_tasks, auth)
                     else:
                         _run_agent(thread_id, parent_run.id, auth=auth)
         return run_model.to_openai()
