@@ -24,6 +24,7 @@ Before deployment, NEAR AI verifies both proper hardware configuration and Docke
 After execution, NEAR AI validated security through TEE attestations - cryptographic proofs verify both a secure environment and data/code integrity. 
 
 You can view and verify these attestations yourself or publish them on-chain with NEAR Protocol to allow anyone to verify them. This provides a cryptographically verifiable chain of trust through the entire stack from agent to inference to hardware; all the way down to the certifications from the chip manufacturers.
+
 ---
 
 ## How Can I Use it?
