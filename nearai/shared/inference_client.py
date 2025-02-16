@@ -337,7 +337,7 @@ class InferenceClient(object):
         extra_body = {}
         if parent_run_id:
             extra_body["parent_run_id"] = parent_run_id
-        extra_body["run_mode"] = str(run_mode.value)
+        extra_body["run_mode"] = run_mode.value  # type: ignore
         return self.client.beta.threads.runs.create(
             thread_id=run_on_thread_id,
             assistant_id=assistant_id,

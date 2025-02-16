@@ -490,7 +490,6 @@ class Environment(object):
             agent_id: str,
             query: Optional[str] = None,
             thread_mode: ThreadMode = ThreadMode.FORK,
-            additional_subthread_messages: Optional[List[Message]] = None,
             run_mode: RunMode = RunMode.SIMPLE,
         ):
             """Runs a child agent on the thread."""
