@@ -23,6 +23,7 @@ import {
   Star,
   Sun,
   User,
+  Wallet,
   X,
 } from '@phosphor-icons/react';
 import * as NavigationMenu from '@radix-ui/react-navigation-menu';
@@ -122,6 +123,8 @@ export const Navigation = () => {
   const clearTokenMutation = trpc.auth.clearToken.useMutation();
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const wallet = useWalletStore((store) => store.wallet);
+  const modal = useWalletStore((store) => store.modal);
+  const account = useWalletStore((store) => store.account);
   const path = usePathname();
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
@@ -243,6 +246,19 @@ export const Navigation = () => {
               />
             }
           />
+
+          <Tooltip asChild content="Connect Wallet">
+            <Button
+                label={account?.active ? account.accountId : 'Connect Wallet'}
+                size="small"
+                fill="outline"
+                variant="secondary"
+                iconLeft={<Wallet weight="duotone" />}
+                onClick={() => {
+                  modal?.show();
+                }}
+              />
+          </Tooltip>
         </Flex>
 
         <BreakpointDisplay show="smaller-than-desktop" className={s.breakpoint}>
