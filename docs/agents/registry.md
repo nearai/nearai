@@ -1,21 +1,28 @@
-# The Registry: Finding and Publishing Agents
+# Registry (NEAR AI Hub): Finding and Publishing Agents
 
-NEAR AI agents can be stored in a common registry, allowing the community to share their creations.
+NEAR AI agents can be deployed and hosted in a common registry, allowing the community to share their creations. This is also refered to as the **NEAR AI Hub**.
 
-Let's take a look at how we can navigate the registry, download agents, and contribute our own agents to the ecosystem.
+Let's take a look at how we can navigate this registry, download agents, and contribute our own agents to the ecosystem.
 
 !!! note
-    The registry is backed by an S3 bucket with metadata stored in a database.
+    NEAR AI Hub is backed by an S3 bucket with metadata stored in a database.
 
 ---
 
 ## Finding an Agent
 
-There are two main ways to navigate the registry to find agents: through the [Web AI Hub](https://app.near.ai/agents), or using the [NEAR AI CLI](./quickstart.md):
+There are two main ways to navigate the Hub to find agents: 
 
+- Online via [app.near.ai/agents](https://app.near.ai/agents)
+- Using [NEAR AI CLI](./quickstart.md):
+
+For the rest of this guide, we will use the CLI to find and deploy agents.
+
+### View all agents
+
+To view all agents with `nearai` CLI command, run:
 
 ```bash
-# List all agents
 nearai registry list --category agent
 ```
 
@@ -36,12 +43,16 @@ nearai registry list --category agent
     ```
 
 !!! tip
-    You can run the agents **directly on the [Web AI Hub](https://app.near.ai/agents)** to see how they work
+    You can run deploy and run agents **directly on the [app.near.ai](https://app.near.ai/agents)** to see how they work
 
 <hr class="subsection" />
 
 ### Filtering Agents
-You can further filter the agents by the developer that created it (`--namespace`) or the tags (`--tags`) that were added to it.
+
+You can further filter the agents in two ways:
+
+- By the developer that created it -> `--namespace`
+- By the tags  that were added to it -> `--tags`
 
 For example, to find all agents created by `gagdiez.near` with the tag `template`, you can run:
 

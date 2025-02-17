@@ -34,11 +34,11 @@ Driven by one of the minds behinds **TensorFlow** and the **Transformer Architec
     </span>
 
 
--   :material-web: __Web Hub__ :octicons-link-external-16:
+-   :material-web: __NEAR AI Hub__ :octicons-link-external-16:
 
     ---
 
-    Use our Web Hub to discover agents, datasets, and models with ease
+    Use our public AI hub to discover and deploy agents, datasets, and models with ease. 
 
     <span style="display: flex; justify-content: space-between;">
     [:material-robot-happy: Agents](https://app.near.ai/agents)
