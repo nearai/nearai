@@ -59,7 +59,7 @@ class InferenceClient(object):
         else:
             self._auth = None
 
-    # This makes sense in the CLI where we don't mind doing this request and caching it.f
+    # This makes sense in the CLI where we don't mind doing this request and caching it.
     # In the aws_runner this is an extra request every time we run.
     # TODO(#233): add a choice of a provider model in aws_runner, and then this step can be skipped.
     @cached_property
