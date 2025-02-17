@@ -141,6 +141,8 @@ class Environment(object):
             for key, value in self.env_vars.items()
             if key.lower() == "debug"
         )
+        # Expose the NEAR account_id of a user that signs this request to run an agent.
+        self.signer_account_id: str = client._config.auth.account_id if client._config.auth else ""
 
         if fastnear_api_key:
             default_mainnet_rpc = f"https://rpc.mainnet.fastnear.com?apiKey={fastnear_api_key}"
@@ -308,15 +310,6 @@ class Environment(object):
         os.chdir(self._path)
 
         # Protected client methods
-        def signer_account_id() -> Optional[str]:
-            """Expose the NEAR account_id of a user that signs this request to run an agent."""
-            try:
-                return client._config.auth.account_id if client._config.auth else None
-            except (AttributeError, TypeError):
-                return None
-
-        self.signer_account_id = signer_account_id()
-
         def query_vector_store(vector_store_id: str, query: str, full_files: bool = False):
             """Queries a vector store.
 
