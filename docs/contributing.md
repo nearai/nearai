@@ -82,20 +82,12 @@ If you discover any errors or omissions in our documentation, please open an iss
 
 If you think you can contribute a fix for the issue, please feel free to open a Pull Request.
 
-To preview your changes locally, you will need to install all the dependencies for the documentation, particularly:
-
-- [`mkdocs`](https://www.mkdocs.org/)
-- [`mkdocs-material`](https://squidfunk.github.io/mkdocs-material/)
-- [`mkdocs-autorefs`](https://pypi.org/project/mkdocs-autorefs/)
-- [`mkdocs-minify-plugin`](https://github.com/byrnereese/mkdocs-minify-plugin)
-- [`mkdocsstrings`](https://mkdocstrings.github.io/)
-
-All these dependencies can be easily installed through `pip` or `poetry`:
+To preview your changes locally, you will need to install all the dependencies for the documentation which can be easily installed through `pip` or `poetry`:
 
 === "pip"
 
       ```bash
-      pip install mkdocs mkdocs-material mkdocs-autorefs mkdocs-minify-plugin "mkdocstrings[python]" "mkdocs-material[imaging]"
+      pip install -e ".[docs]"
       ```
 
 === "poetry"
