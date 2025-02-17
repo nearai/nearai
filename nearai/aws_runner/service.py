@@ -142,8 +142,8 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
     if params["data_source"] == "registry":
         use_cache = os.getenv("USE_AGENT_CACHE", "true").lower() == "true"
 
+        global local_agent_cache
         if use_cache:
-            global local_agent_cache
             if agent in local_agent_cache:
                 full_agent = local_agent_cache[agent]
                 full_agent.temp_dir = full_agent.write_agent_files_to_temp(full_agent.agent_files)
