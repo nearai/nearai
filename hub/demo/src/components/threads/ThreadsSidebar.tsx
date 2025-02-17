@@ -120,6 +120,7 @@ export const ThreadsSidebar = ({
                   paddingInline="m"
                   background={threadId === thread.id ? 'sand-0' : 'sand-2'}
                   key={thread.id}
+                  onDoubleClick={() => setEditingThreadId(thread.id)}
                 >
                   <Flex direction="column">
                     <Flex align="center" gap="s">
