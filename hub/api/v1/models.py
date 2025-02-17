@@ -6,6 +6,7 @@ from os import getenv
 from typing import Dict, Iterator, List, Optional
 
 from dotenv import load_dotenv
+from nearai.shared.models import RunMode
 from openai.types.beta.thread import Thread as OpenAITThread
 from openai.types.beta.threads.message import Attachment
 from openai.types.beta.threads.message import Message as OpenAITThreadMessage
@@ -355,6 +356,7 @@ class Run(SQLModel, table=True):
     parallel_tool_calls: bool = Field(default=False)
     parent_run_id: Optional[str] = Field(default=None)
     child_run_ids: List[str] = Field(default=[], sa_column=Column(JSON))
+    run_mode: Optional[RunMode] = Field(default=None)
 
     def __init__(self, **data):  # noqa: D107
         super().__init__(**data)

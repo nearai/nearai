@@ -29,6 +29,7 @@ from nearai.shared.models import (
     ExpiresAfter,
     GitHubSource,
     GitLabSource,
+    RunMode,
     SimilaritySearch,
     SimilaritySearchFile,
     StaticFileChunkingStrategyObjectParam,
@@ -329,11 +330,14 @@ class InferenceClient(object):
         """Create a run in a thread."""
         return self.client.beta.threads.runs.create(thread_id=thread_id, assistant_id=assistant_id, model=model)
 
-    def run_agent(self, run_on_thread_id: str, assistant_id: str, parent_run_id: str = ""):
+    def run_agent(
+        self, run_on_thread_id: str, assistant_id: str, parent_run_id: str = "", run_mode: RunMode = RunMode.SIMPLE
+    ):
         """Starts a child agent run from a parent agent run."""
         extra_body = {}
         if parent_run_id:
             extra_body["parent_run_id"] = parent_run_id
+        extra_body["run_mode"] = run_mode.value  # type: ignore
         return self.client.beta.threads.runs.create(
             thread_id=run_on_thread_id,
             assistant_id=assistant_id,
@@ -424,10 +428,10 @@ class InferenceClient(object):
             cast_to=Dict[str, str],
         )
 
-    def filter_agents(self, owner_id: Optional[str] = None, with_capabilities: Optional[bool] = False):
+    def find_agents(self, owner_id: Optional[str] = None, with_capabilities: Optional[bool] = False):
         """Filter agents."""
         return self.client.post(
-            path=f"{self._config.base_url}/filter_agents",
+            path=f"{self._config.base_url}/find_agents",
             body={"owner_id": owner_id, "with_capabilities": with_capabilities},
             cast_to=List[Any],
         )
