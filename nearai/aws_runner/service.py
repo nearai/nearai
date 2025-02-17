@@ -21,8 +21,8 @@ OUTPUT_PATH = "/tmp/nearai-agent-runner"
 DEFAULT_API_URL = "https://api.near.ai"
 
 # Local caches
-inference_client = None
-inference_client_cache_time = None
+provider_models_cache = None
+provider_models_cache_time = None
 local_agent_cache: dict[str, Agent] = {}
 
 
@@ -316,20 +316,21 @@ def start_with_environment(
         base_url=api_url + "/v1",
         auth=auth,
     )
-    global inference_client
-    global inference_client_cache_time
+    inference_client = InferenceClient(client_config, protected_vars.get("RUNNER_API_KEY"), agent.identifier)
+
+    global provider_models_cache
+    global provider_models_cache_time
     # Force a check for new models after an hour if the runner has stayed hot for that long
     # this is a failsafe given usage patterns at the time of writing, if models are uploaded more frequently and
     # runners stay hot, it could be adjusted down or client model caching removed.
-
-    # disabling inference_client cache pending changes to only cache provider models
-    if True or not inference_client or (time.time() - inference_client_cache_time > 3600):
-        if inference_client_cache_time:
+    if not provider_models_cache or (time.time() - (provider_models_cache_time or 0) > 3600):
+        if provider_models_cache_time:
             write_metric("InferenceClientCacheCleared", "1", "Count")
-        inference_client = InferenceClient(client_config, protected_vars.get("RUNNER_API_KEY"), agent.identifier)
-        inference_client_cache_time = time.time()
+        provider_models_cache_time = time.time()
+        provider_models_cache = inference_client.provider_models
     else:
-        inference_client.generate_auth_for_current_agent(client_config, agent.identifier)
+        inference_client.set_provider_models(provider_models_cache)
+
     hub_client = client_config.get_hub_client()
     run_path = (
         additional_path
