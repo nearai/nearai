@@ -25,3 +25,5 @@ aiohttp==3.9.3
 borsh-construct
 tweepy >= 4.14.0
 tenacity == 9.0.0
+web3 >= 7.8.0
+eth-account >= 0.13.5
