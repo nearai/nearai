@@ -14,3 +14,9 @@ variable "aws_account_id" {
   type        = string
   default     = "543900120763"
 }
+
+variable "cloudwatch_log_groups" {
+  description = "Map of CloudWatch Log Groups to forward to Datadog"
+  type        = map(string)
+  default     = {}
+}
