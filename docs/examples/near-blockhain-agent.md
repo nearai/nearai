@@ -1,5 +1,5 @@
 ---
-title: NEAR AI Agent Example
+title: NEAR Blockchain Agent Example
 description: A complete example of a NEAR blockchain agent implementation
 ---
 
@@ -115,6 +115,7 @@ state.amount = 10.0
 ### Complete Agent Code
 
 ```python
-{{ gitsnippet('nearai/official-agents', 'near-agent/utils.py') }}
-```
 
+--8<-- "https://raw.githubusercontent.com/nearai/official-agents/main/near-agent/utils.py:1:10"
+
+```

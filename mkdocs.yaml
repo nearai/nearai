@@ -107,6 +107,7 @@ markdown_extensions:
   - pymdownx.snippets:
       auto_append:
         - includes/mkdocs.md
+      url_download: true
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
@@ -154,8 +155,8 @@ nav:
     - NEAR Event-Triggered Agents: 'near_events.md'
     - Twitter (X) Triggered Agents: 'agent_triggers.md'
   - Examples:
-    - Agent Examples: 'examples/overview.md'
-    - NEAR AI Agent: 'examples/near-agent-example.md'
+    - Overview: 'examples/overview.md'
+    - NEAR Blockchain Agent: 'examples/near-blockhain-agent.md'
   - Models:
     - Fine-tuning: 'models/fine_tuning.md'
     - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
