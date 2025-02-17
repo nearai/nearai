@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from ddtrace import patch_all
 
 from hub.api.v1.agent_data import agent_data_router
 from hub.api.v1.agent_routes import run_agent_router
@@ -26,6 +27,11 @@ from hub.api.v1.stars import v1_router as stars_router
 from hub.api.v1.thread_routes import threads_router
 from hub.api.v1.vector_stores import vector_stores_router
 from hub.tasks.schedule import lifespan
+
+
+# Initialize Datadog tracing
+patch_all()
+
 
 # Configure logging
 logging.basicConfig(

@@ -6,11 +6,6 @@ terraform {
   }
 }
 
-locals {
-  environment = "prod"
-  aws_region = "us-west-2"
-}
-
 module "datadog-log-forwarder" {
   source = "../../modules/datadog-log-forwarder"
   environment = local.environment
