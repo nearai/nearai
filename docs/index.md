@@ -38,7 +38,7 @@ Driven by one of the minds behinds **TensorFlow** and the **Transformer Architec
 
     ---
 
-    An AI developer hub to discover and deploy agents, datasets, and models with ease. 
+    NEAR AI developer hub where you can discover and deploy agents, datasets, and models with ease. 
 
     <span style="display: flex; justify-content: space-between;">
     [:material-robot-happy: Agents](https://app.near.ai/agents)
