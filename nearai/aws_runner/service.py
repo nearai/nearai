@@ -111,7 +111,7 @@ def handler(event, context):
 
 
 def write_metric(metric_name, value, unit="Milliseconds", verbose=True):
-    if cloudwatch:  # running in lambda or locally passed credentials
+    if cloudwatch and value:  # running in lambda or locally passed credentials
         cloudwatch.put_metric_data(
             Namespace="NearAI",
             MetricData=[
