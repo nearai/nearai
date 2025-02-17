@@ -311,7 +311,9 @@ def start_with_environment(
     # Force a check for new models after an hour if the runner has stayed hot for that long
     # this is a failsafe given usage patterns at the time of writing, if models are uploaded more frequently and
     # runners stay hot, it could be adjusted down or client model caching removed.
-    if not inference_client or (time.time() - inference_client_cache_time > 3600):
+
+    # disabling inference_client cache pending changes to only cache provider models
+    if True or not inference_client or (time.time() - inference_client_cache_time > 3600):
         if inference_client_cache_time:
             write_metric("InferenceClientCacheCleared", "1", "Count")
         inference_client = InferenceClient(client_config, protected_vars.get("RUNNER_API_KEY"), agent.identifier)
