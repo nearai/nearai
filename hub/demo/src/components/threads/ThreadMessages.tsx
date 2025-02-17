@@ -84,8 +84,6 @@ export const ThreadMessages = ({
     }
   }, [groupedMessages, threadId, scroll]);
 
-  console.log(groupedMessages);
-
   if (!isAuthenticated) {
     return (
       <div className={s.wrapper} data-grow={grow}>
@@ -100,14 +98,11 @@ export const ThreadMessages = ({
 
       <div className={s.messages} ref={messagesRef}>
         {groupedMessages.map((group, groupIndex) => (
-          <Fragment key={group.threadId + groupIndex}>
+          <Fragment key={groupIndex}>
             {group.isRootThread ? (
               <>
                 {group.messages.map((message, messageIndex) => (
-                  <ThreadMessage
-                    message={message}
-                    key={message.role + messageIndex}
-                  />
+                  <ThreadMessage message={message} key={messageIndex} />
                 ))}
               </>
             ) : (
@@ -161,10 +156,7 @@ const Subthread = ({ group }: SubthreadProps) => {
 
           <Accordion.Content style={{ paddingBottom: 0 }}>
             {group.messages.map((message, messageIndex) => (
-              <ThreadMessage
-                message={message}
-                key={message.role + messageIndex}
-              />
+              <ThreadMessage message={message} key={messageIndex} />
             ))}
 
             <Text

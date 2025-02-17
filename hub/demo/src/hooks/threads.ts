@@ -114,7 +114,10 @@ export function useGroupedThreadMessages(
         return;
       } else {
         result.push({
-          isRootThread: message.thread_id === rootThreadId,
+          isRootThread:
+            message.thread_id === rootThreadId ||
+            message.thread_id === '' ||
+            !rootThreadId,
           threadId: message.thread_id,
           messages: [message],
         });

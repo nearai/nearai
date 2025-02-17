@@ -136,7 +136,7 @@ nav:
     - Private & Verifiable AI: 'private-ml-sdk.md'
   - Agents:
     - Quickstart: 'agents/quickstart.md'
-    - Registry: 'agents/registry.md'
+    - Agent Registry: 'agents/registry.md'
     - Local & Remote Runs: 'agents/running.md'
     - Threads: 'agents/threads.md'
     - Environment:

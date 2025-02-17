@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 from dotenv import load_dotenv
 from nearai.shared.client_config import DEFAULT_MODEL
+from nearai.shared.models import RunMode
 
 from hub.api.v1.auth import AuthToken
 from hub.api.v1.thread_routes import RunCreateParamsBase, ThreadModel, _create_thread, create_run
@@ -168,6 +169,7 @@ async def run_agent(agent, content, auth_token: AuthToken):
         schedule_at=None,
         delegate_execution=False,
         parent_run_id=None,
+        run_mode=RunMode.SIMPLE,
     )
 
     logger.warning(f"Scheduling agent run: {agent}")

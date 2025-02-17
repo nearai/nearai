@@ -7,6 +7,7 @@ from functools import partial
 from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import HTTPException
 from nearai.shared.client_config import DEFAULT_MODEL
+from nearai.shared.models import RunMode
 from sqlmodel import select
 
 from hub.api.v1.auth import AuthToken
@@ -60,6 +61,7 @@ async def process_due_tasks(auth_token: AuthToken):
                     schedule_at=None,
                     delegate_execution=False,
                     parent_run_id=None,
+                    run_mode=RunMode.SIMPLE,
                 )
 
                 # save successful run attempt in DB
