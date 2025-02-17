@@ -1,6 +1,11 @@
 # Environment Variables and Secrets
 
-When building NEAR AI agents, you can configure them using both public and private environment variables. This approach provides a flexible way to manage settings and sensitive information without altering the underlying code.
+Environment variables provide a flexible way to manage configuration settings and sensitive information in your agents without modifying the source code. There are two main categories:
+
+1. [**Public Environment Variables**](#public-environment-variables) - For general configuration settings
+2. [**Private Environment Variables (Secrets)**](#secrets) - For sensitive information like API keys
+
+Each category can be configured by either the agent author or the end user, providing flexibility while maintaining security.
 
 ---
 
