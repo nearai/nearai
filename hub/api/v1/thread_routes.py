@@ -411,7 +411,7 @@ def create_message(
         session.commit()
 
         if not thread.meta_data or not thread.meta_data.get("topic"):
-            generate_thread_topic(thread_id, AuthData(**auth.model_dump()))
+            background_tasks.add_task(generate_thread_topic, thread_id, AuthData(**auth.model_dump()))
 
         return message_model.to_openai()
 
