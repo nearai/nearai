@@ -45,7 +45,7 @@ nearai/
 
 ### Requirements
 
-- [Python 3.11 or higher](https://www.python.org/downloads/)
+- [Python 3.11](https://www.python.org/downloads/) _(3.12+ is currently not supported)_
 - [Git](https://github.com/git-guides/install-git)
 - [Docker](https://docs.docker.com/get-docker/) (for local agent testing)
 
