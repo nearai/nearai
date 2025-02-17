@@ -153,6 +153,9 @@ nav:
     - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
     - NEAR Event-Triggered Agents: 'near_events.md'
     - Twitter (X) Triggered Agents: 'agent_triggers.md'
+  - Examples:
+    - Agent Examples: 'examples/overview.md'
+    - NEAR AI Agent: 'examples/near-agent-example.md'
   - Models:
     - Fine-tuning: 'models/fine_tuning.md'
     - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
@@ -166,6 +169,7 @@ plugins:
   - autorefs
   - search:
       separator: '[\s\u200b\-_,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - git-snippet
   - minify:
       minify_html: true
   - mkdocstrings:
