@@ -1,3 +1,4 @@
+import os
 from abc import ABC, ABCMeta, abstractmethod
 from enum import Enum
 from pathlib import Path
@@ -122,6 +123,13 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
             self.provider, namespaced_model = get_provider_namespaced_model(self.model_full_path, self.provider)
             self.model_namespace = namespaced_model.namespace
             self.model_name = namespaced_model.name
+
+        # If provider specified is a url, recreate a `client`.
+        if self.provider.startswith('https://'):
+            self.client_config.base_url = self.provider
+            self.client_config.auth = None
+            print(self.client_config)
+            self.client = InferenceClient(self.client_config)
 
         self.agent = agent
         self.agent_params = {
