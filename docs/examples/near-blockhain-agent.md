@@ -9,11 +9,7 @@ description: A complete example of a NEAR blockchain agent implementation
     Full source code for this example is at the [bottom of this page](#complete-agent-code) and 
     also available on [Github](https://github.com/nearai/official-agents/tree/main/near-agent) 
     
-
-
-## Overview
-
-This example demonstrates how to build an AI agent that can interacts with the NEAR blockchain. The agent can perform account operations, token transfers, and staking actions.
+This example demonstrates how to build an AI agent that can interacts with the NEAR blockchain. This agent can perform account operations, token transfers, and staking actions.
 
 ## Features
 
@@ -109,7 +105,7 @@ state.amount = 10.0
    - Document state changes
 
 !!! tip "Getting Help"
-    For questions and support, join our [Discord community](https://discord.gg/near)
+    For questions and support, join our [Telegram Support Group](https://t.me/nearaialpha)
 
 ## Complete Agent Code
 
