@@ -8,7 +8,6 @@ from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Pa
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import load_config_file
 from nearai.shared.auth_data import AuthData
-from nearai.shared.client_config import DEFAULT_PROVIDER_MODEL
 from nearai.shared.models import RunMode
 from openai import BaseModel
 from openai.types.beta.assistant_response_format_option_param import AssistantResponseFormatOptionParam
