@@ -154,7 +154,6 @@ docs = [
     "mkdocs-exclude>=1.0.2",
     "mkdocs-material[imaging]>=9.5.31",
     "mkdocs-simple-hooks>=0.1.5",
-    "mkdocs-snippets>=0.1.0"
 ]
 
 [tool.poetry.group.dev.dependencies]
