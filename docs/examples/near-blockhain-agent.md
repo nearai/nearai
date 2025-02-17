@@ -6,9 +6,13 @@ description: A complete example of a NEAR blockchain agent implementation
 # NEAR Blockchain Agent Example
 
 !!! note "Source Code"
-    Full source code for this example is at the [bottom of this page](#complete-agent-code) and 
-    also available on [Github](https://github.com/nearai/official-agents/tree/main/near-agent) 
     
+    Full source code for this example can be found:
+
+    1. [NEAR AI Hub](https://app.near.ai/agents/zavodil.near/near-agent/latest/source)
+    2. [Github](https://github.com/nearai/official-agents/tree/main/near-agent) 
+    3. [Bottom of this article](#complete-agent-code)
+
 This example demonstrates how to build an AI agent that can interacts with the NEAR blockchain. This agent can perform account operations, token transfers, and staking actions.
 
 ## Features
