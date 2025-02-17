@@ -3,15 +3,17 @@ title: NEAR Blockchain Agent Example
 description: A complete example of a NEAR blockchain agent implementation
 ---
 
-# NEAR AI Agent Example
+# NEAR Blockchain Agent Example
 
 !!! note "Source Code"
-    The complete NEAR AI Agent Template source code can be found at:
-    [github.com/nearai/official-agents/near-agent](https://github.com/nearai/official-agents/near-agent)
+    Full source code for this example is at the [bottom of this page](#complete-agent-code) and 
+    also available on [Github](https://github.com/nearai/official-agents/tree/main/near-agent) 
+    
+
 
 ## Overview
 
-This example demonstrates how to build an AI agent that interacts with the NEAR blockchain. The agent can perform account operations, token transfers, and staking actions.
+This example demonstrates how to build an AI agent that can interacts with the NEAR blockchain. The agent can perform account operations, token transfers, and staking actions.
 
 ## Features
 
@@ -35,14 +37,16 @@ class Actions(enum.Enum):
     NEAR_STAKE = "NEAR_STAKE"
 ```
 
-### Authentication
+### Authentication 
 
 !!! warning "Security"
-    Store your private key securely using environment variables:
+    
+    Store your private key securely using environment variables! See [Secrets](../agents/secrets.md) for more information.
 
 ```python
 signer_private_key = globals()['env'].env_vars.get("signer_private_key", None)
 ```
+
 
 ### Core Agent Logic
 
@@ -51,6 +55,8 @@ async def agent(env: Environment, state: State):
     if not signer_private_key:
         env.add_reply("Add a secret `signer_private_key`...")
 ```
+
+---
 
 ## Usage Examples
 
@@ -102,20 +108,31 @@ state.amount = 10.0
    - Maintain clear state transitions
    - Document state changes
 
-## Related Resources
-
-- [NEAR Protocol Documentation](https://docs.near.org)
-- [py-near SDK Reference](https://github.com/near/py-near)
-- [NEAR AI Agents Overview](../overview.md)
-
 !!! tip "Getting Help"
     For questions and support, join our [Discord community](https://discord.gg/near)
-## Implementation
 
-### Complete Agent Code
+## Complete Agent Code
 
-```python
+=== "metadata.json"
+    ```json
+    --8<-- "https://raw.githubusercontent.com/nearai/official-agents/main/near-agent/metadata.json"
+    ```
 
---8<-- "https://raw.githubusercontent.com/nearai/official-agents/main/near-agent/utils.py:1:10"
+=== "agent.py"
+    ```python
+    --8<-- "https://raw.githubusercontent.com/nearai/official-agents/main/near-agent/agent.py"
+    ```
 
-```
+=== "utils.py"
+    ```python
+    --8<-- "https://raw.githubusercontent.com/nearai/official-agents/main/near-agent/utils.py"
+    ```
+
+=== "state.json"
+    ```json
+    --8<-- "https://raw.githubusercontent.com/nearai/official-agents/main/near-agent/state.json"
+    ```
+    
+<Center>
+[View full example on Github](https://github.com/nearai/official-agents/tree/main/near-agent) 
+</Center>
