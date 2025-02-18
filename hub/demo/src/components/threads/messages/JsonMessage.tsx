@@ -10,6 +10,7 @@ import { RequestData } from './aitp/RequestData';
 import { RequestDecision } from './aitp/RequestDecision';
 import { parseJsonWithAitpSchema } from './aitp/schema';
 import { Message } from './Message';
+import { QuoteConfirmation } from './aitp/QuoteConfirmation';
 
 type Props = {
   json: Record<string, unknown>;
@@ -27,6 +28,8 @@ export const JsonMessage = ({ json }: Props) => {
     return <RequestData content={aitp.request_data} />;
   } else if ('request_decision' in aitp) {
     return <RequestDecision content={aitp.request_decision} />;
+  } else if ('quote' in aitp) {
+    return <QuoteConfirmation content={aitp.quote} />;
   }
 
   if (!hasWarned.current) {
