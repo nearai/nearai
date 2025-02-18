@@ -583,10 +583,12 @@ class AgentCli:
         metadata_path = agent_path / "metadata.json"
         with open(metadata_path) as f:
             metadata = json.load(f)
-        if metadata.get("agent", {}).get("welcome_title"):
-            print(metadata.agent.welcome_title)
-        if metadata.get("agent", {}).get("description"):
-            print(metadata.agent.welcome_description)
+            title = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("title")
+            if title:
+                print(title)
+            description = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("description")
+            if description:
+                print(description)
 
         while True:
             new_message = input("> ")
