@@ -1,18 +1,18 @@
-# Environment Variables and Secrets
+# Secrets & Environment Variables
 
-Environment variables and secrets provide a flexible way to manage configuration settings and sensitive information in your agents without modifying the source code. An agent has access to two main types of input variables:
+Secrets and environment variables provide a flexible way to manage configuration settings and sensitive information in your agents without modifying the source code. An agent has access to two main types of input variables:
 
 1. **Agent Variables**: Set by the agent author
 2. **User Variables**: Set by the end user of an agent
 
 Each of which can be either public or private.
 
-- [**Public Environment Variables**](#public-environment-variables): For general configuration settings or user tracking
-- [**Private Environment Variables (Secrets)**](#secrets): For sensitive information like API keys
+- [**Public Variables**](#public-environment-variables): For general configuration settings or user tracking
+- [**Private Variables or Secrets**](#secrets): For sensitive information like API keys
 
 ---
 
-## Public Environment Variables
+## Public Variables
 
 Public environment variables are variables that are set by the agent author and are publicly visible and modifiable during updates/forks. These are typically used for general configuration settings or public user information. There are two types of public environment variables, ones set by the agent author and ones set by the user.
 
@@ -26,11 +26,9 @@ Public environment variables are variables that are set by the agent author and 
     - Example: A user could pass an URL referrer ID to an agent to track where the agent is being used
 
 
-### Storing Environment Variables
+### Agent Public Variables
 
-#### Agent Public Variables
-
-An agent's public environment variables are stored in the agent's `metadata.json` file.
+An agent's public variables are stored in the agent's `metadata.json` file.
 
 Example:
 
@@ -45,7 +43,7 @@ Example:
 }
 ```
 
-#### User Public Variables
+### User Public Variables
 
 <!-- TODO: Need more information on how user public variables are stored and passed to an agent. Is the CLI reference regarding the --env_vars flag? If so, that might be better left to the secrets section as it is more relevant to secrets. -->
 
@@ -84,7 +82,7 @@ Just like public environment variables, there are two types of secrets; ones set
     - Set by users for specific agents when required in the AI Developer Hub
     - Example: `signer_private_key` for making crypto transactions
 
-### Storing Secrets
+### Managing Secrets
 
 <!-- TODO: Add more information about how secrets are stored in the AI platform / runner  -->
 
@@ -114,9 +112,9 @@ nearai agent <FULL_PATH_TO_AGENT> --local --env_vars='{"foo":"bar"}'
 
 ---
 
-## Accessing Environment Variables & Secrets
+## Using Variables & Secrets
 
-You can access these variables in your agent's code using several methods:
+Once stored, agents can access variables & secrets using several methods:
 
 <!-- TODO: Add more info here about the differences between these three methods -->
 
