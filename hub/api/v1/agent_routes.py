@@ -196,9 +196,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
         raise HTTPException(status_code=404, detail=f"Agent '{agent_entry}' not found in the registry.")
 
     specific_agent_version_to_run = f"{agent_entry.namespace}/{agent_entry.name}/{agent_entry.version}"
-    entry_details = agent_entry.details
-    agent_details = entry_details.get("agent", {})
-    framework = agent_details.get("framework", "base")
+    framework = agent_entry.get_framework()
 
     with get_session() as session:
         if not thread_id:
@@ -231,28 +229,28 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
 
     if framework == "prompt":
         raise HTTPException(status_code=400, detail="Prompt only agents are not implemented yet.")
+
+    if runner == "custom_runner":
+        custom_runner_url = getenv("CUSTOM_RUNNER_URL", None)
+        if custom_runner_url:
+            invoke_agent_via_url(custom_runner_url, specific_agent_version_to_run, thread_id, run_id, auth, params)
+    elif runner == "local_runner":
+        """Runs agents directly from the local machine."""
+
+        LocalRunner(
+            None,
+            agents,
+            thread_id,
+            run_id,
+            AuthData(**auth.model_dump()),  # TODO: https://github.com/nearai/nearai/issues/421
+            params,
+        )
     else:
-        if runner == "custom_runner":
-            custom_runner_url = getenv("CUSTOM_RUNNER_URL", None)
-            if custom_runner_url:
-                invoke_agent_via_url(custom_runner_url, specific_agent_version_to_run, thread_id, run_id, auth, params)
-        elif runner == "local_runner":
-            """Runs agents directly from the local machine."""
+        function_name = f"{runner}-{framework.lower()}"
+        if agent_api_url != "https://api.near.ai":
+            print(f"Passing agent API URL: {agent_api_url}")
 
-            LocalRunner(
-                None,
-                agents,
-                thread_id,
-                run_id,
-                AuthData(**auth.model_dump()),  # TODO: https://github.com/nearai/nearai/issues/421
-                params,
-            )
-        else:
-            function_name = f"{runner}-{framework.lower()}"
-            if agent_api_url != "https://api.near.ai":
-                print(f"Passing agent API URL: {agent_api_url}")
-
-            invoke_agent_via_lambda(function_name, specific_agent_version_to_run, thread_id, run_id, auth, params)
+        invoke_agent_via_lambda(function_name, specific_agent_version_to_run, thread_id, run_id, auth, params)
 
     with get_session() as session:
         completed_run_model = session.get(RunModel, run_id)

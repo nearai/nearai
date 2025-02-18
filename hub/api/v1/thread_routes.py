@@ -737,6 +737,9 @@ def _run_agent(
 
         agent_entry = get_agent_entry(run_model.assistant_id, data_source)
 
+        if not agent_entry:
+            raise HTTPException(status_code=404, detail=f"Agent '{agent_entry}' not found in the registry.")
+
         specific_agent_version_to_run = (
             f"{agent_entry.namespace}/{agent_entry.name}/{agent_entry.version}"
             if agent_entry
@@ -783,9 +786,7 @@ def _run_agent(
         }
         runner = _runner_for_env()
 
-        framework = "base"
-        if agent_entry and "agent" in agent_entry.details:
-            framework = agent_entry.details["agent"].get("framework", "base")
+        framework = agent_entry.get_framework()
 
         run_model.status = "in_progress"
         run_model.started_at = datetime.now()
