@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from client.client import CvmClient
+from attestation.client import CvmClient
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI
 from pydantic import BaseModel

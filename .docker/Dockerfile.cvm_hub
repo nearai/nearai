@@ -18,4 +18,4 @@ WORKDIR /app
 RUN uv sync --frozen --no-cache --extra hub
 
 # Run the application.
-CMD ["uv", "run", "fastapi", "run", "hub/app.py", "--port", "80", "--host", "0.0.0.0"]
+CMD ["uv", "run", "hub/app.py"]

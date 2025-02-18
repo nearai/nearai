@@ -1,16 +1,19 @@
 import json
+import logging
+import time
 from os import getenv
 from typing import Any, Dict, Optional, Union
 
 import boto3
 import requests
+from attestation.client import CvmClient
 from fastapi import APIRouter, Depends, HTTPException
 from nearai.agents.local_runner import LocalRunner
 from nearai.clients.lambda_client import LambdaWrapper
 from nearai.shared.auth_data import AuthData
 from pydantic import BaseModel, Field
 from runners.nearai_cvm.app.main import AssignRequest, RunRequest
-from runners.nearai_cvm.client.client import CvmClient
+from runners.nearai_cvm.pool.main import Worker
 
 from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.entry_location import EntryLocation
@@ -20,6 +23,8 @@ from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
 from hub.api.v1.registry import get
 from hub.api.v1.sql import SqlClient
+
+logger = logging.getLogger(__name__)
 
 S3_ENDPOINT = getenv("S3_ENDPOINT")
 s3 = boto3.client(
@@ -130,9 +135,25 @@ def invoke_agent_in_cvm(
 ):
     cvm_url = "http://localhost:8000"
 
+    cvm_runner_host = getenv("CVM_RUNNER_HOST", "cvm.near.ai")
+    cvm_runner_pool_port = getenv("CVM_RUNNER_POOL_PORT", "1234")
+    cvm_runner_pool_url = f"http://{cvm_runner_host}:{cvm_runner_pool_port}"
+
+    worker = None
+    while not worker:
+        try:
+            worker = Worker(**requests.get(f"{cvm_runner_pool_url}/get_worker").json())
+            logger.info(f"CVM worker: {worker}")
+        except Exception as e:
+            logger.info(f"Error getting CVM worker: {e}")
+        time.sleep(1)
+
+    cvm_url = f"http://{cvm_runner_host}:{worker.port}"
+
     client = CvmClient(cvm_url, auth)
 
     try:
+        logger.info(f"Assigning agent {agent_id} to CVM at {cvm_url}")
         client.assign(
             AssignRequest(
                 agent_id=agent_id,

@@ -17,6 +17,7 @@ from hub.api.v1.hub_secrets import hub_secrets_router
 from hub.api.v1.jobs import v1_router as job_router
 from hub.api.v1.logs import logs_router
 from hub.api.v1.permissions import v1_router as permission_router
+from hub.api.v1.quote import quote_router
 from hub.api.v1.registry import v1_router as registry_router
 from hub.api.v1.routes import v1_router
 from hub.api.v1.scheduled_run import scheduled_run_router
@@ -56,6 +57,7 @@ app.include_router(permission_router, prefix="/v1")
 app.include_router(evaluation_router, prefix="/v1")
 app.include_router(delegation_router, prefix="/v1")
 app.include_router(logs_router, prefix="/v1")
+app.include_router(quote_router, prefix="/v1")
 
 # TODO: OpenAPI can't be generated for the following routes.
 app.include_router(vector_stores_router, prefix="/v1")
@@ -85,3 +87,74 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     exc_str = f"{exc}".replace("\n", " ").replace("   ", " ")
     content = {"status_code": 422, "message": exc_str, "data": None}
     return JSONResponse(content=content, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+if __name__ == "__main__":
+    import os
+    import subprocess
+
+    import uvicorn
+
+    certs_dir = "/app/certs"
+    key_path = os.path.join(certs_dir, "key.pem")
+    cert_path = os.path.join(certs_dir, "cert.pem")
+
+    # Create a config file for OpenSSL
+    config_content = """[req]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+CN = localhost
+
+[v3_req]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = localhost
+IP.1 = 127.0.0.1
+"""
+
+    # Ensure the directory exists
+    os.makedirs(certs_dir, exist_ok=True)
+
+    # Write the OpenSSL config
+    config_path = os.path.join(certs_dir, "openssl.cnf")
+    with open(config_path, "w") as f:
+        f.write(config_content)
+
+    # Generate SSL certificate using OpenSSL with the config file
+    openssl_cmd = [
+        "openssl",
+        "req",
+        "-x509",
+        "-newkey",
+        "rsa:4096",
+        "-keyout",
+        key_path,
+        "-out",
+        cert_path,
+        "-days",
+        "365",
+        "-nodes",
+        "-config",
+        config_path,
+    ]
+
+    try:
+        subprocess.run(openssl_cmd, check=True)
+        logger.info(f"SSL certificate generated at: {cert_path}")
+        logger.info(f"SSL key generated at: {key_path}")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error generating SSL certificate: {e}")
+
+    # Clean up the config file
+    try:
+        os.remove(config_path)
+    except Exception as e:
+        logger.warning(f"Failed to remove OpenSSL config file: {e}")
+
+    uvicorn.run(app, host="0.0.0.0", port=443, ssl_keyfile=key_path, ssl_certfile=cert_path)

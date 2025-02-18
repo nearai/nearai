@@ -1,4 +1,4 @@
-from runners.nearai_cvm.client.client import CvmClient
+from attestation.client import CvmClient
 
 
 def test_attest():
