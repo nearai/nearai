@@ -98,11 +98,7 @@ class State(BaseModel):
                         "--port",
                         f"tcp:0.0.0.0:{worker.port+1}:22",  # TODO: disable SSH
                         "--port",
-                        f"tcp:0.0.0.0:{worker.port+2}:8888",
-                        "--port",
-                        f"tcp:0.0.0.0:{worker.port}:8000",
-                        "--port",
-                        f"tcp:0.0.0.0:{worker.port+3}:443",
+                        f"tcp:0.0.0.0:{worker.port}:443",
                     ],
                     check=True,
                 )
