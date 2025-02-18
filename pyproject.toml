@@ -143,6 +143,18 @@ hub = [
 torch = ["torch", "torchao", "torchtune"]
 vllm = ["vllm", "torch"]
 lean = ["lean-dojo"]
+docs = [
+    "mkdocs>=1.6.0",
+    "pillow>=10.4.0",
+    "mkdocs-minify-plugin>=0.8.0",
+    "mkdocstrings>=0.25.2",
+    "mkdocstrings-python>=1.10.7",
+    "mkdocs-redirects>=1.2.1",
+    "mkdocs-embed-external-markdown>=3.0.2",
+    "mkdocs-exclude>=1.0.2",
+    "mkdocs-material[imaging]>=9.5.31",
+    "mkdocs-simple-hooks>=0.1.5",
+]
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.11.0"
