@@ -96,11 +96,13 @@ class State(BaseModel):
                         "-d",
                         "30G",
                         "--port",
-                        f"tcp:{worker.port+1}:22",  # TODO: disable SSH
+                        f"tcp:0.0.0.0:{worker.port+1}:22",  # TODO: disable SSH
                         "--port",
-                        f"tcp:{worker.port+2}:8888",
+                        f"tcp:0.0.0.0:{worker.port+2}:8888",
                         "--port",
-                        f"tcp:{worker.port}:8000",
+                        f"tcp:0.0.0.0:{worker.port}:8000",
+                        "--port",
+                        f"tcp:0.0.0.0:{worker.port+3}:443",
                     ],
                     check=True,
                 )
@@ -126,7 +128,7 @@ class State(BaseModel):
         """Get a worker from the pool."""
         for idx, worker in enumerate(self.free_workers):
             logger.info(f"Checking health of worker {worker.runner_id}")
-            client = CvmClient(f"http://localhost:{worker.port}")
+            client = CvmClient(f"https://localhost:{worker.port}")
             try:
                 health = client.is_assigned()
                 logger.info(f"Health of worker {worker.runner_id}: {health}")

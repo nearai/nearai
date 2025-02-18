@@ -133,14 +133,13 @@ def invoke_agent_in_cvm(
     max_tokens: int,
     max_iterations: int,
 ):
-    cvm_url = "http://localhost:8000"
-
     cvm_runner_host = getenv("CVM_RUNNER_HOST", "cvm.near.ai")
     cvm_runner_pool_port = getenv("CVM_RUNNER_POOL_PORT", "1234")
     cvm_runner_pool_url = f"http://{cvm_runner_host}:{cvm_runner_pool_port}"
 
     worker = None
     while not worker:
+        logger.info(f"Getting CVM worker from {cvm_runner_pool_url}")
         try:
             worker = Worker(**requests.get(f"{cvm_runner_pool_url}/get_worker").json())
             logger.info(f"CVM worker: {worker}")
