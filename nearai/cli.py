@@ -116,7 +116,7 @@ class RegistryCli:
                     "model_max_tokens": DEFAULT_MODEL_MAX_TOKENS,
                     "max_iterations": 1,
                 }
-                metadata["details"]["agent"]["framework"] = "base"
+                metadata["details"]["agent"]["framework"] = "minimal"
 
             json.dump(metadata, f, indent=2)
 
