@@ -41,14 +41,12 @@ import { trpc } from '~/trpc/TRPCProvider';
 import s from './Navigation.module.scss';
 import { NewAgentButton } from './NewAgentButton';
 
-const agentsNav = {
-  label: 'Agents',
-  path: '/agents',
-  icon: ENTRY_CATEGORY_LABELS.agent.icon,
-};
-
 const hubNavItems = [
-  agentsNav,
+  {
+    label: 'Agents',
+    path: '/agents',
+    icon: ENTRY_CATEGORY_LABELS.agent.icon,
+  },
   {
     label: 'Threads',
     path: '/chat',
@@ -56,16 +54,7 @@ const hubNavItems = [
   },
 ];
 
-const chatNavItems = [
-  {
-    label: 'Chat',
-    path: '/chat',
-    icon: <ChatCircleDots />,
-  },
-  agentsNav,
-];
-
-const navItems = env.NEXT_PUBLIC_CONSUMER_MODE ? chatNavItems : hubNavItems;
+const navItems = env.NEXT_PUBLIC_CONSUMER_MODE ? null : hubNavItems;
 
 const resourcesNavItems = env.NEXT_PUBLIC_CONSUMER_MODE
   ? null
@@ -148,7 +137,7 @@ export const Navigation = () => {
       <BreakpointDisplay show="larger-than-tablet" className={s.breakpoint}>
         <NavigationMenu.Root className={s.menu} delayDuration={0}>
           <NavigationMenu.List>
-            {navItems.map((item) => (
+            {navItems?.map((item) => (
               <NavigationMenu.Item key={item.path}>
                 <NavigationMenu.Link
                   asChild
@@ -161,7 +150,7 @@ export const Navigation = () => {
               </NavigationMenu.Item>
             ))}
 
-            {resourcesNavItems ? (
+            {resourcesNavItems && (
               <NavigationMenu.Item>
                 <NavigationMenu.Trigger>
                   Resources
@@ -187,7 +176,7 @@ export const Navigation = () => {
                   ))}
                 </NavigationMenu.Content>
               </NavigationMenu.Item>
-            ) : null}
+            )}
           </NavigationMenu.List>
         </NavigationMenu.Root>
       </BreakpointDisplay>
@@ -221,65 +210,74 @@ export const Navigation = () => {
             </Tooltip>
           )}
 
-          <Tooltip asChild content="View Documentation">
-            <Button
-              label="View Documentation"
-              size="small"
-              icon={<BookOpenText weight="duotone" />}
-              fill="ghost"
-              href="https://docs.near.ai"
-              target="_blank"
-            />
-          </Tooltip>
+          {!env.NEXT_PUBLIC_CONSUMER_MODE && (
+            <>
+              <Tooltip asChild content="View Documentation">
+                <Button
+                  label="View Documentation"
+                  size="small"
+                  icon={<BookOpenText weight="duotone" />}
+                  fill="ghost"
+                  href="https://docs.near.ai"
+                  target="_blank"
+                />
+              </Tooltip>
 
-          <NewAgentButton
-            customButton={
-              <Button
-                label="New Agent"
-                size="small"
-                icon={<Plus weight="bold" />}
-                variant="affirmative"
-                fill="ghost"
+              <NewAgentButton
+                customButton={
+                  <Button
+                    label="New Agent"
+                    size="small"
+                    icon={<Plus weight="bold" />}
+                    variant="affirmative"
+                    fill="ghost"
+                  />
+                }
               />
-            }
-          />
+            </>
+          )}
         </Flex>
 
-        <BreakpointDisplay show="smaller-than-desktop" className={s.breakpoint}>
-          <Dropdown.Root>
-            <Dropdown.Trigger asChild>
-              <Button
-                label="Navigation"
-                size="small"
-                fill="outline"
-                variant="secondary"
-                icon={<List weight="bold" />}
-              />
-            </Dropdown.Trigger>
+        {(navItems || resourcesNavItems) && (
+          <BreakpointDisplay
+            show="smaller-than-desktop"
+            className={s.breakpoint}
+          >
+            <Dropdown.Root>
+              <Dropdown.Trigger asChild>
+                <Button
+                  label="Navigation"
+                  size="small"
+                  fill="outline"
+                  variant="secondary"
+                  icon={<List weight="bold" />}
+                />
+              </Dropdown.Trigger>
 
-            <Dropdown.Content maxHeight="70svh">
-              <Dropdown.Section>
-                {navItems.map((item) => (
-                  <Dropdown.Item href={item.path} key={item.path}>
-                    <SvgIcon icon={item.icon} />
-                    {item.label}
-                  </Dropdown.Item>
-                ))}
-              </Dropdown.Section>
-
-              {resourcesNavItems ? (
+              <Dropdown.Content maxHeight="70svh">
                 <Dropdown.Section>
-                  {resourcesNavItems.map((item) => (
+                  {navItems?.map((item) => (
                     <Dropdown.Item href={item.path} key={item.path}>
                       <SvgIcon icon={item.icon} />
                       {item.label}
                     </Dropdown.Item>
                   ))}
                 </Dropdown.Section>
-              ) : null}
-            </Dropdown.Content>
-          </Dropdown.Root>
-        </BreakpointDisplay>
+
+                {resourcesNavItems && (
+                  <Dropdown.Section>
+                    {resourcesNavItems.map((item) => (
+                      <Dropdown.Item href={item.path} key={item.path}>
+                        <SvgIcon icon={item.icon} />
+                        {item.label}
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Section>
+                )}
+              </Dropdown.Content>
+            </Dropdown.Root>
+          </BreakpointDisplay>
+        )}
 
         {isAuthenticated ? (
           <Dropdown.Root>
@@ -306,15 +304,21 @@ export const Navigation = () => {
               </Dropdown.Section>
 
               <Dropdown.Section>
-                <Dropdown.Item href={`/profiles/${auth?.account_id}`}>
-                  <SvgIcon icon={<Cube />} />
-                  Your Work
-                </Dropdown.Item>
+                {!env.NEXT_PUBLIC_CONSUMER_MODE && (
+                  <>
+                    <Dropdown.Item href={`/profiles/${auth?.account_id}`}>
+                      <SvgIcon icon={<Cube />} />
+                      Your Work
+                    </Dropdown.Item>
 
-                <Dropdown.Item href={`/profiles/${auth?.account_id}/starred`}>
-                  <SvgIcon icon={<Star />} />
-                  Your Stars
-                </Dropdown.Item>
+                    <Dropdown.Item
+                      href={`/profiles/${auth?.account_id}/starred`}
+                    >
+                      <SvgIcon icon={<Star />} />
+                      Your Stars
+                    </Dropdown.Item>
+                  </>
+                )}
 
                 <Dropdown.Item href="/settings">
                   <SvgIcon icon={<Gear />} />

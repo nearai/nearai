@@ -169,6 +169,7 @@ export const AgentRunner = ({
 
   const isRunning =
     _chatMutation.isPending ||
+    thread?.run?.status === 'requires_action' ||
     thread?.run?.status === 'queued' ||
     thread?.run?.status === 'in_progress';
 
@@ -291,10 +292,18 @@ export const AgentRunner = ({
   }, [threadQuery.data, threadQuery.error, threadQuery.isFetching]);
 
   useEffect(() => {
+    if (
+      threadQuery.data?.metadata.topic &&
+      thread?.metadata.topic !== threadQuery.data?.metadata.topic
+    ) {
+      // This will trigger once the inferred thread topic generator background task has resolved
+      void utils.hub.threads.refetch();
+    }
+
     if (threadQuery.data) {
       setThread(threadQuery.data);
     }
-  }, [setThread, threadQuery.data]);
+  }, [setThread, threadQuery.data, thread?.metadata.topic, utils]);
 
   useEffect(() => {
     if (threadQuery.error?.data?.code === 'FORBIDDEN') {

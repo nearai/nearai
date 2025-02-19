@@ -350,10 +350,6 @@ def start_with_environment(
         agent_runner_user=protected_vars.get("AGENT_RUNNER_USER"),
         fastnear_api_key=protected_vars.get("FASTNEAR_APY_KEY"),
     )
-    if agent.welcome_title:
-        print(agent.welcome_title)
-    if agent.welcome_description:
-        print(agent.welcome_description)
     env.add_agent_start_system_log(agent_idx=0)
     return EnvironmentRun(near_client, loaded_agents, env, thread_id, params.get("record_run", True), verbose=verbose)
 
