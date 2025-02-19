@@ -7,11 +7,13 @@ import { type AgentChatMutationInput } from '~/components/AgentRunner';
 import {
   type chatWithAgentModel,
   type threadFileModel,
+  type threadMessageContentModel,
   type threadMessageModel,
   type threadModel,
   type threadRunModel,
 } from '~/lib/models';
 import { type AppRouterOutputs } from '~/trpc/router';
+import { stringToPotentialJson } from '~/utils/string';
 
 type Thread = z.infer<typeof threadModel> & {
   run?: z.infer<typeof threadRunModel>;
@@ -149,3 +151,31 @@ export const useThreadsStore = create<ThreadsStore>()(
     name,
   }),
 );
+
+export function useThreadMessageContentFilter<
+  T = z.infer<typeof threadMessageContentModel>,
+>(
+  threadId: string,
+  filter: (json: Record<string, unknown> | null, text: string) => T | undefined,
+) {
+  const threadsById = useThreadsStore((store) => store.threadsById);
+  const thread = threadsById[threadId];
+  const messages = thread?.messagesById
+    ? Object.values(thread.messagesById)
+    : [];
+  const allContents = messages.flatMap((m) => m.content);
+  const results: T[] = [];
+
+  allContents.forEach((content) => {
+    const match = filter(
+      stringToPotentialJson(content.text?.value ?? ''),
+      content.text?.value ?? '',
+    );
+
+    if (match) {
+      results.push(match);
+    }
+  });
+
+  return results;
+}

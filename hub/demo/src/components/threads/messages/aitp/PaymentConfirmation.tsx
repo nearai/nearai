@@ -52,6 +52,7 @@ export const PaymentConfirmation = ({ content }: Props) => {
             <Text
               href={`https://nearblocks.io/txns/${content.transaction_id}`}
               target="_blank"
+              family="monospace"
             >
               {content.transaction_id}
             </Text>

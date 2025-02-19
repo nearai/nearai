@@ -1,6 +1,6 @@
 'use client';
 
-import { useTheme } from '@near-pagoda/ui';
+import { ImageIcon, useTheme } from '@near-pagoda/ui';
 import {
   BreakpointDisplay,
   Button,
@@ -346,30 +346,29 @@ export const Navigation = () => {
                   <Dropdown.SectionContent>
                     <Flex direction="column" gap="m">
                       <Text size="text-xs" weight={600} uppercase>
-                        Wallet
+                        Payment Method
                       </Text>
 
-                      <div>
-                        <Text
-                          size="text-s"
-                          weight={600}
-                          color="sand-12"
-                          clampLines={1}
-                        >
-                          {walletAccount.accountId}
-                        </Text>
-                        <Flex align="center" gap="xs">
-                          <SvgIcon
-                            icon={<Wallet weight="bold" />}
-                            size="xs"
-                            color="sand-10"
-                          />
+                      <Flex align="center" gap="s">
+                        <ImageIcon
+                          src={wallet.metadata.iconUrl}
+                          alt={wallet.metadata.name}
+                        />
 
+                        <Flex direction="column">
+                          <Text
+                            size="text-s"
+                            weight={600}
+                            color="sand-12"
+                            clampLines={1}
+                          >
+                            {walletAccount.accountId}
+                          </Text>
                           <Text size="text-xs" clampLines={1}>
                             {wallet.metadata.name}
                           </Text>
                         </Flex>
-                      </div>
+                      </Flex>
                     </Flex>
                   </Dropdown.SectionContent>
 
@@ -383,7 +382,7 @@ export const Navigation = () => {
                   <Dropdown.SectionContent>
                     <Flex direction="column" gap="m">
                       <Text size="text-xs" weight={600} uppercase>
-                        Wallet
+                        Payment Method
                       </Text>
 
                       <Text size="text-xs">
@@ -394,7 +393,7 @@ export const Navigation = () => {
 
                   <Dropdown.Item onSelect={() => walletModal?.show()}>
                     <SvgIcon icon={<Wallet />} />
-                    Connect Wallet
+                    Add Payment Method
                   </Dropdown.Item>
                 </Dropdown.Section>
               )}
