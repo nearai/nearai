@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { dataSchema, requestDataSchema } from './data';
 import { decisionSchema, requestDecisionSchema } from './decision';
-import { quoteSchema } from './quote';
+import { paymentConfirmationSchema, quoteSchema } from './payment';
 
 /*
   NOTE: The following duplication of aitpSchema and aitpSchemaWithoutPassthrough is 
@@ -20,17 +20,19 @@ import { quoteSchema } from './quote';
 const aitpSchema = z.union([
   dataSchema,
   decisionSchema,
+  paymentConfirmationSchema,
+  quoteSchema,
   requestDataSchema,
   requestDecisionSchema,
-  quoteSchema,
 ]);
 
 const aitpSchemaWithoutPassthrough = z.union([
   dataSchema.strip(),
   decisionSchema.strip(),
+  paymentConfirmationSchema.strip(),
+  quoteSchema.strip(),
   requestDataSchema.strip(),
   requestDecisionSchema.strip(),
-  quoteSchema.strip(),
 ]);
 
 type AitpSchema = z.infer<typeof aitpSchemaWithoutPassthrough>;

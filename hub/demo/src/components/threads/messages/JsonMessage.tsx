@@ -6,11 +6,12 @@ import { Code } from '~/components/lib/Code';
 
 import { Data } from './aitp/Data';
 import { Decision } from './aitp/Decision';
+import { PaymentConfirmation } from './aitp/PaymentConfirmation';
+import { Quote } from './aitp/Quote';
 import { RequestData } from './aitp/RequestData';
 import { RequestDecision } from './aitp/RequestDecision';
 import { parseJsonWithAitpSchema } from './aitp/schema';
 import { Message } from './Message';
-import { QuoteConfirmation } from './aitp/QuoteConfirmation';
 
 type Props = {
   json: Record<string, unknown>;
@@ -24,12 +25,14 @@ export const JsonMessage = ({ json }: Props) => {
     return <Data content={aitp.data} />;
   } else if ('decision' in aitp) {
     return <Decision content={aitp.decision} />;
+  } else if ('payment_confirmation' in aitp) {
+    return <PaymentConfirmation content={aitp.payment_confirmation} />;
+  } else if ('quote' in aitp) {
+    return <Quote content={aitp.quote} />;
   } else if ('request_data' in aitp) {
     return <RequestData content={aitp.request_data} />;
   } else if ('request_decision' in aitp) {
     return <RequestDecision content={aitp.request_decision} />;
-  } else if ('quote' in aitp) {
-    return <QuoteConfirmation content={aitp.quote} />;
   }
 
   if (!hasWarned.current) {
