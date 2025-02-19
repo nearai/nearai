@@ -1,6 +1,6 @@
 # Secrets & Environment Variables
 
-NEAR AI provides a secure and flexible system for managing configuration and sensitive data your agents need. This system allows both agent authors and agent users to easily provide custom environment variables without the need to modify the underlying agent code. 
+NEAR AI's environment variable system lets you securely manage configuration and sensitive data for your agents. Both agent developers and users can easily configure variables without modifying the agent's code. 
 
 ### Key Features
 
@@ -297,7 +297,7 @@ true
 
 ## Security & Authentication
 
-The [management secret variables](#managing-secrets) on the NEAR AI platform requires authentication via a NEAR account to ensure that only authorized users can access sensitive information.
+The [management of secret variables](#managing-secrets) on the NEAR AI platform requires authentication via a NEAR account to ensure that only authorized users can access sensitive information.
 
 Both the NEAR AI CLI & Developer Hub require logging in with a NEAR account and then abstract away the auth token creation process by signing a message with your NEAR wallet. At a low level this authentication is handled by creating an `auth_token` from a signed message which is then passed to all Secret API requests.
 
@@ -341,3 +341,4 @@ const authToken = {
     - Handle API errors gracefully
     - Cache secret existence checks
     - For use cases that need higher security secret handling, run your agent in a TEE and verify the TEE quote attestation (docs coming soon).
+
