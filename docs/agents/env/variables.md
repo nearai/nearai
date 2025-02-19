@@ -10,13 +10,11 @@ NEAR AI provides a secure and flexible system for managing configuration and sen
 
 ---
 
-## Types of Environment Variables
+## Public Variables
 
-### 1. Public Variables
+Public variables are configuration values that are **visible in code and metadata**. 
 
-Public variables are configuration values that are visible in code and metadata. 
-
-#### Agent Public Variables
+### Agent Public Variables
 
 Agent public variables are defined by by the agent author in the agent's `metadata.json` file:
 
@@ -30,7 +28,7 @@ Agent public variables are defined by by the agent author in the agent's `metada
 }
 ```
 
-#### User Public Variables
+### User Public Variables
 
 User public variables are set by users via the CLI or URL parameters.
 
@@ -42,21 +40,24 @@ nearai agent run my-agent --env_vars='{"CUSTOM_ENDPOINT":"https://api.custom.com
 https://app.near.ai/agents/casino.near/game/1?refId=ad.near
 ```
 
-### 2. Private Variables (Secrets)
+---
 
-Secrets in NEAR AI are private variables that are securely stored and never exposed in agent code. As with public variables, secrets can be set by both agent authors and users. 
+## Private Variables (Secrets)
 
-#### Agent Secrets
+These are private variables that are securely stored and **never exposed in agent code.**
+
+### Agent Secrets
 - Set by agent authors
-- Scoped to specific agent versions
+- Scoped to specific agent versions _(ex: `v0.0.1` vs `v0.0.2`)_
 
-#### User Secrets
+### User Secrets
 - Set by users for specific agents
 - Can override agent secrets
 - Accessible only to authorized runners
 
+---
 
-## Variable Resolution
+## How Variables are Merged
 
 It's important to note that at runtime both agent author and user environment variables and secrets are merged into a single `env_vars` object. 
 
@@ -71,7 +72,8 @@ If there are conflicting variables with the same name, user variables will take 
     4. Agent Public Variables (metadata.json)
     
 
-### Example
+**Example:**
+
 ```python
 # Given these variables:
 agent_secrets = {"API_KEY": "agent-key"}
@@ -84,6 +86,41 @@ env.env_vars["API_KEY"] == "cli-key"  # Highest priority wins
 ```
 
 ---
+
+## Using Variables in Agent Code
+
+Using variables in your agent is straightforward. You can access any variable in your agent code  using Python’s os module or by accessing the env_vars dictionary directly using the `env.env_vars` object.
+
+Examples:
+
+
+```python
+# Access any variable
+api_key = env.env_vars.get('VARIABLE_NAME', 'default-value')
+
+# Using env.env_vars
+value = env.env_vars.get('VARIABLE_NAME', 'default_value')
+
+# Using os.environ
+import os
+value = os.environ.get('VARIABLE_NAME', 'default_value')
+
+# Or using globals()
+value = globals()['env'].env_vars.get('VARIABLE_NAME', 'default_value')
+This allows users to fork the agent, modify the environment variables in metadata.json, and achieve the desired behavior without changing the code itself.
+
+```
+
+You can also check if a variable exists:
+
+```python
+if 'VARIABLE_NAME' in env.env_vars:
+    # Use API key
+    api_key = env.env_vars['VARIABLE_NAME']
+```
+
+---
+
 
 ## Managing Secrets
 
@@ -243,40 +280,6 @@ true
 
 ---
 
-## Using Variables in Agents
-
-Using variables in your agent is straightforward. You can access any variable in your agent code  using Python’s os module or by accessing the env_vars dictionary directly using the `env.env_vars` object.
-
-Examples:
-
-
-```python
-# Access any variable
-api_key = env.env_vars.get('VARIABLE_NAME', 'default-value')
-
-# Using env.env_vars
-value = env.env_vars.get('VARIABLE_NAME', 'default_value')
-
-# Using os.environ
-import os
-value = os.environ.get('VARIABLE_NAME', 'default_value')
-
-# Or using globals()
-value = globals()['env'].env_vars.get('VARIABLE_NAME', 'default_value')
-This allows users to fork the agent, modify the environment variables in metadata.json, and achieve the desired behavior without changing the code itself.
-
-```
-
-You can also check if a variable exists:
-
-```python
-if 'VARIABLE_NAME' in env.env_vars:
-    # Use API key
-    api_key = env.env_vars['VARIABLE_NAME']
-```
-
----
-
 ## Security & Authentication
 
 ### NEAR Wallet Authentication
@@ -326,21 +329,3 @@ const authToken = {
     - Validate required variables exist
     - Handle API errors gracefully
     - Cache secret existence checks
-
-## Troubleshooting
-
-### Common Issues
-1. **Authentication Errors**
-    - Ensure NEAR wallet is connected
-    - Check if signature is valid
-    - Verify nonce hasn't been used
-
-2. **Access Denied**
-    - Verify agent has correct permissions
-    - Check if variables are correctly scoped
-    - Ensure auth token is valid
-
-3. **Missing Variables**
-    - Check priority order
-    - Verify variable names match exactly
-    - Look for typos in keys
