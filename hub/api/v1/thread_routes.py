@@ -419,42 +419,42 @@ def create_message(
 def generate_thread_topic(thread_id: str):
     # not much error handling in here – it's OK if this fails
     with get_session() as session:
-        thread = session.get(ThreadModel, thread_id)
-        if thread is None:
-            raise HTTPException(status_code=404, detail="Thread not found")
+        try:
+            thread = session.get(ThreadModel, thread_id)
+            if thread is None:
+                raise HTTPException(status_code=404, detail="Thread not found")
 
-        messages = session.exec(
-            select(MessageModel)
-            .where(MessageModel.thread_id == thread_id)
-            .where(MessageModel.role != "assistant")
-            .order_by(desc(MessageModel.created_at))
-            .limit(1)
-        ).all()
+            messages = session.exec(
+                select(MessageModel)
+                .where(MessageModel.thread_id == thread_id)
+                .where(MessageModel.role != "assistant")
+                .order_by(desc(MessageModel.created_at))
+                .limit(1)
+            ).all()
 
-        messages = [
-            {
-                "role": "system",
-                "content": SUMMARY_PROMPT,
-            }
-        ] + [message.to_completions_model() for message in messages]
+            messages = [
+                {
+                    "role": "system",
+                    "content": SUMMARY_PROMPT,
+                }
+            ] + [message.to_completions_model() for message in messages]
 
-        llm = get_llm_ai(Provider.FIREWORKS.value)
-        resp = llm.chat.completions.create(
-            messages=messages, model="accounts/fireworks/models/qwen2p5-72b-instruct", timeout=DEFAULT_TIMEOUT
-        )
+            logger.info(f"Infer thread topic: STARTED ({thread_id}): {messages[-1]}, timeout: {DEFAULT_TIMEOUT}")
 
-    with get_session() as session:
-        thread = session.get(ThreadModel, thread_id)
+            llm = get_llm_ai(Provider.FIREWORKS.value)
+            resp = llm.chat.completions.create(
+                messages=messages, model="accounts/fireworks/models/qwen2p5-72b-instruct", timeout=DEFAULT_TIMEOUT
+            )
 
-        if thread is None:
-            raise HTTPException(status_code=404, detail="Thread not found")
+            logger.info(f"Infer thread topic: COMPLETED ({thread_id}): {resp}")
 
-        if thread.meta_data is None:
-            thread.meta_data = {}
+            topic = resp.choices[0].message.content
+            thread.meta_data["topic"] = topic
+            flag_modified(thread, "meta_data")  # SQLAlchemy is not detecting changes in the dict, forcing a commit.
+            session.commit()
 
-        thread.meta_data["topic"] = resp.choices[0].message.content
-        flag_modified(thread, "meta_data")  # SQLAlchemy is not detecting changes in the dict, forcing a commit.
-        session.commit()
+        except Exception as e:
+            logger.error(f"Infer thread topic: FAILED ({thread_id}): {e}")
 
 
 class ListMessagesResponse(BaseModel):
