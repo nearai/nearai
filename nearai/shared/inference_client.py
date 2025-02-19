@@ -45,6 +45,7 @@ class InferenceClient(object):
         self._auth = None
         self.generate_auth_for_current_agent(config, agent_identifier)
         self.client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
+        self._provider_models: Optional[ProviderModels] = None
 
     def generate_auth_for_current_agent(self, config, agent_identifier):
         """Regenerate auth for the current agent."""
@@ -63,7 +64,16 @@ class InferenceClient(object):
     # TODO(#233): add a choice of a provider model in aws_runner, and then this step can be skipped.
     @cached_property
     def provider_models(self) -> ProviderModels:  # noqa: D102
-        return ProviderModels(self._config)
+        if self._provider_models is None:
+            self._provider_models = ProviderModels(self._config)
+        return self._provider_models
+
+    def set_provider_models(self, provider_models: Optional[ProviderModels]):
+        """Set provider models. Used by external caching."""
+        if provider_models is None:
+            self._provider_models = ProviderModels(self._config)
+        else:
+            self._provider_models = provider_models
 
     def get_agent_public_key(self, agent_name: str) -> str:
         """Request agent public key."""
