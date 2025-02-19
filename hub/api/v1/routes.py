@@ -172,16 +172,9 @@ def get_agent_public_key(agent_name: str = Query(...)):
 @v1_router.post("/chat/completions")
 def chat_completions(
     db: DatabaseSession,
-    # request: ChatCompletionsRequest = Depends(convert_request)
-    request: ChatCompletionsRequest,
+    request: ChatCompletionsRequest = Depends(convert_request),
     auth: AuthToken = Depends(get_auth),
 ):
-    request = convert_request(request)
-    """
-        The "request: Depends(convert_request)" logic would not run when chat_completions() is called directly from
-        thread_routes.py generate_thread_topic(). Calling convert_request() directly inside this method instead.
-    """
-
     logger.info(f"Received chat completions request: {request.model_dump()}")
 
     try:

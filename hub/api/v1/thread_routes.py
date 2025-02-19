@@ -1,10 +1,11 @@
-import json
 import logging
 from datetime import datetime
 from os import getenv
 from typing import Any, Dict, Iterable, List, Literal, Optional, Union
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
+
+from hub.api.v1.completions import Provider
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import load_config_file
 from nearai.shared.auth_data import AuthData
@@ -33,7 +34,7 @@ from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
 from hub.api.v1.models import get_session
-from hub.api.v1.routes import ChatCompletionsRequest, chat_completions
+from hub.api.v1.routes import get_llm_ai, DEFAULT_TIMEOUT
 from hub.api.v1.sql import SqlClient
 from hub.tasks.scheduler import get_scheduler
 
@@ -411,12 +412,13 @@ def create_message(
         session.commit()
 
         if not thread.meta_data or not thread.meta_data.get("topic"):
-            background_tasks.add_task(generate_thread_topic, thread_id, AuthData(**auth.model_dump()))
+            background_tasks.add_task(generate_thread_topic, thread_id)
 
         return message_model.to_openai()
 
 
-def generate_thread_topic(thread_id: str, auth: AuthData):
+def generate_thread_topic(thread_id: str):
+    # not much error handling in here – it's OK if this fails
     with get_session() as session:
         thread = session.get(ThreadModel, thread_id)
         if thread is None:
@@ -437,12 +439,9 @@ def generate_thread_topic(thread_id: str, auth: AuthData):
             }
         ] + [message.to_completions_model() for message in messages]
 
-        completion = chat_completions(
-            db=SqlClient(),
-            request=ChatCompletionsRequest(
-                messages=messages, model="fireworks::accounts/fireworks/models/qwen2p5-72b-instruct", stream=False
-            ),
-            auth=AuthToken(**auth.model_dump()),
+        llm = get_llm_ai(Provider.FIREWORKS.value)
+        resp = llm.chat.completions.create(
+            messages=messages, model="accounts/fireworks/models/qwen2p5-72b-instruct", timeout=DEFAULT_TIMEOUT
         )
 
     with get_session() as session:
@@ -454,8 +453,7 @@ def generate_thread_topic(thread_id: str, auth: AuthData):
         if thread.meta_data is None:
             thread.meta_data = {}
 
-        data = json.loads(completion.body.decode("utf-8"))
-        thread.meta_data["topic"] = data["choices"][0]["message"]["content"]
+        thread.meta_data["topic"] = resp.choices[0].message.content
         flag_modified(thread, "meta_data")  # SQLAlchemy is not detecting changes in the dict, forcing a commit.
         session.commit()
 
