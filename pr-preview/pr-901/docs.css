@@ -55,3 +55,7 @@
     max-height: 50vh;
     overflow: scroll;
 }
+
+.admonition, details {
+    font-size: .75rem !important;
+}
