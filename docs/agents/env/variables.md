@@ -3,10 +3,9 @@
 NEAR AI provides a secure and flexible system for managing configuration and sensitive data your agents need. This system allows both agent authors and agent users to easily provide custom environment variables without the need to modify the underlying agent code. 
 
 ### Key Features
-- Secure storage of sensitive data
-- [Hierarchical variable resolution](#variable-resolution)
-- NEAR wallet-based authentication
-- Scoped access control
+
+- [Hierarchical variable resolution](#variable-resolution): Users can override agent variables and secrets
+- [NEAR wallet-based authentication](#security-authentication): Only authorized users can set and get secrets
 
 ## Types of Environment Variables
 
@@ -142,7 +141,7 @@ if 'API_KEY' in env.env_vars:
 
 All variable management requires a NEAR wallet authentication to ensure that only authorized users can access sensitive information. The CLI and the Developer Hub both require a NEAR wallet connection which is used to authenticate all requests.
 
-Here is an example of creating a auth token for uploading or getting secrets:
+Both the NEAR AI CLI & Developer hub abstract away the need to manually create an auth token and is handled automatically after you connect your NEAR wallet. Here is an example of what the authentication flow looks like:
 
 ```typescript
 // Authentication flow
@@ -180,7 +179,7 @@ const authToken = {
     - Request logging and monitoring
 
 !!! warning "Security Best Practices"
-    - Never commit secrets to source control
+    - Never commit secrets to source code
     - Use descriptive key names
     - Validate required variables exist
     - Handle API errors gracefully
