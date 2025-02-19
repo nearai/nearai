@@ -139,7 +139,7 @@ The easiest way to manage variables is through [app.near.ai](https://app.near.ai
     - Enter key-value pair
     - Choose visibility (public/private)
 
-![variable-management](../../assets/agents/secrets-1.png)
+![variable-management](../../assets/agents/secrets.png)
 
 ### Using CLI
 
