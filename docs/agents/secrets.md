@@ -62,6 +62,7 @@ Retrieves secrets belonging to the authenticated user (via `owner_namespace`).
 curl -X GET "https://<api-url>/v1/get_user_secrets?limit=10&offset=0" \
   -H "Authorization: Bearer <YOUR-NEAR-ACCOUNT-TOKEN>"
 ```
+
 Example response
 ```json
 [
@@ -86,8 +87,8 @@ Secrets can be tied to:
 A specific agent namespace (namespace)
 A specific version (version) (optional)
 A category, such as "agent" or "user" (default is "agent")
-Request Body
 
+**Example Request Body**  
 ```json
 {
   "namespace": "string",      // Required
@@ -99,18 +100,8 @@ Request Body
   "category": "string"        // Optional (default: "agent")
 }
 ```
-| Field       | Type   | Required | Default | Description                                                                  |
-|-------------|--------|----------|---------|------------------------------------------------------------------------------|
-| namespace   | string | Yes      | —       | Namespace scope (often matches an agent’s namespace).                       |
-| name        | string | Yes      | —       | A unique name for the secret.                                               |
-| version     | string | No       | null    | Optional string to differentiate secret versions (e.g., "v1").              |
-| description | string | No       | null    | Descriptive text about the secret.                                          |
-| key         | string | Yes      | —       | The key under which the secret is stored (e.g., "GITHUB_API_TOKEN").        |
-| value       | string | Yes      | —       | The actual secret value.                                                    |
-| category    | string | No       | "agent" | Category of the secret (e.g., "agent" or "user").                           |
 
-### Example Request
-
+### Example Request 
 
 ```bash
 curl -X POST "https://<api-url>/v1/create_hub_secret" \
@@ -126,6 +117,7 @@ curl -X POST "https://<api-url>/v1/create_hub_secret" \
     "category": "agent"
   }'
 ```
+
 Example Response
 
 ```json
@@ -135,8 +127,7 @@ true
 3. POST /v1/remove_hub_secret
 Removes an existing hub secret from the database.
 
-Request Body
-
+**Example Request Body**  
 ```json
 {
   "namespace": "string",  // Required
@@ -146,16 +137,8 @@ Request Body
   "category": "string"    // Optional (default: "agent")
 }
 ```
-| Field     | Type   | Required | Default | Description                                                  |
-|-----------|--------|----------|---------|--------------------------------------------------------------|
-| namespace | string | Yes      | —       | Namespace scope for the secret to remove.                    |
-| name      | string | Yes      | —       | The name of the secret to remove.                            |
-| version   | string | No       | null    | The version of the secret (if you have multiple versions).   |
-| key       | string | Yes      | —       | The key name of the secret (e.g., "GITHUB_API_TOKEN").       |
-| category  | string | No       | "agent" | Category of the secret (e.g., "agent", "user").              |
 
 ### Example Request
-
 
 ```bash
 curl -X POST "https://<api-url>/v1/remove_hub_secret" \
@@ -169,8 +152,8 @@ curl -X POST "https://<api-url>/v1/remove_hub_secret" \
     "category": "agent"
   }'
 ```
-Example Response
 
+Example Response
 ```json
 true
 ```
