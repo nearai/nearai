@@ -118,6 +118,19 @@ Here are a the API endpoints for programmatic management of secrets:
 | `/v1/remove_hub_secret` | POST | Delete an existing secret |
 
 
+### `GET /v1/get_user_secrets`
+
+Retrieves secrets belonging to the authenticated user. (via `owner_namespace`)
+
+Params:
+
+```json
+{
+  "limit": 100,  // Optional (default: 100)
+  "offset": 0   // Optional (default: 0)
+}
+```
+
 Example usage:
 
 ```python
@@ -126,7 +139,50 @@ response = env.http.get(
     "/v1/get_user_secrets",
     headers={"Authorization": f"Bearer {env.auth_token}"}
 )
+```
 
+<details>
+<summary>Example response</summary>
+
+```json
+[
+  {
+    "id": 123,
+    "owner_namespace": "your_account.near",
+    "namespace": "example_agent",
+    "name": "my_secret_name",
+    "version": "1.0",
+    "key": "GITHUB_API_TOKEN",
+    "category": "agent",
+    "created_at": "2025-02-19T12:34:56.789Z",
+    "updated_at": "2025-02-19T12:34:56.789Z"
+  }
+]
+```
+
+</details>
+
+### `POST /v1/create_hub_secret`
+
+Creates a new secret for the authenticated user.
+
+Params:
+
+```json
+{
+  "namespace": "string",      // Required
+  "name": "string",           // Required
+  "version": "string",        // Optional
+  "description": "string",    // Optional
+  "key": "string",            // Required
+  "value": "string",          // Required
+  "category": "string"        // Optional (default: "agent")
+}
+```
+
+Example request:
+
+```python
 # Create secret
 response = env.http.post(
     "/v1/create_hub_secret",
@@ -139,6 +195,50 @@ response = env.http.post(
     },
     headers={"Authorization": f"Bearer {env.auth_token}"}
 )
+```
+
+Example response:
+
+```bash
+true
+```
+
+### `POST /v1/remove_hub_secret`
+
+Deletes an existing secret.
+
+Params:
+
+```json
+{
+  "namespace": "string",      // Required
+  "name": "string",           // Required
+  "version": "string",        // Optional
+  "key": "string",            // Required
+  "category": "string"        // Optional (default: "agent")
+}
+```
+
+Example request:
+
+```python
+# Delete secret
+response = env.http.post(
+    "/v1/remove_hub_secret",
+    json={
+        "namespace": env.agent.namespace,
+        "name": env.agent.name,
+        "key": "API_KEY",
+        "category": "agent"
+    },
+    headers={"Authorization": f"Bearer {env.auth_token}"}
+)
+```
+
+Example response:
+
+```bash
+true
 ```
 
 ---
