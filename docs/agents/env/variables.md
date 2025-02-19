@@ -4,8 +4,11 @@ NEAR AI provides a secure and flexible system for managing configuration and sen
 
 ### Key Features
 
+- [Flexible variable management](#types-of-environment-variables): Set and manage variables as agent authors or users
 - [Hierarchical variable resolution](#variable-resolution): Users can override agent variables and secrets
 - [NEAR wallet-based authentication](#security-authentication): Only authorized users can set and get secrets
+
+---
 
 ## Types of Environment Variables
 
@@ -14,21 +17,23 @@ NEAR AI provides a secure and flexible system for managing configuration and sen
 Public variables are configuration values that are visible in code and metadata. 
 
 #### Agent Public Variables
-Agent public variables are defined by by the agent author in `metadata.json`:
+
+Agent public variables are defined by by the agent author in the agent's `metadata.json` file:
 
 ```json
 {
-    "details": {
-        "env_vars": {
-            "API_ENDPOINT": "https://api.example.com",
-            "DEFAULT_MODEL": "gpt-4"
-        }
+  "details": {
+    "env_vars": {
+      "API_ENDPOINT": "https://api.example.com",
     }
+  }
 }
 ```
 
 #### User Public Variables
-Set by users via CLI or URL:
+
+User public variables are set by users via the CLI or URL parameters.
+
 ```bash
 # Via CLI
 nearai agent run my-agent --env_vars='{"CUSTOM_ENDPOINT":"https://api.custom.com"}'
@@ -78,6 +83,8 @@ user_public = {"API_KEY": "cli-key"}
 env.env_vars["API_KEY"] == "cli-key"  # Highest priority wins
 ```
 
+---
+
 ## Managing Secrets
 
 ### Via Developer Hub (Recommended)
@@ -123,17 +130,41 @@ response = env.http.post(
 )
 ```
 
+---
+
 ## Using Variables in Agents
 
-### Basic Usage
+Using variables in your agent is straightforward. You can access any variable in your agent code  using Python’s os module or by accessing the env_vars dictionary directly using the `env.env_vars` object.
+
+Examples:
+
+
 ```python
 # Access any variable
-api_key = env.env_vars.get('API_KEY', 'default-value')
+api_key = env.env_vars.get('VARIABLE_NAME', 'default-value')
 
-# Check if variable exists
-if 'API_KEY' in env.env_vars:
-    # Use API key
+# Using env.env_vars
+value = env.env_vars.get('VARIABLE_NAME', 'default_value')
+
+# Using os.environ
+import os
+value = os.environ.get('VARIABLE_NAME', 'default_value')
+
+# Or using globals()
+value = globals()['env'].env_vars.get('VARIABLE_NAME', 'default_value')
+This allows users to fork the agent, modify the environment variables in metadata.json, and achieve the desired behavior without changing the code itself.
+
 ```
+
+You can also check if a variable exists:
+
+```python
+if 'VARIABLE_NAME' in env.env_vars:
+    # Use API key
+    api_key = env.env_vars['VARIABLE_NAME']
+```
+
+---
 
 ## Security & Authentication
 
