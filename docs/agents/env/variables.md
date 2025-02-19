@@ -328,12 +328,7 @@ const authToken = {
     - Each agent only sees its own variables
     - User variables override agent variables
 
-2. **Storage Security**
-    - Secrets stored securely in NEAR AI platform
-    - Never exposed in agent code or logs
-    - Only provided to authorized runners
-
-3. **Request Security**
+2. **Request Security**
     - All requests require NEAR wallet signature
     - Nonces prevent replay attacks
     - Rate limiting on failed attempts
@@ -345,3 +340,4 @@ const authToken = {
     - Validate required variables exist
     - Handle API errors gracefully
     - Cache secret existence checks
+    - For use cases that need higher security secret handling, run your agent in a TEE and verify the TEE quote attestation (docs coming soon).
