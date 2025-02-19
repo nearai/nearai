@@ -104,6 +104,4 @@ async def get_user_secrets(
         offset=offset,
     )
 
-    # TODO decryption
-
     return result
