@@ -33,14 +33,11 @@ export const PaymentConfirmation = ({ content }: Props) => {
           </Text>
         </Flex>
 
-        <Flex direction="column">
-          <Text size="text-xs">Status</Text>
-          {content.result === 'success' ? (
-            <Badge label="Success" variant="success" />
-          ) : (
-            <Badge label="Failure" variant="alert" />
-          )}
-        </Flex>
+        {content.result === 'success' ? (
+          <Badge label="Success" variant="success" />
+        ) : (
+          <Badge label="Failure" variant="alert" />
+        )}
 
         {content.message && (
           <Flex direction="column">
