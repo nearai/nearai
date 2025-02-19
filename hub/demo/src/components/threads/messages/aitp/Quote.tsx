@@ -132,7 +132,7 @@ export const Quote = ({ content }: Props) => {
       </Flex>
 
       {!sendUsdcMutation.isSuccess && (
-        <>
+        <Flex direction="column" gap="m" align="start">
           {wallet && walletAccount ? (
             <>
               <Flex direction="column">
@@ -145,9 +145,7 @@ export const Quote = ({ content }: Props) => {
                     color="sand-10"
                   />
 
-                  <Text size="text-s" color="sand-12" clampLines={1}>
-                    {walletAccount.accountId}
-                  </Text>
+                  <Text color="sand-12">{walletAccount.accountId}</Text>
 
                   <Button
                     label="Change"
@@ -166,7 +164,6 @@ export const Quote = ({ content }: Props) => {
                 iconRight={<ArrowRight />}
                 onClick={() => sendUsdcMutation.mutate()}
                 loading={sendUsdcMutation.isPending}
-                style={{ marginRight: 'auto' }}
               />
             </>
           ) : (
@@ -177,23 +174,8 @@ export const Quote = ({ content }: Props) => {
               onClick={() => walletModal?.show()}
             />
           )}
-        </>
+        </Flex>
       )}
     </Message>
   );
 };
-
-{
-  /* <Flex align="center" gap="m">
-          <SvgIcon icon={<CheckCircle />} color="green-10" />
-          <div>
-            <Text>Payment transaction success</Text>
-            <Button
-              size="x-small"
-              label="View Transaction"
-              iconRight={<ArrowUpRight />}
-              href={`https://nearblocks.io/txns/${sendUsdcMutation.data?.transaction_outcome.id}`}
-            />
-          </div>
-        </Flex> */
-}
