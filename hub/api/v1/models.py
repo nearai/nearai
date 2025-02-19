@@ -2,6 +2,7 @@ import json
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from enum import Enum
 from os import getenv
 from typing import Dict, Iterator, List, Optional
 
@@ -33,6 +34,11 @@ STORAGE_TYPE = getenv("STORAGE_TYPE", "file")
 DB_POOL_SIZE = int(getenv("DATABASE_POOL_SIZE", 10))
 
 
+class Framework(Enum):
+    MINIMAL = "minimal"
+    STANDARD = "standard"
+
+
 class RegistryEntry(SQLModel, table=True):
     """Entry stored in the registry."""
 
@@ -55,6 +61,18 @@ class RegistryEntry(SQLModel, table=True):
     """Free-form dictionary with details about the entry."""
     show_entry: bool = Field(default=True)
     """Whether to show the entry in the registry by default."""
+
+    def get_framework(self) -> str:
+        """Get the framework of the entry."""
+        agent_details = self.details.get("agent", {})
+        framework = agent_details.get("framework", "minimal")
+
+        if framework in ["minimal", "base"]:
+            return Framework.MINIMAL.value
+        elif framework in ["web-agent", "standard"]:
+            return Framework.STANDARD.value
+        else:
+            return framework
 
     def get_key(self, object: Optional[str] = None) -> str:
         """Get the key to the entry or object in S3."""
