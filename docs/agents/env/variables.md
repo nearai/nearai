@@ -108,7 +108,18 @@ nearai agent interactive <AGENT-PATH> --env_vars='{"API_KEY":"sk-...","ENDPOINT"
 ```
 
 ### Via API
-For programmatic management:
+
+Here are a the API endpoints for programmatic management of secrets:
+
+| Endpoint | Method | Description |
+|----------|---------|-------------|
+| `/v1/get_user_secrets` | GET | Retrieve user secrets |
+| `/v1/create_hub_secret` | POST | Create a new secret |
+| `/v1/remove_hub_secret` | POST | Delete an existing secret |
+
+
+Example usage:
+
 ```python
 # Get secrets
 response = env.http.get(
