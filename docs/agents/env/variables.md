@@ -1,159 +1,202 @@
 # Secrets & Environment Variables
 
-Secrets and environment variables provide a flexible way to manage configuration settings and sensitive information in your agents without modifying the source code. An agent has access to two main types of input variables:
+## Overview
+NEAR AI provides a secure and flexible system for managing configuration and sensitive data in your agents. This system allows both agent authors and users to easily provide custom environment variables without the need to modify the underlying agent code. 
 
-1. **Agent Variables**: Set by the agent author
-2. **User Variables**: Set by the end user of an agent
+### Key Features
+- Secure storage of sensitive data
+- Hierarchical variable resolution
+- NEAR wallet-based authentication
+- Scoped access control
 
-Each of which can be either public or private.
+## Types of Environment Variables
 
-- [**Public Variables**](#public-environment-variables): For general configuration settings or user tracking
-- [**Private Variables or Secrets**](#secrets): For sensitive information like API keys
+### 1. Public Variables
 
----
+Public variables are configuration values that are visible in code and metadata. 
 
-## Public Variables
-
-Public environment variables are variables that are set by the agent author and are publicly visible and modifiable during updates/forks. These are typically used for general configuration settings or public user information. There are two types of public environment variables, ones set by the agent author and ones set by the user.
-
-- **Agent Public Variables** 
-      - Set by the agent author in the `metadata.json` file
-      - Publicly visible and modifiable during updates/forks
-      - Example: A URL of an API endpoint
-
-- **User Public Variables**
-    - Provided by users via CLI or URL parameters
-    - Example: A user could pass an URL referrer ID to an agent to track where the agent is being used
-
-
-### Agent Public Variables
-
-An agent's public variables are stored in the agent's `metadata.json` file.
-
-Example:
+#### Agent Public Variables
+Agent public variables are defined by by the agent author in `metadata.json`:
 
 ```json
 {
-  "details": {
-    "env_vars": {
-      "id": "id_from_env",
-      "key": "key_from_env"
+    "details": {
+        "env_vars": {
+            "API_ENDPOINT": "https://api.example.com",
+            "DEFAULT_MODEL": "gpt-4"
+        }
     }
-  }
 }
 ```
 
-### User Public Variables
-
-<!-- TODO: Need more information on how user public variables are stored and passed to an agent. Is the CLI reference regarding the --env_vars flag? If so, that might be better left to the secrets section as it is more relevant to secrets. -->
-
-User public variables are passed to an agent when running the agent locally via CLI or via URL parameters.
-
-For example, a user could pass a URL referrer ID to an agent to track where the agent is being referred from.
-
+#### User Public Variables
+Set by users via CLI or URL:
 ```bash
-refId in https://app.near.ai/agents/casino.near/game/1?refId=ad.near
-```
-<!-- 
-TODO: explain this better... I believe they are combined at some point into one large env_vars object. -->
+# Via CLI
+nearai agent run my-agent --env_vars='{"CUSTOM_ENDPOINT":"https://api.custom.com"}'
 
-These variables are also stored in an `env_vars` object but seprate from an agent's `metadata.json` file.
-
----
-
-## Secrets
-
-<!-- TODO: add more detailed explainer about the aws runner and how it works -->
-
-Secrets enhance the agent framework by allowing both an agent and its user to send private information to the execution environment (an aws runner). Some important information to note:
-
-- **Reading Secrets**: Requires user authentication via a NEAR account
-- **Secret Distribution**: Secrets are only provided to our trusted runner
-- **Secret Encryption**: All secrets are encrypted in the database using a master key
-
-Just like public environment variables, there are two types of secrets; ones set by the agent author and ones set by the user.
-
-- **Agent Secrets**
-    - Set by the agent author in the AI Developer Hub
-    - Can be version-specific or apply to all versions
-    - Example: `Github_API_Token`
-
-- **User Secrets**
-    - Set by users for specific agents when required in the AI Developer Hub
-    - Example: `signer_private_key` for making crypto transactions
-
-### Managing Secrets
-
-<!-- TODO: Add more information about how secrets are stored in the AI platform / runner  -->
-
-Secrets are securely stored in the NEAR AI platform, not in the agent's codebase. They are securely accessed by agents via the [Secrets API endpoints](#secrets-api).
-
-### Managing Secrets in the Developer Hub
-
-The easiest way to manage secrets is via the [NEAR AI Developer Hub](https://app.near.ai).
-
-  1.) In the Agent Development Hub, select an agent and click on the `Run` tab.
-
-  2.) On the right side of the page, you will see `Environment Variables`, click `+` to create a new secret.
-
-![secrets-1](../../assets/agents/secrets-1.png)
-
-  3.) You will be prompted to enter the secret's key value pair.
-
-![secrets-2](../../assets/agents/secrets-2.png)
-
-### Using a secret locally
-
-You can use a secret locally by passing it to the agent when launching it. Note that this will only be accesible to the agent for the duration of that run.
-
-```bash
-nearai agent <FULL_PATH_TO_AGENT> --local --env_vars='{"foo":"bar"}'
+# Via URL parameters
+https://app.near.ai/agents/casino.near/game/1?refId=ad.near
 ```
 
----
+### 2. Private Variables (Secrets)
 
-## Using Variables & Secrets
+Secrets in NEAR AI are private variables that are securely stored and never exposed in agent code. As with public variables, secrets can be set by both agent authors and users. 
 
-Once stored, agents can access variables & secrets using several methods:
+#### Agent Secrets
+- Set by agent authors
+- Scoped to specific agent versions (example: `v1.0.0`)
 
-<!-- TODO: Add more info here about the differences between these three methods -->
+#### User Secrets
+- Set by users for specific agents
+- Can override agent secrets
+- Accessible only to authorized runners
 
-```python
-# Using env.env_vars
-value = env.env_vars.get('VARIABLE_NAME', 'default_value')
-
-# Using os.environ
-import os
-value = os.environ.get('VARIABLE_NAME', 'default_value')
-
-# Or using globals()
-value = globals()['env'].env_vars.get('VARIABLE_NAME', 'default_value')
-```
-
-### Secrets API
-
-<!-- TODO: How to access secrets API and how this works securely -->
-
-Agents can access secrets securley from the runner using the following API endpoints:
-
-| Endpoint | Method | Description |
-|----------|---------|------------|
-| `/v1/get_user_secrets` | GET | Retrieve user secrets |
-| `/v1/create_hub_secret` | POST | Create a new secret |
-| `/v1/remove_hub_secret` | POST | Delete an existing secret |
-
-
-!!! warning
-    When multiple agents are running, each agent only has access to its own secrets.
-
-<!-- TODO: Is this the best place for this Variable Resolution section? -->
 
 ## Variable Resolution
 
-!!! tip "Priority Order"
-    All variables are combined into a single `env_vars` object with the following priority (highest to lowest):
+It's important to note that at runtime both agent author and user environment variables and secrets are merged into a single `env_vars` object. If a variable is set in both the agent author and the user, the user variable will take precedence. This can be useful if you have a default value for a variable in the agent author and then override it for a specific user such as an API endpoint or API key.
 
-    1. User Public Variables
-    2. User Private Variables (Secrets)
-    3. Agent Public Variables
-    4. Agent Private Variables (Secrets)
+!!! tip "Priority Order"
+    Variables are merged with this priority (highest to lowest):
+    1. User Public Variables 
+    2. User Secrets
+    3. Agent Public Variables (metadata.json)
+    4. Agent Secrets
+
+### Example
+```python
+# Given these variables:
+agent_secrets = {"API_KEY": "agent-key"}
+agent_public = {"API_KEY": "metadata-key"}
+user_secrets = {"API_KEY": "user-key"}
+user_public = {"API_KEY": "cli-key"}
+
+# Your agent sees:
+env.env_vars["API_KEY"] == "cli-key"  # Highest priority wins
+```
+
+## Managing Secrets
+
+### Via Developer Hub (Recommended)
+
+The easiest way to manage variables is through [app.near.ai](https://app.near.ai):
+
+1. Select your agent
+2. Click the "Run" tab
+3. Under "Environment Variables":
+    - Click "+" to add new variable
+    - Enter key-value pair
+    - Choose visibility (public/private)
+
+![variable-management](../../assets/agents/secrets-1.png)
+
+### Via CLI
+For local development and testing:
+```bash
+# Set variables for a single run
+nearai agent interactive <AGENT-PATH> --env_vars='{"API_KEY":"sk-...","ENDPOINT":"https://api.custom.com"}'
+```
+
+### Via API
+For programmatic management:
+```python
+# Get secrets
+response = env.http.get(
+    "/v1/get_user_secrets",
+    headers={"Authorization": f"Bearer {env.auth_token}"}
+)
+
+# Create secret
+response = env.http.post(
+    "/v1/create_hub_secret",
+    json={
+        "namespace": env.agent.namespace,
+        "name": env.agent.name,
+        "key": "API_KEY",
+        "value": "sk-...",
+        "category": "agent"
+    },
+    headers={"Authorization": f"Bearer {env.auth_token}"}
+)
+```
+
+## Using Variables in Agents
+
+### Basic Usage
+```python
+# Access any variable
+api_key = env.env_vars.get('API_KEY', 'default-value')
+
+# Check if variable exists
+if 'API_KEY' in env.env_vars:
+    # Use API key
+```
+
+## Security & Authentication
+
+### NEAR Wallet Authentication
+
+All variable management requires a NEAR wallet authentication to ensure that only authorized users can access sensitive information. The CLI and the Developer Hub both require a NEAR wallet connection which is used to authenticate all requests.
+
+Here is an example of creating a auth token for uploading or getting secrets:
+
+```typescript
+// Authentication flow
+const signature = await wallet.signMessage({
+    message: messageToSign,
+    recipient: "ai.near",
+    nonce: generateNonce(),  // 32-byte random nonce
+});
+
+const authToken = {
+    account_id: wallet.accountId,
+    public_key: wallet.publicKey,
+    signature: signature,
+    message: messageToSign,
+    nonce: nonce,
+    recipient: "ai.near"
+};
+```
+
+### Security Model
+1. **Access Control**
+    - Variables are scoped to specific agents/users
+    - Each agent only sees its own variables
+    - User variables override agent variables
+
+2. **Storage Security**
+    - Secrets stored securely in NEAR AI platform
+    - Never exposed in agent code or logs
+    - Only provided to authorized runners
+
+3. **Request Security**
+    - All requests require NEAR wallet signature
+    - Nonces prevent replay attacks
+    - Rate limiting on failed attempts
+    - Request logging and monitoring
+
+!!! warning "Security Best Practices"
+    - Never commit secrets to source control
+    - Use descriptive key names
+    - Validate required variables exist
+    - Handle API errors gracefully
+    - Cache secret existence checks
+
+## Troubleshooting
+
+### Common Issues
+1. **Authentication Errors**
+    - Ensure NEAR wallet is connected
+    - Check if signature is valid
+    - Verify nonce hasn't been used
+
+2. **Access Denied**
+    - Verify agent has correct permissions
+    - Check if variables are correctly scoped
+    - Ensure auth token is valid
+
+3. **Missing Variables**
+    - Check priority order
+    - Verify variable names match exactly
+    - Look for typos in keys
