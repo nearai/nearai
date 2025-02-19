@@ -1209,7 +1209,8 @@ class Environment(object):
     ) -> Tuple[Optional[str], Optional[List[ChatCompletionMessageToolCall]]]:
         if hasattr(response_message, "tool_calls") and response_message.tool_calls:
             return response_message.content, response_message.tool_calls
-        if "content" not in response_message or response_message.content is None:
+        content = response_message.content
+        if content is None:
             return None, None
         content = response_message.content
         llama_matches = LLAMA_TOOL_FORMAT_PATTERN.findall(content)
