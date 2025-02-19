@@ -26,7 +26,7 @@ fastapi dev app.py --port 8081
 4. If you want to rebuild the docker image and restart all local runners, you can run the following command:
 
 ```bash
-docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-base -t nearai-runner:test . && cd aws_runner/local_runners &&  docker-compose up -d --force-recreate && cd ../..
+docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-minimal -t nearai-runner:test . && cd aws_runner/local_runners &&  docker-compose up -d --force-recreate && cd ../..
 ```
 
 You can create `aws_runner/local_runners/.env` file with the custom runner parameters to override the default ones in the docker-compose file. For example:
