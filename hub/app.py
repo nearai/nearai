@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
+
 @asynccontextmanager
 async def lifespan_with_scheduler(lifespan_app: FastAPI):
     try:
