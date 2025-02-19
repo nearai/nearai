@@ -124,7 +124,7 @@ if 'VARIABLE_NAME' in env.env_vars:
 
 ## Managing Secrets
 
-All secret variables are managed through the NEAR AI platform and [require a NEAR account to access](security-authentication). This ensures that only authorized users can access sensitive information and that the variables are stored securely. 
+All secret variables are managed through the NEAR AI platform and [require a NEAR account to access](#security-authentication). This ensures that only authorized users can access sensitive information and that the variables are stored securely. 
 
 You can manage these secrets at a lower level by using the [secrets API](#secrets-api), but the NEAR AI Developer Hub provides a more user-friendly interface for managing these variables.
 
