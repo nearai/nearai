@@ -581,7 +581,7 @@ export const hubRouter = createTRPCRouter({
     }),
 
   threads: protectedProcedure.query(async ({ ctx }) => {
-    const url = `${env.ROUTER_URL}/threads`;
+    const url = `${env.ROUTER_URL}/threads?include_subthreads=false`;
 
     const threads = await fetchWithZod(threadsModel, url, {
       headers: {

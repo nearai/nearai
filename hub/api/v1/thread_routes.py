@@ -145,10 +145,18 @@ def _create_thread(thread_model: ThreadModel, auth: AuthToken = Depends(get_auth
 
 @threads_router.get("/threads")
 def list_threads(
+    include_subthreads: Optional[bool] = Query(
+        True, description="Include threads that have a parent_id - defaults to true"
+    ),
     auth: AuthToken = Depends(get_auth),
 ) -> List[Thread]:
     with get_session() as session:
-        threads = session.exec(select(ThreadModel).where(ThreadModel.owner_id == auth.account_id)).all()
+        statement = select(ThreadModel).where(ThreadModel.owner_id == auth.account_id)
+
+        if include_subthreads is not True:
+            statement = select(ThreadModel).where(ThreadModel.parent_id == None)  # noqa: E711
+
+        threads = session.exec(statement).all()
         return [thread.to_openai() for thread in threads]
 
 
