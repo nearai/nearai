@@ -12,3 +12,5 @@ site/
 .venv/
 last_block_id.txt
 .DS_Store
+build-info.txt
+nearai/ts_runner/build

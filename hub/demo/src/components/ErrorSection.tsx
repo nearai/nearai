@@ -21,7 +21,9 @@ export const ErrorSection = ({ error }: Props) => {
     <Section grow="available">
       <Container size="s" style={{ margin: 'auto', textAlign: 'center' }}>
         <Flex direction="column" gap="l" align="center">
-          <Text as="h1">{title}</Text>
+          <Text as="h1" color="red-10">
+            {title}
+          </Text>
           <Text>{description}</Text>
           <Button href="/" label="Go Home" iconRight={<ArrowRight />} />
         </Flex>

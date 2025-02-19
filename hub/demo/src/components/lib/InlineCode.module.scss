@@ -3,7 +3,6 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 22px;
   min-width: 22px;
   padding: 0 4px;
   margin: 0 2px;
@@ -13,7 +12,7 @@
   font-family: monospace;
   color: var(--violet-12);
   background-color: var(--violet-4);
-  white-space: nowrap;
+  text-align: left;
   flex-shrink: 0;
   outline: none;
   cursor: pointer;

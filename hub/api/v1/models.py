@@ -1,4 +1,4 @@
-import re
+import json
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -6,6 +6,7 @@ from os import getenv
 from typing import Dict, Iterator, List, Optional
 
 from dotenv import load_dotenv
+from nearai.shared.models import RunMode
 from openai.types.beta.thread import Thread as OpenAITThread
 from openai.types.beta.threads.message import Attachment
 from openai.types.beta.threads.message import Message as OpenAITThreadMessage
@@ -13,6 +14,8 @@ from openai.types.beta.threads.message_content import MessageContent
 from openai.types.beta.threads.run import Run as OpenAIRun
 from openai.types.beta.threads.text import Text
 from openai.types.beta.threads.text_content_block import TextContentBlock
+from sqlalchemy.dialects.mysql import LONGTEXT
+from sqlalchemy.types import TypeDecorator
 from sqlmodel import JSON, Column, Field, Session, SQLModel, create_engine
 
 from hub.api.v1.entry_location import EntryLocation
@@ -183,6 +186,43 @@ class Log(SQLModel, table=True):
     info: Dict = Field(default_factory=dict, sa_column=Column(JSON))
 
 
+class UnicodeSafeJSON(TypeDecorator):
+    """Custom JSON handler that safely stores/retrieves Unicode-rich JSON data.
+
+    Uses LONGTEXT to avoid SingleStore/MySQL encoding bugs.
+
+    Why LONGTEXT instead of JSON:
+    1. Bypasses binary storage issues with MySQL JSON type
+    2. Guarantees UTF8MB4 compliance through text column handling
+    3. Avoids implicit encoding conversions in database drivers
+
+    Inherits from TypeDecorator to customize these behaviors:
+    - Safe Unicode serialization (preserves emojis/special chars)
+    - Binary-to-text conversion for reliable deserialization
+    """
+
+    impl = LONGTEXT  # Critical: Uses text storage instead of binary JSON
+    cache_ok = True  # Essential for query caching and performance
+
+    def process_bind_param(self, value, dialect):
+        """Serialize Python objects to UTF8MB4-compliant JSON string."""
+        if value is not None:
+            # Prevent ASCII escaping (\uXXXX sequences) for Unicode chars
+            # enable_ascii=False is crucial for emojis/non-Latin chars
+            return json.dumps(value, ensure_ascii=False)
+        return value
+
+    def process_result_value(self, value, dialect):
+        """Convert database result to Python objects with encoding safety."""
+        if value is not None:
+            # Force string conversion to handle:
+            # - Legacy database drivers returning bytes
+            # - Mixed encoding edge cases
+            # - SingleStore's binary storage peculiarities
+            return json.loads(str(value))
+        return value
+
+
 class Message(SQLModel, table=True):
     __tablename__ = "messages"
 
@@ -195,7 +235,7 @@ class Message(SQLModel, table=True):
     completed_at: Optional[datetime] = Field(default=None)
     incomplete_at: Optional[datetime] = Field(default=None)
     role: str = Field(nullable=False)
-    content: List[MessageContent] = Field(sa_column=Column(JSON))
+    content: List[MessageContent] = Field(sa_column=Column(UnicodeSafeJSON))
     assistant_id: Optional[str] = Field(default=None)
     run_id: Optional[str] = Field(default=None)
     attachments: Optional[List[Attachment]] = Field(default=None, sa_column=Column(JSON))
@@ -215,15 +255,7 @@ class Message(SQLModel, table=True):
             ]
         if self.content:
             if isinstance(self.content, str):
-                # Filter out non-utf8 characters (which shouldn't happen!)
-                content = self.content.encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
-
-                # Regular expression to match only 1- to 3-byte characters, because something is broken
-                # for 4-byte (utf8mb4) characters
-                # TODO #767: Remove this when we support utf8mb4 charset
-                content = re.sub(r"[\U00010000-\U0010FFFF]", "", content)
-
-                self.content = [TextContentBlock(text=Text(value=content, annotations=[]), type="text")]
+                self.content = [TextContentBlock(text=Text(value=self.content, annotations=[]), type="text")]
 
             # Handle both Pydantic models and dictionaries
             self.content = [
@@ -266,9 +298,24 @@ class Thread(SQLModel, table=True):
     tool_resources: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
     meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", JSON))
     owner_id: str = Field(nullable=False)
+    parent_id: Optional[str] = Field(default=None)
+    child_thread_ids: List[str] = Field(default=[], sa_column=Column(JSON))
 
     def to_openai(self) -> OpenAITThread:
         """Convert to OpenAI Thread."""
+        # Assuming agent_ids is a list, join it into a string
+        if self.meta_data and "agent_ids" in self.meta_data:
+            agent_ids = ",".join(self.meta_data["agent_ids"])  # Join the list into a single string
+            self.meta_data["agent_ids"] = agent_ids
+
+        self.meta_data = self.meta_data or {}
+        if self.owner_id:
+            self.meta_data["owner_id"] = self.owner_id
+        if self.parent_id:
+            self.meta_data["parent_id"] = self.parent_id
+        if self.child_thread_ids:
+            self.meta_data["child_thread_ids"] = json.dumps(self.child_thread_ids)
+
         return OpenAITThread(
             metadata=self.meta_data,
             tool_resources=None,  # TODO: Implement conversion
@@ -309,6 +356,7 @@ class Run(SQLModel, table=True):
     parallel_tool_calls: bool = Field(default=False)
     parent_run_id: Optional[str] = Field(default=None)
     child_run_ids: List[str] = Field(default=[], sa_column=Column(JSON))
+    run_mode: Optional[RunMode] = Field(default=None)
 
     def __init__(self, **data):  # noqa: D107
         super().__init__(**data)
@@ -368,7 +416,7 @@ class ScheduledRun(SQLModel, table=True):
     has_run: bool = Field(default=False, nullable=False)
 
 
-db_url = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+db_url = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}?charset=utf8mb4&use_unicode=1&binary_prefix=true"
 engine = create_engine(db_url, pool_size=DB_POOL_SIZE)
 
 

@@ -1,5 +1,6 @@
 import logging
-from typing import Any
+from datetime import datetime
+from typing import Any, List, Optional
 
 import boto3
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -16,7 +17,7 @@ from openai.types.beta.vector_store import ExpiresAfter as OpenAIExpiresAfter
 from openai.types.beta.vector_store import FileCounts, VectorStore
 
 from hub.api.v1.auth import AuthToken, get_auth
-from hub.api.v1.sql import SqlClient
+from hub.api.v1.sql import SqlClient, VectorStoreFile
 from hub.tasks.embedding_generation import (
     generate_embedding,
     generate_embeddings_for_file,
@@ -330,14 +331,14 @@ async def create_vector_store_file(
 
 
 @vector_stores_router.delete("/vector_stores/{vector_store_id}/files/{file_id}")
-async def remove_file_from_vector_store(vector_store_id: str, file_id: str, auth: AuthToken = Depends(get_auth)):
+async def remove_file_from_vector_stores(file_id: str, auth: AuthToken = Depends(get_auth)):
+    """Remove a file from all vector stores."""
     sql_client = SqlClient()
 
     deleted = sql_client.delete_file(file_id, auth.account_id)
-    if not deleted:
-        raise HTTPException(status_code=500, detail="Failed to remove file from vector store")
 
-    return JSONResponse(content={"deleted": True}, status_code=200)
+    # Deleted is false if file_id not found or not owned by the user
+    return JSONResponse(content={"deleted": deleted}, status_code=200)
 
 
 class QueryVectorStoreRequest(BaseModel):
@@ -385,7 +386,7 @@ async def query_vector_store(vector_store_id: str, request: QueryVectorStoreRequ
 
 
 @vector_stores_router.get("/vector_stores/{vector_store_id}/list/files/filename/{filename}")
-async def list_vector_store_files(vector_store_id: str, filename: str, auth: AuthToken = Depends(get_auth)):
+async def get_vector_store_file(vector_store_id: str, filename: str, auth: AuthToken = Depends(get_auth)):
     sql = SqlClient()
     vector_store = sql.get_vector_store(vector_store_id)
     if not vector_store:
@@ -393,6 +394,36 @@ async def list_vector_store_files(vector_store_id: str, filename: str, auth: Aut
         raise HTTPException(status_code=404, detail="Vector store not found")
 
     return sql.get_file_details_by_filename(vector_store_id, filename)
+
+
+@vector_stores_router.get("/vector_stores/{vector_store_id}/files")
+async def list_vector_store_files(vector_store_id: str, auth: AuthToken = Depends(get_auth)):
+    """List all files in a vector store."""
+    logger.info(f"Queueing list of files for vector store: {vector_store_id}")
+
+    sql = SqlClient()
+    vector_store = sql.get_vector_store_by_account(account_id=auth.account_id, vector_store_id=vector_store_id)
+
+    if not vector_store:
+        logger.warning(f"Vector store not found: {vector_store_id}")
+        raise HTTPException(status_code=404, detail="Vector store not found")
+
+    files: Optional[List[VectorStoreFile]] = sql.list_vector_store_files(vector_store_id)
+
+    def serialize_file(file):
+        file_dict = file.__dict__.copy()
+        file_dict["created_at"] = (
+            file.created_at.isoformat() if isinstance(file.created_at, datetime) else file.created_at
+        )
+        file_dict["updated_at"] = (
+            file.updated_at.isoformat() if isinstance(file.updated_at, datetime) else file.updated_at
+        )
+        return file_dict
+
+    files_list = [serialize_file(file) for file in files] if files else []
+
+    # JSON serialize the files, otherwise the datetime objects will not be serializable
+    return JSONResponse(content={"data": files_list})
 
 
 @vector_stores_router.post("/vector_stores/from_source", response_model=VectorStore)

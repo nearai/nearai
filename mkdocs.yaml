@@ -136,9 +136,9 @@ nav:
     - Decentralization: 'decentralization.md'
     - Private & Verifiable AI: 'private-ml-sdk.md'
   - Agents:
-    - "":
+    - Building Agents:
       - Quickstart: 'agents/quickstart.md'
-      - Registry: 'agents/registry.md'
+      - Agent Registry: 'agents/registry.md'
       - Local & Remote Runs: 'agents/running.md'
       - Threads: 'agents/threads.md'
       - "Environment":
@@ -150,11 +150,11 @@ nav:
         - 'agents/env/variables.md'
         - 'agents/env/near.md'
         - Secrets: 'agents/secrets.md'
-        - Inference (OpenAI): 'inference.md'
-        - Vector Stores (OpenAI): 'vector-stores.md'
-        - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
-        - NEAR Event-Triggered Agents: 'near_events.md'
-        - Twitter (X) Triggered Agents: 'agent_triggers.md'
+      - Inference (OpenAI): 'inference.md'
+      - Vector Stores (OpenAI): 'vector-stores.md'
+      - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
+      - NEAR Event-Triggered Agents: 'near_events.md'
+      - Twitter (X) Triggered Agents: 'agent_triggers.md'
     - Tutorials:
       - Documentation Agent:
         - Introduction: 'tutorials/rag/introduction.md'
@@ -163,7 +163,6 @@ nav:
         - RAG Agent: 'tutorials/rag/agent.md'
         - Chunking: 'tutorials/rag/chunking.md'
         - Manual Embeddings: 'tutorials/rag/embeddings.md'
-
   - Models:
     - Fine-tuning: 'models/fine_tuning.md'
     - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'

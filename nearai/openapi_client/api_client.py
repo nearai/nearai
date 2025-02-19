@@ -82,6 +82,8 @@ class ApiClient:
             configuration = Configuration.get_default()
         self.configuration = configuration
 
+        configuration.retries = 0
+
         self.rest_client = rest.RESTClientObject(configuration)
         self.default_headers = {}
         if header_name is not None:
