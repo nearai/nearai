@@ -124,7 +124,9 @@ if 'VARIABLE_NAME' in env.env_vars:
 
 ## Managing Secrets
 
-All secret variables are managed through the NEAR AI platform and [require a NEAR account to access](security-authentication). This ensures that only authorized users can access sensitive information and that the variables are stored securely. You can manage these secrets at a lower level by using the [secrets API](#secrets-api), but the NEAR AI Developer Hub provides a more user-friendly interface for managing these variables.
+All secret variables are managed through the NEAR AI platform and [require a NEAR account to access](security-authentication). This ensures that only authorized users can access sensitive information and that the variables are stored securely. 
+
+You can manage these secrets at a lower level by using the [secrets API](#secrets-api), but the NEAR AI Developer Hub provides a more user-friendly interface for managing these variables.
 
 ### Using Developer Hub
 
@@ -141,15 +143,20 @@ The easiest way to manage variables is through [app.near.ai](https://app.near.ai
 
 ### Using CLI
 
-For local development and testing:
+!!! warning "Local Development Only"
+
+For local development and testing only as the CLI does not upload secret variables to the NEAR AI platform. 
+
+Also note that using `--env_vars` flag only works for a single run.
+
 ```bash
 # Set variables for a single run
 nearai agent interactive <AGENT-PATH> --env_vars='{"API_KEY":"sk-...","ENDPOINT":"https://api.custom.com"}'
 ```
 
-### Using Secrets API
+### Secrets API
 
-Here are a the API endpoints for programmatic management of secrets:
+For programmatic management of secrets, you can use the following API endpoints:
 
 | Endpoint | Method | Description |
 |----------|---------|-------------|
@@ -177,7 +184,7 @@ Retrieves secrets belonging to the authenticated user. (via `owner_namespace`)
 ```python
 # Get secrets
 response = env.http.get(
-    "/v1/get_user_secrets",
+    f"{API_URL}/v1/get_user_secrets",
     headers={"Authorization": f"Bearer {env.auth_token}"}
 )
 ```
@@ -228,7 +235,7 @@ Creates a new secret for the authenticated user.
 ```python
 # Create secret
 response = env.http.post(
-    "/v1/create_hub_secret",
+    f"{API_URL}/v1/create_hub_secret",
     json={
         "namespace": env.agent.namespace,
         "name": env.agent.name,
@@ -269,7 +276,7 @@ Params:
 ```python
 # Delete secret
 response = env.http.post(
-    "/v1/remove_hub_secret",
+    f"{API_URL}/v1/remove_hub_secret",
     json={
         "namespace": env.agent.namespace,
         "name": env.agent.name,
