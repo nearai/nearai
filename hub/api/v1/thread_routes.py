@@ -4,8 +4,6 @@ from os import getenv
 from typing import Any, Dict, Iterable, List, Literal, Optional, Union
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
-
-from hub.api.v1.completions import Provider
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import load_config_file
 from nearai.shared.auth_data import AuthData
@@ -30,11 +28,12 @@ from hub.api.v1.agent_routes import (
     invoke_agent_via_url,
 )
 from hub.api.v1.auth import AuthToken, get_auth
+from hub.api.v1.completions import Provider
 from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
 from hub.api.v1.models import get_session
-from hub.api.v1.routes import get_llm_ai, DEFAULT_TIMEOUT
+from hub.api.v1.routes import DEFAULT_TIMEOUT, get_llm_ai
 from hub.api.v1.sql import SqlClient
 from hub.tasks.scheduler import get_scheduler
 
