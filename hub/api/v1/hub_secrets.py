@@ -46,7 +46,8 @@ async def create_hub_secret(
     """Create a hub secret."""
     logger.info(f"Creating hub secret for: {request.name}")
 
-    # TODO encryption
+    # Currently, using secrets requires trust in NEAR AI. After the launch of NEAR AI HUB in TEE,
+    # the need for trust will be eliminated.
 
     sql_client = SqlClient()
     sql_client.create_hub_secret(
