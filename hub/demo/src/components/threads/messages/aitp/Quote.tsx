@@ -10,10 +10,18 @@ import {
 import { formatDollar } from '@near-pagoda/ui/utils';
 import { ArrowRight, Wallet } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef } from 'react';
 import { type z } from 'zod';
 
+import { useQueryParams } from '~/hooks/url';
 import { useThreadsStore } from '~/stores/threads';
 import { useWalletStore } from '~/stores/wallet';
+import {
+  generateWalletTransactionCallbackUrl,
+  UNSET_WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
+  WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
+  type WalletTransactionRequestOrigin,
+} from '~/utils/wallet';
 
 import { Message } from './Message';
 import {
@@ -35,6 +43,10 @@ export const Quote = ({ content }: Props) => {
   const walletModal = useWalletStore((store) => store.modal);
   const walletAccount = useWalletStore((store) => store.account);
   const amount = content.payment_plans?.[0]?.amount;
+  const { queryParams, updateQueryPath } = useQueryParams([
+    ...WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
+  ]);
+  const lastSuccessfulTransactionIdRef = useRef('');
 
   const changeWallet = async () => {
     if (wallet) {
@@ -42,6 +54,29 @@ export const Quote = ({ content }: Props) => {
     }
     walletModal?.show();
   };
+
+  const onTransactionSuccess = useCallback(
+    (transactionId: string) => {
+      if (!addMessage) return;
+      if (lastSuccessfulTransactionIdRef.current === transactionId) return;
+      lastSuccessfulTransactionIdRef.current = transactionId;
+
+      const aitpResult: z.infer<typeof paymentConfirmationSchema> = {
+        $schema: CURRENT_AITP_PAYMENT_SCHEMA_URL,
+        payment_confirmation: {
+          quote_id: content.quote_id,
+          result: 'success',
+          transaction_id: transactionId,
+          timestamp: new Date().toISOString(),
+        },
+      };
+
+      void addMessage({
+        new_message: JSON.stringify(aitpResult),
+      });
+    },
+    [addMessage, content.quote_id],
+  );
 
   const sendUsdcMutation = useMutation({
     mutationFn: async () => {
@@ -76,6 +111,10 @@ export const Quote = ({ content }: Props) => {
             },
           },
         ],
+        callbackUrl: generateWalletTransactionCallbackUrl(
+          'quote',
+          content.quote_id,
+        ),
       });
 
       if (!result) {
@@ -86,19 +125,7 @@ export const Quote = ({ content }: Props) => {
     },
 
     onSuccess: (result) => {
-      const aitpResult: z.infer<typeof paymentConfirmationSchema> = {
-        $schema: CURRENT_AITP_PAYMENT_SCHEMA_URL,
-        payment_confirmation: {
-          quote_id: content.quote_id,
-          result: 'success',
-          transaction_id: result.transaction_outcome.id,
-          timestamp: new Date().toISOString(),
-        },
-      };
-
-      void addMessage!({
-        new_message: JSON.stringify(aitpResult),
-      });
+      onTransactionSuccess(result.transaction_outcome.id);
     },
 
     onError: (error) => {
@@ -106,6 +133,29 @@ export const Quote = ({ content }: Props) => {
       handleClientError({ error, title: 'Failed to send transaction' });
     },
   });
+
+  useEffect(() => {
+    // This logic handles full page redirect wallet flows like MyNearWallet
+
+    const transactionId = queryParams.transactionHashes
+      ?.split(',')
+      .pop()
+      ?.trim();
+
+    if (
+      transactionId &&
+      queryParams.transactionRequestOrigin ===
+        ('quote' satisfies WalletTransactionRequestOrigin) &&
+      queryParams.transactionRequestId === content.quote_id
+    ) {
+      onTransactionSuccess(transactionId);
+      updateQueryPath(
+        UNSET_WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
+        'replace',
+        false,
+      );
+    }
+  }, [queryParams, content, onTransactionSuccess, updateQueryPath]);
 
   return (
     <Message>

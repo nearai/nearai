@@ -54,10 +54,9 @@ import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { useThreadsStore } from '~/stores/threads';
 import { trpc } from '~/trpc/TRPCProvider';
+import { WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS } from '~/utils/wallet';
 
 import { ThreadFileModal } from './threads/ThreadFileModal';
-
-type RunView = 'conversation' | 'output' | undefined;
 
 type Props = {
   namespace: string;
@@ -65,6 +64,8 @@ type Props = {
   version: string;
   showLoadingPlaceholder?: boolean;
 };
+
+type RunView = 'conversation' | 'output' | undefined;
 
 type FormSchema = Pick<
   z.infer<typeof chatWithAgentModel>,
@@ -91,10 +92,9 @@ export const AgentRunner = ({
     'showLogs',
     'threadId',
     'view',
-    'transactionHashes',
-    'transactionRequestId',
     'initialUserMessage',
     'mockedAitpMessages',
+    ...WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
   ]);
   const entryEnvironmentVariables = useEntryEnvironmentVariables(
     currentEntry,
@@ -265,7 +265,7 @@ export const AgentRunner = ({
   };
 
   const startNewThread = () => {
-    updateQueryPath({ threadId: undefined });
+    updateQueryPath({ threadId: null });
     form.setValue('new_message', '');
     form.setFocus('new_message');
   };
@@ -303,7 +303,7 @@ export const AgentRunner = ({
         title: 'Failed to load thread',
         description: `Your account doesn't have permission to access requested thread`,
       });
-      updateQueryPath({ threadId: undefined });
+      updateQueryPath({ threadId: null });
     }
   }, [threadQuery.error, updateQueryPath]);
 

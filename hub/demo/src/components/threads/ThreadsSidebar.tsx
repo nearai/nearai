@@ -73,7 +73,7 @@ export const ThreadsSidebar = ({
   const removeThread = async (thread: ThreadSummary) => {
     try {
       if (threadId === thread.id) {
-        updateQueryPath({ threadId: undefined });
+        updateQueryPath({ threadId: null });
       }
 
       setRemovedThreadIds((value) => [...value, thread.id]);
