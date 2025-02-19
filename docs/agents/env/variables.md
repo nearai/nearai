@@ -4,8 +4,8 @@ NEAR AI provides a secure and flexible system for managing configuration and sen
 
 ### Key Features
 
-- [Flexible variable management](#types-of-environment-variables): Set and manage variables as agent authors or users
-- [Hierarchical variable resolution](#variable-resolution): Users can override agent variables and secrets
+- [Flexible variable management](#private-variables-secrets): Set and manage variables as agent authors or users
+- [Hierarchical variable resolution](#how-variables-are-merged): Users can override agent variables and secrets
 - [NEAR wallet-based authentication](#security-authentication): Only authorized users can set and get secrets
 
 ---
@@ -72,7 +72,7 @@ If there are conflicting variables with the same name, user variables will take 
     4. Agent Public Variables (metadata.json)
     
 
-**Example:**
+`Example`:
 
 ```python
 # Given these variables:
@@ -89,9 +89,9 @@ env.env_vars["API_KEY"] == "cli-key"  # Highest priority wins
 
 ## Using Variables in Agent Code
 
-Using variables in your agent is straightforward. You can access any variable in your agent code  using Python’s os module or by accessing the env_vars dictionary directly using the `env.env_vars` object.
+Using variables in your agent is straightforward. You can access any variable in your agent code  using Python’s os module or by accessing the `env_vars` dictionary directly using the `env.env_vars` object.
 
-Examples:
+`Examples`:
 
 
 ```python
@@ -124,7 +124,9 @@ if 'VARIABLE_NAME' in env.env_vars:
 
 ## Managing Secrets
 
-### Via Developer Hub (Recommended)
+All secret variables are managed through the NEAR AI platform and [require a NEAR account to access](security-authentication). This ensures that only authorized users can access sensitive information and that the variables are stored securely. You can manage these secrets at a lower level by using the [secrets API](#secrets-api), but the NEAR AI Developer Hub provides a more user-friendly interface for managing these variables.
+
+### Using Developer Hub
 
 The easiest way to manage variables is through [app.near.ai](https://app.near.ai):
 
@@ -137,14 +139,15 @@ The easiest way to manage variables is through [app.near.ai](https://app.near.ai
 
 ![variable-management](../../assets/agents/secrets-1.png)
 
-### Via CLI
+### Using CLI
+
 For local development and testing:
 ```bash
 # Set variables for a single run
 nearai agent interactive <AGENT-PATH> --env_vars='{"API_KEY":"sk-...","ENDPOINT":"https://api.custom.com"}'
 ```
 
-### Via API
+### Using Secrets API
 
 Here are a the API endpoints for programmatic management of secrets:
 
@@ -154,12 +157,13 @@ Here are a the API endpoints for programmatic management of secrets:
 | `/v1/create_hub_secret` | POST | Create a new secret |
 | `/v1/remove_hub_secret` | POST | Delete an existing secret |
 
+---
 
-### `GET /v1/get_user_secrets`
+**`GET /v1/get_user_secrets`**{style="font-size: 1.3em"}
 
 Retrieves secrets belonging to the authenticated user. (via `owner_namespace`)
 
-Params:
+`Params`:
 
 ```json
 {
@@ -168,7 +172,7 @@ Params:
 }
 ```
 
-Example usage:
+`Example request`:
 
 ```python
 # Get secrets
@@ -199,11 +203,13 @@ response = env.http.get(
 
 </details>
 
-### `POST /v1/create_hub_secret`
+---
+
+**`POST /v1/create_hub_secret`**{style="font-size: 1.3em"}
 
 Creates a new secret for the authenticated user.
 
-Params:
+`Params`:
 
 ```json
 {
@@ -217,7 +223,7 @@ Params:
 }
 ```
 
-Example request:
+`Example request`:
 
 ```python
 # Create secret
@@ -240,7 +246,9 @@ Example response:
 true
 ```
 
-### `POST /v1/remove_hub_secret`
+---
+
+**`POST /v1/remove_hub_secret`**{style="font-size: 1.3em"}
 
 Deletes an existing secret.
 
@@ -256,7 +264,7 @@ Params:
 }
 ```
 
-Example request:
+`Example request`:
 
 ```python
 # Delete secret
@@ -272,7 +280,7 @@ response = env.http.post(
 )
 ```
 
-Example response:
+`Example response`:
 
 ```bash
 true
@@ -282,11 +290,12 @@ true
 
 ## Security & Authentication
 
-### NEAR Wallet Authentication
+The [management secret variables](#managing-secrets) on the NEAR AI platform requires authentication via a NEAR account to ensure that only authorized users can access sensitive information.
 
-All variable management requires a NEAR wallet authentication to ensure that only authorized users can access sensitive information. The CLI and the Developer Hub both require a NEAR wallet connection which is used to authenticate all requests.
+Both the NEAR AI CLI & Developer Hub require logging in with a NEAR account and then abstract away the auth token creation process by signing a message with your NEAR wallet. At a low level this authentication is handled by creating an `auth_token` from a signed message which is then passed to all Secret API requests.
 
-Both the NEAR AI CLI & Developer hub abstract away the need to manually create an auth token and is handled automatically after you connect your NEAR wallet. Here is an example of what the authentication flow looks like:
+
+`Example`:
 
 ```typescript
 // Authentication flow
