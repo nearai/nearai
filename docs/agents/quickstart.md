@@ -234,5 +234,5 @@ The environment object unlocks NEAR AI's powerful features:
 - Enable [agent-to-agent communication](./env/calling_other_agents.md)
 - Extend capabilities with [custom tools](./env/tools.md)
 
-### [Learn About Secrets and Veriables →](./env/variables.md)
-Keep your agent secure with proper secrets management. Store API keys safely and connect to external services with confidence.
+### [Learn About Secrets and Variables →](./env/variables.md)
+Learn how to manage environment variables and secure with proper secrets management. Store API keys safely and connect to external services with confidence.
