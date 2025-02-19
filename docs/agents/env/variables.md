@@ -1,11 +1,10 @@
 # Secrets & Environment Variables
 
-## Overview
-NEAR AI provides a secure and flexible system for managing configuration and sensitive data in your agents. This system allows both agent authors and users to easily provide custom environment variables without the need to modify the underlying agent code. 
+NEAR AI provides a secure and flexible system for managing configuration and sensitive data your agents need. This system allows both agent authors and agent users to easily provide custom environment variables without the need to modify the underlying agent code. 
 
 ### Key Features
 - Secure storage of sensitive data
-- Hierarchical variable resolution
+- [Hierarchical variable resolution](#variable-resolution)
 - NEAR wallet-based authentication
 - Scoped access control
 
@@ -45,7 +44,7 @@ Secrets in NEAR AI are private variables that are securely stored and never expo
 
 #### Agent Secrets
 - Set by agent authors
-- Scoped to specific agent versions (example: `v1.0.0`)
+- Scoped to specific agent versions
 
 #### User Secrets
 - Set by users for specific agents
@@ -55,14 +54,18 @@ Secrets in NEAR AI are private variables that are securely stored and never expo
 
 ## Variable Resolution
 
-It's important to note that at runtime both agent author and user environment variables and secrets are merged into a single `env_vars` object. If a variable is set in both the agent author and the user, the user variable will take precedence. This can be useful if you have a default value for a variable in the agent author and then override it for a specific user such as an API endpoint or API key.
+It's important to note that at runtime both agent author and user environment variables and secrets are merged into a single `env_vars` object. 
+
+If there are conflicting variables with the same name, user variables will take precedence. This enables agent users to easily override any default value or secret set by the agent author such as an API key or API endpoint.
 
 !!! tip "Priority Order"
-    Variables are merged with this priority (highest to lowest):
-    1. User Public Variables 
+    Variables are merged with this priority (highest to lowest), ultimately user variables take precedence:
+    
+    1. User Public Variables (CLI/URL Params)
     2. User Secrets
-    3. Agent Public Variables (metadata.json)
-    4. Agent Secrets
+    3. Agent Secrets
+    4. Agent Public Variables (metadata.json)
+    
 
 ### Example
 ```python
