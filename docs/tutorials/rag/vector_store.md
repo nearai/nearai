@@ -12,7 +12,7 @@ Vector Stores by using a mathematical model to convert documents into numerical 
 
 Ideally, documents and queries that are semantically similar will have similar numerical representation. Meaning that, the documents that are closer to the query in the vector space are the most relevant to answer it.
 
-Exactly how these representations are generated is a complex topic, which exceeds the scope of this tutorial. For us, it will suffice to know that these models already exist and are readily available to be used.
+Exactly how these representations are generated is a complex topic, which exceeds the scope of this tutorial. For us, it suffices to know that these models already exist and are readily available to be used.
 
 ---
 

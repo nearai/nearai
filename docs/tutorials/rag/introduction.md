@@ -1,30 +1,33 @@
 # Using RAG to Build a Docs Agent
 
-Current AI models are trained on a wide variety of data sources, which makes them incredibly good at generating text for broad topics. However, if you need your agent to talk about a niche domain (e.g. data from your own products), chances are that the model will start to hallucinate.
+Current AI models are trained on a wide variety of data sources, which makes them outstanding at generating broad text. However, if you need your agent to talk about a topic on which it was not trained (e.g. your own internal documentation), the model will start to [hallucinate](https://thebullshitmachines.com/lesson-2-the-nature-of-bullshit/index.html).
 
-To solve this problem you can use a technique called Retrieval-Augmented Generation (RAG). RAG is as simple as combining two models:
+In these very common scenarios, hallucinating is the result of the model trying to generate plausible text, without having the necessary data to do so. 
 
-1. One retrieval model to find relevant information from a structured dataset
-2. A generation model to generate the response from the retrieved information
+Thankfully, there is a solution to this problem: Retrieval-Augmented Generation (RAG). This technique consists on **combining two AI models**:
 
-In this tutorial, we will show you how to build a simple agent that uses RAG to answer questions about NEAR! For this, we will use part of our documentation to build a dataset that the agent will use to generate responses.
+1. The first to **retrieve relevant information** from a structured dataset
+2. The second to **generate a response** based on the retrieved information
+
+In this tutorial, we will show you how to build a simple agent that uses RAG to answer questions about NEAR!
 
 ---
 
-## The Simplest RAG Agent
+## What You Will Need
 
-Just to exemplify the concept of RAG, lets start by checking a very simple agent that [answers questions about NEAR Protocol tools.](https://app.near.ai/agents/gagdiez.near/docs-simplest/latest/run)
+To follow this tutorial you will need two things:
 
-This agent has access to 4 markdown files - `api.md`, `cli.md`, `explorer.md`, and `sdk.md` - and implements a simple mechanisms to answer questions:
+1. A `Hello AI` agent, which you can create by following the [Agents Quickstart Tutorial](../../agents/quickstart.md) 
+2. The `NEAR Docs` dataset, which you can download from the [official docs repo](https://github.com/near/docs/tree/master/docs)
 
-1. Create a filtering prompt, that includes all the files' content and the user's question, and task a model to choose the best files to answer the question
-2. Use another prompt, that includes the chosen files and the user's question, to task another model with generating the answer
+---
 
+## Index
 
-![Simple RAG Agent](./rag-no-vector-store.png)
+This tutorial is divided in the following sections:
 
-While useful to understand the concept, this agent has a very important limitation: **it cannot scale** to a large number of documents.
-
-Since we are loading all documents into the prompt, soon we will hit a limit on the number of tokens that the model can process.
-
-To solve this problem, we need to use rely on a special kind of database called a **Vector Store**.
+- [The problem](./problem.md): A brief example on how common AI models hallucinate when they don't have the necessary data
+- [Vector Stores](./vector_store.md): An introduction to vector stores and how to create them
+- [RAG Agent](./agent.md): We create an agent that uses the vector store to answer questions about NEAR Protocol tools
+- [Chunking](./chunking.md): Where we dive deeper into how vector stores store documents
+- [Embeddings](./embeddings.md): We show how one can manually create embeddings for a document
