@@ -55,6 +55,7 @@ from nearai.shared.near.sign import (
     CompletionSignaturePayload,
     validate_completion_signature,
 )
+from nearai.shared.secure_openai_clients import SecureAsyncOpenAI, SecureOpenAI
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
@@ -119,7 +120,17 @@ class Environment(object):
 
         # user_auth is used to authenticate the user in the ts_runner. It will be removed after that in
         # `nearai/agents/agent.py`
-        self.user_auth = client._auth
+        auth = client._auth
+        self.user_auth = auth
+
+        # Initialize secure openai clients
+        openai_client_params = {
+            "api_key": auth,
+            "base_url": client._config.base_url,
+            "default_headers": {"Authorization": f"Bearer {auth}"},
+        }
+        self.openai = SecureOpenAI(**openai_client_params)
+        self.async_openai = SecureAsyncOpenAI(**openai_client_params)
 
         # Placeholder for solver
         self.client: Optional[InferenceClient] = None
