@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Badge,
   Button,
   Flex,
   handleClientError,
@@ -12,8 +13,10 @@ import { formatDollar } from '@near-pagoda/ui/utils';
 import {
   ArrowRight,
   CheckCircle,
+  CurrencyDollar,
   PencilSimple,
   Wallet,
+  Warning,
 } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
@@ -25,6 +28,10 @@ import {
   useThreadsStore,
 } from '~/stores/threads';
 import { useWalletStore } from '~/stores/wallet';
+import {
+  dollarsToUsdcAtomicAmount,
+  MAINNET_NEAR_USDC_CONTRACT_ID,
+} from '~/utils/usdc';
 import {
   generateWalletTransactionCallbackUrl,
   UNSET_WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
@@ -43,9 +50,6 @@ type Props = {
   content: z.infer<typeof quoteSchema>['quote'];
 };
 
-const NEAR_USDC_CONTRACT_ID =
-  '17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1';
-
 export const Quote = ({ content }: Props) => {
   const addMessage = useThreadsStore((store) => store.addMessage);
   const wallet = useWalletStore((store) => store.wallet);
@@ -57,6 +61,9 @@ export const Quote = ({ content }: Props) => {
     ...WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
   ]);
   const lastSuccessfulTransactionIdRef = useRef('');
+  const usdcBalanceDollars = useWalletStore(
+    (store) => store.usdcBalanceDollars,
+  );
 
   const threadId = queryParams.threadId ?? '';
   const paymentConfirmation = useThreadMessageContentFilter(
@@ -118,7 +125,7 @@ export const Quote = ({ content }: Props) => {
 
       const result = await wallet!.signAndSendTransaction({
         signerId: walletAccount!.accountId,
-        receiverId: NEAR_USDC_CONTRACT_ID,
+        receiverId: MAINNET_NEAR_USDC_CONTRACT_ID,
         actions: [
           {
             type: 'FunctionCall',
@@ -126,7 +133,7 @@ export const Quote = ({ content }: Props) => {
               methodName: 'ft_transfer',
               args: {
                 receiver_id: content.payee_id,
-                amount: (amount * 1000000).toString(),
+                amount: dollarsToUsdcAtomicAmount(amount).toString(),
                 memo: `Quote ID: ${content.quote_id}`,
               },
               gas: '300000000000000',
@@ -184,6 +191,9 @@ export const Quote = ({ content }: Props) => {
     paymentConfirmation?.payment_confirmation.transaction_id ||
     sendUsdcMutation.data?.transaction_outcome.id;
 
+  const walletHasSufficientUsdcBalance =
+    typeof amount === 'number' ? usdcBalanceDollars >= amount : false;
+
   return (
     <Message>
       <Text size="text-xs" weight={600} uppercase>
@@ -218,10 +228,10 @@ export const Quote = ({ content }: Props) => {
         <Flex direction="column" gap="m" align="start">
           {wallet && walletAccount ? (
             <>
-              <Flex direction="column" gap="xs">
-                <Text size="text-xs">Payment Method</Text>
+              <Flex direction="column" gap="s">
+                <Flex direction="column" gap="xs">
+                  <Text size="text-xs">Payment Method</Text>
 
-                <Flex align="center" gap="m">
                   <Flex align="center" gap="s">
                     <ImageIcon
                       src={wallet.metadata.iconUrl}
@@ -245,16 +255,37 @@ export const Quote = ({ content }: Props) => {
                     <Tooltip asChild content="Change payment method">
                       <Button
                         label="Change"
-                        icon={<PencilSimple />}
+                        icon={<PencilSimple weight="duotone" />}
                         variant="primary"
-                        size="x-small"
-                        fill="ghost"
+                        fill="outline"
+                        size="small"
                         onClick={changeWallet}
                         disabled={sendUsdcMutation.isPending}
                       />
                     </Tooltip>
+
+                    <Tooltip content="Add USDC funds via REF Finance">
+                      <Button
+                        size="small"
+                        variant="affirmative"
+                        fill="outline"
+                        label="Add Funds"
+                        icon={<CurrencyDollar weight="duotone" />}
+                        href="https://app.ref.finance/#near"
+                        target="_blank"
+                      />
+                    </Tooltip>
                   </Flex>
                 </Flex>
+
+                {!walletHasSufficientUsdcBalance && (
+                  <Badge
+                    label={`Insufficient Funds: ${formatDollar(usdcBalanceDollars)} USDC`}
+                    variant="warning"
+                    iconLeft={<Warning />}
+                    style={{ alignSelf: 'start' }}
+                  />
+                )}
               </Flex>
 
               <Button
@@ -263,6 +294,7 @@ export const Quote = ({ content }: Props) => {
                 iconRight={<ArrowRight />}
                 onClick={() => sendUsdcMutation.mutate()}
                 loading={sendUsdcMutation.isPending}
+                disabled={!walletHasSufficientUsdcBalance}
               />
             </>
           ) : (
