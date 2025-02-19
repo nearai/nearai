@@ -1,18 +1,26 @@
-# Vector Stores
+Vector Stores are a special kind of database that stores documents and allows you to do a semantic query to retrieve them. This way, you can easily find the most relevant documents to answer a given question.
 
-Vector Stores are a special kind of database that allows you to store and query documents based on their numerical representation. This is particularly useful when you have a large number of documents and you want to find the most relevant ones to answer a given query.
+!!! info
+    The Vector Store is built separately from the agent, and can be used in multiple places
+
+!!! tip
+    You can find the dataset and code used in this tutorial in the [vector store example](https://github.com/gagdiez/docs-ai/tree/main/docs-gpt/dataset) repository
+
 
 ---
 
 ## How Vector Stores Work
 
-Vector Stores by using a mathematical model to convert documents into numerical representations in a low-dimensional space. This is done by using a technique called Vectorial Representations.
+Vector Stores use AI models to convert documents into low-dimensional numerical representations. For example, the [Nomic v1.5](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5) model represents this whole [`cli.md`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md) as the vector  `[0.01025390625, 0.048309326171875, -0.166015625, ... , -0.004741668701171875, -0.048553466796875]`
+
+!!!tip
+    How these representations are generated is a complex topic that exceeds the scope of this tutorial. For us, it suffices to know that such models already exist and are available for us to use
+
+Ideally, documents that are semantically similar will have similar numerical representation, and thus end relatively close within this vectorial space.
 
 ![alt text](vector-space.png)
 
-Ideally, documents and queries that are semantically similar will have similar numerical representation. Meaning that, the documents that are closer to the query in the vector space are the most relevant to answer it.
-
-Exactly how these representations are generated is a complex topic, which exceeds the scope of this tutorial. For us, it suffices to know that these models already exist and are readily available to be used.
+More importantly, user queries can directly be converted into the same vectorial space. This gives us a simple way to find documents in the vector store: documents that are close to the query in the vector space are relevant to answer it.
 
 ---
 
@@ -24,9 +32,6 @@ Creating a vector store in NEAR AI consist in 2 main steps:
 - Creating a Vector Store by providing one or multiple files IDs
 
 Let's create a vector store using the official documentation, which consists of a set of markdown files.
-
-!!! tip
-    You can find the dataset and code used in this tutorial in the [vector store example](https://github.com/gagdiez/docs-ai/tree/main/docs-gpt/dataset) repository
 
 Since NEAR AI implements an API compatible with that of OpenAI, we can use the `client` object from the `openai` library to upload the files and create the vector store.
 
