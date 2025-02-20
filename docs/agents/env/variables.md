@@ -166,27 +166,22 @@ For programmatic management of secrets, you can use the following API endpoints:
 
 ---
 
-**`GET /v1/get_user_secrets`**{style="font-size: 1.3em"}
+#### `GET /v1/get_user_secrets`
 
 Retrieves secrets belonging to the authenticated user. (via `owner_namespace`)
 
-`Params`:
+Params:
 
-```json
-{
-  "limit": 100,  // Optional (default: 100)
-  "offset": 0   // Optional (default: 0)
-}
+- `limit`: Optional (default: 100)
+- `offset`: Optional (default: 0)
+
 ```
 
-`Example request`:
+Example request:
 
-```python
-# Get secrets
-response = env.http.get(
-    f"{API_URL}/v1/get_user_secrets",
-    headers={"Authorization": f"Bearer {env.auth_token}"}
-)
+```bash
+curl -X GET "https://<api-url>/v1/get_user_secrets?limit=10&offset=0" \
+  -H "Authorization: Bearer <YOUR-NEAR-AUTH-TOKEN>"
 ```
 
 <details>
@@ -212,11 +207,17 @@ response = env.http.get(
 
 ---
 
-**`POST /v1/create_hub_secret`**{style="font-size: 1.3em"}
+#### `POST /v1/create_hub_secret`
 
 Creates a new secret for the authenticated user.
 
-`Params`:
+Secrets can be tied to:
+
+- A specific agent namespace (namespace)
+- A specific version (version) (optional)
+- A category, such as "agent" or "user" (default is "agent")
+
+**Example Request Body:**
 
 ```json
 {
@@ -230,66 +231,65 @@ Creates a new secret for the authenticated user.
 }
 ```
 
-`Example request`:
-
-```python
-# Create secret
-response = env.http.post(
-    f"{API_URL}/v1/create_hub_secret",
-    json={
-        "namespace": env.agent.namespace,
-        "name": env.agent.name,
-        "key": "API_KEY",
-        "value": "sk-...",
-        "category": "agent"
-    },
-    headers={"Authorization": f"Bearer {env.auth_token}"}
-)
-```
-
-Example response:
+**Example Request:**
 
 ```bash
+curl -X POST "https://<api-url>/v1/create_hub_secret" \
+  -H "Authorization: Bearer <YOUR-NEAR-AUTH-TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "namespace": "example_agent",
+    "name": "my_secret_name",
+    "version": "1.0",
+    "description": "GitHub token for my agent",
+    "key": "GITHUB_API_TOKEN",
+    "value": "ghp_abc123",
+    "category": "agent"
+  }'
+```
+
+**Example Response:**
+
+```json
 true
 ```
 
 ---
 
-**`POST /v1/remove_hub_secret`**{style="font-size: 1.3em"}
+#### `POST /v1/remove_hub_secret`
 
 Deletes an existing secret.
 
-Params:
+**Example Request Body:**
 
 ```json
 {
-  "namespace": "string",      // Required
-  "name": "string",           // Required
-  "version": "string",        // Optional
-  "key": "string",            // Required
-  "category": "string"        // Optional (default: "agent")
+  "namespace": "string",  // Required
+  "name": "string",       // Required
+  "version": "string",    // Optional
+  "key": "string",        // Required
+  "category": "string"    // Optional (default: "agent")
 }
 ```
 
-`Example request`:
-
-```python
-# Delete secret
-response = env.http.post(
-    f"{API_URL}/v1/remove_hub_secret",
-    json={
-        "namespace": env.agent.namespace,
-        "name": env.agent.name,
-        "key": "API_KEY",
-        "category": "agent"
-    },
-    headers={"Authorization": f"Bearer {env.auth_token}"}
-)
-```
-
-`Example response`:
+**Example Request:**
 
 ```bash
+curl -X POST "https://<api-url>/v1/remove_hub_secret" \
+  -H "Authorization: Bearer <YOUR-NEAR-AUTH-TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "namespace": "example_agent",
+    "name": "my_secret_name",
+    "version": "1.0",
+    "key": "GITHUB_API_TOKEN",
+    "category": "agent"
+  }'
+```
+
+**Example Response:**
+
+```json
 true
 ```
 
