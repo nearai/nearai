@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { dataSchema, requestDataSchema } from './data';
 import { decisionSchema, requestDecisionSchema } from './decision';
-import { paymentConfirmationSchema, quoteSchema } from './payment';
+import { paymentAuthorizationSchema, paymentResultSchema, quoteSchema } from './payment';
 
 /*
   NOTE: The following duplication of aitpSchema and aitpSchemaWithoutPassthrough is 
@@ -20,7 +20,8 @@ import { paymentConfirmationSchema, quoteSchema } from './payment';
 const aitpSchema = z.union([
   dataSchema,
   decisionSchema,
-  paymentConfirmationSchema,
+  paymentAuthorizationSchema,
+  paymentResultSchema,
   quoteSchema,
   requestDataSchema,
   requestDecisionSchema,
@@ -29,7 +30,8 @@ const aitpSchema = z.union([
 const aitpSchemaWithoutPassthrough = z.union([
   dataSchema.strip(),
   decisionSchema.strip(),
-  paymentConfirmationSchema.strip(),
+  paymentAuthorizationSchema.strip(),
+  paymentResultSchema.strip(),
   quoteSchema.strip(),
   requestDataSchema.strip(),
   requestDecisionSchema.strip(),

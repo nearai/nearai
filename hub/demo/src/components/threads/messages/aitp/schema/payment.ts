@@ -27,8 +27,20 @@ export const quoteSchema = baseSchema.extend({
   quote: nestedQuoteSchema,
 });
 
-export const paymentConfirmationSchema = baseSchema.extend({
-  payment_confirmation: z
+export const paymentAuthorizationSchema = baseSchema.extend({
+  payment_authorization: z
+    .object({
+      transaction_id: z.string(),
+      quote_id: z.string(),
+      result: z.enum(['success', 'failure']),
+      message: z.string().optional(),
+      timestamp: z.string().datetime(),
+    })
+    .passthrough(),
+});
+
+export const paymentResultSchema = baseSchema.extend({
+  payment_result: z
     .object({
       transaction_id: z.string(),
       quote_id: z.string(),

@@ -12,13 +12,13 @@ import { Wallet } from '@phosphor-icons/react';
 import { type z } from 'zod';
 
 import { Message } from './Message';
-import { type paymentConfirmationSchema } from './schema/payment';
+import { type paymentResultSchema } from './schema/payment';
 
 type Props = {
-  content: z.infer<typeof paymentConfirmationSchema>['payment_confirmation'];
+  content: z.infer<typeof paymentResultSchema>['payment_result'];
 };
 
-export const PaymentConfirmation = ({ content }: Props) => {
+export const PaymentResult = ({ content }: Props) => {
   return (
     <Message>
       <Flex direction="column" gap="m" align="start">
@@ -29,7 +29,7 @@ export const PaymentConfirmation = ({ content }: Props) => {
             color="sand-11"
           />
           <Text size="text-xs" weight={600} uppercase>
-            Payment Confirmation
+            Payment Result
           </Text>
         </Flex>
 

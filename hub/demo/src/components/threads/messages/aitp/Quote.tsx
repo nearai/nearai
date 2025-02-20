@@ -43,7 +43,7 @@ import {
 import { Message } from './Message';
 import {
   CURRENT_AITP_PAYMENT_SCHEMA_URL,
-  paymentConfirmationSchema,
+  paymentAuthorizationSchema,
   type quoteSchema,
 } from './schema/payment';
 
@@ -66,15 +66,15 @@ export const Quote = ({ content }: Props) => {
     (store) => store.usdcBalanceDollars,
   );
   const [isRefreshingUsdcBalance, setIsRefreshingUsdcBalance] = useState(false);
-  const amount = content.payment_plans?.[0]?.amount;
+  const amount = 0.01; // content.payment_plans?.[0]?.amount;
 
   const threadId = queryParams.threadId ?? '';
   const paymentConfirmation = useThreadMessageContentFilter(
     threadId,
     (json) => {
       if (json?.payment_confirmation) {
-        const { data } = paymentConfirmationSchema.safeParse(json);
-        if (data?.payment_confirmation.quote_id === content.quote_id) {
+        const { data } = paymentAuthorizationSchema.safeParse(json);
+        if (data?.payment_authorization.quote_id === content.quote_id) {
           return data;
         }
       }
@@ -100,9 +100,9 @@ export const Quote = ({ content }: Props) => {
       if (lastSuccessfulTransactionIdRef.current === transactionId) return;
       lastSuccessfulTransactionIdRef.current = transactionId;
 
-      const aitpResult: z.infer<typeof paymentConfirmationSchema> = {
+      const aitpResult: z.infer<typeof paymentAuthorizationSchema> = {
         $schema: CURRENT_AITP_PAYMENT_SCHEMA_URL,
-        payment_confirmation: {
+        payment_authorization: {
           quote_id: content.quote_id,
           result: 'success',
           transaction_id: transactionId,
@@ -186,7 +186,7 @@ export const Quote = ({ content }: Props) => {
     if (
       transactionId &&
       queryParams.transactionRequestOrigin ===
-        ('quote' satisfies WalletTransactionRequestOrigin) &&
+      ('quote' satisfies WalletTransactionRequestOrigin) &&
       queryParams.transactionRequestId === content.quote_id
     ) {
       onTransactionSuccess(transactionId);
@@ -199,7 +199,7 @@ export const Quote = ({ content }: Props) => {
   }, [queryParams, content, onTransactionSuccess, updateQueryPath]);
 
   const successfulTransactionId =
-    paymentConfirmation?.payment_confirmation.transaction_id ||
+    paymentConfirmation?.payment_authorization.transaction_id ||
     sendUsdcMutation.data?.transaction_outcome.id;
 
   const walletHasSufficientUsdcBalance =
