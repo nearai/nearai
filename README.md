@@ -25,7 +25,7 @@ nearai/
 ├── aws_runner/          # Lambda-based AI agent execution
 │   ├── Dockerfile         # Container for running agents
 │   └── frameworks/        # Framework-specific requirements
-├── hub/                 # Central HUB for registering and running agents
+├── hub/                 # Central hub for registering and running agents and models
 │   ├── alembic/           # Database migrations
 │   └── api/               # API endpoints
 ├── nearai/              # Core library
