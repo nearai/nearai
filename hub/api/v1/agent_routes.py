@@ -310,6 +310,7 @@ def find_agents(request_data: FilterAgentsRequest, auth: AuthToken = Depends(get
 
         query = query.filter(category_column == "agent")
 
+        # Filter by latest versions only (if flag is set)
         if request_data.latest_versions_only:
             latest_versions = (
                 session.query(namespace_column, name_column, func.max(version_column).label("max_version"))
@@ -327,7 +328,7 @@ def find_agents(request_data: FilterAgentsRequest, auth: AuthToken = Depends(get
                 ),
             )
 
-        # Filter by owner (if specified)
+        # Filter by owner (if flag is set)
         if request_data.owner_id is not None:
             namespace_column = mapper.columns["namespace"]
             query = query.filter(namespace_column == request_data.owner_id)
