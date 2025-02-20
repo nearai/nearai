@@ -55,6 +55,7 @@ from nearai.shared.near.sign import (
     CompletionSignaturePayload,
     validate_completion_signature,
 )
+from nearai.shared.secure_openai_clients import SecureAsyncOpenAI, SecureOpenAI
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
@@ -119,7 +120,17 @@ class Environment(object):
 
         # user_auth is used to authenticate the user in the ts_runner. It will be removed after that in
         # `nearai/agents/agent.py`
-        self.user_auth = client._auth
+        auth = client._auth
+        self.user_auth = auth
+
+        # Initialize secure openai clients
+        openai_client_params = {
+            "api_key": auth,
+            "base_url": client._config.base_url,
+            "default_headers": {"Authorization": f"Bearer {auth}"},
+        }
+        self.openai = SecureOpenAI(**openai_client_params)
+        self.async_openai = SecureAsyncOpenAI(**openai_client_params)
 
         # Placeholder for solver
         self.client: Optional[InferenceClient] = None
@@ -382,9 +393,14 @@ class Environment(object):
         self.add_file_to_vector_store = add_file_to_vector_store
 
         # positional arguments are not allowed because arguments list will be updated
-        def find_agents(*, owner_id: Optional[str] = None, with_capabilities: Optional[bool] = False):
+        def find_agents(
+            *,
+            owner_id: Optional[str] = None,
+            with_capabilities: Optional[bool] = False,
+            latest_versions_only: Optional[bool] = True,
+        ):
             """Find agents based on various parameters."""
-            return client.find_agents(owner_id, with_capabilities)
+            return client.find_agents(owner_id, with_capabilities, latest_versions_only)
 
         self.find_agents = find_agents
 
@@ -1209,7 +1225,8 @@ class Environment(object):
     ) -> Tuple[Optional[str], Optional[List[ChatCompletionMessageToolCall]]]:
         if hasattr(response_message, "tool_calls") and response_message.tool_calls:
             return response_message.content, response_message.tool_calls
-        if "content" not in response_message or response_message.content is None:
+        content = response_message.content
+        if content is None:
             return None, None
         content = response_message.content
         llama_matches = LLAMA_TOOL_FORMAT_PATTERN.findall(content)

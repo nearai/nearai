@@ -26,7 +26,6 @@ import {
   Tag,
   Trash,
 } from '@phosphor-icons/react';
-import { usePrevious } from '@uidotdev/usehooks';
 import { useEffect, useState } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 
@@ -51,7 +50,6 @@ export const ThreadsSidebar = ({
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const { updateQueryPath, queryParams } = useQueryParams(['threadId']);
   const threadId = queryParams.threadId ?? '';
-  const previousThreadId = usePrevious(threadId);
   const { threads } = useThreads();
   const [removedThreadIds, setRemovedThreadIds] = useState<string[]>([]);
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
@@ -66,9 +64,6 @@ export const ThreadsSidebar = ({
     : filteredThreads?.slice(0, 50);
   const hiddenThreadsCount =
     (filteredThreads?.length ?? 0) - (threadsToDisplay?.length ?? 0);
-
-  const currentThreadIdMatchesThread =
-    !threadId || !!filteredThreads?.find((thread) => thread.id === threadId);
 
   const removeThread = async (thread: ThreadSummary) => {
     try {
@@ -123,14 +118,9 @@ export const ThreadsSidebar = ({
                   href={thread.url}
                   padding="s"
                   paddingInline="m"
-                  background={
-                    (currentThreadIdMatchesThread && threadId === thread.id) ||
-                    (!currentThreadIdMatchesThread &&
-                      previousThreadId === thread.id)
-                      ? 'sand-0'
-                      : 'sand-2'
-                  }
+                  background={threadId === thread.id ? 'sand-0' : 'sand-2'}
                   key={thread.id}
+                  onDoubleClick={() => setEditingThreadId(thread.id)}
                 >
                   <Flex direction="column">
                     <Flex align="center" gap="s">

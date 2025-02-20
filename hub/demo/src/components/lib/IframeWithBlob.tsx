@@ -14,12 +14,16 @@ export type IframePostMessageEventHandler<T = any> = (
 
 type Props = Omit<ComponentProps<'iframe'>, 'nonce'> & {
   html: string;
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  height?: 'auto' | (string & {});
+  fixedHeight?: string;
   onPostMessage?: IframePostMessageEventHandler;
   postMessage?: unknown;
 };
 
 export const IframeWithBlob = ({
   className = '',
+  height = 'auto',
   html,
   onPostMessage,
   postMessage,
@@ -31,8 +35,8 @@ export const IframeWithBlob = ({
   const previousHeightRef = useRef(0);
   const previousHeightChangeUnixTimestampRef = useRef(0);
   const shouldClampHeightRef = useRef(false);
-  const [height, __setHeight] = useState(0);
-  const isLoading = !height;
+  const [computedHeight, __setComputedHeight] = useState(0);
+  const isLoading = height === 'auto' ? !computedHeight : false;
   const wrapperInitialHeight = useRef(0);
 
   const executePostMessage = useDebouncedFunction((message: unknown) => {
@@ -45,13 +49,15 @@ export const IframeWithBlob = ({
     */
   }, 10);
 
-  const setHeight = useDebouncedFunction((height: number) => {
-    __setHeight(() => {
+  const setComputedHeight = useDebouncedFunction((value: number) => {
+    if (height !== 'auto') return;
+
+    __setComputedHeight(() => {
       if (!wrapperInitialHeight.current) {
         wrapperInitialHeight.current = wrapperRef.current?.offsetHeight ?? 0;
       }
 
-      const computedHeight = Math.max(wrapperInitialHeight.current, height);
+      const computedHeight = Math.max(wrapperInitialHeight.current, value);
       const previousHeight = previousHeightRef.current;
       const previousHeightDiff = computedHeight - previousHeight;
       const previousHeightChangeUnixTimestamp =
@@ -111,7 +117,7 @@ export const IframeWithBlob = ({
             'height' in data &&
             typeof data.height === 'number'
           ) {
-            setHeight(data.height || 0);
+            setComputedHeight(data.height || 0);
             return;
           }
         }
@@ -126,7 +132,7 @@ export const IframeWithBlob = ({
     return () => {
       window.removeEventListener('message', messageListener);
     };
-  }, [onPostMessage, setHeight]);
+  }, [onPostMessage, setComputedHeight]);
 
   useEffect(() => {
     if (postMessage) {
@@ -155,11 +161,11 @@ export const IframeWithBlob = ({
       </div>
 
       <iframe
-        height={height}
         ref={iframeRef}
         src={dataUrl}
         sandbox="allow-scripts allow-popups"
         className={`${s.iframe} ${className}`}
+        style={{ height: height === 'auto' ? `${computedHeight}px` : height }}
         {...props}
       />
     </div>
@@ -171,8 +177,14 @@ function extendHtml(html: string) {
   const bodyStyle = getComputedStyle(document.body, null);
   const bodyBackgroundColor = bodyStyle.getPropertyValue('background-color');
 
+  const globalStyles = `
+    <style>
+      * { box-sizing: border-box !important; }
+    </style>
+  `;
+
   if (!html.includes('</body>')) {
-    wrappedHtml = `<html><body>${html}</body></html>`;
+    wrappedHtml = `<html><head></head><body>${html}</body></html>`;
   }
 
   const script = `
@@ -219,7 +231,12 @@ function extendHtml(html: string) {
     </script>
   `;
 
-  const extendedHtml = wrappedHtml.replace('</body>', `${script}</body>`);
+  const viewportMeta =
+    '<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">';
+
+  const extendedHtml = wrappedHtml
+    .replace('</body>', `${script}${globalStyles}</body>`)
+    .replace('</head>', `${viewportMeta}</head>`);
 
   return extendedHtml;
 }

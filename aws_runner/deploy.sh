@@ -11,11 +11,11 @@
 ##
 ## Builds the Docker image, pushes it to ECR, and updates the Lambda function to use it.
 
-ALL_FRAMEWORKS=("base" "langgraph-0-1-4" "langgraph-0-2-26" "web-agent" "agentkit")
+ALL_FRAMEWORKS=("minimal" "langgraph-0-1-4" "langgraph-0-2-26" "standard" "agentkit")
 ALL_ENVIRONMENTS=("staging" "production")
 
 deploy() {
-  FRAMEWORK="-${FRAMEWORK:-"base"}"
+  FRAMEWORK="-${FRAMEWORK:-"minimal"}"
   ENV="${ENV:-"staging"}-"
   RUNNER_TYPE=${RUNNER_TYPE:-"py_runner"}
   VERSION=$(date +%Y%m%d_%H%M%S)

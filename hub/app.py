@@ -1,4 +1,6 @@
 import logging
+import multiprocessing
+from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, status
@@ -33,7 +35,23 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-app = FastAPI(lifespan=lifespan)
+
+
+@asynccontextmanager
+async def lifespan_with_scheduler(lifespan_app: FastAPI):
+    try:
+        # run scheduler only in the main process
+        if multiprocessing.current_process().name == "SpawnProcess-1":
+            async with lifespan(lifespan_app):
+                yield
+        else:
+            yield
+    except Exception as e:
+        logger.error(f"Error in lifespan: {e}")
+        raise
+
+
+app = FastAPI(lifespan=lifespan_with_scheduler)
 
 origins = ["*"]
 

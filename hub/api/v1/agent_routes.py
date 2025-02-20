@@ -13,7 +13,7 @@ from nearai.clients.lambda_client import LambdaWrapper
 from nearai.shared.auth_data import AuthData
 from nearai.shared.client_config import DEFAULT_TIMEOUT
 from pydantic import BaseModel, Field
-from sqlalchemy import inspect, text
+from sqlalchemy import and_, func, inspect, text
 
 from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.entry_location import EntryLocation
@@ -196,9 +196,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
         raise HTTPException(status_code=404, detail=f"Agent '{agent_entry}' not found in the registry.")
 
     specific_agent_version_to_run = f"{agent_entry.namespace}/{agent_entry.name}/{agent_entry.version}"
-    entry_details = agent_entry.details
-    agent_details = entry_details.get("agent", {})
-    framework = agent_details.get("framework", "base")
+    framework = agent_entry.get_framework()
 
     with get_session() as session:
         if not thread_id:
@@ -231,28 +229,28 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
 
     if framework == "prompt":
         raise HTTPException(status_code=400, detail="Prompt only agents are not implemented yet.")
+
+    if runner == "custom_runner":
+        custom_runner_url = getenv("CUSTOM_RUNNER_URL", None)
+        if custom_runner_url:
+            invoke_agent_via_url(custom_runner_url, specific_agent_version_to_run, thread_id, run_id, auth, params)
+    elif runner == "local_runner":
+        """Runs agents directly from the local machine."""
+
+        LocalRunner(
+            None,
+            agents,
+            thread_id,
+            run_id,
+            AuthData(**auth.model_dump()),  # TODO: https://github.com/nearai/nearai/issues/421
+            params,
+        )
     else:
-        if runner == "custom_runner":
-            custom_runner_url = getenv("CUSTOM_RUNNER_URL", None)
-            if custom_runner_url:
-                invoke_agent_via_url(custom_runner_url, specific_agent_version_to_run, thread_id, run_id, auth, params)
-        elif runner == "local_runner":
-            """Runs agents directly from the local machine."""
+        function_name = f"{runner}-{framework.lower()}"
+        if agent_api_url != "https://api.near.ai":
+            print(f"Passing agent API URL: {agent_api_url}")
 
-            LocalRunner(
-                None,
-                agents,
-                thread_id,
-                run_id,
-                AuthData(**auth.model_dump()),  # TODO: https://github.com/nearai/nearai/issues/421
-                params,
-            )
-        else:
-            function_name = f"{runner}-{framework.lower()}"
-            if agent_api_url != "https://api.near.ai":
-                print(f"Passing agent API URL: {agent_api_url}")
-
-            invoke_agent_via_lambda(function_name, specific_agent_version_to_run, thread_id, run_id, auth, params)
+        invoke_agent_via_lambda(function_name, specific_agent_version_to_run, thread_id, run_id, auth, params)
 
     with get_session() as session:
         completed_run_model = session.get(RunModel, run_id)
@@ -290,6 +288,7 @@ def get_agent_entry(agent, data_source: str) -> Optional[RegistryEntry]:
 class FilterAgentsRequest(BaseModel):
     owner_id: Optional[str]
     with_capabilities: Optional[bool] = False
+    latest_versions_only: Optional[bool] = True
 
 
 @run_agent_router.post("/find_agents", response_model=List[RegistryEntry])
@@ -299,12 +298,38 @@ def find_agents(request_data: FilterAgentsRequest, auth: AuthToken = Depends(get
         # Start building the base query
         query = session.query(RegistryEntry)
 
-        # Filter by owner (if specified)
+        # Get the column for the namespace. This helps mypy to understand the type of the column
+        # inspect uses cached data, so it's not a performance issue, but this can be optimized
+        # by storing the mapper in a variable and reusing it
+        mapper = inspect(RegistryEntry)
+
+        category_column = mapper.columns["category"]
+        namespace_column = mapper.columns["namespace"]
+        name_column = mapper.columns["name"]
+        version_column = mapper.columns["version"]
+
+        query = query.filter(category_column == "agent")
+
+        # Filter by latest versions only (if flag is set)
+        if request_data.latest_versions_only:
+            latest_versions = (
+                session.query(namespace_column, name_column, func.max(version_column).label("max_version"))
+                .group_by(namespace_column, name_column)
+                .subquery()
+            )
+
+            # Join the main query with the subquery to get only the latest versions
+            query = query.join(
+                latest_versions,
+                and_(
+                    namespace_column == latest_versions.c.namespace,
+                    name_column == latest_versions.c.name,
+                    version_column == latest_versions.c.max_version,
+                ),
+            )
+
+        # Filter by owner (if flag is set)
         if request_data.owner_id is not None:
-            # Get the column for the namespace. This helps mypy to understand the type of the column
-            # inspect uses cached data, so it's not a performance issue, but this can be optimized
-            # by storing the mapper in a variable and reusing it
-            mapper = inspect(RegistryEntry)
             namespace_column = mapper.columns["namespace"]
             query = query.filter(namespace_column == request_data.owner_id)
 

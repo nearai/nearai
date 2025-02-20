@@ -1,3 +1,26 @@
+## v0.1.12 (2025-02-19)
+
+### Feat
+
+- add optional docs deps in toml (#877)
+- add docs PR preview (#888)
+- add mcp dependency to base framework requirements (#864)
+- sql method to `list_vector_store_files` (#859)
+- local runner to support multiple agents in parallel. Doc: aws_t… (#854)
+- debug mode to return python error & python traceback (#833)
+
+### Fix
+
+- callback_url cannot be None, replace default value to "" to auto-generated signature (#880)
+- signer_account_id getter simplified (#881)
+- do not try to cloudwatch value if value is null (#883)
+- update registry doc (#878)
+- recreate agent files in `temp_dir` for both py and ts cached agents (#868)
+- Proper unicode handling in JSON content using UnicodeSafeJSON (#834)
+- Introduced `UnicodeSafeJSON` type decorator using LONGTEXT storage
+fix: Updated Message model's content field
+fix: Singlestore connection string updated to force charset
+
 ## v0.1.11 (2025-02-11)
 
 ### Feat

@@ -116,7 +116,7 @@ class RegistryCli:
                     "model_max_tokens": DEFAULT_MODEL_MAX_TOKENS,
                     "max_iterations": 1,
                 }
-                metadata["details"]["agent"]["framework"] = "base"
+                metadata["details"]["agent"]["framework"] = "minimal"
 
             json.dump(metadata, f, indent=2)
 
@@ -578,6 +578,17 @@ class AgentCli:
         last_message_id = None
         print(f"\n=== Starting interactive session with agent: {agent_id} ===")
         print("Type 'exit' to end the session\n")
+
+        # get agent metadata from metadata.json
+        metadata_path = agent_path / "metadata.json"
+        with open(metadata_path) as f:
+            metadata = json.load(f)
+            title = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("title")
+            if title:
+                print(title)
+            description = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("description")
+            if description:
+                print(description)
 
         while True:
             new_message = input("> ")
