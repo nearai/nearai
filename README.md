@@ -11,7 +11,7 @@ NEAR AI is a distributed system for building, deploying, and managing AI agents 
 ## NEAR AI Components
 
 - [**NEAR AI Hub**](./hub/README.md): Central hub for model serving, agent registry, and running agents
-- [**TEE Runner**](https://github.com/nearai/private-ml-sdk): TEE-based execution environment for NEAR AI agents
+- [**TEE Runner**](https://github.com/nearai/private-ml-sdk): Confidential execution environment for NEAR AI agents and inference
 - [**AWS Runner**](./aws_runner/README.md): Lambda-based execution environment for NEAR AI agents
 - **Agent System**: Build and run AI agents with built-in tools and environment isolation
 - **Worker System**: Distributed job execution and scheduling
