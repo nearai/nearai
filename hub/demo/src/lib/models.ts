@@ -86,7 +86,8 @@ export const entryDetailsModel = z.intersection(
               max_iterations: z.number(),
             })
             .partial(),
-          html_minimum_height: z.string(),
+          html_height: z.enum(['auto']).or(z.string()).default('auto'),
+          html_show_latest_messages_below: z.boolean().default(false),
           initial_user_message: z.string(),
           welcome: z
             .object({
