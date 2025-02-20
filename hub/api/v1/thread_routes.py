@@ -126,8 +126,8 @@ def create_thread(
     auth: AuthToken = Depends(get_auth),
 ) -> Thread:
     thread_model = ThreadModel(
-        messages=thread["messages"] if hasattr(thread, "messages") else [],
-        meta_data=thread["metadata"] if hasattr(thread, "metadata") else None,
+        messages=thread["messages"] if "messages" in thread else [],
+        meta_data=thread["metadata"] if "metadata" in thread else None,
         tool_resources=thread["tool_resources"] if hasattr(thread, "tool_resources") else None,
         owner_id=auth.account_id,
     )

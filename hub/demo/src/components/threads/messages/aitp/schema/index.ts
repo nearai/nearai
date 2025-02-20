@@ -2,9 +2,28 @@
 
 import { z } from 'zod';
 
-import { dataSchema, requestDataSchema } from './data';
-import { decisionSchema, requestDecisionSchema } from './decision';
-import { paymentAuthorizationSchema, paymentResultSchema, quoteSchema } from './payment';
+import {
+  CURRENT_AITP_DATA_SCHEMA_URL,
+  dataSchema,
+  requestDataSchema,
+} from './data';
+import {
+  CURRENT_AITP_DECISION_SCHEMA_URL,
+  decisionSchema,
+  requestDecisionSchema,
+} from './decision';
+import {
+  CURRENT_AITP_PAYMENT_SCHEMA_URL,
+  paymentAuthorizationSchema,
+  paymentResultSchema,
+  quoteSchema,
+} from './payment';
+
+export const CURRENT_AITP_CAPABILITIES = [
+  CURRENT_AITP_DATA_SCHEMA_URL,
+  CURRENT_AITP_DECISION_SCHEMA_URL,
+  CURRENT_AITP_PAYMENT_SCHEMA_URL,
+] as const;
 
 /*
   NOTE: The following duplication of aitpSchema and aitpSchemaWithoutPassthrough is 

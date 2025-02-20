@@ -2,6 +2,7 @@ import { parseStringOrNumber } from '@near-pagoda/ui/utils';
 import path from 'path';
 import { z } from 'zod';
 
+import { CURRENT_AITP_CAPABILITIES } from '~/components/threads/messages/aitp/schema';
 import { env } from '~/env';
 import {
   chatWithAgentModel,
@@ -519,7 +520,12 @@ export const hubRouter = createTRPCRouter({
               Authorization: ctx.authorization,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({}),
+            body: JSON.stringify({
+              metadata: {
+                foo: 'bar',
+                capabilities: JSON.stringify(CURRENT_AITP_CAPABILITIES),
+              },
+            }),
           });
 
       const message = await fetchWithZod(
