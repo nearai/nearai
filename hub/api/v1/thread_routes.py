@@ -3,6 +3,9 @@ from datetime import datetime
 from os import getenv
 from typing import Any, Dict, Iterable, List, Literal, Optional, Union
 
+from collections import defaultdict
+import asyncio
+
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import load_config_file
@@ -31,6 +34,7 @@ from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.completions import Provider
 from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import Run as RunModel
+from hub.api.v1.models import get_session
 from hub.api.v1.models import Thread as ThreadModel
 from hub.api.v1.models import get_session
 from hub.api.v1.routes import DEFAULT_TIMEOUT, get_llm_ai
@@ -43,6 +47,7 @@ threads_router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
+run_queues = defaultdict(asyncio.Queue)
 
 class FilterThreadRequestsLogs(logging.Filter):
     """Custom logging filter to suppress spammy healthcheck/status requests.
@@ -690,6 +695,12 @@ def create_run(
         session.add(run_model)
 
         # Add the run and messages in DB
+        if run.stream:
+            run_queues[run_model.id] = asyncio.Queue()
+            return StreamingResponse(
+                stream_run_events(run_model.id),
+                media_type="text/event-stream"
+            )
         session.commit()
 
         if run.delegate_execution:
@@ -843,6 +854,15 @@ def _run_agent(
                         _run_agent(thread_id, parent_run.id, auth=auth)
         return run_model.to_openai()
 
+async def stream_run_events(run_id: str):
+    """Stream events for a run via SSE until completion."""
+    queue = run_queues[run_id]
+    while True:
+        event = await queue.get()
+        if event == "done":
+            break
+        yield f"data: {event}\n\n"
+    del run_queues[run_id]  # Clean up after stream ends
 
 @threads_router.get("/threads/{thread_id}/runs/{run_id}")
 def get_run(
@@ -867,6 +887,27 @@ class RunUpdateParams(BaseModel):
     completed_at: Optional[datetime] = None
     failed_at: Optional[datetime] = None
     metadata: Optional[dict] = None
+
+@threads_router.post("/runs/{run_id}/complete")
+def complete_run(
+    run_id: str,
+    auth: AuthToken = Depends(get_auth),
+) -> OpenAIRun:
+    """Mark a run as completed and close its stream if active."""
+    with get_session() as session:
+        run_model = session.get(RunModel, run_id)
+        if not run_model:
+            raise HTTPException(status_code=404, detail="Run not found")
+        run_model.status = "completed"
+        run_model.completed_at = datetime.now()
+        session.commit()
+
+        if run_id in run_queues:
+            final_event = run_model.to_openai().json()
+            asyncio.run(run_queues[run_id].put(final_event))
+            asyncio.run(run_queues[run_id].put("done"))
+
+        return run_model.to_openai()
 
 
 @threads_router.post("/threads/{thread_id}/runs/{run_id}")

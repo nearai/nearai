@@ -13,6 +13,8 @@ from nearai.shared.models import RunMode
 from openai.types.beta.thread import Thread as OpenAITThread
 from openai.types.beta.threads.message import Attachment
 from openai.types.beta.threads.message import Message as OpenAITThreadMessage
+from openai.types.beta.threads.message_delta_event import MessageDeltaEvent as OpenAITMessageDeltaEvent
+from openai.types.beta.threads.message_delta import MessageDelta as OpenAITMessageDelta
 from openai.types.beta.threads.message_content import MessageContent
 from openai.types.beta.threads.run import Run as OpenAIRun
 from openai.types.beta.threads.text import Text
@@ -440,6 +442,23 @@ class Run(SQLModel, table=True):
             parallel_tool_calls=self.parallel_tool_calls,
         )
 
+class Delta(SQLModel, table=True):
+    __tablename__ = "deltas"
+    id: str = Field(default_factory=lambda: "delta_" + uuid.uuid4().hex[:24], primary_key=True)
+    object: str = Field(default="thread.message.delta", nullable=False)
+    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
+    content: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    step_details: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", JSON))
+    filename: Optional[str] = Field(default=None)
+
+    def to_openai(self) -> OpenAITMessageDeltaEvent:
+        return OpenAITMessageDeltaEvent(
+            id=self.id,
+            object=self.object,
+            delta=OpenAITMessageDelta(role="assistant", content=self.content),
+            metadata=self.meta_data,
+        )
 
 class Delegation(SQLModel, table=True):
     __tablename__ = "delegation"
