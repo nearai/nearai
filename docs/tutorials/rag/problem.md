@@ -1,4 +1,6 @@
-Let's start by understanding the problem that RAG is trying to solve, as well as a first approach to solve it.
+Let's start by understanding the problem that RAG solves. For this, we will create an agent that uses the `llama` model, and ask it questions about NEAR Protocol.
+
+Then, we will then compare the answers when the model has access to the actual documentation, to see how much better the answers are.
 
 ---
 
@@ -20,6 +22,8 @@ Then, lets invoke the agent and make it a couple questions:
 ```
 nearai agent interactive gagdiez.near/docs-ai-tutorial/0.0.1 --local
 ```
+
+<div class="grid" markdown>
 
 ??? note "What types of access keys are there in NEAR?"
 
@@ -59,6 +63,8 @@ nearai agent interactive gagdiez.near/docs-ai-tutorial/0.0.1 --local
 
     Note: You need to have the NEAR CLI installed and configured, and have a master account with sufficient balance to cover the account creation fee.
     ```
+
+</div>
 
 This agent uses `llama-v3p1-70b-instruct` model, which is a powerful open-domain model, and gets the answers mostly right... but then it starts to invent.
 
@@ -104,6 +110,8 @@ def run(env: Environment):
 run(env)
 ```
 
+<div class="grid" markdown>
+
 ??? note "What types of access keys are there in NEAR?"
 
     ```
@@ -133,6 +141,8 @@ run(env)
     near create-account $ACCOUNT_ID --useFaucet --networkId testnet
     `
     ```
+
+</div>
 
 The answers now are much more accurate, which is expected, as we are providing the model with the actual documentation that it needs to generate the answers.
 

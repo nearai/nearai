@@ -59,3 +59,7 @@
 .admonition, details {
     font-size: .75rem !important;
 }
+
+.md-typeset details:not([open]) {
+    height: fit-content;
+}
