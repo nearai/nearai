@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  runner:
+    build:
+      context: .
+      dockerfile: aws_runner/py_runner/Dockerfile
+      args:
+        FRAMEWORK: -base
+      platforms:
+        - linux/amd64
+    image: nearai-runner:test
+    ports:
+      - "9009:8080"
+    volumes:
+      - ~/.nearai/registry:/root/.nearai/registry
+
+  db:
+    image: ghcr.io/singlestore-labs/singlestoredb-dev:latest
+    platform: linux/amd64
+    environment:
+      - ROOT_PASSWORD=change-me
+    ports:
+      - "3306:3306"
+      - "8080:8080"
+      - "9000:9000"
+
+  
+  # hub:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.dev.hub  # You'll need to create this
+  #   environment:
+  #     - DATABASE_HOST=db
+  #     - DATABASE_USER=root
+  #     - DATABASE_PASSWORD=change-me
+  #     - DATABASE_NAME=hub
+  #     - RUNNER_ENVIRONMENT=custom_runner
+  #     - CUSTOM_RUNNER_URL=http://runner:8080/2015-03-31/functions/function/invocations
+  #     - API_URL=http://localhost:8081
+  #   ports:
+  #     - "8081:8081"

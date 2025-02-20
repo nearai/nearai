@@ -1,0 +1,47 @@
+# Use Python 3.11 slim base
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3-dev \
+    libssl-dev \
+    libffi-dev \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust & Cargo
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:$PATH"
+
+# Install Python virtual environment
+RUN python3 -m venv /venv
+ENV PATH="/venv/bin:$PATH"
+
+# Upgrade pip and install maturin
+RUN /venv/bin/pip install --upgrade pip setuptools wheel maturin
+
+# Ensure Python and Rust tools are found
+RUN which python3 && python3 --version
+RUN which maturin && maturin --version
+RUN which cargo && cargo --version
+
+# Copy application files
+COPY pyproject.toml .
+COPY . .
+
+# Install nearai
+RUN /venv/bin/pip install nearai
+
+# Install project dependencies
+RUN /venv/bin/pip install -e ".[hub]"
+
+# Expose the port the app runs on
+EXPOSE 8081
+
+# Command to run the application
+CMD ["fastapi", "dev", "app.py", "--port", "8081"]
