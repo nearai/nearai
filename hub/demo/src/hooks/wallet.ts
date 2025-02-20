@@ -82,6 +82,8 @@ export function useWalletInitializer() {
   }, [walletSelector, setWalletAccount, setWalletState, setWallet]);
 
   useEffect(() => {
+    if (!walletAccount?.accountId) return;
+
     function onVisibilityChange() {
       if (document.visibilityState === 'visible') {
         void loadUsdcBalance();
@@ -89,7 +91,6 @@ export function useWalletInitializer() {
     }
 
     window.addEventListener('visibilitychange', onVisibilityChange);
-
     void loadUsdcBalance();
 
     return () => {

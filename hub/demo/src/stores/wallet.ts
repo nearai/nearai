@@ -75,16 +75,18 @@ const store: StateCreator<WalletStore> = (set, get) => ({
 
   setAccount: (account) => {
     if (account) {
-      return set({ account });
+      set({ account });
+      return;
     }
-    return set({ account, usdcBalanceDollars: 0 });
+    set({ account, usdcBalanceDollars: 0 });
   },
   setSelector: (selector, modal) => set({ selector, modal }),
   setState: (state) => {
     if (state) {
-      return set({ hasResolved: true, state });
+      set({ hasResolved: true, state });
+      return;
     }
-    return set({ state });
+    set({ state });
   },
   setWallet: (wallet) => set({ wallet }),
 });

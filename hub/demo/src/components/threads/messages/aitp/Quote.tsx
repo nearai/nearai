@@ -12,6 +12,7 @@ import {
 import { formatDollar } from '@near-pagoda/ui/utils';
 import {
   ArrowRight,
+  ArrowsClockwise,
   CheckCircle,
   CurrencyDollar,
   PencilSimple,
@@ -19,7 +20,7 @@ import {
   Warning,
 } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { type z } from 'zod';
 
 import { useQueryParams } from '~/hooks/url';
@@ -55,7 +56,7 @@ export const Quote = ({ content }: Props) => {
   const wallet = useWalletStore((store) => store.wallet);
   const walletModal = useWalletStore((store) => store.modal);
   const walletAccount = useWalletStore((store) => store.account);
-  const amount = content.payment_plans?.[0]?.amount;
+  const loadUsdcBalance = useWalletStore((store) => store.loadUsdcBalance);
   const { queryParams, updateQueryPath } = useQueryParams([
     'threadId',
     ...WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
@@ -64,6 +65,8 @@ export const Quote = ({ content }: Props) => {
   const usdcBalanceDollars = useWalletStore(
     (store) => store.usdcBalanceDollars,
   );
+  const [isRefreshingUsdcBalance, setIsRefreshingUsdcBalance] = useState(false);
+  const amount = content.payment_plans?.[0]?.amount;
 
   const threadId = queryParams.threadId ?? '';
   const paymentConfirmation = useThreadMessageContentFilter(
@@ -77,6 +80,12 @@ export const Quote = ({ content }: Props) => {
       }
     },
   )[0];
+
+  const refreshUsdcBalanceVisually = async () => {
+    setIsRefreshingUsdcBalance(true);
+    await loadUsdcBalance();
+    setIsRefreshingUsdcBalance(false);
+  };
 
   const changeWallet = async () => {
     if (wallet) {
@@ -120,7 +129,7 @@ export const Quote = ({ content }: Props) => {
         with the USDC contract.  
 
         TODO: Look into using signAndSendTransactions() to register user with 
-        USDC native contract. Example flow: https://app.ref.finance/#near
+        USDC native contract and swap NEAR for USDC. Example flow: https://app.ref.finance/#near
       */
 
       const result = await wallet!.signAndSendTransaction({
@@ -156,10 +165,12 @@ export const Quote = ({ content }: Props) => {
 
     onSuccess: (result) => {
       onTransactionSuccess(result.transaction_outcome.id);
+      void loadUsdcBalance();
     },
 
     onError: (error) => {
       if (error.message === 'User cancelled the action') return;
+      void loadUsdcBalance();
       handleClientError({ error, title: 'Failed to send transaction' });
     },
   });
@@ -279,12 +290,26 @@ export const Quote = ({ content }: Props) => {
                 </Flex>
 
                 {!walletHasSufficientUsdcBalance && (
-                  <Badge
-                    label={`Insufficient Funds: ${formatDollar(usdcBalanceDollars)} USDC`}
-                    variant="warning"
-                    iconLeft={<Warning />}
-                    style={{ alignSelf: 'start' }}
-                  />
+                  <Flex align="center" gap="xs">
+                    <Badge
+                      label={`Insufficient Funds: ${formatDollar(usdcBalanceDollars)} USDC`}
+                      variant="warning"
+                      iconLeft={<Warning />}
+                      style={{ alignSelf: 'start' }}
+                    />
+
+                    <Tooltip asChild content="Reload current balance">
+                      <Button
+                        label="Refresh Balance"
+                        icon={<ArrowsClockwise />}
+                        variant="primary"
+                        fill="ghost"
+                        size="x-small"
+                        onClick={refreshUsdcBalanceVisually}
+                        loading={isRefreshingUsdcBalance}
+                      />
+                    </Tooltip>
+                  </Flex>
                 )}
               </Flex>
 
