@@ -246,7 +246,7 @@ const Product = ({ content, ...props }: Product) => {
         </Flex>
 
         <Button
-          label="Add to cart"
+          label="Buy Now"
           variant="affirmative"
           size="small"
           onClick={addProductToCart}

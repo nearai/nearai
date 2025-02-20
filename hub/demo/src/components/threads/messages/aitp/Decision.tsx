@@ -38,7 +38,7 @@ export const Decision = ({ content }: Props) => {
               color="sand-11"
             />
             <Text size="text-xs" weight={600} uppercase>
-              Add to cart
+              Buy Now
             </Text>
           </Flex>
         ) : (

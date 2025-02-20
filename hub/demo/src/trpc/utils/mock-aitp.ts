@@ -6,12 +6,14 @@ import {
 } from '~/components/threads/messages/aitp/schema/data';
 import {
   CURRENT_AITP_DECISION_SCHEMA_URL,
-  type quoteSchema,
   type requestDecisionSchema,
 } from '~/components/threads/messages/aitp/schema/decision';
+import { type nestedQuoteSchema } from '~/components/threads/messages/aitp/schema/payment';
 import { type threadMessageModel } from '~/lib/models';
 
-function generateMockedQuote(priceUsd: number): z.infer<typeof quoteSchema> {
+function generateMockedQuote(
+  priceUsd: number,
+): z.infer<typeof nestedQuoteSchema> {
   return {
     type: 'Quote',
     payee_id: 'foobar',
