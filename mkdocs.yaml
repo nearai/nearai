@@ -177,3 +177,6 @@ plugins:
             allow_inspection: true
             show_bases: true
             show_submodules: true
+  - redirects:
+      redirect_maps:
+        'agents/secrets.md': 'agents/env/variables.md'
