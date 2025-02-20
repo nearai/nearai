@@ -6,47 +6,10 @@ import {
 } from '~/components/threads/messages/aitp/schema/data';
 import {
   CURRENT_AITP_DECISION_SCHEMA_URL,
-  quoteSchema,
-  type listingSchema,
   type requestDecisionSchema,
 } from '~/components/threads/messages/aitp/schema/decision';
 import { type nestedQuoteSchema } from '~/components/threads/messages/aitp/schema/payment';
 import { type threadMessageModel } from '~/lib/models';
-
-function generateMockedListing(priceUsd: number): z.infer<typeof listingSchema> {
-  return {
-    type: 'Listing',
-    listing_id: 'foobar',
-    quotes: [
-      {
-        type: 'Quote',
-        quote_id: 'foobar',
-        payee_id: 'foobar',
-        payment_plans: [
-          {
-            plan_id: 'foobar',
-            plan_type: 'one-time',
-            amount: priceUsd,
-            currency: 'USD',
-          },
-        ],
-        valid_until: '2050-01-01T00:00:00Z',
-      },
-    ],
-    products: [
-      {
-        type: 'Product',
-        product_id: 'foobar',
-        quote_id: 'foobar',
-        product_info: {
-          name: 'foobar',
-          description: 'foobar',
-          image_url: 'foobar',
-        },
-      },
-    ],
-  };
-}
 
 function generateMockedQuote(
   priceUsd: number,

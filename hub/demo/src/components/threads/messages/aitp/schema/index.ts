@@ -19,7 +19,9 @@ import {
   quoteSchema,
 } from './payment';
 
-export const CURRENT_AITP_CAPABILITIES = [
+export const AITP_CLIENT_ID = 'app.near.ai';
+
+export const AITP_CAPABILITIES = [
   CURRENT_AITP_DATA_SCHEMA_URL,
   CURRENT_AITP_DECISION_SCHEMA_URL,
   CURRENT_AITP_PAYMENT_SCHEMA_URL,

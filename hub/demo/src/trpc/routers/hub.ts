@@ -2,7 +2,10 @@ import { parseStringOrNumber } from '@near-pagoda/ui/utils';
 import path from 'path';
 import { z } from 'zod';
 
-import { CURRENT_AITP_CAPABILITIES } from '~/components/threads/messages/aitp/schema';
+import {
+  AITP_CAPABILITIES,
+  AITP_CLIENT_ID,
+} from '~/components/threads/messages/aitp/schema';
 import { env } from '~/env';
 import {
   chatWithAgentModel,
@@ -522,7 +525,13 @@ export const hubRouter = createTRPCRouter({
             },
             body: JSON.stringify({
               metadata: {
-                capabilities: JSON.stringify(CURRENT_AITP_CAPABILITIES),
+                actors: JSON.stringify([
+                  {
+                    id: ctx.signature.account_id,
+                    client_id: AITP_CLIENT_ID,
+                    capabilities: AITP_CAPABILITIES,
+                  },
+                ]),
               },
             }),
           });

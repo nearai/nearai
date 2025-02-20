@@ -7,12 +7,12 @@ import { Code } from '~/components/lib/Code';
 import { Data } from './aitp/Data';
 import { Decision } from './aitp/Decision';
 import { PaymentAuthorization } from './aitp/PaymentAuthorization';
+import { PaymentResult } from './aitp/PaymentResult';
 import { Quote } from './aitp/Quote';
 import { RequestData } from './aitp/RequestData';
 import { RequestDecision } from './aitp/RequestDecision';
 import { parseJsonWithAitpSchema } from './aitp/schema';
 import { Message } from './Message';
-import { PaymentResult } from './aitp/PaymentResult';
 
 type Props = {
   json: Record<string, unknown>;

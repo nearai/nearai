@@ -80,7 +80,7 @@ export const RequestDecisionConfirmation = ({ content }: Props) => {
         {options.map((option, index) => (
           <Button
             label={option.name || option.id}
-            variant={index === 0 ? 'affirmative' : 'secondary'}
+            variant="affirmative"
             key={option.id + index}
             onClick={() => submitDecision(option)}
           />
