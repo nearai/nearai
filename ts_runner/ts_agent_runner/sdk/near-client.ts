@@ -85,7 +85,7 @@ export class NearAIClient {
                 throw new Error(`Error querying vector store: ${response.status} ${response.statusText}`);
             }
 
-            return await response.json();
+            return response.json();
         } catch (error: any) {
             throw new Error(`Error querying vector store: ${error.message}`);
         }
