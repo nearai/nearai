@@ -9319,7 +9319,7 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-docs = ["mkdocs", "mkdocs-embed-external-markdown", "mkdocs-exclude", "mkdocs-material", "mkdocs-minify-plugin", "mkdocs-redirects", "mkdocs-simple-hooks", "mkdocstrings", "mkdocstrings-python", "pillow"]
+docs = ["mkdocs", "mkdocs-embed-external-markdown", "mkdocs-exclude", "mkdocs-material", "mkdocs-minify-plugin", "mkdocs-redirects", "mkdocs-redirects", "mkdocs-simple-hooks", "mkdocstrings", "mkdocstrings-python", "pillow"]
 explatform = ["fabric", "flask", "gunicorn", "requests", "shortuuid"]
 hub = ["apscheduler", "chardet", "cryptography", "fastapi", "fastapi-cli", "openpyxl", "pypdf", "python-docx", "python-dotenv", "python-pptx", "shortuuid", "sqlmodel", "tweepy"]
 lean = ["lean-dojo"]
@@ -9329,4 +9329,4 @@ vllm = ["torch", "vllm"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<3.12"
-content-hash = "82fc8291d14ce597ca69baa68e841b73d88149f68dc087cad3293f877df7e577"
+content-hash = "5d9244794520309cb9ed8bd83a517af4e767962931b74f77cab81aacf2c93f02"
