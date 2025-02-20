@@ -175,9 +175,7 @@ Params:
 - `limit`: Optional (default: 100)
 - `offset`: Optional (default: 0)
 
-```
-
-Example request:
+**Example Request:**
 
 ```bash
 curl -X GET "https://<api-url>/v1/get_user_secrets?limit=10&offset=0" \
@@ -211,10 +209,9 @@ curl -X GET "https://<api-url>/v1/get_user_secrets?limit=10&offset=0" \
 
 Creates a new secret for the authenticated user.
 
-Secrets can be tied to:
+Secrets are tied to:
 
-- A specific agent namespace (namespace)
-- A specific version (version) (optional)
+- A specific version
 - A category, such as "agent" or "user" (default is "agent")
 
 **Example Request Body:**
@@ -240,7 +237,7 @@ curl -X POST "https://<api-url>/v1/create_hub_secret" \
   -d '{
     "namespace": "example_agent",
     "name": "my_secret_name",
-    "version": "1.0",
+    "version": "0.0.1",
     "description": "GitHub token for my agent",
     "key": "GITHUB_API_TOKEN",
     "value": "ghp_abc123",
