@@ -41,11 +41,11 @@ nearai/
 └── e2e/                 # End-to-end tests
 ```
 
-## Quick Start
+## Agent Creation Quick Start
 
 ### Requirements
 
-- [Python 3.11](https://www.python.org/downloads/) _(3.12+ is currently not supported)_
+- [Python 3.11](https://www.python.org/downloads/) _(3.12+ currently not supported)_
 - [Git](https://github.com/git-guides/install-git)
 - [Docker](https://docs.docker.com/get-docker/) (for local agent testing)
 
@@ -110,16 +110,19 @@ nearai login
 ### Useful Commands
 
 1. Create an agent:
+
 ```bash
 nearai agent create
 ```
 
 2. Run agent locally:
+
 ```bash
 nearai agent interactive
 ```
 
-3. Deploy to NEAR AI Hub:
+3. Deploy to [NEAR AI Developer Hub](https://hub.near.ai):
+
 ```bash
 nearai registry upload <path-to-agent>
 ```
@@ -128,12 +131,23 @@ nearai registry upload <path-to-agent>
 
 - [Official Documentation](https://docs.near.ai)
 - [Agent Development Guide](https://docs.near.ai/agents/quickstart)
-- [Contributing Guide](https://docs.near.ai/contributing)
 
-## Updating 
+## Updating
 
 ```bash
 cd nearai
 git pull
 python3 -m pip install -e .  # If dependencies changed
 ```
+
+## Contributing
+
+Want to help shape the future of AI? Join our community and contribute! 🚀
+
+- 🐛 [Report bugs and suggest features](https://github.com/nearai/nearai/issues)
+- 💻 [Submit pull requests](https://github.com/nearai/nearai/pulls)
+- 📖 [Improve documentation](https://docs.near.ai/contributing/#contribute-documentation)
+- 🤝 [Help other users in the community](https://t.me/nearaialpha)
+- 🌟 [Star our repository](https://github.com/nearai/nearai)
+
+Check out our [contributing guide](https://docs.near.ai/contributing) to get started.
