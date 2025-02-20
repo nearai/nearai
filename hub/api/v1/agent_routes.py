@@ -13,7 +13,7 @@ from nearai.clients.lambda_client import LambdaWrapper
 from nearai.shared.auth_data import AuthData
 from nearai.shared.client_config import DEFAULT_TIMEOUT
 from pydantic import BaseModel, Field
-from sqlalchemy import inspect, text
+from sqlalchemy import and_, func, inspect, text
 
 from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.entry_location import EntryLocation
@@ -288,6 +288,7 @@ def get_agent_entry(agent, data_source: str) -> Optional[RegistryEntry]:
 class FilterAgentsRequest(BaseModel):
     owner_id: Optional[str]
     with_capabilities: Optional[bool] = False
+    latest_versions_only: Optional[bool] = True
 
 
 @run_agent_router.post("/find_agents", response_model=List[RegistryEntry])
@@ -297,12 +298,37 @@ def find_agents(request_data: FilterAgentsRequest, auth: AuthToken = Depends(get
         # Start building the base query
         query = session.query(RegistryEntry)
 
+        # Get the column for the namespace. This helps mypy to understand the type of the column
+        # inspect uses cached data, so it's not a performance issue, but this can be optimized
+        # by storing the mapper in a variable and reusing it
+        mapper = inspect(RegistryEntry)
+
+        category_column = mapper.columns["category"]
+        namespace_column = mapper.columns["namespace"]
+        name_column = mapper.columns["name"]
+        version_column = mapper.columns["version"]
+
+        query = query.filter(category_column == "agent")
+
+        if request_data.latest_versions_only:
+            latest_versions = (
+                session.query(namespace_column, name_column, func.max(version_column).label("max_version"))
+                .group_by(namespace_column, name_column)
+                .subquery()
+            )
+
+            # Join the main query with the subquery to get only the latest versions
+            query = query.join(
+                latest_versions,
+                and_(
+                    namespace_column == latest_versions.c.namespace,
+                    name_column == latest_versions.c.name,
+                    version_column == latest_versions.c.max_version,
+                ),
+            )
+
         # Filter by owner (if specified)
         if request_data.owner_id is not None:
-            # Get the column for the namespace. This helps mypy to understand the type of the column
-            # inspect uses cached data, so it's not a performance issue, but this can be optimized
-            # by storing the mapper in a variable and reusing it
-            mapper = inspect(RegistryEntry)
             namespace_column = mapper.columns["namespace"]
             query = query.filter(namespace_column == request_data.owner_id)
 

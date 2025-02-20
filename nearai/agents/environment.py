@@ -382,9 +382,14 @@ class Environment(object):
         self.add_file_to_vector_store = add_file_to_vector_store
 
         # positional arguments are not allowed because arguments list will be updated
-        def find_agents(*, owner_id: Optional[str] = None, with_capabilities: Optional[bool] = False):
+        def find_agents(
+            *,
+            owner_id: Optional[str] = None,
+            with_capabilities: Optional[bool] = False,
+            latest_versions_only: Optional[bool] = True,
+        ):
             """Find agents based on various parameters."""
-            return client.find_agents(owner_id, with_capabilities)
+            return client.find_agents(owner_id, with_capabilities, latest_versions_only)
 
         self.find_agents = find_agents
 

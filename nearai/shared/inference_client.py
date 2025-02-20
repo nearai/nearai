@@ -438,10 +438,19 @@ class InferenceClient(object):
             cast_to=Dict[str, str],
         )
 
-    def find_agents(self, owner_id: Optional[str] = None, with_capabilities: Optional[bool] = False):
+    def find_agents(
+        self,
+        owner_id: Optional[str] = None,
+        with_capabilities: Optional[bool] = False,
+        latest_versions_only: Optional[bool] = True,
+    ):
         """Filter agents."""
         return self.client.post(
             path=f"{self._config.base_url}/find_agents",
-            body={"owner_id": owner_id, "with_capabilities": with_capabilities},
+            body={
+                "owner_id": owner_id,
+                "with_capabilities": with_capabilities,
+                "latest_versions_only": latest_versions_only,
+            },
             cast_to=List[Any],
         )
