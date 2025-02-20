@@ -154,7 +154,7 @@ def list_threads(
         statement = select(ThreadModel).where(ThreadModel.owner_id == auth.account_id)
 
         if include_subthreads is not True:
-            statement = select(ThreadModel).where(ThreadModel.parent_id == None)  # noqa: E711
+            statement = statement.where(ThreadModel.parent_id == None)  # noqa: E711
 
         threads = session.exec(statement).all()
         return [thread.to_openai() for thread in threads]
