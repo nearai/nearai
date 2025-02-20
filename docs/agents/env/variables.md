@@ -107,7 +107,7 @@ value = os.environ.get('VARIABLE_NAME', 'default_value')
 
 # Or using globals()
 value = globals()['env'].env_vars.get('VARIABLE_NAME', 'default_value')
-This allows users to fork the agent, modify the environment variables in metadata.json, and achieve the desired behavior without changing the code itself.
+
 
 ```
 
