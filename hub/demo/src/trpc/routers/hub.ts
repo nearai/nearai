@@ -522,7 +522,6 @@ export const hubRouter = createTRPCRouter({
             },
             body: JSON.stringify({
               metadata: {
-                foo: 'bar',
                 capabilities: JSON.stringify(CURRENT_AITP_CAPABILITIES),
               },
             }),
