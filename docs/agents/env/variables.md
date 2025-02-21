@@ -93,7 +93,6 @@ Using variables in your agent is straightforward. You can access any variable in
 
 `Examples`:
 
-
 ```python
 # Access any variable
 api_key = env.env_vars.get('VARIABLE_NAME', 'default-value')

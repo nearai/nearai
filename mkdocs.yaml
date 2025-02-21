@@ -158,7 +158,7 @@ nav:
         - NEAR Event-Triggered Agents: 'near_events.md'
         - Twitter (X) Triggered Agents: 'agent_triggers.md'
     - Tutorials:
-      - Documentation Agent:
+      - Documentation Agent (RAG):
         - Introduction: 'tutorials/rag/introduction.md'
         - The Problem: 'tutorials/rag/problem.md'
         - Vector Stores: 'tutorials/rag/vector_store.md'

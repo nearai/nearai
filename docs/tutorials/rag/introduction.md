@@ -1,15 +1,13 @@
-# Using RAG to Build a Docs Agent
+# Building a Documentation Agent with RAG
 
-Current AI models are trained on a wide variety of data sources, which makes them outstanding at generating broad text. However, if you need your agent to talk about a topic on which it was not trained (e.g. your own internal documentation), the model will start to [hallucinate](https://thebullshitmachines.com/lesson-2-the-nature-of-bullshit/index.html).
+Current AI models are trained on vast datasets, making them powerful at generating general-purpose text. However, when asked about specific topics outside their training data (like your company's internal documentation), these models often [hallucinate](https://thebullshitmachines.com/lesson-2-the-nature-of-bullshit/index.html) - generating plausible-sounding but incorrect information.
 
-In these very common scenarios, hallucinating is the result of the model trying to generate plausible text, without having the necessary data to do so. 
+Thankfully, there is a solution to this problem: Retrieval-Augmented Generation (RAG). This technique consists on **combining two key components**:
 
-Thankfully, there is a solution to this problem: Retrieval-Augmented Generation (RAG). This technique consists on **combining two AI models**:
+1. A **retrieval system** that finds relevant information from your custom dataset
+2. A **language model** that generates accurate responses using the retrieved information
 
-1. The first to **retrieve relevant information** from a structured dataset
-2. The second to **generate a response** based on the retrieved information
-
-In this tutorial, we will show you how to build a simple agent that uses RAG to answer questions about NEAR!
+In this tutorial, you'll learn how to build a RAG-powered agent that accurately answers questions about NEAR Protocol!
 
 ---
 
