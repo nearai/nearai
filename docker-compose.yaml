@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: aws_runner/py_runner/Dockerfile
       args:
-        FRAMEWORK: -base
+        FRAMEWORK: -minimal
       platforms:
         - linux/amd64
     image: nearai-runner:test
@@ -24,19 +24,27 @@ services:
       - "3306:3306"
       - "8080:8080"
       - "9000:9000"
-
-  
-  # hub:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.dev.hub  # You'll need to create this
-  #   environment:
-  #     - DATABASE_HOST=db
-  #     - DATABASE_USER=root
-  #     - DATABASE_PASSWORD=change-me
-  #     - DATABASE_NAME=hub
-  #     - RUNNER_ENVIRONMENT=custom_runner
-  #     - CUSTOM_RUNNER_URL=http://runner:8080/2015-03-31/functions/function/invocations
-  #     - API_URL=http://localhost:8081
-  #   ports:
-  #     - "8081:8081"
+ 
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:latest
+    env_file:
+      - .env
+    environment:
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_APM_ENABLED=true
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+      - DD_ENV=${DD_ENV}
+      - DD_VERSION=${DD_VERSION}
+      - DD_SERVICE=${DD_SERVICE}
+      - DD_HOSTNAME=${DD_HOSTNAME}
+      - DD_LOGS_ENABLED=true
+      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
+      - DD_TRACE_AGENT_PORT=${DD_TRACE_AGENT_PORT}
+      - DD_TRACE_AGENT_URL=${DD_TRACE_AGENT_URL}
+      - DD_SITE=${DD_SITE}
+    ports:
+      - "8126:8126"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
