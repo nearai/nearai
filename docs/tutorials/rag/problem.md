@@ -74,15 +74,17 @@ nearai agent interactive --local
 
 </div>
 
-This agent uses `llama-v3p1-70b-instruct` model, which is a powerful open-domain model, and gets the answers mostly right... but then it starts to invent.
+This agent uses `llama-v3p1-70b-instruct` model, which is a powerful open-domain model, and gets the answers _mostly_ right... but then it starts to invent things.
 
-Without going too deep on the specifics of NEAR Protocol - which are in no way relevant for this tutorial - the agent invented a third type of access key (`View Function Access Key`), which simply does not exist, and proposed outdated commands to create accounts.
+Without going too deep on the specifics of NEAR Protocol - which are not relevant for this tutorial - the agent invented a third type of access key (`View Function Access Key`), which simply does not exist, and proposed outdated commands to create accounts.
 
 ---
 
 ## Giving Context to the Model
 
-Now, lets try to give some context to the model so it can improve its answers. For that, lets take the two files that talk about [`access keys`](https://github.com/near/docs/blob/master/docs/1.concepts/protocol/access-keys.md) and the [`cli`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md), and directly embed them into the prompt
+Now, lets try to give some context to the model so it can improve its answers. 
+
+For that, lets take the two files that talk about [`access keys`](https://github.com/near/docs/blob/master/docs/1.concepts/protocol/access-keys.md) and the [`cli`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md) then directly embed them into the prompt by updating our agent code:
 
 ```python
 import json
@@ -118,6 +120,8 @@ def run(env: Environment):
 run(env)
 ```
 
+After updating the agent code, lets invoke it again and ask it the same questions:
+
 <div class="grid" markdown>
 
 ??? note "What types of access keys are there in NEAR?"
@@ -152,7 +156,8 @@ run(env)
 
 </div>
 
-The answers now are much more accurate, which is expected, as we are providing the model with the actual documentation that it needs to generate the answers.
+
+As you can see the answers now are much more accurate, which is expected, as we are providing the model with the actual documentation that it needs to generate the answers.
 
 ---
 
