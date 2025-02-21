@@ -431,7 +431,8 @@ export default function HomePage() {
               {
                 icon: <Lightning weight="duotone" />,
                 title: 'Agent Interaction and Transaction Protocol (AITP)',
-                description: 'Standard protocol for secure agent-to-agent and user-to-agent communication',
+                description:
+                  'Standard protocol for secure agent-to-agent and user-to-agent communication',
                 label: 'Learn More',
                 href: 'https://aitp.dev/',
                 target: '_blank',
