@@ -30,11 +30,19 @@ export const quoteSchema = baseSchema.extend({
 export const paymentAuthorizationSchema = baseSchema.extend({
   payment_authorization: z
     .object({
-      transaction_id: z.string(),
       quote_id: z.string(),
       result: z.enum(['success', 'failure']),
       message: z.string().optional(),
       timestamp: z.string().datetime(),
+      details: z
+        .object({
+          network: z.enum(['NEAR']),
+          token_type: z.enum(['USDC']),
+          amount: z.number(),
+          account_id: z.string(),
+          transaction_id: z.string(),
+        })
+        .array(),
     })
     .passthrough(),
 });
@@ -42,11 +50,17 @@ export const paymentAuthorizationSchema = baseSchema.extend({
 export const paymentResultSchema = baseSchema.extend({
   payment_result: z
     .object({
-      transaction_id: z.string(),
       quote_id: z.string(),
       result: z.enum(['success', 'failure']),
-      message: z.string().optional(),
       timestamp: z.string().datetime(),
+      message: z.string().optional(),
+      details: z
+        .object({
+          label: z.string(),
+          url: z.string().url().optional(),
+          value: z.string().or(z.number()),
+        })
+        .array(),
     })
     .passthrough(),
 });

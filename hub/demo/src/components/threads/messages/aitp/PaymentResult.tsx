@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  Badge,
-  Flex,
-  SvgIcon,
-  Text,
-  Timestamp,
-  Tooltip,
-} from '@near-pagoda/ui';
+import { Badge, Flex, SvgIcon, Text, Timestamp } from '@near-pagoda/ui';
 import { Wallet } from '@phosphor-icons/react';
 import { type z } from 'zod';
 
@@ -42,26 +35,28 @@ export const PaymentResult = ({ content }: Props) => {
         {content.message && (
           <Flex direction="column">
             <Text size="text-xs">Message</Text>
-            {content.message}
+            <Text color="sand-12">{content.message}</Text>
           </Flex>
         )}
 
-        <Flex direction="column">
-          <Text size="text-xs">Transaction ID</Text>
-          <Tooltip content="View transaction details">
+        {content.details.map((detail, index) => (
+          <Flex direction="column" key={index}>
+            <Text size="text-xs">{detail.label}</Text>
             <Text
-              href={`https://nearblocks.io/txns/${content.transaction_id}`}
-              target="_blank"
-              family="monospace"
+              color="sand-12"
+              href={detail.url}
+              target={detail.url ? '_blank' : undefined}
             >
-              {content.transaction_id}
+              {detail.value}
             </Text>
-          </Tooltip>
-        </Flex>
+          </Flex>
+        ))}
 
         <Flex direction="column">
-          <Text size="text-xs">Sent On</Text>
-          <Timestamp date={new Date(content.timestamp)} />
+          <Text size="text-xs">Processed On</Text>
+          <Text color="sand-12">
+            <Timestamp date={new Date(content.timestamp)} />
+          </Text>
         </Flex>
       </Flex>
     </Message>

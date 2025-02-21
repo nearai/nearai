@@ -66,7 +66,7 @@ export const Quote = ({ content }: Props) => {
     (store) => store.usdcBalanceDollars,
   );
   const [isRefreshingUsdcBalance, setIsRefreshingUsdcBalance] = useState(false);
-  const amount = 0.01; // content.payment_plans?.[0]?.amount;
+  const amount = content.payment_plans?.[0]?.amount;
 
   const threadId = queryParams.threadId ?? '';
   const paymentConfirmation = useThreadMessageContentFilter(
@@ -96,7 +96,9 @@ export const Quote = ({ content }: Props) => {
 
   const onTransactionSuccess = useCallback(
     (transactionId: string) => {
+      if (typeof amount !== 'number') return;
       if (!addMessage) return;
+      if (!walletAccount?.accountId) return;
       if (lastSuccessfulTransactionIdRef.current === transactionId) return;
       lastSuccessfulTransactionIdRef.current = transactionId;
 
@@ -105,8 +107,16 @@ export const Quote = ({ content }: Props) => {
         payment_authorization: {
           quote_id: content.quote_id,
           result: 'success',
-          transaction_id: transactionId,
           timestamp: new Date().toISOString(),
+          details: [
+            {
+              account_id: walletAccount.accountId,
+              amount,
+              network: 'NEAR',
+              token_type: 'USDC',
+              transaction_id: transactionId,
+            },
+          ],
         },
       };
 
@@ -114,7 +124,7 @@ export const Quote = ({ content }: Props) => {
         new_message: JSON.stringify(aitpResult),
       });
     },
-    [addMessage, content.quote_id],
+    [addMessage, content.quote_id, walletAccount?.accountId, amount],
   );
 
   const sendUsdcMutation = useMutation({
@@ -186,7 +196,7 @@ export const Quote = ({ content }: Props) => {
     if (
       transactionId &&
       queryParams.transactionRequestOrigin ===
-      ('quote' satisfies WalletTransactionRequestOrigin) &&
+        ('quote' satisfies WalletTransactionRequestOrigin) &&
       queryParams.transactionRequestId === content.quote_id
     ) {
       onTransactionSuccess(transactionId);
@@ -199,7 +209,7 @@ export const Quote = ({ content }: Props) => {
   }, [queryParams, content, onTransactionSuccess, updateQueryPath]);
 
   const successfulTransactionId =
-    paymentConfirmation?.payment_authorization.transaction_id ||
+    paymentConfirmation?.payment_authorization.details[0]?.transaction_id ||
     sendUsdcMutation.data?.transaction_outcome.id;
 
   const walletHasSufficientUsdcBalance =
