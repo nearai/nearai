@@ -6,16 +6,16 @@ However, current chunking strategies are very limited, dividing the document int
 
 If you know that your documents have a specific structure, you can create your own embeddings by manually dividing the document into chunks and processing them separately.
 
+!!! warning
+    As with chunking, there are high chances that you do NOT need to create your own embeddings. We recommend to read this section only to gain understanding on how vector stores are implemented.
+
 ---
 
 ### Manual Embeddings
 
-In the case of our NEAR documentation, we know that each file is divided into sections - denoted by `##` in markdown - and subsections - denoted by `###`.
-
-We can use this information to manually divide the document into chunks, and process them separately.
+Instead of using a vector store, we will directly call the [Nomic v1.5 model](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5) so it creates the embedding vector for our documents:
 
 ```python
-# BUILD VECTOR STORE FROM FILES
 import json
 import os
 import re
@@ -62,6 +62,9 @@ df.to_csv("embeddings.csv", index=False)
 ```
 
 Notice that we are manually storing the embeddings into a `CSV` file. This is because the platform does not support uploading embeddings directly into a vector store.
+
+!!! tip Prefix
+    The [Nomic v1.5 model](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5) uses `prefixes` (e.g. `classification:`, `search-document:`) to better guide the model on how to transform the documents. Make sure to read your model's documentation before using it to make the most of the embeddings
 
 ---
 

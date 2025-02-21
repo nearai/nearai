@@ -9,6 +9,9 @@ Chunking a document does not only make it less computationally expensive to proc
 
     This is, it is better to have multiple vectors representing small sections, than a single vector representing the whole document.
 
+!!! warning
+    It's very likely you don't need to worry about chunking, only change it if you find that the agent consistently fails at answering questions because of how documents are divided in chunks
+
 ---
 
 ## Chunking Strategy
@@ -34,8 +37,6 @@ By default, the platform will divide the document into chunks of 800 tokens, wit
 
 ![Chunking Strategy](chunks.png)
 
-However, the way that these chunks are created is not efficient, as the platform simply takes the first `max_chunk_size_tokens` tokens (e.g. 800) and then moves `chunk_overlap_tokens` tokens to the right to create the next chunk.
+It is important to notice that chunks are not created based on the document's structure, but merely on counting tokens, which can lead to a loss of context.
 
-This means that the chunks are not created based on the document's structure, which can lead to a loss of context.
-
-You can change the `chunking_strategy` to better fit your documents' structure. For example, if your documents have a lot of code snippets, you can increase the `chunk_overlap_tokens` to make sure that the code snippets are not split into different chunks.
+Make sure you change the `chunking_strategy` to better fit your documents' structure. For example, if your documents have a lot of code snippets, you can increase the `size` and `overlap` to make sure that the code can be correctly retrieved by the vector store.

@@ -19,17 +19,10 @@ Instructions: You are a helpful assistant that answers questions about NEAR Prot
 
 Then, lets invoke the agent and ask it a few questions:
 
+```bash
+# nearai agent interactive --local  # List your local agents
+nearai agent interactive ~/.nearai/registry/<user.near>/docs-ai-tutorial/0.0.1 --local
 ```
-nearai agent interactive <PATH-TO-YOUR-AGENT> --local
-```
-
-If you don't remember the path to your agent, you can list all your agents with:
-
-```
-nearai agent interactive --local
-```
-
-
 
 <div class="grid" markdown>
 
@@ -84,7 +77,7 @@ Without going too deep on the specifics of NEAR Protocol - which are not relevan
 
 Now, lets try to give some context to the model so it can improve its answers. 
 
-For that, lets take the two files that talk about [`access keys`](https://github.com/near/docs/blob/master/docs/1.concepts/protocol/access-keys.md) and the [`cli`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md) then directly embed them into the prompt by updating our agent code:
+For that, lets directly embed into the agent's prompt the documentation on [`access keys`](https://github.com/near/docs/blob/master/docs/1.concepts/protocol/access-keys.md) and the [`cli tool`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md):
 
 ```python
 import json

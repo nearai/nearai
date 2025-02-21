@@ -1,4 +1,4 @@
-Lets see how simple it is to create an agent that uses the vector store we [created in the previous section](./creating.md) to answer questions about NEAR Protocol tools.
+Lets see how simple it is to create an agent that uses the vector store we [created in the previous section](./vector_store.md) to answer questions about NEAR Protocol.
 
 !!! tip
     You can test the code below in the [NEAR AI platform](https://app.near.ai/agents/gagdiez.near/docs-gpt/latest/run)
@@ -7,7 +7,7 @@ Lets see how simple it is to create an agent that uses the vector store we [crea
 
 ## Documentation Agent
 
-The script we created in the previous section was returning us the `id` of the vector store we created. We will use this `id` to build an agent, here is the full code:
+The script we created in the previous section was returning us the `id` of the vector store we created. We will use this `id` within the agent to retrieve the store, so we can query it.
 
 ```python
 import json

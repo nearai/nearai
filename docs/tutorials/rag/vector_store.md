@@ -1,12 +1,6 @@
 Vector Stores are a special kind of database that stores documents and allows retrieving them through natural language. 
 
-In our case, we will store all NEAR documentation in a vector store, which will allow us to:
-
-1. Convert each document into a searchable format
-2. Find relevant documentation when given a natural language query
-3. Use these relevant documents to provide accurate answers
-
-For example, if a user asks "How do I deploy a smart contract?", the vector store will help us find and retrieve the most relevant deployment-related documentation to answer their question.
+In our case, we will store all NEAR documentation in a vector store, this way if a user asks "What types of access keys are there in NEAR?", the vector store will help us find our access keys docs, so we can use it to answer the question. 
 
 !!! info
     The Vector Store is built separately from the agent, and can be used in multiple places
@@ -19,7 +13,7 @@ For example, if a user asks "How do I deploy a smart contract?", the vector stor
 
 ## How Vector Stores Work
 
-Vector Stores use AI models to convert text documents into low-dimensional numerical representaitons that computers can easily process and compare. These vectors are like "fingerprints" of the documents - each one unique, but much smaller than the original text.
+Vector Stores use AI models to convert text documents into low-dimensional numerical representations that computers can easily process and compare. These vectors are like "fingerprints" of the documents - each one unique, but much smaller than the original text.
 
 For example, the [Nomic v1.5](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5) model can take our entire [`cli.md`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md) documentation file and represent it as a compact vector:
 
@@ -31,15 +25,13 @@ Each number in this vector captures some aspect of the document's meaning. Docum
 
 This is powerful because it means we can convert user questions into vectors too - allowing us to find relevant documentation by looking for documents that appear "closest" to the user's question.
 
-When a user asks a question, we:
-
-1. Convert their question into a vector
-2. Compare it with all our stored document vectors
-3. Find the documents whose vectors are closest to the question's vector
-
-This means we can automatically find the most relevant documentation to answer any question.
-
 ![alt text](vector-space.png)
+
+When a user asks a question, the vector still will help us find relevant documentation by:
+
+1. Converting their question into a vector
+2. Comparing it with all our stored document vectors
+3. Retrieving the documents whose vectors are closest to the question's vector
 
 !!!tip
     How these representations are generated is a complex topic that exceeds the scope of this tutorial. For us, it suffices to know that such models already exist and are available for us to use.
@@ -104,9 +96,6 @@ print(vs.id)
 
 In the code above we are first instantiating an OpenAI compatible client
 
-!!! note
-    While we are using a OpenAI client, the files are being uploaded to the NEAR AI platform, not OpenAI.
-
 ```python 
 # Load NEAR AI Hub configuration
 config = nearai.config.load_config_file()
@@ -115,6 +104,9 @@ auth = config["auth"]
 
 client = openai.OpenAI(base_url=base_url, api_key=json.dumps(auth))
 ```
+
+!!! note
+    While we are using a OpenAI client, the files are being uploaded to the NEAR AI platform, not OpenAI.
 
 Then, we list all markdown files in the current directory and its subdirectories
 
@@ -158,7 +150,7 @@ This `id` will be used in the next section to build an agent that leverages the 
 
 ??? tip "Where are the Embeddings?"
 
-    All the complexity of processing the files to create embeddings, and then storing them in a database to be queried, is abstracted away by the platform
+    No need to worry about this, the NEAR AI platform abstracts away all the complexity of processing the files to create embeddings, and then storing them in a database to be queried.
     
     You only need to upload the files and the platform will take care of the rest
 
@@ -169,12 +161,12 @@ This `id` will be used in the next section to build an agent that leverages the 
 
 ---
 
-## Preprocessing the Files
+## A Note on Preprocessing
 
 While the platform abstracts away the complexity of creating embeddings, it is still a good idea to preprocess the files before uploading them.
 
-In our case, our `markdown` files contain a lot of unnecessary information, such as `imports`, `iframes` and other tags that the model simply will not know how to interpret.
+In our case, our `markdown` files contain a lot of unnecessary information, such as `imports`, `iframes` and other tags that are simply not relevant for the document's semantics.
 
-Furthermore - and this might be common to many documentation files - our files do not necessarily contain the plain-text code snippets, but instead embed them from external sources (e.g. GitHub).
+Furthermore - and this might be common to many documentation files - our files do not necessarily contain the plain-text code snippets, but instead embed them from external sources (e.g. GitHub). So we need to preprocess them to translate the Github tags into actual code snippets.
 
-In case you are curious, you can file all the preprocessing steps we use in our [vector.py script](https://github.com/gagdiez/docs-ai/blob/main/docs-gpt/dataset/vector.py#L12-L65)
+In case you are curious, you can file all the preprocessing steps we use for our documentation in the [vector.py script](https://github.com/gagdiez/docs-ai/blob/main/docs-gpt/dataset/vector.py#L12-L65)
