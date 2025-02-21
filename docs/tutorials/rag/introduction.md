@@ -27,8 +27,8 @@ To follow this tutorial you will need:
 
 This tutorial is divided in the following sections:
 
-- [The problem](./problem.md): A brief example on how common AI models hallucinate when they don't have the relevant data
-- [Vector Stores](./vector_store.md): An introduction to vector stores and how to create them
-- [RAG Agent](./agent.md): We create an agent that uses the vector store to answer questions about NEAR Protocol tools
-- [Chunking](./chunking.md): Dive deeper into how vector stores store documents
-- [Embeddings](./embeddings.md): We show how one can manually create embeddings for a document
+- [The problem](./problem.md) → Understanding AI hallucination from incorrect data
+- [Vector Stores](./vector_store.md) → Getting started with vector stores
+- [RAG Agent](./agent.md) → Building a NEAR Documentation Q&A agent
+- [Chunking](./chunking.md) → Dive deeper into how vector stores store documents
+- [Embeddings](./embeddings.md) → Creating document embeddings manually
