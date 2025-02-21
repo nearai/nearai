@@ -5,7 +5,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import {
   decisionSchema,
   requestDecisionSchema,
-} from '~/components/threads/messages/aitp/schema/decision';
+} from '~/components/threads/messages/aitp/schema/decisions';
 
 export async function GET() {
   const schema = zodToJsonSchema(

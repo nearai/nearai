@@ -132,29 +132,31 @@ extra_css:
 nav:
   - Home: 
     - Welcome To NEAR AI Docs: 'index.md'
+    - 'cli.md'
     - Contributing: 'contributing.md'
     - Decentralization: 'decentralization.md'
     - Private & Verifiable AI: 'private-ml-sdk.md'
   - Agents:
     - Building Agents:
       - Quickstart: 'agents/quickstart.md'
-      - Agent Registry: 'agents/registry.md'
-      - Local & Remote Runs: 'agents/running.md'
-      - Threads: 'agents/threads.md'
-      - "Environment":
+      - "Agent Environment":
         - 'agents/env/overview.md'
         - 'agents/env/messages_files.md'
         - 'agents/env/inference.md'
         - 'agents/env/calling_other_agents.md'
         - 'agents/env/tools.md'
-        - 'agents/env/variables.md'
-        - 'agents/env/near.md'
-        - Secrets: 'agents/secrets.md'
-      - Inference (OpenAI): 'inference.md'
-      - Vector Stores (OpenAI): 'vector-stores.md'
-      - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
-      - NEAR Event-Triggered Agents: 'near_events.md'
-      - Twitter (X) Triggered Agents: 'agent_triggers.md'
+        - Secrets & Variables: 'agents/env/variables.md'
+        - NEAR Blockchain: 'agents/env/near.md'
+      - Agent Registry: 'agents/registry.md'
+      - Core Features:
+        - Threads: 'agents/threads.md'
+        - Inference (OpenAI): 'inference.md'
+        - Vector Stores (OpenAI): 'vector-stores.md'
+        - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
+        - Local & Remote Runs: 'agents/running.md'
+      - Event-Driven Agents:
+        - NEAR Event-Triggered Agents: 'near_events.md'
+        - Twitter (X) Triggered Agents: 'agent_triggers.md'
     - Tutorials:
       - Documentation Agent:
         - Introduction: 'tutorials/rag/introduction.md'
@@ -164,6 +166,7 @@ nav:
         - Chunking: 'tutorials/rag/chunking.md'
         - Manual Embeddings: 'tutorials/rag/embeddings.md'
   - Models:
+    - 'models/home.md'
     - Fine-tuning: 'models/fine_tuning.md'
     - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
   - Assistants:
@@ -186,3 +189,6 @@ plugins:
             allow_inspection: true
             show_bases: true
             show_submodules: true
+  - redirects:
+      redirect_maps:
+        'agents/secrets.md': 'agents/env/variables.md'

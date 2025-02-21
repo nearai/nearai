@@ -5,26 +5,32 @@ import { CheckSquare, ShoppingCart } from '@phosphor-icons/react';
 import { type z } from 'zod';
 
 import { useQueryParams } from '~/hooks/url';
-import { useThreadsStore } from '~/stores/threads';
-import { stringToPotentialJson } from '~/utils/string';
+import { useThreadMessageContentFilter } from '~/stores/threads';
 
 import { Message } from './Message';
-import {
-  type decisionSchema,
-  type requestDecisionSchema,
-} from './schema/decision';
+import { type decisionSchema, requestDecisionSchema } from './schema/decisions';
 
 type Props = {
   content: z.infer<typeof decisionSchema>['decision'];
 };
 
 export const Decision = ({ content }: Props) => {
-  const request = useRequestForDecision(content);
+  const { queryParams } = useQueryParams(['threadId']);
+  const threadId = queryParams.threadId ?? '';
+
+  const requestDecision = useThreadMessageContentFilter(threadId, (json) => {
+    if (json?.request_decision) {
+      const { data } = requestDecisionSchema.safeParse(json);
+      if (data?.request_decision.id === content.request_decision_id) {
+        return data;
+      }
+    }
+  })[0];
 
   return (
     <Message>
       <Flex direction="column" gap="s" align="start">
-        {request?.request_decision.type === 'products' ? (
+        {requestDecision?.request_decision.type === 'products' ? (
           <Flex align="center" gap="s">
             <SvgIcon
               icon={<ShoppingCart weight="duotone" />}
@@ -32,7 +38,7 @@ export const Decision = ({ content }: Props) => {
               color="sand-11"
             />
             <Text size="text-xs" weight={600} uppercase>
-              Add to cart
+              Buy Now
             </Text>
           </Flex>
         ) : (
@@ -64,27 +70,3 @@ export const Decision = ({ content }: Props) => {
     </Message>
   );
 };
-
-function useRequestForDecision(content: Props['content']) {
-  const { queryParams } = useQueryParams(['threadId']);
-  const threadId = queryParams.threadId ?? '';
-  const threadsById = useThreadsStore((store) => store.threadsById);
-  const thread = threadsById[threadId];
-  const messages = thread?.messagesById
-    ? Object.values(thread.messagesById)
-    : [];
-  const allContents = messages.flatMap((m) => m.content);
-
-  let request: z.infer<typeof requestDecisionSchema> | null = null;
-  for (const c of allContents) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-    const json = stringToPotentialJson(c.text?.value ?? '') as any;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (json?.request_decision?.id === content.request_decision_id) {
-      request = json as z.infer<typeof requestDecisionSchema>;
-      break;
-    }
-  }
-
-  return request;
-}

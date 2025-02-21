@@ -2,8 +2,30 @@
 
 import { z } from 'zod';
 
-import { dataSchema, requestDataSchema } from './data';
-import { decisionSchema, requestDecisionSchema } from './decision';
+import {
+  CURRENT_AITP_DATA_SCHEMA_URL,
+  dataSchema,
+  requestDataSchema,
+} from './data';
+import {
+  CURRENT_AITP_DECISIONS_SCHEMA_URL,
+  decisionSchema,
+  requestDecisionSchema,
+} from './decisions';
+import {
+  CURRENT_AITP_PAYMENTS_SCHEMA_URL,
+  paymentAuthorizationSchema,
+  paymentResultSchema,
+  quoteSchema,
+} from './payments';
+
+export const AITP_CLIENT_ID = 'app.near.ai';
+
+export const AITP_CAPABILITIES = [
+  CURRENT_AITP_DATA_SCHEMA_URL,
+  CURRENT_AITP_DECISIONS_SCHEMA_URL,
+  CURRENT_AITP_PAYMENTS_SCHEMA_URL,
+] as const;
 
 /*
   NOTE: The following duplication of aitpSchema and aitpSchemaWithoutPassthrough is 
@@ -19,6 +41,9 @@ import { decisionSchema, requestDecisionSchema } from './decision';
 const aitpSchema = z.union([
   dataSchema,
   decisionSchema,
+  paymentAuthorizationSchema,
+  paymentResultSchema,
+  quoteSchema,
   requestDataSchema,
   requestDecisionSchema,
 ]);
@@ -26,6 +51,9 @@ const aitpSchema = z.union([
 const aitpSchemaWithoutPassthrough = z.union([
   dataSchema.strip(),
   decisionSchema.strip(),
+  paymentAuthorizationSchema.strip(),
+  paymentResultSchema.strip(),
+  quoteSchema.strip(),
   requestDataSchema.strip(),
   requestDecisionSchema.strip(),
 ]);

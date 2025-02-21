@@ -1,27 +1,10 @@
 import { z } from 'zod';
 
 import { baseSchema } from './base';
+import { nestedQuoteSchema } from './payments';
 
-export const CURRENT_AITP_DECISION_SCHEMA_URL =
-  'https://aitp.dev/v1/decision/schema.json';
-
-export const quoteSchema = z
-  .object({
-    type: z.enum(['Quote']),
-    quote_id: z.string(),
-    payee_id: z.string(),
-    payment_plans: z
-      .object({
-        plan_id: z.string(),
-        plan_type: z.enum(['one-time']),
-        amount: z.number(),
-        currency: z.enum(['USD']),
-      })
-      .passthrough()
-      .array(),
-    valid_until: z.string().datetime(),
-  })
-  .passthrough();
+export const CURRENT_AITP_DECISIONS_SCHEMA_URL =
+  'https://aitp.dev/v1/decisions/schema.json';
 
 const requestDecisionOptionSchema = z
   .object({
@@ -30,7 +13,7 @@ const requestDecisionOptionSchema = z
     short_variant_name: z.string().optional(),
     image_url: z.string().url().optional(),
     description: z.string().optional(),
-    quote: quoteSchema.optional(),
+    quote: nestedQuoteSchema.optional(),
     reviews_count: z
       .number()
       .int()

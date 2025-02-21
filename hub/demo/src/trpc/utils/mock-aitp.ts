@@ -5,13 +5,15 @@ import {
   type requestDataSchema,
 } from '~/components/threads/messages/aitp/schema/data';
 import {
-  CURRENT_AITP_DECISION_SCHEMA_URL,
-  type quoteSchema,
+  CURRENT_AITP_DECISIONS_SCHEMA_URL,
   type requestDecisionSchema,
-} from '~/components/threads/messages/aitp/schema/decision';
+} from '~/components/threads/messages/aitp/schema/decisions';
+import { type nestedQuoteSchema } from '~/components/threads/messages/aitp/schema/payments';
 import { type threadMessageModel } from '~/lib/models';
 
-function generateMockedQuote(priceUsd: number): z.infer<typeof quoteSchema> {
+function generateMockedQuote(
+  priceUsd: number,
+): z.infer<typeof nestedQuoteSchema> {
   return {
     type: 'Quote',
     payee_id: 'foobar',
@@ -31,7 +33,7 @@ function generateMockedQuote(priceUsd: number): z.infer<typeof quoteSchema> {
 export const mockRequestDecisionCheckbox: z.infer<
   typeof requestDecisionSchema
 > = {
-  $schema: CURRENT_AITP_DECISION_SCHEMA_URL,
+  $schema: CURRENT_AITP_DECISIONS_SCHEMA_URL,
   request_decision: {
     id: crypto.randomUUID(),
     title: 'Your Favorite Colors',
@@ -64,7 +66,7 @@ export const mockRequestDecisionCheckbox: z.infer<
 };
 
 export const mockRequestDecisionRadio: z.infer<typeof requestDecisionSchema> = {
-  $schema: CURRENT_AITP_DECISION_SCHEMA_URL,
+  $schema: CURRENT_AITP_DECISIONS_SCHEMA_URL,
   request_decision: {
     id: crypto.randomUUID(),
     type: 'radio',
@@ -89,7 +91,7 @@ export const mockRequestDecisionRadio: z.infer<typeof requestDecisionSchema> = {
 export const mockRequestDecisionProducts: z.infer<
   typeof requestDecisionSchema
 > = {
-  $schema: CURRENT_AITP_DECISION_SCHEMA_URL,
+  $schema: CURRENT_AITP_DECISIONS_SCHEMA_URL,
   request_decision: {
     id: crypto.randomUUID(),
     title: 'Recommended Products',
@@ -162,7 +164,7 @@ export const mockRequestDecisionProducts: z.infer<
 export const mockRequestDecisionConfirmation: z.infer<
   typeof requestDecisionSchema
 > = {
-  $schema: CURRENT_AITP_DECISION_SCHEMA_URL,
+  $schema: CURRENT_AITP_DECISIONS_SCHEMA_URL,
   request_decision: {
     id: crypto.randomUUID(),
     title: 'Please confirm',

@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         if: github.event.action != 'closed'
         run: |
-          pip install mkdocs mkdocs-material mkdocs-autorefs mkdocs-minify-plugin "mkdocstrings[python]" "mkdocs-material[imaging]"
+          pip install -e ".[docs]"
 
       - name: Build documentation
         if: github.event.action != 'closed'

@@ -1,3 +1,21 @@
+## v0.1.13 (2025-02-21)
+
+### Feat
+
+- enhance readme (#856)
+- `latest_versions_only` argument added to `env.find_agents` (#914)
+- add `mkdocs-redirect` plugin (#917)
+- enhance alpha section with CTAs (#874)
+- enhance secrets & env variables (#879)
+- frameworks base/web-agent -> minimal/standard (#892)
+- multiple workers support (#886)
+- web agent to support eth libs (#887)
+
+### Fix
+
+- minor typos in `private-ml-sdk.md` (#873)
+- readme path fixed for py_runner (#897)
+
 ## v0.1.12 (2025-02-19)
 
 ### Feat

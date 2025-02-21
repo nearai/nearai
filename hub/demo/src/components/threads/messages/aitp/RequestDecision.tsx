@@ -5,7 +5,7 @@ import { type z } from 'zod';
 import { RequestDecisionCheckbox } from './RequestDecisionCheckbox';
 import { RequestDecisionConfirmation } from './RequestDecisionConfirmation';
 import { RequestDecisionProducts } from './RequestDecisionProducts';
-import { type requestDecisionSchema } from './schema/decision';
+import { type requestDecisionSchema } from './schema/decisions';
 
 type Props = {
   content: z.infer<typeof requestDecisionSchema>['request_decision'];

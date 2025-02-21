@@ -15,11 +15,13 @@ import { useWalletStore } from '~/stores/wallet';
 
 export function useWalletInitializer() {
   const setupPromise = useRef<Promise<WalletSelector> | null>(null);
-  const setState = useWalletStore((store) => store.setState);
-  const setAccount = useWalletStore((store) => store.setAccount);
   const setWallet = useWalletStore((store) => store.setWallet);
-  const setSelector = useWalletStore((store) => store.setSelector);
-  const selector = useWalletStore((store) => store.selector);
+  const setWalletState = useWalletStore((store) => store.setState);
+  const setWalletAccount = useWalletStore((store) => store.setAccount);
+  const setWalletSelector = useWalletStore((store) => store.setSelector);
+  const loadUsdcBalance = useWalletStore((store) => store.loadUsdcBalance);
+  const walletAccount = useWalletStore((store) => store.account);
+  const walletSelector = useWalletStore((store) => store.selector);
 
   useEffect(() => {
     const initialize = async () => {
@@ -43,27 +45,33 @@ export function useWalletInitializer() {
         theme: 'auto',
       });
 
-      setSelector(selector, modal);
+      setWalletSelector(selector, modal);
     };
 
     void initialize();
-  }, [setSelector]);
+  }, [setWalletSelector]);
 
   useEffect(() => {
-    if (!selector) return;
+    if (!walletSelector) return;
 
-    setState(selector.store.getState());
+    setWalletState(walletSelector.store.getState());
 
-    const subscription = selector.store.observable.subscribe((value) => {
-      setState(value);
-      setAccount(value?.accounts[0] ?? null);
+    const subscription = walletSelector.store.observable.subscribe((value) => {
+      setWalletState(value);
+      setWalletAccount(value?.accounts[0] ?? null);
 
-      if (value.accounts.length > 0 && value.selectedWalletId && selector) {
-        selector
+      if (
+        value.accounts.length > 0 &&
+        value.selectedWalletId &&
+        walletSelector
+      ) {
+        walletSelector
           .wallet()
           .then((wallet) => setWallet(wallet))
           .catch((error) => console.error(error));
       } else {
+        setWalletAccount(null);
+        setWalletState(null);
         setWallet(null);
       }
     });
@@ -71,5 +79,22 @@ export function useWalletInitializer() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [selector, setAccount, setState, setWallet]);
+  }, [walletSelector, setWalletAccount, setWalletState, setWallet]);
+
+  useEffect(() => {
+    if (!walletAccount?.accountId) return;
+
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        void loadUsdcBalance();
+      }
+    }
+
+    window.addEventListener('visibilitychange', onVisibilityChange);
+    void loadUsdcBalance();
+
+    return () => {
+      window.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [walletAccount?.accountId, loadUsdcBalance]);
 }

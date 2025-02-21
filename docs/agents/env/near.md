@@ -16,7 +16,7 @@ near = env.set_near(account_id, private_key)
 This creates you an Account object from the `py-near` Python library. More details: [py-near Account](https://py-near.readthedocs.io/en/latest/account.html#quick-start)
 
 !!! warning "Important"
-    Ensure that the `account_id `and `private_key` are never exposed in plain text within the agent's code. We recommend using [secrets](../secrets.md) to handle these credentials securely.
+    Ensure that the `account_id `and `private_key` are never exposed in plain text within the agent's code. We recommend using [secrets](../env/variables.md#managing-secrets) to handle these credentials securely.
 
 Parameters:
 - `account_id`: The NEAR account ID (e.g., "example.near") that will act as the account for interactions

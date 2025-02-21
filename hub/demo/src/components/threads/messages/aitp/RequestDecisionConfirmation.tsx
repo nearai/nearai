@@ -7,10 +7,10 @@ import { useThreadsStore } from '~/stores/threads';
 
 import { Message } from './Message';
 import {
-  CURRENT_AITP_DECISION_SCHEMA_URL,
+  CURRENT_AITP_DECISIONS_SCHEMA_URL,
   type decisionSchema,
   type requestDecisionSchema,
-} from './schema/decision';
+} from './schema/decisions';
 
 type Props = {
   content: z.infer<typeof requestDecisionSchema>['request_decision'];
@@ -44,7 +44,7 @@ export const RequestDecisionConfirmation = ({ content }: Props) => {
     if (!addMessage) return;
 
     const result: z.infer<typeof decisionSchema> = {
-      $schema: CURRENT_AITP_DECISION_SCHEMA_URL,
+      $schema: CURRENT_AITP_DECISIONS_SCHEMA_URL,
       decision: {
         request_decision_id: content.id,
         options: [
@@ -80,7 +80,7 @@ export const RequestDecisionConfirmation = ({ content }: Props) => {
         {options.map((option, index) => (
           <Button
             label={option.name || option.id}
-            variant={index === 0 ? 'affirmative' : 'secondary'}
+            variant="affirmative"
             key={option.id + index}
             onClick={() => submitDecision(option)}
           />

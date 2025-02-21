@@ -54,10 +54,9 @@ import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { useThreadsStore } from '~/stores/threads';
 import { trpc } from '~/trpc/TRPCProvider';
+import { WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS } from '~/utils/wallet';
 
 import { ThreadFileModal } from './threads/ThreadFileModal';
-
-type RunView = 'conversation' | 'output' | undefined;
 
 type Props = {
   namespace: string;
@@ -65,6 +64,8 @@ type Props = {
   version: string;
   showLoadingPlaceholder?: boolean;
 };
+
+type RunView = 'conversation' | 'output' | undefined;
 
 type FormSchema = Pick<
   z.infer<typeof chatWithAgentModel>,
@@ -91,10 +92,9 @@ export const AgentRunner = ({
     'showLogs',
     'threadId',
     'view',
-    'transactionHashes',
-    'transactionRequestId',
     'initialUserMessage',
     'mockedAitpMessages',
+    ...WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
   ]);
   const entryEnvironmentVariables = useEntryEnvironmentVariables(
     currentEntry,
@@ -169,6 +169,7 @@ export const AgentRunner = ({
 
   const isRunning =
     _chatMutation.isPending ||
+    thread?.run?.status === 'requires_action' ||
     thread?.run?.status === 'queued' ||
     thread?.run?.status === 'in_progress';
 
@@ -265,7 +266,7 @@ export const AgentRunner = ({
   };
 
   const startNewThread = () => {
-    updateQueryPath({ threadId: undefined });
+    updateQueryPath({ threadId: null });
     form.setValue('new_message', '');
     form.setFocus('new_message');
   };
@@ -291,10 +292,18 @@ export const AgentRunner = ({
   }, [threadQuery.data, threadQuery.error, threadQuery.isFetching]);
 
   useEffect(() => {
+    if (
+      threadQuery.data?.metadata.topic &&
+      thread?.metadata.topic !== threadQuery.data?.metadata.topic
+    ) {
+      // This will trigger once the inferred thread topic generator background task has resolved
+      void utils.hub.threads.refetch();
+    }
+
     if (threadQuery.data) {
       setThread(threadQuery.data);
     }
-  }, [setThread, threadQuery.data]);
+  }, [setThread, threadQuery.data, thread?.metadata.topic, utils]);
 
   useEffect(() => {
     if (threadQuery.error?.data?.code === 'FORBIDDEN') {
@@ -303,7 +312,7 @@ export const AgentRunner = ({
         title: 'Failed to load thread',
         description: `Your account doesn't have permission to access requested thread`,
       });
-      updateQueryPath({ threadId: undefined });
+      updateQueryPath({ threadId: null });
     }
   }, [threadQuery.error, updateQueryPath]);
 
@@ -423,18 +432,21 @@ export const AgentRunner = ({
                 <>
                   <IframeWithBlob
                     html={htmlOutput}
+                    height={currentEntry.details.agent?.html_height}
                     onPostMessage={onIframePostMessage}
                     postMessage={iframePostMessage}
                   />
 
-                  {latestAssistantMessages.length > 0 && (
-                    <ThreadMessages
-                      grow={false}
-                      messages={latestAssistantMessages}
-                      scroll={false}
-                      threadId={threadId}
-                    />
-                  )}
+                  {latestAssistantMessages.length > 0 &&
+                    currentEntry.details.agent
+                      ?.html_show_latest_messages_below && (
+                      <ThreadMessages
+                        grow={false}
+                        messages={latestAssistantMessages}
+                        scroll={false}
+                        threadId={threadId}
+                      />
+                    )}
                 </>
               ) : (
                 <ThreadMessages

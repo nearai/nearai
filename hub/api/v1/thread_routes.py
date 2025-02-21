@@ -7,7 +7,6 @@ from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Pa
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import load_config_file
 from nearai.shared.auth_data import AuthData
-from nearai.shared.client_config import DEFAULT_PROVIDER_MODEL
 from nearai.shared.models import RunMode
 from openai import BaseModel
 from openai.types.beta.assistant_response_format_option_param import AssistantResponseFormatOptionParam
@@ -29,11 +28,12 @@ from hub.api.v1.agent_routes import (
     invoke_agent_via_url,
 )
 from hub.api.v1.auth import AuthToken, get_auth
+from hub.api.v1.completions import Provider
 from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
 from hub.api.v1.models import get_session
-from hub.api.v1.routes import ChatCompletionsRequest, chat_completions, get_models_inner
+from hub.api.v1.routes import DEFAULT_TIMEOUT, get_llm_ai
 from hub.api.v1.sql import SqlClient
 from hub.tasks.scheduler import get_scheduler
 
@@ -112,11 +112,11 @@ SUMMARY_PROMPT = """You are an expert at summarizing conversations in a maximum 
 
 **Example Responses:**
 
-- "Weather in Tokyo"
-- "Trip to Lisbon"
-- "Career change advice"
-- "Book recommendation request"
-- "Tech support for laptop"
+- Weather in Tokyo
+- Trip to Lisbon
+- Career change advice
+- Book recommendation request
+- Tech support for laptop
 """
 
 
@@ -126,9 +126,9 @@ def create_thread(
     auth: AuthToken = Depends(get_auth),
 ) -> Thread:
     thread_model = ThreadModel(
-        messages=thread["messages"] if hasattr(thread, "messages") else [],
-        meta_data=thread["metadata"] if hasattr(thread, "metadata") else None,
-        tool_resources=thread["tool_resources"] if hasattr(thread, "tool_resources") else None,
+        messages=thread["messages"] if "messages" in thread else [],
+        meta_data=thread["metadata"] if "metadata" in thread else None,
+        tool_resources=thread["tool_resources"] if "tool_resources" in thread else None,
         owner_id=auth.account_id,
     )
 
@@ -145,10 +145,18 @@ def _create_thread(thread_model: ThreadModel, auth: AuthToken = Depends(get_auth
 
 @threads_router.get("/threads")
 def list_threads(
+    include_subthreads: Optional[bool] = Query(
+        True, description="Include threads that have a parent_id - defaults to true"
+    ),
     auth: AuthToken = Depends(get_auth),
 ) -> List[Thread]:
     with get_session() as session:
-        threads = session.exec(select(ThreadModel).where(ThreadModel.owner_id == auth.account_id)).all()
+        statement = select(ThreadModel).where(ThreadModel.owner_id == auth.account_id)
+
+        if include_subthreads is not True:
+            statement = statement.where(ThreadModel.parent_id == None)  # noqa: E711
+
+        threads = session.exec(statement).all()
         return [thread.to_openai() for thread in threads]
 
 
@@ -394,10 +402,6 @@ def create_message(
         if thread is None:
             raise HTTPException(status_code=404, detail="Thread not found")
 
-        # TODO(#529): Fix topic generation
-        # if not thread.meta_data or not thread.meta_data.get("topic"):
-        #     background_tasks.add_task(update_thread_topic, thread_id, AuthData(**auth.model_dump()))
-
         if not message.content:
             message.content = " "  # OpenAI format requires content to be non-empty
 
@@ -413,10 +417,15 @@ def create_message(
         logger.info(f"Created message: {message_model}")
         session.add(message_model)
         session.commit()
+
+        if not thread.meta_data or not thread.meta_data.get("topic"):
+            background_tasks.add_task(generate_thread_topic, thread_id)
+
         return message_model.to_openai()
 
 
-def update_thread_topic(thread_id: str, auth: AuthData):
+def generate_thread_topic(thread_id: str):
+    # not much error handling in here – it's OK if this fails
     with get_session() as session:
         thread = session.get(ThreadModel, thread_id)
         if thread is None:
@@ -430,12 +439,6 @@ def update_thread_topic(thread_id: str, auth: AuthData):
             .limit(1)
         ).all()
 
-        # Determine default model
-        models = [m["id"] for m in get_models_inner()]
-        model = DEFAULT_PROVIDER_MODEL
-        if DEFAULT_PROVIDER_MODEL not in models:
-            model = models[0]
-
         messages = [
             {
                 "role": "system",
@@ -443,13 +446,9 @@ def update_thread_topic(thread_id: str, auth: AuthData):
             }
         ] + [message.to_completions_model() for message in messages]
 
-        completion = chat_completions(
-            db=SqlClient(),
-            request=ChatCompletionsRequest(
-                messages=messages,
-                model=model,
-            ),
-            auth=AuthToken(**auth.model_dump()),
+        llm = get_llm_ai(Provider.FIREWORKS.value)
+        resp = llm.chat.completions.create(
+            messages=messages, model="accounts/fireworks/models/qwen2p5-72b-instruct", timeout=DEFAULT_TIMEOUT
         )
 
     with get_session() as session:
@@ -461,7 +460,7 @@ def update_thread_topic(thread_id: str, auth: AuthData):
         if thread.meta_data is None:
             thread.meta_data = {}
 
-        thread.meta_data["topic"] = completion.choices[0].message.content
+        thread.meta_data["topic"] = resp.choices[0].message.content
         flag_modified(thread, "meta_data")  # SQLAlchemy is not detecting changes in the dict, forcing a commit.
         session.commit()
 
@@ -737,6 +736,9 @@ def _run_agent(
 
         agent_entry = get_agent_entry(run_model.assistant_id, data_source)
 
+        if not agent_entry:
+            raise HTTPException(status_code=404, detail=f"Agent '{agent_entry}' not found in the registry.")
+
         specific_agent_version_to_run = (
             f"{agent_entry.namespace}/{agent_entry.name}/{agent_entry.version}"
             if agent_entry
@@ -783,9 +785,7 @@ def _run_agent(
         }
         runner = _runner_for_env()
 
-        framework = "base"
-        if agent_entry and "agent" in agent_entry.details:
-            framework = agent_entry.details["agent"].get("framework", "base")
+        framework = agent_entry.get_framework()
 
         run_model.status = "in_progress"
         run_model.started_at = datetime.now()

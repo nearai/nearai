@@ -22,17 +22,18 @@
 .productGrid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-  gap: var(--gap-s);
+  margin: calc(var(--gap-s) * -1);
+  gap: var(--gap-m);
 
   @media (max-width: 2100px) {
     grid-template-columns: 1fr 1fr 1fr 1fr;
   }
 
-  @media (max-width: 1550px) {
+  @media (max-width: 1600px) {
     grid-template-columns: 1fr 1fr 1fr;
   }
 
-  @media (max-width: 1250px) {
+  @media (max-width: 1300px) {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -40,7 +41,7 @@
     grid-template-columns: 1fr 1fr 1fr;
   }
 
-  @media (max-width: 800px) {
+  @media (max-width: 750px) {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -51,25 +52,40 @@
 
 .productImage {
   display: block;
-  margin-top: -1rem;
-  margin-inline: -1rem;
   height: 10rem;
   flex-shrink: 0;
   background-color: #fff;
   background-position: center center;
   background-size: contain;
   background-repeat: no-repeat;
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
+  border-radius: 5px;
   cursor: zoom-in;
 }
 
 .productCard {
-  border: 1px solid var(--sand-5) !important;
+  --box-shadow-border-color: var(--sand-6);
+  --box-shadow-color: rgba(255, 255, 255, 0.075);
+  :global(.light) & {
+    --box-shadow-color: rgba(0, 0, 0, 0.075);
+  }
+
+  padding: var(--gap-s);
+  gap: var(--gap-m);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: box-shadow var(--transition-speed);
+  box-shadow:
+    0 0 0 0px var(--box-shadow-border-color),
+    0 0 0rem var(--box-shadow-color);
 
   &:hover,
   &:focus-within {
-    border-color: var(--sand-8) !important;
+    z-index: 5;
+    box-shadow:
+      0 0 0 1px var(--box-shadow-border-color),
+      0 0 2rem var(--box-shadow-color);
   }
 }
 
@@ -81,7 +97,7 @@
 
 .formSections {
   > div:not(:last-child) {
-    border-bottom: 1px solid var(--sand-5);
+    border-bottom: 1px solid var(--sand-6);
     padding-bottom: var(--gap-l);
   }
 }

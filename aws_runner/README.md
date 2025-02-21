@@ -11,7 +11,7 @@ __Docker must be run from the root of the repository so the Dockerfile can pull 
 
 Note the dash before the framework name when passing a framework. The deploy script adds the dash but here it must be added manually.
 
-Base framework `docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-base -t nearai-runner:test .`
+Minimal framework `docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-minimal -t nearai-runner:test .`
 
 Typescript framework `docker build -f aws_runner/ts_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-ts -t nearai-runner:test .`
 

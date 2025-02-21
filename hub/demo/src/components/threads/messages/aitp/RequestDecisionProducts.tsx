@@ -2,7 +2,6 @@
 
 import {
   Button,
-  Card,
   Dialog,
   Dropdown,
   Flex,
@@ -11,7 +10,7 @@ import {
   Tooltip,
 } from '@near-pagoda/ui';
 import { formatDollar } from '@near-pagoda/ui/utils';
-import { Star, StarHalf } from '@phosphor-icons/react';
+import { ShoppingCart, Star, StarHalf } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';
 
@@ -20,10 +19,10 @@ import { getPrimaryDomainFromUrl } from '~/utils/url';
 
 import { Message } from './Message';
 import {
-  CURRENT_AITP_DECISION_SCHEMA_URL,
+  CURRENT_AITP_DECISIONS_SCHEMA_URL,
   type decisionSchema,
   type requestDecisionSchema,
-} from './schema/decision';
+} from './schema/decisions';
 import s from './styles.module.scss';
 
 type Props = {
@@ -108,7 +107,7 @@ const Product = ({ content, ...props }: Product) => {
     if (!addMessage) return;
 
     const result: z.infer<typeof decisionSchema> = {
-      $schema: CURRENT_AITP_DECISION_SCHEMA_URL,
+      $schema: CURRENT_AITP_DECISIONS_SCHEMA_URL,
       decision: {
         request_decision_id: content.id,
         options: [
@@ -127,7 +126,7 @@ const Product = ({ content, ...props }: Product) => {
   };
 
   return (
-    <Card background="sand-0" border="sand-0" className={s.productCard}>
+    <div className={s.productCard}>
       {option.image_url && (
         <div
           className={s.productImage}
@@ -246,9 +245,9 @@ const Product = ({ content, ...props }: Product) => {
         </Flex>
 
         <Button
-          label="Add to cart"
+          iconLeft={<ShoppingCart />}
+          label="Buy Now"
           variant="affirmative"
-          size="small"
           onClick={addProductToCart}
         />
       </Flex>
@@ -271,7 +270,7 @@ const Product = ({ content, ...props }: Product) => {
           />
         </Dialog.Content>
       </Dialog.Root>
-    </Card>
+    </div>
   );
 };
 

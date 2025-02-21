@@ -2,6 +2,10 @@ import { parseStringOrNumber } from '@near-pagoda/ui/utils';
 import path from 'path';
 import { z } from 'zod';
 
+import {
+  AITP_CAPABILITIES,
+  AITP_CLIENT_ID,
+} from '~/components/threads/messages/aitp/schema';
 import { env } from '~/env';
 import {
   chatWithAgentModel,
@@ -519,7 +523,17 @@ export const hubRouter = createTRPCRouter({
               Authorization: ctx.authorization,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({}),
+            body: JSON.stringify({
+              metadata: {
+                actors: JSON.stringify([
+                  {
+                    id: ctx.signature.account_id,
+                    client_id: AITP_CLIENT_ID,
+                    capabilities: AITP_CAPABILITIES,
+                  },
+                ]),
+              },
+            }),
           });
 
       const message = await fetchWithZod(
@@ -581,7 +595,7 @@ export const hubRouter = createTRPCRouter({
     }),
 
   threads: protectedProcedure.query(async ({ ctx }) => {
-    const url = `${env.ROUTER_URL}/threads`;
+    const url = `${env.ROUTER_URL}/threads?include_subthreads=false`;
 
     const threads = await fetchWithZod(threadsModel, url, {
       headers: {

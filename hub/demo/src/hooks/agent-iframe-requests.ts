@@ -23,6 +23,12 @@ import { useNearStore } from '~/stores/near';
 import { useThreadsStore } from '~/stores/threads';
 import { useWalletStore } from '~/stores/wallet';
 import { trpc } from '~/trpc/TRPCProvider';
+import {
+  generateWalletTransactionCallbackUrl,
+  UNSET_WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
+  WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
+  type WalletTransactionRequestOrigin,
+} from '~/utils/wallet';
 
 import { useQueryParams } from './url';
 
@@ -45,8 +51,7 @@ export function useAgentRequestsWithIframe(
     'account_id',
     'threadId',
     'public_key',
-    'transactionHashes',
-    'transactionRequestId',
+    ...WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
   ]);
   const selector = useWalletStore((store) => store.selector);
   const wallet = useWalletStore((store) => store.wallet);
@@ -79,10 +84,9 @@ export function useAgentRequestsWithIframe(
 
       updateQueryPath(
         {
-          account_id: undefined,
-          public_key: undefined,
-          transactionHashes: undefined,
-          transactionRequestId: undefined,
+          account_id: null,
+          public_key: null,
+          ...UNSET_WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
         },
         'replace',
         false,
@@ -152,17 +156,12 @@ export function useAgentRequestsWithIframe(
         } else if (action === 'near_send_transactions') {
           if (wallet) {
             try {
-              const callbackUrl = new URL(window.location.href);
-              if (input.requestId) {
-                callbackUrl.searchParams.set(
-                  'transactionRequestId',
-                  input.requestId,
-                );
-              }
-
               const result = await wallet.signAndSendTransactions({
                 transactions: input.transactions,
-                callbackUrl: callbackUrl.toString(),
+                callbackUrl: generateWalletTransactionCallbackUrl(
+                  'iframe',
+                  input.requestId,
+                ),
               });
 
               if (result) {
@@ -307,7 +306,11 @@ export function useAgentRequestsWithIframe(
   }, [currentEntry, wallet]);
 
   useEffect(() => {
-    if (queryParams.transactionHashes) {
+    if (
+      queryParams.transactionHashes &&
+      queryParams.transactionRequestOrigin ===
+        ('iframe' satisfies WalletTransactionRequestOrigin)
+    ) {
       handleWalletTransactionResponse({
         result: queryParams.transactionHashes,
         requestId: queryParams.transactionRequestId,

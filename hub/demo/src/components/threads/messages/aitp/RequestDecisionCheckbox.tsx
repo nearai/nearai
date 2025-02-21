@@ -18,10 +18,10 @@ import { stringToHtmlAttribute } from '~/utils/string';
 import { useThreadMessageContent } from '../../ThreadMessageContentProvider';
 import { Message } from './Message';
 import {
-  CURRENT_AITP_DECISION_SCHEMA_URL,
+  CURRENT_AITP_DECISIONS_SCHEMA_URL,
   type decisionSchema,
   type requestDecisionSchema,
-} from './schema/decision';
+} from './schema/decisions';
 import s from './styles.module.scss';
 
 type Props = {
@@ -48,7 +48,7 @@ export const RequestDecisionCheckbox = ({ content }: Props) => {
     if (!addMessage) return;
 
     const result: z.infer<typeof decisionSchema> = {
-      $schema: CURRENT_AITP_DECISION_SCHEMA_URL,
+      $schema: CURRENT_AITP_DECISIONS_SCHEMA_URL,
       decision: {
         request_decision_id: content.id,
         options: [],

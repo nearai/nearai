@@ -1,3 +1,4 @@
+# ex web-agent framework
 base58 == 2.1.1
 pynacl >= 1.5.0
 pytz == 2024.2
