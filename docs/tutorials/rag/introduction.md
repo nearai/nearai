@@ -13,10 +13,13 @@ In this tutorial, you'll learn how to build a RAG-powered agent that accurately 
 
 ## What You Will Need
 
-To follow this tutorial you will need two things:
+To follow this tutorial you will need:
 
-1. A `Hello AI` agent, which you can create by following the [Agents Quickstart Tutorial](../../agents/quickstart.md) 
-2. The `NEAR Docs` dataset, which you can download from the [official docs repo](https://github.com/near/docs/tree/master/docs)
+1. A `Hello AI` agent - You can create one by following the [Agents Quickstart Tutorial](../../agents/quickstart.md) (estimated time: 5 minutes)
+2. The `NEAR Docs` dataset - Download it from the [official docs repo](https://github.com/near/docs/tree/master/docs). You'll only need the markdown (`.md`) files
+
+!!!info
+    Make sure you have completed the [Agents Quickstart Tutorial](../../agents/quickstart.md) first, as this tutorial builds upon those concepts.
 
 ---
 
@@ -24,8 +27,8 @@ To follow this tutorial you will need two things:
 
 This tutorial is divided in the following sections:
 
-- [The problem](./problem.md): A brief example on how common AI models hallucinate when they don't have the necessary data
+- [The problem](./problem.md): A brief example on how common AI models hallucinate when they don't have the relevant data
 - [Vector Stores](./vector_store.md): An introduction to vector stores and how to create them
 - [RAG Agent](./agent.md): We create an agent that uses the vector store to answer questions about NEAR Protocol tools
-- [Chunking](./chunking.md): Where we dive deeper into how vector stores store documents
+- [Chunking](./chunking.md): Dive deeper into how vector stores store documents
 - [Embeddings](./embeddings.md): We show how one can manually create embeddings for a document
