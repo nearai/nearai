@@ -33,6 +33,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { type SubmitHandler, useForm } from 'react-hook-form';
 import { type z } from 'zod';
 
 import { AgentPermissionsModal } from '~/components/AgentPermissionsModal';
