@@ -451,9 +451,7 @@ export const AgentRunner = ({
                 <ThreadMessages
                   messages={messages}
                   threadId={threadId}
-                  welcomeMessage={
-                    <AgentWelcome details={currentEntry.details} />
-                  }
+                  welcomeMessage={<AgentWelcome currentEntry={currentEntry} />}
                 />
               )}
             </>

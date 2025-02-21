@@ -1,37 +1,56 @@
 'use client';
 
-import { Container, Flex, Text } from '@near-pagoda/ui';
+import { Flex, ImageIcon, Text } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
+import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
 
 import { Markdown } from './lib/Markdown';
 
 type Props = {
-  details: z.infer<typeof entryModel>['details'];
+  currentEntry: z.infer<typeof entryModel>;
 };
 
-export const AgentWelcome = ({ details }: Props) => {
-  const welcome = details.agent?.welcome;
+export const AgentWelcome = ({ currentEntry }: Props) => {
+  const welcome = currentEntry.details.agent?.welcome;
 
-  if (!welcome?.title || !welcome?.description) return null;
+  if (!welcome) return null;
 
   return (
-    <Container size="s" style={{ margin: 'auto' }}>
-      <Flex
-        direction="column"
-        gap="m"
-        style={{
-          borderImageSource:
-            'linear-gradient(to bottom, var(--green-9), var(--violet-9))',
-          borderImageSlice: 1,
-          borderLeft: '2px solid',
-          paddingLeft: 'var(--gap-l)',
-        }}
-      >
-        {welcome.title && <Text size="text-l">{welcome.title}</Text>}
-        <Markdown content={`How can I help you today?`} />
+    <Flex
+      direction="column"
+      gap="m"
+      style={{
+        marginTop: 'auto',
+      }}
+    >
+      <Flex align="center" gap="m">
+        <ImageIcon
+          size="l"
+          src={welcome.icon || currentEntry.details.icon}
+          alt={currentEntry.name}
+          fallbackIcon={ENTRY_CATEGORY_LABELS.agent.icon}
+        />
+        <Text size="text-l">{welcome.title || currentEntry.name}</Text>
       </Flex>
-    </Container>
+
+      {welcome.description && (
+        <Flex
+          direction="column"
+          gap="m"
+          style={{
+            borderImageSource:
+              'linear-gradient(to bottom, var(--green-9), var(--violet-9))',
+            borderImageSlice: 1,
+            borderLeft: '2px solid',
+            paddingLeft: 'calc((var(--icon-size-l) / 2) + var(--gap-m))',
+            marginLeft: 'calc(var(--icon-size-l) / 2)',
+          }}
+        >
+          <Markdown content={welcome.description} />
+        </Flex>
+      )}
+    </Flex>
   );
 };
