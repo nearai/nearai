@@ -19,16 +19,30 @@ For example, if a user asks "How do I deploy a smart contract?", the vector stor
 
 ## How Vector Stores Work
 
-Vector Stores use AI models to convert documents into low-dimensional numerical representations. For example, the [Nomic v1.5](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5) model represents this whole [`cli.md`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md) as the vector  `[0.01025390625, 0.048309326171875, -0.166015625, ... , -0.004741668701171875, -0.048553466796875]`
+Vector Stores use AI models to convert text documents into low-dimensional numerical representaitons that computers can easily process and compare. These vectors are like "fingerprints" of the documents - each one unique, but much smaller than the original text.
 
-!!!tip
-    How these representations are generated is a complex topic that exceeds the scope of this tutorial. For us, it suffices to know that such models already exist and are available for us to use
+For example, the [Nomic v1.5](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5) model can take our entire [`cli.md`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md) documentation file and represent it as a compact vector:
 
-Ideally, documents that are semantically similar will have similar numerical representation, and thus end up relatively close within this vectorial space.
+```
+[0.01025390625, 0.048309326171875, -0.166015625, ... , -0.004741668701171875, -0.048553466796875]
+```
+
+Each number in this vector captures some aspect of the document's meaning. Documents with similar meanings will have similar vectors, appearing "closer" to each other in the vector space - like clusters of related topics.
+
+This is powerful because it means we can convert user questions into vectors too - allowing us to find relevant documentation by looking for documents that appear "closest" to the user's question.
+
+When a user asks a question, we:
+
+1. Convert their question into a vector
+2. Compare it with all our stored document vectors
+3. Find the documents whose vectors are closest to the question's vector
+
+This means we can automatically find the most relevant documentation to answer any question.
 
 ![alt text](vector-space.png)
 
-More importantly, user queries can directly be converted into the same vectorial space, allowing us to find the documents needed to answer it by looking at their relative distances.
+!!!tip
+    How these representations are generated is a complex topic that exceeds the scope of this tutorial. For us, it suffices to know that such models already exist and are available for us to use.
 
 ---
 
