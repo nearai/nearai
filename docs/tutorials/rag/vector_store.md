@@ -48,9 +48,15 @@ This means we can automatically find the most relevant documentation to answer a
 
 ## Creating a Vector Store
 
-Let's create a vector store using the official documentation, which consists of a set of markdown files.
+Let's create a vector store using [the official documentation](../../vector-stores.md), which consists of a set of markdown files.
 
-Creating a vector store in NEAR AI consist in 2 main steps: **uploading the files** to NEAR AI, and **assigning them** to a vector store. Here is the full code:
+Creating a vector store in NEAR AI consist in 2 main steps:
+
+ 1.) **uploading the files** to NEAR AI
+ 
+ 2.) **assigning them** to a vector store. 
+ 
+ Here is the entire example code:
 
 ```python
 import json
@@ -99,7 +105,7 @@ print(vs.id)
 In the code above we are first instantiating an OpenAI compatible client
 
 !!! note
-    While we are using a OpenAI client, the files are being uploaded to the NEAR AI platform, not OpenAI
+    While we are using a OpenAI client, the files are being uploaded to the NEAR AI platform, not OpenAI.
 
 ```python 
 # Load NEAR AI Hub configuration
