@@ -4,7 +4,7 @@ from typing import Optional
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from dstack_sdk import TappdClient  # type: ignore
+from dstack_sdk import TappdClient, TdxQuoteResponse  # type: ignore
 
 
 class Quote:
@@ -39,9 +39,8 @@ class Quote:
         self.public_key = self.public_key_bytes.hex()
         self.signing_address = "0x" + hashlib.sha3_256(self.public_key_bytes).digest()[-20:].hex()
 
-    def get_quote(self, message: Optional[str] = None) -> str:
+    def get_quote(self, message: Optional[str] = None) -> TdxQuoteResponse:
         """Get a quote with a message."""
-        # Initialize the client
         client = TappdClient()
 
         if message is None:
@@ -51,7 +50,7 @@ class Quote:
         result = client.tdx_quote(message)
         quote = bytes.fromhex(result.quote)
         self.intel_quote = base64.b64encode(quote).decode("utf-8")
-        return result.quote
+        return result
 
     def sign(self, content: str):
         """Sign content using ed25519."""

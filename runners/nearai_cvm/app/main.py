@@ -3,6 +3,7 @@ import json
 import logging
 from typing import Dict, Optional
 
+from dstack_sdk import TdxQuoteResponse  # type: ignore
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -14,7 +15,7 @@ from nearai.shared.client_config import ClientConfig  # type: ignore
 from nearai.shared.inference_client import InferenceClient  # type: ignore
 from nearai.shared.near.sign import verify_signed_message  # type: ignore
 from pydantic import BaseModel
-from quote.quote import Quote
+from quote.quote import Quote  # type: ignore
 
 bearer = HTTPBearer(auto_error=False)
 app = FastAPI()
@@ -206,16 +207,15 @@ class QuoteResponse(BaseModel):
     quote: str
 
 
-@app.get("/quote", response_model=QuoteResponse)
+@app.get("/quote", response_model=TdxQuoteResponse)
 def get_quote(app_state: AppState = Depends(get_app_state)):
     if app_state.quote is None:
         app_state.quote = Quote()
     cmd = """echo | openssl s_client -connect localhost:443 2>/dev/null |\
      openssl x509 -pubkey -noout -outform DER | openssl dgst -sha256"""
     ssl_pub_key = subprocess.check_output(cmd, shell=True).decode("utf-8").split("= ")[1].strip()
-    print("ssl_pub_key", ssl_pub_key)
     quote = app_state.quote.get_quote(ssl_pub_key)
-    return QuoteResponse(quote=quote)
+    return quote
 
 
 if __name__ == "__main__":

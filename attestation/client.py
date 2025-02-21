@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 
 import requests
 from dcap_qvl import verify_quote  # type: ignore
+from dstack_sdk import TdxQuoteResponse  # type: ignore
 from nearai.shared.auth_data import AuthData
 from runners.nearai_cvm.app.main import AssignRequest, IsAssignedResp, QuoteResponse, RunRequest
 
@@ -49,7 +50,7 @@ class CvmClient:
             self._attest()
 
         url = f"{self.url}/{path.lstrip('/')}"
-        response = requests.request(method, url, headers=self.headers, verify=self.cert_path, **kwargs)
+        response = requests.request(method, url, headers=self.headers, verify=False, **kwargs)
         response.raise_for_status()
         return response
 
@@ -59,9 +60,11 @@ class CvmClient:
             return
 
         # Get quote from server
-        response = requests.get(f"{self.url}/quote", headers=self.headers, verify=self.cert_path)
+        response = requests.get(f"{self.url}/quote", headers=self.headers, verify=False)
+        print(response.text)
         response.raise_for_status()
-        quote = QuoteResponse(**response.json())
+        quote = TdxQuoteResponse(**response.json())
+        print(quote)
 
         # Get certificate's public key hash
         cmd = f"""openssl x509 -in {self.cert_path} -pubkey -noout -outform DER | openssl dgst -sha256"""
