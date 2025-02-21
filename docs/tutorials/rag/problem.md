@@ -1,4 +1,4 @@
-Let's start by understanding the problem that RAG solves. For this, we will create an agent that uses the `llama` model, and ask it questions about NEAR Protocol.
+Let's start by understanding the problem that RAG solves. For this, we will create an agent that uses the open-source `llama` model, and ask it questions about NEAR Protocol.
 
 Then, we will enhance the agent by giving it access to the actual documentation, demonstrating how this dramatically improves the accuracy of its responses.
 
@@ -6,7 +6,7 @@ Then, we will enhance the agent by giving it access to the actual documentation,
 
 ## An Agent that Hallucinates
 
-Let's create an agent that uses the `llama` model, and ask it questions about NEAR Protocol. For this, we will run the command `nearai agent create`, using the following parameters:
+Let's create an agent that uses the open-source `llama` model, and ask it questions about NEAR Protocol. For this, we will run the command `nearai agent create`, using the following parameters:
 
 ```
 Agent Name: docs-ai-tutorial
@@ -14,14 +14,22 @@ Description: Answer questions about NEAR Protocol
 Instructions: You are a helpful assistant that answers questions about NEAR Protocol
 ```
 
-??? warning "I don't have `nearai` installed"
-    If you don't have the NEAR CLI installed, please check our [Agent Quickstart Tutorial](../../agents/quickstart.md) to learn how to do so.
+??? warning "NEAR CLI not installed?"
+    If you haven't installed the NEAR CLI yet, follow our [Agent Quickstart Tutorial](../../agents/quickstart.md) for installation instructions.
 
-Then, lets invoke the agent and make it a couple questions:
+Then, lets invoke the agent and ask it a few questions:
 
 ```
-nearai agent interactive gagdiez.near/docs-ai-tutorial/0.0.1 --local
+nearai agent interactive <PATH-TO-YOUR-AGENT> --local
 ```
+
+If you don't remember the path to your agent, you can list all your agents with:
+
+```
+nearai agent interactive --local
+```
+
+
 
 <div class="grid" markdown>
 
