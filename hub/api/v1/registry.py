@@ -451,7 +451,7 @@ def list_entries_inner(
             )
             SELECT
                 registry.id, registry.namespace, registry.name, registry.version,
-                registry.category, registry.description, registry.details, registry.time,
+                registry.category, registry.description, HEX(registry.details) as details, registry.time,
                 CountedStars.num_stars, CountedStars.starred_by_pov, CountedForks.num_forks,
                 Fork.fork_from_namespace, Fork.fork_from_name
             FROM registry_entry registry
@@ -545,7 +545,7 @@ def list_entries_inner(
                     )
 
                     SELECT registry.id, registry.namespace, registry.name, registry.version,
-                           registry.category, registry.description, registry.details, registry.time,
+                           registry.category, registry.description, HEX(registry.details) as details, registry.time,
                            ranked.num_stars, ranked.starred_by_pov, num_forks, fork_from_namespace,
                            fork_from_name
                     FROM RankedRegistry ranked
@@ -580,6 +580,17 @@ def list_entries_inner(
             if fork_from_namespace and fork_from_name:
                 fork_of = ForkOf(namespace=fork_from_namespace, name=fork_from_name)
 
+            # Handle details decoding with error handling
+            if details:
+                # Convert hex string back to bytes and decode
+                try:
+                    details_bytes = bytes.fromhex(details)
+                    details_str = details_bytes.decode("utf-8", errors="ignore")
+                except (ValueError, AttributeError):
+                    details_str = "{}"
+            else:
+                details_str = "{}"
+
             entries_info.append(
                 EntryInformation(
                     id=id,
@@ -589,7 +600,7 @@ def list_entries_inner(
                     updated=timestamp.replace(tzinfo=datetime.timezone.utc),
                     category=category_,
                     description=description,
-                    details=json.loads(details),
+                    details=json.loads(details_str),
                     tags=[],
                     num_forks=num_forks or 0,
                     num_stars=num_stars or 0,
