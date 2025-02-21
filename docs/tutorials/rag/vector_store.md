@@ -1,6 +1,12 @@
-Vector Stores are a special kind of database that stores documents and allows to retrieve them through natural language. 
+Vector Stores are a special kind of database that stores documents and allows retrieving them through natural language. 
 
-In our case, we will store all documentation from NEAR AI, and then retrieve the most relevant documents to answer a query by searching the documents with the query itself.
+In our case, we will store all NEAR documentation in a vector store, which will allow us to:
+
+1. Convert each document into a searchable format
+2. Find relevant documentation when given a natural language query
+3. Use these relevant documents to provide accurate answers
+
+For example, if a user asks "How do I deploy a smart contract?", the vector store will help us find and retrieve the most relevant deployment-related documentation to answer their question.
 
 !!! info
     The Vector Store is built separately from the agent, and can be used in multiple places
