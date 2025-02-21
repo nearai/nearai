@@ -405,7 +405,8 @@ export default function HomePage() {
               {
                 icon: <Code weight="duotone" />,
                 title: 'TypeScript Agents',
-                description: 'Learn how to develop TypeScript agents, including Coinbase functions',
+                description:
+                  'Learn how to develop TypeScript agents, including Coinbase functions',
                 label: 'View Code',
                 href: 'https://github.com/nearai/nearai/tree/main/ts_runner/ts_agent_runner',
                 target: '_blank',
@@ -413,7 +414,8 @@ export default function HomePage() {
               {
                 icon: <Brain weight="duotone" />,
                 title: 'LangChain and Coinbase Python Agents',
-                description: 'Utilize LangChain, LangGraph, and Coinbase AgentKit Python functions on NEAR AI',
+                description:
+                  'Utilize LangChain, LangGraph, and Coinbase AgentKit Python functions on NEAR AI',
                 label: 'Explore',
                 href: 'https://github.com/nearai/nearai_langchain',
                 target: '_blank',
@@ -421,7 +423,8 @@ export default function HomePage() {
               {
                 icon: <ShieldCheck weight="duotone" />,
                 title: 'Trusted Execution Environment',
-                description: 'A secure environment for running LLM workloads with guaranteed privacy and security',
+                description:
+                  'A secure environment for running LLM workloads with guaranteed privacy and security',
                 label: 'Learn More',
                 href: 'https://github.com/nearai/private-ml-sdk',
                 target: '_blank',
