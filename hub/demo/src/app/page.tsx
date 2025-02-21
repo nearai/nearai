@@ -33,6 +33,10 @@ import {
   TwitterLogo,
   UserCircle,
   XLogo,
+  Code,
+  Brain,
+  ShieldCheck,
+  Handshake as HandshakeIcon,
 } from '@phosphor-icons/react';
 import { useMemo } from 'react';
 import { type z } from 'zod';
@@ -395,6 +399,39 @@ export default function HomePage() {
                 description: 'Connect with other researchers',
                 label: 'Join',
                 href: 'https://t.me/nearaialpha',
+                target: '_blank',
+              },
+              // Second row
+              {
+                icon: <Code weight="duotone" />,
+                title: 'TypeScript Agents',
+                description: 'Learn how to develop TypeScript agents, including Coinbase functions',
+                label: 'View Code',
+                href: 'https://github.com/nearai/nearai/tree/main/ts_runner/ts_agent_runner',
+                target: '_blank',
+              },
+              {
+                icon: <Brain weight="duotone" />,
+                title: 'LangChain and Coinbase Python Agents',
+                description: 'Utilize LangChain, LangGraph, and Coinbase AgentKit Python functions on NEAR AI',
+                label: 'Explore',
+                href: 'https://github.com/nearai/nearai_langchain',
+                target: '_blank',
+              },
+              {
+                icon: <ShieldCheck weight="duotone" />,
+                title: 'Trusted Execution Environment',
+                description: 'A secure environment for running LLM workloads with guaranteed privacy and security',
+                label: 'Learn More',
+                href: 'https://github.com/nearai/private-ml-sdk',
+                target: '_blank',
+              },
+              {
+                icon: <HandshakeIcon weight="duotone" />,
+                title: 'AITP',
+                description: 'Explore our protocol for agent interactions',
+                label: 'View Spec',
+                href: 'https://github.com/nearai/aitp/tree/main',
                 target: '_blank',
               },
             ].map((resource, index) => (
