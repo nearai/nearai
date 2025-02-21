@@ -661,27 +661,6 @@ export const AgentRunner = ({
                   entry={currentEntry}
                   excludeQueryParamKeys={Object.keys(queryParams)}
                 />
-
-                <Flex direction="column" gap="m">
-                  <Text size="text-xs" weight={600} uppercase>
-                    Parameters
-                  </Text>
-
-                  <Controller
-                    control={form.control}
-                    name="max_iterations"
-                    render={({ field }) => (
-                      <Slider
-                        label="Max Iterations"
-                        max={20}
-                        min={1}
-                        step={1}
-                        assistive="The maximum number of iterations to run the agent for, usually 1. Each iteration will loop back through your agent allowing it to act and reflect on LLM results."
-                        {...field}
-                      />
-                    )}
-                  />
-                </Flex>
               </>
             )}
           </Flex>
