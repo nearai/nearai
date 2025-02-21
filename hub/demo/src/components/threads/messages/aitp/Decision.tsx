@@ -8,7 +8,7 @@ import { useQueryParams } from '~/hooks/url';
 import { useThreadMessageContentFilter } from '~/stores/threads';
 
 import { Message } from './Message';
-import { type decisionSchema, requestDecisionSchema } from './schema/decision';
+import { type decisionSchema, requestDecisionSchema } from './schema/decisions';
 
 type Props = {
   content: z.infer<typeof decisionSchema>['decision'];

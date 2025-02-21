@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 import { baseSchema } from './base';
-import { nestedQuoteSchema } from './payment';
+import { nestedQuoteSchema } from './payments';
 
-export const CURRENT_AITP_DECISION_SCHEMA_URL =
-  'https://aitp.dev/v1/decision/schema.json';
+export const CURRENT_AITP_DECISIONS_SCHEMA_URL =
+  'https://aitp.dev/v1/decisions/schema.json';
 
 const requestDecisionOptionSchema = z
   .object({

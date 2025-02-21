@@ -42,10 +42,10 @@ import {
 
 import { Message } from './Message';
 import {
-  CURRENT_AITP_PAYMENT_SCHEMA_URL,
+  CURRENT_AITP_PAYMENTS_SCHEMA_URL,
   paymentAuthorizationSchema,
   type quoteSchema,
-} from './schema/payment';
+} from './schema/payments';
 
 type Props = {
   content: z.infer<typeof quoteSchema>['quote'];
@@ -103,7 +103,7 @@ export const Quote = ({ content }: Props) => {
       lastSuccessfulTransactionIdRef.current = transactionId;
 
       const aitpResult: z.infer<typeof paymentAuthorizationSchema> = {
-        $schema: CURRENT_AITP_PAYMENT_SCHEMA_URL,
+        $schema: CURRENT_AITP_PAYMENTS_SCHEMA_URL,
         payment_authorization: {
           quote_id: content.quote_id,
           result: 'success',

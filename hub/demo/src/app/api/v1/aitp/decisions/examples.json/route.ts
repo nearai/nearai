@@ -1,9 +1,9 @@
 import { type z } from 'zod';
 
 import {
-  CURRENT_AITP_DECISION_SCHEMA_URL,
+  CURRENT_AITP_DECISIONS_SCHEMA_URL,
   type decisionSchema,
-} from '~/components/threads/messages/aitp/schema/decision';
+} from '~/components/threads/messages/aitp/schema/decisions';
 import {
   mockRequestDecisionCheckbox,
   mockRequestDecisionConfirmation,
@@ -13,7 +13,7 @@ import {
 
 export async function GET() {
   const decision: z.infer<typeof decisionSchema> = {
-    $schema: CURRENT_AITP_DECISION_SCHEMA_URL,
+    $schema: CURRENT_AITP_DECISIONS_SCHEMA_URL,
     decision: {
       request_decision_id: crypto.randomUUID(),
       options: [
@@ -30,7 +30,7 @@ export async function GET() {
   };
 
   const decision_products: z.infer<typeof decisionSchema> = {
-    $schema: CURRENT_AITP_DECISION_SCHEMA_URL,
+    $schema: CURRENT_AITP_DECISIONS_SCHEMA_URL,
     decision: {
       request_decision_id: crypto.randomUUID(),
       options: [

@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 import { baseSchema } from './base';
 
-export const CURRENT_AITP_PAYMENT_SCHEMA_URL =
-  'https://aitp.dev/v1/payment/schema.json';
+export const CURRENT_AITP_PAYMENTS_SCHEMA_URL =
+  'https://aitp.dev/v1/payments/schema.json';
 
 export const nestedQuoteSchema = z
   .object({

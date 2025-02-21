@@ -14,7 +14,7 @@ import { Fragment } from 'react';
 import { type z } from 'zod';
 
 import { Message } from './Message';
-import { type paymentAuthorizationSchema } from './schema/payment';
+import { type paymentAuthorizationSchema } from './schema/payments';
 
 type Props = {
   content: z.infer<typeof paymentAuthorizationSchema>['payment_authorization'];

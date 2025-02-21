@@ -5,7 +5,7 @@ import { Wallet } from '@phosphor-icons/react';
 import { type z } from 'zod';
 
 import { Message } from './Message';
-import { type paymentResultSchema } from './schema/payment';
+import { type paymentResultSchema } from './schema/payments';
 
 type Props = {
   content: z.infer<typeof paymentResultSchema>['payment_result'];

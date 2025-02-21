@@ -8,23 +8,23 @@ import {
   requestDataSchema,
 } from './data';
 import {
-  CURRENT_AITP_DECISION_SCHEMA_URL,
+  CURRENT_AITP_DECISIONS_SCHEMA_URL,
   decisionSchema,
   requestDecisionSchema,
-} from './decision';
+} from './decisions';
 import {
-  CURRENT_AITP_PAYMENT_SCHEMA_URL,
+  CURRENT_AITP_PAYMENTS_SCHEMA_URL,
   paymentAuthorizationSchema,
   paymentResultSchema,
   quoteSchema,
-} from './payment';
+} from './payments';
 
 export const AITP_CLIENT_ID = 'app.near.ai';
 
 export const AITP_CAPABILITIES = [
   CURRENT_AITP_DATA_SCHEMA_URL,
-  CURRENT_AITP_DECISION_SCHEMA_URL,
-  CURRENT_AITP_PAYMENT_SCHEMA_URL,
+  CURRENT_AITP_DECISIONS_SCHEMA_URL,
+  CURRENT_AITP_PAYMENTS_SCHEMA_URL,
 ] as const;
 
 /*
