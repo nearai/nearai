@@ -405,7 +405,7 @@ export default function HomePage() {
                 icon: <Code weight="duotone" />,
                 title: 'TypeScript Agents',
                 description:
-                  'Learn how to develop TypeScript agents, including Coinbase functions',
+                  'Learn how to develop TypeScript agents that can utilize a variety of packages, including Coinbase AgentKit',
                 label: 'View Code',
                 href: 'https://github.com/nearai/nearai/tree/main/ts_runner/ts_agent_runner',
                 target: '_blank',
