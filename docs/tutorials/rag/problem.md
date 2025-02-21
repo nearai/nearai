@@ -1,6 +1,6 @@
 Let's start by understanding the problem that RAG solves. For this, we will create an agent that uses the `llama` model, and ask it questions about NEAR Protocol.
 
-Then, we will then compare the answers when the model has access to the actual documentation, to see how much better the answers are.
+Then, we will enhance the agent by giving it access to the actual documentation, demonstrating how this dramatically improves the accuracy of its responses.
 
 ---
 
