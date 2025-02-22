@@ -8,7 +8,7 @@ export const MESSAGE = 'Welcome to NEAR AI Hub!';
 export const REVOKE_MESSAGE = 'Are you sure? Revoking a nonce';
 export const REVOKE_ALL_MESSAGE = 'Are you sure? Revoking all nonces';
 export const SIGN_IN_CALLBACK_PATH = '/sign-in/callback';
-const SIGN_IN_RESTORE_URL_KEY = 'signInRestoreUrl';
+export const SIGN_IN_RESTORE_URL_KEY = 'signInRestoreUrl';
 const SIGN_IN_NONCE_KEY = 'signInNonce';
 
 export function signInWithNear() {
@@ -94,6 +94,7 @@ export function extractSignatureFromHashParams() {
   const accountId = hashParams.accountId;
   const publicKey = hashParams.publicKey;
   const signature = hashParams.signature;
+  const nonce = hashParams.nonce;
 
-  return { accountId, publicKey, signature };
+  return { accountId, publicKey, signature, nonce };
 }

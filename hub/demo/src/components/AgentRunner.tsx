@@ -62,6 +62,8 @@ type Props = {
   name: string;
   version: string;
   showLoadingPlaceholder?: boolean;
+  showThreads?: boolean;
+  showOutputAndEnvVars?: boolean;
 };
 
 type RunView = 'conversation' | 'output' | undefined;
@@ -79,6 +81,8 @@ export const AgentRunner = ({
   name,
   version,
   showLoadingPlaceholder,
+  showThreads = true,
+  showOutputAndEnvVars = true,
 }: Props) => {
   const { currentEntry, currentEntryId: agentId } = useCurrentEntry('agent', {
     namespace,
@@ -89,6 +93,8 @@ export const AgentRunner = ({
   const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const { queryParams, updateQueryPath } = useQueryParams([
     'showLogs',
+    'showThreads',
+    'showOutputAndEnvVars',
     'threadId',
     'view',
     'initialUserMessage',
@@ -416,11 +422,13 @@ export const AgentRunner = ({
   return (
     <>
       <Sidebar.Root>
-        <ThreadsSidebar
-          onRequestNewThread={startNewThread}
-          openForSmallScreens={threadsOpenForSmallScreens}
-          setOpenForSmallScreens={setThreadsOpenForSmallScreens}
-        />
+        {showThreads && (
+          <ThreadsSidebar
+            onRequestNewThread={startNewThread}
+            openForSmallScreens={threadsOpenForSmallScreens}
+            setOpenForSmallScreens={setThreadsOpenForSmallScreens}
+          />
+        )}
 
         <Sidebar.Main>
           {isLoading ? (
@@ -601,69 +609,71 @@ export const AgentRunner = ({
           </Sidebar.MainStickyFooter>
         </Sidebar.Main>
 
-        <Sidebar.Sidebar
-          openForSmallScreens={parametersOpenForSmallScreens}
-          setOpenForSmallScreens={setParametersOpenForSmallScreens}
-        >
-          <Flex direction="column" gap="l">
-            <Flex direction="column" gap="m">
-              <Text size="text-xs" weight={600} uppercase>
-                Output
-              </Text>
+        {showOutputAndEnvVars && (
+          <Sidebar.Sidebar
+            openForSmallScreens={parametersOpenForSmallScreens}
+            setOpenForSmallScreens={setParametersOpenForSmallScreens}
+          >
+            <Flex direction="column" gap="l">
+              <Flex direction="column" gap="m">
+                <Text size="text-xs" weight={600} uppercase>
+                  Output
+                </Text>
 
-              {isLoading ? (
-                <PlaceholderStack />
-              ) : (
+                {isLoading ? (
+                  <PlaceholderStack />
+                ) : (
+                  <>
+                    {files.length ? (
+                      <CardList>
+                        {files.map((file) => (
+                          <Card
+                            padding="s"
+                            gap="s"
+                            key={file.id}
+                            background="sand-2"
+                            onClick={() => {
+                              setOpenedFileName(file.filename);
+                            }}
+                          >
+                            <Flex align="center" gap="s">
+                              <Text
+                                size="text-s"
+                                color="sand-12"
+                                weight={500}
+                                clampLines={1}
+                                style={{ marginRight: 'auto' }}
+                              >
+                                {file.filename}
+                              </Text>
+
+                              <Text size="text-xs">
+                                {formatBytes(file.bytes)}
+                              </Text>
+                            </Flex>
+                          </Card>
+                        ))}
+                      </CardList>
+                    ) : (
+                      <Text size="text-s" color="sand-10">
+                        No files generated yet.
+                      </Text>
+                    )}
+                  </>
+                )}
+              </Flex>
+
+              {!env.NEXT_PUBLIC_CONSUMER_MODE && (
                 <>
-                  {files.length ? (
-                    <CardList>
-                      {files.map((file) => (
-                        <Card
-                          padding="s"
-                          gap="s"
-                          key={file.id}
-                          background="sand-2"
-                          onClick={() => {
-                            setOpenedFileName(file.filename);
-                          }}
-                        >
-                          <Flex align="center" gap="s">
-                            <Text
-                              size="text-s"
-                              color="sand-12"
-                              weight={500}
-                              clampLines={1}
-                              style={{ marginRight: 'auto' }}
-                            >
-                              {file.filename}
-                            </Text>
-
-                            <Text size="text-xs">
-                              {formatBytes(file.bytes)}
-                            </Text>
-                          </Flex>
-                        </Card>
-                      ))}
-                    </CardList>
-                  ) : (
-                    <Text size="text-s" color="sand-10">
-                      No files generated yet.
-                    </Text>
-                  )}
+                  <EntryEnvironmentVariables
+                    entry={currentEntry}
+                    excludeQueryParamKeys={Object.keys(queryParams)}
+                  />
                 </>
               )}
             </Flex>
-
-            {!env.NEXT_PUBLIC_CONSUMER_MODE && (
-              <>
-                <EntryEnvironmentVariables
-                  entry={currentEntry}
-                  excludeQueryParamKeys={Object.keys(queryParams)}
-                />
-              </>
-            )}
-          </Flex>
-        </Sidebar.Sidebar>
+          </Sidebar.Sidebar>
+        )}
       </Sidebar.Root>
 
       <AgentPermissionsModal

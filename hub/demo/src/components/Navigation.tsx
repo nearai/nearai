@@ -34,6 +34,7 @@ import { useEffect, useState } from 'react';
 
 import { APP_TITLE } from '~/constants';
 import { env } from '~/env';
+import { useIsEmbeddedIframe } from '~/hooks/embed';
 import { signInWithNear } from '~/lib/auth';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { useAuthStore } from '~/stores/auth';
@@ -118,10 +119,18 @@ export const Navigation = () => {
   const path = usePathname();
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
+  const { isEmbedded } = useIsEmbeddedIframe();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isEmbedded) {
+      document.body.style.setProperty('--header-height', '0px');
+      document.body.style.setProperty('--section-fill-height', '100svh');
+    }
+  }, [isEmbedded]);
 
   const signOut = () => {
     void clearTokenMutation.mutate();
@@ -136,6 +145,8 @@ export const Navigation = () => {
       void wallet.signOut();
     }
   };
+
+  if (isEmbedded) return null;
 
   return (
     <header className={s.navigation}>
