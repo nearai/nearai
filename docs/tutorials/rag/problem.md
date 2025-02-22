@@ -77,7 +77,29 @@ Without going too deep on the specifics of NEAR Protocol - which are not relevan
 
 Now, lets try to give some context to the model so it can improve its answers. 
 
-For that, lets directly embed into the agent's prompt the documentation on [`access keys`](https://github.com/near/docs/blob/master/docs/1.concepts/protocol/access-keys.md) and the [`cli tool`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md):
+For that, lets directly embed into the agent's prompt the documentation on:
+
+- [`Access Keys`](https://github.com/near/docs/blob/master/docs/1.concepts/protocol/access-keys.md) 
+- [`NEAR CLI`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md)
+
+In your agent directory, let's surface the these two files from our [downloaded dataset](../introduction#what-you-will-need) and copy them to the root of our agent folder:
+
+```bash
+cp ./docs/**/cli.md ./docs/**/access-keys.md .
+```
+
+You should now have the following structure in your agent directory:
+
+```
+📁 ~/.nearai/registry/your-account.near/rag-tutorial-agent/0.0.1
+├── 📁 docs/
+├── 📄 agent.py
+├── 📄 metadata.json
+├── 📄 cli.md
+└── 📄 access-keys.md
+```
+
+Then let's update the `agent.py` file with the following code:
 
 ```python
 import json

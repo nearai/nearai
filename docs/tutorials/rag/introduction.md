@@ -25,6 +25,15 @@ A quick way to download this dataset is to run the following in your new agent's
 curl -L https://api.github.com/repos/near/docs/tarball/master | tar xz --strip=1 '*/docs'
 ```
 
+You should have the following structure in your agent directory:
+
+```
+📁 ~/.nearai/registry/your-account.near/rag-tutorial-agent/0.0.1
+├── 📁 docs/
+├── 📄 agent.py
+└── 📄 metadata.json
+```
+
 !!!info
     Make sure you have completed the [Agents Quickstart Tutorial](../../agents/quickstart.md) first, as this tutorial builds upon those concepts.
 
