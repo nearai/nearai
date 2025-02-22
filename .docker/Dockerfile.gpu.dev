@@ -8,6 +8,7 @@ ARG USER_GID=$USER_UID
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV DEBIAN_FRONTEND=noninteractive
+ENV NODE_VERSION=21.x
 
 ## Install python + opencl + blas
 RUN apt-get update && apt-get upgrade -y \
@@ -38,6 +39,19 @@ RUN groupadd --gid $USER_GID $USER \
     && apt-get install -y sudo \
     && echo $USER ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USER \
     && chmod 0440 /etc/sudoers.d/$USER
+
+# Install node
+RUN curl -sL https://deb.nodesource.com/setup_${NODE_VERSION} | bash - && \
+    apt-get install -y nodejs --no-install-recommends && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install node global deps
+ARG OPENAPI_GENERATOR_VERSION=2.15.3
+RUN npm install -g \
+    @openapitools/openapi-generator-cli@${OPENAPI_GENERATOR_VERSION} \
+    typescript \
+    pnpm@latest-10
 
 USER ${USER}
 RUN python3 -m pip install --user poetry

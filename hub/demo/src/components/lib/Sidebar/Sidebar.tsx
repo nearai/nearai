@@ -2,14 +2,41 @@
 
 import { Button } from '@near-pagoda/ui';
 import { X } from '@phosphor-icons/react';
-import { type CSSProperties, type ReactNode } from 'react';
+import { type CSSProperties, type ReactNode, useEffect, useRef } from 'react';
 
 import { Footer } from '~/components/Footer';
 
 import s from './Sidebar.module.scss';
 
 export const Root = (props: { children: ReactNode }) => {
-  return <div className={s.root} {...props} />;
+  const elementRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    function calculateSize() {
+      if (!element) return;
+      const rect = element.getBoundingClientRect();
+      const top = Math.max(0, rect.top);
+      element.style.setProperty(`--sidebar-root-top`, `${top}px`);
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      calculateSize();
+    });
+
+    calculateSize();
+    resizeObserver.observe(element);
+    window.addEventListener('scroll', calculateSize);
+
+    () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('scroll', calculateSize);
+    };
+  }, []);
+
+  return <div className={s.root} ref={elementRef} {...props} />;
 };
 
 export const Main = ({

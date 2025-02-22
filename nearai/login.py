@@ -149,11 +149,11 @@ def generate_nonce():
 def generate_and_save_signature(account_id, private_key):
     """Generates a signature for the given account ID and private key, then updates the auth configuration."""
     nonce = generate_nonce()
-    payload = near.Payload(MESSAGE, nonce, RECIPIENT, None)
+    payload = near.Payload(MESSAGE, nonce, RECIPIENT, "")
 
     signature, public_key = near.create_signature(private_key, payload)
 
-    if update_auth_config(account_id, signature, public_key, None, nonce):
+    if update_auth_config(account_id, signature, public_key, "", nonce):
         print_login_status()
 
 

@@ -81,7 +81,7 @@ export default function ProfilePage() {
                 value="all"
                 type="radio"
                 checked={!queryParams.category}
-                onChange={() => updateQueryPath({ category: undefined })}
+                onChange={() => updateQueryPath({ category: null })}
               />
               <Text>All</Text>
             </Flex>

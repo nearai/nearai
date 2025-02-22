@@ -15,10 +15,11 @@ ed25519 == 1.5
 tweepy >= 4.14.0
 cdp-sdk >= 0.15.0
 web3 >= 7.6.0
-cdp-agentkit-core >= 0.0.11
 langchain >= 0.3.4
 langchain-openai >= 0.2.4
 langchain-community >= 0.3.16
 langgraph >= 0.2.39
-nearai-langchain >= 0.0.11
-duckduckgo-search  >= 7.3.0 
+nearai-langchain >= 0.0.12
+duckduckgo-search >= 7.3.0
+coinbase-agentkit >= 0.1.2
+coinbase-agentkit-langchain >= 0.1.0

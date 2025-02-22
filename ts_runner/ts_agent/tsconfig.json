@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "moduleResolution": "node",
+    "module": "ESNext",
+    "outDir": "./build",
+    "strict": true,
+    "esModuleInterop": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "ts-agent-runner": ["node_modules/ts-agent-runner"]
+    },
+    "typeRoots": ["node_modules/@types", "node_modules"]
+  }
+}

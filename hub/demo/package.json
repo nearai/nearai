@@ -22,7 +22,7 @@
   "dependencies": {
     "@gera2ld/tarjs": "^0.3.1",
     "@hookform/resolvers": "^3.6.0",
-    "@near-pagoda/ui": "^3.0.4",
+    "@near-pagoda/ui": "^3.1.10",
     "@near-wallet-selector/bitte-wallet": "8.9.14",
     "@near-wallet-selector/core": "8.9.14",
     "@near-wallet-selector/here-wallet": "8.9.14",
@@ -40,6 +40,7 @@
     "@uidotdev/usehooks": "^2.4.1",
     "client-only": "^0.0.1",
     "date-fns": "^3.6.0",
+    "json-schema-migrate": "^2.0.0",
     "lodash-es": "^4.17.21",
     "near-api-js": "4.0.3",
     "next": "^14.2.21",
@@ -54,6 +55,7 @@
     "superjson": "^2.2.1",
     "unist-util-visit": "^5.0.0",
     "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.1",
     "zustand": "^4.5.4"
   },
   "devDependencies": {
