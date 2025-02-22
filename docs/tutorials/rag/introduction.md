@@ -15,8 +15,15 @@ In this tutorial, you'll learn how to build a RAG-powered agent that accurately 
 
 To follow this tutorial you will need:
 
-1. A `Hello AI` agent - You can create one by following the [Agents Quickstart Tutorial](../../agents/quickstart.md) (estimated time: 5 minutes)
-2. The `NEAR Docs` dataset - Download it from the [official docs repo](https://github.com/near/docs/tree/master/docs). You'll only need the markdown (`.md`) files
+1. **NEAR AI Agent** - Run `nearai agent create` or follow the [Quickstart Guide](../../agents/quickstart.md) _(~5 minutes)_
+
+2. **NEAR Docs dataset** - Download [NEAR Docs markdown files](https://github.com/near/docs/tree/master/docs) in your new agent's directory.
+
+A quick way to download this dataset is to run the following in your new agent's directory:
+
+```bash
+curl -L https://api.github.com/repos/near/docs/tarball/master | tar xz --strip=1 '*/docs'
+```
 
 !!!info
     Make sure you have completed the [Agents Quickstart Tutorial](../../agents/quickstart.md) first, as this tutorial builds upon those concepts.
