@@ -27,7 +27,11 @@ export function useWalletInitializer() {
     const initialize = async () => {
       if (!setupPromise.current) {
         setupPromise.current = setupWalletSelector({
-          network: 'mainnet',
+          // @ts-expect-error: Other url config values (helper, indexer) are not actually required
+          network: {
+            networkId: 'mainnet',
+            nodeUrl: '/api/near-rpc-proxy',
+          },
           modules: [
             setupMyNearWallet(),
             setupBitteWallet(),
@@ -35,7 +39,6 @@ export function useWalletInitializer() {
             setupSender(),
             setupHereWallet(),
           ],
-          fallbackRpcUrls: ['/api/near-rpc-proxy'],
         });
       }
 
