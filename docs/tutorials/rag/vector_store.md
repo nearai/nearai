@@ -40,7 +40,7 @@ Let's create a vector store using using all of our documentation files in the [d
 !!!tip "Didn't download the dataset?"
     If you have not completed the [problem](./problem.md) section yet, you can download the dataset by running the following command:
     ```bash
-        curl -L https://api.github.com/repos/near-examples/docs-ai/tarball/main | tar xz --strip=1 '*/docs-gpt/dataset'
+    curl -L https://api.github.com/repos/near-examples/docs-ai/tarball/main | tar xz --strip=2 '*/docs-gpt/dataset'
     ```
 
 

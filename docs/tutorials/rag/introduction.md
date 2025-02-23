@@ -24,7 +24,7 @@ To follow this tutorial you will need:
 
 ---
 
-## Index
+## Overview
 
 This tutorial is divided in the following sections:
 

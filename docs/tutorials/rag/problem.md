@@ -87,14 +87,14 @@ For that, lets directly embed into the agent's prompt documentation on:
 In your agent directory, let's download the docs dataset:
 
 ```bash
-curl -L https://api.github.com/repos/near/docs/tarball/master | tar xz --strip=1 '*/docs'
+curl -L https://api.github.com/repos/near-examples/docs-ai/tarball/main | tar xz --strip=2 '*/docs-gpt/dataset'
 ```
 
 Your agent directory should now look like this:
 
 ```
 📁 ~/.nearai/registry/<your-account.near>/ai-docs-tutorial/0.0.1
-├── 📁 docs/
+├── 📁 dataset/
 ├── 📄 agent.py
 └── 📄 metadata.json
 ```
@@ -109,7 +109,7 @@ Your agent directory should now look like this:
 
 ```
 📁 ./your-agent-name/0.0.1
-├── 📁 docs/
+├── 📁 dataset/
 ├── 📄 agent.py
 ├── 📄 metadata.json
 ├── 📄 cli.md
