@@ -31,6 +31,7 @@ export const AgentWelcome = ({ currentEntry }: Props) => {
           src={welcome.icon || currentEntry.details.icon}
           alt={currentEntry.name}
           fallbackIcon={ENTRY_CATEGORY_LABELS.agent.icon}
+          padding={false}
         />
         <Text size="text-l">{welcome.title || currentEntry.name}</Text>
       </Flex>
