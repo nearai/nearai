@@ -16,7 +16,7 @@ Chunking a document not only makes it less computationally expensive to process,
 
 ## Chunking Strategy
 
-When creating the vector store we left a parameter commented in the code, the `chunking_strategy`. This parameter allows you to specify how the documents are "split" into chunks before being processed by the model.
+When creating the vector store we left a parameter commented out in the code - `chunking_strategy`. This parameter allows you to specify how the documents are "split" into chunks before being processed by the model.
 
 ```python
 vs = client.beta.vector_stores.create(
@@ -30,10 +30,9 @@ vs = client.beta.vector_stores.create(
 ```
 
 The `chunking_strategy` parameter is a dictionary that can have the following keys:
-    - `chunk_overlap_tokens`: The number of tokens that the chunks will overlap. Default is 400.
-    - `max_chunk_size_tokens`: The maximum number of tokens that a chunk can have. Default is 800.
 
-By default, the platform will divide the document into chunks of 800 tokens, with an overlap of 400 tokens.
+- `chunk_overlap_tokens`: Number of tokens that chunks will overlap. _(Default 400)_
+- `max_chunk_size_tokens`: Max number of tokens that a chunk can have. _(Default 800)_
 
 ![Chunking Strategy](chunks.png)
 
