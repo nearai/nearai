@@ -1,16 +1,16 @@
 # Chunking
 
-Before transforming the docs into embeddings, the NEAR AI platform divides them into smaller chunks of text. 
+Before converting documentation into vector embeddings, the NEAR AI platform segments the text into smaller, manageable chunks. This process, known as text chunking, serves several crucial purposes:
 
-Chunking a document does not only make it less computationally expensive to process, but also allows the model to better understand the document as a whole.
+Chunking a document not only makes it less computationally expensive to process, but also allows the model to better understand and represent the information within.
 
 !!! tip
-    Embedding models transform documents (wherever their size) into fixed-size vector. By dividing the document into smaller chunks, we can better represent the document as a whole.
-
-    This is, it is better to have multiple vectors representing small sections, than a single vector representing the whole document.
+    Embedding models transform documents into fixed-size vectors, regardless of the original document size. By dividing documents into smaller chunks, we achieve more granular and accurate representation.
+    
+    It's more effective to have multiple vectors representing specific sections than a single vector trying to capture an entire document's meaning.
 
 !!! warning
-    It's very likely you don't need to worry about chunking, only change it if you find that the agent consistently fails at answering questions because of how documents are divided in chunks
+    Most users won't need to modify the default chunking settings. Only consider adjusting them if you notice the agent consistently struggles to answer questions due to how the documents are segmented.
 
 ---
 
