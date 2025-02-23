@@ -95,6 +95,7 @@ export const EntryDetailsLayout = ({
                 src={currentEntry?.details.icon}
                 alt={name}
                 fallbackIcon={ENTRY_CATEGORY_LABELS[category].icon}
+                padding={false}
               />
 
               <Flex
