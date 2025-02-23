@@ -84,36 +84,21 @@ For that, lets directly embed into the agent's prompt documentation on:
 - [`Access Keys`](https://github.com/near/docs/blob/master/docs/1.concepts/protocol/access-keys.md) 
 - [`NEAR CLI`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md)
 
-In your agent directory, let's download the docs dataset:
+In your agent directory, let's download these files from the official NEAR docs repo:
 
 ```bash
-curl -L https://api.github.com/repos/near-examples/docs-ai/tarball/main | tar xz --strip=2 '*/docs-gpt/dataset'
+curl -L https://raw.githubusercontent.com/near/docs/master/docs/1.concepts/protocol/access-keys.md -o access-keys.md && \
+curl -L https://raw.githubusercontent.com/near/docs/master/docs/4.tools/cli.md -o cli.md
 ```
 
 Your agent directory should now look like this:
 
 ```
 📁 ~/.nearai/registry/<your-account.near>/ai-docs-tutorial/0.0.1
-├── 📁 dataset/
 ├── 📄 agent.py
-└── 📄 metadata.json
-```
-
-Lets surface the two files we're interested in from the dataset:
-
-```bash
-cp ./dataset/**/cli.md ./dataset/**/access-keys.md .
-```
-
-Your agent directory should now look like this:
-
-```
-📁 ./your-agent-name/0.0.1
-├── 📁 dataset/
-├── 📄 agent.py
-├── 📄 metadata.json
+├── 📄 access-keys.md
 ├── 📄 cli.md
-└── 📄 access-keys.md
+└── 📄 metadata.json
 ```
 
 Next, we'll update `agent.py` and instruct it to use these two markdown files:
@@ -197,6 +182,6 @@ As you can see the answers now are much more accurate, which is expected, as we 
 
 While useful to understand the concept, this agent has a very important limitation: **It does not scale**
 
-Since this approach loads all of the content of a document into the prompt, it would quickly hit a limit on the number of tokens that the model can process if we were to load _all of the documentation_. This is why we surfaced only two documents in the previous example.
+Since this approach loads all of the content of a document into the prompt, it would quickly hit a limit on the number of tokens that the model can process if we were to load _all of the documentation_.
 
 To solve this problem, we need to use rely on a special kind of database called a **Vector Store**, which can help us to store documents and easily retrieve the most relevant ones to answer a given query.
