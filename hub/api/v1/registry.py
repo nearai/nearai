@@ -13,12 +13,12 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from nearai.shared.client_config import DEFAULT_NAMESPACE
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 from sqlmodel import col, delete, select, text
 
 from hub.api.v1.auth import AuthToken, get_auth, get_optional_auth
 from hub.api.v1.entry_location import EntryLocation, valid_identifier
-from hub.api.v1.models import Fork, RegistryEntry, Tags, get_session
+from hub.api.v1.models import Fork, RegistryEntry, Tags, get_session, sanitize
 
 DEFAULT_NAMESPACE_WRITE_ACCESS_LIST = [
     "spensa2.near",
@@ -159,6 +159,24 @@ class EntryMetadataInput(BaseModel):
     tags: List[str]
     details: Dict
     show_entry: bool
+
+    @model_validator(mode="before")
+    @classmethod
+    def preprocess_all_fields(cls, data: Any) -> Any:
+        """Global preprocessing validator that sanitizes all input data before validation."""
+        return sanitize(data)
+
+    @field_validator("tags", mode="after")
+    @classmethod
+    def process_tags(cls, tags: List[str]) -> List[str]:
+        """Post-sanitization processing for tags.
+
+        1. Remove empty/whitespace-only tags
+        2. Deduplicate while preserving order
+        3. Enforce case consistency
+        """
+        # Use dictionary keys to preserve order and remove duplicates
+        return list({tag.strip().lower(): None for tag in tags if tag.strip()}.keys())
 
 
 class EntryMetadata(EntryMetadataInput):

@@ -24,6 +24,7 @@ import s from './styles.module.scss';
 
 type Props = {
   content: z.infer<typeof requestDataSchema>['request_data'];
+  defaultFieldValues?: z.infer<typeof dataSchema>['data']['fields'];
   onCancel: () => unknown;
   onValidSubmit: () => unknown;
 };
@@ -32,6 +33,7 @@ export type RequestDataHookFormSchema = Record<string, string>;
 
 export const RequestDataForm = ({
   content,
+  defaultFieldValues,
   onCancel,
   onValidSubmit,
 }: Props) => {
@@ -83,7 +85,11 @@ export const RequestDataForm = ({
     <Form autoComplete="on" onSubmit={hookForm.handleSubmit(onSubmit)}>
       <FormProvider {...hookForm}>
         <Flex direction="column" gap="l" className={s.formSections}>
-          <RequestDataFormSection content={content} form={form} />
+          <RequestDataFormSection
+            content={content}
+            form={form}
+            defaultFieldValues={defaultFieldValues}
+          />
 
           <Flex justify="space-between">
             <Button

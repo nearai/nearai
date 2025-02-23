@@ -1,10 +1,17 @@
 import OpenAI from 'openai';
+import {VectorStore} from "openai/resources/beta";
+import {
+    FileChunkingStrategyParam,
+    VectorStoreCreateParams
+} from "openai/src/resources/beta/vector-stores/vector-stores";
+import {FilePurpose} from "openai/src/resources/files";
+
+import {globalEnv} from './global-env.js';
 
 type Message = OpenAI.Beta.Threads.Messages.Message;
 type FileObject = OpenAI.Files.FileObject;
 type ChatCompletionMessageParam = OpenAI.ChatCompletionMessageParam;
 type ChatCompletionTool = OpenAI.ChatCompletionTool;
-import {globalEnv} from './global-env.js';
 
 class Environment {
     async write_file(filename: string, content: string, encoding: string = "utf-8", filetype: string = "text/plain",
@@ -83,6 +90,30 @@ class Environment {
             return "";
         }
     }
+
+    async query_vector_store(vector_store_id: string, query: string, full_files: boolean = false): Promise<any> {
+        return globalEnv.client.query_vector_store(vector_store_id, query, full_files)
+    }
+
+    async add_file_to_vector_store(vector_store_id: string, file_id: string): Promise<any> {
+        return globalEnv.client.add_file_to_vector_store(vector_store_id, file_id)
+    }
+
+    async create_vector_store(
+        name: string,
+        file_ids: string[],
+        expires_after: VectorStoreCreateParams.ExpiresAfter,
+        chunking_strategy: FileChunkingStrategyParam,
+        metadata: unknown | null = null
+    ): Promise<VectorStore | null> {
+        return globalEnv.client.create_vector_store(name, file_ids, expires_after, chunking_strategy, metadata)
+    }
+
+    async upload_file(file_content: string, purpose: FilePurpose, encoding: string = "utf-8", file_name: string = "file.txt",
+                      file_type: string = "text/plain"): Promise<FileObject> {
+        return globalEnv.client.upload_file(file_content, purpose, encoding, file_name, file_type);
+    }
+
 
     get_thread_id(): string {
         return globalEnv.client.get_thread_id()

@@ -148,7 +148,7 @@ const Product = ({ content, ...props }: Product) => {
             target="_blank"
             style={{ lineHeight: 1.35 }}
           >
-            {option.name}
+            {option.name || option.id}
           </Text>
         </Tooltip>
 

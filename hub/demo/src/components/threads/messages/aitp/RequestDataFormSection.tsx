@@ -17,6 +17,7 @@ import { stringToHtmlAttribute } from '~/utils/string';
 import { useThreadMessageContent } from '../../ThreadMessageContentProvider';
 import { type RequestDataHookFormSchema } from './RequestDataForm';
 import {
+  type dataSchema,
   type requestDataFormFieldSchema,
   type requestDataFormSchema,
   type requestDataSchema,
@@ -24,28 +25,33 @@ import {
 
 type Props = {
   content: z.infer<typeof requestDataSchema>['request_data'];
+  defaultFieldValues?: z.infer<typeof dataSchema>['data']['fields'];
   form: z.infer<typeof requestDataFormSchema>;
 };
 
-export const RequestDataFormSection = ({ form }: Props) => {
+export const RequestDataFormSection = ({ defaultFieldValues, form }: Props) => {
   const { messageContentId } = useThreadMessageContent();
   const hookForm = useFormContext<RequestDataHookFormSchema>();
 
   useEffect(() => {
-    if (!hookForm.formState.isDirty) return;
+    if (hookForm.formState.isDirty) return;
 
     form.fields?.forEach((field, index) => {
-      if (field.default_value) {
+      const defaultValue =
+        defaultFieldValues?.find((f) => f.id === field.id)?.value ||
+        field.default_value;
+
+      if (defaultValue) {
         hookForm.setValue(
           requestDataInputNameForField(messageContentId, field, index),
-          field.default_value,
+          defaultValue,
           {
             shouldDirty: true,
           },
         );
       }
     });
-  }, [messageContentId, hookForm, form]);
+  }, [defaultFieldValues, messageContentId, hookForm, form]);
 
   return (
     <Flex direction="column" gap="m">

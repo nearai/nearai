@@ -2,7 +2,7 @@ import importlib.metadata
 import json
 import logging
 import time
-from typing import Annotated, Dict, Iterable, List, Optional, Union
+from typing import Annotated, Iterable, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -11,6 +11,7 @@ from nearai.shared.cache import mem_cache_with_timeout
 from nearai.shared.client_config import DEFAULT_TIMEOUT
 from nearai.shared.near.sign import derive_new_extended_private_key, get_public_key
 from nearai.shared.provider_models import PROVIDER_MODEL_SEP, get_provider_model
+from openai.types.beta.assistant_response_format_option import AssistantResponseFormatOption
 from pydantic import BaseModel, field_validator
 
 from hub.api.v1.auth import AuthToken, get_auth, validate_signature
@@ -36,15 +37,6 @@ REVOKE_MESSAGE = "Are you sure? Revoking a nonce"
 REVOKE_ALL_MESSAGE = "Are you sure? Revoking all nonces"
 
 
-class ResponseFormat(BaseModel):
-    """The format of the response."""
-
-    type: str
-    """The type of the response format."""
-    json_schema: Optional[Dict] = None
-    """Optional JSON schema for the response format."""
-
-
 class LlmRequest(BaseModel):
     """Base class for LLM requests."""
 
@@ -66,7 +58,7 @@ class LlmRequest(BaseModel):
     """The number of completions to generate."""
     stop: Optional[Union[str, List[str]]] = None
     """The stop sequence(s) for generation."""
-    response_format: Optional[ResponseFormat] = None
+    response_format: Optional[AssistantResponseFormatOption] = None
     """The format of the response."""
     stream: bool = False
     """Whether to stream the response."""

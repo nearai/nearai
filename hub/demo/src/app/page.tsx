@@ -17,10 +17,12 @@ import {
   ArrowRight,
   ArrowSquareUpRight,
   BookOpenText,
+  Brain,
   ChartBar,
   ChatCircle,
   Check,
   CloudCheck,
+  Code,
   CodeBlock,
   DownloadSimple,
   GitFork,
@@ -30,6 +32,7 @@ import {
   LockKey,
   MagnifyingGlass,
   PaperPlaneTilt,
+  ShieldCheck,
   TwitterLogo,
   UserCircle,
   XLogo,
@@ -395,6 +398,43 @@ export default function HomePage() {
                 description: 'Connect with other researchers',
                 label: 'Join',
                 href: 'https://t.me/nearaialpha',
+                target: '_blank',
+              },
+              // Second row
+              {
+                icon: <Code weight="duotone" />,
+                title: 'TypeScript Agents',
+                description:
+                  'Learn how to develop TypeScript agents that can utilize a variety of packages, including Coinbase AgentKit',
+                label: 'View Code',
+                href: 'https://github.com/nearai/nearai/tree/main/ts_runner/ts_agent_runner',
+                target: '_blank',
+              },
+              {
+                icon: <Brain weight="duotone" />,
+                title: 'LangChain and Coinbase Python Agents',
+                description:
+                  'Utilize LangChain, LangGraph, and Coinbase AgentKit Python functions on NEAR AI',
+                label: 'Explore',
+                href: 'https://github.com/nearai/nearai_langchain',
+                target: '_blank',
+              },
+              {
+                icon: <ShieldCheck weight="duotone" />,
+                title: 'Trusted Execution Environment',
+                description:
+                  'A secure environment for running LLM workloads with guaranteed privacy and security',
+                label: 'Learn More',
+                href: 'https://github.com/nearai/private-ml-sdk',
+                target: '_blank',
+              },
+              {
+                icon: <Lightning weight="duotone" />,
+                title: 'Agent Interaction and Transaction Protocol (AITP)',
+                description:
+                  'Standard protocol for secure agent-to-agent and user-to-agent communication',
+                label: 'Learn More',
+                href: 'https://aitp.dev/',
                 target: '_blank',
               },
             ].map((resource, index) => (

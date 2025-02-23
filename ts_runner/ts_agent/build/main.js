@@ -43,4 +43,4 @@ if (!jsonString) {
         throw new Error(`No configuration provided. Please make sure you have a valid Near Auth in ${configPath}.`);
     }
 }
-globalEnv.initialize(jsonString, agentPath);
+globalEnv.initialize(jsonString);

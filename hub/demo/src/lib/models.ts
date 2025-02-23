@@ -93,6 +93,7 @@ export const entryDetailsModel = z.intersection(
             .object({
               title: z.string(),
               description: z.string(),
+              icon: z.string(),
             })
             .partial(),
         })
