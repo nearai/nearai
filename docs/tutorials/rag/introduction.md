@@ -16,7 +16,7 @@ In this tutorial, you'll learn how to build a RAG-powered agent that accurately 
 To follow this tutorial you will need:
 
 1. NEAR AI CLI installed on your local machine → [Installation Guide](../../cli.md)
-2. Basic understading of creating a NEAR AI agent → [Agents Quickstart Tutorial](../../agents/quickstart.md)
+2. Basic understanding of creating a NEAR AI agent → [Agents Quickstart Tutorial](../../agents/quickstart.md)
 
 ---
 
