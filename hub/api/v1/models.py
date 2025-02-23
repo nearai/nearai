@@ -1,4 +1,5 @@
 import json
+import unicodedata
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -6,6 +7,7 @@ from enum import Enum
 from os import getenv
 from typing import Dict, Iterator, List, Optional
 
+import ftfy
 from dotenv import load_dotenv
 from nearai.shared.models import RunMode
 from openai.types.beta.thread import Thread as OpenAITThread
@@ -17,7 +19,7 @@ from openai.types.beta.threads.text import Text
 from openai.types.beta.threads.text_content_block import TextContentBlock
 from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.types import TypeDecorator
-from sqlmodel import JSON, Column, Field, Session, SQLModel, create_engine
+from sqlmodel import Column, Field, Session, SQLModel, create_engine
 
 from hub.api.v1.entry_location import EntryLocation
 
@@ -39,10 +41,74 @@ class Framework(Enum):
     STANDARD = "standard"
 
 
+def sanitize(value):
+    """Recursively sanitize data with SingleStore-specific handling."""
+    if isinstance(value, str):
+        # Fix common encoding errors like mojibake (e.g., "â€™" → "’")
+        fixed_text = ftfy.fix_text(value)
+
+        # Normalize Unicode to NFC form for consistent database storage
+        normalized = unicodedata.normalize("NFC", fixed_text)
+
+        # Replace invalid UTF-8 characters instead of removing them
+        return normalized.encode("utf-8", "replace").decode("utf-8").strip()
+
+    if isinstance(value, list):
+        # Recursively process list elements while preserving order
+        return [sanitize(item) for item in value]
+
+    if isinstance(value, dict):
+        # Clean both keys and values while maintaining dictionary structure
+        return {k: sanitize(v) for k, v in value.items()}
+
+    # Return non-string/non-collection values unchanged
+    return value
+
+
+class UnicodeSafeJSON(TypeDecorator):
+    """Custom JSON handler that safely stores/retrieves Unicode-rich JSON data.
+
+    Uses LONGTEXT to avoid SingleStore/MySQL encoding bugs.
+
+    Why LONGTEXT instead of JSON:
+    1. Bypasses binary storage issues with MySQL JSON type
+    2. Guarantees UTF8MB4 compliance through text column handling
+    3. Avoids implicit encoding conversions in database drivers
+
+    Inherits from TypeDecorator to customize these behaviors:
+    - Safe Unicode serialization (preserves emojis/special chars)
+    - Binary-to-text conversion for reliable deserialization
+    """
+
+    impl = LONGTEXT  # Critical: Uses text storage instead of binary JSON
+    cache_ok = True  # Essential for query caching and performance
+
+    def process_bind_param(self, value, dialect):
+        """Serialize Python objects to UTF8MB4-compliant JSON string."""
+        if value is not None:
+            # Prevent ASCII escaping (\uXXXX sequences) for Unicode chars
+            # enable_ascii=False is crucial for emojis/non-Latin chars
+            return json.dumps(value, ensure_ascii=False)
+        return value
+
+    def process_result_value(self, value, dialect):
+        """Convert database result to Python objects with encoding safety."""
+        if value is not None:
+            # Force string conversion to handle:
+            # - Legacy database drivers returning bytes
+            # - Mixed encoding edge cases
+            # - SingleStore's binary storage peculiarities
+            return json.loads(str(value))
+        return value
+
+
 class RegistryEntry(SQLModel, table=True):
     """Entry stored in the registry."""
 
     __tablename__ = "registry_entry"
+    __table_args__ = {
+        "mysql_collate": "utf8mb4_unicode_ci",  # Use case-insensitive Unicode collation for full text search
+    }
 
     id: int = Field(default=None, primary_key=True)
     namespace: str = Field(nullable=False)
@@ -57,7 +123,7 @@ class RegistryEntry(SQLModel, table=True):
     """Long description of the entry."""
     category: str = Field(default="", nullable=False)
     """Type of the entry, e.g. 'dataset', 'model', 'agent', ...."""
-    details: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    details: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))
     """Free-form dictionary with details about the entry."""
     show_entry: bool = Field(default=True)
     """Whether to show the entry in the registry by default."""
@@ -99,7 +165,7 @@ class AgentData(SQLModel, table=True):
     namespace: str = Field(primary_key=True)
     name: str = Field(primary_key=True)
     key: str = Field(primary_key=True)
-    value: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    value: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))
     created_at: datetime = Field(default=datetime.now(timezone.utc), nullable=False)
     updated_at: datetime = Field(default_factory=datetime.now, nullable=False)
 
@@ -166,8 +232,8 @@ class Job(SQLModel, table=True):
     status: str = Field(nullable=False)
     worker_id: Optional[str] = Field(default=None)
     worker_kind: str = Field(nullable=False)
-    info: Dict = Field(default_factory=dict, sa_column=Column(JSON))
-    result: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    info: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))
+    result: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))
 
 
 class Permissions(SQLModel, table=True):
@@ -193,7 +259,7 @@ class BenchmarkResult(SQLModel, table=True):
     benchmark_id: int = Field(nullable=False)
     index: int = Field(nullable=False)
     solved: bool = Field(nullable=False)
-    info: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    info: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))
 
 
 class Log(SQLModel, table=True):
@@ -201,44 +267,7 @@ class Log(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     account_id: str = Field(nullable=False)
     target: str = Field(nullable=False)
-    info: Dict = Field(default_factory=dict, sa_column=Column(JSON))
-
-
-class UnicodeSafeJSON(TypeDecorator):
-    """Custom JSON handler that safely stores/retrieves Unicode-rich JSON data.
-
-    Uses LONGTEXT to avoid SingleStore/MySQL encoding bugs.
-
-    Why LONGTEXT instead of JSON:
-    1. Bypasses binary storage issues with MySQL JSON type
-    2. Guarantees UTF8MB4 compliance through text column handling
-    3. Avoids implicit encoding conversions in database drivers
-
-    Inherits from TypeDecorator to customize these behaviors:
-    - Safe Unicode serialization (preserves emojis/special chars)
-    - Binary-to-text conversion for reliable deserialization
-    """
-
-    impl = LONGTEXT  # Critical: Uses text storage instead of binary JSON
-    cache_ok = True  # Essential for query caching and performance
-
-    def process_bind_param(self, value, dialect):
-        """Serialize Python objects to UTF8MB4-compliant JSON string."""
-        if value is not None:
-            # Prevent ASCII escaping (\uXXXX sequences) for Unicode chars
-            # enable_ascii=False is crucial for emojis/non-Latin chars
-            return json.dumps(value, ensure_ascii=False)
-        return value
-
-    def process_result_value(self, value, dialect):
-        """Convert database result to Python objects with encoding safety."""
-        if value is not None:
-            # Force string conversion to handle:
-            # - Legacy database drivers returning bytes
-            # - Mixed encoding edge cases
-            # - SingleStore's binary storage peculiarities
-            return json.loads(str(value))
-        return value
+    info: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))
 
 
 class Message(SQLModel, table=True):
@@ -249,15 +278,15 @@ class Message(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.now, nullable=False)
     thread_id: str = Field(nullable=False, foreign_key="threads.id")
     status: str = Field(default="completed", nullable=False)
-    incomplete_details: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    incomplete_details: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
     completed_at: Optional[datetime] = Field(default=None)
     incomplete_at: Optional[datetime] = Field(default=None)
     role: str = Field(nullable=False)
     content: List[MessageContent] = Field(sa_column=Column(UnicodeSafeJSON))
     assistant_id: Optional[str] = Field(default=None)
     run_id: Optional[str] = Field(default=None)
-    attachments: Optional[List[Attachment]] = Field(default=None, sa_column=Column(JSON))
-    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", JSON))
+    attachments: Optional[List[Attachment]] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
+    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", UnicodeSafeJSON))
 
     def __init__(self, **data):  # noqa: D107
         super().__init__(**data)
@@ -313,11 +342,11 @@ class Thread(SQLModel, table=True):
     id: str = Field(default_factory=lambda: "thread_" + uuid.uuid4().hex[:24], primary_key=True)
     object: str = Field(default="thread", nullable=False)
     created_at: datetime = Field(default_factory=datetime.now, nullable=False)
-    tool_resources: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
-    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", JSON))
+    tool_resources: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
+    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", UnicodeSafeJSON))
     owner_id: str = Field(nullable=False)
     parent_id: Optional[str] = Field(default=None)
-    child_thread_ids: List[str] = Field(default=[], sa_column=Column(JSON))
+    child_thread_ids: List[str] = Field(default=[], sa_column=Column(UnicodeSafeJSON))
 
     def to_openai(self) -> OpenAITThread:
         """Convert to OpenAI Thread."""
@@ -357,23 +386,23 @@ class Run(SQLModel, table=True):
     cancelled_at: Optional[datetime] = Field(default=None)
     failed_at: Optional[datetime] = Field(default=None)
     completed_at: Optional[datetime] = Field(default=None)
-    last_error: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    last_error: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
     model: str = Field(nullable=False)
     instructions: Optional[str] = Field(default=None)
-    tools: List[Dict] = Field(default=[], sa_column=Column(JSON))
-    file_ids: List[str] = Field(default=[], sa_column=Column(JSON))
-    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", JSON))
-    usage: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    tools: List[Dict] = Field(default=[], sa_column=Column(UnicodeSafeJSON))
+    file_ids: List[str] = Field(default=[], sa_column=Column(UnicodeSafeJSON))
+    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", UnicodeSafeJSON))
+    usage: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
     temperature: Optional[float] = Field(default=None)
     top_p: Optional[float] = Field(default=None)
     max_prompt_tokens: Optional[int] = Field(default=None)
     max_completion_tokens: Optional[int] = Field(default=None)
-    truncation_strategy: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
+    truncation_strategy: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
     response_format: Optional[str] = Field(default=None)
     tool_choice: Optional[str] = Field(default=None)
     parallel_tool_calls: bool = Field(default=False)
     parent_run_id: Optional[str] = Field(default=None)
-    child_run_ids: List[str] = Field(default=[], sa_column=Column(JSON))
+    child_run_ids: List[str] = Field(default=[], sa_column=Column(UnicodeSafeJSON))
     run_mode: Optional[RunMode] = Field(default=None)
 
     def __init__(self, **data):  # noqa: D107
@@ -427,7 +456,7 @@ class ScheduledRun(SQLModel, table=True):
     thread_id: str = Field(nullable=True)
     agent: str = Field(nullable=False)
     input_message: str = Field(nullable=False)
-    run_params: Dict = Field(default_factory=dict, sa_column=Column(JSON))
+    run_params: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))
     created_at: datetime = Field(default_factory=datetime.now, nullable=False)
     created_by: str = Field(nullable=False)
     run_at: datetime = Field(nullable=False)
