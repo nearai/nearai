@@ -15,7 +15,7 @@ In this tutorial, you'll learn how to build a RAG-powered agent that accurately 
 
 To follow this tutorial you will need:
 
-1. **NEAR AI Agent** - This requires [`nearai` CLI installed](../../cli.md/?h=cli). _(~5 minutes)_
+1. **NEAR AI Agent** - This requires [`nearai` CLI installed](../../cli.md). _(~5 minutes)_
 
 2. **NEAR Docs dataset** - We'll be using the [NEAR Docs markdown files](https://github.com/near-examples/docs-ai/tree/main/docs-gpt/dataset) as a dataset. 
 
