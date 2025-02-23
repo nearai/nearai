@@ -17,12 +17,14 @@ Instructions: You are a helpful assistant that answers questions about NEAR Prot
 ??? warning "NEAR CLI not installed?"
     If you haven't installed the NEAR CLI yet, follow our [Agent Quickstart Tutorial](../../agents/quickstart.md) for installation instructions.
 
-Then, lets invoke the agent and ask it a few questions:
+Once the agent creation is complete, the CLI will show you how to run the agent locally:
 
 ```bash
-# nearai agent interactive --local  # List your local agents
-nearai agent interactive ~/.nearai/registry/<user.near>/docs-ai-tutorial/0.0.1 --local
+nearai agent interactive ~/.nearai/registry/<your-account.near>/docs-ai-tutorial/0.0.1 --local
 ```
+
+Now ask it a few questions about NEAR Protocol:
+
 
 <div class="grid" markdown>
 
@@ -77,21 +79,36 @@ Without going too deep on the specifics of NEAR Protocol - which are not relevan
 
 Now, lets try to give some context to the model so it can improve its answers. 
 
-For that, lets directly embed into the agent's prompt the documentation on:
+For that, lets directly embed into the agent's prompt documentation on:
 
 - [`Access Keys`](https://github.com/near/docs/blob/master/docs/1.concepts/protocol/access-keys.md) 
 - [`NEAR CLI`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md)
 
-In your agent directory, let's surface the these two files from our [downloaded dataset](../introduction#what-you-will-need) and copy them to the root of our agent folder:
+In your agent directory, let's download the docs dataset:
 
 ```bash
-cp ./docs/**/cli.md ./docs/**/access-keys.md .
+curl -L https://api.github.com/repos/near/docs/tarball/master | tar xz --strip=1 '*/docs'
 ```
 
-You should now have the following structure in your agent directory:
+Your agent directory should now look like this:
 
 ```
-📁 ~/.nearai/registry/your-account.near/rag-tutorial-agent/0.0.1
+📁 ~/.nearai/registry/<your-account.near>/ai-docs-tutorial/0.0.1
+├── 📁 docs/
+├── 📄 agent.py
+└── 📄 metadata.json
+```
+
+Lets surface the two files we're interested in from the dataset:
+
+```bash
+cp ./dataset/**/cli.md ./dataset/**/access-keys.md .
+```
+
+Your agent directory should now look like this:
+
+```
+📁 ./your-agent-name/0.0.1
 ├── 📁 docs/
 ├── 📄 agent.py
 ├── 📄 metadata.json
@@ -99,7 +116,7 @@ You should now have the following structure in your agent directory:
 └── 📄 access-keys.md
 ```
 
-Then let's update the `agent.py` file with the following code:
+Next, we'll update `agent.py` and instruct it to use these two markdown files:
 
 ```python
 import json
@@ -125,7 +142,7 @@ def run(env: Environment):
         },
         {
             "role": "system",
-            "content": "Give a brief but complete answer to the user's query, staying as true as possible to the documentation SPECIALLY when dealing with code"
+            "content": "Give a brief but complete answer to the user's query, staying as true as possible to the documentation ESPECIALLY when dealing with code."
         }
     ]
 
@@ -178,8 +195,8 @@ As you can see the answers now are much more accurate, which is expected, as we 
 
 ## Limitations of this Approach
 
-While useful to understand the concept, this agent has a very important limitation: **it cannot scale** to a large number of documents.
+While useful to understand the concept, this agent has a very important limitation: **It does not scale**
 
-Since we are loading all documents into the prompt, soon we will hit a limit on the number of tokens that the model can process.
+Since this approach loads all of the content of a document into the prompt, it would quickly hit a limit on the number of tokens that the model can process if we were to load _all of the documentation_. This is why we surfaced only two documents in the previous example.
 
 To solve this problem, we need to use rely on a special kind of database called a **Vector Store**, which can help us to store documents and easily retrieve the most relevant ones to answer a given query.

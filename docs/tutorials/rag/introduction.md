@@ -7,7 +7,7 @@ Thankfully, there is a solution to this problem: Retrieval-Augmented Generation 
 1. A **retrieval system** that finds relevant information from your custom dataset
 2. A **language model** that generates accurate responses using the retrieved information
 
-In this tutorial, you'll learn how to build a RAG-powered agent that accurately answers questions about NEAR Protocol!
+In this tutorial, you'll learn how to build a RAG-powered agent that accurately answers questions about NEAR Protocol.
 
 ---
 
@@ -15,24 +15,9 @@ In this tutorial, you'll learn how to build a RAG-powered agent that accurately 
 
 To follow this tutorial you will need:
 
-1. **NEAR AI Agent** - Run `nearai agent create` or follow the [Quickstart Guide](../../agents/quickstart.md) _(~5 minutes)_
+1. **NEAR AI Agent** - This requires [`nearai` CLI installed](../../cli/?h=cli). _(~5 minutes)_
 
-2. **NEAR Docs dataset** - Download [NEAR Docs markdown files](https://github.com/near/docs/tree/master/docs) in your new agent's directory.
-
-A quick way to download this dataset is to run the following in your new agent's directory:
-
-```bash
-curl -L https://api.github.com/repos/near/docs/tarball/master | tar xz --strip=1 '*/docs'
-```
-
-You should have the following structure in your agent directory:
-
-```
-📁 ~/.nearai/registry/your-account.near/rag-tutorial-agent/0.0.1
-├── 📁 docs/
-├── 📄 agent.py
-└── 📄 metadata.json
-```
+2. **NEAR Docs dataset** - We'll be using the [NEAR Docs markdown files](https://github.com/near/docs/tree/master/docs) as a dataset. 
 
 !!!info
     Make sure you have completed the [Agents Quickstart Tutorial](../../agents/quickstart.md) first, as this tutorial builds upon those concepts.
