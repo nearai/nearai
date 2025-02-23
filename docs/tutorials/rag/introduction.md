@@ -17,7 +17,7 @@ To follow this tutorial you will need:
 
 1. **NEAR AI Agent** - This requires [`nearai` CLI installed](../../cli/?h=cli). _(~5 minutes)_
 
-2. **NEAR Docs dataset** - We'll be using the [NEAR Docs markdown files](https://github.com/near/docs/tree/master/docs) as a dataset. 
+2. **NEAR Docs dataset** - We'll be using the [NEAR Docs markdown files](https://github.com/near-examples/docs-ai/tree/main/docs-gpt/dataset) as a dataset. 
 
 !!!info
     Make sure you have completed the [Agents Quickstart Tutorial](../../agents/quickstart.md) first, as this tutorial builds upon those concepts.

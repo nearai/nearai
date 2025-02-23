@@ -3,12 +3,7 @@ Vector Stores are a special kind of database that stores documents and allows re
 In our case, we will store all NEAR documentation in a vector store, this way if a user asks "What types of access keys are there in NEAR?", the vector store will help us find our access keys docs, so we can use it to answer the question. 
 
 !!! info
-    The Vector Store is built separately from the agent, and can be used in multiple places
-
-!!! tip
-    You can find the dataset and code used in this tutorial in the [vector store example](https://github.com/gagdiez/docs-ai/tree/main/docs-gpt/dataset) repository
-
-
+    The Vector Store is built separately from the agent, and can be used in multiple places.
 ---
 
 ## How Vector Stores Work
@@ -40,15 +35,23 @@ When a user asks a question, the vector still will help us find relevant documen
 
 ## Creating a Vector Store
 
-Let's create a vector store using [the official documentation](../../vector-stores.md), which consists of a set of markdown files.
+Let's create a vector store using using all of our documentation files in the [dataset](https://github.com/near-examples/docs-ai/tree/main/docs-gpt/dataset).
 
-Creating a vector store in NEAR AI consist in 2 main steps:
+!!!tip "Didn't download the dataset?"
+    If you have not completed the [problem](./problem.md) section yet, you can download the dataset by running the following command:
+    ```bash
+        curl -L https://api.github.com/repos/near-examples/docs-ai/tarball/main | tar xz --strip=1 '*/docs-gpt/dataset'
+    ```
+
+
+Creating a vector store in NEAR AI consist of 2 main steps:
 
  1.) **uploading the files** to NEAR AI
  
  2.) **assigning them** to a vector store. 
  
- Here is the entire example code:
+
+Let's start by uploading the files to NEAR AI. Create a new file called `vector.py` and paste the following code:
 
 ```python
 import json
@@ -143,10 +146,14 @@ vs = client.beta.vector_stores.create(
 print(vs.id)
 ```
 
-After running the script, you will get the `id` of the vector store that was created.
+Now run the script:
 
-This `id` will be used in the next section to build an agent that leverages the knowledge contained on it.
+```bash
+python3 vector.py
+```
+You should see each file being uploaded to NEAR AI in the console. 
 
+At the end of the script, you will get the `id` of the vector store that was created. This `id` will be used in the next section to build an agent that leverages the knowledge contained on it.
 
 ??? tip "Where are the Embeddings?"
 
@@ -169,4 +176,4 @@ In our case, our `markdown` files contain a lot of unnecessary information, such
 
 Furthermore - and this might be common to many documentation files - our files do not necessarily contain the plain-text code snippets, but instead embed them from external sources (e.g. GitHub). So we need to preprocess them to translate the Github tags into actual code snippets.
 
-In case you are curious, you can file all the preprocessing steps we use for our documentation in the [vector.py script](https://github.com/gagdiez/docs-ai/blob/main/docs-gpt/dataset/vector.py#L12-L65)
+In case you are curious, you can file all the preprocessing steps we use for our documentation in the [vector.py script](https://github.com/near-examples/docs-ai/blob/main/docs-gpt/dataset/vector.py#L12-L65)
