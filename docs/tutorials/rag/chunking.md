@@ -39,3 +39,5 @@ The `chunking_strategy` parameter is a dictionary that can have the following ke
 It is important to notice that chunks are not created based on the document's structure, but merely on counting tokens, which can lead to a loss of context.
 
 Make sure you change the `chunking_strategy` to better fit your documents' structure. For example, if your documents have a lot of code snippets, you can increase the `size` and `overlap` to make sure that the code can be correctly retrieved by the vector store.
+
+Additionally, you can use embedding models that are able to understand the document's structure and create chunks accordingly. We'll cover this in the next section.

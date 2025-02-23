@@ -13,7 +13,9 @@ If you know that your documents have a specific structure, you can create your o
 
 ### Manual Embeddings
 
-Instead of using a vector store, we will directly call the [Nomic v1.5 model](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5) so it creates the embedding vector for our documents:
+Instead of using a vector store, you can directly call the [Nomic v1.5 model](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5) so it creates the embedding vector for our documents:
+
+**Example:**
 
 ```python
 import json
@@ -70,7 +72,9 @@ Notice that we are manually storing the embeddings into a `CSV` file. This is be
 
 ### Using Manual Embeddings
 
-After creating the embeddings, we will need to emulate the vector store's behavior by querying the embeddings and selecting the most relevant documents.
+After creating the embeddings, you will need to emulate the vector store's behavior by querying the embeddings and selecting the most relevant documents.
+
+**Example:**
 
 ```python
 import json
@@ -137,8 +141,8 @@ def run(env: Environment):
 run(env)
 ```
 
-In the code above, we are transforming the user's query into an embedding using the model we used to create the embeddings.
+In the code above, we transform the user's query into a vector embedding using the same model that created our documentation embeddings. 
 
-After that, we manually calculate the cosine similarity between the user's query and all the embeddings we created.
+The system then calculates the cosine similarity between the query embedding and all stored document embeddings to find the most relevant matches.
 
-Finally, we sort the documents by similarity and send the 6 most relevant documents to the model.
+Finally, we rank the documents by their similarity scores and select the 6 most relevant chunks to provide context for the model's response.
