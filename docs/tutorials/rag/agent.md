@@ -135,8 +135,7 @@ Let's try it out! Lets ask the agent the same questions we used when [talking ab
     ```
 </div>
 
-Lets remember that the agent was hallucinating when asked the same questions without the vector store.
-
-Now, the answers are both correct and complete, which means that the agent was able to retrieve the right answers from the vector store.
+Let's compare the results with our previous attempts. Without the vector store, the agent was prone to hallucination - generating plausible but incorrect responses. Now, the answers are both correct and complete grounded in the actual documentation - meaning that the agent was able to retrieve the right answers from the vector store.
 
 More impressively, the vector store was able to correctly pick up the relevant documents from the more than than 100 files that compose the official NEAR documentation.
+
