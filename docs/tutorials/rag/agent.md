@@ -7,7 +7,15 @@ Let's see how simple it is to create an agent that leverages the vector store we
 
 ## Documentation Agent
 
-The script we created in the previous section was returning us the `id` of the vector store we created. We will use this `id` within the agent to retrieve the store, so we can query it.
+In the previous section, we created a vector store and obtained its unique `id`. This `id` is a crucial piece that allows us to reference and interact with our stored embeddings. We'll now use this `id` within our agent to:
+
+1. Retrieve the vector store from storage
+2. Query it for relevant information based on user input
+3. Use the retrieved context to generate more informed responses
+
+The vector store `id` acts as a persistent identifier, enabling our agent to access the same knowledge base across multiple sessions or interactions.
+
+Let's update your `agent.py` file to include the vector store `id` and the RAG logic:
 
 ```python
 import json
