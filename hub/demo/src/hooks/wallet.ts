@@ -35,6 +35,7 @@ export function useWalletInitializer() {
             setupSender(),
             setupHereWallet(),
           ],
+          fallbackRpcUrls: ['/api/near-rpc-proxy'],
         });
       }
 
