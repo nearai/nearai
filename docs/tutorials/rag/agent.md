@@ -58,19 +58,23 @@ run(env)
 
 ### How it works?
 
-In the code above, we are retrieving the user's query from the list of messages in the environment, and using it to **directly query the vector store**.
+In the code above, we extract the user's question from the environment's message history and use it as a semantic search query against our vector store. This allows us to find the most relevant document chunks based on their embedding similarity to the query.
 
 ```python
 vector_results = env.query_vector_store(VECTOR_STORE_ID, user_query)
 ```
 
-The results is a list of the documents that are the most relevant to answer the user's query. In order to make the model's job easier, we are only sending the 6 most relevant documents to the model.
+The vector store returns a list of documents ranked by relevance to the user's query. To maintain efficiency and focus, we limit our context to the 6 most relevant document chunks:
 
 ```python
 docs = [{"file": res["chunk_text"]} for res in vector_results[:6]]
 ```
 
-After, we create a prompt that includes the user's query, the documents, and a system message that instructs the model to generate a response.
+We then construct a structured prompt with three key components:
+
+1. The user's original query
+2. The relevant documentation chunks
+3. A system message that guides the model's response behavior
 
 ```python
 prompt = [
@@ -89,7 +93,7 @@ prompt = [
 ]
 ```
 
-Finally, we use the `env.completion` method to generate the response and show it to the user.
+This prompt structure ensures that the model has both the necessary context from our documentation and clear instructions on how to use it. We then pass this prompt to `env.completion()` to generate a response that accurately addresses the user's question based on our documentation.
 
 ```python
 answer = env.completion(model=MODEL, messages=prompt)
