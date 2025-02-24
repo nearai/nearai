@@ -175,11 +175,10 @@ Driven by one of the minds behinds **TensorFlow** and the **Transformer Architec
     
 </head>
 <body>
-    <button id="connect-btn" class="connect-btn" onclick="signInWithNear()">Connect NEAR Wallet</button>
+    <button id="connect-btn" class="connect-btn" onclick="signInWithNear()">Sign In</button>
     <iframe 
-        src="https://app.near.ai/agents/gagdiez.near/docs-gpt/latest/run"
         class="agent-iframe"
-        allow="microphone"
+        sandbox="allow-scripts allow-popups allow-same-origin allow-forms"
         title="NEAR AI Agent">
     </iframe>
 </body>
