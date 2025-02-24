@@ -52,8 +52,8 @@ nosetests.xml
 coverage.xml
 
 # Virtual environment
-.venv/
-venv/
+**/.venv/
+**/venv/
 
 
 # Ignore all .env files
@@ -75,3 +75,5 @@ venv/
 # VS Code
 .vscode/
 .devcontainer/
+
+nearai-cvm-*/

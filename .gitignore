@@ -10,3 +10,5 @@ site/
 .cache/
 .venv/
 last_block_id.txt
+
+nearai-cvm-*/
