@@ -3,6 +3,7 @@ from enum import Enum
 from os import getenv
 from typing import Callable
 
+import httpx
 from dotenv import load_dotenv
 from nearai.shared.client_config import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
 from openai import OpenAI
@@ -46,6 +47,16 @@ def get_llm_ai(provider: str) -> OpenAI:
             api_key=getenv("FIREWORKS_API_KEY"),
             timeout=DEFAULT_TIMEOUT,
             max_retries=DEFAULT_MAX_RETRIES,
+        )
+    elif provider == "nearai":
+        # TODO: is it https?
+        http_client = httpx.Client(verify=False)
+        return OpenAI(
+            base_url="https://10.0.2.2/v1",
+            api_key="PHALA",
+            timeout=DEFAULT_TIMEOUT,
+            max_retries=DEFAULT_MAX_RETRIES,
+            http_client=http_client,
         )
     elif provider == "local":
         return OpenAI(

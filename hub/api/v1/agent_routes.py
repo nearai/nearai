@@ -27,6 +27,7 @@ from hub.api.v1.sql import SqlClient
 logger = logging.getLogger(__name__)
 
 S3_ENDPOINT = getenv("S3_ENDPOINT")
+
 s3 = boto3.client(
     "s3",
     endpoint_url=S3_ENDPOINT,
@@ -141,13 +142,13 @@ def invoke_agent_in_cvm(
     while not worker:
         logger.info(f"Getting CVM worker from {cvm_runner_pool_url}")
         try:
-            worker = Worker(**requests.get(f"{cvm_runner_pool_url}/get_worker").json())
+            worker = Worker(**requests.post(f"{cvm_runner_pool_url}/get_worker").json())
             logger.info(f"CVM worker: {worker}")
         except Exception as e:
             logger.info(f"Error getting CVM worker: {e}")
         time.sleep(1)
 
-    cvm_url = f"http://{cvm_runner_host}:{worker.port}"
+    cvm_url = f"https://{cvm_runner_host}:{worker.port}"
 
     client = CvmClient(cvm_url, auth)
 
@@ -166,6 +167,7 @@ def invoke_agent_in_cvm(
                 env_vars={"agent_env_vars": "test"},
             ),
         )
+        logger.info(f"Running agent {agent_id} in CVM at {cvm_url}")
         client.run(
             RunRequest(
                 run_id=run_id,

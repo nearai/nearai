@@ -54,7 +54,7 @@ def load_protected_variables():
 
 
 cloudwatch = create_cloudwatch()
-protected_vars = load_protected_variables()
+# protected_vars = load_protected_variables()
 
 
 def handler(event, context):

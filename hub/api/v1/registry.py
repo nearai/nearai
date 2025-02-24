@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import os
 import re
 from collections import defaultdict
 from os import getenv
@@ -32,14 +33,13 @@ DEFAULT_NAMESPACE_WRITE_ACCESS_LIST = [
     "calebjacob.near",
 ]
 
-load_dotenv()
-S3_BUCKET = getenv("S3_BUCKET")
+print(os.environ)
 
+S3_BUCKET = getenv("S3_BUCKET")
 S3_ENDPOINT = getenv("S3_ENDPOINT")
-s3 = boto3.client(
-    "s3",
-    endpoint_url=S3_ENDPOINT,
-)
+
+
+s3 = boto3.client("s3", endpoint_url=S3_ENDPOINT)
 
 v1_router = APIRouter(
     prefix="/registry",

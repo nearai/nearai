@@ -1,6 +1,7 @@
 import re
 from typing import Optional
 
+import httpx
 import openai
 from pydantic import BaseModel
 
@@ -29,6 +30,12 @@ class ClientConfig(BaseModel):
         """Get the hub client."""
         signature = f"Bearer {self.auth.model_dump_json()}"
         base_url = self.base_url
+        http_client = httpx.Client(verify=False)
+
         return openai.OpenAI(
-            base_url=base_url, api_key=signature, timeout=DEFAULT_TIMEOUT, max_retries=DEFAULT_MAX_RETRIES
+            base_url=base_url,
+            api_key=signature,
+            timeout=DEFAULT_TIMEOUT,
+            max_retries=DEFAULT_MAX_RETRIES,
+            http_client=http_client,
         )

@@ -4,6 +4,7 @@ from datetime import datetime
 from functools import cached_property
 from typing import Any, Dict, Iterable, List, Literal, Optional, Union
 
+import httpx
 import litellm
 import openai
 import requests
@@ -37,7 +38,8 @@ class InferenceClient(object):
         self.agent_identifier = agent_identifier
         self._auth = None
         self.generate_auth_for_current_agent(config, agent_identifier)
-        self.client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
+        http_client = httpx.Client(verify=False)
+        self.client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth, http_client=http_client)
 
     def generate_auth_for_current_agent(self, config, agent_identifier):
         """Regenerate auth for the current agent."""
@@ -101,6 +103,9 @@ class InferenceClient(object):
         # NOTE(#246): this is to disable "Provider List" messages.
         litellm.suppress_debug_info = True
 
+        litellm.ssl_verify = False
+        kwargs["ssl_verify"] = False
+
         for i in range(0, self._config.num_inference_retries):
             try:
                 result: Union[ModelResponse, CustomStreamWrapper] = litellm_completion(
@@ -112,7 +117,7 @@ class InferenceClient(object):
                     output_cost_per_token=0,
                     temperature=temperature,
                     max_tokens=max_tokens,
-                    base_url=self._config.base_url,
+                    base_url="https://api.near.ai/v1",
                     provider=provider,
                     api_key=self._auth,
                     **kwargs,

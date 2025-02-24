@@ -1,4 +1,5 @@
 import logging
+from os import getenv
 from typing import Optional
 
 import boto3
@@ -12,7 +13,10 @@ hub_secrets_router = APIRouter(tags=["Hub Secrets"])
 
 logger = logging.getLogger(__name__)
 
-s3_client = boto3.client("s3")
+s3_client = boto3.client(
+    "s3",
+    endpoint_url=getenv("S3_ENDPOINT"),
+)
 
 
 class CreateHubSecretRequest(BaseModel):
