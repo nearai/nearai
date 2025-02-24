@@ -51,6 +51,7 @@ theme:
     - navigation.instant.progress
     - navigation.prune
     - navigation.expand
+    - navigation.sections
     - navigation.tabs
     # - navigation.tabs.sticky
     - navigation.top
@@ -136,23 +137,34 @@ nav:
     - Decentralization: 'decentralization.md'
     - Private & Verifiable AI: 'private-ml-sdk.md'
   - Agents:
-    - Quickstart: 'agents/quickstart.md'
-    - Agent Registry: 'agents/registry.md'
-    - Local & Remote Runs: 'agents/running.md'
-    - Threads: 'agents/threads.md'
-    - Environment:
-      - 'agents/env/overview.md'
-      - 'agents/env/messages_files.md'
-      - 'agents/env/inference.md'
-      - 'agents/env/calling_other_agents.md'
-      - 'agents/env/tools.md'
-      - Secrets & Variables: 'agents/env/variables.md'
-      - 'agents/env/near.md'
-    - Inference (OpenAI): 'inference.md'
-    - Vector Stores (OpenAI): 'vector-stores.md'
-    - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
-    - NEAR Event-Triggered Agents: 'near_events.md'
-    - Twitter (X) Triggered Agents: 'agent_triggers.md'
+    - Building Agents:
+      - Quickstart: 'agents/quickstart.md'
+      - "Agent Environment":
+        - 'agents/env/overview.md'
+        - 'agents/env/messages_files.md'
+        - 'agents/env/inference.md'
+        - 'agents/env/calling_other_agents.md'
+        - 'agents/env/tools.md'
+        - Secrets & Variables: 'agents/env/variables.md'
+        - NEAR Blockchain: 'agents/env/near.md'
+      - Agent Registry: 'agents/registry.md'
+      - Core Features:
+        - Threads: 'agents/threads.md'
+        - Inference (OpenAI): 'inference.md'
+        - Vector Stores (OpenAI): 'vector-stores.md'
+        - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
+        - Local & Remote Runs: 'agents/running.md'
+      - Event-Driven Agents:
+        - NEAR Event-Triggered Agents: 'near_events.md'
+        - Twitter (X) Triggered Agents: 'agent_triggers.md'
+    - Tutorials:
+      - Documentation Agent (RAG):
+        - Introduction: 'tutorials/rag/introduction.md'
+        - The Problem: 'tutorials/rag/problem.md'
+        - Vector Stores: 'tutorials/rag/vector_store.md'
+        - RAG Agent: 'tutorials/rag/agent.md'
+        - Chunking: 'tutorials/rag/chunking.md'
+        - Manual Embeddings: 'tutorials/rag/embeddings.md'
   - Models:
     - 'models/home.md'
     - Fine-tuning: 'models/fine_tuning.md'
