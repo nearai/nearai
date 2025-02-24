@@ -8,6 +8,20 @@ export async function GET() {
   const form: z.infer<typeof requestDataFormSchema> = {
     fields: [
       {
+        id: 'full_name',
+        label: 'Full Name',
+        type: 'text',
+        required: true,
+        autocomplete: 'name',
+      },
+      {
+        id: 'phone',
+        label: 'Phone',
+        type: 'tel',
+        required: true,
+        autocomplete: 'tel',
+      },
+      {
         id: 'email_address',
         label: 'Email Address',
         type: 'email',
@@ -15,13 +29,6 @@ export async function GET() {
         description:
           'Order and tracking information will be sent to this email',
         autocomplete: 'email',
-      },
-      {
-        id: 'full_name',
-        label: 'Full Name',
-        type: 'text',
-        required: true,
-        autocomplete: 'name',
       },
       {
         id: 'address_line_1',
