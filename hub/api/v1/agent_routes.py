@@ -1,14 +1,19 @@
 import json
+import logging
+from collections import deque
 from os import getenv
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import boto3
 import requests
+from botocore.config import Config
 from fastapi import APIRouter, Depends, HTTPException
 from nearai.agents.local_runner import LocalRunner
 from nearai.clients.lambda_client import LambdaWrapper
 from nearai.shared.auth_data import AuthData
+from nearai.shared.client_config import DEFAULT_TIMEOUT
 from pydantic import BaseModel, Field
+from sqlalchemy import and_, func, inspect, text
 
 from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.entry_location import EntryLocation
@@ -67,12 +72,35 @@ class CreateThreadAndRunRequest(BaseModel):
     )
 
 
+available_local_runners_ports = getenv("AVAILABLE_LOCAL_RUNNER_PORTS", "")
+available_local_runners = deque(
+    [int(port) for port in available_local_runners_ports.split(",") if port.strip().isdigit()]
+)  # Queue of available ports
+agent_runners_ports: dict[str, int] = {}  # Mapping of agents to their assigned ports
+
+
 def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: AuthToken, params):
     auth_data = auth.model_dump()
 
     if auth_data["nonce"]:
         if isinstance(auth_data["nonce"], bytes):
             auth_data["nonce"] = auth_data["nonce"].decode("utf-8")
+
+    if "%PORT%" in custom_runner_url:
+        # Assign a port to the agent if not already assigned
+        if agents in agent_runners_ports:
+            port = agent_runners_ports[agents]  # Reuse existing port
+        elif available_local_runners:
+            port = available_local_runners.popleft()  # Assign a free port
+            agent_runners_ports[agents] = port
+        else:
+            # If no ports are available, reassign the oldest used agent's port
+            oldest_agent = next(iter(agent_runners_ports))
+            logging.warning(f"No available local runners ports! Reassigning port from agent {oldest_agent}")
+            port = agent_runners_ports[oldest_agent]
+            agent_runners_ports[agents] = port  # Update mapping
+
+        custom_runner_url = custom_runner_url.replace("%PORT%", str(port))
 
     payload = {
         "agents": agents,
@@ -93,7 +121,8 @@ def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: Aut
 
 
 def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: AuthToken, params):
-    wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
+    config = Config(read_timeout=DEFAULT_TIMEOUT, connect_timeout=DEFAULT_TIMEOUT, retries=None)
+    wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2", config=config), thread_id, run_id)
     auth_data = auth.model_dump()
 
     if auth_data["nonce"]:
@@ -167,9 +196,7 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
         raise HTTPException(status_code=404, detail=f"Agent '{agent_entry}' not found in the registry.")
 
     specific_agent_version_to_run = f"{agent_entry.namespace}/{agent_entry.name}/{agent_entry.version}"
-    entry_details = agent_entry.details
-    agent_details = entry_details.get("agent", {})
-    framework = agent_details.get("framework", "base")
+    framework = agent_entry.get_framework()
 
     with get_session() as session:
         if not thread_id:
@@ -202,28 +229,28 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
 
     if framework == "prompt":
         raise HTTPException(status_code=400, detail="Prompt only agents are not implemented yet.")
+
+    if runner == "custom_runner":
+        custom_runner_url = getenv("CUSTOM_RUNNER_URL", None)
+        if custom_runner_url:
+            invoke_agent_via_url(custom_runner_url, specific_agent_version_to_run, thread_id, run_id, auth, params)
+    elif runner == "local_runner":
+        """Runs agents directly from the local machine."""
+
+        LocalRunner(
+            None,
+            agents,
+            thread_id,
+            run_id,
+            AuthData(**auth.model_dump()),  # TODO: https://github.com/nearai/nearai/issues/421
+            params,
+        )
     else:
-        if runner == "custom_runner":
-            custom_runner_url = getenv("CUSTOM_RUNNER_URL", None)
-            if custom_runner_url:
-                invoke_agent_via_url(custom_runner_url, specific_agent_version_to_run, thread_id, run_id, auth, params)
-        elif runner == "local_runner":
-            """Runs agents directly from the local machine."""
+        function_name = f"{runner}-{framework.lower()}"
+        if agent_api_url != "https://api.near.ai":
+            print(f"Passing agent API URL: {agent_api_url}")
 
-            LocalRunner(
-                None,
-                agents,
-                thread_id,
-                run_id,
-                AuthData(**auth.model_dump()),  # TODO: https://github.com/nearai/nearai/issues/421
-                params,
-            )
-        else:
-            function_name = f"{runner}-{framework.lower()}"
-            if agent_api_url != "https://api.near.ai":
-                print(f"Passing agent API URL: {agent_api_url}")
-
-            invoke_agent_via_lambda(function_name, specific_agent_version_to_run, thread_id, run_id, auth, params)
+        invoke_agent_via_lambda(function_name, specific_agent_version_to_run, thread_id, run_id, auth, params)
 
     with get_session() as session:
         completed_run_model = session.get(RunModel, run_id)
@@ -256,3 +283,66 @@ def get_agent_entry(agent, data_source: str) -> Optional[RegistryEntry]:
         )
     else:
         raise HTTPException(status_code=404, detail=f"Illegal data_source '{data_source}'.")
+
+
+class FilterAgentsRequest(BaseModel):
+    owner_id: Optional[str]
+    with_capabilities: Optional[bool] = False
+    latest_versions_only: Optional[bool] = True
+    limit: Optional[int] = 100
+    offset: Optional[int] = 0
+
+
+@run_agent_router.post("/find_agents", response_model=List[RegistryEntry])
+def find_agents(request_data: FilterAgentsRequest, auth: AuthToken = Depends(get_auth)) -> List[RegistryEntry]:
+    """Find agents based on various parameters."""
+    with get_session() as session:
+        # Start building the base query
+        query = session.query(RegistryEntry)
+
+        # Get the column for the namespace. This helps mypy to understand the type of the column
+        # inspect uses cached data, so it's not a performance issue, but this can be optimized
+        # by storing the mapper in a variable and reusing it
+        mapper = inspect(RegistryEntry)
+
+        category_column = mapper.columns["category"]
+        namespace_column = mapper.columns["namespace"]
+        name_column = mapper.columns["name"]
+        version_column = mapper.columns["version"]
+
+        query = query.filter(category_column == "agent")
+
+        # Filter by latest versions only (if flag is set)
+        if request_data.latest_versions_only:
+            latest_versions = (
+                session.query(namespace_column, name_column, func.max(version_column).label("max_version"))
+                .group_by(namespace_column, name_column)
+                .subquery()
+            )
+
+            # Join the main query with the subquery to get only the latest versions
+            query = query.join(
+                latest_versions,
+                and_(
+                    namespace_column == latest_versions.c.namespace,
+                    name_column == latest_versions.c.name,
+                    version_column == latest_versions.c.max_version,
+                ),
+            )
+
+        # Filter by owner (if flag is set)
+        if request_data.owner_id is not None:
+            namespace_column = mapper.columns["namespace"]
+            query = query.filter(namespace_column == request_data.owner_id)
+
+        # Filter by capabilities (if flag is set)
+        if request_data.with_capabilities:
+            query = query.filter(text("JSON_EXTRACT_JSON(details, 'capabilities') IS NOT NULL"))
+
+        # Limit and offset
+        query = query.limit(request_data.limit).offset(request_data.offset)
+
+        # Execute query and return results
+        filtered_agents = query.all()
+
+        return filtered_agents

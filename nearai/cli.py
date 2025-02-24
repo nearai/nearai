@@ -116,7 +116,7 @@ class RegistryCli:
                     "model_max_tokens": DEFAULT_MODEL_MAX_TOKENS,
                     "max_iterations": 1,
                 }
-                metadata["details"]["agent"]["framework"] = "base"
+                metadata["details"]["agent"]["framework"] = "minimal"
 
             json.dump(metadata, f, indent=2)
 
@@ -520,6 +520,8 @@ class AgentCli:
             env_vars: Optional environment variables to pass to the agent
 
         """
+        assert_user_auth()
+
         if agent is None:
             # List available agents in the registry folder
             registry_path = Path(get_registry_folder())
@@ -576,6 +578,17 @@ class AgentCli:
         last_message_id = None
         print(f"\n=== Starting interactive session with agent: {agent_id} ===")
         print("Type 'exit' to end the session\n")
+
+        # get agent metadata from metadata.json
+        metadata_path = agent_path / "metadata.json"
+        with open(metadata_path) as f:
+            metadata = json.load(f)
+            title = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("title")
+            if title:
+                print(title)
+            description = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("description")
+            if description:
+                print(description)
 
         while True:
             new_message = input("> ")
@@ -636,6 +649,8 @@ class AgentCli:
         env_vars: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
         """Runs agent non-interactively with a single task."""
+        assert_user_auth()
+
         hub_client = get_hub_client()
         if thread_id:
             thread = hub_client.beta.threads.retrieve(thread_id)
@@ -1183,6 +1198,13 @@ def check_update():
 
     except Exception as _:
         pass
+
+
+def assert_user_auth() -> None:
+    """Ensure the user is authenticated."""
+    if CONFIG.auth is None:
+        print("Please login with `nearai login` first")
+        exit(1)
 
 
 def main() -> None:

@@ -34,11 +34,11 @@ Driven by one of the minds behinds **TensorFlow** and the **Transformer Architec
     </span>
 
 
--   :material-web: __Web Hub__ :octicons-link-external-16:
+-   :material-web: __Developer Hub__ :octicons-link-external-16:
 
     ---
 
-    Use our Web Hub to discover agents, datasets, and models with ease
+    NEAR AI developer hub where you can discover and deploy agents, datasets, and models with ease. 
 
     <span style="display: flex; justify-content: space-between;">
     [:material-robot-happy: Agents](https://app.near.ai/agents)
@@ -60,7 +60,13 @@ Driven by one of the minds behinds **TensorFlow** and the **Transformer Architec
 
 !!! warning "Alpha"
 
-    NEAR AI is currently on its alpha stage. We are actively working on improving the software and would love your help.
+    NEAR AI is currently in `alpha` - we're building something special and shipping new features every day! Want to help shape the future of AI? Join our community and contribute! 🚀
 
-    If you would like to help build our future, please see our [contributing guide](contributing.md).
+    - 🐛 [Report bugs and suggest features](https://github.com/nearai/nearai/issues)
+    - 💻 [Submit pull requests](https://github.com/nearai/nearai/pulls)
+    - 📖 [Improve documentation](contributing.md/#contribute-documentation)
+    - 🤝 [Help other users in the community](https://t.me/nearaialpha)
+    - 🌟 [Star our repository](https://github.com/nearai/nearai)
+
+    Check out our [contributing guide](contributing.md) to get started.
 

@@ -50,7 +50,7 @@
   z-index: 250;
   top: var(--header-height);
   max-width: 100%;
-  max-height: var(--section-fill-height);
+  max-height: calc(100svh - max(var(--header-height), var(--sidebar-root-top)));
   min-height: 0;
   flex-shrink: 0;
   box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);

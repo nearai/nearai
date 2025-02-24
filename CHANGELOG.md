@@ -1,3 +1,90 @@
+## v0.1.13 (2025-02-21)
+
+### Feat
+
+- enhance readme (#856)
+- `latest_versions_only` argument added to `env.find_agents` (#914)
+- add `mkdocs-redirect` plugin (#917)
+- enhance alpha section with CTAs (#874)
+- enhance secrets & env variables (#879)
+- frameworks base/web-agent -> minimal/standard (#892)
+- multiple workers support (#886)
+- web agent to support eth libs (#887)
+
+### Fix
+
+- minor typos in `private-ml-sdk.md` (#873)
+- readme path fixed for py_runner (#897)
+
+## v0.1.12 (2025-02-19)
+
+### Feat
+
+- add optional docs deps in toml (#877)
+- add docs PR preview (#888)
+- add mcp dependency to base framework requirements (#864)
+- sql method to `list_vector_store_files` (#859)
+- local runner to support multiple agents in parallel. Doc: aws_t… (#854)
+- debug mode to return python error & python traceback (#833)
+
+### Fix
+
+- callback_url cannot be None, replace default value to "" to auto-generated signature (#880)
+- signer_account_id getter simplified (#881)
+- do not try to cloudwatch value if value is null (#883)
+- update registry doc (#878)
+- recreate agent files in `temp_dir` for both py and ts cached agents (#868)
+- Proper unicode handling in JSON content using UnicodeSafeJSON (#834)
+- Introduced `UnicodeSafeJSON` type decorator using LONGTEXT storage
+fix: Updated Message model's content field
+fix: Singlestore connection string updated to force charset
+
+## v0.1.11 (2025-02-11)
+
+### Feat
+
+- Ensure the user is authenticated on agent local run (#822)
+
+### Fix
+
+- Removed unnecessary retries in HUB (#827)
+
+## v0.1.10 (2025-02-01)
+
+### Feat
+
+- update agent quickstart guide (#782)
+
+## v0.1.9 (2025-01-31)
+
+## v0.1.8 (2025-01-31)
+
+## v0.1.7 (2025-01-31)
+
+### Feat
+
+- env methods to interact with NEAR Blockchain (#748)
+- easy agent creation (#723)
+- cli to respect `verbose` param (#716)
+- run_scheduler (#703)
+- format verbose printed statements (#709)
+- Expose user's NEAR account_id to agent (#700)
+- borsh serializer to support dicts (#677)
+- get_signed_completion to use messages as list, not string
+fix: user auth removed from runner's logs
+- hub to derive a private key for every agent and generate a veri… (#662)
+- faster (#665)
+
+### Fix
+
+- set num_retries to avoid extra requests with slow completions (#755)
+- set DEFAULT_TIMEOUT and remove MAX_RETRIES to avoid multiple paid requests on slow completions (#754)
+- add format_check and update lint/type check filename (#710)
+- enable `FASTNEAR_APIKEY` (#699)
+- cached_property for runner properties (#692)
+- add project dependencies section for pip install support (#683)
+- protected auth (#670)
+
 ## v0.1.6 (2024-12-19)
 
 ### Feat

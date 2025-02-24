@@ -114,7 +114,7 @@ services:
       context: ..
       dockerfile: .docker/Dockerfile.agent_runner
       args:
-        FRAMEWORK: -base
+        FRAMEWORK: -minimal
   
   ci:
     depends_on:

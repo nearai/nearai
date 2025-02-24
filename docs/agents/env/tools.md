@@ -11,6 +11,7 @@ To tell the LLM about your tools and automatically execute them when selected by
 
 * [`completion_and_run_tools`](../../api.md#nearai.agents.environment.Environment.completion_and_run_tools): Allows tools to be passed and processes any returned tool_calls by running the tool
 * [`completions_and_run_tools`](../../api.md#nearai.agents.environment.Environment.completions_and_run_tools): Handles tool calls and returns the full llm response.
+* [`completion_and_get_tools_calls`](../../api.md#nearai.agents.environment.Environment.completion_and_get_tools_calls): Returns completion message and/or tool calls from OpenAI or Llama tool formats.
 
 By default, these methods will add both the LLM response and tool invocation responses to the message list. 
 You do not need to call `env.add_message` for these responses.

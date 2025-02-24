@@ -7,6 +7,7 @@ from subprocess import call
 from typing import Optional, Union
 
 import boto3
+from ddtrace import patch_all, tracer
 from nearai.agents.agent import Agent
 from nearai.agents.environment import Environment
 from nearai.aws_runner.partial_near_client import PartialNearClient
@@ -17,17 +18,25 @@ from nearai.shared.inference_client import InferenceClient
 from nearai.shared.near.sign import SignatureVerificationResult, verify_signed_message
 from nearai.shared.provider_models import PROVIDER_MODEL_SEP
 
+# Initialize Datadog tracing
+if os.environ.get("DD_API_KEY"):
+    patch_all()
+
 OUTPUT_PATH = "/tmp/nearai-agent-runner"
 DEFAULT_API_URL = "https://api.near.ai"
 
 # Local caches
-inference_client = None
-inference_client_cache_time = None
+provider_models_cache = None
+provider_models_cache_time = None
 local_agent_cache: dict[str, Agent] = {}
 
 
 def create_cloudwatch():
-    if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    if (
+        os.environ.get("AWS_ACCESS_KEY_ID")
+        and os.environ.get("AWS_SECRET_ACCESS_KEY")
+        and os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+    ):
         return boto3.client("cloudwatch", region_name="us-east-2")
     return None
 
@@ -58,6 +67,7 @@ cloudwatch = create_cloudwatch()
 protected_vars = load_protected_variables()
 
 
+@tracer.wrap(service="aws-runner", resource="lambda_handler")
 def handler(event, context):
     start_time = time.perf_counter()
     required_params = ["agents", "auth"]
@@ -111,20 +121,23 @@ def handler(event, context):
 
 
 def write_metric(metric_name, value, unit="Milliseconds", verbose=True):
-    if cloudwatch:  # running in lambda or locally passed credentials
-        cloudwatch.put_metric_data(
-            Namespace="NearAI",
-            MetricData=[
-                {
-                    "MetricName": metric_name,
-                    "Value": value,
-                    "Unit": unit,
-                    "Dimensions": [
-                        {"Name": "FunctionName", "Value": os.environ["AWS_LAMBDA_FUNCTION_NAME"]},
-                    ],
-                }
-            ],
-        )
+    if cloudwatch and value:  # running in lambda or locally passed credentials
+        try:
+            cloudwatch.put_metric_data(
+                Namespace="NearAI",
+                MetricData=[
+                    {
+                        "MetricName": metric_name,
+                        "Value": value,
+                        "Unit": unit,
+                        "Dimensions": [
+                            {"Name": "FunctionName", "Value": os.environ["AWS_LAMBDA_FUNCTION_NAME"]},
+                        ],
+                    }
+                ],
+            )
+        except Exception as e:
+            print("Caught Error writing metric to CloudWatch: ", e)
     elif verbose:
         print(f"[DEBUG] • Would have written metric {metric_name} with value {value} to cloudwatch")
 
@@ -133,10 +146,23 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
     agent_metadata = None
 
     if params["data_source"] == "registry":
+        use_cache = os.getenv("USE_AGENT_CACHE", "true").lower() == "true"
+
         global local_agent_cache
-        if agent in local_agent_cache:
-            print(f"Using {agent} from cache")
-            return local_agent_cache[agent]
+        if use_cache:
+            if agent in local_agent_cache:
+                cached_agent = local_agent_cache[agent]
+
+                # recreate the agent object to ensure it has all data from constructor
+                full_agent = Agent(
+                    agent,
+                    cached_agent.agent_files,
+                    cached_agent.metadata or {},
+                    change_to_temp_dir=params.get("change_to_agent_temp_dir", True),
+                )
+
+                print(f"Using {agent} from cache in {full_agent.temp_dir}")
+                return full_agent
 
         start_time = time.perf_counter()
         agent_files = client.get_agent(agent)
@@ -150,6 +176,7 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
             agent, agent_files, agent_metadata or {}, change_to_temp_dir=params.get("change_to_agent_temp_dir", True)
         )
         local_agent_cache[full_agent.identifier] = full_agent
+        print(f"Saving {full_agent.identifier} from {full_agent.temp_dir} to cache")
         return full_agent
     elif params["data_source"] == "local_files":
         agent = agent.replace(f"{get_registry_folder()}/", "")
@@ -304,18 +331,21 @@ def start_with_environment(
         base_url=api_url + "/v1",
         auth=auth,
     )
-    global inference_client
-    global inference_client_cache_time
+    inference_client = InferenceClient(client_config, protected_vars.get("RUNNER_API_KEY"), agent.identifier)
+
+    global provider_models_cache
+    global provider_models_cache_time
     # Force a check for new models after an hour if the runner has stayed hot for that long
     # this is a failsafe given usage patterns at the time of writing, if models are uploaded more frequently and
     # runners stay hot, it could be adjusted down or client model caching removed.
-    if not inference_client or (time.time() - inference_client_cache_time > 3600):
-        if inference_client_cache_time:
+    if not provider_models_cache or (time.time() - (provider_models_cache_time or 0) > 3600):
+        if provider_models_cache_time:
             write_metric("InferenceClientCacheCleared", "1", "Count")
-        inference_client = InferenceClient(client_config, protected_vars.get("RUNNER_API_KEY"), agent.identifier)
-        inference_client_cache_time = time.time()
+        provider_models_cache_time = time.time()
+        provider_models_cache = inference_client.provider_models
     else:
-        inference_client.generate_auth_for_current_agent(client_config, agent.identifier)
+        inference_client.set_provider_models(provider_models_cache)
+
     hub_client = client_config.get_hub_client()
     run_path = (
         additional_path
@@ -335,10 +365,6 @@ def start_with_environment(
         agent_runner_user=protected_vars.get("AGENT_RUNNER_USER"),
         fastnear_api_key=protected_vars.get("FASTNEAR_APY_KEY"),
     )
-    if agent.welcome_title:
-        print(agent.welcome_title)
-    if agent.welcome_description:
-        print(agent.welcome_description)
     env.add_agent_start_system_log(agent_idx=0)
     return EnvironmentRun(near_client, loaded_agents, env, thread_id, params.get("record_run", True), verbose=verbose)
 

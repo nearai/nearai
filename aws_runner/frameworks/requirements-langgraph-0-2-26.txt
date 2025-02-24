@@ -17,3 +17,4 @@ tweepy >= 4.14.0
 langchain == 0.3.0
 langgraph == 0.2.26
 openai == 1.51.2
+ddtrace == 2.21.0

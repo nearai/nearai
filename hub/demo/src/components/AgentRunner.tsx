@@ -9,9 +9,9 @@ import {
   Form,
   handleClientError,
   InputTextarea,
+  openToast,
   PlaceholderSection,
   PlaceholderStack,
-  Slider,
   Text,
   Tooltip,
 } from '@near-pagoda/ui';
@@ -33,7 +33,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
+import { type SubmitHandler, useForm } from 'react-hook-form';
 import { type z } from 'zod';
 
 import { AgentPermissionsModal } from '~/components/AgentPermissionsModal';
@@ -41,9 +41,9 @@ import { AgentWelcome } from '~/components/AgentWelcome';
 import { EntryEnvironmentVariables } from '~/components/EntryEnvironmentVariables';
 import { IframeWithBlob } from '~/components/lib/IframeWithBlob';
 import { Sidebar } from '~/components/lib/Sidebar';
-import { Messages } from '~/components/Messages';
 import { SignInPrompt } from '~/components/SignInPrompt';
-import { ThreadsSidebar } from '~/components/ThreadsSidebar';
+import { ThreadMessages } from '~/components/threads/ThreadMessages';
+import { ThreadsSidebar } from '~/components/threads/ThreadsSidebar';
 import { env } from '~/env';
 import { useAgentRequestsWithIframe } from '~/hooks/agent-iframe-requests';
 import { useCurrentEntry, useEntryEnvironmentVariables } from '~/hooks/entries';
@@ -53,10 +53,9 @@ import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { useThreadsStore } from '~/stores/threads';
 import { trpc } from '~/trpc/TRPCProvider';
+import { WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS } from '~/utils/wallet';
 
-import { ThreadFileModal } from './ThreadFileModal';
-
-type RunView = 'conversation' | 'output' | undefined;
+import { ThreadFileModal } from './threads/ThreadFileModal';
 
 type Props = {
   namespace: string;
@@ -64,6 +63,8 @@ type Props = {
   version: string;
   showLoadingPlaceholder?: boolean;
 };
+
+type RunView = 'conversation' | 'output' | undefined;
 
 type FormSchema = Pick<
   z.infer<typeof chatWithAgentModel>,
@@ -90,9 +91,9 @@ export const AgentRunner = ({
     'showLogs',
     'threadId',
     'view',
-    'transactionHashes',
-    'transactionRequestId',
     'initialUserMessage',
+    'mockedAitpMessages',
+    ...WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
   ]);
   const entryEnvironmentVariables = useEntryEnvironmentVariables(
     currentEntry,
@@ -128,20 +129,8 @@ export const AgentRunner = ({
   const resetThreadsStore = useThreadsStore((store) => store.reset);
   const setThread = useThreadsStore((store) => store.setThread);
   const threadsById = useThreadsStore((store) => store.threadsById);
+  const setAddMessage = useThreadsStore((store) => store.setAddMessage);
   const thread = threadsById[chatMutationThreadId.current || threadId];
-
-  const threadQuery = trpc.hub.thread.useQuery(
-    {
-      afterMessageId: thread?.latestMessageId,
-      runId: thread?.run?.id,
-      threadId,
-    },
-    {
-      enabled: isAuthenticated && !!threadId,
-      refetchInterval: 1500,
-      retry: false,
-    },
-  );
 
   const _chatMutation = trpc.hub.chatWithAgent.useMutation();
   const chatMutation = useMutation({
@@ -176,6 +165,28 @@ export const AgentRunner = ({
       }
     },
   });
+
+  const isRunning =
+    _chatMutation.isPending ||
+    thread?.run?.status === 'requires_action' ||
+    thread?.run?.status === 'queued' ||
+    thread?.run?.status === 'in_progress';
+
+  const isLoading = isAuthenticated && !!threadId && !thread && !isRunning;
+
+  const threadQuery = trpc.hub.thread.useQuery(
+    {
+      afterMessageId: thread?.latestMessageId,
+      mockedAitpMessages: queryParams.mockedAitpMessages === 'true',
+      runId: thread?.run?.id,
+      threadId,
+    },
+    {
+      enabled: isAuthenticated && !!threadId,
+      refetchInterval: isRunning ? 150 : 1500,
+      retry: false,
+    },
+  );
 
   const logMessages = useMemo(() => {
     const result = (thread ? Object.values(thread.messagesById) : []).filter(
@@ -218,14 +229,7 @@ export const AgentRunner = ({
     conditionallyProcessAgentRequests,
     iframePostMessage,
     onIframePostMessage,
-  } = useAgentRequestsWithIframe(currentEntry, chatMutation, threadId);
-
-  const isRunning =
-    _chatMutation.isPending ||
-    thread?.run?.status === 'queued' ||
-    thread?.run?.status === 'in_progress';
-
-  const isLoading = !!threadId && !thread && !isRunning;
+  } = useAgentRequestsWithIframe(currentEntry, threadId);
 
   const [__view, __setView] = useState<RunView>();
   const view = (queryParams.view as RunView) ?? __view;
@@ -261,7 +265,7 @@ export const AgentRunner = ({
   };
 
   const startNewThread = () => {
-    updateQueryPath({ threadId: undefined });
+    updateQueryPath({ threadId: null });
     form.setValue('new_message', '');
     form.setFocus('new_message');
   };
@@ -287,10 +291,29 @@ export const AgentRunner = ({
   }, [threadQuery.data, threadQuery.error, threadQuery.isFetching]);
 
   useEffect(() => {
+    if (
+      threadQuery.data?.metadata.topic &&
+      thread?.metadata.topic !== threadQuery.data?.metadata.topic
+    ) {
+      // This will trigger once the inferred thread topic generator background task has resolved
+      void utils.hub.threads.refetch();
+    }
+
     if (threadQuery.data) {
       setThread(threadQuery.data);
     }
-  }, [setThread, threadQuery.data]);
+  }, [setThread, threadQuery.data, thread?.metadata.topic, utils]);
+
+  useEffect(() => {
+    if (threadQuery.error?.data?.code === 'FORBIDDEN') {
+      openToast({
+        type: 'error',
+        title: 'Failed to load thread',
+        description: `Your account doesn't have permission to access requested thread`,
+      });
+      updateQueryPath({ threadId: null });
+    }
+  }, [threadQuery.error, updateQueryPath]);
 
   useEffect(() => {
     const htmlFile = files.find((file) => file.filename === 'index.html');
@@ -370,13 +393,28 @@ export const AgentRunner = ({
     conditionallyProcessAgentRequests,
   ]);
 
+  useEffect(() => {
+    /*
+      This allows child components within <AgentRunner> to add messages to the 
+      current thread via Zustand:
+
+      const addMessage = useThreadsStore((store) => store.addMessage);
+    */
+
+    setAddMessage(chatMutation.mutateAsync);
+
+    () => {
+      setAddMessage(undefined);
+    };
+  }, [chatMutation.mutateAsync, setAddMessage]);
+
   if (!currentEntry) {
     if (showLoadingPlaceholder) return <PlaceholderSection />;
     return null;
   }
 
   return (
-    <Form stretch onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
+    <>
       <Sidebar.Root>
         <ThreadsSidebar
           onRequestNewThread={startNewThread}
@@ -393,164 +431,171 @@ export const AgentRunner = ({
                 <>
                   <IframeWithBlob
                     html={htmlOutput}
+                    height={currentEntry.details.agent?.html_height}
                     onPostMessage={onIframePostMessage}
                     postMessage={iframePostMessage}
                   />
 
-                  {latestAssistantMessages.length > 0 && (
-                    <Messages
-                      grow={false}
-                      messages={latestAssistantMessages}
-                      scrollTo={false}
-                      threadId={threadId}
-                    />
-                  )}
+                  {latestAssistantMessages.length > 0 &&
+                    currentEntry.details.agent
+                      ?.html_show_latest_messages_below && (
+                      <ThreadMessages
+                        grow={false}
+                        messages={latestAssistantMessages}
+                        scroll={false}
+                        threadId={threadId}
+                      />
+                    )}
                 </>
               ) : (
-                <Messages
+                <ThreadMessages
                   messages={messages}
                   threadId={threadId}
-                  welcomeMessage={
-                    <AgentWelcome details={currentEntry.details} />
-                  }
+                  welcomeMessage={<AgentWelcome currentEntry={currentEntry} />}
                 />
               )}
             </>
           )}
 
           <Sidebar.MainStickyFooter>
-            <Flex direction="column" gap="m">
-              <InputTextarea
-                placeholder="Write your message and press enter..."
-                onKeyDown={onKeyDownContent}
-                disabled={!isAuthenticated}
-                {...form.register('new_message')}
-              />
+            <Form onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
+              <Flex direction="column" gap="m">
+                <InputTextarea
+                  placeholder="Write your message and press enter..."
+                  onKeyDown={onKeyDownContent}
+                  disabled={!isAuthenticated}
+                  {...form.register('new_message', {
+                    required: 'Please enter a message',
+                  })}
+                />
 
-              {isAuthenticated ? (
-                <Flex align="start" gap="m" justify="space-between">
-                  <BreakpointDisplay
-                    show="larger-than-phone"
-                    style={{ marginRight: 'auto' }}
-                  >
-                    <Text size="text-xs">
-                      <b>Shift + Enter</b> to add a new line
-                    </Text>
-                  </BreakpointDisplay>
-
-                  <Flex
-                    align="start"
-                    gap="s"
-                    style={{ paddingRight: '0.15rem' }}
-                  >
-                    <BreakpointDisplay show="sidebar-small-screen">
-                      <Tooltip asChild content="View all threads">
-                        <Button
-                          label="Select Thread"
-                          icon={<List />}
-                          size="small"
-                          variant="secondary"
-                          fill="ghost"
-                          onClick={() => setThreadsOpenForSmallScreens(true)}
-                        />
-                      </Tooltip>
+                {isAuthenticated ? (
+                  <Flex align="start" gap="m" justify="space-between">
+                    <BreakpointDisplay
+                      show="larger-than-phone"
+                      style={{ marginRight: 'auto' }}
+                    >
+                      <Text size="text-xs">
+                        <b>Shift + Enter</b> to add a new line
+                      </Text>
                     </BreakpointDisplay>
 
-                    <BreakpointDisplay show="sidebar-small-screen">
+                    <Flex
+                      align="start"
+                      gap="s"
+                      style={{ paddingRight: '0.15rem' }}
+                    >
+                      <BreakpointDisplay show="sidebar-small-screen">
+                        <Tooltip asChild content="View all threads">
+                          <Button
+                            label="Select Thread"
+                            icon={<List />}
+                            size="small"
+                            variant="secondary"
+                            fill="ghost"
+                            onClick={() => setThreadsOpenForSmallScreens(true)}
+                          />
+                        </Tooltip>
+                      </BreakpointDisplay>
+
+                      <BreakpointDisplay show="sidebar-small-screen">
+                        <Tooltip
+                          asChild
+                          content="View output files & agent settings"
+                        >
+                          <Button
+                            label={files.length.toString()}
+                            iconLeft={<Folder />}
+                            size="small"
+                            variant="secondary"
+                            fill="ghost"
+                            style={{ paddingInline: '0.5rem' }}
+                            onClick={() =>
+                              setParametersOpenForSmallScreens(true)
+                            }
+                          />
+                        </Tooltip>
+                      </BreakpointDisplay>
+
+                      {htmlOutput && (
+                        <Tooltip
+                          asChild
+                          content={
+                            view === 'output'
+                              ? 'View conversation'
+                              : 'View rendered output'
+                          }
+                        >
+                          <Button
+                            label="Toggle View"
+                            icon={
+                              <Eye
+                                weight={view === 'output' ? 'fill' : 'regular'}
+                              />
+                            }
+                            size="small"
+                            variant="secondary"
+                            fill="ghost"
+                            onClick={() =>
+                              view === 'output'
+                                ? setView('conversation', true)
+                                : setView('output', true)
+                            }
+                          />
+                        </Tooltip>
+                      )}
+
                       <Tooltip
                         asChild
-                        content="View output files & agent settings"
+                        content={
+                          showLogs ? 'Hide system logs' : 'Show system logs'
+                        }
                       >
                         <Button
-                          label={files.length.toString()}
-                          iconLeft={<Folder />}
+                          label={logMessages.length.toString()}
+                          iconLeft={
+                            <Info weight={showLogs ? 'fill' : 'regular'} />
+                          }
                           size="small"
                           variant="secondary"
                           fill="ghost"
                           style={{ paddingInline: '0.5rem' }}
-                          onClick={() => setParametersOpenForSmallScreens(true)}
-                        />
-                      </Tooltip>
-                    </BreakpointDisplay>
-
-                    {htmlOutput && (
-                      <Tooltip
-                        asChild
-                        content={
-                          view === 'output'
-                            ? 'View conversation'
-                            : 'View rendered output'
-                        }
-                      >
-                        <Button
-                          label="Toggle View"
-                          icon={
-                            <Eye
-                              weight={view === 'output' ? 'fill' : 'regular'}
-                            />
-                          }
-                          size="small"
-                          variant="secondary"
-                          fill="ghost"
                           onClick={() =>
-                            view === 'output'
-                              ? setView('conversation', true)
-                              : setView('output', true)
+                            updateQueryPath(
+                              { showLogs: showLogs ? undefined : 'true' },
+                              'replace',
+                              false,
+                            )
                           }
                         />
                       </Tooltip>
-                    )}
 
-                    <Tooltip
-                      asChild
-                      content={
-                        showLogs ? 'Hide system logs' : 'Show system logs'
-                      }
-                    >
-                      <Button
-                        label={logMessages.length.toString()}
-                        iconLeft={
-                          <Info weight={showLogs ? 'fill' : 'regular'} />
-                        }
-                        size="small"
-                        variant="secondary"
-                        fill="ghost"
-                        style={{ paddingInline: '0.5rem' }}
-                        onClick={() =>
-                          updateQueryPath(
-                            { showLogs: showLogs ? undefined : 'true' },
-                            'replace',
-                            false,
-                          )
-                        }
-                      />
-                    </Tooltip>
+                      {env.NEXT_PUBLIC_CONSUMER_MODE && (
+                        <Tooltip asChild content="Inspect agent source">
+                          <Button
+                            label="Agent Source"
+                            icon={<CodeBlock />}
+                            size="small"
+                            fill="ghost"
+                            href={`https://app.near.ai${sourceUrlForEntry(currentEntry)}`}
+                          />
+                        </Tooltip>
+                      )}
+                    </Flex>
 
-                    {env.NEXT_PUBLIC_CONSUMER_MODE && (
-                      <Tooltip asChild content="Inspect agent source">
-                        <Button
-                          label="Agent Source"
-                          icon={<CodeBlock />}
-                          size="small"
-                          fill="ghost"
-                          href={`https://app.near.ai${sourceUrlForEntry(currentEntry)}`}
-                        />
-                      </Tooltip>
-                    )}
+                    <Button
+                      label="Send Message"
+                      type="submit"
+                      icon={<ArrowRight weight="bold" />}
+                      size="small"
+                      loading={isRunning}
+                    />
                   </Flex>
-
-                  <Button
-                    label="Send Message"
-                    type="submit"
-                    icon={<ArrowRight weight="bold" />}
-                    size="small"
-                    loading={isRunning}
-                  />
-                </Flex>
-              ) : (
-                <SignInPrompt />
-              )}
-            </Flex>
+                ) : (
+                  <SignInPrompt />
+                )}
+              </Flex>
+            </Form>
           </Sidebar.MainStickyFooter>
         </Sidebar.Main>
 
@@ -613,27 +658,6 @@ export const AgentRunner = ({
                   entry={currentEntry}
                   excludeQueryParamKeys={Object.keys(queryParams)}
                 />
-
-                <Flex direction="column" gap="m">
-                  <Text size="text-xs" weight={600} uppercase>
-                    Parameters
-                  </Text>
-
-                  <Controller
-                    control={form.control}
-                    name="max_iterations"
-                    render={({ field }) => (
-                      <Slider
-                        label="Max Iterations"
-                        max={20}
-                        min={1}
-                        step={1}
-                        assistive="The maximum number of iterations to run the agent for, usually 1. Each iteration will loop back through your agent allowing it to act and reflect on LLM results."
-                        {...field}
-                      />
-                    )}
-                  />
-                </Flex>
               </>
             )}
           </Flex>
@@ -654,6 +678,6 @@ export const AgentRunner = ({
         openedFileName={openedFileName}
         setOpenedFileName={setOpenedFileName}
       />
-    </Form>
+    </>
   );
 };

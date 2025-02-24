@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { TRPCError } from '@trpc/server';
+
+import { statusCodeToTRPCErrorCode } from './error';
+
 /**
  * A type representing a fetcher function that can be
  * passed to createZodFetcher.
@@ -10,9 +14,15 @@ export type AnyFetcher = (...args: any[]) => any;
 /**
  * @internal
  */
-export type Schema<TData> = {
-  parse: (data: unknown) => TData;
-};
+export type Schema<TData> =
+  | {
+      passthrough: () => {
+        parse: (data: unknown) => TData;
+      };
+    }
+  | {
+      parse: (data: unknown) => TData;
+    };
 
 /**
  * A type utility which represents the function returned
@@ -36,7 +46,10 @@ export const defaultFetcher = async (...args: Parameters<typeof fetch>) => {
       console.error(body);
     } catch (error) {}
 
-    throw new Error(`Request failed with status ${response.status}`);
+    throw new TRPCError({
+      code: statusCodeToTRPCErrorCode(response.status),
+      message: `Request failed with status: ${response.status}`,
+    });
   }
 
   return response.json();
@@ -92,6 +105,9 @@ export function createZodFetcher(
 ): ZodFetcher<any> {
   return async (schema, ...args) => {
     const response = await fetcher(...args);
+    if ('passthrough' in schema) {
+      return schema.passthrough().parse(response);
+    }
     return schema.parse(response);
   };
 }

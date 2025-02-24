@@ -12,6 +12,7 @@ export const env = createEnv({
     ROUTER_URL: z.string().url(),
     DATA_SOURCE: z.enum(['registry', 'local_files']).default('registry'),
     AUTH_COOKIE_DOMAIN: z.string().optional(),
+    NEAR_RPC_URL: z.string().url().default('https://rpc.mainnet.near.org'),
   },
 
   /**
@@ -57,6 +58,7 @@ export const env = createEnv({
    */
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
+    NEAR_RPC_URL: process.env.NEAR_RPC_URL,
     ROUTER_URL: process.env.ROUTER_URL,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_VERCEL_URL
       ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`

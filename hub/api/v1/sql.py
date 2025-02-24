@@ -330,10 +330,30 @@ class SqlClient:
 
         """
         query = """SELECT * FROM vector_store_files f
-                 INNER JOIN inference_router.vector_store_embeddings e ON f.id = e.file_id
+                 INNER JOIN vector_store_embeddings e ON f.id = e.file_id
                  WHERE filename = %s AND e.vector_store_id = %s"""
         cursor = self.db.cursor(pymysql.cursors.DictCursor)
         cursor.execute(query, (filename, vector_store_id))
+        result = cursor.fetchall()
+        return [VectorStoreFile(**res) for res in result] if result else None
+
+    def list_vector_store_files(self, vector_store_id: str) -> Optional[List[VectorStoreFile]]:
+        """List file details for a Vector Store by vector_store_id.
+
+        Args:
+        ----
+            vector_store_id (str): The ID of the vector store.
+
+        Returns:
+        -------
+            Optional[List[VectorStoreFile]]: A list of matching file details if found, None otherwise.
+
+        """
+        query = """SELECT * FROM vector_store_files f
+                 INNER JOIN vector_store_embeddings e ON f.id = e.file_id
+                 WHERE e.vector_store_id = %s"""
+        cursor = self.db.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(query, vector_store_id)
         result = cursor.fetchall()
         return [VectorStoreFile(**res) for res in result] if result else None
 
@@ -758,7 +778,7 @@ class SqlClient:
             # First verify the file belongs to the account
             file = self.get_file_details_by_account(file_id, account_id)
             if not file:
-                logger.warning(f"File {file_id} not found or doesn't belong to account {account_id}")
+                logger.warning(f"File {file_id} that belongs to account {account_id} not found")
                 return False
 
             # Get all vector stores that contain this file
@@ -767,7 +787,7 @@ class SqlClient:
             WHERE file_id = %s
             """
 
-            cursor.execute(query, (file_id))
+            cursor.execute(query, file_id)
             vector_stores = cursor.fetchall()
 
             # Remove file from each vector store that references it
