@@ -19,7 +19,8 @@ from nearai.shared.near.sign import SignatureVerificationResult, verify_signed_m
 from nearai.shared.provider_models import PROVIDER_MODEL_SEP
 
 # Initialize Datadog tracing
-patch_all()
+if os.environ.get("DD_API_KEY"):
+    patch_all()
 
 OUTPUT_PATH = "/tmp/nearai-agent-runner"
 DEFAULT_API_URL = "https://api.near.ai"
