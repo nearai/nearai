@@ -20,7 +20,7 @@ export function useNearInitializer() {
         connectPromise.current = connect({
           networkId: 'mainnet',
           keyStore,
-          nodeUrl: 'https://rpc.mainnet.near.org',
+          nodeUrl: '/api/near-rpc-proxy',
         });
       }
 

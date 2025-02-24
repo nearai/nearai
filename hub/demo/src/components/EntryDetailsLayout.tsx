@@ -48,6 +48,8 @@ type Props = {
     | null;
 };
 
+export const ENTRY_DETAILS_LAYOUT_SIZE_NAME = 'entry-details-layout';
+
 export const EntryDetailsLayout = ({
   category,
   children,
@@ -93,6 +95,7 @@ export const EntryDetailsLayout = ({
                 src={currentEntry?.details.icon}
                 alt={name}
                 fallbackIcon={ENTRY_CATEGORY_LABELS[category].icon}
+                padding={false}
               />
 
               <Flex

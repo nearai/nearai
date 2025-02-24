@@ -40,6 +40,7 @@ export const EntryCard = ({ entry, linksOpenNewTab, footer }: Props) => {
             src={entry.details.icon}
             alt={entry.name}
             fallbackIcon={icon}
+            padding={false}
           />
         </ConditionalLink>
 

@@ -80,6 +80,11 @@ Deploy all frameworks to all environments.
 deploy.sh all
 ```
 
+Deploying the TypeScript runner requires providing a RUNNER_TYPE environment variable
+```shell
+FRAMEWORK=ts ENV=production RUNNER_TYPE=ts_runner ./aws_runner/deploy.sh
+```
+
 ## Running against staging
 A local api can use the staging or other remote runner environments by setting the server environment in hub/.env. 
 This requires that you have appropriate system credentials for the runner environment 
