@@ -3,11 +3,11 @@ import multiprocessing
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
+from ddtrace import patch_all
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from ddtrace import patch_all
 
 from hub.api.v1.agent_data import agent_data_router
 from hub.api.v1.agent_routes import run_agent_router
