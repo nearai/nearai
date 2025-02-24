@@ -2250,7 +2250,7 @@ description = "Fixes mojibake and other problems with Unicode, after the fact"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version <= \"3.11\""
+markers = "python_version <= \"3.11.0\""
 files = [
     {file = "ftfy-6.3.1-py3-none-any.whl", hash = "sha256:7c70eb532015cd2f9adb53f101fb6c7945988d023a085d127d1573dc49dd0083"},
     {file = "ftfy-6.3.1.tar.gz", hash = "sha256:9b3c3d90f84fb267fe64d375a07b7f8912d817cf86009ae134aa03e1819506ec"},
@@ -8873,7 +8873,7 @@ description = "Measures the displayed width of unicode strings in a terminal"
 optional = false
 python-versions = "*"
 groups = ["main", "dev"]
-markers = "python_version <= \"3.11\""
+markers = "python_version <= \"3.11.0\""
 files = [
     {file = "wcwidth-0.2.13-py2.py3-none-any.whl", hash = "sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859"},
     {file = "wcwidth-0.2.13.tar.gz", hash = "sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5"},
@@ -9502,4 +9502,4 @@ vllm = ["torch", "vllm"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<3.12"
-content-hash = "330e7306390ddd5569ba5e8bf04131bbf3127a98c4254d60873d7151999698ce"
+content-hash = "03b2c4edf999e5de85450bb69b041af49215b7c284d91151982b3941240d67eb"
