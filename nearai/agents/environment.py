@@ -398,9 +398,11 @@ class Environment(object):
             owner_id: Optional[str] = None,
             with_capabilities: Optional[bool] = False,
             latest_versions_only: Optional[bool] = True,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
         ):
             """Find agents based on various parameters."""
-            return client.find_agents(owner_id, with_capabilities, latest_versions_only)
+            return client.find_agents(owner_id, with_capabilities, latest_versions_only, limit, offset)
 
         self.find_agents = find_agents
 
