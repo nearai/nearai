@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 
+import { useIsEmbeddedIframe } from '~/hooks/embed';
 import {
   extractSignatureFromHashParams,
   MESSAGE,
@@ -33,12 +34,12 @@ export default function SignInCallbackPage() {
     typeof authorizationModel
   > | null>(null);
   const [isInvalidToken, setIsInvalidToken] = useState(false);
+  const { isEmbedded } = useIsEmbeddedIframe();
 
   useEffect(() => {
     async function parseToken() {
       try {
         const hashParams = extractSignatureFromHashParams();
-        const nonce = returnSignInNonce();
 
         const auth = authorizationModel.parse({
           account_id: hashParams?.accountId,
@@ -47,7 +48,7 @@ export default function SignInCallbackPage() {
           callback_url: returnSignInCallbackUrl(),
           message: MESSAGE,
           recipient: RECIPIENT,
-          nonce,
+          nonce: hashParams?.nonce || returnSignInNonce(),
         });
 
         setParsedAuth(auth);
@@ -88,12 +89,14 @@ export default function SignInCallbackPage() {
                 Your token is invalid. Please try signing in again.
               </Text>
 
-              <Button
-                variant="affirmative"
-                label="Sign In"
-                onClick={() => signInWithNear()}
-                iconRight={<ArrowRight />}
-              />
+              {!isEmbedded && (
+                <Button
+                  variant="affirmative"
+                  label="Sign In"
+                  onClick={() => signInWithNear()}
+                  iconRight={<ArrowRight />}
+                />
+              )}
             </>
           ) : (
             <>

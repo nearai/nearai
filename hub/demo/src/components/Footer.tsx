@@ -30,6 +30,7 @@ export const Footer = ({ conditional }: Props) => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
   return (
     <footer
       className={s.footer}
