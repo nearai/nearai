@@ -16,6 +16,7 @@ class Provider(Enum):
     HYPERBOLIC = "hyperbolic"
     FIREWORKS = "fireworks"
     LOCAL = "local"
+    NEARAI = "nearai"
 
 
 async def handle_stream(resp_stream, add_usage_callback: Callable):
@@ -49,11 +50,10 @@ def get_llm_ai(provider: str) -> OpenAI:
             max_retries=DEFAULT_MAX_RETRIES,
         )
     elif provider == "nearai":
-        # TODO: is it https?
         http_client = httpx.Client(verify=False)
         return OpenAI(
-            base_url="https://10.0.2.2/v1",
-            api_key="PHALA",
+            base_url="http://10.0.2.2:8000/v1",
+            api_key="PHALA@2025",
             timeout=DEFAULT_TIMEOUT,
             max_retries=DEFAULT_MAX_RETRIES,
             http_client=http_client,
