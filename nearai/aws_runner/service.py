@@ -8,7 +8,6 @@ from typing import Optional, Union
 
 import boto3
 from ddtrace import patch_all, tracer
-
 from nearai.agents.agent import Agent
 from nearai.agents.environment import Environment
 from nearai.aws_runner.partial_near_client import PartialNearClient
@@ -18,7 +17,6 @@ from nearai.shared.client_config import ClientConfig
 from nearai.shared.inference_client import InferenceClient
 from nearai.shared.near.sign import SignatureVerificationResult, verify_signed_message
 from nearai.shared.provider_models import PROVIDER_MODEL_SEP
-
 
 # Initialize Datadog tracing
 patch_all()

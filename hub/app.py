@@ -2,8 +2,8 @@ import logging
 import multiprocessing
 from contextlib import asynccontextmanager
 
-from dotenv import load_dotenv
 from ddtrace import patch_all
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +27,6 @@ from hub.api.v1.stars import v1_router as stars_router
 from hub.api.v1.thread_routes import threads_router
 from hub.api.v1.vector_stores import vector_stores_router
 from hub.tasks.schedule import lifespan
-
 
 # Initialize Datadog tracing
 patch_all()
