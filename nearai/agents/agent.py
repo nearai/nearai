@@ -327,6 +327,11 @@ class Agent(object):
                     process.join()
                 else:
                     error_message, traceback_message = self.run_python_code(namespace, env.agent_runner_user)
+
+                    if error_message:
+                        print(f"[ERROR PYTHON]: {error_message}")
+                    if traceback_message:
+                        print(f"[ERROR PYTHON TRACEBACK]: {traceback_message}")
         finally:
             if os.path.exists(self.temp_dir):
                 sys.path.remove(self.temp_dir)
