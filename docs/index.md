@@ -6,6 +6,184 @@ Driven by one of the minds behinds **TensorFlow** and the **Transformer Architec
 
 ---
 
+<!DOCTYPE html>
+<html>
+<head>
+    <script>
+    // Auth constants matching demo
+    const MESSAGE = 'Welcome to NEAR AI Hub!';
+    const RECIPIENT = 'ai.near';
+    const AUTH_COOKIE_NAME = 'near_ai_auth';
+    const SIGN_IN_CALLBACK_PATH = '/sign-in/callback';
+    const SIGN_IN_RESTORE_URL_KEY = 'signInRestoreUrl';
+    const SIGN_IN_NONCE_KEY = 'signInNonce';
+    const AUTH_NEAR_URL = 'https://auth.near.ai';
+
+    // Generate nonce using timestamp like demo
+    function generateNonce() {
+        const nonce = Date.now().toString();
+        return nonce.padStart(32, '0');
+    }
+
+    function signInWithNear() {
+        const nonce = generateNonce();
+
+        // Store current URL to restore after sign in
+        localStorage.setItem(
+            SIGN_IN_RESTORE_URL_KEY,
+            `${location.pathname}${location.search}`
+        );
+
+        localStorage.setItem(SIGN_IN_NONCE_KEY, nonce);
+
+        // Small delay to ensure storage is set
+        setTimeout(() => {
+            redirectToAuthNearLink(
+                MESSAGE,
+                RECIPIENT,
+                nonce,
+                returnSignInCallbackUrl()
+            );
+        }, 10);
+    }
+
+    function returnSignInCallbackUrl() {
+        return location.origin + SIGN_IN_CALLBACK_PATH;
+    }
+
+    function returnSignInNonce() {
+        return localStorage.getItem(SIGN_IN_NONCE_KEY);
+    }
+
+    function clearSignInNonce() {
+        return localStorage.removeItem(SIGN_IN_NONCE_KEY);
+    }
+
+    function returnUrlToRestoreAfterSignIn() {
+        const url = localStorage.getItem(SIGN_IN_RESTORE_URL_KEY) || '/';
+        if (url.startsWith(SIGN_IN_CALLBACK_PATH)) return '/';
+        return url;
+    }
+
+    function createAuthNearLink(
+        message,
+        recipient,
+        nonce,
+        callbackUrl
+    ) {
+        const urlParams = new URLSearchParams({
+            message,
+            recipient, 
+            nonce,
+            callbackUrl
+        });
+
+        return `${AUTH_NEAR_URL}/?${urlParams.toString()}`;
+    }
+
+    function redirectToAuthNearLink(
+        message,
+        recipient,
+        nonce, 
+        callbackUrl
+    ) {
+        const url = createAuthNearLink(message, recipient, nonce, callbackUrl);
+        window.location.href = url;
+    }
+
+    function extractSignatureFromHashParams() {
+        const hashParams = new URLSearchParams(location.hash.substring(1));
+        
+        if (!hashParams.get('signature')) {
+            return null;
+        }
+
+        return {
+            accountId: hashParams.get('accountId'),
+            publicKey: hashParams.get('publicKey'),
+            signature: hashParams.get('signature')
+        };
+    }
+
+    // Handle callback
+    async function handleCallback() {
+        if (window.location.pathname.endsWith(SIGN_IN_CALLBACK_PATH)) {
+            try {
+                const hashParams = extractSignatureFromHashParams();
+                const nonce = returnSignInNonce();
+                
+                if (!hashParams || !nonce) {
+                    throw new Error('Invalid auth params');
+                }
+
+                const auth = {
+                    account_id: hashParams.accountId,
+                    public_key: hashParams.publicKey,
+                    signature: hashParams.signature,
+                    message: MESSAGE,
+                    recipient: RECIPIENT,
+                    nonce: nonce
+                };
+
+                // Store auth
+                document.cookie = `${AUTH_COOKIE_NAME}=${JSON.stringify(auth)}; path=/; max-age=3600`;
+                
+                // Clear nonce
+                clearSignInNonce();
+                
+                // Redirect back
+                const restoreUrl = returnUrlToRestoreAfterSignIn();
+                // Handle docs path
+                window.location.href = restoreUrl.startsWith('/') ? 
+                    window.location.origin + '/nearai' + restoreUrl : 
+                    restoreUrl;
+            } catch (error) {
+                console.error('Auth error:', error);
+                window.location.href = window.location.origin + '/nearai/';
+            }
+        }
+    }
+
+    // Initialize
+    window.addEventListener('load', () => {
+        handleCallback();
+    });
+    </script>
+    <style>
+        .agent-iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .connect-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin-bottom: 16px;
+            background: #00C08B;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .connect-btn:hover {
+            background: #00B081;
+        }
+    </style>
+    
+</head>
+<body>
+    <button id="connect-btn" class="connect-btn" onclick="signInWithNear()">Sign In</button>
+    <iframe 
+        class="agent-iframe"
+        sandbox="allow-scripts allow-popups allow-same-origin allow-forms"
+        title="NEAR AI Agent">
+    </iframe>
+</body>
+</html>
+
 <div class="grid cards" markdown>
 
 -   :material-robot-happy: __NEAR AI Agents__
