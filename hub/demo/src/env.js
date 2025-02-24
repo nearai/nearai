@@ -12,7 +12,7 @@ export const env = createEnv({
     ROUTER_URL: z.string().url(),
     DATA_SOURCE: z.enum(['registry', 'local_files']).default('registry'),
     AUTH_COOKIE_DOMAIN: z.string().optional(),
-    NEAR_RPC_URL: z.string().default('https://rpc.mainnet.near.org'),
+    NEAR_RPC_URL: z.string().url().default('https://rpc.mainnet.near.org'),
   },
 
   /**
