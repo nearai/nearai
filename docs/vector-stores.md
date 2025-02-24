@@ -1,10 +1,11 @@
-Vector Stores are a powerful feature in NEAR AI that allows you to store and manage large amounts of data in a vectorized format. This enables efficient searching and retrieval of data, making it ideal for applications such as natural language processing, image recognition, and more.
+Vector Stores are a special kind of database that stores documents and allows retrieving them through natural language. 
 
 ---
 
-This document describes how to **create, upload, query, and manage** a Vector Store in **NEAR AI**. Use this guide to build a semantic search pipeline that integrates with LLMs for context-aware responses.
+!!! tip
+    Read our tutorial on [**Vector Stores**](../tutorials/rag/introduction.md) to discover how you can build an agent that answers questions based on your custom data
 
-### Prerequisites
+---
 
 - [**NEAR AI**](../docs/cli.md) Python dependencies (e.g., `nearai`, `openai`) installed.
 - A local directory containing your text files (e.g., `.md`, `.txt`) for upload.
@@ -17,26 +18,17 @@ The code imports standard libraries and NEAR AI modules to load configuration se
 
 ```python
 import json
-import openai
-import os
-import time
 from glob import glob
 
-from nearai.config import Config, load_config_file
-from nearai.shared.client_config import ClientConfig
-from nearai.shared.inference_client import InferenceClient
+import openai
+import nearai
 
-# Load NEAR AI configuration
-CONFIG = Config()
-config_data = load_config_file(local=False)
-CONFIG = CONFIG.update_with(config_data)
+# Load NEAR AI Hub configuration
+config = nearai.config.load_config_file()
+base_url = config.get("api_url", "https://api.near.ai/") + "v1"
+auth = config["auth"]
 
-if CONFIG.api_url is None:
-    raise ValueError("CONFIG.api_url is None")
-
-# Initialize the NEAR AI (OpenAI-compatible) client
-base_url = CONFIG.api_url + "/v1"
-client = openai.OpenAI(base_url=base_url, api_key=json.dumps(config_data["auth"]))
+client = openai.OpenAI(base_url=base_url, api_key=json.dumps(auth))
 ```
 
 ---
