@@ -289,6 +289,8 @@ class FilterAgentsRequest(BaseModel):
     owner_id: Optional[str]
     with_capabilities: Optional[bool] = False
     latest_versions_only: Optional[bool] = True
+    limit: Optional[int] = 100
+    offset: Optional[int] = 0
 
 
 @run_agent_router.post("/find_agents", response_model=List[RegistryEntry])
@@ -336,6 +338,9 @@ def find_agents(request_data: FilterAgentsRequest, auth: AuthToken = Depends(get
         # Filter by capabilities (if flag is set)
         if request_data.with_capabilities:
             query = query.filter(text("JSON_EXTRACT_JSON(details, 'capabilities') IS NOT NULL"))
+
+        # Limit and offset
+        query = query.limit(request_data.limit).offset(request_data.offset)
 
         # Execute query and return results
         filtered_agents = query.all()

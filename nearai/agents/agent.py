@@ -23,6 +23,31 @@ AGENT_FILENAME_TS = "agent.ts"
 load_dotenv()
 
 
+def clear_module_cache(module_names, namespace):
+    """Clears specified modules from the cache before executing the main code.
+
+    When executing agent code that imports utility modules from different locations,
+    Python's module caching can sometimes use cached versions from the wrong location
+    instead of importing from the agent's directory.
+
+    This function removes modules from sys.modules to ensure they're freshly
+    imported when used in subsequent code executions, preventing issues with
+    cached imports.
+
+    Args:
+    ----
+        module_names: List of module names to clear from cache
+        namespace: Dictionary namespace for code execution
+
+    """
+    cleanup_code = "import sys\n"
+    for module_name in module_names:
+        cleanup_code += f"if '{module_name}' in sys.modules:\n"
+        cleanup_code += f"    del sys.modules['{module_name}']\n"
+
+    exec(cleanup_code, namespace)
+
+
 class Agent(object):
     def __init__(  # noqa: D107
         self, identifier: str, agent_files: Union[List, Path], metadata: Dict, change_to_temp_dir: bool = True
@@ -129,7 +154,9 @@ class Agent(object):
         if not self.version or not self.name:
             raise ValueError("Both 'version' and 'name' must be non-empty in metadata.")
 
-    def run_python_code(self, agent_namespace, agent_runner_user) -> Tuple[Optional[str], Optional[str]]:
+    def run_python_code(
+        self, agent_namespace, agent_runner_user, agent_py_modules_import
+    ) -> Tuple[Optional[str], Optional[str]]:
         """Launch python agent."""
         try:
             # switch to user env.agent_runner_user
@@ -144,6 +171,7 @@ class Agent(object):
             #       work on Linux but not work on Mac.
             #       `compile` and `exec` have been tested to work properly in a multithreaded environment.
             if self.code:
+                clear_module_cache(agent_py_modules_import, agent_namespace)
                 exec(self.code, agent_namespace)
 
             # If no errors occur, return None
@@ -222,6 +250,7 @@ class Agent(object):
         env.env_vars = total_env_vars
 
         agent_ts_files_to_transpile = []
+        agent_py_modules_import = []
 
         if not self.agent_filename or True:
             # if agent has "agent.py" file, we use python runner
@@ -262,6 +291,10 @@ class Agent(object):
                     # get file extension for agent_filename
                     if file_path.endswith(".ts"):
                         agent_ts_files_to_transpile.append(file_path)
+
+                    if file != AGENT_FILENAME_PY and file_path.endswith(".py"):
+                        # save py file without extension as potential module to import
+                        agent_py_modules_import.append(os.path.splitext(os.path.basename(file_path))[0])
 
                     relative_path = os.path.relpath(file_path, self.temp_dir)
                     try:
@@ -326,7 +359,14 @@ class Agent(object):
                     process.start()
                     process.join()
                 else:
-                    error_message, traceback_message = self.run_python_code(namespace, env.agent_runner_user)
+                    error_message, traceback_message = self.run_python_code(
+                        namespace, env.agent_runner_user, agent_py_modules_import
+                    )
+
+                    if error_message:
+                        print(f"[ERROR PYTHON]: {error_message}")
+                    if traceback_message:
+                        print(f"[ERROR PYTHON TRACEBACK]: {traceback_message}")
         finally:
             if os.path.exists(self.temp_dir):
                 sys.path.remove(self.temp_dir)

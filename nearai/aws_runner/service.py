@@ -19,7 +19,8 @@ from nearai.shared.near.sign import SignatureVerificationResult, verify_signed_m
 from nearai.shared.provider_models import PROVIDER_MODEL_SEP
 
 # Initialize Datadog tracing
-patch_all()
+if os.environ.get("DD_API_KEY"):
+    patch_all()
 
 OUTPUT_PATH = "/tmp/nearai-agent-runner"
 DEFAULT_API_URL = "https://api.near.ai"
@@ -150,8 +151,16 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
         global local_agent_cache
         if use_cache:
             if agent in local_agent_cache:
-                full_agent = local_agent_cache[agent]
-                full_agent.temp_dir = full_agent.write_agent_files_to_temp(full_agent.agent_files)
+                cached_agent = local_agent_cache[agent]
+
+                # recreate the agent object to ensure it has all data from constructor
+                full_agent = Agent(
+                    agent,
+                    cached_agent.agent_files,
+                    cached_agent.metadata or {},
+                    change_to_temp_dir=params.get("change_to_agent_temp_dir", True),
+                )
+
                 print(f"Using {agent} from cache in {full_agent.temp_dir}")
                 return full_agent
 
@@ -167,6 +176,7 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
             agent, agent_files, agent_metadata or {}, change_to_temp_dir=params.get("change_to_agent_temp_dir", True)
         )
         local_agent_cache[full_agent.identifier] = full_agent
+        print(f"Saving {full_agent.identifier} from {full_agent.temp_dir} to cache")
         return full_agent
     elif params["data_source"] == "local_files":
         agent = agent.replace(f"{get_registry_folder()}/", "")

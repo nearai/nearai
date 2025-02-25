@@ -224,7 +224,7 @@ class Environment(object):
                 gas: int = DEFAULT_ATTACHED_GAS,
                 amount: int = 0,
                 nowait: bool = False,
-                included=False,
+                included: bool = False,
                 max_retries: int = 1,
             ):
                 """Wrapper for the call method of the Account class, adding multiple retry attempts.
@@ -242,9 +242,9 @@ class Environment(object):
                 amount : int
                     The amount of tokens to attach to the call.
                 nowait : bool
-                    If True, do not wait for the transaction to be confirmed.
+                    If nowait is True, return transaction hash, else wait execution.
                 included : bool
-                    If True, include the transaction in the block.
+                    If included is True, return transaction hash, else wait execution
                 max_retries : int
                     The maximum number of retry attempts.
 
@@ -398,9 +398,11 @@ class Environment(object):
             owner_id: Optional[str] = None,
             with_capabilities: Optional[bool] = False,
             latest_versions_only: Optional[bool] = True,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
         ):
             """Find agents based on various parameters."""
-            return client.find_agents(owner_id, with_capabilities, latest_versions_only)
+            return client.find_agents(owner_id, with_capabilities, latest_versions_only, limit, offset)
 
         self.find_agents = find_agents
 
@@ -952,6 +954,7 @@ class Environment(object):
         file_content: Optional[Union[bytes, str]] = None
         # First try to read from local filesystem
         local_path = os.path.join(self.get_primary_agent_temp_dir(), filename)
+        print(f"Read file {filename} from local path: {local_path}")
         if os.path.exists(local_path):
             try:
                 with open(local_path, "rb") as local_path_file:

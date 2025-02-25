@@ -3,7 +3,7 @@ site_author: NEAR AI
 site_description: NEAR AI Docs - Quickly build and deploy robust AI agents, models, benchmarks, and more.
 repo_name: nearai
 repo_url: https://github.com/nearai/nearai/
-site_url: https://docs.near.ai/
+site_url: https://docs.near.ai/ 
 edit_uri: edit/main/docs/
 validation:
   omitted_files: warn
@@ -17,7 +17,7 @@ theme:
   favicon: assets/images/favicon.ico
   icon:
     repo: fontawesome/brands/github
-    edit: material/pencil
+    edit: material/pencil 
     view: material/eye
     theme:
     admonition:
@@ -62,18 +62,18 @@ theme:
     - toc.follow
     # - toc.integrate
   palette:
-    - scheme: default
-      primary: black
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: black
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+      - scheme: default
+        primary: black 
+        accent: indigo
+        toggle:
+          icon: material/brightness-7
+          name: Switch to dark mode
+      - scheme: slate
+        primary: black
+        accent: indigo
+        toggle:
+          icon: material/brightness-4
+          name: Switch to light mode
   font:
     text: Roboto
     code: Roboto Mono
@@ -120,7 +120,7 @@ markdown_extensions:
       custom_checkbox: true
   - pymdownx.arithmatex:
       generic: true
-
+      
 extra_javascript:
   - javascripts/katex.js
   - https://unpkg.com/katex@0/dist/katex.min.js
@@ -130,49 +130,49 @@ extra_css:
   - https://unpkg.com/katex@0/dist/katex.min.css
   - docs.css
 nav:
-  - Home:
-      - Welcome To NEAR AI Docs: "index.md"
-      - "cli.md"
-      - Contributing: "contributing.md"
-      - Decentralization: "decentralization.md"
-      - Private & Verifiable AI: "private-ml-sdk.md"
+  - Home: 
+    - Welcome To NEAR AI Docs: 'index.md'
+    - 'cli.md'
+    - Contributing: 'contributing.md'
+    - Decentralization: 'decentralization.md'
+    - Private & Verifiable AI: 'private-ml-sdk.md'
   - Agents:
-      - Building Agents:
-          - Quickstart: "agents/quickstart.md"
-          - "Agent Environment":
-              - "agents/env/overview.md"
-              - "agents/env/messages_files.md"
-              - "agents/env/inference.md"
-              - "agents/env/calling_other_agents.md"
-              - "agents/env/tools.md"
-              - Secrets & Variables: "agents/env/variables.md"
-              - NEAR Blockchain: "agents/env/near.md"
-          - Agent Registry: "agents/registry.md"
-          - Core Features:
-              - Threads: "agents/threads.md"
-              - Inference (OpenAI): "inference.md"
-              - Vector Stores (OpenAI): "vector-stores.md"
-              - Benchmarks and Evaluations: "models/benchmarks_and_evaluations.md"
-              - Local & Remote Runs: "agents/running.md"
-          - Event-Driven Agents:
-              - NEAR Event-Triggered Agents: "near_events.md"
-              - Twitter (X) Triggered Agents: "agent_triggers.md"
-      - Tutorials:
-          - Documentation Agent (RAG):
-              - Introduction: "tutorials/rag/introduction.md"
-              - The Problem: "tutorials/rag/problem.md"
-              - Vector Stores: "tutorials/rag/vector_store.md"
-              - RAG Agent: "tutorials/rag/agent.md"
-              - Chunking: "tutorials/rag/chunking.md"
-              - Manual Embeddings: "tutorials/rag/embeddings.md"
+    - Building Agents:
+      - Quickstart: 'agents/quickstart.md'
+      - "Agent Environment":
+        - 'agents/env/overview.md'
+        - 'agents/env/messages_files.md'
+        - 'agents/env/inference.md'
+        - 'agents/env/calling_other_agents.md'
+        - 'agents/env/tools.md'
+        - Secrets & Variables: 'agents/env/variables.md'
+        - NEAR Blockchain: 'agents/env/near.md'
+      - Agent Registry: 'agents/registry.md'
+      - Core Features:
+        - Threads: 'agents/threads.md'
+        - Vector Stores: 'agents/vector-stores.md'
+        - Inference (OpenAI): 'inference.md'
+        - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
+        - Local & Remote Runs: 'agents/running.md'
+      - Event-Driven Agents:
+        - NEAR Event-Triggered Agents: 'near_events.md'
+        - Twitter (X) Triggered Agents: 'agent_triggers.md'
+    - Tutorials:
+      - Documentation Agent (RAG):
+        - Introduction: 'tutorials/rag/introduction.md'
+        - The Problem: 'tutorials/rag/problem.md'
+        - Vector Stores: 'tutorials/rag/vector_store.md'
+        - RAG Agent: 'tutorials/rag/agent.md'
+        - Chunking: 'tutorials/rag/chunking.md'
+        - Manual Embeddings: 'tutorials/rag/embeddings.md'
   - Models:
-      - "models/home.md"
-      - Fine-tuning: "models/fine_tuning.md"
-      - Benchmarks and Evaluations: "models/benchmarks_and_evaluations.md"
+    - 'models/home.md'
+    - Fine-tuning: 'models/fine_tuning.md'
+    - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
   - Assistants:
-      - Overview: "assistants/overview.md"
-      - Integrate: "assistants/integrate.md"
-  - API: "api.md"
+    - Overview: 'assistants/overview.md'
+    - Integrate: 'assistants/integrate.md'
+  - API: 'api.md'
 
 plugins:
   - social
@@ -191,4 +191,4 @@ plugins:
             show_submodules: true
   - redirects:
       redirect_maps:
-        "agents/secrets.md": "agents/env/variables.md"
+        'agents/secrets.md': 'agents/env/variables.md'

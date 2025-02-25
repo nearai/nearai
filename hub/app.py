@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+import os
 from contextlib import asynccontextmanager
 
 from ddtrace import patch_all
@@ -29,7 +30,8 @@ from hub.api.v1.vector_stores import vector_stores_router
 from hub.tasks.schedule import lifespan
 
 # Initialize Datadog tracing
-patch_all()
+if os.environ.get("DD_API_KEY"):
+    patch_all()
 
 
 # Configure logging

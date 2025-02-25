@@ -443,6 +443,8 @@ class InferenceClient(object):
         owner_id: Optional[str] = None,
         with_capabilities: Optional[bool] = False,
         latest_versions_only: Optional[bool] = True,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
     ):
         """Filter agents."""
         return self.client.post(
@@ -451,6 +453,8 @@ class InferenceClient(object):
                 "owner_id": owner_id,
                 "with_capabilities": with_capabilities,
                 "latest_versions_only": latest_versions_only,
+                "limit": limit,
+                "offset": offset,
             },
             cast_to=List[Any],
         )
