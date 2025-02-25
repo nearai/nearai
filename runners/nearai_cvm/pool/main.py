@@ -96,7 +96,7 @@ class State(BaseModel):
                         "-d",
                         "30G",
                         "--port",
-                        f"tcp:0.0.0.0:{worker.port+1}:22",  # TODO: disable SSH
+                        f"tcp:0.0.0.0:{worker.port + 1}:22",  # TODO: disable SSH
                         "--port",
                         f"tcp:0.0.0.0:{worker.port}:443",
                     ],
@@ -123,9 +123,10 @@ class State(BaseModel):
     def pop_available_worker(self) -> Optional[Worker]:
         """Get a worker from the pool."""
         for idx, worker in enumerate(self.free_workers):
-            logger.info(f"Checking health of worker {worker.runner_id}")
-            client = CvmClient(f"https://localhost:{worker.port}")
             try:
+                logger.info(f"Checking health of worker {worker.runner_id}")
+                client = CvmClient(f"https://localhost:{worker.port}")
+
                 health = client.is_assigned()
                 logger.info(f"Health of worker {worker.runner_id}: {health}")
 
@@ -134,7 +135,7 @@ class State(BaseModel):
                     return self.free_workers.pop(idx)
 
             except Exception as e:
-                logger.error(f"Failed to get health of worker {worker.runner_id}: {str(e)}")
+                logger.warning(f"Failed to get health of worker {worker.runner_id}: {str(e)}, trying next worker")
         return None
 
 
