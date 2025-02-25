@@ -40,7 +40,7 @@ export const ThreadMessages = ({
   threadId,
   welcomeMessage,
 }: Props) => {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const scrolledToThreadId = useRef('');
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const countRef = useRef(0);
@@ -84,7 +84,7 @@ export const ThreadMessages = ({
     }
   }, [groupedMessages, threadId, scroll]);
 
-  if (!isAuthenticated) {
+  if (!auth) {
     return (
       <div className={s.wrapper} data-grow={grow}>
         {welcomeMessage}

@@ -11,7 +11,6 @@ import {
   Tooltip,
 } from '@near-pagoda/ui';
 import {
-  ArrowRight,
   BookOpenText,
   CaretDown,
   ChatCircleDots,
@@ -36,7 +35,7 @@ import { useEffect, useState } from 'react';
 import { APP_TITLE } from '~/constants';
 import { env } from '~/env';
 import { useEmbeddedWithinIframe } from '~/hooks/embed';
-import { signInWithNear } from '~/lib/auth';
+import { SIGN_IN_CALLBACK_PATH, signIn } from '~/lib/auth';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { useAuthStore } from '~/stores/auth';
 import { useWalletStore } from '~/stores/wallet';
@@ -113,7 +112,6 @@ export const Navigation = () => {
   const auth = useAuthStore((store) => store.auth);
   const clearAuth = useAuthStore((store) => store.clearAuth);
   const clearTokenMutation = trpc.auth.clearToken.useMutation();
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const wallet = useWalletStore((store) => store.wallet);
   const walletModal = useWalletStore((store) => store.modal);
   const walletAccount = useWalletStore((store) => store.account);
@@ -121,7 +119,7 @@ export const Navigation = () => {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
   const { embedded } = useEmbeddedWithinIframe();
-  const hidden = !!window.opener;
+  const hidden = path === SIGN_IN_CALLBACK_PATH;
 
   useEffect(() => {
     if (hidden) {
@@ -245,16 +243,21 @@ export const Navigation = () => {
 
               {!env.NEXT_PUBLIC_CONSUMER_MODE && (
                 <>
-                  <Tooltip asChild content="View Documentation">
-                    <Button
-                      label="View Documentation"
-                      size="small"
-                      icon={<BookOpenText weight="duotone" />}
-                      fill="ghost"
-                      href="https://docs.near.ai"
-                      target="_blank"
-                    />
-                  </Tooltip>
+                  <BreakpointDisplay
+                    show="larger-than-phone"
+                    className={s.breakpoint}
+                  >
+                    <Tooltip asChild content="View Documentation">
+                      <Button
+                        label="View Documentation"
+                        size="small"
+                        icon={<BookOpenText weight="duotone" />}
+                        fill="ghost"
+                        href="https://docs.near.ai"
+                        target="_blank"
+                      />
+                    </Tooltip>
+                  </BreakpointDisplay>
 
                   <NewAgentButton
                     customButton={
@@ -314,7 +317,7 @@ export const Navigation = () => {
           </>
         )}
 
-        {isAuthenticated ? (
+        {auth ? (
           <Dropdown.Root>
             <Dropdown.Trigger asChild>
               <Button
@@ -338,21 +341,19 @@ export const Navigation = () => {
                       color="sand-12"
                       clampLines={1}
                     >
-                      {auth?.account_id}
+                      {auth.accountId}
                     </Text>
                   </Flex>
                 </Dropdown.SectionContent>
 
                 {!env.NEXT_PUBLIC_CONSUMER_MODE && !embedded && (
                   <>
-                    <Dropdown.Item href={`/profiles/${auth?.account_id}`}>
+                    <Dropdown.Item href={`/profiles/${auth.accountId}`}>
                       <SvgIcon icon={<Cube />} />
                       Your Work
                     </Dropdown.Item>
 
-                    <Dropdown.Item
-                      href={`/profiles/${auth?.account_id}/starred`}
-                    >
+                    <Dropdown.Item href={`/profiles/${auth.accountId}/starred`}>
                       <SvgIcon icon={<Star />} />
                       Your Stars
                     </Dropdown.Item>
@@ -431,13 +432,7 @@ export const Navigation = () => {
             </Dropdown.Content>
           </Dropdown.Root>
         ) : (
-          <Button
-            size="small"
-            label="Sign In"
-            iconRight={<ArrowRight />}
-            variant="affirmative"
-            onClick={signInWithNear}
-          />
+          <Button size="small" label="Sign In" onClick={signIn} />
         )}
       </Flex>
     </header>

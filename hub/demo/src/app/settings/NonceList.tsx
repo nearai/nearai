@@ -15,7 +15,7 @@ import { RECIPIENT, REVOKE_ALL_MESSAGE, REVOKE_MESSAGE } from '~/lib/auth';
 import {
   extractSignatureFromHashParams,
   generateNonce,
-  redirectToAuthNearLink,
+  openAuthUrl,
 } from '~/lib/auth';
 import { authorizationModel } from '~/lib/models';
 import { trpc } from '~/trpc/TRPCProvider';
@@ -31,10 +31,10 @@ export const NonceList = () => {
     let callbackUrl = location.origin + '/settings?nonce=' + nonce;
     if (revokeNonce) {
       callbackUrl += '&revoke_nonce=' + revokeNonce;
-      redirectToAuthNearLink(REVOKE_MESSAGE, RECIPIENT, nonce, callbackUrl);
+      openAuthUrl(REVOKE_MESSAGE, RECIPIENT, nonce, callbackUrl);
     } else {
       // If no nonce is provided, it will revoke all nonces
-      redirectToAuthNearLink(REVOKE_ALL_MESSAGE, RECIPIENT, nonce, callbackUrl);
+      openAuthUrl(REVOKE_ALL_MESSAGE, RECIPIENT, nonce, callbackUrl);
     }
   };
 

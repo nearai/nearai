@@ -90,7 +90,7 @@ export const AgentRunner = ({
     version,
   });
 
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const { queryParams, updateQueryPath } = useQueryParams([
     'showLogs',
     'showThreads',
@@ -178,7 +178,7 @@ export const AgentRunner = ({
     thread?.run?.status === 'queued' ||
     thread?.run?.status === 'in_progress';
 
-  const isLoading = isAuthenticated && !!threadId && !thread && !isRunning;
+  const isLoading = !!auth && !!threadId && !thread && !isRunning;
 
   const threadQuery = trpc.hub.thread.useQuery(
     {
@@ -188,7 +188,7 @@ export const AgentRunner = ({
       threadId,
     },
     {
-      enabled: isAuthenticated && !!threadId,
+      enabled: !!auth && !!threadId,
       refetchInterval: isRunning ? 150 : 1500,
       retry: false,
     },
@@ -338,10 +338,10 @@ export const AgentRunner = ({
   }, [files, htmlOutput, agentId, setView]);
 
   useEffect(() => {
-    if (currentEntry && isAuthenticated) {
+    if (currentEntry && auth) {
       form.setFocus('new_message');
     }
-  }, [threadId, currentEntry, isAuthenticated, form]);
+  }, [threadId, currentEntry, auth, form]);
 
   useEffect(() => {
     if (threadId !== chatMutationThreadId.current) {
@@ -471,13 +471,13 @@ export const AgentRunner = ({
                 <InputTextarea
                   placeholder="Write your message and press enter..."
                   onKeyDown={onKeyDownContent}
-                  disabled={!isAuthenticated}
+                  disabled={!auth}
                   {...form.register('new_message', {
                     required: 'Please enter a message',
                   })}
                 />
 
-                {isAuthenticated ? (
+                {auth ? (
                   <Flex align="start" gap="m" justify="space-between">
                     <BreakpointDisplay
                       show="larger-than-phone"

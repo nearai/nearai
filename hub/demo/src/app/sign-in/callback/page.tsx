@@ -19,7 +19,7 @@ import {
   RECIPIENT,
   returnSignInCallbackUrl,
   returnUrlToRestoreAfterSignIn,
-  signInWithNear,
+  signIn,
 } from '~/lib/auth';
 import { authorizationModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
@@ -64,20 +64,20 @@ export default function SignInCallbackPage() {
 
     saveTokenMutation.mutate(parsedAuth, {
       onSuccess: () => {
-        const { setAuth } = useAuthStore.getState();
-        setAuth(parsedAuth);
         const opener = window.opener as WindowProxy | null;
-
-        // TODO: Why is MyNearWallet not working? Never redirects back...
 
         if (opener) {
           opener.postMessage(
             {
-              auth: parsedAuth,
+              authenticated: true,
             },
             '*',
           );
         } else {
+          const { setAuth } = useAuthStore.getState();
+          setAuth({
+            accountId: parsedAuth.account_id,
+          });
           router.replace(returnUrlToRestoreAfterSignIn());
         }
       },
@@ -102,7 +102,7 @@ export default function SignInCallbackPage() {
               <Button
                 variant="affirmative"
                 label="Sign In"
-                onClick={() => signInWithNear()}
+                onClick={() => signIn()}
                 iconRight={<ArrowRight />}
               />
             </>

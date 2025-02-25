@@ -3,7 +3,7 @@
 import { Button, Container, Flex, Section, Text } from '@near-pagoda/ui';
 import { ArrowRight } from '@phosphor-icons/react';
 
-import { signInWithNear } from '~/lib/auth';
+import { signIn } from '~/lib/auth';
 
 type Props = {
   layout?: 'horizontal-right' | 'horizontal-justified';
@@ -20,7 +20,7 @@ export const SignInPrompt = ({ layout = 'horizontal-right' }: Props) => {
       <Button
         variant="affirmative"
         label="Sign In"
-        onClick={signInWithNear}
+        onClick={signIn}
         size="small"
         iconRight={<ArrowRight />}
       />
@@ -38,7 +38,7 @@ export const SignInPromptSection = () => {
           <Button
             variant="affirmative"
             label="Sign In"
-            onClick={signInWithNear}
+            onClick={signIn}
             size="large"
             iconRight={<ArrowRight />}
           />

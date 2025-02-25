@@ -47,7 +47,7 @@ export const ThreadsSidebar = ({
   openForSmallScreens,
   setOpenForSmallScreens,
 }: Props) => {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const { updateQueryPath, queryParams } = useQueryParams(['threadId']);
   const threadId = queryParams.threadId ?? '';
   const { threads } = useThreads();
@@ -85,7 +85,7 @@ export const ThreadsSidebar = ({
     setOpenForSmallScreens(false);
   }, [setOpenForSmallScreens, threadId]);
 
-  if (!isAuthenticated) return null;
+  if (!auth) return null;
 
   return (
     <Sidebar.Sidebar

@@ -21,11 +21,11 @@ export type ThreadSummary = z.infer<typeof threadModel> & {
 };
 
 export function useThreads() {
-  const accountId = useAuthStore((store) => store.auth?.account_id);
+  const auth = useAuthStore((store) => store.auth);
   const utils = trpc.useUtils();
 
   const threadsQuery = trpc.hub.threads.useQuery(undefined, {
-    enabled: !!accountId,
+    enabled: !!auth,
   });
 
   const setThreadData = useCallback(
@@ -47,7 +47,7 @@ export function useThreads() {
   );
 
   const threads = useMemo(() => {
-    if (!accountId) return [];
+    if (!auth) return [];
     if (!threadsQuery.data) return;
 
     const result: ThreadSummary[] = [];
@@ -82,7 +82,7 @@ export function useThreads() {
     }
 
     return result;
-  }, [accountId, threadsQuery.data]);
+  }, [auth, threadsQuery.data]);
 
   return {
     setThreadData,

@@ -404,7 +404,7 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
               </Text>
             </Flex>
 
-            {auth.account_id === entry.namespace && (
+            {auth.accountId === entry.namespace && (
               <Card background="amber-2" border="amber-4">
                 <Text color="amber-11" size="text-s">
                   You are the owner of this {entry.category}. Any secrets you

@@ -32,9 +32,9 @@ type Props = {
 };
 
 export const EntrySource = ({ entry }: Props) => {
-  const accountId = useAuthStore((store) => store.auth?.account_id);
+  const auth = useAuthStore((store) => store.auth);
   const isPermittedToViewSource =
-    !entry.details.private_source || accountId === entry.namespace;
+    !entry.details.private_source || auth?.accountId === entry.namespace;
   const { createQueryPath, queryParams } = useQueryParams(['file']);
   const params = useEntryParams();
 

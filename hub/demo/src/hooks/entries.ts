@@ -111,12 +111,12 @@ export function useEntryEnvironmentVariables(
   entry: z.infer<typeof entryModel> | undefined,
   excludeQueryParamKeys?: string[],
 ) {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const searchParams = useSearchParams();
   const secretsQuery = trpc.hub.secrets.useQuery(
     {},
     {
-      enabled: isAuthenticated,
+      enabled: !!auth,
     },
   );
 

@@ -41,8 +41,12 @@ export const authRouter = createTRPCRouter({
       return true;
     }),
 
-  getToken: publicProcedure.query(({ ctx }) => {
-    return ctx.signature;
+  getSession: publicProcedure.query(({ ctx }) => {
+    if (!ctx.signature) return null;
+
+    return {
+      accountId: ctx.signature.account_id,
+    };
   }),
 
   clearToken: publicProcedure.mutation(({ ctx }) => {

@@ -3,7 +3,7 @@ import { Star } from '@phosphor-icons/react';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { type z } from 'zod';
 
-import { signInWithNear } from '~/lib/auth';
+import { signIn } from '~/lib/auth';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { trpc } from '~/trpc/TRPCProvider';
@@ -17,12 +17,12 @@ type Props = {
 };
 
 export const StarButton = ({ entry, style, variant = 'simple' }: Props) => {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const [starred, setStarred] = useState(false);
   const [count, setCount] = useState(0);
   const [clicked, setClicked] = useState(false);
   const starMutation = trpc.hub.starEntry.useMutation();
-  const visuallyStarred = isAuthenticated && starred;
+  const visuallyStarred = !!auth && starred;
 
   useEffect(() => {
     setCount(entry?.num_stars ?? 0);
@@ -37,14 +37,14 @@ export const StarButton = ({ entry, style, variant = 'simple' }: Props) => {
   const toggleStar = () => {
     if (!entry) return;
 
-    if (!isAuthenticated) {
+    if (!auth) {
       openToast({
         type: 'info',
         title: 'Please Sign In',
         description:
           'Signing in will allow you to star and interact with agents and other resources',
         actionText: 'Sign In',
-        action: signInWithNear,
+        action: signIn,
         duration: Infinity,
       });
       return;

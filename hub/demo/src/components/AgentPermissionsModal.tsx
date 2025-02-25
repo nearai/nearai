@@ -118,7 +118,6 @@ export const AgentPermissionsModal = ({
   onAllow,
 }: Props) => {
   const auth = useAuthStore((store) => store.auth);
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const agentId = idForEntry(agent);
   const setAgentSettings = useAgentSettingsStore(
     (store) => store.setAgentSettings,
@@ -186,7 +185,7 @@ export const AgentPermissionsModal = ({
       <Dialog.Content title="Agent Request" size="s">
         {check && requests && (
           <>
-            {isAuthenticated ? (
+            {auth ? (
               <Flex direction="column" gap="l">
                 {!check.permissions.allowAddSecrets && (
                   <SecretsToAdd agent={agent} requests={requests} />
@@ -224,7 +223,7 @@ export const AgentPermissionsModal = ({
                       </Text>{' '}
                       using your {`account's`} signature{' '}
                       <Text as="span" color="sand-12" weight={500}>
-                        {auth?.account_id}
+                        {auth.accountId}
                       </Text>
                     </Text>
 

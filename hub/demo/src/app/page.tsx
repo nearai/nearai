@@ -42,7 +42,7 @@ import { type z } from 'zod';
 
 import { EntryCard } from '~/components/EntryCard';
 import { env } from '~/env';
-import { signInWithNear } from '~/lib/auth';
+import { signIn } from '~/lib/auth';
 import { idMatchesEntry } from '~/lib/entries';
 import { type entriesModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
@@ -52,7 +52,7 @@ import { trpc } from '~/trpc/TRPCProvider';
 import s from './page.module.scss';
 
 export default function HomePage() {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const agentsQuery = trpc.hub.entries.useQuery({
     category: 'agent',
   });
@@ -114,7 +114,7 @@ export default function HomePage() {
               </Text>
 
               <Flex direction="column" gap="s" style={{ marginTop: 'auto' }}>
-                {isAuthenticated ? (
+                {auth ? (
                   <Flex align="center" gap="s">
                     <SvgIcon icon={<Check />} color="sand-10" />
                     <Text color="sand-10">{`You're`} signed in.</Text>
@@ -123,7 +123,7 @@ export default function HomePage() {
                   <Button
                     label="Sign In"
                     fill="outline"
-                    onClick={signInWithNear}
+                    onClick={signIn}
                     iconRight={<ArrowRight />}
                   />
                 )}

@@ -2,42 +2,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { TRPCError } from '@trpc/server';
+import { type z } from 'zod';
 
 import { statusCodeToTRPCErrorCode } from './error';
 
-/**
- * A type representing a fetcher function that can be
- * passed to createZodFetcher.
- */
-export type AnyFetcher = (...args: any[]) => any;
+type AnyFetcher = (...args: any[]) => any;
 
-/**
- * @internal
- */
-export type Schema<TData> =
+type Schema<TData> =
   | {
       passthrough: () => {
-        parse: (data: unknown) => TData;
+        safeParse: (data: unknown) => z.SafeParseReturnType<unknown, TData>;
       };
     }
   | {
-      parse: (data: unknown) => TData;
+      safeParse: (data: unknown) => z.SafeParseReturnType<unknown, TData>;
     };
 
-/**
- * A type utility which represents the function returned
- * from createZodFetcher
- */
-export type ZodFetcher<TFetcher extends AnyFetcher> = <TData>(
+type ZodFetcher<TFetcher extends AnyFetcher> = <TData>(
   schema: Schema<TData>,
   ...args: Parameters<TFetcher>
 ) => Promise<TData>;
 
-/**
- * The default fetcher used by createZodFetcher when no
- * fetcher is provided.
- */
-export const defaultFetcher = async (...args: Parameters<typeof fetch>) => {
+const defaultFetcher = async (...args: Parameters<typeof fetch>) => {
   const response = await fetch(...args);
 
   if (!response.ok) {
@@ -105,9 +91,26 @@ export function createZodFetcher(
 ): ZodFetcher<any> {
   return async (schema, ...args) => {
     const response = await fetcher(...args);
+
+    let parsed;
     if ('passthrough' in schema) {
-      return schema.passthrough().parse(response);
+      parsed = schema.passthrough().safeParse(response);
+    } else {
+      parsed = schema.safeParse(response);
     }
-    return schema.parse(response);
+
+    if (parsed.error) {
+      console.error(
+        'API response failed to match expected Zod schema',
+        parsed.error,
+      );
+
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: parsed.error.message,
+      });
+    }
+
+    return parsed.data;
   };
 }
