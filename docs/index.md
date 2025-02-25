@@ -5,10 +5,8 @@ Welcome! [NEAR AI](https://near.ai) is a toolkit to help build, measure, and dep
 Driven by one of the minds behinds **TensorFlow** and the **Transformer Architecture**, NEAR AI puts you back in control. Your data stays yours, and your AI works for you, with no compromises on privacy or ownership.
 
 ---
-<iframe
-    class="agent-iframe"
-    sandbox="allow-scripts allow-popups allow-same-origin allow-forms">
-</iframe>
+
+<iframe src="https://app.near.ai/embed/gagdiez.near/docs-gpt/latest" class="agent-iframe" sandbox="allow-scripts allow-popups allow-same-origin allow-forms"></iframe>
 
 <div class="grid cards" markdown>
 
