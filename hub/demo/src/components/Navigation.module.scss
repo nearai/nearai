@@ -29,6 +29,14 @@
   }
 }
 
+.embeddedLogo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  white-space: nowrap;
+  margin-right: auto;
+}
+
 .logoNearAi {
   font: var(--text-2xs);
   font-weight: 600;

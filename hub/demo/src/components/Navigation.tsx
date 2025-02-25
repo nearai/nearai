@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from '@near-pagoda/ui';
 import {
+  ArrowRight,
   BookOpenText,
   CaretDown,
   ChatCircleDots,
@@ -34,7 +35,7 @@ import { useEffect, useState } from 'react';
 
 import { APP_TITLE } from '~/constants';
 import { env } from '~/env';
-import { useIsEmbeddedIframe } from '~/hooks/embed';
+import { useEmbeddedWithinIframe } from '~/hooks/embed';
 import { signInWithNear } from '~/lib/auth';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { useAuthStore } from '~/stores/auth';
@@ -119,18 +120,19 @@ export const Navigation = () => {
   const path = usePathname();
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
-  const { isEmbedded } = useIsEmbeddedIframe();
+  const { embedded } = useEmbeddedWithinIframe();
+  const hidden = !!window.opener;
+
+  useEffect(() => {
+    if (hidden) {
+      document.body.style.setProperty('--header-height', '0px');
+      document.body.style.setProperty('--section-fill-height', '100svh');
+    }
+  }, [hidden]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (isEmbedded) {
-      document.body.style.setProperty('--header-height', '0px');
-      document.body.style.setProperty('--section-fill-height', '100svh');
-    }
-  }, [isEmbedded]);
 
   const signOut = () => {
     void clearTokenMutation.mutate();
@@ -146,61 +148,69 @@ export const Navigation = () => {
     }
   };
 
-  if (isEmbedded) return null;
+  if (hidden) return null;
 
   return (
     <header className={s.navigation}>
-      <Link className={s.logo} href="/">
-        <span className={s.logoNearAi}>NEAR AI</span>
-        <span className={s.logoTitle}>{APP_TITLE}</span>
-      </Link>
+      {embedded ? (
+        <div className={s.embeddedLogo}>
+          <span className={s.logoTitle}>NEAR AI</span>
+        </div>
+      ) : (
+        <Link className={s.logo} href="/">
+          <span className={s.logoNearAi}>NEAR AI</span>
+          <span className={s.logoTitle}>{APP_TITLE}</span>
+        </Link>
+      )}
 
-      <BreakpointDisplay show="larger-than-tablet" className={s.breakpoint}>
-        <NavigationMenu.Root className={s.menu} delayDuration={0}>
-          <NavigationMenu.List>
-            {navItems?.map((item) => (
-              <NavigationMenu.Item key={item.path}>
-                <NavigationMenu.Link
-                  asChild
-                  active={path.startsWith(item.path)}
-                >
-                  <Link href={item.path} key={item.path}>
-                    {item.label}
-                  </Link>
-                </NavigationMenu.Link>
-              </NavigationMenu.Item>
-            ))}
+      {!embedded && (
+        <BreakpointDisplay show="larger-than-tablet" className={s.breakpoint}>
+          <NavigationMenu.Root className={s.menu} delayDuration={0}>
+            <NavigationMenu.List>
+              {navItems?.map((item) => (
+                <NavigationMenu.Item key={item.path}>
+                  <NavigationMenu.Link
+                    asChild
+                    active={path.startsWith(item.path)}
+                  >
+                    <Link href={item.path} key={item.path}>
+                      {item.label}
+                    </Link>
+                  </NavigationMenu.Link>
+                </NavigationMenu.Item>
+              ))}
 
-            {resourcesNavItems && (
-              <NavigationMenu.Item>
-                <NavigationMenu.Trigger>
-                  Resources
-                  <SvgIcon size="xs" icon={<CaretDown />} />
-                </NavigationMenu.Trigger>
+              {resourcesNavItems && (
+                <NavigationMenu.Item>
+                  <NavigationMenu.Trigger>
+                    Resources
+                    <SvgIcon size="xs" icon={<CaretDown />} />
+                  </NavigationMenu.Trigger>
 
-                <NavigationMenu.Content className={s.menuDropdown}>
-                  {resourcesNavItems.map((item) => (
-                    <NavigationMenu.Link
-                      key={item.path}
-                      asChild
-                      active={path.startsWith(item.path)}
-                    >
-                      <Link
-                        href={item.path}
-                        target={item.target}
+                  <NavigationMenu.Content className={s.menuDropdown}>
+                    {resourcesNavItems.map((item) => (
+                      <NavigationMenu.Link
                         key={item.path}
+                        asChild
+                        active={path.startsWith(item.path)}
                       >
-                        <SvgIcon icon={item.icon} />
-                        {item.label}
-                      </Link>
-                    </NavigationMenu.Link>
-                  ))}
-                </NavigationMenu.Content>
-              </NavigationMenu.Item>
-            )}
-          </NavigationMenu.List>
-        </NavigationMenu.Root>
-      </BreakpointDisplay>
+                        <Link
+                          href={item.path}
+                          target={item.target}
+                          key={item.path}
+                        >
+                          <SvgIcon icon={item.icon} />
+                          {item.label}
+                        </Link>
+                      </NavigationMenu.Link>
+                    ))}
+                  </NavigationMenu.Content>
+                </NavigationMenu.Item>
+              )}
+            </NavigationMenu.List>
+          </NavigationMenu.Root>
+        </BreakpointDisplay>
+      )}
 
       <Flex
         align="center"
@@ -208,96 +218,100 @@ export const Navigation = () => {
         phone={{ gap: 's' }}
         style={{ marginLeft: 'auto' }}
       >
-        <Flex align="center" gap="xs">
-          {mounted && resolvedTheme === 'dark' ? (
-            <Tooltip asChild content="Switch to light mode">
-              <Button
-                label="Switch to light mode"
-                size="small"
-                icon={<Moon weight="duotone" />}
-                fill="ghost"
-                onClick={() => setTheme('light')}
-              />
-            </Tooltip>
-          ) : (
-            <Tooltip asChild content="Switch to dark mode">
-              <Button
-                label="Switch to dark mode"
-                size="small"
-                icon={<Sun weight="duotone" />}
-                fill="ghost"
-                onClick={() => setTheme('dark')}
-              />
-            </Tooltip>
-          )}
-
-          {!env.NEXT_PUBLIC_CONSUMER_MODE && (
-            <>
-              <Tooltip asChild content="View Documentation">
-                <Button
-                  label="View Documentation"
-                  size="small"
-                  icon={<BookOpenText weight="duotone" />}
-                  fill="ghost"
-                  href="https://docs.near.ai"
-                  target="_blank"
-                />
-              </Tooltip>
-
-              <NewAgentButton
-                customButton={
+        {!embedded && (
+          <>
+            <Flex align="center" gap="xs">
+              {mounted && resolvedTheme === 'dark' ? (
+                <Tooltip asChild content="Switch to light mode">
                   <Button
-                    label="New Agent"
+                    label="Switch to light mode"
                     size="small"
-                    icon={<Plus weight="bold" />}
-                    variant="affirmative"
+                    icon={<Moon weight="duotone" />}
                     fill="ghost"
+                    onClick={() => setTheme('light')}
                   />
-                }
-              />
-            </>
-          )}
-        </Flex>
+                </Tooltip>
+              ) : (
+                <Tooltip asChild content="Switch to dark mode">
+                  <Button
+                    label="Switch to dark mode"
+                    size="small"
+                    icon={<Sun weight="duotone" />}
+                    fill="ghost"
+                    onClick={() => setTheme('dark')}
+                  />
+                </Tooltip>
+              )}
 
-        {(navItems || resourcesNavItems) && (
-          <BreakpointDisplay
-            show="smaller-than-desktop"
-            className={s.breakpoint}
-          >
-            <Dropdown.Root>
-              <Dropdown.Trigger asChild>
-                <Button
-                  label="Navigation"
-                  size="small"
-                  fill="outline"
-                  variant="secondary"
-                  icon={<List weight="bold" />}
-                />
-              </Dropdown.Trigger>
+              {!env.NEXT_PUBLIC_CONSUMER_MODE && (
+                <>
+                  <Tooltip asChild content="View Documentation">
+                    <Button
+                      label="View Documentation"
+                      size="small"
+                      icon={<BookOpenText weight="duotone" />}
+                      fill="ghost"
+                      href="https://docs.near.ai"
+                      target="_blank"
+                    />
+                  </Tooltip>
 
-              <Dropdown.Content maxHeight="70svh">
-                <Dropdown.Section>
-                  {navItems?.map((item) => (
-                    <Dropdown.Item href={item.path} key={item.path}>
-                      <SvgIcon icon={item.icon} />
-                      {item.label}
-                    </Dropdown.Item>
-                  ))}
-                </Dropdown.Section>
+                  <NewAgentButton
+                    customButton={
+                      <Button
+                        label="New Agent"
+                        size="small"
+                        icon={<Plus weight="bold" />}
+                        variant="affirmative"
+                        fill="ghost"
+                      />
+                    }
+                  />
+                </>
+              )}
+            </Flex>
 
-                {resourcesNavItems && (
-                  <Dropdown.Section>
-                    {resourcesNavItems.map((item) => (
-                      <Dropdown.Item href={item.path} key={item.path}>
-                        <SvgIcon icon={item.icon} />
-                        {item.label}
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Section>
-                )}
-              </Dropdown.Content>
-            </Dropdown.Root>
-          </BreakpointDisplay>
+            {(navItems || resourcesNavItems) && (
+              <BreakpointDisplay
+                show="smaller-than-desktop"
+                className={s.breakpoint}
+              >
+                <Dropdown.Root>
+                  <Dropdown.Trigger asChild>
+                    <Button
+                      label="Navigation"
+                      size="small"
+                      fill="outline"
+                      variant="secondary"
+                      icon={<List weight="bold" />}
+                    />
+                  </Dropdown.Trigger>
+
+                  <Dropdown.Content maxHeight="80svh">
+                    <Dropdown.Section>
+                      {navItems?.map((item) => (
+                        <Dropdown.Item href={item.path} key={item.path}>
+                          <SvgIcon icon={item.icon} />
+                          {item.label}
+                        </Dropdown.Item>
+                      ))}
+                    </Dropdown.Section>
+
+                    {resourcesNavItems && (
+                      <Dropdown.Section>
+                        {resourcesNavItems.map((item) => (
+                          <Dropdown.Item href={item.path} key={item.path}>
+                            <SvgIcon icon={item.icon} />
+                            {item.label}
+                          </Dropdown.Item>
+                        ))}
+                      </Dropdown.Section>
+                    )}
+                  </Dropdown.Content>
+                </Dropdown.Root>
+              </BreakpointDisplay>
+            )}
+          </>
         )}
 
         {isAuthenticated ? (
@@ -310,7 +324,7 @@ export const Navigation = () => {
               />
             </Dropdown.Trigger>
 
-            <Dropdown.Content style={{ width: '14rem' }}>
+            <Dropdown.Content style={{ width: '14rem' }} maxHeight="80svh">
               <Dropdown.Section>
                 <Dropdown.SectionContent>
                   <Flex direction="column" gap="m">
@@ -329,7 +343,7 @@ export const Navigation = () => {
                   </Flex>
                 </Dropdown.SectionContent>
 
-                {!env.NEXT_PUBLIC_CONSUMER_MODE && (
+                {!env.NEXT_PUBLIC_CONSUMER_MODE && !embedded && (
                   <>
                     <Dropdown.Item href={`/profiles/${auth?.account_id}`}>
                       <SvgIcon icon={<Cube />} />
@@ -345,10 +359,12 @@ export const Navigation = () => {
                   </>
                 )}
 
-                <Dropdown.Item href="/settings">
-                  <SvgIcon icon={<Gear />} />
-                  Settings
-                </Dropdown.Item>
+                {!embedded && (
+                  <Dropdown.Item href="/settings">
+                    <SvgIcon icon={<Gear />} />
+                    Settings
+                  </Dropdown.Item>
+                )}
 
                 <Dropdown.Item onSelect={signOut}>
                   <SvgIcon icon={<SignOut />} />
@@ -418,8 +434,9 @@ export const Navigation = () => {
           <Button
             size="small"
             label="Sign In"
+            iconRight={<ArrowRight />}
+            variant="affirmative"
             onClick={signInWithNear}
-            type="button"
           />
         )}
       </Flex>

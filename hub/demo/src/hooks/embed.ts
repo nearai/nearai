@@ -1,17 +1,15 @@
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export function useIsEmbeddedIframe() {
+export function useEmbeddedWithinIframe() {
   const path = usePathname();
-  const [isEmbedded, setIsEmbedded] = useState(false);
+  const [embedded, setEmbedded] = useState(path.startsWith('/embed/'));
 
   useEffect(() => {
     if (path.startsWith('/embed/')) {
-      document.body.style.setProperty('--header-height', '0px');
-      document.body.style.setProperty('--section-fill-height', '100svh');
-      setIsEmbedded(true);
+      setEmbedded(true);
     }
   }, [path]);
 
-  return { isEmbedded };
+  return { embedded };
 }

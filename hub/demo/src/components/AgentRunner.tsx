@@ -493,37 +493,43 @@ export const AgentRunner = ({
                       gap="s"
                       style={{ paddingRight: '0.15rem' }}
                     >
-                      <BreakpointDisplay show="sidebar-small-screen">
-                        <Tooltip asChild content="View all threads">
-                          <Button
-                            label="Select Thread"
-                            icon={<List />}
-                            size="small"
-                            variant="secondary"
-                            fill="ghost"
-                            onClick={() => setThreadsOpenForSmallScreens(true)}
-                          />
-                        </Tooltip>
-                      </BreakpointDisplay>
+                      {showThreads && (
+                        <BreakpointDisplay show="sidebar-small-screen">
+                          <Tooltip asChild content="View all threads">
+                            <Button
+                              label="Select Thread"
+                              icon={<List />}
+                              size="small"
+                              variant="secondary"
+                              fill="ghost"
+                              onClick={() =>
+                                setThreadsOpenForSmallScreens(true)
+                              }
+                            />
+                          </Tooltip>
+                        </BreakpointDisplay>
+                      )}
 
-                      <BreakpointDisplay show="sidebar-small-screen">
-                        <Tooltip
-                          asChild
-                          content="View output files & agent settings"
-                        >
-                          <Button
-                            label={files.length.toString()}
-                            iconLeft={<Folder />}
-                            size="small"
-                            variant="secondary"
-                            fill="ghost"
-                            style={{ paddingInline: '0.5rem' }}
-                            onClick={() =>
-                              setParametersOpenForSmallScreens(true)
-                            }
-                          />
-                        </Tooltip>
-                      </BreakpointDisplay>
+                      {showOutputAndEnvVars && (
+                        <BreakpointDisplay show="sidebar-small-screen">
+                          <Tooltip
+                            asChild
+                            content="View output files & agent settings"
+                          >
+                            <Button
+                              label={files.length.toString()}
+                              iconLeft={<Folder />}
+                              size="small"
+                              variant="secondary"
+                              fill="ghost"
+                              style={{ paddingInline: '0.5rem' }}
+                              onClick={() =>
+                                setParametersOpenForSmallScreens(true)
+                              }
+                            />
+                          </Tooltip>
+                        </BreakpointDisplay>
+                      )}
 
                       {htmlOutput && (
                         <Tooltip

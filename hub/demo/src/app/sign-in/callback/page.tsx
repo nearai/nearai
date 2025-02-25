@@ -13,13 +13,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 
-import { useIsEmbeddedIframe } from '~/hooks/embed';
 import {
   extractSignatureFromHashParams,
   MESSAGE,
   RECIPIENT,
   returnSignInCallbackUrl,
-  returnSignInNonce,
   returnUrlToRestoreAfterSignIn,
   signInWithNear,
 } from '~/lib/auth';
@@ -34,7 +32,6 @@ export default function SignInCallbackPage() {
     typeof authorizationModel
   > | null>(null);
   const [isInvalidToken, setIsInvalidToken] = useState(false);
-  const { isEmbedded } = useIsEmbeddedIframe();
 
   useEffect(() => {
     async function parseToken() {
@@ -48,7 +45,7 @@ export default function SignInCallbackPage() {
           callback_url: returnSignInCallbackUrl(),
           message: MESSAGE,
           recipient: RECIPIENT,
-          nonce: hashParams?.nonce || returnSignInNonce(),
+          nonce: hashParams?.nonce,
         });
 
         setParsedAuth(auth);
@@ -69,7 +66,20 @@ export default function SignInCallbackPage() {
       onSuccess: () => {
         const { setAuth } = useAuthStore.getState();
         setAuth(parsedAuth);
-        router.replace(returnUrlToRestoreAfterSignIn());
+        const opener = window.opener as WindowProxy | null;
+
+        // TODO: Why is MyNearWallet not working? Never redirects back...
+
+        if (opener) {
+          opener.postMessage(
+            {
+              auth: parsedAuth,
+            },
+            '*',
+          );
+        } else {
+          router.replace(returnUrlToRestoreAfterSignIn());
+        }
       },
       onError: (error) => {
         const { clearAuth } = useAuthStore.getState();
@@ -89,14 +99,12 @@ export default function SignInCallbackPage() {
                 Your token is invalid. Please try signing in again.
               </Text>
 
-              {!isEmbedded && (
-                <Button
-                  variant="affirmative"
-                  label="Sign In"
-                  onClick={() => signInWithNear()}
-                  iconRight={<ArrowRight />}
-                />
-              )}
+              <Button
+                variant="affirmative"
+                label="Sign In"
+                onClick={() => signInWithNear()}
+                iconRight={<ArrowRight />}
+              />
             </>
           ) : (
             <>
