@@ -14,6 +14,8 @@ services:
       - "9009:8080"
     volumes:
       - ~/.nearai/registry:/root/.nearai/registry
+    env_file:
+      - .env
     environment:
       - DD_API_KEY=${DD_API_KEY}
       - DD_APM_ENABLED=true
@@ -24,8 +26,7 @@ services:
       - DD_LOGS_ENABLED=true
       - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
       - DD_SITE=${DD_SITE} 
-      - DD_AGENT_HOST=datadog-agent
-      - DD_TRACE_AGENT_PORT=8126
+      - DD_TRACE_ENABLED=true
 
   db:
     image: ghcr.io/singlestore-labs/singlestoredb-dev:latest
