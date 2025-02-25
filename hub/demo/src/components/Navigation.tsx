@@ -1,6 +1,6 @@
 'use client';
 
-import { ImageIcon, useTheme } from '@near-pagoda/ui';
+import { ImageIcon, Placeholder, useTheme } from '@near-pagoda/ui';
 import {
   BreakpointDisplay,
   Button,
@@ -35,10 +35,12 @@ import { useEffect, useState } from 'react';
 import { APP_TITLE } from '~/constants';
 import { env } from '~/env';
 import { useEmbeddedWithinIframe } from '~/hooks/embed';
+import { useCurrentEntry } from '~/hooks/entries';
 import { SIGN_IN_CALLBACK_PATH, signIn } from '~/lib/auth';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
 import { useAuthStore } from '~/stores/auth';
 import { useWalletStore } from '~/stores/wallet';
+import NearAiLogo from '~/svgs/near-ai-logo.svg';
 import { trpc } from '~/trpc/TRPCProvider';
 
 import s from './Navigation.module.scss';
@@ -120,6 +122,9 @@ export const Navigation = () => {
   const { resolvedTheme, setTheme } = useTheme();
   const { embedded } = useEmbeddedWithinIframe();
   const hidden = path === SIGN_IN_CALLBACK_PATH;
+  const { currentEntry, currentEntryId } = useCurrentEntry('agent', {
+    enabled: !embedded,
+  });
 
   useEffect(() => {
     if (hidden) {
@@ -152,7 +157,20 @@ export const Navigation = () => {
     <header className={s.navigation}>
       {embedded ? (
         <div className={s.embeddedLogo}>
-          <span className={s.logoTitle}>NEAR AI</span>
+          {currentEntry ? (
+            <>
+              {currentEntry.details.agent?.embed?.logo ? (
+                <img
+                  src={currentEntry.details.agent.embed.logo}
+                  alt={currentEntry.name}
+                />
+              ) : (
+                <span className={s.logoTitle}>{currentEntry.name}</span>
+              )}
+            </>
+          ) : (
+            <Placeholder />
+          )}
         </div>
       ) : (
         <Link className={s.logo} href="/">
@@ -216,7 +234,16 @@ export const Navigation = () => {
         phone={{ gap: 's' }}
         style={{ marginLeft: 'auto' }}
       >
-        {!embedded && (
+        {embedded ? (
+          <a
+            href={`https://app.near.ai/agents/${currentEntryId}`}
+            target="_blank"
+            className={s.poweredByNearAiLogo}
+          >
+            <Text size="text-2xs">Powered by</Text>
+            <NearAiLogo />
+          </a>
+        ) : (
           <>
             <Flex align="center" gap="xs">
               {mounted && resolvedTheme === 'dark' ? (

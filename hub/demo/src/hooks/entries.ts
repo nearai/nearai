@@ -41,6 +41,7 @@ export function useEntryParams(overrides?: {
 export function useCurrentEntry(
   category: EntryCategory,
   overrides?: {
+    enabled?: boolean;
     namespace?: string;
     name?: string;
     version?: string;
@@ -48,11 +49,17 @@ export function useCurrentEntry(
 ) {
   const { id, namespace, name, version } = useEntryParams(overrides);
 
-  const entriesQuery = trpc.hub.entries.useQuery({
-    category,
-    namespace,
-    showLatestVersion: false,
-  });
+  const entriesQuery = trpc.hub.entries.useQuery(
+    {
+      category,
+      namespace,
+      showLatestVersion: false,
+    },
+    {
+      enabled:
+        typeof overrides?.enabled === 'boolean' ? overrides.enabled : true,
+    },
+  );
 
   const currentVersions = entriesQuery.data?.filter(
     (item) => item.name === name,

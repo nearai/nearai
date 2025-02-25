@@ -96,6 +96,11 @@ export const entryDetailsModel = z.intersection(
               icon: z.string(),
             })
             .partial(),
+          embed: z
+            .object({
+              logo: z.string(),
+            })
+            .partial(),
         })
         .partial(),
       env_vars: z.record(z.string(), z.string()),
