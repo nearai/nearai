@@ -1,10 +1,27 @@
+# ruff: noqa: E402  # two blocks of imports makes the linter sad
 import logging
-import multiprocessing
 import os
-from contextlib import asynccontextmanager
 
 from ddtrace import patch_all
 from dotenv import load_dotenv
+
+# Initialize env vars, logging, and Datadog tracing before any other imports
+load_dotenv()
+
+if os.environ.get("DD_ENABLED"):
+    patch_all()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+# next round of imports
+import multiprocessing
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,20 +45,6 @@ from hub.api.v1.stars import v1_router as stars_router
 from hub.api.v1.thread_routes import threads_router
 from hub.api.v1.vector_stores import vector_stores_router
 from hub.tasks.schedule import lifespan
-
-# Initialize Datadog tracing
-if os.environ.get("DD_API_KEY"):
-    patch_all()
-
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
-
-load_dotenv()
 
 
 @asynccontextmanager
