@@ -20,9 +20,7 @@ RUN pip install \
 
 ENV DD_TRACE_ENABLED=true \
     DD_MERGE_XRAY_TRACES=true \
-    DD_LOG_LEVEL=debug \
     DD_LAMBDA_HANDLER="nearai/aws_runner/service.handler" \
-    DD_TRACE_DEBUG=true \
     PYTHONPATH="/opt/python:${PYTHONPATH}" \
     DD_ENHANCED_METRICS=true
 
