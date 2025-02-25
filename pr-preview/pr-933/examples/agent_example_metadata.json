@@ -1,0 +1,30 @@
+{
+  "name": "example_travel_agent",
+  "version": "1",
+  "description": "Example agent that helps users with travel",
+  "category": "agent",
+  "tags": ["python", "langgraph", "travel"],
+  "details": {
+    "display_name": "Example Travel Agent",
+    "icon": "https://upload.wikimedia.org/wikipedia/commons/6/66/Likes_Travel_icon.png",
+    "agent": {
+      "framework": "langgraph",
+      "welcome": {
+        "title": "Your Travel Agent",
+        "description": "Where would you like to go?"
+      },
+      "defaults": {
+        "max_iterations": 1,
+        "models": [
+          {
+            "model": "qwen2p5-72b-instruct",
+            "model_provider": "fireworks",
+            "model_temperature": 1.0,
+            "model_max_tokens": 1024
+          }
+        ]
+      }
+    }
+  },
+  "show_entry": true
+}
