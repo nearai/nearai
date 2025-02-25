@@ -14,9 +14,7 @@ RUN pip install --upgrade pip
 # Add Datadog Lambda Extension
 COPY --from=public.ecr.aws/datadog/lambda-extension:latest /opt/extensions/ /opt/extensions/
 
-RUN pip install \
-    datadog-lambda \
-    ddtrace
+RUN pip install datadog-lambda
 
 ENV DD_TRACE_ENABLED=true \
     DD_MERGE_XRAY_TRACES=true \
