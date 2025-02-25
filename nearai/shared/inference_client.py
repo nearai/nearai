@@ -163,14 +163,12 @@ class InferenceClient(object):
         file_type="text/plain",
     ) -> FileObject:
         """Uploads a file."""
-        client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
         file_data = io.BytesIO(file_content.encode(encoding))
-        return client.files.create(file=(file_name, file_data, file_type), purpose=purpose)
+        return self.client.files.create(file=(file_name, file_data, file_type), purpose=purpose)
 
     def add_file_to_vector_store(self, vector_store_id: str, file_id: str) -> VectorStoreFile:
         """Adds a file to vector store."""
-        client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
-        return client.beta.vector_stores.files.create(vector_store_id=vector_store_id, file_id=file_id)
+        return self.client.beta.vector_stores.files.create(vector_store_id=vector_store_id, file_id=file_id)
 
     def create_vector_store_from_source(
         self,
@@ -237,8 +235,7 @@ class InferenceClient(object):
         :param metadata: Additional metadata.
         :return: Returns the created vector store or error.
         """
-        client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
-        return client.beta.vector_stores.create(
+        return self.client.beta.vector_stores.create(
             file_ids=file_ids,
             name=name,
             expires_after=expires_after,

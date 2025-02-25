@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
+import httpx
 import openai
 import urllib3
 from pydantic import BaseModel
@@ -140,6 +141,7 @@ def setup_api_client():
     if CONFIG.auth is not None:
         kwargs["access_token"] = f"Bearer {CONFIG.auth.model_dump_json()}"
     configuration = Configuration(**kwargs)
+    configuration.verify_ssl = False  # Disable SSL verification for self-signed certificates
     client = ApiClient(configuration)
     if "http_proxy" in os.environ:
         client.rest_client.pool_manager = urllib3.ProxyManager(proxy_url=os.environ["http_proxy"])
@@ -149,7 +151,8 @@ def setup_api_client():
 def get_hub_client():
     signature = CONFIG.auth.model_dump_json()
     base_url = CONFIG.api_url + "/v1"
-    return openai.OpenAI(base_url=base_url, api_key=signature)
+    http_client = httpx.Client(verify=False)
+    return openai.OpenAI(base_url=base_url, api_key=signature, http_client=http_client)
 
 
 setup_api_client()

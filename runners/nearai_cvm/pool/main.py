@@ -138,7 +138,7 @@ class State(BaseModel):
         return None
 
 
-app.state.app_state = State(free_workers=[], assigned_workers=[], max_pool_size=1)
+app.state.app_state = State(free_workers=[], assigned_workers=[], max_pool_size=8)
 
 
 def get_app_state() -> State:

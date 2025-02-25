@@ -15,7 +15,7 @@ from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadF
 from fastapi.responses import StreamingResponse
 from nearai.shared.client_config import DEFAULT_NAMESPACE
 from pydantic import BaseModel
-from sqlmodel import col, delete, select, text
+from sqlmodel import col, delete, func, select, text
 
 from hub.api.v1.auth import AuthToken, get_auth, get_optional_auth
 from hub.api.v1.entry_location import EntryLocation, valid_identifier
@@ -81,6 +81,13 @@ def with_write_access(use_forms=False):
     return fn_with_write_access
 
 
+def get_next_id():
+    """Get the next available ID in the registry_entry table"""
+    with get_session() as session:
+        max_id = session.exec(select(func.max(RegistryEntry.id))).first()
+        return (max_id or 0) + 1
+
+
 def get_or_create(entry_location: EntryLocation = Depends(with_write_access())) -> int:
     with get_session() as session:
         entry = session.exec(
@@ -92,7 +99,9 @@ def get_or_create(entry_location: EntryLocation = Depends(with_write_access())) 
         ).first()
 
         if entry is None:
+            next_id = get_next_id()
             entry = RegistryEntry(
+                id=next_id,  # Explicitly set ID
                 namespace=entry_location.namespace,
                 name=entry_location.name,
                 version=entry_location.version,
@@ -635,7 +644,9 @@ def fork_entry(
 ) -> ForkResult:
     """Fork an existing registry entry to the current user's namespace."""
     with get_session() as session:
+        next_id = get_next_id()
         new_entry = RegistryEntry(
+            id=next_id,  # Use dynamic ID instead of hardcoded 1006747
             namespace=auth.account_id,
             name=modifications.name,
             version=modifications.version,
