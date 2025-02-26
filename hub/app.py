@@ -1,7 +1,5 @@
 import logging
-import multiprocessing
 import os
-from contextlib import asynccontextmanager
 
 from ddtrace import patch_all
 from dotenv import load_dotenv
@@ -27,7 +25,6 @@ from hub.api.v1.scheduled_run import scheduled_run_router
 from hub.api.v1.stars import v1_router as stars_router
 from hub.api.v1.thread_routes import threads_router
 from hub.api.v1.vector_stores import vector_stores_router
-from hub.tasks.schedule import lifespan
 
 # Initialize Datadog tracing
 if os.environ.get("DD_API_KEY"):
@@ -44,21 +41,8 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-@asynccontextmanager
-async def lifespan_with_scheduler(lifespan_app: FastAPI):
-    try:
-        # run scheduler only in the main process
-        if multiprocessing.current_process().name == "SpawnProcess-1":
-            async with lifespan(lifespan_app):
-                yield
-        else:
-            yield
-    except Exception as e:
-        logger.error(f"Error in lifespan: {e}")
-        raise
-
-
-app = FastAPI(lifespan=lifespan_with_scheduler)
+# No lifespan function - FastAPI will use default behavior
+app = FastAPI()
 
 origins = ["*"]
 

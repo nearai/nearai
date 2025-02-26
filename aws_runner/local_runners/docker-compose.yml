@@ -8,7 +8,7 @@ services:
     ports:
       - "9009-9011:8080"
     environment:
-      TZ: Europe/Kiev
+      TZ: ${RUNNER_TZ:-"UTC"}
       API_URL: ${API_URL:-"http://host.docker.internal:8081"}
       FASTNEAR_APY_KEY: ${FASTNEAR_APY_KEY:-""}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-""}
