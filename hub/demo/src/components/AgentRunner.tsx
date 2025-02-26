@@ -269,7 +269,12 @@ export const AgentRunner = ({
   };
 
   const startNewThread = () => {
-    updateQueryPath({ threadId: null });
+    updateQueryPath({
+      threadId: null,
+      view: null,
+      showLogs: null,
+      initialUserMessage: null,
+    });
     form.setValue('new_message', '');
     form.setFocus('new_message');
   };
