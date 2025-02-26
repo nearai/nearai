@@ -163,14 +163,15 @@ stop_all() {
                 kill -9 "$api_pid" 2>/dev/null
                 log "Forced termination of API process (PID: $api_pid)"
             fi
-            rm api.pid
         else
             log "API process (PID: $api_pid) not running"
         fi
-    else
-        pkill -f uvicorn || true
-        log "API process killed by pkill"
+        rm api.pid
     fi
+
+    # If the API process is still running (PID didn't work or file wasn't there), kill by name
+    pkill -f uvicorn || true
+    log "API process killed by pkill"
 
     # Stopping scheduler process
     if [ -f scheduler.pid ]; then
@@ -183,17 +184,19 @@ stop_all() {
                 kill -9 "$scheduler_pid" 2>/dev/null
                 log "Forced termination of scheduler process (PID: $scheduler_pid)"
             fi
-            rm scheduler.pid
         else
             log "Scheduler process (PID: $scheduler_pid) not running"
         fi
-    else
-        pkill -f "python scheduler.py" || true
-        log "Scheduler process killed by pkill"
+        rm scheduler.pid
     fi
+
+    # If the scheduler process is still running (PID didn't work or file wasn't there), kill by name
+    pkill -f "python scheduler.py" || true
+    log "Scheduler process killed by pkill"
 
     log "All processes stopped."
 }
+
 
 stop_processes() {
   local path=${1:-"/nearai"}
