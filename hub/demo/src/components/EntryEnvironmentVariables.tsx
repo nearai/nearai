@@ -29,8 +29,8 @@ import { type z } from 'zod';
 
 import {
   type EntryEnvironmentVariable,
+  useCurrentEntryParams,
   useEntryEnvironmentVariables,
-  useEntryParams,
 } from '~/hooks/entries';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
@@ -330,7 +330,7 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
   const removeMutation = trpc.hub.removeSecret.useMutation();
   const utils = trpc.useUtils();
   const auth = useAuthStore((store) => store.auth);
-  const params = useEntryParams();
+  const params = useCurrentEntryParams();
 
   useEffect(() => {
     if (!form.formState.isDirty) {
@@ -404,7 +404,7 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
               </Text>
             </Flex>
 
-            {auth.account_id === entry.namespace && (
+            {auth.accountId === entry.namespace && (
               <Card background="amber-2" border="amber-4">
                 <Text color="amber-11" size="text-s">
                   You are the owner of this {entry.category}. Any secrets you

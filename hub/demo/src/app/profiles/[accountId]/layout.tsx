@@ -43,7 +43,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {accountId}
           </Text>
 
-          {auth?.account_id === accountId && (
+          {auth?.accountId === accountId && (
             <Badge label="You" variant="neutral" />
           )}
         </Flex>

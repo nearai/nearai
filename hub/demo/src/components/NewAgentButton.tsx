@@ -139,7 +139,7 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
   const entriesQuery = trpc.hub.entries.useQuery(
     {
       category: 'agent',
-      namespace: auth?.account_id,
+      namespace: auth?.accountId,
     },
     {
       enabled: !!auth,
@@ -249,7 +249,7 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
               <Input
                 label="Namespace"
                 name="namespace"
-                value={auth.account_id}
+                value={auth.accountId}
                 disabled
               />
 

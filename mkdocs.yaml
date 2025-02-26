@@ -150,8 +150,8 @@ nav:
       - Agent Registry: 'agents/registry.md'
       - Core Features:
         - Threads: 'agents/threads.md'
+        - Vector Stores: 'agents/vector-stores.md'
         - Inference (OpenAI): 'inference.md'
-        - Vector Stores (OpenAI): 'vector-stores.md'
         - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
         - Local & Remote Runs: 'agents/running.md'
       - Event-Driven Agents:

@@ -3,7 +3,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink, loggerLink, type TRPCLink } from '@trpc/client';
-import { createTRPCReact } from '@trpc/react-query';
+import { createTRPCQueryUtils, createTRPCReact } from '@trpc/react-query';
 import { observable } from '@trpc/server/observable';
 import { useState } from 'react';
 import superjson from 'superjson';
@@ -60,6 +60,29 @@ const globalErrorHandlingLink: TRPCLink<AppRouter> = () => {
   };
 };
 
+const links = [
+  globalErrorHandlingLink,
+
+  loggerLink({
+    enabled: (opts) =>
+      (process.env.NODE_ENV === 'development' &&
+        typeof window !== 'undefined') ||
+      (opts.direction === 'down' && opts.result instanceof Error),
+  }),
+
+  httpBatchLink({
+    transformer: superjson,
+    url: getUrl(),
+  }),
+];
+
+export const clientUtils = createTRPCQueryUtils({
+  queryClient: getQueryClient(),
+  client: trpc.createClient({
+    links,
+  }),
+});
+
 export function TRPCProvider(
   props: Readonly<{
     children: React.ReactNode;
@@ -69,21 +92,7 @@ export function TRPCProvider(
 
   const [trpcClient] = useState(() =>
     trpc.createClient({
-      links: [
-        globalErrorHandlingLink,
-
-        loggerLink({
-          enabled: (opts) =>
-            (process.env.NODE_ENV === 'development' &&
-              typeof window !== 'undefined') ||
-            (opts.direction === 'down' && opts.result instanceof Error),
-        }),
-
-        httpBatchLink({
-          transformer: superjson,
-          url: getUrl(),
-        }),
-      ],
+      links,
     }),
   );
 

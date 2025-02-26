@@ -13,7 +13,7 @@ import { useAuthStore } from '~/stores/auth';
 import { trpc } from '~/trpc/TRPCProvider';
 import { wordsMatchFuzzySearch } from '~/utils/search';
 
-export function useEntryParams(overrides?: {
+export function useCurrentEntryParams(overrides?: {
   namespace?: string;
   name?: string;
   version?: string;
@@ -41,18 +41,25 @@ export function useEntryParams(overrides?: {
 export function useCurrentEntry(
   category: EntryCategory,
   overrides?: {
+    enabled?: boolean;
     namespace?: string;
     name?: string;
     version?: string;
   },
 ) {
-  const { id, namespace, name, version } = useEntryParams(overrides);
+  const { id, namespace, name, version } = useCurrentEntryParams(overrides);
 
-  const entriesQuery = trpc.hub.entries.useQuery({
-    category,
-    namespace,
-    showLatestVersion: false,
-  });
+  const entriesQuery = trpc.hub.entries.useQuery(
+    {
+      category,
+      namespace,
+      showLatestVersion: false,
+    },
+    {
+      enabled:
+        typeof overrides?.enabled === 'boolean' ? overrides.enabled : true,
+    },
+  );
 
   const currentVersions = entriesQuery.data?.filter(
     (item) => item.name === name,
@@ -111,12 +118,12 @@ export function useEntryEnvironmentVariables(
   entry: z.infer<typeof entryModel> | undefined,
   excludeQueryParamKeys?: string[],
 ) {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const searchParams = useSearchParams();
   const secretsQuery = trpc.hub.secrets.useQuery(
     {},
     {
-      enabled: isAuthenticated,
+      enabled: !!auth,
     },
   );
 

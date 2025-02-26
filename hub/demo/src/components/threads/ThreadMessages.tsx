@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { type z } from 'zod';
 
-import { env } from '~/env';
+import { useConsumerModeEnabled } from '~/hooks/consumer';
 import { type MessageGroup, useGroupedThreadMessages } from '~/hooks/threads';
 import { type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
@@ -40,7 +40,7 @@ export const ThreadMessages = ({
   threadId,
   welcomeMessage,
 }: Props) => {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const scrolledToThreadId = useRef('');
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const countRef = useRef(0);
@@ -84,7 +84,7 @@ export const ThreadMessages = ({
     }
   }, [groupedMessages, threadId, scroll]);
 
-  if (!isAuthenticated) {
+  if (!auth) {
     return (
       <div className={s.wrapper} data-grow={grow}>
         {welcomeMessage}
@@ -120,9 +120,10 @@ type SubthreadProps = {
 };
 
 const Subthread = ({ group }: SubthreadProps) => {
+  const { consumerModeEnabled } = useConsumerModeEnabled();
   const [accordionValue, setAccordionValue] = useState<string[]>();
 
-  if (env.NEXT_PUBLIC_CONSUMER_MODE) {
+  if (consumerModeEnabled) {
     // As of now, we don't want to show subthreads to end users within chat.near.ai
     return null;
   }

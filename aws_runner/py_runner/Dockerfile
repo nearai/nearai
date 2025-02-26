@@ -10,6 +10,19 @@ ARG FRAMEWORK=""
 COPY aws_runner/frameworks/requirements${FRAMEWORK}.txt ${LAMBDA_TASK_ROOT}
 
 RUN pip install --upgrade pip
+
+# Add Datadog Lambda Extension
+COPY --from=public.ecr.aws/datadog/lambda-extension:latest /opt/extensions/ /opt/extensions/
+
+RUN pip install datadog-lambda
+
+ENV DD_TRACE_ENABLED=true \
+    DD_MERGE_XRAY_TRACES=true \
+    DD_LAMBDA_HANDLER="nearai/aws_runner/service.handler" \
+    PYTHONPATH="/opt/python:${PYTHONPATH}" \
+    DD_ENHANCED_METRICS=true
+
+
 RUN pip install -r requirements${FRAMEWORK}.txt
 
 # This will build a smaller container, but takes much longer time to run.
@@ -53,5 +66,5 @@ RUN if [ -f aws_runner/build-info.txt ]; then \
         rm -f ${LAMBDA_TASK_ROOT}/build-info.txt; \
     fi
 
-CMD [ "nearai/aws_runner/service.handler" ]
-
+# Invoke the Datadog Lambda Handler that will invoke the main handler
+CMD [ "datadog_lambda.handler.handler" ]

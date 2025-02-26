@@ -29,9 +29,9 @@ type Props = {
 };
 
 export const DevelopButton = ({ entry, style }: Props) => {
-  const accountId = useAuthStore((store) => store.auth?.account_id);
+  const auth = useAuthStore((store) => store.auth);
   const isPermittedToViewSource =
-    !entry?.details.private_source || accountId === entry.namespace;
+    !entry?.details.private_source || auth?.accountId === entry.namespace;
   const [forkModalIsOpen, setForkModalIsOpen] = useState(false);
 
   if (!isPermittedToViewSource) return null;

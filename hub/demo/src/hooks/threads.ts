@@ -6,6 +6,8 @@ import { useAuthStore } from '~/stores/auth';
 import { type AppRouterOutputs } from '~/trpc/router';
 import { trpc } from '~/trpc/TRPCProvider';
 
+import { useEmbeddedWithinIframe } from './embed';
+import { useCurrentEntryParams } from './entries';
 import { useQueryParams } from './url';
 
 export type ThreadSummary = z.infer<typeof threadModel> & {
@@ -21,11 +23,13 @@ export type ThreadSummary = z.infer<typeof threadModel> & {
 };
 
 export function useThreads() {
-  const accountId = useAuthStore((store) => store.auth?.account_id);
+  const { embedded } = useEmbeddedWithinIframe();
+  const currentEntryParams = useCurrentEntryParams();
+  const auth = useAuthStore((store) => store.auth);
   const utils = trpc.useUtils();
 
   const threadsQuery = trpc.hub.threads.useQuery(undefined, {
-    enabled: !!accountId,
+    enabled: !!auth,
   });
 
   const setThreadData = useCallback(
@@ -47,7 +51,7 @@ export function useThreads() {
   );
 
   const threads = useMemo(() => {
-    if (!accountId) return [];
+    if (!auth) return [];
     if (!threadsQuery.data) return;
 
     const result: ThreadSummary[] = [];
@@ -59,6 +63,15 @@ export function useThreads() {
       const [namespace, name, version, ...otherSegments] =
         rootAgentId.split('/');
       if (!namespace || !name || !version || otherSegments.length > 0) continue;
+
+      if (
+        embedded &&
+        (currentEntryParams.namespace !== namespace ||
+          currentEntryParams.name !== name)
+      ) {
+        // When embedded within an iframe, only show threads for the embedded agent
+        continue;
+      }
 
       const agentUrl = `/agents/${namespace}/${name}/${version}`;
       const threadUrl = `${agentUrl}/run?threadId=${encodeURIComponent(data.id)}`;
@@ -82,7 +95,13 @@ export function useThreads() {
     }
 
     return result;
-  }, [accountId, threadsQuery.data]);
+  }, [
+    auth,
+    threadsQuery.data,
+    embedded,
+    currentEntryParams.name,
+    currentEntryParams.namespace,
+  ]);
 
   return {
     setThreadData,

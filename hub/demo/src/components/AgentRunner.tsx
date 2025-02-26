@@ -44,8 +44,8 @@ import { Sidebar } from '~/components/lib/Sidebar';
 import { SignInPrompt } from '~/components/SignInPrompt';
 import { ThreadMessages } from '~/components/threads/ThreadMessages';
 import { ThreadsSidebar } from '~/components/threads/ThreadsSidebar';
-import { env } from '~/env';
 import { useAgentRequestsWithIframe } from '~/hooks/agent-iframe-requests';
+import { useConsumerModeEnabled } from '~/hooks/consumer';
 import { useCurrentEntry, useEntryEnvironmentVariables } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
 import { sourceUrlForEntry } from '~/lib/entries';
@@ -80,13 +80,14 @@ export const AgentRunner = ({
   version,
   showLoadingPlaceholder,
 }: Props) => {
+  const { consumerModeEnabled } = useConsumerModeEnabled();
   const { currentEntry, currentEntryId: agentId } = useCurrentEntry('agent', {
     namespace,
     name,
     version,
   });
 
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const { queryParams, updateQueryPath } = useQueryParams([
     'showLogs',
     'threadId',
@@ -172,7 +173,7 @@ export const AgentRunner = ({
     thread?.run?.status === 'queued' ||
     thread?.run?.status === 'in_progress';
 
-  const isLoading = isAuthenticated && !!threadId && !thread && !isRunning;
+  const isLoading = !!auth && !!threadId && !thread && !isRunning;
 
   const threadQuery = trpc.hub.thread.useQuery(
     {
@@ -182,7 +183,7 @@ export const AgentRunner = ({
       threadId,
     },
     {
-      enabled: isAuthenticated && !!threadId,
+      enabled: !!auth && !!threadId,
       refetchInterval: isRunning ? 150 : 1500,
       retry: false,
     },
@@ -332,10 +333,10 @@ export const AgentRunner = ({
   }, [files, htmlOutput, agentId, setView]);
 
   useEffect(() => {
-    if (currentEntry && isAuthenticated) {
+    if (currentEntry && auth) {
       form.setFocus('new_message');
     }
-  }, [threadId, currentEntry, isAuthenticated, form]);
+  }, [threadId, currentEntry, auth, form]);
 
   useEffect(() => {
     if (threadId !== chatMutationThreadId.current) {
@@ -463,13 +464,13 @@ export const AgentRunner = ({
                 <InputTextarea
                   placeholder="Write your message and press enter..."
                   onKeyDown={onKeyDownContent}
-                  disabled={!isAuthenticated}
+                  disabled={!auth}
                   {...form.register('new_message', {
                     required: 'Please enter a message',
                   })}
                 />
 
-                {isAuthenticated ? (
+                {auth ? (
                   <Flex align="start" gap="m" justify="space-between">
                     <BreakpointDisplay
                       show="larger-than-phone"
@@ -570,7 +571,7 @@ export const AgentRunner = ({
                         />
                       </Tooltip>
 
-                      {env.NEXT_PUBLIC_CONSUMER_MODE && (
+                      {consumerModeEnabled && (
                         <Tooltip asChild content="Inspect agent source">
                           <Button
                             label="Agent Source"
@@ -652,13 +653,11 @@ export const AgentRunner = ({
               )}
             </Flex>
 
-            {!env.NEXT_PUBLIC_CONSUMER_MODE && (
-              <>
-                <EntryEnvironmentVariables
-                  entry={currentEntry}
-                  excludeQueryParamKeys={Object.keys(queryParams)}
-                />
-              </>
+            {!consumerModeEnabled && (
+              <EntryEnvironmentVariables
+                entry={currentEntry}
+                excludeQueryParamKeys={Object.keys(queryParams)}
+              />
             )}
           </Flex>
         </Sidebar.Sidebar>

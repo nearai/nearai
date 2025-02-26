@@ -42,6 +42,46 @@
   margin-top: -0.15rem;
 }
 
+.poweredByNearAiLogo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-decoration: none;
+  outline: none;
+  white-space: nowrap;
+  color: var(--sand-12);
+  transition: var(--transitions);
+  width: 3.4rem;
+  white-space: nowrap;
+  gap: 0.1rem;
+
+  svg {
+    width: 100%;
+  }
+
+  &:hover,
+  &:focus-visible {
+    color: var(--violet-10);
+  }
+}
+
+.embeddedLogo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  white-space: nowrap;
+  margin-right: auto;
+  padding: 0.5rem 0;
+
+  img {
+    height: 100%;
+  }
+
+  .logoTitle {
+    margin-block: auto;
+  }
+}
+
 .breakpoint {
   display: flex;
   align-items: stretch;

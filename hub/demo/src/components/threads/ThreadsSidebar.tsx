@@ -30,7 +30,7 @@ import { useEffect, useState } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 
 import { Sidebar } from '~/components/lib/Sidebar';
-import { env } from '~/env';
+import { useConsumerModeEnabled } from '~/hooks/consumer';
 import { type ThreadSummary, useThreads } from '~/hooks/threads';
 import { useQueryParams } from '~/hooks/url';
 import { useAuthStore } from '~/stores/auth';
@@ -47,7 +47,8 @@ export const ThreadsSidebar = ({
   openForSmallScreens,
   setOpenForSmallScreens,
 }: Props) => {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const { consumerModeEnabled } = useConsumerModeEnabled();
+  const auth = useAuthStore((store) => store.auth);
   const { updateQueryPath, queryParams } = useQueryParams(['threadId']);
   const threadId = queryParams.threadId ?? '';
   const { threads } = useThreads();
@@ -85,7 +86,7 @@ export const ThreadsSidebar = ({
     setOpenForSmallScreens(false);
   }, [setOpenForSmallScreens, threadId]);
 
-  if (!isAuthenticated) return null;
+  if (!auth) return null;
 
   return (
     <Sidebar.Sidebar
@@ -93,7 +94,12 @@ export const ThreadsSidebar = ({
       setOpenForSmallScreens={setOpenForSmallScreens}
     >
       <Flex align="center" gap="s">
-        <Text size="text-xs" weight={600} uppercase>
+        <Text
+          size="text-xs"
+          weight={600}
+          uppercase
+          style={{ marginRight: 'auto' }}
+        >
           Threads
         </Text>
 
@@ -102,8 +108,8 @@ export const ThreadsSidebar = ({
             label="New Thread"
             icon={<Plus weight="bold" />}
             variant="affirmative"
+            fill="outline"
             size="x-small"
-            fill="ghost"
             onClick={onRequestNewThread}
           />
         </Tooltip>
@@ -211,19 +217,12 @@ export const ThreadsSidebar = ({
                               Copy Thread Link
                             </Dropdown.Item>
 
-                            <Dropdown.Item href={thread.agent.url}>
-                              {env.NEXT_PUBLIC_CONSUMER_MODE ? (
-                                <>
-                                  <SvgIcon icon={<Plus />} />
-                                  New Thread
-                                </>
-                              ) : (
-                                <>
-                                  <SvgIcon icon={<Lightbulb />} />
-                                  View Agent
-                                </>
-                              )}
-                            </Dropdown.Item>
+                            {!consumerModeEnabled && (
+                              <Dropdown.Item href={thread.agent.url}>
+                                <SvgIcon icon={<Lightbulb />} />
+                                View Agent Details
+                              </Dropdown.Item>
+                            )}
 
                             <Dropdown.Item
                               onSelect={() => removeThread(thread)}
@@ -259,12 +258,14 @@ export const ThreadsSidebar = ({
                 Submit a message to start your first thread.
               </Text>
 
-              <Button
-                label="Browse Agents"
-                href="/agents"
-                size="small"
-                variant="secondary"
-              />
+              {!consumerModeEnabled && (
+                <Button
+                  label="Browse Agents"
+                  href="/agents"
+                  size="small"
+                  variant="secondary"
+                />
+              )}
             </>
           ) : (
             <PlaceholderStack />

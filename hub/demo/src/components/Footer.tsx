@@ -4,6 +4,7 @@ import { Flex, Text } from '@near-pagoda/ui';
 import { useEffect, useState } from 'react';
 
 import { APP_TITLE } from '~/constants';
+import { useEmbeddedWithinIframe } from '~/hooks/embed';
 
 import s from './Footer.module.scss';
 
@@ -13,6 +14,7 @@ type Props = {
 
 export const Footer = ({ conditional }: Props) => {
   const [mounted, setMounted] = useState(false);
+  const { embedded } = useEmbeddedWithinIframe();
 
   useEffect(() => {
     if (!conditional && typeof window !== 'undefined') {
@@ -30,6 +32,9 @@ export const Footer = ({ conditional }: Props) => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  if (embedded) return null;
+
   return (
     <footer
       className={s.footer}
