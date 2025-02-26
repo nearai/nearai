@@ -151,18 +151,45 @@ show_help() {
 # Stop all processes
 stop_all() {
     log "Stopping API and scheduler processes..."
+
+    # Stopping API process
     if [ -f api.pid ]; then
-        kill -9 $(cat api.pid) 2>/dev/null || true
-        rm api.pid
+        local api_pid=$(cat api.pid)
+        if kill -0 "$api_pid" 2>/dev/null; then
+            kill "$api_pid" 2>/dev/null
+            log "Sent termination signal to API process (PID: $api_pid)"
+            sleep 1  # Wait for process to terminate
+            if kill -0 "$api_pid" 2>/dev/null; then
+                kill -9 "$api_pid" 2>/dev/null
+                log "Forced termination of API process (PID: $api_pid)"
+            fi
+            rm api.pid
+        else
+            log "API process (PID: $api_pid) not running"
+        fi
     else
         pkill -f uvicorn || true
+        log "API process killed by pkill"
     fi
 
+    # Stopping scheduler process
     if [ -f scheduler.pid ]; then
-        kill -9 $(cat scheduler.pid) 2>/dev/null || true
-        rm scheduler.pid
+        local scheduler_pid=$(cat scheduler.pid)
+        if kill -0 "$scheduler_pid" 2>/dev/null; then
+            kill "$scheduler_pid" 2>/dev/null
+            log "Sent termination signal to scheduler process (PID: $scheduler_pid)"
+            sleep 1  # Wait for process to terminate
+            if kill -0 "$scheduler_pid" 2>/dev/null; then
+                kill -9 "$scheduler_pid" 2>/dev/null
+                log "Forced termination of scheduler process (PID: $scheduler_pid)"
+            fi
+            rm scheduler.pid
+        else
+            log "Scheduler process (PID: $scheduler_pid) not running"
+        fi
     else
         pkill -f "python scheduler.py" || true
+        log "Scheduler process killed by pkill"
     fi
 
     log "All processes stopped."
