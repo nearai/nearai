@@ -28,7 +28,7 @@ Clone the NEAR AI Github Repository
 git clone https://github.com/nearai/nearai.git
 ```
 
-Change your directory to `ts_runner/ts_agent` and Install `Node.js` dependencies by running the command bellow
+Change your directory to `ts_runner/ts_agent` and Install `Node.js` dependencies by running the command below
 
 ```shell
 cd ts_runner/ts_agent && npm install
@@ -48,7 +48,7 @@ import { env } from "ts-agent-runner";
     const messages: any = [
       {
         role: "system",
-        content: "You are a smart assistent.",
+        content: "You are a smart assistant.",
       },
       {
         role: "user",
