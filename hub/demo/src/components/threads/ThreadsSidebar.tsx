@@ -258,12 +258,14 @@ export const ThreadsSidebar = ({
                 Submit a message to start your first thread.
               </Text>
 
-              <Button
-                label="Browse Agents"
-                href="/agents"
-                size="small"
-                variant="secondary"
-              />
+              {!consumerModeEnabled && (
+                <Button
+                  label="Browse Agents"
+                  href="/agents"
+                  size="small"
+                  variant="secondary"
+                />
+              )}
             </>
           ) : (
             <PlaceholderStack />
