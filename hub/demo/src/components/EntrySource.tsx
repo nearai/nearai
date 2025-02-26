@@ -18,7 +18,7 @@ import { type z } from 'zod';
 
 import { Code } from '~/components/lib/Code';
 import { Sidebar } from '~/components/lib/Sidebar';
-import { useEntryParams } from '~/hooks/entries';
+import { useCurrentEntryParams } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
@@ -36,7 +36,7 @@ export const EntrySource = ({ entry }: Props) => {
   const isPermittedToViewSource =
     !entry.details.private_source || auth?.accountId === entry.namespace;
   const { createQueryPath, queryParams } = useQueryParams(['file']);
-  const params = useEntryParams();
+  const params = useCurrentEntryParams();
 
   const filePathsQuery = trpc.hub.filePaths.useQuery(params, {
     enabled: isPermittedToViewSource,

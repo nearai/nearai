@@ -14,7 +14,6 @@ import { Code } from '~/components/lib/Code';
 import { Markdown } from '~/components/lib/Markdown';
 import { type threadMessageContentModel } from '~/lib/models';
 
-import { useThreadMessageContent } from '../ThreadMessageContentProvider';
 import { Message } from './Message';
 
 type Props = {
@@ -22,46 +21,43 @@ type Props = {
 };
 
 export const TextMessage = (props: Props) => {
-  const { message } = useThreadMessageContent();
   const [viewSource, setViewSource] = useState(false);
   const text = props.text.value;
 
   return (
     <Message
       actions={
-        message.role !== 'user' ? (
-          <Dropdown.Root>
-            <Dropdown.Trigger asChild>
-              <Button
-                label="Message Actions"
-                icon={<DotsThree weight="bold" />}
-                size="x-small"
-                fill="ghost"
-              />
-            </Dropdown.Trigger>
+        <Dropdown.Root>
+          <Dropdown.Trigger asChild>
+            <Button
+              label="Message Actions"
+              icon={<DotsThree weight="bold" />}
+              size="x-small"
+              fill="ghost"
+            />
+          </Dropdown.Trigger>
 
-            <Dropdown.Content sideOffset={0}>
-              <Dropdown.Section>
-                {viewSource ? (
-                  <Dropdown.Item onSelect={() => setViewSource(false)}>
-                    <SvgIcon icon={<Eye />} />
-                    View Rendered Markdown
-                  </Dropdown.Item>
-                ) : (
-                  <Dropdown.Item onSelect={() => setViewSource(true)}>
-                    <SvgIcon icon={<MarkdownLogo />} />
-                    View Markdown Source
-                  </Dropdown.Item>
-                )}
-
-                <Dropdown.Item onSelect={() => copyTextToClipboard(text)}>
-                  <SvgIcon icon={<Copy />} />
-                  Copy To Clipboard (Markdown)
+          <Dropdown.Content sideOffset={0}>
+            <Dropdown.Section>
+              {viewSource ? (
+                <Dropdown.Item onSelect={() => setViewSource(false)}>
+                  <SvgIcon icon={<Eye />} />
+                  View Rendered Markdown
                 </Dropdown.Item>
-              </Dropdown.Section>
-            </Dropdown.Content>
-          </Dropdown.Root>
-        ) : undefined
+              ) : (
+                <Dropdown.Item onSelect={() => setViewSource(true)}>
+                  <SvgIcon icon={<MarkdownLogo />} />
+                  View Markdown Source
+                </Dropdown.Item>
+              )}
+
+              <Dropdown.Item onSelect={() => copyTextToClipboard(text)}>
+                <SvgIcon icon={<Copy />} />
+                Copy To Clipboard (Markdown)
+              </Dropdown.Item>
+            </Dropdown.Section>
+          </Dropdown.Content>
+        </Dropdown.Root>
       }
     >
       {viewSource ? (

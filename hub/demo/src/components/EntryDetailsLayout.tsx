@@ -29,7 +29,8 @@ import { type ReactElement, type ReactNode, useEffect, useState } from 'react';
 import { ErrorSection } from '~/components/ErrorSection';
 import { StarButton } from '~/components/StarButton';
 import { env } from '~/env';
-import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
+import { useConsumerModeEnabled } from '~/hooks/consumer';
+import { useCurrentEntry, useCurrentEntryParams } from '~/hooks/entries';
 import { ENTRY_CATEGORY_LABELS, primaryUrlForEntry } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
 
@@ -41,13 +42,11 @@ type Props = {
   category: EntryCategory;
   children: ReactNode;
   defaultConsumerModePath?: string;
-  tabs:
-    | {
-        path: string;
-        label: string;
-        icon: ReactElement;
-      }[]
-    | null;
+  tabs: {
+    path: string;
+    label: string;
+    icon: ReactElement;
+  }[];
 };
 
 export const ENTRY_DETAILS_LAYOUT_SIZE_NAME = 'entry-details-layout';
@@ -58,8 +57,9 @@ export const EntryDetailsLayout = ({
   defaultConsumerModePath,
   tabs,
 }: Props) => {
+  const { consumerModeEnabled } = useConsumerModeEnabled();
   const pathname = usePathname();
-  const { namespace, name, version } = useEntryParams();
+  const { namespace, name, version } = useCurrentEntryParams();
   const { currentEntry, currentEntryIsHidden, currentVersions } =
     useCurrentEntry(category);
   const baseUrl = `/${category}s/${namespace}/${name}`;
@@ -85,8 +85,8 @@ export const EntryDetailsLayout = ({
 
   return (
     <>
-      {!env.NEXT_PUBLIC_CONSUMER_MODE && (
-        <Section background="sand-0" bleed gap="m" tabs={!!tabs}>
+      {!consumerModeEnabled && (
+        <Section background="sand-0" bleed gap="m" tabs>
           <Flex
             align="center"
             gap="m"
@@ -309,22 +309,20 @@ export const EntryDetailsLayout = ({
             </Flex>
           </Flex>
 
-          {tabs && (
-            <Tabs.Root value={activeTabPath}>
-              <Tabs.List>
-                {tabs.map((tab) => (
-                  <Tabs.Trigger
-                    href={`${baseUrl}/${version}${tab.path}`}
-                    value={tab.path}
-                    key={tab.path}
-                  >
-                    <SvgIcon icon={tab.icon} />
-                    {tab.label}
-                  </Tabs.Trigger>
-                ))}
-              </Tabs.List>
-            </Tabs.Root>
-          )}
+          <Tabs.Root value={activeTabPath}>
+            <Tabs.List>
+              {tabs.map((tab) => (
+                <Tabs.Trigger
+                  href={`${baseUrl}/${version}${tab.path}`}
+                  value={tab.path}
+                  key={tab.path}
+                >
+                  <SvgIcon icon={tab.icon} />
+                  {tab.label}
+                </Tabs.Trigger>
+              ))}
+            </Tabs.List>
+          </Tabs.Root>
         </Section>
       )}
 

@@ -2,7 +2,7 @@ import { Accordion, Dialog, Flex, SvgIcon, Text } from '@near-pagoda/ui';
 import { Code as CodeIcon } from '@phosphor-icons/react';
 import { type z } from 'zod';
 
-import { useEntryParams } from '~/hooks/entries';
+import { useCurrentEntryParams } from '~/hooks/entries';
 import { primaryUrlForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
 
@@ -16,7 +16,7 @@ type Props = {
 };
 
 export const EmbedAgentModal = ({ entry, isOpen, setIsOpen }: Props) => {
-  const { id } = useEntryParams();
+  const { id } = useCurrentEntryParams();
 
   if (entry && entry.category !== 'agent') {
     throw new Error(
@@ -75,9 +75,7 @@ export const EmbedAgentModal = ({ entry, isOpen, setIsOpen }: Props) => {
   "details": {
     "agent": {
       "embed": {
-        "logo": "https://near.ai/logo-white.svg",
-        "show_output_sidebar": true,
-        "show_threads_sidebar": true
+        "logo": "https://near.ai/logo-white.svg"
       }
     }
   }

@@ -44,9 +44,8 @@ import { Sidebar } from '~/components/lib/Sidebar';
 import { SignInPrompt } from '~/components/SignInPrompt';
 import { ThreadMessages } from '~/components/threads/ThreadMessages';
 import { ThreadsSidebar } from '~/components/threads/ThreadsSidebar';
-import { env } from '~/env';
 import { useAgentRequestsWithIframe } from '~/hooks/agent-iframe-requests';
-import { useEmbeddedWithinIframe } from '~/hooks/embed';
+import { useConsumerModeEnabled } from '~/hooks/consumer';
 import { useCurrentEntry, useEntryEnvironmentVariables } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
 import { sourceUrlForEntry } from '~/lib/entries';
@@ -81,18 +80,12 @@ export const AgentRunner = ({
   version,
   showLoadingPlaceholder,
 }: Props) => {
+  const { consumerModeEnabled } = useConsumerModeEnabled();
   const { currentEntry, currentEntryId: agentId } = useCurrentEntry('agent', {
     namespace,
     name,
     version,
   });
-
-  const { embedded } = useEmbeddedWithinIframe();
-  const embedConfig = currentEntry?.details.agent?.embed;
-  const showOutputSidebar =
-    !embedded || embedConfig?.show_output_sidebar !== false;
-  const showThreadsSidebar =
-    !embedded || embedConfig?.show_threads_sidebar !== false;
 
   const auth = useAuthStore((store) => store.auth);
   const { queryParams, updateQueryPath } = useQueryParams([
@@ -424,13 +417,11 @@ export const AgentRunner = ({
   return (
     <>
       <Sidebar.Root>
-        {showThreadsSidebar && (
-          <ThreadsSidebar
-            onRequestNewThread={startNewThread}
-            openForSmallScreens={threadsOpenForSmallScreens}
-            setOpenForSmallScreens={setThreadsOpenForSmallScreens}
-          />
-        )}
+        <ThreadsSidebar
+          onRequestNewThread={startNewThread}
+          openForSmallScreens={threadsOpenForSmallScreens}
+          setOpenForSmallScreens={setThreadsOpenForSmallScreens}
+        />
 
         <Sidebar.Main>
           {isLoading ? (
@@ -495,43 +486,37 @@ export const AgentRunner = ({
                       gap="s"
                       style={{ paddingRight: '0.15rem' }}
                     >
-                      {showThreadsSidebar && (
-                        <BreakpointDisplay show="sidebar-small-screen">
-                          <Tooltip asChild content="View all threads">
-                            <Button
-                              label="Select Thread"
-                              icon={<List />}
-                              size="small"
-                              variant="secondary"
-                              fill="ghost"
-                              onClick={() =>
-                                setThreadsOpenForSmallScreens(true)
-                              }
-                            />
-                          </Tooltip>
-                        </BreakpointDisplay>
-                      )}
+                      <BreakpointDisplay show="sidebar-small-screen">
+                        <Tooltip asChild content="View all threads">
+                          <Button
+                            label="Select Thread"
+                            icon={<List />}
+                            size="small"
+                            variant="secondary"
+                            fill="ghost"
+                            onClick={() => setThreadsOpenForSmallScreens(true)}
+                          />
+                        </Tooltip>
+                      </BreakpointDisplay>
 
-                      {showOutputSidebar && (
-                        <BreakpointDisplay show="sidebar-small-screen">
-                          <Tooltip
-                            asChild
-                            content="View output files & agent settings"
-                          >
-                            <Button
-                              label={files.length.toString()}
-                              iconLeft={<Folder />}
-                              size="small"
-                              variant="secondary"
-                              fill="ghost"
-                              style={{ paddingInline: '0.5rem' }}
-                              onClick={() =>
-                                setParametersOpenForSmallScreens(true)
-                              }
-                            />
-                          </Tooltip>
-                        </BreakpointDisplay>
-                      )}
+                      <BreakpointDisplay show="sidebar-small-screen">
+                        <Tooltip
+                          asChild
+                          content="View output files & agent settings"
+                        >
+                          <Button
+                            label={files.length.toString()}
+                            iconLeft={<Folder />}
+                            size="small"
+                            variant="secondary"
+                            fill="ghost"
+                            style={{ paddingInline: '0.5rem' }}
+                            onClick={() =>
+                              setParametersOpenForSmallScreens(true)
+                            }
+                          />
+                        </Tooltip>
+                      </BreakpointDisplay>
 
                       {htmlOutput && (
                         <Tooltip
@@ -586,7 +571,7 @@ export const AgentRunner = ({
                         />
                       </Tooltip>
 
-                      {env.NEXT_PUBLIC_CONSUMER_MODE && (
+                      {consumerModeEnabled && (
                         <Tooltip asChild content="Inspect agent source">
                           <Button
                             label="Agent Source"
@@ -615,71 +600,67 @@ export const AgentRunner = ({
           </Sidebar.MainStickyFooter>
         </Sidebar.Main>
 
-        {showOutputSidebar && (
-          <Sidebar.Sidebar
-            openForSmallScreens={parametersOpenForSmallScreens}
-            setOpenForSmallScreens={setParametersOpenForSmallScreens}
-          >
-            <Flex direction="column" gap="l">
-              <Flex direction="column" gap="m">
-                <Text size="text-xs" weight={600} uppercase>
-                  Output
-                </Text>
+        <Sidebar.Sidebar
+          openForSmallScreens={parametersOpenForSmallScreens}
+          setOpenForSmallScreens={setParametersOpenForSmallScreens}
+        >
+          <Flex direction="column" gap="l">
+            <Flex direction="column" gap="m">
+              <Text size="text-xs" weight={600} uppercase>
+                Output
+              </Text>
 
-                {isLoading ? (
-                  <PlaceholderStack />
-                ) : (
-                  <>
-                    {files.length ? (
-                      <CardList>
-                        {files.map((file) => (
-                          <Card
-                            padding="s"
-                            gap="s"
-                            key={file.id}
-                            background="sand-2"
-                            onClick={() => {
-                              setOpenedFileName(file.filename);
-                            }}
-                          >
-                            <Flex align="center" gap="s">
-                              <Text
-                                size="text-s"
-                                color="sand-12"
-                                weight={500}
-                                clampLines={1}
-                                style={{ marginRight: 'auto' }}
-                              >
-                                {file.filename}
-                              </Text>
-
-                              <Text size="text-xs">
-                                {formatBytes(file.bytes)}
-                              </Text>
-                            </Flex>
-                          </Card>
-                        ))}
-                      </CardList>
-                    ) : (
-                      <Text size="text-s" color="sand-10">
-                        No files generated yet.
-                      </Text>
-                    )}
-                  </>
-                )}
-              </Flex>
-
-              {!env.NEXT_PUBLIC_CONSUMER_MODE && (
+              {isLoading ? (
+                <PlaceholderStack />
+              ) : (
                 <>
-                  <EntryEnvironmentVariables
-                    entry={currentEntry}
-                    excludeQueryParamKeys={Object.keys(queryParams)}
-                  />
+                  {files.length ? (
+                    <CardList>
+                      {files.map((file) => (
+                        <Card
+                          padding="s"
+                          gap="s"
+                          key={file.id}
+                          background="sand-2"
+                          onClick={() => {
+                            setOpenedFileName(file.filename);
+                          }}
+                        >
+                          <Flex align="center" gap="s">
+                            <Text
+                              size="text-s"
+                              color="sand-12"
+                              weight={500}
+                              clampLines={1}
+                              style={{ marginRight: 'auto' }}
+                            >
+                              {file.filename}
+                            </Text>
+
+                            <Text size="text-xs">
+                              {formatBytes(file.bytes)}
+                            </Text>
+                          </Flex>
+                        </Card>
+                      ))}
+                    </CardList>
+                  ) : (
+                    <Text size="text-s" color="sand-10">
+                      No files generated yet.
+                    </Text>
+                  )}
                 </>
               )}
             </Flex>
-          </Sidebar.Sidebar>
-        )}
+
+            {!consumerModeEnabled && (
+              <EntryEnvironmentVariables
+                entry={currentEntry}
+                excludeQueryParamKeys={Object.keys(queryParams)}
+              />
+            )}
+          </Flex>
+        </Sidebar.Sidebar>
       </Sidebar.Root>
 
       <AgentPermissionsModal

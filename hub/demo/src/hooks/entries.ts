@@ -13,7 +13,7 @@ import { useAuthStore } from '~/stores/auth';
 import { trpc } from '~/trpc/TRPCProvider';
 import { wordsMatchFuzzySearch } from '~/utils/search';
 
-export function useEntryParams(overrides?: {
+export function useCurrentEntryParams(overrides?: {
   namespace?: string;
   name?: string;
   version?: string;
@@ -47,7 +47,7 @@ export function useCurrentEntry(
     version?: string;
   },
 ) {
-  const { id, namespace, name, version } = useEntryParams(overrides);
+  const { id, namespace, name, version } = useCurrentEntryParams(overrides);
 
   const entriesQuery = trpc.hub.entries.useQuery(
     {
