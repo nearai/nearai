@@ -1,7 +1,11 @@
 Let's see how simple it is to create an agent that leverages the vector store we [created in the previous section](./vector_store.md). This agent will demonstrate how to effectively use RAG (Retrieval-Augmented Generation) to provide accurate answers based on NEAR's documentation.
 
-!!! tip
-    Try out this code directly in the [NEAR AI platform](https://app.near.ai/agents/gagdiez.near/docs-gpt/latest/run)
+---
+
+!!!tip
+    You can try out a live demo of this agent by signing in with your NEAR account below!
+
+<iframe src="https://app.near.ai/embed/near-ai-dev.near/near-protocol-docs-agent/latest/" class="agent-iframe" sandbox="allow-scripts allow-popups allow-same-origin allow-forms"></iframe>
 
 ---
 

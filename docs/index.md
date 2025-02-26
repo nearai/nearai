@@ -6,8 +6,6 @@ Driven by one of the minds behinds **TensorFlow** and the **Transformer Architec
 
 ---
 
-<iframe src="https://app.near.ai/embed/gagdiez.near/docs-gpt/latest" class="agent-iframe" sandbox="allow-scripts allow-popups allow-same-origin allow-forms"></iframe>
-
 <div class="grid cards" markdown>
 
 -   :material-robot-happy: __NEAR AI Agents__
