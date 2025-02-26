@@ -55,12 +55,19 @@ kill_processes() {
 run_api() {
     local workers=$1
     local port=$2
+    local process_name="nearai-hub-worker"  # Process name to identify workers
 
     log "Starting FastAPI server with $workers workers on port $port..."
-    nohup uvicorn app:app --workers $workers --host 0.0.0.0 --port $port > ./api.log 2>&1 &
+
+    # Start the API server with specified number of workers
+    nohup env PYTHON_PROCESS_NAME="${process_name}" uvicorn app:app --workers $workers --host 0.0.0.0 --port $port > ./api.log 2>&1 &
+
+    # Capture the PID of the main process (the parent process)
     local api_pid=$!
     echo $api_pid > api.pid
-    log "FastAPI server started with PID $api_pid"
+    log "FastAPI server started with PID $api_pid and $workers workers."
+
+    log "API server started with $workers workers on port $port."
 }
 # Step 7: Run the scheduler
 run_scheduler() {
@@ -170,7 +177,8 @@ stop_all() {
     fi
 
     # If the API process is still running (PID didn't work or file wasn't there), kill by name
-    pkill -f uvicorn || true
+    pkill -f "nearai-hub-worker" || true
+    pkill -f "multiprocessing.spawn" || true
     log "API process killed by pkill"
 
     # Stopping scheduler process

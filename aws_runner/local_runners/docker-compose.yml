@@ -14,5 +14,7 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-""}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-""}
       RUNNER_API_KEY: ${RUNNER_API_KEY:-""}
+      DD_APM_ENABLED: false
+      DD_LOGS_ENABLED: false
     volumes:
       - ~/.nearai/registry:/root/.nearai/registry
