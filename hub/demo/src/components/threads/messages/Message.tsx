@@ -3,6 +3,8 @@
 import { Card, Flex, Text } from '@near-pagoda/ui';
 import { type ReactNode } from 'react';
 
+import { useCurrentEntry } from '~/hooks/entries';
+
 import { useThreadMessageContent } from '../ThreadMessageContentProvider';
 
 type Props = {
@@ -11,8 +13,13 @@ type Props = {
 };
 
 export const Message = ({ children, actions }: Props) => {
+  const { currentEntry } = useCurrentEntry('agent', {
+    refetchOnMount: false,
+  });
   const { message } = useThreadMessageContent();
   const showFooter = message.role !== 'user' || actions;
+  const assistantRoleLabel =
+    currentEntry?.details.agent?.assistant_role_label || 'Assistant';
 
   return (
     <Card
@@ -25,13 +32,8 @@ export const Message = ({ children, actions }: Props) => {
       {showFooter && (
         <Flex align="center" gap="m">
           {message.role !== 'user' && (
-            <Text
-              size="text-xs"
-              style={{
-                textTransform: 'capitalize',
-              }}
-            >
-              - {message.role}
+            <Text size="text-xs">
+              - {message.role === 'assistant' ? assistantRoleLabel : 'System'}
             </Text>
           )}
 

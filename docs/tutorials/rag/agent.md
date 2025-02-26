@@ -5,7 +5,7 @@ Let's see how simple it is to create an agent that leverages the vector store we
 !!!tip
     You can try out a live demo of this agent by signing in with your NEAR account below!
 
-<iframe src="https://app.near.ai/embed/near-ai-dev.near/near-protocol-docs-agent/latest/" class="agent-iframe" sandbox="allow-scripts allow-popups allow-same-origin allow-forms"></iframe>
+<iframe src="https://app.near.ai/embed/near-ai-dev.near/near-protocol-docs-agent/latest?theme=light" class="agent-iframe" sandbox="allow-scripts allow-popups allow-same-origin allow-forms"></iframe>
 
 ---
 

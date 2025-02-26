@@ -8,7 +8,6 @@ import {
   Section,
   Text,
 } from '@near-pagoda/ui';
-import { ArrowRight } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
@@ -99,17 +98,12 @@ export default function SignInCallbackPage() {
                 Your token is invalid. Please try signing in again.
               </Text>
 
-              <Button
-                variant="affirmative"
-                label="Sign In"
-                onClick={() => signIn()}
-                iconRight={<ArrowRight />}
-              />
+              <Button label="Sign In" onClick={() => signIn()} />
             </>
           ) : (
             <>
               <Text color="sand-10">Verifying...</Text>
-              <Button icon={<></>} label="Sign In" loading fill="ghost" />
+              <Button label="Sign In" loading fill="ghost" />
             </>
           )}
         </Flex>

@@ -5,5 +5,5 @@ import { useEmbeddedWithinIframe } from './embed';
 export function useConsumerModeEnabled() {
   const { embedded } = useEmbeddedWithinIframe();
   const consumerModeEnabled = env.NEXT_PUBLIC_CONSUMER_MODE || embedded;
-  return { consumerModeEnabled };
+  return { consumerModeEnabled, embedded };
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import { Button, Container, Flex, Section, Text } from '@near-pagoda/ui';
-import { ArrowRight } from '@phosphor-icons/react';
 
 import { signIn } from '~/lib/auth';
 
@@ -17,13 +16,7 @@ export const SignInPrompt = ({ layout = 'horizontal-right' }: Props) => {
       justify={layout === 'horizontal-right' ? 'end' : 'space-between'}
     >
       <Text size="text-s">Please sign in to continue</Text>
-      <Button
-        variant="affirmative"
-        label="Sign In"
-        onClick={signIn}
-        size="small"
-        iconRight={<ArrowRight />}
-      />
+      <Button label="Sign In" onClick={signIn} size="small" />
     </Flex>
   );
 };
@@ -35,13 +28,7 @@ export const SignInPromptSection = () => {
         <Flex direction="column" gap="m" align="center">
           <Text size="text-l">Welcome</Text>
           <Text>Please sign in to continue</Text>
-          <Button
-            variant="affirmative"
-            label="Sign In"
-            onClick={signIn}
-            size="large"
-            iconRight={<ArrowRight />}
-          />
+          <Button label="Sign In" onClick={signIn} size="large" />
         </Flex>
       </Container>
     </Section>

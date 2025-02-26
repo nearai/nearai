@@ -1,5 +1,13 @@
-import { Accordion, Dialog, Flex, SvgIcon, Text } from '@near-pagoda/ui';
+import {
+  Accordion,
+  Checkbox,
+  Dialog,
+  Flex,
+  SvgIcon,
+  Text,
+} from '@near-pagoda/ui';
 import { Code as CodeIcon } from '@phosphor-icons/react';
+import { useState } from 'react';
 import { type z } from 'zod';
 
 import { useCurrentEntryParams } from '~/hooks/entries';
@@ -17,6 +25,7 @@ type Props = {
 
 export const EmbedAgentModal = ({ entry, isOpen, setIsOpen }: Props) => {
   const { id } = useCurrentEntryParams();
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   if (entry && entry.category !== 'agent') {
     throw new Error(
@@ -37,6 +46,35 @@ export const EmbedAgentModal = ({ entry, isOpen, setIsOpen }: Props) => {
                 </Text>
               </Flex>
 
+              <Flex direction="column" gap="s">
+                <Text size="text-xs" weight={600} uppercase>
+                  Theme
+                </Text>
+                <Flex align="center" gap="m">
+                  <Flex as="label" align="center" gap="s">
+                    <Checkbox
+                      name="theme"
+                      value="light"
+                      type="radio"
+                      checked={theme === 'light'}
+                      onChange={() => setTheme('light')}
+                    />
+                    Light
+                  </Flex>
+
+                  <Flex as="label" align="center" gap="s">
+                    <Checkbox
+                      name="theme"
+                      value="dark"
+                      type="radio"
+                      checked={theme === 'dark'}
+                      onChange={() => setTheme('dark')}
+                    />
+                    Dark
+                  </Flex>
+                </Flex>
+              </Flex>
+
               <Flex direction="column" gap="m">
                 <Text>
                   Copy and paste the following HTML to embed this agent on any
@@ -46,7 +84,7 @@ export const EmbedAgentModal = ({ entry, isOpen, setIsOpen }: Props) => {
                 <Code
                   language="html"
                   source={`<iframe 
-  src="https://app.near.ai/embed/${id}" 
+  src="https://app.near.ai/embed/${id}?theme=${theme}" 
   sandbox="allow-scripts allow-popups allow-same-origin allow-forms"
   style="border: none; height: 100svh;">
 </iframe>`}
@@ -60,13 +98,13 @@ export const EmbedAgentModal = ({ entry, isOpen, setIsOpen }: Props) => {
                   <Accordion.Trigger
                     style={{ width: 'auto', gap: 'var(--gap-s)' }}
                   >
-                    Customize
+                    Customize Metadata
                   </Accordion.Trigger>
 
                   <Accordion.Content>
                     <Text>
-                      You can customize how an agent is displayed by updating
-                      its <InlineCode>metadata.json</InlineCode>:
+                      You can further customize how an agent is displayed by
+                      updating its <InlineCode>metadata.json</InlineCode>:
                     </Text>
 
                     <Code
@@ -75,9 +113,14 @@ export const EmbedAgentModal = ({ entry, isOpen, setIsOpen }: Props) => {
   "details": {
     "agent": {
       "embed": {
-        "logo": "https://near.ai/logo-white.svg"
+        "logo": "https://images.com/logo.svg" | false
+      },
+      "welcome": {
+        "title": "Helpful Assistant",
+        "description": "How can I help you today?"
       }
-    }
+    },
+    "icon": "https://images.com/icon.svg"
   }
 }`}
                     />

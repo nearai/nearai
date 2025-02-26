@@ -81,9 +81,15 @@ export const entryDetailsModel = z.intersection(
     .object({
       agent: z
         .object({
+          assistant_role_label: z.string(),
           defaults: z
             .object({
               max_iterations: z.number(),
+            })
+            .partial(),
+          embed: z
+            .object({
+              logo: z.string().or(z.literal(false)),
             })
             .partial(),
           html_height: z.enum(['auto']).or(z.string()).default('auto'),
@@ -94,11 +100,6 @@ export const entryDetailsModel = z.intersection(
               title: z.string(),
               description: z.string(),
               icon: z.string(),
-            })
-            .partial(),
-          embed: z
-            .object({
-              logo: z.string(),
             })
             .partial(),
         })

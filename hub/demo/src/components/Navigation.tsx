@@ -1,6 +1,6 @@
 'use client';
 
-import { ImageIcon, Placeholder, useTheme } from '@near-pagoda/ui';
+import { ImageIcon, useTheme } from '@near-pagoda/ui';
 import {
   BreakpointDisplay,
   Button,
@@ -123,7 +123,7 @@ export const Navigation = () => {
   const { embedded } = useEmbeddedWithinIframe();
   const hidden = path === SIGN_IN_CALLBACK_PATH;
   const { currentEntry, currentEntryId } = useCurrentEntry('agent', {
-    enabled: !embedded,
+    enabled: embedded,
   });
 
   useEffect(() => {
@@ -156,22 +156,21 @@ export const Navigation = () => {
   return (
     <header className={s.navigation}>
       {embedded ? (
-        <div className={s.embeddedLogo}>
-          {currentEntry ? (
-            <>
-              {currentEntry.details.agent?.embed?.logo ? (
-                <img
-                  src={currentEntry.details.agent.embed.logo}
-                  alt={currentEntry.name}
-                />
-              ) : (
-                <span className={s.logoTitle}>{currentEntry.name}</span>
-              )}
-            </>
-          ) : (
-            <Placeholder />
-          )}
-        </div>
+        <>
+          {currentEntry &&
+            currentEntry.details.agent?.embed?.logo !== false && (
+              <div className={s.embeddedLogo}>
+                {currentEntry.details.agent?.embed?.logo ? (
+                  <img
+                    src={currentEntry.details.agent.embed.logo}
+                    alt={currentEntry.name}
+                  />
+                ) : (
+                  <span className={s.logoTitle}>{currentEntry.name}</span>
+                )}
+              </div>
+            )}
+        </>
       ) : (
         <Link className={s.logo} href="/">
           <span className={s.logoNearAi}>NEAR AI</span>
@@ -400,61 +399,68 @@ export const Navigation = () => {
                 </Dropdown.Item>
               </Dropdown.Section>
 
-              {wallet && walletAccount ? (
-                <Dropdown.Section>
-                  <Dropdown.SectionContent>
-                    <Flex direction="column" gap="m">
-                      <Text size="text-xs" weight={600} uppercase>
-                        Payment Method
-                      </Text>
+              {!embedded && (
+                <>
+                  {/* https://github.com/nearai/nearai/issues/952 */}
 
-                      <Flex align="center" gap="s">
-                        <ImageIcon
-                          src={wallet.metadata.iconUrl}
-                          alt={wallet.metadata.name}
-                        />
-
-                        <Flex direction="column">
-                          <Text
-                            size="text-s"
-                            weight={600}
-                            color="sand-12"
-                            clampLines={1}
-                          >
-                            {walletAccount.accountId}
+                  {wallet && walletAccount ? (
+                    <Dropdown.Section>
+                      <Dropdown.SectionContent>
+                        <Flex direction="column" gap="m">
+                          <Text size="text-xs" weight={600} uppercase>
+                            Payment Method
                           </Text>
-                          <Text size="text-xs" clampLines={1}>
-                            {wallet.metadata.name}
+
+                          <Flex align="center" gap="s">
+                            <ImageIcon
+                              src={wallet.metadata.iconUrl}
+                              alt={wallet.metadata.name}
+                            />
+
+                            <Flex direction="column">
+                              <Text
+                                size="text-s"
+                                weight={600}
+                                color="sand-12"
+                                clampLines={1}
+                              >
+                                {walletAccount.accountId}
+                              </Text>
+                              <Text size="text-xs" clampLines={1}>
+                                {wallet.metadata.name}
+                              </Text>
+                            </Flex>
+                          </Flex>
+                        </Flex>
+                      </Dropdown.SectionContent>
+
+                      <Dropdown.Item onSelect={disconnectWallet}>
+                        <SvgIcon icon={<X />} />
+                        Disconnect
+                      </Dropdown.Item>
+                    </Dropdown.Section>
+                  ) : (
+                    <Dropdown.Section>
+                      <Dropdown.SectionContent>
+                        <Flex direction="column" gap="m">
+                          <Text size="text-xs" weight={600} uppercase>
+                            Payment Method
+                          </Text>
+
+                          <Text size="text-xs">
+                            Certain agent interactions require a connected
+                            wallet.
                           </Text>
                         </Flex>
-                      </Flex>
-                    </Flex>
-                  </Dropdown.SectionContent>
+                      </Dropdown.SectionContent>
 
-                  <Dropdown.Item onSelect={disconnectWallet}>
-                    <SvgIcon icon={<X />} />
-                    Disconnect
-                  </Dropdown.Item>
-                </Dropdown.Section>
-              ) : (
-                <Dropdown.Section>
-                  <Dropdown.SectionContent>
-                    <Flex direction="column" gap="m">
-                      <Text size="text-xs" weight={600} uppercase>
-                        Payment Method
-                      </Text>
-
-                      <Text size="text-xs">
-                        Certain agent interactions require a connected wallet.
-                      </Text>
-                    </Flex>
-                  </Dropdown.SectionContent>
-
-                  <Dropdown.Item onSelect={() => walletModal?.show()}>
-                    <SvgIcon icon={<Wallet />} />
-                    Add Payment Method
-                  </Dropdown.Item>
-                </Dropdown.Section>
+                      <Dropdown.Item onSelect={() => walletModal?.show()}>
+                        <SvgIcon icon={<Wallet />} />
+                        Add Payment Method
+                      </Dropdown.Item>
+                    </Dropdown.Section>
+                  )}
+                </>
               )}
             </Dropdown.Content>
           </Dropdown.Root>

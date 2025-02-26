@@ -2,8 +2,8 @@
 
 import { PagodaUiProvider, Toaster } from '@near-pagoda/ui';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { type ReactNode } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { type ComponentProps, type ReactNode } from 'react';
 
 import { TRPCProvider } from '~/trpc/TRPCProvider';
 
@@ -14,9 +14,14 @@ import { NearInitializer } from './NearInitializer';
 import { ZustandHydration } from './ZustandHydration';
 
 export const Layout = ({ children }: { children: ReactNode }) => {
+  const params = useSearchParams();
+
   return (
     <PagodaUiProvider
       value={{
+        forcedTheme: params.get('theme') as NonNullable<
+          ComponentProps<typeof PagodaUiProvider>['value']
+        >['forcedTheme'],
         Link,
         useRouter,
       }}

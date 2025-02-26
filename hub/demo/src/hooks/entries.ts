@@ -40,14 +40,19 @@ export function useCurrentEntryParams(overrides?: {
 
 export function useCurrentEntry(
   category: EntryCategory,
-  overrides?: {
+  options?: {
     enabled?: boolean;
-    namespace?: string;
-    name?: string;
-    version?: string;
+    refetchOnMount?: boolean;
+    overrides?: {
+      namespace?: string;
+      name?: string;
+      version?: string;
+    };
   },
 ) {
-  const { id, namespace, name, version } = useCurrentEntryParams(overrides);
+  const { id, namespace, name, version } = useCurrentEntryParams(
+    options?.overrides,
+  );
 
   const entriesQuery = trpc.hub.entries.useQuery(
     {
@@ -56,8 +61,8 @@ export function useCurrentEntry(
       showLatestVersion: false,
     },
     {
-      enabled:
-        typeof overrides?.enabled === 'boolean' ? overrides.enabled : true,
+      refetchOnMount: options?.refetchOnMount,
+      enabled: typeof options?.enabled === 'boolean' ? options.enabled : true,
     },
   );
 

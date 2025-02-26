@@ -80,17 +80,20 @@ export const AgentRunner = ({
   version,
   showLoadingPlaceholder,
 }: Props) => {
-  const { consumerModeEnabled } = useConsumerModeEnabled();
+  const { consumerModeEnabled, embedded } = useConsumerModeEnabled();
   const { currentEntry, currentEntryId: agentId } = useCurrentEntry('agent', {
-    namespace,
-    name,
-    version,
+    overrides: {
+      namespace,
+      name,
+      version,
+    },
   });
 
   const auth = useAuthStore((store) => store.auth);
   const { queryParams, updateQueryPath } = useQueryParams([
     'showLogs',
     'threadId',
+    'theme',
     'view',
     'initialUserMessage',
     'mockedAitpMessages',
@@ -571,7 +574,7 @@ export const AgentRunner = ({
                         />
                       </Tooltip>
 
-                      {consumerModeEnabled && (
+                      {consumerModeEnabled && !embedded && (
                         <Tooltip asChild content="Inspect agent source">
                           <Button
                             label="Agent Source"
