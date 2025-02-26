@@ -13,16 +13,13 @@ logger = logging.getLogger(__name__)
 hub_url = "https://cvm.near.ai/v1"
 
 cvm_client = CvmClient(url=hub_url)
-resp = cvm_client.attest()
+cvm_client.attest()
 
-print(resp)
 
 # Login to NEAR AI Hub using nearai CLI.
 # Read the auth object from ~/.nearai/config.json
 auth = nearai.config.load_config_file()["auth"]
 signature = json.dumps(auth)
-
-print(signature)
 
 # Configure HTTP client to accept untrusted certificates
 http_client = httpx.Client(verify=False)
