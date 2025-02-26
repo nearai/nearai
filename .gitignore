@@ -15,3 +15,7 @@ last_block_id.txt
 build-info.txt
 nearai/ts_runner/build
 **/.pnpm-store/*
+api.log
+api.pid
+scheduler.log
+scheduler.pid
