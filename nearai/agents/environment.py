@@ -602,7 +602,6 @@ class Environment(object):
             thread_id: str = self._thread_id,
         ):
             """Assistant adds a message to the environment."""
-
             if message_type is None or not message_type.startswith("system:"):
                 print(f"add_reply: {message}")
 

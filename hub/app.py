@@ -19,8 +19,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # next round of imports
-import multiprocessing
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -44,7 +42,6 @@ from hub.api.v1.scheduled_run import scheduled_run_router
 from hub.api.v1.stars import v1_router as stars_router
 from hub.api.v1.thread_routes import threads_router
 from hub.api.v1.vector_stores import vector_stores_router
-
 
 # No lifespan function - FastAPI will use default behavior
 app = FastAPI()
