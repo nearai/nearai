@@ -46,6 +46,7 @@ import { ThreadMessages } from '~/components/threads/ThreadMessages';
 import { ThreadsSidebar } from '~/components/threads/ThreadsSidebar';
 import { env } from '~/env';
 import { useAgentRequestsWithIframe } from '~/hooks/agent-iframe-requests';
+import { useEmbeddedWithinIframe } from '~/hooks/embed';
 import { useCurrentEntry, useEntryEnvironmentVariables } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
 import { sourceUrlForEntry } from '~/lib/entries';
@@ -62,8 +63,6 @@ type Props = {
   name: string;
   version: string;
   showLoadingPlaceholder?: boolean;
-  showThreads?: boolean;
-  showOutputAndEnvVars?: boolean;
 };
 
 type RunView = 'conversation' | 'output' | undefined;
@@ -81,8 +80,6 @@ export const AgentRunner = ({
   name,
   version,
   showLoadingPlaceholder,
-  showThreads = true,
-  showOutputAndEnvVars = true,
 }: Props) => {
   const { currentEntry, currentEntryId: agentId } = useCurrentEntry('agent', {
     namespace,
@@ -90,11 +87,16 @@ export const AgentRunner = ({
     version,
   });
 
+  const { embedded } = useEmbeddedWithinIframe();
+  const embedConfig = currentEntry?.details.agent?.embed;
+  const showOutputSidebar =
+    !embedded || embedConfig?.show_output_sidebar !== false;
+  const showThreadsSidebar =
+    !embedded || embedConfig?.show_threads_sidebar !== false;
+
   const auth = useAuthStore((store) => store.auth);
   const { queryParams, updateQueryPath } = useQueryParams([
     'showLogs',
-    'showThreads',
-    'showOutputAndEnvVars',
     'threadId',
     'view',
     'initialUserMessage',
@@ -422,7 +424,7 @@ export const AgentRunner = ({
   return (
     <>
       <Sidebar.Root>
-        {showThreads && (
+        {showThreadsSidebar && (
           <ThreadsSidebar
             onRequestNewThread={startNewThread}
             openForSmallScreens={threadsOpenForSmallScreens}
@@ -493,7 +495,7 @@ export const AgentRunner = ({
                       gap="s"
                       style={{ paddingRight: '0.15rem' }}
                     >
-                      {showThreads && (
+                      {showThreadsSidebar && (
                         <BreakpointDisplay show="sidebar-small-screen">
                           <Tooltip asChild content="View all threads">
                             <Button
@@ -510,7 +512,7 @@ export const AgentRunner = ({
                         </BreakpointDisplay>
                       )}
 
-                      {showOutputAndEnvVars && (
+                      {showOutputSidebar && (
                         <BreakpointDisplay show="sidebar-small-screen">
                           <Tooltip
                             asChild
@@ -613,7 +615,7 @@ export const AgentRunner = ({
           </Sidebar.MainStickyFooter>
         </Sidebar.Main>
 
-        {showOutputAndEnvVars && (
+        {showOutputSidebar && (
           <Sidebar.Sidebar
             openForSmallScreens={parametersOpenForSmallScreens}
             setOpenForSmallScreens={setParametersOpenForSmallScreens}

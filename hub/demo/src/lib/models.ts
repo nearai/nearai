@@ -99,6 +99,8 @@ export const entryDetailsModel = z.intersection(
           embed: z
             .object({
               logo: z.string(),
+              show_output_sidebar: z.boolean(),
+              show_threads_sidebar: z.boolean(),
             })
             .partial(),
         })

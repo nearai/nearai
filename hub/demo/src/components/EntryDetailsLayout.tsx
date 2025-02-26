@@ -17,13 +17,14 @@ import {
 import {
   CaretDown,
   ChatCircleDots,
+  Code,
   CodeBlock,
   GitFork,
   LockKey,
   ShareFat,
 } from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
-import { type ReactElement, type ReactNode, useEffect } from 'react';
+import { type ReactElement, type ReactNode, useEffect, useState } from 'react';
 
 import { ErrorSection } from '~/components/ErrorSection';
 import { StarButton } from '~/components/StarButton';
@@ -33,6 +34,7 @@ import { ENTRY_CATEGORY_LABELS, primaryUrlForEntry } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
 
 import { DevelopButton } from './DevelopButton';
+import { EmbedAgentModal } from './EmbedAgentModal';
 import { ForkButton } from './ForkButton';
 
 type Props = {
@@ -69,6 +71,7 @@ export const EntryDetailsLayout = ({
     defaultConsumerModePath &&
     !pathname.includes(defaultConsumerPath);
   const isLatestVersion = version === 'latest';
+  const [showEmbedAgentModal, setShowEmbedAgentModal] = useState(false);
 
   useEffect(() => {
     if (shouldRedirectToDefaultConsumerPath) {
@@ -240,14 +243,16 @@ export const EntryDetailsLayout = ({
 
               {category === 'agent' ? (
                 <Dropdown.Root>
-                  <Dropdown.Trigger asChild>
-                    <Button
-                      label="Share"
-                      iconLeft={<SvgIcon size="xs" icon={<ShareFat />} />}
-                      size="small"
-                      fill="outline"
-                    />
-                  </Dropdown.Trigger>
+                  <Tooltip asChild content={`Share or embed this ${category}`}>
+                    <Dropdown.Trigger asChild>
+                      <Button
+                        label="Share"
+                        icon={<SvgIcon size="xs" icon={<ShareFat />} />}
+                        size="small"
+                        fill="outline"
+                      />
+                    </Dropdown.Trigger>
+                  </Tooltip>
 
                   <Dropdown.Content>
                     <Dropdown.Section>
@@ -258,10 +263,9 @@ export const EntryDetailsLayout = ({
                             `https://app.near.ai${primaryUrlForEntry(currentEntry)}`,
                           )
                         }
-                        key="latest"
                       >
                         <SvgIcon icon={<CodeBlock />} />
-                        Developer URL
+                        Copy Developer URL
                       </Dropdown.Item>
 
                       <Dropdown.Item
@@ -271,28 +275,36 @@ export const EntryDetailsLayout = ({
                             `https://chat.near.ai${primaryUrlForEntry(currentEntry)}`,
                           )
                         }
-                        key="latest"
                       >
                         <SvgIcon icon={<ChatCircleDots />} />
-                        Chat URL
+                        Copy Chat URL
+                      </Dropdown.Item>
+
+                      <Dropdown.Item
+                        onSelect={() => setShowEmbedAgentModal(true)}
+                      >
+                        <SvgIcon icon={<Code />} />
+                        Embed Agent
                       </Dropdown.Item>
                     </Dropdown.Section>
                   </Dropdown.Content>
                 </Dropdown.Root>
               ) : (
-                <Button
-                  label="Share"
-                  iconLeft={<SvgIcon size="xs" icon={<ShareFat />} />}
-                  size="small"
-                  fill="outline"
-                  onClick={() =>
-                    currentEntry &&
-                    copyTextToClipboard(
-                      `https://app.near.ai${primaryUrlForEntry(currentEntry)}`,
-                      `Shareable URL for ${currentEntry.name}`,
-                    )
-                  }
-                />
+                <Tooltip asChild content={`Share this ${category}`}>
+                  <Button
+                    label="Share"
+                    icon={<SvgIcon size="xs" icon={<ShareFat />} />}
+                    size="small"
+                    fill="outline"
+                    onClick={() =>
+                      currentEntry &&
+                      copyTextToClipboard(
+                        `https://app.near.ai${primaryUrlForEntry(currentEntry)}`,
+                        `Shareable URL for ${currentEntry.name}`,
+                      )
+                    }
+                  />
+                </Tooltip>
               )}
             </Flex>
           </Flex>
@@ -321,6 +333,14 @@ export const EntryDetailsLayout = ({
       )}
 
       {!shouldRedirectToDefaultConsumerPath && children}
+
+      {category === 'agent' && (
+        <EmbedAgentModal
+          entry={currentEntry}
+          isOpen={showEmbedAgentModal}
+          setIsOpen={setShowEmbedAgentModal}
+        />
+      )}
     </>
   );
 };
