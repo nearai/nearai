@@ -68,13 +68,10 @@ services:
     shm_size: '2gb'
     deploy:
       resources:
-        limits:
-          cpus: "0.50"
-          memory: "128M"
         reservations:
           devices:
             - driver: nvidia
-              count: 1
+              count: 8
               capabilities: [ gpu ]
 
   proxy:
