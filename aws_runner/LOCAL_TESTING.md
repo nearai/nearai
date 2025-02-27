@@ -2,15 +2,12 @@
 
 This guide explains how to set up and run the NEAR AI Runner locally. Running the runner locally provides full emulation of the production environment, allowing for proper debugging and fixing of errors that might not be fully reported in the production runner by design.
 
-!!! tip "Why Use the Local Runner?"
-
-   By using the local runner, you can:
-
-   - See all errors from the agent, API, and UI.
-
-   - Run agents directly from your local disk without needing to update versions in the NEAR AI registry.
-
-   - Add necessary packages to local runner frameworks ([contact us](http://t.me/nearaialpha) if you need these packages added to the production runners later).
+> [!NOTE]
+> **Why Use the Local Runner?**
+> By using the local runner, you can:
+>   - See all errors from the agent, API, and UI
+>   - Run agents directly from your local disk without needing to update versions in the NEAR AI registry
+>   - Add necessary packages to local runner frameworks - [contact us](http://t.me/nearaialpha) if to add packages to production runners
 
 ---
 
