@@ -284,7 +284,13 @@ class Agent(object):
                 raise ValueError(f"Agent run error: {AGENT_FILENAME_PY} or {AGENT_FILENAME_TS} does not exist")
 
             # cache all agent files in file_cache
-            for root, _, files in os.walk(self.temp_dir):
+            for root, dirs, files in os.walk(self.temp_dir):
+                is_main_dir = root == self.temp_dir
+
+                if is_main_dir:
+                    # add all folders in the root directory as potential modules to import
+                    agent_py_modules_import.extend(dirs)
+
                 for file in files:
                     file_path = os.path.join(root, file)
 
@@ -292,7 +298,7 @@ class Agent(object):
                     if file_path.endswith(".ts"):
                         agent_ts_files_to_transpile.append(file_path)
 
-                    if file != AGENT_FILENAME_PY and file_path.endswith(".py"):
+                    if is_main_dir and file != AGENT_FILENAME_PY and file_path.endswith(".py"):
                         # save py file without extension as potential module to import
                         agent_py_modules_import.append(os.path.splitext(os.path.basename(file_path))[0])
 
