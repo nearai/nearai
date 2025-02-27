@@ -1,0 +1,73 @@
+.md-typeset h1:first-of-type {
+    margin-top: 0;
+    margin-bottom: 0.25em;
+}
+
+.md-typeset h1 {
+    margin-top: 1.5em;
+    margin-bottom: 0.25em;
+}
+
+.subsection {
+    width: 80%;
+    margin: .6rem auto 0 auto !important;
+}
+
+.card {
+    border-radius: 0.8rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin: 2em 0;
+}
+
+.card__image {
+    border: 0;
+    max-height: 168px;
+    overflow: hidden;
+}
+
+.card__header {
+    padding: 1rem;
+}
+
+.card__body h3 {
+    margin: 0 0 .3em !important;
+}
+
+.card p {
+    font-size: small;
+}
+
+.card li {
+    margin: 0.8rem 0px;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+}
+
+.md-content img {
+    max-width: 80%;
+    display: block;
+    margin: 0 auto;
+}
+
+.md-code__content {
+    max-height: 50vh;
+    overflow: scroll;
+}
+
+.admonition, details {
+    font-size: .75rem !important;
+}
+
+.md-typeset details:not([open]) {
+    height: fit-content;
+}
+
+.agent-iframe {
+    width: 100%;
+    height: 600px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
