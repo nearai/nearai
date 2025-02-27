@@ -15,3 +15,5 @@ last_block_id.txt
 build-info.txt
 nearai/ts_runner/build
 **/.pnpm-store/*
+ts_runner/ts_agent/node_modules/*
+ts_runner/ts_agent_runner/node_modules/*
