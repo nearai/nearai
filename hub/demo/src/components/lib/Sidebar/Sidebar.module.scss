@@ -54,7 +54,10 @@
   max-height: calc(100svh - max(var(--header-height), var(--sidebar-root-top)));
   min-height: 0;
   flex-shrink: 0;
-  box-shadow: var(--shadow-card-with-outline);
+  box-shadow:
+    1px 0px 0px rgba(0, 0, 0, 0.025),
+    -1px 0px 0px rgba(0, 0, 0, 0.025),
+    var(--shadow-card);
   overflow: hidden;
 
   @media (max-width: $tabletBreakpointMaxWidth) {
