@@ -85,7 +85,7 @@ async def process_due_tasks(auth_token: AuthToken):
                         thread = _create_thread(thread_model, auth=auth_token)
                         task.thread_id = thread.id
 
-                    model = task.run_params.get("model", DEFAULT_MODEL)
+                    model = task.run_params.get("model", "")
 
                     run_params = RunCreateParamsBase(
                         assistant_id=task.agent,

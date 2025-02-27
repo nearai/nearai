@@ -205,7 +205,6 @@ async def run_agent(agent, content, auth_token: AuthToken):
     if not agent or not content:
         return logger.error("Missing data in scheduled call to run_agent")
 
-    # TODO find out how to get rid of 401 error here
     # auth_token.on_behalf_of = signer_id
 
     thread_model = ThreadModel(
@@ -220,7 +219,7 @@ async def run_agent(agent, content, auth_token: AuthToken):
 
     run_params = RunCreateParamsBase(
         assistant_id=agent,
-        model=DEFAULT_MODEL,
+        model="",
         instructions=None,
         tools=None,
         metadata=None,
