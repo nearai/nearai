@@ -116,7 +116,7 @@ def save_last_block_id(new_block_id: int):
     global _current_block_id, _processed_blocks
 
     if new_block_id <= _current_block_id:
-        logger.warning(f"Ignoring older block {new_block_id} (current: {_current_block_id})")
+        # logger.warning(f"Ignoring saving of the older block {new_block_id} (current: {_current_block_id})")
         return
 
     # Add to processed set and maintain size
