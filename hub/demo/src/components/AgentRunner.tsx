@@ -121,6 +121,9 @@ export const AgentRunner = ({
     useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
 
+  const clearOptimisticMessages = useThreadsStore(
+    (store) => store.clearOptimisticMessages,
+  );
   const addOptimisticMessages = useThreadsStore(
     (store) => store.addOptimisticMessages,
   );
@@ -130,7 +133,6 @@ export const AgentRunner = ({
   const initialUserMessageSent = useRef(false);
   const chatMutationThreadId = useRef('');
   const chatMutationStartedAt = useRef<Date | null>(null);
-  const resetThreadsStore = useThreadsStore((store) => store.reset);
   const setThread = useThreadsStore((store) => store.setThread);
   const threadsById = useThreadsStore((store) => store.threadsById);
   const setAddMessage = useThreadsStore((store) => store.setAddMessage);
@@ -275,6 +277,7 @@ export const AgentRunner = ({
       showLogs: null,
       initialUserMessage: null,
     });
+    clearOptimisticMessages();
     form.setValue('new_message', '');
     form.setFocus('new_message');
   };
@@ -351,9 +354,9 @@ export const AgentRunner = ({
       initialUserMessageSent.current = false;
       chatMutationThreadId.current = '';
       chatMutationStartedAt.current = null;
-      resetThreadsStore();
+      clearOptimisticMessages();
     }
-  }, [threadId, resetThreadsStore]);
+  }, [threadId, clearOptimisticMessages]);
 
   useEffect(() => {
     form.reset();
