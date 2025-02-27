@@ -2,23 +2,27 @@
 
 This guide explains how to set up and run the NEAR AI Runner locally. Running the runner locally provides full emulation of the production environment, allowing for proper debugging and fixing of errors that might not be fully reported in the production runner by design.
 
-## Why Use the Local Runner?
+!!! tip "Why Use the Local Runner?"
 
-By using the local runner, you can:
+   By using the local runner, you can:
 
-- See all errors from the agent, API, and UI.
+   - See all errors from the agent, API, and UI.
 
-- Run agents directly from your local disk without needing to update versions in the NEAR AI registry.
+   - Run agents directly from your local disk without needing to update versions in the NEAR AI registry.
 
-- Add necessary packages to local runner frameworks ([contact us](http://t.me/nearaialpha) if you need these packages added to the production runners later).
+   - Add necessary packages to local runner frameworks ([contact us](http://t.me/nearaialpha) if you need these packages added to the production runners later).
+
+---
 
 ## Prerequisites
 
 Before starting, ensure you have the following installed:
 
-- Docker
+- [Docker](https://docs.docker.com/engine/install/)
 - jq (for processing JSON in shell commands)
 - A configured NEAR AI account
+
+---
 
 ## Setting Up the Local Runner
 
@@ -32,7 +36,7 @@ Before starting, ensure you have the following installed:
 
    - **Base framework:**
      ```sh
-     docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-base -t nearai-runner:test .
+     docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-minimal -t nearai-runner:test .
      ```
 
 3. Start the Docker container and mount all your local agents to agent registry:
@@ -43,7 +47,11 @@ Before starting, ensure you have the following installed:
 
     Note: Sometimes, you may need to restart the local Docker instance to refresh files mounted from the local agents registry.
 
-4. Run a local SingleStore Database:
+---
+
+## SingleStore Database
+
+1. Run a local SingleStore Database:
 
 ```bash
 docker run -d --name singlestoredb-dev \
@@ -51,9 +59,31 @@ docker run -d --name singlestoredb-dev \
            --platform linux/amd64 \
            -p 3306:3306 -p 8080:8080 -p 9000:9000 \
            ghcr.io/singlestore-labs/singlestoredb-dev:latest
+
+# Example answer: 74cb1f18d6547373483a7f4aff0e9fe69b44647dca454158dc4673ae5e983db3
 ```
 
-Set database environment variables in the `hub/.env` file:
+2. Connect to the docker and create the `hub` database:
+
+```bash
+docker exec -it singlestoredb-dev singlestore -p
+
+# Inside the SingleStore shell
+CREATE DATABASE hub;
+exit;
+```
+
+---
+
+## Running the Local Hub
+Before starting the hub, make sure to have all the necessary dependencies installed:
+
+```bash
+# From the root of the repository
+pip install -e ".[hub]"
+```
+
+Now, create a `.env` environment file in the **`/hub` folder** - you can use the `hub/.env.example` as a template - and setup the following variables:
 
 ```shell
 DATABASE_HOST=localhost
@@ -62,16 +92,16 @@ DATABASE_PASSWORD=change-me
 DATABASE_NAME=hub
 ```
 
-Apply all migrations using alembic:
+Install `alembic` and apply all migrations using alembic:
 
 ```bash
 # Install alembic
 pip install alembic
-# Apply migrations
+
+# Enter the hub directory and apply migrations
+cd hub
 alembic upgrade head
 ```
-
-## Running the Local Hub
 
 To use the local runner with the NEAR AI Hub, update the `hub/.env` file:
 
@@ -80,11 +110,17 @@ RUNNER_ENVIRONMENT="custom_runner"
 CUSTOM_RUNNER_URL=http://localhost:9009/2015-03-31/functions/function/invocations
 API_URL=http://host.docker.internal:8081
 ```
+
 Then, start the local NEAR AI Hub API:
+
 ```sh
-cd hub
+# within the hub/ directory
 fastapi dev app.py --port 8081
 ```
+
+The Hub API should now be available at **`http://127.0.0.1:8081/`**.
+
+---
 
 ## Running the Local Hub UI
 
