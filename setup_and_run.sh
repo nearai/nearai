@@ -13,12 +13,9 @@ trap 'log "Error occurred at line $LINENO. Command: $BASH_COMMAND"' ERR
 check_directory() {
     local path=$1
 
-    if [[ ! -d $path ]]; then
-        log "Changing to '$path' directory..."
-        cd $path || { log "Directory '$path' not found"; exit 1; }
-    else
-        log "Already in the correct directory"
-    fi
+    log "Changing to directory '$path'..."
+    cd "$path" || { log "Directory '$path' not found"; exit 1; }
+    log "Successfully changed to directory: $(pwd)"
 }
 # Step 2: Setup virtual environment
 setup_venv() {

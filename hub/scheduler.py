@@ -5,6 +5,7 @@ import signal
 import sys
 from datetime import datetime
 from functools import partial
+from ddtrace import patch_all
 
 from apscheduler.triggers.interval import IntervalTrigger
 from dotenv import load_dotenv
@@ -25,6 +26,9 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+
+if os.environ.get("DD_ENABLED"):
+    patch_all()
 
 
 class WarningFilter(logging.Filter):
