@@ -7,7 +7,6 @@ from typing import Any, Set
 
 import httpx
 from dotenv import load_dotenv
-from nearai.shared.client_config import DEFAULT_MODEL
 from nearai.shared.models import RunMode
 
 from hub.api.v1.auth import AuthToken
@@ -219,6 +218,7 @@ async def run_agent(agent, content, auth_token: AuthToken):
 
     run_params = RunCreateParamsBase(
         assistant_id=agent,
+        # provide model="" to use the agent's model later
         model="",
         instructions=None,
         tools=None,

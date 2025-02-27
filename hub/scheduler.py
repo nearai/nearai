@@ -5,11 +5,10 @@ import signal
 import sys
 from datetime import datetime
 from functools import partial
-from ddtrace import patch_all
 
 from apscheduler.triggers.interval import IntervalTrigger
+from ddtrace import patch_all
 from dotenv import load_dotenv
-from nearai.shared.client_config import DEFAULT_MODEL
 from nearai.shared.models import RunMode
 from sqlmodel import select
 
