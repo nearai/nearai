@@ -10,6 +10,7 @@ import boto3
 from ddtrace import patch_all, tracer
 from nearai.agents.agent import Agent
 from nearai.agents.environment import Environment
+from nearai.aws_runner.cache_manager import cache_manager
 from nearai.aws_runner.partial_near_client import PartialNearClient
 from nearai.registry import get_registry_folder
 from nearai.shared.auth_data import AuthData
@@ -24,11 +25,6 @@ if os.environ.get("DD_API_KEY"):
 
 OUTPUT_PATH = "/tmp/nearai-agent-runner"
 DEFAULT_API_URL = "https://api.near.ai"
-
-# Local caches
-provider_models_cache = None
-provider_models_cache_time = None
-local_agent_cache: dict[str, Agent] = {}
 
 
 def create_cloudwatch():
@@ -142,45 +138,47 @@ def write_metric(metric_name, value, unit="Milliseconds", verbose=True):
         print(f"[DEBUG] • Would have written metric {metric_name} with value {value} to cloudwatch")
 
 
-def load_agent(client, agent, params: dict, additional_path: str = "", verbose=True) -> Agent:
+def load_agent(client, agent_name: str, params: dict, additional_path: str = "", verbose=True) -> Agent:
     agent_metadata = None
 
     if params["data_source"] == "registry":
         use_cache = os.getenv("USE_AGENT_CACHE", "true").lower() == "true"
 
-        global local_agent_cache
-        if use_cache:
-            if agent in local_agent_cache:
-                cached_agent = local_agent_cache[agent]
+        # First try to load the agent from cache
+        try:
+            if use_cache:
+                cached_agent = cache_manager.get_agent(agent_name)
+                if cached_agent:
+                    if verbose:
+                        print(f"Using cached agent: {agent_name}")
+                    # Ensure module-level singletons are reset
+                    # This prevents state leakage between Lambda invocations
+                    cached_agent.clear_module_cache()
+                    return cached_agent
+        except Exception as e:
+            if verbose:
+                print(f"Error retrieving agent from cache: {e}")
 
-                # recreate the agent object to ensure it has all data from constructor
-                full_agent = Agent(
-                    agent,
-                    cached_agent.agent_files,
-                    cached_agent.metadata or {},
-                    change_to_temp_dir=params.get("change_to_agent_temp_dir", True),
-                )
-
-                print(f"Using {agent} from cache in {full_agent.temp_dir}")
-                return full_agent
-
+        # If not cached or cache retrieval failed, load the agent normally
         start_time = time.perf_counter()
-        agent_files = client.get_agent(agent)
+        agent_files = client.get_agent(agent_name)
         stop_time = time.perf_counter()
         write_metric("GetAgentFromRegistry_Duration", stop_time - start_time, verbose=verbose)
         start_time = time.perf_counter()
-        agent_metadata = client.get_agent_metadata(agent)
+        agent_metadata = client.get_agent_metadata(agent_name)
         stop_time = time.perf_counter()
         write_metric("GetMetadataFromRegistry_Duration", stop_time - start_time, verbose=verbose)
-        full_agent = Agent(
-            agent, agent_files, agent_metadata or {}, change_to_temp_dir=params.get("change_to_agent_temp_dir", True)
-        )
-        local_agent_cache[full_agent.identifier] = full_agent
+
+        # Create a new agent instance
+        full_agent = Agent(agent_name, agent_files, agent_metadata or {}, change_to_temp_dir=True)
+
+        # Cache the agent for future use
         print(f"Saving {full_agent.identifier} from {full_agent.temp_dir} to cache")
+        cache_manager.cache_agent(full_agent)
         return full_agent
     elif params["data_source"] == "local_files":
-        agent = agent.replace(f"{get_registry_folder()}/", "")
-        agent_files = get_local_agent_files(agent, additional_path)
+        agent_name = agent_name.replace(f"{get_registry_folder()}/", "")
+        agent_files = get_local_agent_files(agent_name, additional_path)
 
         for file in agent_files:
             if os.path.basename(file["filename"]) == "metadata.json":
@@ -193,26 +191,29 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
 [DEBUG]   • Tags: {', '.join(agent_metadata.get('tags', [])) if agent_metadata.get('tags') else 'None'}
 [DEBUG]   • Model: {agent_metadata.get('details', {}).get('agent', {}).get('defaults', {}).get('model', 'N/A')}
 [DEBUG]   • Model Provider: {agent_metadata.get('details', {}).get('agent', {}).get('defaults', {})
-                    .get('model_provider', 'N/A')}
+                .get('model_provider', 'N/A')}
 [DEBUG]   • Model Temperature: {agent_metadata.get('details', {}).get('agent', {}).get('defaults', {})
-                    .get('model_temperature', 'N/A')}
+                .get('model_temperature', 'N/A')}
 [DEBUG]   • Model Max Tokens: {agent_metadata.get('details', {}).get('agent', {}).get('defaults', {})
-                    .get('model_max_tokens', 'N/A')}
+                .get('model_max_tokens', 'N/A')}
 [DEBUG]   • Show Entry: {agent_metadata.get('show_entry', 'N/A')}
 [DEBUG]    ----------------------------
 """
 
-                    print(f"\n[DEBUG] Loaded agent from {agent}:\n{agent_info}")
+                    print(f"\n[DEBUG] Loaded agent from {agent_name}:\n{agent_info}")
                 break
 
         if not agent_metadata:
-            print(f"Missing metadata for {agent}")
+            print(f"Missing metadata for {agent_name}")
 
         return Agent(
-            agent, agent_files, agent_metadata or {}, change_to_temp_dir=params.get("change_to_agent_temp_dir", True)
+            agent_name,
+            agent_files,
+            agent_metadata or {},
+            change_to_temp_dir=params.get("change_to_agent_temp_dir", True),
         )
     else:
-        raise ValueError("Invalid data_source")
+        raise ValueError(f"Invalid data_source: {params['data_source']}")
 
 
 def clear_temp_agent_files(agents, verbose=True):
@@ -333,18 +334,17 @@ def start_with_environment(
     )
     inference_client = InferenceClient(client_config, protected_vars.get("RUNNER_API_KEY"), agent.identifier)
 
-    global provider_models_cache
-    global provider_models_cache_time
-    # Force a check for new models after an hour if the runner has stayed hot for that long
-    # this is a failsafe given usage patterns at the time of writing, if models are uploaded more frequently and
-    # runners stay hot, it could be adjusted down or client model caching removed.
-    if not provider_models_cache or (time.time() - (provider_models_cache_time or 0) > 3600):
-        if provider_models_cache_time:
-            write_metric("InferenceClientCacheCleared", "1", "Count")
-        provider_models_cache_time = time.time()
-        provider_models_cache = inference_client.provider_models
+    # Use the cache manager for provider models
+    cached_models_result = cache_manager.get_provider_models(max_age_seconds=3600)
+    if cached_models_result:
+        models, age = cached_models_result
+        inference_client.set_provider_models(models)
+        write_metric("InferenceClientCacheAge", age)
     else:
-        inference_client.set_provider_models(provider_models_cache)
+        # Cache miss or expired, fetch and cache
+        models = inference_client.provider_models
+        cache_manager.cache_provider_models(models)
+        write_metric("InferenceClientCacheRefresh", 1, "Count")
 
     hub_client = client_config.get_hub_client()
     run_path = (
