@@ -67,7 +67,7 @@ class Message(BaseModel):
     @field_validator("content", mode="before")
     @classmethod
     def ensure_string_content(cls, v):
-        """Ensure content within the messages is always a string"""
+        """Ensure content within the messages is always a string."""
         if v is None:
             return ""
 
