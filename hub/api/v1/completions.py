@@ -1,7 +1,7 @@
 import json
 from enum import Enum
 from os import getenv
-from typing import Callable, List
+from typing import Callable, List, Union
 
 from dotenv import load_dotenv
 from nearai.shared.client_config import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
@@ -62,16 +62,16 @@ class Message(BaseModel):
     """A chat message."""
 
     role: str
-    content: List[dict]
+    content: Union[List, str]
 
     @field_validator("content", mode="before")
     @classmethod
     def ensure_string_content(cls, v):
-        """Convert None to empty string and ensure content is always a string."""
+        """Ensure content within the messages is always a string"""
         if v is None:
             return ""
 
-        # Iterate recursively over the object, convert None to empty string
+        # Iterate recursively over the object, converting values to str
         if isinstance(v, list):
             return [cls.ensure_string_content(i) for i in v]
         elif isinstance(v, dict):
