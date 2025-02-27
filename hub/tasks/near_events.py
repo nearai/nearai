@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import re
-from typing import Any
+from typing import Any, Set
 
 import httpx
 from dotenv import load_dotenv
@@ -15,7 +15,14 @@ from hub.api.v1.thread_routes import RunCreateParamsBase, ThreadModel, _create_t
 from hub.tasks.scheduler import get_async_scheduler
 
 load_dotenv()
-logger = logging.getLogger(__name__)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger("naerai-neardata")
+
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 RESET_BLOCK_ID_ON_START = True
 
@@ -28,8 +35,19 @@ BLOCK_ID_FILE = "last_block_id.txt"
 # OPTION TO READ MULTIPLE BLOCKS PER RUN
 NUMBER_OF_BLOCKS_TO_READ_IF_NOT_SYNCED = int(os.getenv("NEAR_EVENTS_NUMBER_OF_BLOCKS_TO_READ_PER_RUN", 2))
 
+# Number of blocks to remember for duplicate protection
+MAX_HISTORY_SIZE = 100
+
+# Global state for in-memory block tracking
+_current_block_id: int = 0
+# Track recent blocks to avoid duplicates
+_processed_blocks: Set[int] = set()
+# Ensures single-threaded execution
+processing_lock = asyncio.Lock()
+
 
 async def async_fetch_json(url: str) -> Any:
+    """Fetch JSON data from URL with API key authentication and error handling."""
     headers = {}
     api_key = os.getenv("FASTNEAR_APIKEY")
     if api_key:
@@ -52,6 +70,7 @@ async def async_fetch_json(url: str) -> Any:
 
 
 async def get_latest_block_id():
+    """Fetch the current blockchain height from network."""
     # DEBUG. This block has the required event
     # return 135350100
 
@@ -65,31 +84,82 @@ async def get_latest_block_id():
     return 0
 
 
+async def initialize_block_state():
+    """Initialize state with history tracking."""
+    global _current_block_id, _processed_blocks
+    try:
+        if os.path.exists(BLOCK_ID_FILE):
+            with open(BLOCK_ID_FILE, "r") as f:
+                data = json.load(f)
+                _current_block_id = data["current_block"]
+                _processed_blocks = set(data["processed_blocks"][-MAX_HISTORY_SIZE:])
+        else:
+            _current_block_id = await get_latest_block_id()
+            _processed_blocks = set()
+    except Exception as e:
+        logger.error(f"State initialization failed: {str(e)}")
+        _current_block_id = await get_latest_block_id()
+        _processed_blocks = set()
+
+
 # Function to get the last read blockId from a file
 async def get_last_block_id():
-    if os.path.exists(BLOCK_ID_FILE):
-        with open(BLOCK_ID_FILE, "r") as f:
-            return int(f.read().strip())
-    return await get_latest_block_id()
+    if _current_block_id:
+        return _current_block_id
+    else:
+        return await get_latest_block_id()
 
 
 # Function to save the last blockId to a file
-def save_last_block_id(block_id):
-    # logger.info(f"Saving last block {block_id}")
-    with open(BLOCK_ID_FILE, "w") as f:
-        f.write(str(block_id))
+def save_last_block_id(new_block_id: int):
+    """Update block ID state in memory and persistent storage."""
+    global _current_block_id, _processed_blocks
+
+    if new_block_id <= _current_block_id:
+        logger.warning(f"Ignoring older block {new_block_id} (current: {_current_block_id})")
+        return
+
+    # Add to processed set and maintain size
+    _processed_blocks.add(new_block_id)
+    while len(_processed_blocks) > MAX_HISTORY_SIZE:
+        _processed_blocks.remove(min(_processed_blocks))
+
+    # Update current block to maximum processed
+    _current_block_id = max(_processed_blocks)
+
+    # Persist state
+    asyncio.create_task(_persist_block_state())
+
+
+async def _persist_block_state():
+    """Save state with history using atomic write."""
+    try:
+        temp_path = f"{BLOCK_ID_FILE}.tmp"
+        with open(temp_path, "w") as f:
+            json.dump({"current_block": _current_block_id, "processed_blocks": sorted(_processed_blocks)}, f)
+
+        os.replace(temp_path, BLOCK_ID_FILE)
+    except Exception as e:
+        logger.error(f"Failed to save block state: {str(e)}")
 
 
 # Asynchronous function to load a block by its ID
-async def load_block(block_id, auth_token):
-    # logger.info(f"Loading block {block_id}")
-    data = await async_fetch_json(f"{BASE_URL}{block_id}")
-    if data and data.get("shards"):
-        # If data and shards are found, process them
-        await process_shards(data["shards"], block_id, auth_token)
-        return block_id
-    else:
-        return None
+async def load_block(block_id: int, auth_token: AuthToken) -> bool:
+    """Process block with duplicate check."""
+    if block_id in _processed_blocks:
+        logger.debug(f"Block {block_id} already processed")
+        return False
+
+    try:
+        # Service will keep connection open until block exists
+        data = await async_fetch_json(f"{BASE_URL}{block_id}")
+        if data and data.get("shards"):
+            await process_shards(data["shards"], block_id, auth_token)
+            return True
+        return False
+    except Exception as e:
+        logger.error(f"Failed to process block {block_id}: {e}")
+        return False
 
 
 # Function to process shards in the block
@@ -194,45 +264,43 @@ async def run_agent(agent, content, auth_token: AuthToken):
 #         return False
 
 
-async def process_blocks_in_parallel(auth_token, num_parallel=NUMBER_OF_BLOCKS_TO_READ_IF_NOT_SYNCED):
-    block_id = await get_last_block_id()
-
-    async def process_single_block(block_id):
-        new_block_id = await load_block(block_id, auth_token)
-        if new_block_id:
-            # logger.info(f"New block found: {new_block_id}")
-            save_last_block_id(new_block_id)
-            return new_block_id
-        else:
-            logger.warning(f"Block not found: {block_id}")
-            return None
-
-    tasks = [process_single_block(block_id + i + 1) for i in range(num_parallel)]
-
-    results = await asyncio.gather(*tasks)
-    successful_blocks = [result for result in results if result is not None]
-
-    if successful_blocks:
-        logger.info(f"Successfully loaded blocks: {successful_blocks}")
-        return True
-    else:
-        logger.warning("No new blocks were found.")
-        return False
-
-
 async def near_events_task(auth_token: AuthToken):
-    # Try to catch up reading NUMBER_OF_BLOCKS_TO_READ_IF_NOT_SYNCED blocks per run
-    # for _ in range(NUMBER_OF_BLOCKS_TO_READ_IF_NOT_SYNCED):
-    #     block_found = await process_blocks_sequentially(auth_token)
-    #     if not block_found:
-    #         break
+    """Main processing workflow with duplicate protection."""
+    async with processing_lock:
+        await initialize_block_state()  # Ensure state is initialized
 
-    await process_blocks_in_parallel(auth_token)
+        # Calculate start block AFTER initialization
+        start_block = _current_block_id + 1
+
+        tasks = [
+            process_block_wrapper(start_block + i, auth_token) for i in range(NUMBER_OF_BLOCKS_TO_READ_IF_NOT_SYNCED)
+        ]
+
+        for task in asyncio.as_completed(tasks):
+            if (block_id := await task) is not None:
+                save_last_block_id(block_id)
+                logger.info(f"Processed block {block_id}")
+
+
+async def process_block_wrapper(block_id, auth_token):
+    """Wrapper for block processing with error handling."""
+    retries = 3
+    for attempt in range(retries):
+        try:
+            if await load_block(block_id, auth_token):
+                return block_id
+        except Exception:
+            if attempt == retries - 1:
+                logger.error(f"Block {block_id} failed after {retries} attempts")
+    return None
 
 
 def process_near_events_initial_state():
-    # remove last known block_id to reset the state on start
+    """Reset state including history."""
+    global _current_block_id, _processed_blocks
     if RESET_BLOCK_ID_ON_START:
+        _current_block_id = 0
+        _processed_blocks = set()
         if os.path.exists(BLOCK_ID_FILE):
             os.remove(BLOCK_ID_FILE)
-            logger.info(f"File {BLOCK_ID_FILE} has been deleted.")
+            logger.info("Reset processing state")

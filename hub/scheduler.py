@@ -25,7 +25,24 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
-logger = logging.getLogger("nearai-scheduler")
+
+
+class WarningFilter(logging.Filter):
+    """Filter to suppress APScheduler warning messages."""
+
+    def filter(self, record):
+        """Filter out APScheduler warning messages which are not relevant."""
+        msg = record.getMessage()
+        # It is expected that the maximum number of running instances may be reached because of the scheduler design
+        # We're always trying to download the block that does not exist yet
+        if "skipped: maximum number of running instances reached" in msg:
+            return False
+        return True
+
+
+logger = logging.getLogger("apscheduler.scheduler")
+logger.addFilter(WarningFilter())
+
 
 load_dotenv()
 
@@ -152,7 +169,15 @@ async def main():
     if read_near_events:
         process_near_events_initial_state()
         job = partial(near_events_task, auth_token)
-        scheduler.add_job(job, IntervalTrigger(seconds=1), name="near_events")
+        scheduler.add_job(
+            job,
+            IntervalTrigger(seconds=1),
+            name="near_events",
+            max_instances=1,  # ABSOLUTELY CRUCIAL - only 1 concurrent job
+            coalesce=True,  # Combine missed executions into one
+            misfire_grace_time=10,  # Allow some delay for busy system
+            replace_existing=True,  # Ensure no duplicate jobs
+        )
         logger.info("Added near events job")
 
     if read_x_events:
