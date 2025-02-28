@@ -163,6 +163,7 @@ class Registry:
 
         If metadata is provided it will overwrite the metadata in the directory,
         otherwise it will use the metadata.json found on the root of the directory.
+        Files matching patterns in .gitignore (if present) will be excluded from upload.
         """
         path = Path(local_path).absolute()
 
@@ -221,6 +222,84 @@ class Registry:
 
         registry.update(entry_location, entry_metadata)
 
+        # Initialize gitignore matcher
+        gitignore_spec = None
+        try:
+            import pathspec
+
+            gitignore_path = path / ".gitignore"
+            if gitignore_path.exists() and gitignore_path.is_file():
+                with open(gitignore_path, "r") as f:
+                    # Start with Git's default ignore patterns
+                    default_ignore_patterns = [
+                        # Git internal directories
+                        ".git/",
+                        ".gitignore",
+                        ".gitmodules",
+                        ".gitattributes",
+                        # Python specific
+                        "__pycache__/",
+                        "*.py[cod]",
+                        "*$py.class",
+                        "*.so",
+                        ".Python",
+                        "build/",
+                        "develop-eggs/",
+                        "dist/",
+                        "downloads/",
+                        "eggs/",
+                        ".eggs/",
+                        "lib/",
+                        "lib64/",
+                        "parts/",
+                        "sdist/",
+                        "var/",
+                        "wheels/",
+                        "*.egg-info/",
+                        ".installed.cfg",
+                        "*.egg",
+                        # Common cache directories
+                        ".ruff_cache/",
+                        ".pytest_cache/",
+                        ".mypy_cache/",
+                        ".hypothesis/",
+                        ".coverage",
+                        "htmlcov/",
+                        ".tox/",
+                        ".nox/",
+                        # Virtual environments
+                        "venv/",
+                        "env/",
+                        ".env/",
+                        ".venv/",
+                        "ENV/",
+                        # Jupyter Notebook
+                        ".ipynb_checkpoints",
+                        # IDE specific
+                        ".idea/",
+                        ".vscode/",
+                        "*.swp",
+                        "*.swo",
+                        # macOS specific
+                        ".DS_Store",
+                        ".AppleDouble",
+                        ".LSOverride",
+                        # Windows specific
+                        "Thumbs.db",
+                        "ehthumbs.db",
+                        "Desktop.ini",
+                    ]
+                    custom_patterns = f.readlines()
+                    gitignore_spec = pathspec.PathSpec.from_lines(
+                        "gitwildmatch", default_ignore_patterns + custom_patterns
+                    )
+        except ImportError:
+            print("Error: pathspec library not found. .gitignore patterns will not be applied.")
+            exit(1)
+        except Exception as e:
+            print(f"Error: Failed to parse .gitignore file: {str(e)}")
+            exit(1)
+
         all_files = []
         total_size = 0
 
@@ -243,6 +322,16 @@ class Registry:
             if relative.parts[0] == ".nearai":
                 continue
 
+            # Don't upload files in __pycache__
+            if "__pycache__" in relative.parts:
+                continue
+
+            # Check if file matches gitignore patterns
+            if gitignore_spec is not None:
+                rel_str = str(relative).replace("\\", "/")
+                if gitignore_spec.match_file(rel_str):
+                    continue
+
             size = file.stat().st_size
             total_size += size
 
@@ -250,8 +339,6 @@ class Registry:
 
         pbar = tqdm(total=total_size, unit="B", unit_scale=True, disable=not show_progress)
         for file, relative, size in all_files:
-            if "__pycache__" in relative.parts:
-                continue
             registry.upload_file(entry_location, file, relative)
             pbar.update(size)
 
