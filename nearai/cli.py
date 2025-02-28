@@ -577,7 +577,11 @@ class AgentCli:
 
         last_message_id = None
         print(f"\n=== Starting interactive session with agent: {agent_id} ===")
-        print("Type 'exit' to end the session\n")
+        print("")
+        print("Type 'exit' to end the session")
+        print("On Linux/macOS: Press Ctrl+D at the beginning of a new line after the prompt")
+        print("On Windows: Press Ctrl+Z followed by Enter")
+        print("")
 
         # get agent metadata from metadata.json
         metadata_path = agent_path / "metadata.json"
@@ -591,9 +595,18 @@ class AgentCli:
                 print(description)
 
         while True:
-            new_message = input("> ")
-            if new_message.lower() == "exit":
+            first_line = input("> ")
+            if first_line.lower() == "exit":
                 break
+            lines = [first_line]
+            try:
+                while True:
+                    line = input("> ")
+                    lines.append(line)
+            except EOFError:
+                print("")
+
+            new_message = "\n".join(lines)
 
             last_message_id = self._task(
                 agent=agent_id,
