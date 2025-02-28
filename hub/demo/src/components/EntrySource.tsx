@@ -64,8 +64,10 @@ export const EntrySource = ({ entry }: Props) => {
   if (activeFilePath === METADATA_FILE_PATH) {
     const metadata = {
       category: entry.category,
-      name: entry.name,
       namespace: entry.namespace,
+      name: entry.name,
+      version: entry.version,
+      description: entry.description,
       tags: entry.tags,
       details: entry.details,
     };
