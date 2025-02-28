@@ -22,7 +22,7 @@ from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
 from nearai.banners import NEAR_AI_BANNER
-from nearai.cli_helpers import display_agents_in_columns
+from nearai.cli_helpers import display_agents_in_columns, has_pending_input
 from nearai.config import (
     CONFIG,
     get_hub_client,
@@ -595,14 +595,24 @@ class AgentCli:
                 print(description)
 
         while True:
+            # print("> ", end="", flush=True)
+            # lines = []
+            # for line in sys.stdin:
+            #     lines.append(line.rstrip('\n'))
+            # if lines and lines[0].strip() == "exit":
+            #     break
+
             first_line = input("> ")
             if first_line.lower() == "exit":
                 break
             lines = [first_line]
             try:
+                pending_input_on_prev_line = False
                 while True:
-                    line = input("> ")
+                    pending_input_on_this_line = has_pending_input()
+                    line = input("") if (pending_input_on_prev_line or pending_input_on_this_line) else input("> ")
                     lines.append(line)
+                    pending_input_on_prev_line = pending_input_on_this_line
             except EOFError:
                 print("")
 
