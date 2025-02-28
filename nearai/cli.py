@@ -29,7 +29,7 @@ from nearai.config import (
     update_config,
 )
 from nearai.finetune import FinetuneCli
-from nearai.lib import check_metadata, parse_location, parse_tags
+from nearai.lib import check_metadata_present, parse_location, parse_tags
 from nearai.log import LogCLI
 from nearai.openapi_client import EntryLocation, EntryMetadataInput
 from nearai.openapi_client.api.benchmark_api import BenchmarkApi
@@ -39,7 +39,7 @@ from nearai.openapi_client.api.evaluation_api import EvaluationApi
 from nearai.openapi_client.api.jobs_api import JobsApi, WorkerKind
 from nearai.openapi_client.api.permissions_api import PermissionsApi
 from nearai.openapi_client.models.body_add_job_v1_jobs_add_job_post import BodyAddJobV1JobsAddJobPost
-from nearai.registry import get_registry_folder, registry
+from nearai.registry import get_agent_id, get_metadata, get_registry_folder, registry, resolve_local_path
 from nearai.shared.client_config import (
     DEFAULT_MODEL,
     DEFAULT_MODEL_MAX_TOKENS,
@@ -82,7 +82,7 @@ class RegistryCli:
 
     def metadata_template(self, local_path: str = ".", category: str = "", description: str = ""):
         """Create a metadata template."""
-        path = Path(local_path)
+        path = resolve_local_path(Path(local_path))
 
         metadata_path = path / "metadata.json"
 
@@ -91,6 +91,7 @@ class RegistryCli:
         assert re.match(pattern, version), f"Invalid semantic version format: {version}"
         name = path.parent.name
         assert not re.match(pattern, name), f"Invalid agent name: {name}"
+        assert " " not in name
 
         with open(metadata_path, "w") as f:
             metadata: Dict[str, Any] = {
@@ -179,14 +180,14 @@ class RegistryCli:
 
     def update(self, local_path: str = ".") -> None:
         """Update metadata of a registry item."""
-        path = Path(local_path)
+        path = resolve_local_path(Path(local_path))
 
         if CONFIG.auth is None:
             print("Please login with `nearai login`")
             exit(1)
 
         metadata_path = path / "metadata.json"
-        check_metadata(metadata_path)
+        check_metadata_present(metadata_path)
 
         with open(metadata_path) as f:
             metadata: Dict[str, Any] = json.load(f)
@@ -200,6 +201,7 @@ class RegistryCli:
                 version=metadata.pop("version"),
             )
         )
+        assert " " not in entry_location.name
 
         entry_metadata = EntryMetadataInput.model_validate(metadata)
         result = registry.update(entry_location, entry_metadata)
@@ -258,7 +260,7 @@ class RegistryCli:
 
     def upload(self, local_path: str = ".") -> EntryLocation:
         """Upload item to the registry."""
-        return registry.upload(Path(local_path), show_progress=True)
+        return registry.upload(resolve_local_path(Path(local_path)), show_progress=True)
 
     def download(self, entry_location: str, force: bool = False) -> None:
         """Download item."""
@@ -562,33 +564,22 @@ class AgentCli:
 
         # Convert agent path to Path object if it's a string
         agent_path = Path(agent)
-        if not agent_path.exists():
-            print(f"Error: Agent not found at path: {agent_path}")
-            return
+        if local:
+            agent_path = resolve_local_path(agent_path)
 
-        try:
-            # Get the last 3 parts of the path (namespace/name/version)
-            parts = agent_path.parts[-3:]
-            agent_id = "/".join(parts)
-        except IndexError:
-            print("Error: Invalid agent path. Expected format: path/to/namespace/name/version")
-            print("Example: ~/.nearai/registry/namespace/agent-name/0.0.1")
-            return
+        agent_id = get_agent_id(agent_path, local)
 
         last_message_id = None
         print(f"\n=== Starting interactive session with agent: {agent_id} ===")
         print("Type 'exit' to end the session\n")
 
-        # get agent metadata from metadata.json
-        metadata_path = agent_path / "metadata.json"
-        with open(metadata_path) as f:
-            metadata = json.load(f)
-            title = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("title")
-            if title:
-                print(title)
-            description = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("description")
-            if description:
-                print(description)
+        metadata = get_metadata(agent_path, local)
+        title = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("title")
+        if title:
+            print(title)
+        description = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("description")
+        if description:
+            print(description)
 
         while True:
             new_message = input("> ")
@@ -601,7 +592,7 @@ class AgentCli:
                 thread_id=thread_id,
                 tool_resources=tool_resources,
                 last_message_id=last_message_id,
-                local=local,
+                local_path=agent_path if local else None,
                 verbose=verbose,
                 env_vars=env_vars,
             )
@@ -628,7 +619,7 @@ class AgentCli:
             thread_id=thread_id,
             tool_resources=tool_resources,
             file_ids=file_ids,
-            local=local,
+            local_path=resolve_local_path(Path(agent)) if local else None,
             verbose=verbose,
             env_vars=env_vars,
         )
@@ -644,7 +635,7 @@ class AgentCli:
         tool_resources: Optional[Dict[str, Any]] = None,
         file_ids: Optional[List[str]] = None,
         last_message_id: Optional[str] = None,
-        local: bool = False,
+        local_path: Optional[Path] = None,
         verbose: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
@@ -666,7 +657,7 @@ class AgentCli:
             attachments=[Attachment(file_id=file_id) for file_id in file_ids] if file_ids else None,
         )
 
-        if not local:
+        if not local_path:
             hub_client.beta.threads.runs.create_and_poll(
                 thread_id=thread.id,
                 assistant_id=agent,
@@ -687,7 +678,7 @@ class AgentCli:
             }
             auth = CONFIG.auth
             assert auth is not None
-            LocalRunner(agent, agent, thread.id, run.id, auth, params)
+            LocalRunner(str(local_path), agent, thread.id, run.id, auth, params)
 
         # List new messages
         messages = hub_client.beta.threads.messages.list(thread_id=thread.id, after=last_message_id, order="asc")

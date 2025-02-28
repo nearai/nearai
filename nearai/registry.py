@@ -9,7 +9,7 @@ from tqdm import tqdm
 #       before creating RegistryApi object. This is because setup_api_client sets the default configuration for the
 #       API client that is used by Registry API.
 from nearai.config import CONFIG, DATA_FOLDER
-from nearai.lib import check_metadata, parse_location
+from nearai.lib import check_metadata_present, parse_location
 from nearai.openapi_client import EntryInformation, EntryLocation, EntryMetadata, EntryMetadataInput
 from nearai.openapi_client.api.registry_api import (
     BodyDownloadFileV1RegistryDownloadFilePost,
@@ -27,6 +27,22 @@ REGISTRY_FOLDER = "registry"
 def get_registry_folder() -> Path:
     """Path to local registry."""
     return DATA_FOLDER / REGISTRY_FOLDER
+
+
+def resolve_local_path(local_path: Path) -> Path:
+    """Determines if the `local_path` is `local_path` or `registry_folder/local_path`.
+
+    Raises FileNotFoundError if folder or parent folder is not present.
+    """
+    if local_path.exists() or local_path.parent.exists():
+        return local_path
+
+    registry_path = get_registry_folder() / local_path
+    if registry_path.exists() or registry_path.parent.exists():
+        return registry_path
+
+    # If neither exists, raise an error
+    raise FileNotFoundError(f"Path not found: {local_path} or {registry_path}")
 
 
 def get_namespace(local_path: Path) -> str:
@@ -50,6 +66,26 @@ def get_namespace(local_path: Path) -> str:
     if CONFIG.auth is None:
         raise ValueError("AuthData is None")
     return CONFIG.auth.namespace
+
+
+def get_agent_id(path: Path, local: bool) -> str:
+    metadata = get_metadata(path, local)
+    namespace = get_namespace(path)
+    name = metadata["name"]
+    assert " " not in name
+    version = metadata["version"]
+    return f"{namespace}/{name}/{version}"
+
+
+def get_metadata(path: Path, local: bool) -> dict:
+    if local:
+        metadata_path = path / "metadata.json"
+        with open(metadata_path) as f:
+            return json.load(f)
+    entry_location = parse_location(str(path))
+    entry = registry.info(entry_location)
+    assert entry
+    return entry.to_dict()
 
 
 class Registry:
@@ -166,10 +202,6 @@ class Registry:
         """
         path = Path(local_path).absolute()
 
-        if not path.exists():
-            # try path in local registry if original path not exists
-            path = get_registry_folder() / local_path
-
         if CONFIG.auth is None:
             print("Please login with `nearai login`")
             exit(1)
@@ -180,13 +212,14 @@ class Registry:
             with open(metadata_path, "w") as f:
                 f.write(metadata.model_dump_json(indent=2))
 
-        check_metadata(metadata_path)
+        check_metadata_present(metadata_path)
 
         with open(metadata_path) as f:
             plain_metadata: Dict[str, Any] = json.load(f)
 
         namespace = get_namespace(local_path)
         name = plain_metadata.pop("name")
+        assert " " not in name
 
         entry_location = EntryLocation.model_validate(
             dict(
