@@ -148,3 +148,58 @@ The folder must contain:
 
 !!! warning
     You can't remove or overwrite a file once it's uploaded, but you can hide the entire agent by setting the `"show_entry": false` field in the `metadata.json` file
+
+---
+
+## Embedding an Agent
+
+You can embed NEAR AI agents directly into your website using an iframe. This allows users to interact with your agent without leaving your site.
+
+### Basic Embedding
+
+To embed an agent, use the following iframe code replacing the `src` with the agent you want to embed.
+
+`Example`:
+
+```html
+<iframe 
+  src="https://app.near.ai/embed/<your-account.near>/<your-agent-name>/latest" 
+  sandbox="allow-scripts allow-popups allow-same-origin allow-forms"
+  style="border: none; height: 100svh;">
+</iframe>
+```
+
+!!! info
+    - Note that the difference with this `src` path compared to a regular link to your agent is that it is using the `embed` endpoint.
+
+    - Also note that you can replace the `latest` with a specific agent version number.
+
+!!! tip
+    You can also copy/paste the snippet from the [NEAR AI Dev Platform](https://app.near.ai/agents).
+    
+    - Clicking the `share` icon from your agent page and select `<embed>`
+
+    ![agent embed snippet](../assets/agents/agent-embed.png)
+
+### Customizing the Embed
+
+<!-- TODO: Enhance this section for all the customization options available. -->
+
+In addition to customizing the agent's iframe, you can also customize how your agent appears when embedded by updating the `metadata.json` file.
+
+Add an `embed` section under the agent details:
+
+```json
+{
+  "details": {
+    "agent": {
+      "embed": {
+        "logo": "https://near.ai/logo-white.svg"
+      }
+    }
+  }
+}
+```
+
+!!! info
+    The embedded agent will inherit the styling of the NEAR AI platform while maintaining a consistent look and feel with your website.
