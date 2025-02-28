@@ -39,7 +39,7 @@ type ThreadsStore = {
     currentThreadId: string | null | undefined,
     inputs: z.infer<typeof chatWithAgentModel>[],
   ) => void;
-  reset: () => void;
+  clearOptimisticMessages: () => void;
   setAddMessage: (addMessage: ThreadsStore['addMessage']) => void;
   setThread: (
     thread: Partial<Omit<AppRouterOutputs['hub']['thread'], 'id'>> & {
@@ -97,7 +97,7 @@ const store: StateCreator<ThreadsStore> = (set, get) => ({
     set({ optimisticMessages });
   },
 
-  reset: () => set({ optimisticMessages: [] }),
+  clearOptimisticMessages: () => set({ optimisticMessages: [] }),
 
   setAddMessage: (addMessage) => set({ addMessage }),
 

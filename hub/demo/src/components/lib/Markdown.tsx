@@ -1,6 +1,7 @@
 'use client';
 
 import { Table } from '@near-pagoda/ui';
+import { memo } from 'react';
 import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { visit } from 'unist-util-visit';
@@ -22,7 +23,7 @@ function urlTransform(url: string) {
   return defaultUrlTransform(url);
 }
 
-export const Markdown = (props: Props) => {
+export const Markdown = memo((props: Props) => {
   const content = props.content?.replace(/\s```/g, '\n```');
 
   return (
@@ -83,4 +84,6 @@ export const Markdown = (props: Props) => {
       </ReactMarkdown>
     </div>
   );
-};
+});
+
+Markdown.displayName = 'Markdown';

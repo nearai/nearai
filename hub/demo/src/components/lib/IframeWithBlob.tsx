@@ -32,12 +32,8 @@ export const IframeWithBlob = ({
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [dataUrl, setDataUrl] = useState('');
-  const previousHeightRef = useRef(0);
-  const previousHeightChangeUnixTimestampRef = useRef(0);
-  const shouldClampHeightRef = useRef(false);
   const [computedHeight, __setComputedHeight] = useState(0);
   const isLoading = height === 'auto' ? !computedHeight : false;
-  const wrapperInitialHeight = useRef(0);
 
   const executePostMessage = useDebouncedFunction((message: unknown) => {
     console.log('Sending postMessage to <IframeWithBlob />', message);
@@ -51,49 +47,27 @@ export const IframeWithBlob = ({
 
   const setComputedHeight = useDebouncedFunction((value: number) => {
     if (height !== 'auto') return;
-
     __setComputedHeight(() => {
-      if (!wrapperInitialHeight.current) {
-        wrapperInitialHeight.current = wrapperRef.current?.offsetHeight ?? 0;
-      }
-
-      const computedHeight = Math.max(wrapperInitialHeight.current, value);
-      const previousHeight = previousHeightRef.current;
-      const previousHeightDiff = computedHeight - previousHeight;
-      const previousHeightChangeUnixTimestamp =
-        previousHeightChangeUnixTimestampRef.current;
-      const heightDiff = computedHeight - previousHeight;
-      const elapsedMsSinceLastChange =
-        Date.now() - previousHeightChangeUnixTimestamp;
-
-      if (
-        previousHeight > 0 &&
-        heightDiff > 0 &&
-        elapsedMsSinceLastChange < 50 &&
-        previousHeightDiff === heightDiff
-      ) {
-        /*
-          NOTE: At this point we've detected an infinite loop where the iframe 
-          is consistently growing in height. This is caused by an element inside 
-          the iframe using viewport relative units like "vh" or "svh". To exit 
-          this loop, we'll need to clamp the iframe height.
-        */
-        shouldClampHeightRef.current = true;
-      }
-
-      previousHeightChangeUnixTimestampRef.current = Date.now();
-      previousHeightRef.current = computedHeight;
-
-      if (shouldClampHeightRef.current) {
-        return Math.min(computedHeight, window.innerHeight);
-      }
-
-      return computedHeight;
+      const newHeight = Math.max(wrapperRef.current?.offsetHeight ?? 0, value);
+      return newHeight;
     });
   }, 10);
 
+  const resetComputedHeight = useDebouncedFunction(() => {
+    __setComputedHeight(-1);
+  }, 150);
+
   useEffect(() => {
-    shouldClampHeightRef.current = false;
+    function resize() {
+      resetComputedHeight();
+    }
+    window.addEventListener('resize', resize);
+    () => {
+      window.removeEventListener('resize', resize);
+    };
+  }, [resetComputedHeight]);
+
+  useEffect(() => {
     const extendedHtml = extendHtml(html);
     const blob = new Blob([extendedHtml], { type: 'text/html;charset=UTF-8' });
     const url = URL.createObjectURL(blob);
@@ -165,7 +139,22 @@ export const IframeWithBlob = ({
         src={dataUrl}
         sandbox="allow-scripts allow-popups"
         className={`${s.iframe} ${className}`}
-        style={{ height: height === 'auto' ? `${computedHeight}px` : height }}
+        style={{
+          height:
+            height === 'auto'
+              ? computedHeight === -1
+                ? undefined
+                : `${computedHeight}px`
+              : height,
+          paddingRight: computedHeight === -1 ? '1px' : undefined,
+
+          /*
+            When computedHeight is -1, we adjust the styles above to trigger a 
+            ResizeObserver event within the iframe. This will then trigger a 
+            SET_HEIGHT postMessage from the iframe to update computedHeight 
+            with an updated value.
+          */
+        }}
         {...props}
       />
     </div>

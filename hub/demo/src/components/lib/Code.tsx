@@ -5,7 +5,7 @@
 import { useTheme } from '@near-pagoda/ui';
 import { Button, copyTextToClipboard, Tooltip } from '@near-pagoda/ui';
 import { Copy } from '@phosphor-icons/react';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import {
   atomOneDark,
@@ -54,58 +54,62 @@ function normalizeLanguage(input: string | null | undefined) {
   return value;
 }
 
-export const Code = ({
-  bleed,
-  showCopyButton = true,
-  showLineNumbers = true,
-  ...props
-}: Props) => {
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const language = normalizeLanguage(props.language);
-  const source = props.source?.replace(/[\n]+$/, '').replace(/^[\n]+/, '');
+export const Code = memo(
+  ({
+    bleed,
+    showCopyButton = true,
+    showLineNumbers = true,
+    ...props
+  }: Props) => {
+    const { resolvedTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+    const language = normalizeLanguage(props.language);
+    const source = props.source?.replace(/[\n]+$/, '').replace(/^[\n]+/, '');
 
-  const style =
-    mounted && resolvedTheme === 'dark' ? atomOneDark : atomOneLight;
+    const style =
+      mounted && resolvedTheme === 'dark' ? atomOneDark : atomOneLight;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+    useEffect(() => {
+      setMounted(true);
+    }, []);
 
-  if (!mounted) return null;
+    if (!mounted) return null;
 
-  return (
-    <div
-      className={s.code}
-      data-bleed={bleed}
-      data-copy={showCopyButton}
-      data-language={language}
-    >
-      {showCopyButton && (
-        <Tooltip asChild content="Copy to clipboard">
-          <Button
-            label="Copy code to clipboard"
-            icon={<Copy />}
-            variant="secondary"
-            size="small"
-            fill="ghost"
-            onClick={() => source && copyTextToClipboard(source)}
-            className={s.copyButton}
-            tabIndex={-1}
-          />
-        </Tooltip>
-      )}
+    return (
+      <div
+        className={s.code}
+        data-bleed={bleed}
+        data-copy={showCopyButton}
+        data-language={language}
+      >
+        {showCopyButton && (
+          <Tooltip asChild content="Copy to clipboard">
+            <Button
+              label="Copy code to clipboard"
+              icon={<Copy />}
+              variant="secondary"
+              size="small"
+              fill="ghost"
+              onClick={() => source && copyTextToClipboard(source)}
+              className={s.copyButton}
+              tabIndex={-1}
+            />
+          </Tooltip>
+        )}
 
-      {source && (
-        <SyntaxHighlighter
-          PreTag="div"
-          language={language ?? ''}
-          style={style}
-          showLineNumbers={showLineNumbers}
-        >
-          {source}
-        </SyntaxHighlighter>
-      )}
-    </div>
-  );
-};
+        {source && (
+          <SyntaxHighlighter
+            PreTag="div"
+            language={language ?? ''}
+            style={style}
+            showLineNumbers={showLineNumbers}
+          >
+            {source}
+          </SyntaxHighlighter>
+        )}
+      </div>
+    );
+  },
+);
+
+Code.displayName = 'Code';

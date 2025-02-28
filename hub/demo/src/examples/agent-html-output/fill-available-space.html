@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <style>
+      html,
+      body {
+        height: 100%;
+        background: #fff;
+      }
+
+      .container {
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        min-height: 300px;
+        display: grid;
+        grid-template-columns: 1fr 150px;
+        gap: 1rem;
+        justify-content: stretch;
+        align-items: stretch;
+      }
+
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .box {
+        border: 2px solid;
+        padding: 1rem;
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="stack">
+        <div class="box">Content 1</div>
+        <div class="box">Content 2</div>
+      </div>
+
+      <div class="box">Sidebar</div>
+    </div>
+  </body>
+</html>
