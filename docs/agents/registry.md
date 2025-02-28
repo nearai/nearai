@@ -183,11 +183,26 @@ To embed an agent, use the following iframe code replacing the `src` with the ag
 
 ### Customizing the Embed
 
-<!-- TODO: Enhance this section for all the customization options available. -->
+There are three ways to customize the appearance and behavior of your embedded agent:
 
-In addition to customizing the agent's iframe, you can also customize how your agent appears when embedded by updating the `metadata.json` file.
+1. Basic iframe attributes
+2. URL parameters
+3. `metadata.json` file
 
-Add an `embed` section under the agent details:
+!!! info
+    The embedded agent will inherit the styling of the NEAR AI platform while maintaining a consistent look and feel with your website.
+
+#### Light or Dark Theme
+
+For light or dark themes, add a `theme` parameter to the embed src URL:
+
+`src="https://app.near.ai/embed/<your-account.near>/<your-agent-name>/latest?theme=dark"`
+
+#### Custom Logo
+
+You can also add a custom logo to replace the default agent name in the upper left hand corner of your agent.
+
+In your `metadata.json` file add an `embed` section under the agent details:
 
 ```json
 {
@@ -200,6 +215,3 @@ Add an `embed` section under the agent details:
   }
 }
 ```
-
-!!! info
-    The embedded agent will inherit the styling of the NEAR AI platform while maintaining a consistent look and feel with your website.
