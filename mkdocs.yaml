@@ -165,6 +165,7 @@ nav:
         - RAG Agent: 'tutorials/rag/agent.md'
         - Chunking: 'tutorials/rag/chunking.md'
         - Manual Embeddings: 'tutorials/rag/embeddings.md'
+      - Typescript Agent - Quickstart: 'tutorials/typescript/getting_started.md'
   - Models:
     - 'models/home.md'
     - Fine-tuning: 'models/fine_tuning.md'
