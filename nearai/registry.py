@@ -230,6 +230,7 @@ class Registry:
             gitignore_path = path / ".gitignore"
             if gitignore_path.exists() and gitignore_path.is_file():
                 with open(gitignore_path, "r") as f:
+                    print(".gitignore file detected. Will filter out git ignore files.\n")
                     # Start with Git's default ignore patterns
                     default_ignore_patterns = [
                         # Git internal directories
@@ -336,6 +337,7 @@ class Registry:
             total_size += size
 
             all_files.append((file, relative, size))
+            print(f"U   {relative}")
 
         pbar = tqdm(total=total_size, unit="B", unit_scale=True, disable=not show_progress)
         for file, relative, size in all_files:
