@@ -595,13 +595,6 @@ class AgentCli:
                 print(description)
 
         while True:
-            # print("> ", end="", flush=True)
-            # lines = []
-            # for line in sys.stdin:
-            #     lines.append(line.rstrip('\n'))
-            # if lines and lines[0].strip() == "exit":
-            #     break
-
             first_line = input("> ")
             if first_line.lower() == "exit":
                 break
