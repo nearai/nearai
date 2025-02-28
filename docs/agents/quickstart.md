@@ -138,7 +138,7 @@ Now that you have the basics down, here are some key areas to focus on next that
 
 ### [Ship your agent 🚀](./registry.md#uploading-an-agent)
 
-[Upload your agent](./registry.md#uploading-an-agent) to the agent registry and [easily embed](./registry.md#embedding-an-agent) it into your website.
+Upload your agent to the agent registry and [easily embed it into your website](./registry.md#embedding-an-agent).
 
 ### [Explore the Registry 🔍](./registry.md)
 
