@@ -236,23 +236,23 @@ def display_success_and_options(agent_path: Path) -> None:
     console.print(commands_panel)
     console.print("\n")
     
-    # Create options with proper markup
+    # Create next steps options with proper markup
     options = [
-        "Upload agent to registry",
-        "Run agent",
-        "Code agent (open in editor)",
-        "Exit"
+        "Upload agent to NEAR AI registry 🚀",
+        "Run agent 💬",
+        "Open agent code in editor 🧑‍💻",
+        "Exit 👋"
     ]
     
     # Create the panel with direct markup
     next_steps_panel = Panel(
-        f"""What would you like to do next?
+        f"""[bold blue]What would you like to do next?[/bold blue]
 
 [bold blue]1.[/bold blue] {options[0]}
 [bold blue]2.[/bold blue] {options[1]}
 [bold blue]3.[/bold blue] {options[2]}
 [bold blue]4.[/bold blue] {options[3]}""",
-        title="Next Steps",
+        title="[bold blue]Next Steps[/bold blue]",
         border_style="blue",
     )
     console.print(next_steps_panel)
