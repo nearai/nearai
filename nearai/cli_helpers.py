@@ -1,4 +1,7 @@
 import json
+import os
+import select
+import sys
 from pathlib import Path
 
 from rich.console import Console
@@ -51,3 +54,14 @@ def display_agents_in_columns(agents: list[Path]) -> None:
     console.print("\n")
     console.print(table)
     console.print("\n")
+
+
+def has_pending_input():
+    """Check if there's input waiting to be read without blocking."""
+    if os.name == "nt":  # Windows
+        import msvcrt
+
+        return msvcrt.kbhit()
+    else:  # Unix/Linux/Mac
+        rlist, _, _ = select.select([sys.stdin], [], [], 0)
+        return bool(rlist)

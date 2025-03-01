@@ -602,9 +602,6 @@ class Environment(object):
             thread_id: str = self._thread_id,
         ):
             """Assistant adds a message to the environment."""
-            if message_type is None or not message_type.startswith("system:"):
-                print(f"add_reply: {message}")
-
             # NOTE: message from `user` are not stored in the memory
 
             return hub_client.beta.threads.messages.create(
@@ -633,8 +630,6 @@ class Environment(object):
             attachments: Optional[Iterable[Attachment]] = None,
             **kwargs: Any,
         ):
-            print(f"add_message [{role}]: {message}")
-
             return hub_client.beta.threads.messages.create(
                 thread_id=self._thread_id,
                 role=role,  # type: ignore

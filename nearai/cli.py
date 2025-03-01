@@ -22,7 +22,7 @@ from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
 from nearai.banners import NEAR_AI_BANNER
-from nearai.cli_helpers import display_agents_in_columns
+from nearai.cli_helpers import display_agents_in_columns, has_pending_input
 from nearai.config import (
     CONFIG,
     get_hub_client,
@@ -571,7 +571,11 @@ class AgentCli:
 
         last_message_id = None
         print(f"\n=== Starting interactive session with agent: {agent_id} ===")
-        print("Type 'exit' to end the session\n")
+        print("")
+        print("Type 'exit' to end the session")
+        print("On Linux/macOS: Press Ctrl+D at the beginning of a new line after the prompt")
+        print("On Windows: Press Ctrl+Z followed by Enter")
+        print("")
 
         metadata = get_metadata(agent_path, local)
         title = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("title")
@@ -582,9 +586,21 @@ class AgentCli:
             print(description)
 
         while True:
-            new_message = input("> ")
-            if new_message.lower() == "exit":
+            first_line = input("> ")
+            if first_line.lower() == "exit":
                 break
+            lines = [first_line]
+            try:
+                pending_input_on_prev_line = False
+                while True:
+                    pending_input_on_this_line = has_pending_input()
+                    line = input("") if (pending_input_on_prev_line or pending_input_on_this_line) else input("> ")
+                    lines.append(line)
+                    pending_input_on_prev_line = pending_input_on_this_line
+            except EOFError:
+                print("")
+
+            new_message = "\n".join(lines)
 
             last_message_id = self._task(
                 agent=agent_id,
