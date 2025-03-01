@@ -114,7 +114,8 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = localhost
+DNS.1 = cvm.near.ai
+DNS.2 = localhost
 IP.1 = 127.0.0.1
 """
 

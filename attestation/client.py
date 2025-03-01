@@ -77,6 +77,8 @@ class CvmClient:
             if not verified:
                 raise Exception("Quote verification failed")
 
+            print("Verification result\n", verified)
+
             verified = json.loads(verified)
             if verified["report"]["TD10"]["report_data"] != report_data:
                 raise Exception("Report data mismatch")

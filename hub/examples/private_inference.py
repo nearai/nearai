@@ -20,4 +20,6 @@ chat_completion = client.chat.completions.create(
     stop=["<|eot_id|>", "<|start_header_id|>"]
 )
 
+print(f"\n\n{chat_completion.choices[0].message.content}\n\n")
+
 print(chat_completion)
