@@ -833,6 +833,74 @@ run(env)
         console.print("\n")
         console.print(commands_panel)
         console.print("\n")
+        
+        # Add next steps menu
+        next_steps_panel = Panel(
+            "What would you like to do next?",
+            title="Next Steps",
+            border_style="blue",
+        )
+        console.print(next_steps_panel)
+        console.print("\n")
+        
+        # Display options
+        options = [
+            "Upload agent to registry",
+            "Run agent",
+            "Code agent (open in editor)",
+            "Exit"
+        ]
+        
+        for idx, option in enumerate(options, 1):
+            console.print(f"[bold blue]{idx}.[/bold blue] {option}")
+        
+        # Get user choice
+        while True:
+            try:
+                choice = int(Prompt.ask("\n[bold]Choose an option", default="4")) - 1
+                if 0 <= choice < len(options):
+                    break
+                console.print("[red]Invalid choice. Please try again.")
+            except ValueError:
+                console.print("[red]Please enter a valid number.")
+        
+        # Handle user choice
+        if choice == 0:  # Upload agent
+            console.print("\n[green]Uploading agent to registry...[/green]")
+            try:
+                registry.upload(agent_path, show_progress=True)
+                console.print("[green bold]✓ Agent uploaded successfully![/green bold]")
+            except Exception as e:
+                console.print(f"[red bold]✗ Error uploading agent: {str(e)}[/red bold]")
+                
+        elif choice == 1:  # Run agent
+            console.print("\n[green]Running agent...[/green]")
+            try:
+                self.interactive(str(agent_path), local=True)
+            except Exception as e:
+                console.print(f"[red bold]✗ Error running agent: {str(e)}[/red bold]")
+                
+        elif choice == 2:  # Open in editor
+            console.print("\n[green]Opening agent directory...[/green]")
+            try:
+                import subprocess
+                import platform
+                
+                system = platform.system()
+                if system == "Windows":
+                    subprocess.run(["explorer", str(agent_path)], check=False)
+                elif system == "Darwin":  # macOS
+                    subprocess.run(["open", str(agent_path)], check=False)
+                elif system == "Linux":
+                    subprocess.run(["xdg-open", str(agent_path)], check=False)
+                else:
+                    console.print(f"[yellow]Cannot automatically open directory on {system}.[/yellow]")
+                    console.print(f"[yellow]Your agent is located at: {agent_path}[/yellow]")
+                
+                console.print("[green bold]✓ Agent directory opened![/green bold]")
+            except Exception as e:
+                console.print(f"[red bold]✗ Error opening directory: {str(e)}[/red bold]")
+                console.print(f"[yellow]Your agent is located at: {agent_path}[/yellow]")
 
     def _fork_agent(self, fork: str, namespace: str, new_name: Optional[str]) -> None:
         """Fork an existing agent."""
