@@ -27,6 +27,7 @@ def prompt_agent_details() -> Tuple[str, str, str, str]:
 
     # Get namespace from CONFIG, with null check
     from nearai.config import CONFIG
+
     if CONFIG.auth is None:
         raise ValueError("Not logged in. Please run 'nearai login' first.")
     namespace = CONFIG.auth.namespace
@@ -236,12 +237,7 @@ def display_success_and_options(agent_path: Path) -> None:
     console.print("\n")
 
     # Create next steps options with proper markup
-    options = [
-        "Upload agent to NEAR AI registry 🚀",
-        "Run agent 💬",
-        "Open agent code in editor 🧑‍💻",
-        "Exit 👋"
-    ]
+    options = ["Upload agent to NEAR AI registry 🚀", "Run agent 💬", "Open agent code in editor 🧑‍💻", "Exit 👋"]
 
     # Create the panel with direct markup
     next_steps_panel = Panel(
@@ -296,6 +292,7 @@ def display_success_and_options(agent_path: Path) -> None:
             console.print("\n[green]Running agent...[/green]")
             try:
                 from nearai.cli import AgentCli
+
                 agent_cli = AgentCli()
                 agent_cli.interactive(str(agent_path), local=True)
                 break  # Exit after running agent
