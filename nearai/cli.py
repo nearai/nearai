@@ -10,18 +10,14 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from textwrap import fill
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import fire
 from openai.types.beta.threads.message import Attachment
-from rich.console import Console
-from rich.panel import Panel
-from rich.prompt import Confirm, Prompt
-from rich.text import Text
+from rich.prompt import Prompt
 from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
-from nearai.banners import NEAR_AI_BANNER
 from nearai.cli_helpers import display_agents_in_columns
 from nearai.config import (
     CONFIG,

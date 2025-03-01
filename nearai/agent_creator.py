@@ -1,11 +1,10 @@
-import os
 import json
+import platform
 import re
 import shutil
-import platform
 import subprocess
 from pathlib import Path
-from typing import Dict, Any, Tuple, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from rich.console import Console
 from rich.panel import Panel
@@ -125,7 +124,7 @@ def prompt_agent_details() -> Tuple[str, str, str, str]:
     if not Confirm.ask("[bold]Would you like to proceed?", default=True):
         console.print("[red]❌ Agent creation cancelled")
         raise SystemExit(0)
-    
+
     return namespace, name, description, init_instructions
 
 
@@ -235,7 +234,7 @@ def display_success_and_options(agent_path: Path) -> None:
     console.print("\n")
     console.print(commands_panel)
     console.print("\n")
-    
+
     # Create next steps options with proper markup
     options = [
         "Upload agent to NEAR AI registry 🚀",
@@ -243,7 +242,7 @@ def display_success_and_options(agent_path: Path) -> None:
         "Open agent code in editor 🧑‍💻",
         "Exit 👋"
     ]
-    
+
     # Create the panel with direct markup
     next_steps_panel = Panel(
         f"""[bold blue]What would you like to do next?[/bold blue]
@@ -257,7 +256,7 @@ def display_success_and_options(agent_path: Path) -> None:
     )
     console.print(next_steps_panel)
     console.print("\n")
-    
+
     # Main options loop
     while True:
         try:
@@ -268,31 +267,31 @@ def display_success_and_options(agent_path: Path) -> None:
         except ValueError:
             console.print("[red]Please enter a valid number.")
             continue
-        
+
         # Exit option
         if choice == 3:  # Exit
             break
-            
+
         # Handle user choice
         if choice == 0:  # Upload agent
             console.print("\n[green]Uploading agent to registry...[/green]")
             try:
                 registry.upload(agent_path, show_progress=True)
                 console.print("[green bold]✓ Agent uploaded successfully![/green bold]\n")
-                
+
                 # Extract namespace and name from agent_path
                 namespace = agent_path.parts[-3]
                 agent_name = agent_path.parts[-2]
-                
+
                 # Generate and display link to the agent
                 agent_url = f"https://app.near.ai/agents/{namespace}/{agent_name}/latest"
                 console.print("[yellow]View your agent in the NEAR AI Developer Hub:[/yellow]")
                 console.print(f"[link={agent_url}]{agent_url}[/link]\n")
-                
+
                 break  # Exit after successful upload
             except Exception as e:
                 console.print(f"[red bold]✗ Error uploading agent: {str(e)}[/red bold]\n")
-                
+
         elif choice == 1:  # Run agent
             console.print("\n[green]Running agent...[/green]")
             try:
@@ -302,7 +301,7 @@ def display_success_and_options(agent_path: Path) -> None:
                 break  # Exit after running agent
             except Exception as e:
                 console.print(f"[red bold]✗ Error running agent: {str(e)}[/red bold]\n")
-                
+
         elif choice == 2:  # Code agent
             console.print("\n[green]Attempting to open agent in a code editor...[/green]")
             try:
@@ -313,7 +312,7 @@ def display_success_and_options(agent_path: Path) -> None:
                     ("Atom", "atom"),
                     ("IntelliJ IDEA", "idea"),
                 ]
-                
+
                 # Try each editor
                 editor_found = False
                 for editor_name, command in editors:
@@ -323,13 +322,13 @@ def display_success_and_options(agent_path: Path) -> None:
                         console.print(f"[green bold]✓ Agent opened in {editor_name}![/green bold]\n")
                         editor_found = True
                         break
-                
+
                 # If no code editor found, try opening in file explorer
                 if not editor_found:
                     console.print("[yellow]Could not find any common code editors. Trying file explorer...[/yellow]")
                     system = platform.system()
                     explorer_opened = False
-                    
+
                     if system == "Windows":
                         subprocess.run(["explorer", str(agent_path)], check=False)
                         explorer_opened = True
@@ -339,14 +338,14 @@ def display_success_and_options(agent_path: Path) -> None:
                     elif system == "Linux":
                         subprocess.run(["xdg-open", str(agent_path)], check=False)
                         explorer_opened = True
-                    
+
                     if explorer_opened:
                         console.print("[green bold]✓ Agent directory opened in file explorer![/green bold]\n")
                     else:
                         console.print("[yellow]Could not open directory automatically.[/yellow]")
                         console.print("[yellow]Your agent is located at:[/yellow]")
                         console.print(f"[bold cyan]{agent_path}[/bold cyan]\n")
-                
+
                 break  # Exit after attempt
             except Exception as e:
                 console.print(f"[red bold]✗ Error opening agent: {str(e)}[/red bold]")
@@ -356,6 +355,7 @@ def display_success_and_options(agent_path: Path) -> None:
 def fork_agent(fork: str, namespace: str, new_name: Optional[str]) -> None:
     """Fork an existing agent."""
     import shutil
+
     from nearai.registry import parse_location
 
     # Parse the fork parameter
@@ -406,6 +406,6 @@ def fork_agent(fork: str, namespace: str, new_name: Optional[str]) -> None:
 
     print(f"\nForked agent '{agent_location}' to '{dest_path}'")
     print(f"Agent '{new_name}' created at '{dest_path}' with updated metadata.")
-    
+
     # Display success and interactive options
-    display_success_and_options(dest_path) 
+    display_success_and_options(dest_path)
