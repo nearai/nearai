@@ -303,6 +303,7 @@ class Registry:
 
         all_files = []
         total_size = 0
+        num_files_ignored = 0
 
         # Traverse all files in the directory `path`
         for file in path.rglob("*"):
@@ -310,34 +311,46 @@ class Registry:
                 continue
 
             relative = file.relative_to(path)
+            ignore_file = False
 
             # Don't upload metadata file.
             if file == metadata_path:
-                continue
+                ignore_file = True
 
             # Don't upload backup files.
-            if file.name.endswith("~"):
-                continue
+            if not ignore_file and file.name.endswith("~"):
+                ignore_file = True
 
             # Don't upload configuration files.
-            if relative.parts[0] == ".nearai":
-                continue
+            if not ignore_file and relative.parts[0] == ".nearai":
+                ignore_file = True
 
             # Don't upload files in __pycache__
-            if "__pycache__" in relative.parts:
-                continue
+            if not ignore_file and "__pycache__" in relative.parts:
+                ignore_file = True
 
             # Check if file matches gitignore patterns
-            if gitignore_spec is not None:
+            if not ignore_file and gitignore_spec is not None:
                 rel_str = str(relative).replace("\\", "/")
                 if gitignore_spec.match_file(rel_str):
-                    continue
+                    ignore_file = True
+
+            if ignore_file:
+                num_files_ignored += 1
+                continue
 
             size = file.stat().st_size
             total_size += size
 
             all_files.append((file, relative, size))
+
+        if num_files_ignored > 0:
+            print(f"{num_files_ignored} files are filtered out and will not be uploaded.\n")
+
+        print("Files to be uploaded:")
+        for _file, relative, _size in all_files:
             print(f"U   {relative}")
+        print("")
 
         pbar = tqdm(total=total_size, unit="B", unit_scale=True, disable=not show_progress)
         for file, relative, size in all_files:
