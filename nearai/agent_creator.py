@@ -279,6 +279,16 @@ def display_success_and_options(agent_path: Path) -> None:
             try:
                 registry.upload(agent_path, show_progress=True)
                 console.print("[green bold]✓ Agent uploaded successfully![/green bold]\n")
+                
+                # Extract namespace and name from agent_path
+                namespace = agent_path.parts[-3]
+                agent_name = agent_path.parts[-2]
+                
+                # Generate and display link to the agent
+                agent_url = f"https://app.near.ai/agents/{namespace}/{agent_name}/latest"
+                console.print("[yellow]View your agent in the NEAR AI Developer Hub:[/yellow]")
+                console.print(f"[link={agent_url}]{agent_url}[/link]\n")
+                
                 break  # Exit after successful upload
             except Exception as e:
                 console.print(f"[red bold]✗ Error uploading agent: {str(e)}[/red bold]\n")
