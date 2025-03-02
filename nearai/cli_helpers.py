@@ -70,15 +70,8 @@ def increment_version(version_str: str) -> str:
 
     """
     try:
-        # Parse version components
-        parts = version_str.split(".")
-        if len(parts) < 3:
-            parts = parts + ["0"] * (3 - len(parts))  # Ensure at least 3 parts
-
-        # Increment patch version
-        parts[2] = str(int(parts[2]) + 1)
-        return ".".join(parts)
-    except (ValueError, IndexError):
+        return increment_version_by_type(version_str, "patch")
+    except ValueError:
         # If version doesn't follow semver, append .1
         return f"{version_str}.1"
 
@@ -147,3 +140,52 @@ def check_version_exists(namespace: str, name: str, version: str) -> Tuple[bool,
         if "not found" in str(e).lower() or "does not exist" in str(e).lower():
             return False, None
         return False, f"Error checking registry: {str(e)}"
+
+
+def increment_version_by_type(version_str: str, increment_type: str = "patch") -> str:
+    """Increment a version string based on the specified increment type.
+
+    Args:
+    ----
+        version_str: The version string to increment
+        increment_type: Type of increment: 'patch', 'minor', or 'major'
+
+    Returns:
+    -------
+        The incremented version string
+
+    Raises:
+    ------
+        ValueError: If increment_type is not one of 'patch', 'minor', 'major'
+
+    """
+    if increment_type not in ["patch", "minor", "major"]:
+        raise ValueError(f"Invalid increment type: {increment_type}")
+
+    # Parse version components
+    parts = version_str.split(".")
+
+    # Ensure we have at least 3 parts (major.minor.patch)
+    while len(parts) < 3:
+        parts.append("0")
+
+    # Convert to integers
+    try:
+        major, minor, patch = int(parts[0]), int(parts[1]), int(parts[2])
+    except ValueError as err:
+        # Properly chain the exception with the original error
+        raise ValueError(f"Invalid version format: {version_str}. Expected semver format (e.g., 1.2.3)") from err
+
+    # Increment based on type
+    if increment_type == "patch":
+        patch += 1
+    elif increment_type == "minor":
+        minor += 1
+        patch = 0
+    elif increment_type == "major":
+        major += 1
+        minor = 0
+        patch = 0
+
+    # Reconstruct version string
+    return f"{major}.{minor}.{patch}"

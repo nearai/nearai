@@ -220,3 +220,51 @@ class TestRegistryCliUpload:
             captured = capsys.readouterr()
             assert "Auto-incrementing to" in captured.out
             assert "Updated" in captured.out
+
+    def test_update_version(self, mock_registry, mock_config, tmp_path, capsys):
+        """Test updating version in metadata.json."""
+        # Create a metadata.json file for testing
+        metadata = {"name": "test-agent", "version": "1.2.3"}
+        metadata_path = tmp_path / "metadata.json"
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f)
+
+        # Test patch increment (default)
+        cli = RegistryCli()
+        result = cli.update(str(tmp_path))
+
+        # Assertions
+        assert result is True
+        captured = capsys.readouterr()
+        assert "Version: 1.2.3 → 1.2.4" in captured.out
+
+        # Verify metadata was updated
+        with open(metadata_path, "r") as f:
+            updated_metadata = json.load(f)
+            assert updated_metadata["version"] == "1.2.4"
+
+        # Test minor increment
+        result = cli.update(str(tmp_path), increment_type="minor")
+
+        # Assertions
+        assert result is True
+        captured = capsys.readouterr()
+        assert "Version: 1.2.4 → 1.3.0" in captured.out
+
+        # Verify metadata was updated
+        with open(metadata_path, "r") as f:
+            updated_metadata = json.load(f)
+            assert updated_metadata["version"] == "1.3.0"
+
+        # Test major increment
+        result = cli.update(str(tmp_path), increment_type="major")
+
+        # Assertions
+        assert result is True
+        captured = capsys.readouterr()
+        assert "Version: 1.3.0 → 2.0.0" in captured.out
+
+        # Verify metadata was updated
+        with open(metadata_path, "r") as f:
+            updated_metadata = json.load(f)
+            assert updated_metadata["version"] == "2.0.0"

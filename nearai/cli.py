@@ -26,6 +26,7 @@ from nearai.cli_helpers import (
     check_version_exists,
     display_agents_in_columns,
     increment_version,
+    increment_version_by_type,
     load_and_validate_metadata,
 )
 from nearai.config import (
@@ -34,9 +35,9 @@ from nearai.config import (
     update_config,
 )
 from nearai.finetune import FinetuneCli
-from nearai.lib import check_metadata_present, parse_location, parse_tags
+from nearai.lib import parse_location, parse_tags
 from nearai.log import LogCLI
-from nearai.openapi_client import EntryLocation, EntryMetadataInput
+from nearai.openapi_client import EntryLocation
 from nearai.openapi_client.api.benchmark_api import BenchmarkApi
 from nearai.openapi_client.api.default_api import DefaultApi
 from nearai.openapi_client.api.delegation_api import DelegationApi
@@ -183,34 +184,54 @@ class RegistryCli:
                     f"There are unregistered common provider models: {unregistered_common_provider_models}. Run 'nearai registry upload-unregistered-common-provider-models' to update registry."  # noqa: E501
                 )
 
-    def update(self, local_path: str = ".") -> None:
-        """Update metadata of a registry item."""
+    def update(self, local_path: str = ".", increment_type: str = "patch") -> bool:
+        """Update the version in metadata.json file.
+
+        Args:
+        ----
+            local_path: Path to the directory containing the agent to update
+            increment_type: Type of version increment: 'patch', 'minor', or 'major'
+
+        Returns:
+        -------
+            True if update was successful, False otherwise
+
+        """
         path = resolve_local_path(Path(local_path))
-
-        if CONFIG.auth is None:
-            print("Please login with `nearai login`")
-            exit(1)
-
         metadata_path = path / "metadata.json"
-        check_metadata_present(metadata_path)
 
-        with open(metadata_path) as f:
-            metadata: Dict[str, Any] = json.load(f)
+        # Load and validate metadata
+        metadata, error = load_and_validate_metadata(metadata_path)
+        if error:
+            print(error)
+            return False
 
-        namespace = CONFIG.auth.namespace
+        # At this point, metadata is guaranteed to be not None
+        assert metadata is not None, "Metadata should not be None if error is None"
 
-        entry_location = EntryLocation.model_validate(
-            dict(
-                namespace=namespace,
-                name=metadata.pop("name"),
-                version=metadata.pop("version"),
-            )
-        )
-        assert " " not in entry_location.name
+        # Get current version
+        current_version = metadata["version"]
 
-        entry_metadata = EntryMetadataInput.model_validate(metadata)
-        result = registry.update(entry_location, entry_metadata)
-        print(json.dumps(result, indent=2))
+        # Increment version based on increment_type
+        try:
+            new_version = increment_version_by_type(current_version, increment_type)
+        except ValueError as e:
+            print(f"Error: {str(e)}")
+            print("Valid increment types are: 'patch', 'minor', 'major'")
+            return False
+
+        # Update metadata.json with new version
+        metadata["version"] = new_version
+        try:
+            with open(metadata_path, "w") as f:
+                json.dump(metadata, f, indent=2)
+
+            print(f"Updated {metadata_path}")
+            print(f"Version: {current_version} → {new_version}")
+            return True
+        except Exception as e:
+            print(f"Error updating metadata.json: {str(e)}")
+            return False
 
     def upload_unregistered_common_provider_models(self, dry_run: bool = True) -> None:
         """Creates new registry items for unregistered common provider models."""
@@ -1071,6 +1092,65 @@ run(env)
             console.print("[red]❌ Agent creation cancelled")
             sys.exit(0)
         return namespace, name, description, init_instructions
+
+    def update(self, local_path: str = ".", minor: bool = False, major: bool = False) -> bool:
+        """Update the version in an agent's metadata.json file.
+
+        Args:
+        ----
+            local_path: Path to the directory containing the agent to update
+            minor: If True, increment the minor version (0.1.0 -> 0.2.0)
+            major: If True, increment the major version (0.1.0 -> 1.0.0)
+
+        Returns:
+        -------
+            True if update was successful, False otherwise
+
+        """
+        from nearai.cli_helpers import increment_version_by_type, load_and_validate_metadata
+
+        # Determine increment type based on flags
+        if major:
+            increment_type = "major"
+        elif minor:
+            increment_type = "minor"
+        else:
+            increment_type = "patch"  # Default
+
+        path = resolve_local_path(Path(local_path))
+        metadata_path = path / "metadata.json"
+
+        # Load and validate metadata
+        metadata, error = load_and_validate_metadata(metadata_path)
+        if error:
+            print(error)
+            return False
+
+        # At this point, metadata is guaranteed to be not None
+        assert metadata is not None, "Metadata should not be None if error is None"
+
+        # Get current version
+        current_version = metadata["version"]
+
+        # Increment version based on increment_type
+        try:
+            new_version = increment_version_by_type(current_version, increment_type)
+        except ValueError as e:
+            print(f"Error: {str(e)}")
+            return False
+
+        # Update metadata.json with new version
+        metadata["version"] = new_version
+        try:
+            with open(metadata_path, "w") as f:
+                json.dump(metadata, f, indent=2)
+
+            print(f"Updated {metadata_path}")
+            print(f"Version: {current_version} → {new_version}")
+            return True
+        except Exception as e:
+            print(f"Error updating metadata.json: {str(e)}")
+            return False
 
 
 class VllmCli:
