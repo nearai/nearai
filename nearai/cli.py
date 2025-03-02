@@ -328,7 +328,7 @@ class RegistryCli:
                     print(f"\nError: Version {version} already exists in the registry.")
                     print("\nTo upload a new version:")
                     print(f"1. Edit {metadata_path}")
-                    print("2. Update the \"version\" field (e.g., increment from \"0.0.1\" to \"0.0.2\")")
+                    print('2. Update the "version" field (e.g., increment from "0.0.1" to "0.0.2")')
                     print("3. Try uploading again")
                     print("\nOr use --auto-increment to automatically increment the version\n")
                     return None

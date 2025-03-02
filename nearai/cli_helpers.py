@@ -71,13 +71,13 @@ def increment_version(version_str: str) -> str:
     """
     try:
         # Parse version components
-        parts = version_str.split('.')
+        parts = version_str.split(".")
         if len(parts) < 3:
-            parts = parts + ['0'] * (3 - len(parts))  # Ensure at least 3 parts
+            parts = parts + ["0"] * (3 - len(parts))  # Ensure at least 3 parts
 
         # Increment patch version
         parts[2] = str(int(parts[2]) + 1)
-        return '.'.join(parts)
+        return ".".join(parts)
     except (ValueError, IndexError):
         # If version doesn't follow semver, append .1
         return f"{version_str}.1"

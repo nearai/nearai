@@ -11,14 +11,14 @@ from nearai.openapi_client import EntryLocation
 @pytest.fixture
 def mock_registry():
     """Mock the registry module."""
-    with patch('nearai.cli.registry') as mock_reg:
+    with patch("nearai.cli.registry") as mock_reg:
         yield mock_reg
 
 
 @pytest.fixture
 def mock_config():
     """Mock the CONFIG with auth data."""
-    with patch('nearai.cli.CONFIG') as mock_conf:
+    with patch("nearai.cli.CONFIG") as mock_conf:
         mock_conf.auth = MagicMock()
         mock_conf.auth.namespace = "test-namespace"
         yield mock_conf
@@ -31,20 +31,15 @@ def temp_agent_dir(tmp_path):
     agent_dir.mkdir(parents=True)
 
     # Create metadata.json
-    metadata = {
-        "name": "test-agent",
-        "version": "0.0.1",
-        "description": "Test agent",
-        "category": "agent"
-    }
+    metadata = {"name": "test-agent", "version": "0.0.1", "description": "Test agent", "category": "agent"}
 
     metadata_path = agent_dir / "metadata.json"
-    with open(metadata_path, 'w') as f:
+    with open(metadata_path, "w") as f:
         json.dump(metadata, f)
 
     # Create agent.py
     agent_path = agent_dir / "agent.py"
-    with open(agent_path, 'w') as f:
+    with open(agent_path, "w") as f:
         f.write("# Test agent")
 
     return agent_dir
@@ -56,9 +51,10 @@ class TestRegistryCliUpload:
     def test_successful_upload(self, mock_registry, mock_config, tmp_path):
         """Test successful upload when version doesn't exist."""
         # Mock the helper functions
-        with patch('nearai.cli.load_and_validate_metadata') as mock_load_metadata, \
-             patch('nearai.cli.check_version_exists') as mock_check_version:
-
+        with (
+            patch("nearai.cli.load_and_validate_metadata") as mock_load_metadata,
+            patch("nearai.cli.check_version_exists") as mock_check_version,
+        ):
             # Setup mocks
             mock_load_metadata.return_value = ({"name": "test-agent", "version": "0.0.1"}, None)
             mock_check_version.return_value = (False, None)
@@ -78,9 +74,10 @@ class TestRegistryCliUpload:
     def test_version_already_exists(self, mock_registry, mock_config, tmp_path, capsys):
         """Test upload failure when version already exists."""
         # Mock the helper functions
-        with patch('nearai.cli.load_and_validate_metadata') as mock_load_metadata, \
-             patch('nearai.cli.check_version_exists') as mock_check_version:
-
+        with (
+            patch("nearai.cli.load_and_validate_metadata") as mock_load_metadata,
+            patch("nearai.cli.check_version_exists") as mock_check_version,
+        ):
             # Setup mocks
             mock_load_metadata.return_value = ({"name": "test-agent", "version": "0.0.1"}, None)
             mock_check_version.return_value = (True, None)
@@ -99,8 +96,7 @@ class TestRegistryCliUpload:
     def test_metadata_file_not_found(self, mock_registry, mock_config, tmp_path, capsys):
         """Test upload failure when metadata.json is missing."""
         # Mock the helper function
-        with patch('nearai.cli.load_and_validate_metadata') as mock_load_metadata:
-
+        with patch("nearai.cli.load_and_validate_metadata") as mock_load_metadata:
             # Setup mock
             mock_load_metadata.return_value = (None, "Error: metadata.json not found")
 
@@ -117,8 +113,7 @@ class TestRegistryCliUpload:
     def test_invalid_json_metadata(self, mock_registry, mock_config, tmp_path, capsys):
         """Test upload failure when metadata.json is not valid JSON."""
         # Mock the helper function
-        with patch('nearai.cli.load_and_validate_metadata') as mock_load_metadata:
-
+        with patch("nearai.cli.load_and_validate_metadata") as mock_load_metadata:
             # Setup mock
             mock_load_metadata.return_value = (None, "Error: metadata.json is not a valid JSON file")
 
@@ -135,8 +130,7 @@ class TestRegistryCliUpload:
     def test_missing_required_fields(self, mock_registry, mock_config, tmp_path, capsys):
         """Test upload failure when required fields are missing in metadata.json."""
         # Mock the helper function
-        with patch('nearai.cli.load_and_validate_metadata') as mock_load_metadata:
-
+        with patch("nearai.cli.load_and_validate_metadata") as mock_load_metadata:
             # Setup mock
             mock_load_metadata.return_value = (None, "Error: metadata.json must contain 'name' and 'version' fields")
 
@@ -153,8 +147,7 @@ class TestRegistryCliUpload:
     def test_not_logged_in(self, mock_registry, mock_config, tmp_path, capsys):
         """Test upload failure when user is not logged in."""
         # Mock the helper function
-        with patch('nearai.cli.load_and_validate_metadata') as mock_load_metadata:
-
+        with patch("nearai.cli.load_and_validate_metadata") as mock_load_metadata:
             # Setup mock
             mock_load_metadata.return_value = (None, "Please login with `nearai login` before uploading")
 
@@ -171,9 +164,10 @@ class TestRegistryCliUpload:
     def test_other_registry_error(self, mock_registry, mock_config, tmp_path, capsys):
         """Test upload failure when an unexpected error occurs during registry info check."""
         # Mock the helper functions
-        with patch('nearai.cli.load_and_validate_metadata') as mock_load_metadata, \
-             patch('nearai.cli.check_version_exists') as mock_check_version:
-
+        with (
+            patch("nearai.cli.load_and_validate_metadata") as mock_load_metadata,
+            patch("nearai.cli.check_version_exists") as mock_check_version,
+        ):
             # Setup mocks
             mock_load_metadata.return_value = ({"name": "test-agent", "version": "0.0.1"}, None)
             mock_check_version.return_value = (False, "Error checking registry: Connection failed")
@@ -197,10 +191,11 @@ class TestRegistryCliUpload:
             json.dump(metadata, f)
 
         # Mock the helper functions
-        with patch('nearai.cli.load_and_validate_metadata') as mock_load_metadata, \
-             patch('nearai.cli.check_version_exists') as mock_check_version, \
-             patch('nearai.cli.increment_version', wraps=increment_version) as mock_increment:
-
+        with (
+            patch("nearai.cli.load_and_validate_metadata") as mock_load_metadata,
+            patch("nearai.cli.check_version_exists") as mock_check_version,
+            patch("nearai.cli.increment_version", wraps=increment_version) as mock_increment,
+        ):
             # Setup mocks for first check (version exists) and second check (new version doesn't exist)
             mock_load_metadata.return_value = (metadata, None)
             mock_check_version.side_effect = [(True, None), (False, None)]
