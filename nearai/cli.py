@@ -285,8 +285,17 @@ class RegistryCli:
             print(error)
             return None
 
+        # At this point, metadata is guaranteed to be not None
+        assert metadata is not None, "Metadata should not be None if error is None"
+
         name = metadata["name"]
         version = metadata["version"]
+
+        # Get namespace from auth
+        if CONFIG.auth is None or CONFIG.auth.namespace is None:
+            print("Please login with `nearai login` before uploading")
+            return None
+
         namespace = CONFIG.auth.namespace
 
         # Try to upload, handle version conflict
@@ -1221,9 +1230,16 @@ class CLI:
 
         try:
             client = JobsApi()
+            entry_location_value = location
+            if entry_location_value is None:
+                print("Error: Failed to get entry location")
+                return
+
+            # Now we know entry_location_value is not None
+            result = BodyAddJobV1JobsAddJobPost(entry_location=entry_location_value)
             client.add_job_v1_jobs_add_job_post(
                 worker_kind_t,
-                BodyAddJobV1JobsAddJobPost(entry_location=location),
+                result,
             )
         except Exception as e:
             print("Error: ", e)
