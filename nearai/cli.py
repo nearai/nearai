@@ -258,9 +258,59 @@ class RegistryCli:
             for path in paths:
                 self.upload(str(path))
 
-    def upload(self, local_path: str = ".") -> EntryLocation:
+    def upload(self, local_path: str = ".") -> Optional[EntryLocation]:
         """Upload item to the registry."""
-        return registry.upload(resolve_local_path(Path(local_path)), show_progress=True)
+        path = resolve_local_path(Path(local_path))
+        
+        # Check if metadata.json exists
+        metadata_path = path / "metadata.json"
+        if not metadata_path.exists():
+            print(f"Error: metadata.json not found in {path}")
+            return None
+            
+        # Read metadata to get namespace, name and version
+        try:
+            with open(metadata_path, "r") as f:
+                metadata = json.load(f)
+                
+            name = metadata.get("name")
+            version = metadata.get("version")
+            
+            if not name or not version:
+                print("Error: metadata.json must contain 'name' and 'version' fields")
+                return None
+                
+            # Get namespace from auth
+            if CONFIG.auth is None or CONFIG.auth.namespace is None:
+                print("Please login with `nearai login` before uploading")
+                return None
+                
+            namespace = CONFIG.auth.namespace
+            
+            # Check if this version already exists in the registry
+            entry_location = f"{namespace}/{name}/{version}"
+            try:
+                existing_entry = registry.info(parse_location(entry_location))
+                
+                if existing_entry:
+                    print(f"\nError: Version {version} already exists in the registry.")
+                    print("\nTo upload a new version:")
+                    print(f"1. Edit {metadata_path}")
+                    print("2. Update the \"version\" field (e.g., increment from \"0.0.1\" to \"0.0.2\")")
+                    print("3. Try uploading again")
+                    return None
+            except Exception as e:
+                # Only proceed if the error indicates the entry doesn't exist
+                if "not found" not in str(e).lower() and "does not exist" not in str(e).lower():
+                    # If it's some other error or the entry exists, print and return
+                    print(f"Error checking registry: {str(e)}")
+                    return None
+            
+            # Proceed with upload
+            return registry.upload(path, show_progress=True)
+        except json.JSONDecodeError:
+            print(f"Error: {metadata_path} is not a valid JSON file")
+            return None
 
     def download(self, entry_location: str, force: bool = False) -> None:
         """Download item."""
