@@ -19,6 +19,9 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.text import Text
 from tabulate import tabulate
+from rich.table import Table
+from rich.columns import Columns
+from rich.box import ROUNDED
 
 from nearai.agents.local_runner import LocalRunner
 from nearai.banners import NEAR_AI_BANNER
@@ -1175,6 +1178,119 @@ class CLI:
         """CLI command for running a single task."""
         self.agent.task_cli(*args, **kwargs)
 
+    def __help__(self) -> None:
+        """Display help information about the NEAR AI CLI."""
+        console = Console()
+        version = importlib.metadata.version("nearai")
+        
+        # Header with logo and version
+        console.print(NEAR_AI_BANNER)
+        console.print(f"[bold cyan]NEAR AI CLI[/bold cyan] [dim]v{version}[/dim]\n")
+        
+        # Main description
+        console.print(Panel(
+            "NEAR AI is a powerful tool for building and deploying user-owned AI agents.\n"
+            "Use the commands below to get started or add [bold]--help[/bold] to any command for more information.",
+            title="About",
+            border_style="blue",
+            expand=False
+        ))
+        
+        # Create command categories
+        categories = {
+            "Getting Started": [
+                ("login", "Authenticate with your NEAR account"),
+                ("logout", "Clear your NEAR account authentication data"),
+                ("version", "Display the current version of the CLI"),
+                ("location", "Show the installation location of the CLI"),
+            ],
+            "Agent Development": [
+                ("agent create", "Create a new agent or fork an existing one"),
+                ("agent update", "Update the version in an agent's metadata.json file"),
+                ("agent upload", "Upload an agent to the NEAR AI agent registry"),
+                ("agent interactive", "Run an agent interactively"),
+                ("agent task", "Run a single task with an agent"),
+                ("agent dev", "Run local UI for development of agents"),
+                ("agent inspect", "Inspect environment from given path"),
+            ],
+            "Registry Management": [
+                ("registry upload", "Upload an item to the registry"),
+                ("registry download", "Download an item from the registry"),
+                ("registry info", "Show information about a registry item"),
+                ("registry list", "List available items in the registry"),
+                ("registry metadata-template", "Create a metadata template"),
+            ],
+            "Configuration": [
+                ("config set", "Set a configuration value"),
+                ("config get", "Get a configuration value"),
+                ("config show", "Show all configuration values"),
+            ],
+            "Advanced Features": [
+                ("benchmark run", "Run benchmark on a dataset with a solver strategy"),
+                ("benchmark list", "List all executed benchmarks"),
+                ("evaluation table", "Print table of evaluations"),
+                ("finetune", "Commands for fine-tuning models"),
+                ("tensorboard", "Commands for TensorBoard integration"),
+                ("vllm run", "Run VLLM server with OpenAI-compatible API"),
+                ("permission grant", "Grant permission to an account"),
+                ("hub chat", "Chat with model from NEAR AI hub"),
+            ],
+        }
+        
+        # Create tables for each category
+        tables = []
+        for category, commands in categories.items():
+            table = Table(title=category, box=ROUNDED, title_style="bold green", expand=False)
+            table.add_column("Command", style="cyan", no_wrap=True)
+            table.add_column("Description", style="white")
+            
+            for cmd, desc in commands:
+                table.add_row(f"nearai {cmd}", desc)
+            
+            tables.append(Panel(table, border_style="green", expand=False))
+        
+        # Display tables in columns or stacked based on terminal width
+        console.print(Columns(tables, equal=True, expand=False))
+        
+        # Examples section
+        examples_table = Table(title="Examples", box=ROUNDED, title_style="bold yellow", expand=False)
+        examples_table.add_column("Command", style="cyan")
+        examples_table.add_column("Description", style="white")
+        
+        examples = [
+            ("nearai login", "Log in with your NEAR account"),
+            ("nearai agent create", "Create a new agent interactively"),
+            ("nearai agent interactive", "Select and run an agent interactively"),
+            ("nearai agent upload path/to/agent", "Upload agent to NEAR AI agent registry"),
+            ("nearai registry list --category agent", "List all agents in the registry"),
+        ]
+        
+        for cmd, desc in examples:
+            examples_table.add_row(cmd, desc)
+        
+        console.print(Panel(examples_table, border_style="yellow", expand=False))
+        
+        # Footer with additional help info - now with blue links
+        resources_text = Text.assemble(
+            ("Documentation: ", "white"),
+            ("https://docs.near.ai", "bold blue underline"),
+            ("\nGet Support: ", "white"),
+            ("https://t.me/nearaialpha", "bold blue underline"),
+            ("\nReport an Issue: ", "white"),
+            ("https://github.com/near/nearai-cli/issues", "bold blue underline")
+        )
+        
+        console.print(Panel(
+            resources_text,
+            title="Additional Resources",
+            border_style="blue",
+            expand=False
+        ))
+
+    def help(self) -> None:
+        """Display help information about the NEAR AI CLI."""
+        self.__help__()
+
 
 def check_update():
     """Check if there is a new version of nearai CLI available."""
@@ -1199,5 +1315,13 @@ def assert_user_auth() -> None:
 
 
 def main() -> None:
+    """Main entry point for the NEAR AI CLI."""
     check_update()
+    
+    # If no arguments are provided, show help
+    if len(sys.argv) == 1:
+        cli = CLI()
+        cli.__help__()
+        return
+        
     fire.Fire(CLI)
