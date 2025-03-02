@@ -996,6 +996,145 @@ run(env)
             sys.exit(0)
         return namespace, name, description, init_instructions
 
+    def __help__(self) -> None:
+        """Display detailed help information for agent commands."""
+        console = Console()
+        
+        # Header
+        console.print("\n[bold cyan]NEAR AI Agent Commands[/bold cyan]\n")
+        
+        # Main description
+        console.print(Panel(
+            "Agent commands help you create, develop, test, and deploy AI agents on the NEAR platform.",
+            title="About Agents",
+            border_style="blue",
+            expand=False
+        ))
+        
+        # Command details in a clean table format
+        commands_table = Table(box=ROUNDED, expand=False)
+        commands_table.add_column("Command", style="cyan bold", no_wrap=True)
+        commands_table.add_column("Description", style="white")
+        commands_table.add_column("Flags", style="dim")
+        
+        commands = [
+            (
+                "create",
+                "Create a new agent or fork an existing one",
+                "--name, --description, --fork"
+            ),
+            (
+                "update",
+                "Update the version in an agent's metadata.json",
+                "--minor, --major"
+            ),
+            (
+                "upload",
+                "Upload an agent to the registry",
+                "--auto-increment"
+            ),
+            (
+                "interactive",
+                "Run an agent interactively",
+                "--agent, --thread-id, --tool-resources, --local, --verbose, --env-vars"
+            ),
+            (
+                "task",
+                "Run a single task with an agent",
+                "agent*, task*, --thread-id, --tool-resources, --file-ids, --local, --verbose, --env-vars"
+            ),
+            (
+                "dev",
+                "Run local UI for agent development",
+                "None"
+            ),
+            (
+                "inspect",
+                "Inspect environment from given path",
+                "path*"
+            ),
+        ]
+        
+        for cmd, desc, flags in commands:
+            commands_table.add_row(f"nearai agent {cmd}", desc, flags)
+        
+        console.print(commands_table)
+        console.print("\n* Required parameter\n")
+        
+        # Detailed flag descriptions
+        console.print("[bold green]Flag Details:[/bold green]\n")
+        
+        flag_details = [
+            ("--name", "Name for the new agent"),
+            ("--description", "Description of the agent"),
+            ("--fork", "Path to an existing agent to fork (format: namespace/name/version)"),
+            ("--agent", "Path to agent directory"),
+            ("--thread-id", "Thread ID to continue an existing conversation"),
+            ("--tool-resources", "Tool resources to pass to the agent"),
+            ("--file-ids", "File IDs to attach to the message"),
+            ("--local", "Run the agent locally instead of on NEAR AI servers"),
+            ("--verbose", "Show detailed debug information during execution"),
+            ("--env-vars", "Environment variables to pass to the agent"),
+        ]
+        
+        flag_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
+        flag_table.add_column(style="yellow")
+        flag_table.add_column(style="white")
+        
+        for flag, desc in flag_details:
+            flag_table.add_row(flag, desc)
+        
+        console.print(flag_table)
+        
+        # Examples section
+        console.print("\n[bold green]Examples:[/bold green]\n")
+        
+        examples = [
+            "# Create a new agent interactively",
+            "nearai agent create",
+            "",
+            "# Create an agent with specific name and description",
+            "nearai agent create --name my-agent --description \"My helpful assistant\"",
+            "",
+            "# Run agent interactively (local)",
+            "nearai agent interactive path/to/agent --local",
+            "",
+            "# Update agent version (patch)",
+            "nearai agent update path/to/agent",
+            "",
+            "# Upload agent to NEAR AI agent registry",
+            "nearai agent upload path/to/agent"
+        ]
+        
+        for example in examples:
+            if example.startswith("#"):
+                console.print(f"[dim]{example}[/dim]")
+            elif example:
+                console.print(f"[cyan]{example}[/cyan]")
+            else:
+                console.print("")
+        
+        # Workflow section
+        workflow_panel = Panel(
+            "1. [bold]Create[/bold] an agent with [cyan]nearai agent create[/cyan]\n"
+            "2. [bold]Develop[/bold] your agent by editing the [cyan]agent.py[/cyan] file\n"
+            "3. [bold]Test[/bold] your agent locally with [cyan]nearai agent interactive --local[/cyan]\n"
+            "4. [bold]Upload[/bold] to the registry with [cyan]nearai agent upload[/cyan]\n"
+            "5. [bold]Update[/bold] the version with [cyan]nearai agent update[/cyan]",
+            title="Typical Agent Workflow",
+            border_style="green",
+            expand=False
+        )
+        
+        console.print("\n", workflow_panel)
+        
+        # Footer
+        console.print("\nFor detailed documentation on agents, visit: [bold blue]https://docs.near.ai/agents/quickstart[/bold blue]\n")
+    
+    def __call__(self):
+        """Show help when 'nearai agent' is called without subcommands."""
+        self.__help__()
+
 
 class VllmCli:
     def run(self, *args: Any, **kwargs: Any) -> None:  # noqa: D102
@@ -1323,5 +1462,20 @@ def main() -> None:
         cli = CLI()
         cli.__help__()
         return
+    
+    # Check if help is requested for a specific command
+    if len(sys.argv) >= 2:
+        # Handle "nearai agent --help"
+        if len(sys.argv) == 3 and sys.argv[1] == "agent" and sys.argv[2] == "--help":
+            cli = CLI()
+            cli.agent.__help__()
+            return
         
+        # Handle "nearai --help"
+        if len(sys.argv) == 2 and sys.argv[1] == "--help":
+            cli = CLI()
+            cli.__help__()
+            return
+    
+    # Otherwise, proceed with normal command processing
     fire.Fire(CLI)
