@@ -1152,6 +1152,22 @@ run(env)
             print(f"Error updating metadata.json: {str(e)}")
             return False
 
+    def upload(self, local_path: str = ".", auto_increment: bool = False) -> Optional[EntryLocation]:
+        """Upload agent to the registry.
+        
+        This is an alias for 'nearai registry upload'.
+        
+        Args:
+            local_path: Path to the directory containing the agent to upload
+            auto_increment: If True, automatically increment version if it already exists
+            
+        Returns:
+            EntryLocation if upload was successful, None otherwise
+        """
+        # Create an instance of RegistryCli and call its upload method
+        registry_cli = RegistryCli()
+        return registry_cli.upload(local_path, auto_increment)
+
 
 class VllmCli:
     def run(self, *args: Any, **kwargs: Any) -> None:  # noqa: D102
