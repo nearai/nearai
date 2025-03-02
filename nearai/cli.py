@@ -22,7 +22,7 @@ from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
 from nearai.banners import NEAR_AI_BANNER
-from nearai.cli_helpers import display_agents_in_columns
+from nearai.cli_helpers import display_agents_in_columns, load_and_validate_metadata, check_version_exists, increment_version
 from nearai.config import (
     CONFIG,
     get_hub_client,
@@ -269,100 +269,60 @@ class RegistryCli:
             EntryLocation if upload was successful, None otherwise
         """
         path = resolve_local_path(Path(local_path))
-        
-        # Check if metadata.json exists
         metadata_path = path / "metadata.json"
-        if not metadata_path.exists():
-            print(f"Error: metadata.json not found in {path}")
+        
+        # Load and validate metadata
+        metadata, error = load_and_validate_metadata(metadata_path)
+        if error:
+            print(error)
             return None
+        
+        name = metadata["name"]
+        version = metadata["version"]
+        namespace = CONFIG.auth.namespace
+        
+        # Try to upload, handle version conflict
+        max_attempts = 5  # Prevent infinite loops
+        attempts = 0
+        
+        while attempts < max_attempts:
+            attempts += 1
             
-        # Read metadata to get namespace, name and version
-        try:
-            with open(metadata_path, "r") as f:
-                metadata = json.load(f)
-                
-            name = metadata.get("name")
-            version = metadata.get("version")
-            
-            if not name or not version:
-                print("Error: metadata.json must contain 'name' and 'version' fields")
+            # Check if this version already exists
+            exists, error = check_version_exists(namespace, name, version)
+            if error:
+                print(error)
                 return None
-                
-            # Get namespace from auth
-            if CONFIG.auth is None or CONFIG.auth.namespace is None:
-                print("Please login with `nearai login` before uploading")
-                return None
-                
-            namespace = CONFIG.auth.namespace
             
-            # Function to increment version
-            def increment_version(version_str):
-                """Increment the patch version of a semver string."""
-                try:
-                    # Parse version components
-                    parts = version_str.split('.')
-                    if len(parts) < 3:
-                        parts = parts + ['0'] * (3 - len(parts))  # Ensure at least 3 parts
+            if exists:
+                if auto_increment:
+                    old_version = version
+                    version = increment_version(version)
+                    print(f"Version {old_version} already exists. Auto-incrementing to {version}")
                     
-                    # Increment patch version
-                    parts[2] = str(int(parts[2]) + 1)
-                    return '.'.join(parts)
-                except (ValueError, IndexError):
-                    # If version doesn't follow semver, append .1
-                    return f"{version_str}.1"
-            
-            # Try to upload, handle version conflict
-            max_attempts = 5  # Prevent infinite loops
-            attempts = 0
-            
-            while attempts < max_attempts:
-                attempts += 1
-                
-                # Check if this version already exists in the registry
-                entry_location = f"{namespace}/{name}/{version}"
-                try:
-                    print(f"Checking if version {version} exists in the registry...")
-                    existing_entry = registry.info(parse_location(entry_location))
+                    # Update metadata.json with new version
+                    metadata["version"] = version
+                    with open(metadata_path, "w") as f:
+                        json.dump(metadata, f, indent=2)
                     
-                    if existing_entry:
-                        if auto_increment:
-                            old_version = version
-                            version = increment_version(version)
-                            print(f"Version {old_version} already exists. Auto-incrementing to {version}")
-                            
-                            # Update metadata.json with new version
-                            metadata["version"] = version
-                            with open(metadata_path, "w") as f:
-                                json.dump(metadata, f, indent=2)
-                            
-                            print(f"Updated {metadata_path} with new version: {version}")
-                            continue  # Try again with new version
-                        else:
-                            print(f"\nError: Version {version} already exists in the registry.")
-                            print("\nTo upload a new version:")
-                            print(f"1. Edit {metadata_path}")
-                            print("2. Update the \"version\" field (e.g., increment from \"0.0.1\" to \"0.0.2\")")
-                            print("3. Try uploading again")
-                            print("\nOr use --auto-increment to automatically increment the version\n")
-                            return None
-                except Exception as e:
-                    # Only proceed if the error indicates the entry doesn't exist
-                    if "not found" not in str(e).lower() and "does not exist" not in str(e).lower():
-                        # If it's some other error or the entry exists, print and return
-                        print(f"Error checking registry: {str(e)}")
-                        return None
-                
-                # Version doesn't exist, proceed with upload
-                print(f"Uploading version {version}...")
-                return registry.upload(path, show_progress=True)
+                    print(f"Updated {metadata_path} with new version: {version}")
+                    continue  # Try again with new version
+                else:
+                    print(f"\nError: Version {version} already exists in the registry.")
+                    print("\nTo upload a new version:")
+                    print(f"1. Edit {metadata_path}")
+                    print("2. Update the \"version\" field (e.g., increment from \"0.0.1\" to \"0.0.2\")")
+                    print("3. Try uploading again")
+                    print("\nOr use --auto-increment to automatically increment the version\n")
+                    return None
             
-            # If we get here, we've exceeded max attempts
-            print(f"Error: Exceeded maximum attempts ({max_attempts}) to find an available version")
-            return None
-            
-        except json.JSONDecodeError:
-            print(f"Error: {metadata_path} is not a valid JSON file")
-            return None
+            # Version doesn't exist, proceed with upload
+            print(f"Uploading version {version}...")
+            return registry.upload(path, show_progress=True)
+        
+        # If we get here, we've exceeded max attempts
+        print(f"Error: Exceeded maximum attempts ({max_attempts}) to find an available version")
+        return None
 
     def download(self, entry_location: str, force: bool = False) -> None:
         """Download item."""
