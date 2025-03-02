@@ -22,7 +22,12 @@ from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
 from nearai.banners import NEAR_AI_BANNER
-from nearai.cli_helpers import display_agents_in_columns, load_and_validate_metadata, check_version_exists, increment_version
+from nearai.cli_helpers import (
+    check_version_exists,
+    display_agents_in_columns,
+    increment_version,
+    load_and_validate_metadata,
+)
 from nearai.config import (
     CONFIG,
     get_hub_client,
@@ -260,51 +265,54 @@ class RegistryCli:
 
     def upload(self, local_path: str = ".", auto_increment: bool = False) -> Optional[EntryLocation]:
         """Upload item to the registry.
-        
+
         Args:
+        ----
             local_path: Path to the directory containing the agent to upload
             auto_increment: If True, automatically increment version if it already exists
-            
+
         Returns:
+        -------
             EntryLocation if upload was successful, None otherwise
+
         """
         path = resolve_local_path(Path(local_path))
         metadata_path = path / "metadata.json"
-        
+
         # Load and validate metadata
         metadata, error = load_and_validate_metadata(metadata_path)
         if error:
             print(error)
             return None
-        
+
         name = metadata["name"]
         version = metadata["version"]
         namespace = CONFIG.auth.namespace
-        
+
         # Try to upload, handle version conflict
         max_attempts = 5  # Prevent infinite loops
         attempts = 0
-        
+
         while attempts < max_attempts:
             attempts += 1
-            
+
             # Check if this version already exists
             exists, error = check_version_exists(namespace, name, version)
             if error:
                 print(error)
                 return None
-            
+
             if exists:
                 if auto_increment:
                     old_version = version
                     version = increment_version(version)
                     print(f"Version {old_version} already exists. Auto-incrementing to {version}")
-                    
+
                     # Update metadata.json with new version
                     metadata["version"] = version
                     with open(metadata_path, "w") as f:
                         json.dump(metadata, f, indent=2)
-                    
+
                     print(f"Updated {metadata_path} with new version: {version}")
                     continue  # Try again with new version
                 else:
@@ -315,11 +323,11 @@ class RegistryCli:
                     print("3. Try uploading again")
                     print("\nOr use --auto-increment to automatically increment the version\n")
                     return None
-            
+
             # Version doesn't exist, proceed with upload
             print(f"Uploading version {version}...")
             return registry.upload(path, show_progress=True)
-        
+
         # If we get here, we've exceeded max attempts
         print(f"Error: Exceeded maximum attempts ({max_attempts}) to find an available version")
         return None
