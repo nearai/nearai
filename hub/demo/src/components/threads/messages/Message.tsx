@@ -25,7 +25,10 @@ export const Message = ({ children, actions }: Props) => {
     <Card
       animateIn
       background={message.role === 'user' ? 'sand-2' : undefined}
-      style={message.role === 'user' ? { alignSelf: 'end' } : undefined}
+      style={{
+        maxWidth: '100%',
+        alignSelf: message.role === 'user' ? 'end' : undefined,
+      }}
     >
       {children}
 
