@@ -56,6 +56,9 @@ run_api() {
 
     log "Starting FastAPI server with $workers workers on port $port..."
 
+    # Backup old log file with timestamp
+    [ -f ./api.log ] && mv ./api.log "./api_$(date +%Y-%m-%d_%H-%M-%S).log"
+
     # Start the API server with specified number of workers
     nohup env PYTHON_PROCESS_NAME="${process_name}" uvicorn app:app --workers $workers --host 0.0.0.0 --port $port > ./api.log 2>&1 &
 
@@ -69,7 +72,12 @@ run_api() {
 # Step 7: Run the scheduler
 run_scheduler() {
     log "Starting scheduler as a separate process..."
+
+     # Backup old log file with timestamp
+    [ -f ./scheduler.log ] && mv ./scheduler.log "./scheduler_$(date +%Y-%m-%d_%H-%M-%S).log"
+
     nohup python scheduler.py > ./scheduler.log 2>&1 &
+
     local scheduler_pid=$!
     echo $scheduler_pid > scheduler.pid
     log "Scheduler started with PID $scheduler_pid"
