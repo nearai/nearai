@@ -26,7 +26,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install poetry
+    - name: Install uv
       run: pip install uv
 
     - name: Get uv cache dir
@@ -48,7 +48,7 @@ jobs:
       run: codespell --config .codespellrc
 
     - name: check lock file for inconsistencies
-      run: uv check
+      run: uv lock --check
 
     - name: Install dependencies
       run: uv sync --group docs --group dev
@@ -97,7 +97,7 @@ jobs:
 
   #   - name: Exec Integration Tests
   #     run: |
-  #       docker exec docker-ci-1 poetry run pytest -m integration ./e2e/
+  #       docker exec docker-ci-1 uv run pytest -m integration ./e2e/
     
   #   - name: Stop Docker Compose
   #     run: docker compose -f .docker/compose-e2e.yml down
