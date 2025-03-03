@@ -19,6 +19,9 @@ from tabulate import tabulate
 from rich.table import Table
 from rich.columns import Columns
 from rich.box import ROUNDED
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
 
 from nearai.agents.local_runner import LocalRunner
 from nearai.cli_helpers import display_agents_in_columns
@@ -49,6 +52,7 @@ from nearai.shared.client_config import (
 from nearai.shared.naming import NamespacedName, create_registry_name
 from nearai.shared.provider_models import ProviderModels, get_provider_namespaced_model
 from nearai.tensorboard_feed import TensorboardCli
+from nearai.banners import NEAR_AI_BANNER
 
 
 class RegistryCli:
@@ -1114,8 +1118,7 @@ class CLI:
             ],
         }
         
-        # Create tables for each category
-        tables = []
+        # Create and display tables for each category sequentially
         for category, commands in categories.items():
             table = Table(title=category, box=ROUNDED, title_style="bold green", expand=False)
             table.add_column("Command", style="cyan", no_wrap=True)
@@ -1124,45 +1127,8 @@ class CLI:
             for cmd, desc in commands:
                 table.add_row(f"nearai {cmd}", desc)
             
-            tables.append(Panel(table, border_style="green", expand=False))
-        
-        # Display tables in columns or stacked based on terminal width
-        console.print(Columns(tables, equal=True, expand=False))
-        
-        # Examples section
-        examples_table = Table(title="Examples", box=ROUNDED, title_style="bold yellow", expand=False)
-        examples_table.add_column("Command", style="cyan")
-        examples_table.add_column("Description", style="white")
-        
-        examples = [
-            ("nearai login", "Log in with your NEAR account"),
-            ("nearai agent create", "Create a new agent interactively"),
-            ("nearai agent interactive", "Select and run an agent interactively"),
-            ("nearai agent upload path/to/agent", "Upload agent to NEAR AI agent registry"),
-            ("nearai registry list --category agent", "List all agents in the registry"),
-        ]
-        
-        for cmd, desc in examples:
-            examples_table.add_row(cmd, desc)
-        
-        console.print(Panel(examples_table, border_style="yellow", expand=False))
-        
-        # Footer with additional help info - now with blue links
-        resources_text = Text.assemble(
-            ("Documentation: ", "white"),
-            ("https://docs.near.ai", "bold blue underline"),
-            ("\nGet Support: ", "white"),
-            ("https://t.me/nearaialpha", "bold blue underline"),
-            ("\nReport an Issue: ", "white"),
-            ("https://github.com/near/nearai-cli/issues", "bold blue underline")
-        )
-        
-        console.print(Panel(
-            resources_text,
-            title="Additional Resources",
-            border_style="blue",
-            expand=False
-        ))
+            console.print(Panel(table, border_style="green", expand=False))
+            console.print()  # Add spacing between categories
 
     def help(self) -> None:
         """Display help information about the NEAR AI CLI."""
