@@ -8,12 +8,11 @@ Create Date: 2025-03-03 16:20:48.585525
 
 from typing import Sequence, Union
 
-import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '1debe4dbbce1'
-down_revision: Union[str, None] = 'e8c084b2232b'
+revision: str = "1debe4dbbce1"
+down_revision: Union[str, None] = "e8c084b2232b"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -84,7 +83,7 @@ def downgrade() -> None:
     # Copy data (with the risk of truncating values that are too long)
     op.execute("""
     INSERT INTO vector_store_files_old
-    SELECT id, account_id, LEFT(file_uri, 255), purpose, LEFT(filename, 255), 
+    SELECT id, account_id, LEFT(file_uri, 255), purpose, LEFT(filename, 255),
            content_type, file_size, encoding, embedding_status, created_at, updated_at
     FROM vector_store_files;
     """)
