@@ -117,10 +117,6 @@ test = [
 [project.scripts]
 nearai = "nearai.cli:main"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
 # ==============================================================================
 # tool-specific configs
 # ==============================================================================
