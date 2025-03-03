@@ -12,3 +12,4 @@ site/
 last_block_id.txt
 
 nearai-cvm-*/
+target/

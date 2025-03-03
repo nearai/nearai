@@ -1,0 +1,26 @@
+[package]
+name = "host_api"
+version = "0.1.0"
+edition = "2021"
+
+# Specify both lib and bin targets
+[[bin]]
+name = "host_api"
+path = "src/main.rs"
+
+[lib]
+name = "host_api"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+bytes = "1.0"
+hex = "0.4"
+thiserror = "1.0"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

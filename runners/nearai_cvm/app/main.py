@@ -1,8 +1,11 @@
 import io
 import json
 import logging
+import os
+import subprocess
 from typing import Dict, Optional
 
+import uvicorn
 from dstack_sdk import TdxQuoteResponse  # type: ignore
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +22,7 @@ from quote.quote import Quote  # type: ignore
 
 bearer = HTTPBearer(auto_error=False)
 app = FastAPI()
+account_id = os.getenv("ACCOUNT_ID")
 
 app.add_middleware(
     CORSMiddleware,
@@ -105,12 +109,13 @@ def assert_auth(
     if not verification_result:
         raise HTTPException(status_code=401, detail="Invalid auth token")
 
-    if app_state.auth is not None:
-        if app_state.auth.account_id != auth_object.account_id:
-            """
-            Ensures that the request is from the user assigned to the runner.
-            """
-            raise HTTPException(status_code=401, detail="Unauthorized")
+    # TODO: Decide when to break the trust on auth. Right now we wont fail if the auth object changes.
+    # Only if the account ID is wrong.
+    if auth_object.account_id != account_id:
+        """
+        Ensures that the request is from the user assigned to the runner.
+        """
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
     return auth_object
 
@@ -219,10 +224,8 @@ def get_quote(app_state: AppState = Depends(get_app_state)):
 
 
 if __name__ == "__main__":
-    import os
-    import subprocess
-
-    import uvicorn
+    if not account_id:
+        raise Exception("ACCOUNT_ID env variable needs to be given in env variables.")
 
     certs_dir = "/app/certs"
     key_path = os.path.join(certs_dir, "key.pem")

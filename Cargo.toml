@@ -1,0 +1,3 @@
+[workspace]
+members = ["cloud_infra", "host_api", "tdx_host_lib"]
+resolver = "2"
