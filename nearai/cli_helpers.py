@@ -80,9 +80,11 @@ def validate_version(version: str) -> Tuple[bool, Optional[str]]:
     """Validate version string according to PEP 440.
 
     Args:
+    ----
         version: Version string to validate
 
     Returns:
+    -------
         Tuple of (is_valid, error_message)
 
     """
@@ -97,13 +99,16 @@ def increment_version_by_type(version: str, increment_type: str) -> str:
     """Increment version according to PEP 440.
 
     Args:
+    ----
         version: Current version string
         increment_type: Type of increment ('major', 'minor', or 'patch')
 
     Returns:
+    -------
         New version string
 
     Raises:
+    ------
         ValueError: If increment_type is invalid or version is invalid
 
     """
@@ -127,9 +132,11 @@ def load_and_validate_metadata(metadata_path: Path) -> Tuple[Optional[Dict[str, 
     """Load and validate metadata file, including version format.
 
     Args:
+    ----
         metadata_path: Path to metadata.json file
 
     Returns:
+    -------
         Tuple of (metadata_dict, error_message)
 
     """

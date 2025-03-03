@@ -1173,10 +1173,12 @@ run(env)
         This is an alias for 'nearai registry upload'.
 
         Args:
+        ----
             local_path: Path to the directory containing the agent to upload
             auto_increment: If True, automatically increment version if it already exists
 
         Returns:
+        -------
             EntryLocation if upload was successful, None otherwise
 
         """
