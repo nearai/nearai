@@ -85,7 +85,7 @@ run_scheduler() {
 # Main function to run everything
 main() {
     local workers=${1:-8}
-    local port=${2:-8081}
+    local port=${2:-8001}
     local path=${3:-"/nearai"}
 
     check_directory "$path"
@@ -108,7 +108,7 @@ main() {
 }
 restart() {
     local workers=${1:-8}
-    local port=${2:-8081}
+    local port=${2:-8001}
     local path=${3:-"/nearai"}
 
     log "Restarting processes without installation..."
@@ -150,7 +150,7 @@ show_help() {
     echo ""
     echo "Options:"
     echo "  workers     Number of worker processes (default: 8)"
-    echo "  port        Port to run the API on (default: 8081)"
+    echo "  port        Port to run the API on (default: 8001)"
     echo "  path        Directory path (default: /nearai)"
     echo ""
     echo "Examples:"
