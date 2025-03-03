@@ -10,11 +10,14 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from textwrap import fill
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import fire
 from openai.types.beta.threads.message import Attachment
-from rich.prompt import Prompt
+from rich.console import Console
+from rich.panel import Panel
+from rich.prompt import Confirm, Prompt
+from rich.text import Text
 from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
@@ -50,6 +53,9 @@ from nearai.shared.client_config import (
     DEFAULT_MODEL_TEMPERATURE,
     DEFAULT_NAMESPACE,
     DEFAULT_PROVIDER,
+)
+from nearai.shared.client_config import (
+    IDENTIFIER_PATTERN as PATTERN,
 )
 from nearai.shared.naming import NamespacedName, create_registry_name
 from nearai.shared.provider_models import ProviderModels, get_provider_namespaced_model
@@ -95,9 +101,9 @@ class RegistryCli:
         if not is_valid:
             print(error)
             return
-            
+
         name = path.parent.name
-        assert not re.match(pattern, name), f"Invalid agent name: {name}"
+        assert not re.match(PATTERN, name), f"Invalid agent name: {name}"
         assert " " not in name
 
         with open(metadata_path, "w") as f:
@@ -832,7 +838,7 @@ class AgentCli:
         namespace = CONFIG.auth.namespace
 
         # Import the agent creator functions
-        from nearai.agent_creator import create_new_agent, fork_agent
+        from nearai.agent_creator import fork_agent
 
         if fork:
             # Fork an existing agent
@@ -1163,15 +1169,16 @@ run(env)
 
     def upload(self, local_path: str = ".", auto_increment: bool = False) -> Optional[EntryLocation]:
         """Upload agent to the registry.
-        
+
         This is an alias for 'nearai registry upload'.
-        
+
         Args:
             local_path: Path to the directory containing the agent to upload
             auto_increment: If True, automatically increment version if it already exists
-            
+
         Returns:
             EntryLocation if upload was successful, None otherwise
+
         """
         # Create an instance of RegistryCli and call its upload method
         registry_cli = RegistryCli()

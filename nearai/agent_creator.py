@@ -12,6 +12,7 @@ from rich.prompt import Confirm, Prompt
 from rich.text import Text
 
 from nearai.banners import NEAR_AI_BANNER
+from nearai.cli_helpers import validate_version
 from nearai.registry import get_registry_folder, registry
 from nearai.shared.client_config import (
     DEFAULT_MODEL,
@@ -19,7 +20,6 @@ from nearai.shared.client_config import (
     DEFAULT_MODEL_TEMPERATURE,
     DEFAULT_PROVIDER,
 )
-from nearai.cli_helpers import validate_version
 
 
 def prompt_agent_details() -> Tuple[str, str, str, str]:
