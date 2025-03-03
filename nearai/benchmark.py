@@ -98,7 +98,7 @@ class BenchmarkExecutor:
                         n_true_results += 1
                     if self.solver_strategy.scoring_method == SolverScoringMethod.TrueOrFalseList:
                         bar.set_description(
-                            f"Correct/Seen - {n_true_results}/{total - remaining} - {n_true_results/(total - remaining):.2%}"  # noqa: E501
+                            f"Correct/Seen - {n_true_results}/{total - remaining} - {n_true_results / (total - remaining):.2%}"  # noqa: E501
                         )
                     elif info != "":
                         bar.set_description(f"{info}")
@@ -111,7 +111,7 @@ class BenchmarkExecutor:
             bar.close()  # Ensure the progress bar is closed
 
         if self.solver_strategy.scoring_method == SolverScoringMethod.TrueOrFalseList:
-            print(f"Final score: {n_true_results}/{total} - {n_true_results/total:.2%}")
+            print(f"Final score: {n_true_results}/{total} - {n_true_results / total:.2%}")
             if record:
                 record_single_score_evaluation(
                     self.solver_strategy, self.benchmark_id, data_tasks, round(n_true_results / total * 100, 2)
