@@ -10,14 +10,11 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from textwrap import fill
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import fire
 from openai.types.beta.threads.message import Attachment
-from rich.console import Console
-from rich.panel import Panel
-from rich.prompt import Confirm, Prompt
-from rich.text import Text
+from rich.prompt import Prompt
 from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
@@ -825,9 +822,12 @@ class AgentCli:
 
         namespace = CONFIG.auth.namespace
 
+        # Import the agent creator functions
+        from nearai.agent_creator import create_new_agent, fork_agent
+
         if fork:
             # Fork an existing agent
-            self._fork_agent(fork, namespace, name)
+            fork_agent(fork, namespace, name)
         else:
             # Create a new agent from scratch
             self._create_new_agent(namespace, name, description)

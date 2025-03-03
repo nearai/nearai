@@ -5,6 +5,7 @@ import {
   Flex,
   PlaceholderStack,
   Tooltip,
+  useDebouncedValue,
 } from '@near-pagoda/ui';
 import { Copy, Eye, MarkdownLogo } from '@phosphor-icons/react';
 import { useState } from 'react';
@@ -27,8 +28,11 @@ export const ThreadFileModal = ({
   openedFileName,
   setOpenedFileName,
 }: Props) => {
-  const file =
-    filesByName && openedFileName ? filesByName[openedFileName] : undefined;
+  const file = useDebouncedValue(
+    filesByName && openedFileName ? filesByName[openedFileName] : undefined,
+    25,
+  );
+
   const isImage = filePathIsImage(file?.filename);
   const language = file && filePathToCodeLanguage(file.filename);
   const isMarkdown = language === 'markdown';

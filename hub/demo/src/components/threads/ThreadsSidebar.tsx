@@ -94,12 +94,7 @@ export const ThreadsSidebar = ({
       setOpenForSmallScreens={setOpenForSmallScreens}
     >
       <Flex align="center" gap="s">
-        <Text
-          size="text-xs"
-          weight={600}
-          uppercase
-          style={{ marginRight: 'auto' }}
-        >
+        <Text size="text-xs" weight={600} uppercase>
           Threads
         </Text>
 
@@ -108,7 +103,7 @@ export const ThreadsSidebar = ({
             label="New Thread"
             icon={<Plus weight="bold" />}
             variant="affirmative"
-            fill="outline"
+            fill="ghost"
             size="x-small"
             onClick={onRequestNewThread}
           />
