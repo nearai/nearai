@@ -25,6 +25,7 @@ from nearai.cli_helpers import (
     increment_version,
     increment_version_by_type,
     load_and_validate_metadata,
+    validate_version,
 )
 from nearai.config import (
     CONFIG,
@@ -86,12 +87,15 @@ class RegistryCli:
     def metadata_template(self, local_path: str = ".", category: str = "", description: str = ""):
         """Create a metadata template."""
         path = resolve_local_path(Path(local_path))
-
         metadata_path = path / "metadata.json"
 
         version = path.name
-        pattern = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa: E501
-        assert re.match(pattern, version), f"Invalid semantic version format: {version}"
+        # Validate version format
+        is_valid, error = validate_version(version)
+        if not is_valid:
+            print(error)
+            return
+            
         name = path.parent.name
         assert not re.match(pattern, name), f"Invalid agent name: {name}"
         assert " " not in name
@@ -212,6 +216,11 @@ class RegistryCli:
         # Increment version based on increment_type
         try:
             new_version = increment_version_by_type(current_version, increment_type)
+            # Validate new version format
+            is_valid, error = validate_version(new_version)
+            if not is_valid:
+                print(error)
+                return False
         except ValueError as e:
             print(f"Error: {str(e)}")
             print("Valid increment types are: 'patch', 'minor', 'major'")

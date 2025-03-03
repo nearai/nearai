@@ -7,6 +7,7 @@ from rich.table import Table
 
 from nearai.config import CONFIG
 from nearai.registry import parse_location, registry
+from packaging.version import Version, InvalidVersion
 
 
 def display_agents_in_columns(agents: list[Path]) -> None:
@@ -76,39 +77,79 @@ def increment_version(version_str: str) -> str:
         return f"{version_str}.1"
 
 
-def load_and_validate_metadata(metadata_path: Path) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-    """Load and validate metadata.json file.
-
+def validate_version(version: str) -> Tuple[bool, Optional[str]]:
+    """Validate version string according to PEP 440.
+    
     Args:
-    ----
-        metadata_path: Path to the metadata.json file
-
+        version: Version string to validate
+        
     Returns:
-    -------
-        Tuple of (metadata dict, error message)
-        If validation fails, metadata will be None and error will contain the error message
-
+        Tuple of (is_valid, error_message)
     """
-    if not metadata_path.exists():
-        return None, f"Error: metadata.json not found in {metadata_path.parent}"
-
     try:
-        with open(metadata_path, "r") as f:
+        v = Version(version)
+        return True, None
+    except InvalidVersion as e:
+        return False, f"Invalid version format: {str(e)}. Version must follow PEP 440:https://peps.python.org/pep-0440."
+
+
+def increment_version_by_type(version: str, increment_type: str) -> str:
+    """Increment version according to PEP 440.
+    
+    Args:
+        version: Current version string
+        increment_type: Type of increment ('major', 'minor', or 'patch')
+        
+    Returns:
+        New version string
+        
+    Raises:
+        ValueError: If increment_type is invalid or version is invalid
+    """
+    try:
+        v = Version(version)
+        major, minor, micro = v.release[:3]
+        
+        if increment_type == "major":
+            return f"{major + 1}.0.0"
+        elif increment_type == "minor":
+            return f"{major}.{minor + 1}.0"
+        elif increment_type == "patch":
+            return f"{major}.{minor}.{micro + 1}"
+        else:
+            raise ValueError(f"Invalid increment type: {increment_type}")
+    except InvalidVersion as e:
+        raise ValueError(f"Invalid version format: {str(e)}")
+
+
+def load_and_validate_metadata(metadata_path: Path) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """Load and validate metadata file, including version format.
+    
+    Args:
+        metadata_path: Path to metadata.json file
+        
+    Returns:
+        Tuple of (metadata_dict, error_message)
+    """
+    try:
+        with open(metadata_path) as f:
             metadata = json.load(f)
-
-        name = metadata.get("name")
-        version = metadata.get("version")
-
-        if not name or not version:
-            return None, "Error: metadata.json must contain 'name' and 'version' fields"
-
-        # Get namespace from auth
-        if CONFIG.auth is None or CONFIG.auth.namespace is None:
-            return None, "Please login with `nearai login` before uploading"
-
+            
+        # Validate version format
+        if "version" not in metadata:
+            return None, "Metadata file must contain a 'version' field"
+            
+        is_valid, error = validate_version(metadata["version"])
+        if not is_valid:
+            return None, error
+            
         return metadata, None
+    except FileNotFoundError:
+        return None, f"Metadata file not found at {metadata_path}"
     except json.JSONDecodeError:
-        return None, f"Error: {metadata_path} is not a valid JSON file"
+        return None, f"Invalid JSON in metadata file at {metadata_path}"
+    except Exception as e:
+        return None, f"Error reading metadata file: {str(e)}"
 
 
 def check_version_exists(namespace: str, name: str, version: str) -> Tuple[bool, Optional[str]]:
@@ -140,52 +181,3 @@ def check_version_exists(namespace: str, name: str, version: str) -> Tuple[bool,
         if "not found" in str(e).lower() or "does not exist" in str(e).lower():
             return False, None
         return False, f"Error checking registry: {str(e)}"
-
-
-def increment_version_by_type(version_str: str, increment_type: str = "patch") -> str:
-    """Increment a version string based on the specified increment type.
-
-    Args:
-    ----
-        version_str: The version string to increment
-        increment_type: Type of increment: 'patch', 'minor', or 'major'
-
-    Returns:
-    -------
-        The incremented version string
-
-    Raises:
-    ------
-        ValueError: If increment_type is not one of 'patch', 'minor', 'major'
-
-    """
-    if increment_type not in ["patch", "minor", "major"]:
-        raise ValueError(f"Invalid increment type: {increment_type}")
-
-    # Parse version components
-    parts = version_str.split(".")
-
-    # Ensure we have at least 3 parts (major.minor.patch)
-    while len(parts) < 3:
-        parts.append("0")
-
-    # Convert to integers
-    try:
-        major, minor, patch = int(parts[0]), int(parts[1]), int(parts[2])
-    except ValueError as err:
-        # Properly chain the exception with the original error
-        raise ValueError(f"Invalid version format: {version_str}. Expected semver format (e.g., 1.2.3)") from err
-
-    # Increment based on type
-    if increment_type == "patch":
-        patch += 1
-    elif increment_type == "minor":
-        minor += 1
-        patch = 0
-    elif increment_type == "major":
-        major += 1
-        minor = 0
-        patch = 0
-
-    # Reconstruct version string
-    return f"{major}.{minor}.{patch}"

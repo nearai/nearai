@@ -19,6 +19,7 @@ from nearai.shared.client_config import (
     DEFAULT_MODEL_TEMPERATURE,
     DEFAULT_PROVIDER,
 )
+from nearai.cli_helpers import validate_version
 
 
 def prompt_agent_details() -> Tuple[str, str, str, str]:
@@ -153,9 +154,15 @@ def create_new_agent(namespace: str, name: Optional[str], description: Optional[
     agent_path = registry_folder / namespace_str / name_str / "0.0.1"
     agent_path.mkdir(parents=True, exist_ok=True)
 
+    # Validate initial version format
+    version = "0.0.1"
+    is_valid, error = validate_version(version)
+    if not is_valid:
+        raise ValueError(error)
+
     metadata: Dict[str, Any] = {
         "name": name_str,
-        "version": "0.0.1",
+        "version": version,
         "description": description or "",
         "category": "agent",
         "tags": [],
@@ -397,6 +404,14 @@ def fork_agent(fork: str, namespace: str, new_name: Optional[str]) -> None:
 
     metadata["name"] = new_name
     metadata["version"] = "0.0.1"
+
+    # Validate initial version format
+    version = "0.0.1"
+    is_valid, error = validate_version(version)
+    if not is_valid:
+        raise ValueError(error)
+
+    metadata["version"] = version
 
     with open(metadata_path, "w") as file:
         json.dump(metadata, file, indent=2)
