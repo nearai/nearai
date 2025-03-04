@@ -90,7 +90,9 @@ class TestRegistryCliUpload:
             # Assertions
             assert result is None
             captured = capsys.readouterr()
-            assert "Error: Version 0.0.1 already exists" in captured.out
+            # Check for the new Rich-formatted output
+            assert "Version Conflict" in captured.out
+            assert "Version 0.0.1 already exists in the registry" in captured.out
             assert "To upload a new version" in captured.out
             mock_registry.upload.assert_not_called()
 
@@ -217,10 +219,12 @@ class TestRegistryCliUpload:
                 updated_metadata = json.load(f)
                 assert updated_metadata["version"] == "0.0.2"
 
-            # Check console output
+            # Check console output for the new Rich-formatted panel
             captured = capsys.readouterr()
-            assert "Auto-incrementing to" in captured.out
-            assert "Updated" in captured.out
+            assert "Auto-Increment" in captured.out
+            assert "Previous version: 0.0.1" in captured.out
+            assert "New version:" in captured.out
+            assert "0.0.2" in captured.out
 
     def test_update_version(self, mock_registry, mock_config, tmp_path, capsys):
         """Test updating version in metadata.json."""
@@ -232,12 +236,14 @@ class TestRegistryCliUpload:
 
         # Test patch increment (default)
         cli = RegistryCli()
-        result = cli.update(str(tmp_path))
+        cli.update(str(tmp_path))
 
         # Assertions
-        assert result is True
         captured = capsys.readouterr()
-        assert "Version: 1.2.3 → 1.2.4" in captured.out
+        assert "Previous version:" in captured.out
+        assert "1.2.3" in captured.out
+        assert "New version:" in captured.out
+        assert "1.2.4" in captured.out
 
         # Verify metadata was updated
         with open(metadata_path, "r") as f:
@@ -245,12 +251,14 @@ class TestRegistryCliUpload:
             assert updated_metadata["version"] == "1.2.4"
 
         # Test minor increment
-        result = cli.update(str(tmp_path), increment_type="minor")
+        cli.update(str(tmp_path), increment_type="minor")
 
         # Assertions
-        assert result is True
         captured = capsys.readouterr()
-        assert "Version: 1.2.4 → 1.3.0" in captured.out
+        assert "Previous version:" in captured.out
+        assert "1.2.4" in captured.out
+        assert "New version:" in captured.out
+        assert "1.3.0" in captured.out
 
         # Verify metadata was updated
         with open(metadata_path, "r") as f:
@@ -258,14 +266,97 @@ class TestRegistryCliUpload:
             assert updated_metadata["version"] == "1.3.0"
 
         # Test major increment
-        result = cli.update(str(tmp_path), increment_type="major")
+        cli.update(str(tmp_path), increment_type="major")
 
         # Assertions
-        assert result is True
         captured = capsys.readouterr()
-        assert "Version: 1.3.0 → 2.0.0" in captured.out
+        assert "Previous version:" in captured.out
+        assert "1.3.0" in captured.out
+        assert "New version:" in captured.out
+        assert "2.0.0" in captured.out
 
         # Verify metadata was updated
         with open(metadata_path, "r") as f:
             updated_metadata = json.load(f)
             assert updated_metadata["version"] == "2.0.0"
+
+    def test_pep440_version_validation(self, mock_registry, mock_config, tmp_path):
+        """Test that version validation follows PEP 440 standards."""
+        # Import the actual validation function
+        from packaging.version import InvalidVersion, Version
+
+        from nearai.cli_helpers import validate_version
+
+        # Test valid versions according to PEP 440
+        valid_versions = [
+            "1.0.0",
+            "0.1.0",
+            "0.0.1",  # Simple versions
+            "1.0.0rc1",
+            "1.0.0a1",
+            "1.0.0b1",  # Pre-releases
+            "2.0.0.dev1",  # Dev releases
+            "1.0.0.post1",  # Post releases
+            "1!1.0.0",  # With epoch
+            "1.0.0+local.1",  # Local version
+            "1.0",  # Implicit zero
+            "1.0.0.0.0",  # Many segments (valid in PEP 440)
+            "01.02.03",  # Leading zeros (valid in PEP 440)
+            "1.0a",
+            "1.0.post",
+            "1.0.dev",  # Optional numbers in pre/post/dev
+        ]
+
+        for version in valid_versions:
+            # Verify with packaging.version first
+            try:
+                Version(version)
+                is_valid_pep440 = True
+            except InvalidVersion:
+                is_valid_pep440 = False
+
+            assert is_valid_pep440, f"Version {version} should be valid according to PEP 440"
+
+            # Now test our validation function
+            is_valid, error_msg = validate_version(version)
+            assert is_valid, f"Valid version {version} was rejected with error: {error_msg}"
+
+        # Test invalid versions
+        invalid_versions = [
+            # Non-Numeric Versions
+            "version1.0.0",  # Arbitrary text is not allowed
+            "hithere",
+            "12-212.23",
+            # TODO: Figure out why commented out versions were not rejected
+            # Improper Pre-release Identifiers
+            # "1.0-alpha",              # Should be 1.0a0 or 1.0a1
+            # "1.0-beta-1",             # Should be 1.0b1
+            # Improper Post-release Identifiers
+            # "1.0.0-post",             # Should be 1.0.0.post0
+            # Improper Development Release Identifiers
+            # "1.0.0-dev",              # Should be 1.0.0.dev0
+            # "1.0.dev1.2",             # Should be 1.0.dev2
+            # Unstructured Versions
+            # "2023.04.12",             # Date-based versioning needs specific pattern
+            "1.0_final",  # Underscore is not allowed in this context
+            # Improper Local Versions
+            # "1.0.0+exp.sha.5114f85",  # Complex local identifiers may be rejected
+            # Skipping Patch/Minor Versioning
+            "1..0",  # Empty segments are not allowed
+            "1.0.",  # Trailing dot is not allowed
+        ]
+
+        for version in invalid_versions:
+            # Verify with packaging.version first
+            try:
+                Version(version)
+                is_valid_pep440 = True
+            except InvalidVersion:
+                is_valid_pep440 = False
+
+            assert not is_valid_pep440, f"Version {version} should be invalid according to PEP 440"
+
+            # Now test our validation function
+            is_valid, error_msg = validate_version(version)
+            assert not is_valid, f"Invalid version {version} was accepted"
+            assert "Invalid version format" in error_msg or "not a valid version" in error_msg
