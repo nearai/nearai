@@ -99,6 +99,15 @@ class ImageGenerationRequest(BaseModel):
     """A text description of the desired image(s)."""
     model: str = f"fireworks{PROVIDER_MODEL_SEP}accounts/fireworks/models/playground-v2-5-1024px-aesthetic"
     provider: Optional[str] = None
+    init_image: Optional[str] = None
+    image_strength: Optional[float] = None
+    control_image: Optional[str] = None
+    control_net_name: Optional[str] = None
+    conditioning_scale: Optional[float] = None
+    cfg_scale: Optional[float] = None
+    sampler: Optional[str] = None
+    steps: Optional[int] = None
+    seed: Optional[int] = 0
 
     @field_validator("model")
     @classmethod
