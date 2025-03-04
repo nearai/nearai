@@ -358,12 +358,24 @@ class RegistryCli:
                     print(f"Updated {metadata_path} with new version: {version}")
                     continue  # Try again with new version
                 else:
-                    print(f"\nError: Version {version} already exists in the registry.")
-                    print("\nTo upload a new version:")
-                    print(f"1. Edit {metadata_path}")
-                    print('2. Update the "version" field (e.g., increment from "0.0.1" to "0.0.2")')
-                    print("3. Try uploading again")
-                    print("\nOr use --auto-increment to automatically increment the version\n")
+                    console = Console()
+                    error_panel = Panel(
+                        Text.assemble(
+                            (f"Version {version} already exists in the registry.\n\n", "bold red"),
+                            ("To upload a new version:\n", "yellow"),
+                            (f"1. Edit {metadata_path}\n", "dim"),
+                            ('2. Update the "version" field (e.g., increment from "0.0.1" to "0.0.2")\n', "dim"),
+                            ("3. Try uploading again\n\n", "dim"),
+                            ("Or use the following commands:\n", "yellow"),
+                            ("  nearai agent update            # Patch update (0.0.1 → 0.0.2)\n", "green"),
+                            ("  nearai agent update --minor    # Minor update (0.0.1 → 0.1.0)\n", "green"),
+                            ("  nearai agent update --major    # Major update (0.0.1 → 1.0.0)\n\n", "green"),
+                            ("Or use --auto-increment to automatically increment the version", "cyan"),
+                        ),
+                        title="Version Conflict",
+                        border_style="red",
+                    )
+                    console.print(error_panel)
                     return None
 
             # Version doesn't exist, proceed with upload
