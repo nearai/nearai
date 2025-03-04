@@ -191,17 +191,13 @@ class RegistryCli:
                     f"There are unregistered common provider models: {unregistered_common_provider_models}. Run 'nearai registry upload-unregistered-common-provider-models' to update registry."  # noqa: E501
                 )
 
-    def update(self, local_path: str = ".", increment_type: str = "patch") -> bool:
+    def update(self, local_path: str = ".", increment_type: str = "patch") -> None:
         """Update the version in metadata.json file.
 
         Args:
         ----
             local_path: Path to the directory containing the agent to update
             increment_type: Type of version increment: 'patch', 'minor', or 'major'
-
-        Returns:
-        -------
-            True if update was successful, False otherwise
 
         """
         path = resolve_local_path(Path(local_path))
@@ -210,8 +206,12 @@ class RegistryCli:
         # Load and validate metadata
         metadata, error = load_and_validate_metadata(metadata_path)
         if error:
-            print(error)
-            return False
+            console = Console()
+            error_panel = Panel(
+                Text(error, style="bold red"), title="Metadata Error", border_style="red", padding=(1, 2)
+            )
+            console.print(error_panel)
+            return
 
         # At this point, metadata is guaranteed to be not None
         assert metadata is not None, "Metadata should not be None if error is None"
@@ -225,12 +225,28 @@ class RegistryCli:
             # Validate new version format
             is_valid, error = validate_version(new_version)
             if not is_valid:
-                print(error)
-                return False
+                console = Console()
+                error_panel = Panel(
+                    Text(error, style="bold red"), title="Version Error", border_style="red", padding=(1, 2)
+                )
+                console.print(error_panel)
+                return
         except ValueError as e:
-            print(f"Error: {str(e)}")
-            print("Valid increment types are: 'patch', 'minor', 'major'")
-            return False
+            console = Console()
+            error_panel = Panel(
+                Text.assemble(
+                    (f"{str(e)}\n\n", "bold red"),
+                    ("Valid increment types are:", "yellow"),
+                    ("\n• 'patch' - increment patch version (0.0.1 → 0.0.2)", "dim"),
+                    ("\n• 'minor' - increment minor version (0.0.1 → 0.1.0)", "dim"),
+                    ("\n• 'major' - increment major version (0.0.1 → 1.0.0)", "dim"),
+                ),
+                title="Version Error",
+                border_style="red",
+                padding=(1, 2),
+            )
+            console.print(error_panel)
+            return
 
         # Update metadata.json with new version
         metadata["version"] = new_version
@@ -238,12 +254,34 @@ class RegistryCli:
             with open(metadata_path, "w") as f:
                 json.dump(metadata, f, indent=2)
 
-            print(f"Updated {metadata_path}")
-            print(f"Version: {current_version} → {new_version}")
-            return True
+            # Enhanced version update message
+            console = Console()
+            update_panel = Panel(
+                Text.assemble(
+                    ("Entry: ", "dim"),
+                    (f"{metadata['name']}\n\n", "cyan bold"),
+                    ("Update Type: ", "dim"),
+                    (f"{increment_type}\n", "yellow"),
+                    ("Previous version: ", "dim"),
+                    (f"{current_version}\n", "yellow"),
+                    ("New version:     ", "dim"),
+                    (f"{new_version}", "green bold"),
+                ),
+                title="Version Updated",
+                border_style="green",
+                padding=(1, 2),
+            )
+            console.print(update_panel)
         except Exception as e:
-            print(f"Error updating metadata.json: {str(e)}")
-            return False
+            console = Console()
+            error_panel = Panel(
+                Text(f"Error updating metadata.json: {str(e)}", style="bold red"),
+                title="Update Error",
+                border_style="red",
+                padding=(1, 2),
+            )
+            console.print(error_panel)
+            return
 
     def upload_unregistered_common_provider_models(self, dry_run: bool = True) -> None:
         """Creates new registry items for unregistered common provider models."""
