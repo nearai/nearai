@@ -10,18 +10,17 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from textwrap import fill
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import fire
 from openai.types.beta.threads.message import Attachment
 from rich.console import Console
 from rich.panel import Panel
-from rich.prompt import Confirm, Prompt
+from rich.prompt import Prompt
 from rich.text import Text
 from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
-from nearai.banners import NEAR_AI_BANNER
 from nearai.cli_helpers import (
     check_version_exists,
     display_agents_in_columns,
@@ -906,275 +905,14 @@ class AgentCli:
         namespace = CONFIG.auth.namespace
 
         # Import the agent creator functions
-        from nearai.agent_creator import fork_agent
+        from nearai.agent_creator import create_new_agent, fork_agent
 
         if fork:
             # Fork an existing agent
             fork_agent(fork, namespace, name)
         else:
             # Create a new agent from scratch
-            self._create_new_agent(namespace, name, description)
-
-    def _create_new_agent(self, namespace: str, name: Optional[str], description: Optional[str]) -> None:
-        """Create a new agent from scratch."""
-        # If no name/description provided, use interactive prompts
-        init_instructions = ""
-        if name is None and description is None:
-            _, name, description, init_instructions = self._prompt_agent_details()
-
-        # Set the agent path
-        registry_folder = get_registry_folder()
-        if registry_folder is None:
-            raise ValueError("Registry folder path cannot be None")
-
-        # Narrow the type of namespace & name from Optional[str] to str
-        namespace_str: str = namespace if namespace is not None else ""
-        if namespace_str == "":
-            raise ValueError("Namespace cannot be None or empty")
-
-        name_str: str = name if name is not None else ""
-        if name_str == "":
-            raise ValueError("Name cannot be None or empty")
-
-        agent_path = registry_folder / namespace_str / name_str / "0.0.1"
-        agent_path.mkdir(parents=True, exist_ok=True)
-
-        metadata: Dict[str, Any] = {
-            "name": name_str,
-            "version": "0.0.1",
-            "description": description or "",
-            "category": "agent",
-            "tags": [],
-            "details": {
-                "agent": {
-                    "defaults": {
-                        "model": DEFAULT_MODEL,
-                        "model_provider": DEFAULT_PROVIDER,
-                        "model_temperature": DEFAULT_MODEL_TEMPERATURE,
-                        "model_max_tokens": DEFAULT_MODEL_MAX_TOKENS,
-                    }
-                }
-            },
-            "show_entry": True,
-        }
-
-        metadata_path = agent_path / "metadata.json"
-        with open(metadata_path, "w") as f:
-            json.dump(metadata, f, indent=2)
-
-        # Create a default agent.py with the provided initial
-        agent_py_content = f"""from nearai.agents.environment import Environment
-
-
-def run(env: Environment):
-    # Your agent code here
-    prompt = {{"role": "system", "content": "{init_instructions}"}}
-    result = env.completion([prompt] + env.list_messages())
-    env.add_reply(result)
-    env.request_user_input()
-
-run(env)
-
-"""
-        agent_py_path = agent_path / "agent.py"
-        with open(agent_py_path, "w") as f:
-            f.write(agent_py_content)
-
-        # Create success message
-        console = Console()
-        success_title = Text(" 🎉 SUCCESS!", style="bold green")
-        path_text = Text.assemble(("\n  • New AI Agent created at: ", "bold green"), (f"{agent_path}", "bold"))
-
-        files_panel = Panel(
-            Text.assemble(
-                ("Edit agent code here:\n\n", "yellow"),
-                (f"📄 - {agent_path}/agent.py\n", "bold blue"),
-                (f"📄 - {agent_path}/metadata.json", "bold blue"),
-            ),
-            title="Agent Files",
-            border_style="yellow",
-        )
-
-        commands_panel = Panel(
-            Text.assemble(
-                ("Run this agent locally:\n", "light_green"),
-                (f"  nearai agent interactive {agent_path} --local\n\n", "bold"),
-                ("Upload this agent to NEAR AI's public registry:\n", "light_green"),
-                (f"  nearai registry upload {agent_path}\n\n", "bold"),
-                ("Run ANY agent from your local registry:\n", "light_green"),
-                ("  nearai agent interactive --local", "bold"),
-            ),
-            title="Useful Commands",
-            border_style="green",
-        )
-
-        console.print("\n")
-        console.print(success_title)
-        console.print(path_text)
-        console.print("\n")
-        console.print(files_panel)
-        console.print("\n")
-        console.print(commands_panel)
-        console.print("\n")
-
-    def _fork_agent(self, fork: str, namespace: str, new_name: Optional[str]) -> None:
-        """Fork an existing agent."""
-        import shutil
-
-        # Parse the fork parameter
-        try:
-            entry_location = parse_location(fork)
-            fork_namespace = entry_location.namespace
-            fork_name = entry_location.name
-            fork_version = entry_location.version
-        except ValueError:
-            print("Invalid fork parameter format. Expected format: <namespace>/<agent-name>/<version>")
-            return
-
-        # Download the agent from the registry
-        agent_location = f"{fork_namespace}/{fork_name}/{fork_version}"
-        print(f"Downloading agent '{agent_location}'...")
-        registry.download(agent_location, force=False, show_progress=True)
-        source_path = get_registry_folder() / fork_namespace / fork_name / fork_version
-
-        # Prompt for the new agent name if not provided
-        if not new_name:
-            new_name = input("Enter the new agent name: ").strip()
-            if not new_name:
-                print("Agent name cannot be empty.")
-                return
-
-            # confirm pattern is ok
-            identifier_pattern = re.compile(r"^[a-zA-Z0-9_\-.]+$")
-            if identifier_pattern.match(new_name) is None:
-                print("Invalid Name, please choose something different")
-                return
-
-        # Set the destination path
-        dest_path = get_registry_folder() / namespace / new_name / "0.0.1"
-
-        # Copy the agent files
-        shutil.copytree(source_path, dest_path)
-
-        # Update metadata.json
-        metadata_path = dest_path / "metadata.json"
-        with open(metadata_path, "r") as file:
-            metadata = json.load(file)
-
-        metadata["name"] = new_name
-        metadata["version"] = "0.0.1"
-
-        with open(metadata_path, "w") as file:
-            json.dump(metadata, file, indent=2)
-
-        print(f"\nForked agent '{agent_location}' to '{dest_path}'")
-        print(f"Agent '{new_name}' created at '{dest_path}' with updated metadata.")
-        print("\nUseful commands:")
-        print(f"  > nearai agent interactive {new_name} --local")
-        print(f"  > nearai registry upload {dest_path}")
-
-    def _prompt_agent_details(self) -> Tuple[str, str, str, str]:
-        console = Console()
-
-        # Get namespace from CONFIG, with null check
-        if CONFIG.auth is None:
-            raise ValueError("Not logged in. Please run 'nearai login' first.")
-        namespace = CONFIG.auth.namespace
-
-        # Welcome message
-        console.print(NEAR_AI_BANNER)
-        welcome_panel = Panel(
-            Text.assemble(
-                ("Let's create a new agent! 🦾 \n", "bold green"),
-                ("We'll need some basic information to get started.", "dim"),
-            ),
-            title="Agent Creator",
-            border_style="green",
-        )
-        console.print(welcome_panel)
-        console.print("\n")
-
-        # Name prompt with explanation
-        name_info = Panel(
-            Text.assemble(
-                ("Choose a unique name for your agent using only:\n\n", ""),
-                ("• letters\n", "dim"),
-                ("• numbers\n", "dim"),
-                ("• dots (.)\n", "dim"),
-                ("• hyphens (-)\n", "dim"),
-                ("• underscores (_)\n\n", "dim"),
-                ("Examples: 'code-reviewer', 'data.analyzer', 'text_summarizer'", "green"),
-            ),
-            title="Agent Name Rules",
-            border_style="blue",
-        )
-        console.print(name_info)
-
-        while True:
-            name = Prompt.ask("[bold blue]Enter agent name").strip()
-            # Validate name format
-            if not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$", name):
-                console.print(
-                    "[red]❌ Invalid name format. " "Please use only letters, numbers, dots, hyphens, or underscores."
-                )
-                continue
-            if " " in name:
-                console.print("[red]❌ Spaces are not allowed. Use dots, hyphens, or underscores instead.")
-                continue
-            break
-
-        console.print("\n")
-
-        # Description prompt
-        description_info = Panel(
-            "Describe what your agent will do in a few words...", title="Description Info", border_style="blue"
-        )
-        console.print(description_info)
-        description = Prompt.ask("[bold blue]Enter description")
-
-        console.print("\n")
-
-        # Initial instructions prompt
-        init_instructions_info = Panel(
-            Text.assemble(
-                ("Provide initial instructions for your AI agent...\n\n", ""),
-                ("This will be used as the system message to guide the agent's behavior.\n", "dim"),
-                ("You can edit these instructions later in the `agent.py` file.\n\n", "dim"),
-                (
-                    "Example: You are a helpful humorous assistant. Use puns or jokes to make the user smile.",
-                    "green",
-                ),
-            ),
-            title="Instructions",
-            border_style="blue",
-        )
-        console.print(init_instructions_info)
-        init_instructions = Prompt.ask("[bold blue]Enter instructions")
-
-        # Confirmation
-        console.print("\n")
-        summary_panel = Panel(
-            Text.assemble(
-                ("Summary of your new agent:\n\n", "bold"),
-                ("Namespace/Account:    ", "dim"),
-                (f"{namespace}\n", "green"),
-                ("Agent Name:           ", "dim"),
-                (f"{name}\n", "green"),
-                ("Description:          ", "dim"),
-                (f"{description}\n", "green"),
-                ("Instructions:         ", "dim"),
-                (f"{init_instructions}", "green"),
-            ),
-            title="📋 Review",
-            border_style="green",
-        )
-        console.print(summary_panel)
-        console.print("\n")
-
-        if not Confirm.ask("[bold]Would you like to proceed?", default=True):
-            console.print("[red]❌ Agent creation cancelled")
-            sys.exit(0)
-        return namespace, name, description, init_instructions
+            create_new_agent(namespace, name, description)
 
     def update(self, local_path: str = ".", minor: bool = False, major: bool = False) -> None:
         """Update the version in an agent's metadata.json file.
@@ -1186,12 +924,6 @@ run(env)
             major: If True, increment the major version (0.1.0 → 1.0.0)
 
         """
-        from rich.console import Console
-        from rich.panel import Panel
-        from rich.text import Text
-
-        from nearai.cli_helpers import increment_version_by_type, load_and_validate_metadata
-
         # Determine increment type based on flags
         if major:
             increment_type = "major"
@@ -1200,71 +932,9 @@ run(env)
         else:
             increment_type = "patch"  # Default
 
-        path = resolve_local_path(Path(local_path))
-        metadata_path = path / "metadata.json"
+        from nearai.agent_creator import update_agent_version
 
-        # Load and validate metadata
-        metadata, error = load_and_validate_metadata(metadata_path)
-        if error:
-            console = Console()
-            error_panel = Panel(
-                Text(error, style="bold red"), title="Metadata Error", border_style="red", padding=(1, 2)
-            )
-            console.print(error_panel)
-            return
-
-        # At this point, metadata is guaranteed to be not None
-        assert metadata is not None, "Metadata should not be None if error is None"
-
-        # Get current version
-        current_version = metadata["version"]
-
-        # Increment version based on increment_type
-        try:
-            new_version = increment_version_by_type(current_version, increment_type)
-        except ValueError as e:
-            console = Console()
-            error_panel = Panel(
-                Text(str(e), style="bold red"), title="Version Error", border_style="red", padding=(1, 2)
-            )
-            console.print(error_panel)
-            return
-
-        # Update metadata.json with new version
-        metadata["version"] = new_version
-        try:
-            with open(metadata_path, "w") as f:
-                json.dump(metadata, f, indent=2)
-
-            # Enhanced version update message
-            console = Console()
-            update_panel = Panel(
-                Text.assemble(
-                    ("Agent: ", "dim"),
-                    (f"{metadata['name']}\n\n", "cyan bold"),
-                    ("Update Type: ", "dim"),
-                    (f"{increment_type}\n", "yellow"),
-                    ("Previous version: ", "dim"),
-                    (f"{current_version}\n", "yellow"),
-                    ("New version:     ", "dim"),
-                    (f"{new_version}", "green bold"),
-                ),
-                title="Version Updated",
-                border_style="green",
-                padding=(1, 2),
-            )
-            console.print(update_panel)
-
-        except Exception as e:
-            console = Console()
-            error_panel = Panel(
-                Text(f"Error updating metadata.json: {str(e)}", style="bold red"),
-                title="Update Error",
-                border_style="red",
-                padding=(1, 2),
-            )
-            console.print(error_panel)
-            sys.exit(1)  # Exit with error code instead of returning False
+        update_agent_version(local_path, increment_type)
 
     def upload(self, local_path: str = ".", auto_increment: bool = False) -> Optional[EntryLocation]:
         """Upload agent to the registry.
