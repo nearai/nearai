@@ -40,7 +40,7 @@ class FireworksImageGenerator:
         fireworks_params = {
             "prompt": kwargs.get("prompt"),
             "init_image": kwargs.get("init_image"),
-            "image_strength": kwargs.get("image_strength", 0.7),
+            "image_strength": kwargs.get("image_strength"),
             "cfg_scale": kwargs.get("cfg_scale", 7.0),
             "height": kwargs.get("height", 1024),
             "width": kwargs.get("width", 1024),
@@ -64,6 +64,10 @@ class FireworksImageGenerator:
                 init_image = self._decode_image(base64_image)
                 fireworks_params.update({"init_image": init_image})
 
+                # set the image strength to 0.7 if it is not provided
+                if kwargs.get("image_strength") is None:
+                    fireworks_params.update({"image_strength": 0.7})
+
                 # also check if control_image is received
                 if kwargs.get("control_image"):
                     base64_image = kwargs.get("control_image")
@@ -75,8 +79,6 @@ class FireworksImageGenerator:
                 answer: Answer = self.inference_client.text_to_image(**fireworks_params)
             if answer.image is None:
                 raise RuntimeError(f"No return image, {answer.finish_reason}")
-
-
 
             buffered = io.BytesIO()
             answer.image.save(buffered, format="JPEG")

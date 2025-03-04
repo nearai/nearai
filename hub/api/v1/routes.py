@@ -100,7 +100,7 @@ class ImageGenerationRequest(BaseModel):
     model: str = f"fireworks{PROVIDER_MODEL_SEP}accounts/fireworks/models/playground-v2-5-1024px-aesthetic"
     provider: Optional[str] = None
     init_image: Optional[str] = None
-    image_strength: Optional[float] = 0.7
+    image_strength: Optional[float] = None
     control_image: Optional[str] = None
     control_net_name: Optional[str] = None
     conditioning_scale: Optional[float] = None
