@@ -15,7 +15,8 @@ import { type ReactNode } from 'react';
 import { type z } from 'zod';
 
 import { StarButton } from '~/components/StarButton';
-import { ENTRY_CATEGORY_LABELS, primaryUrlForEntry } from '~/lib/entries';
+import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
+import { primaryUrlForEntry, rawFileSourceUrlForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
 
 import { ForkButton } from './ForkButton';
@@ -37,7 +38,7 @@ export const EntryCard = ({ entry, linksOpenNewTab, footer }: Props) => {
         <ConditionalLink href={primaryUrl}>
           <ImageIcon
             indicateParentClickable
-            src={entry.details.icon}
+            src={rawFileSourceUrlForEntry(entry, entry.details.icon)}
             alt={entry.name}
             fallbackIcon={icon}
             padding={false}

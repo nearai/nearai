@@ -23,8 +23,8 @@ import { type z } from 'zod';
 
 import { APP_TITLE } from '~/constants';
 import { useEntryEnvironmentVariables } from '~/hooks/entries';
+import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
 import {
-  ENTRY_CATEGORY_LABELS,
   idForEntry,
   idMatchesEntry,
   parseEntryIdWithOptionalVersion,
