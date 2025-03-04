@@ -663,6 +663,20 @@ def fork_entry(
             show_entry=True,
         )
 
+        # Remove X (Twitter) event triggers from the forked entry's details
+        if "triggers" in new_entry.details:
+            triggers = new_entry.details["triggers"]
+            if "events" in triggers:
+                events = triggers["events"]
+                if "x_mentions" in events:
+                    del events["x_mentions"]
+                # Optional: Remove the events object if empty after deletion
+                if not events:
+                    del triggers["events"]
+            # Optional: Remove the triggers object if empty after deletions
+            if not triggers:
+                del new_entry.details["triggers"]
+
         new_entry_collision_check = session.exec(
             select(RegistryEntry).where(
                 RegistryEntry.category == new_entry.category,
