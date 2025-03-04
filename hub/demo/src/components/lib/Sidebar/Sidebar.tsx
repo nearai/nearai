@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@near-pagoda/ui';
-import { X } from '@phosphor-icons/react';
+import { SvgIcon } from '@near-pagoda/ui';
+import { CaretDown } from '@phosphor-icons/react';
 import { type CSSProperties, type ReactNode, useEffect, useRef } from 'react';
 
 import { Footer } from '~/components/Footer';
@@ -66,30 +66,34 @@ type SidebarProps = {
   children: ReactNode;
   openForSmallScreens: boolean;
   setOpenForSmallScreens: (open: boolean) => unknown;
-  width?: string;
 };
 
 export const Sidebar = ({
   children,
   openForSmallScreens,
   setOpenForSmallScreens,
-  width,
 }: SidebarProps) => {
   return (
     <div className={s.sidebar} data-open-small-screens={openForSmallScreens}>
-      <div className={s.sidebarContent} style={{ width, minWidth: width }}>
-        <div className={s.sidebarContentInner}>
-          <Button
-            label="Close"
-            icon={<X weight="bold" />}
-            onClick={() => setOpenForSmallScreens(false)}
-            className={s.sidebarCloseButton}
-            fill="ghost"
-            size="x-small"
-          />
+      <div className={s.sidebarContent}>
+        <button
+          type="button"
+          onPointerDownCapture={(event) => {
+            event.stopPropagation();
+            setOpenForSmallScreens(false);
+          }}
+          onPointerUpCapture={(event) => {
+            event.stopPropagation();
+          }}
+          onClickCapture={(event) => {
+            event.stopPropagation();
+          }}
+          className={s.sidebarCloseButton}
+        >
+          <SvgIcon icon={<CaretDown weight="bold" />} size="s" />
+        </button>
 
-          {children}
-        </div>
+        <div className={s.sidebarContentInner}>{children}</div>
       </div>
     </div>
   );

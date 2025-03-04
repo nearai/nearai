@@ -46,6 +46,7 @@
 }
 
 .sidebar {
+  --open-transition-speed: 300ms;
   position: sticky;
   z-index: 250;
   top: var(--header-height);
@@ -53,23 +54,39 @@
   max-height: calc(100svh - max(var(--header-height), var(--sidebar-root-top)));
   min-height: 0;
   flex-shrink: 0;
-  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+  box-shadow:
+    1px 0px 0px rgba(0, 0, 0, 0.025),
+    -1px 0px 0px rgba(0, 0, 0, 0.025),
+    var(--shadow-card);
+  overflow: hidden;
 
   @media (max-width: $tabletBreakpointMaxWidth) {
+    z-index: 750;
     position: fixed;
-    right: 0;
-    bottom: 0;
-    width: 0vw;
-    bottom: 0;
+    max-height: none;
+    height: 0px;
     opacity: 0;
+    top: unset;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    opacity: 0;
+    box-shadow: none;
+    background: var(--sand-4);
     transition:
-      width 300ms,
-      opacity 300ms;
+      height 0ms var(--open-transition-speed),
+      opacity var(--open-transition-speed);
 
     &[data-open-small-screens='true'] {
-      display: flex;
-      width: 100vw;
+      height: 100svh;
       opacity: 1;
+      transition:
+        height 0ms,
+        opacity var(--open-transition-speed);
+
+      .sidebarContent {
+        transform: translateY(0%);
+      }
     }
   }
 }
@@ -78,17 +95,18 @@
   width: 18vw;
   min-width: 260px;
   flex-shrink: 0;
-  background: var(--sand-2);
   overflow: auto;
   scroll-behavior: smooth;
   height: 100%;
+  background: var(--sand-2);
+  transition: transform var(--open-transition-speed);
 
   @include hideScrollbar();
 
   @media (max-width: $tabletBreakpointMaxWidth) {
-    width: 100vw;
-    padding-top: 0 !important;
+    width: 100%;
     overscroll-behavior: contain;
+    transform: translateY(100%);
   }
 }
 
@@ -112,9 +130,27 @@
 }
 
 .sidebarCloseButton {
-  position: absolute;
-  top: var(--gap-m);
-  right: var(--gap-m);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  width: 100%;
+  height: var(--header-height);
+  border: none;
+  outline: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--sand-4);
+  box-shadow:
+    0 0 10px rgba(0, 0, 0, 0.1),
+    0 1px 1px rgba(0, 0, 0, 0.05);
+  transition: var(--transitions);
+
+  &:hover,
+  &:focus-visible {
+    color: var(--sand-12);
+  }
 
   @media (min-width: $tabletBreakpointMaxWidth) {
     display: none !important;
