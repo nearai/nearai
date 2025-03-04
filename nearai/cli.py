@@ -227,7 +227,10 @@ class RegistryCli:
             if not is_valid:
                 console = Console()
                 error_panel = Panel(
-                    Text(error, style="bold red"), title="Version Error", border_style="red", padding=(1, 2)
+                    Text(error or "Unknown error", style="bold red"),
+                    title="Version Error",
+                    border_style="red",
+                    padding=(1, 2),
                 )
                 console.print(error_panel)
                 return
