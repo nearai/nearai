@@ -348,14 +348,29 @@ class RegistryCli:
                 if auto_increment:
                     old_version = version
                     version = increment_version(version)
-                    print(f"Version {old_version} already exists. Auto-incrementing to {version}")
+
+                    # Enhanced version update message
+                    console = Console()
+                    update_panel = Panel(
+                        Text.assemble(
+                            ("Version Update\n\n", "bold"),
+                            ("Previous version: ", "dim"),
+                            (f"{old_version}\n", "yellow"),
+                            ("New version:     ", "dim"),
+                            (f"{version}", "green bold"),
+                        ),
+                        title="Auto-Increment",
+                        border_style="green",
+                        padding=(1, 2),
+                    )
+                    console.print(update_panel)
 
                     # Update metadata.json with new version
                     metadata["version"] = version
                     with open(metadata_path, "w") as f:
                         json.dump(metadata, f, indent=2)
 
-                    print(f"Updated {metadata_path} with new version: {version}")
+                    console.print(f"[dim]Updated [bold]{metadata_path}[/bold] with new version[/dim]")
                     continue  # Try again with new version
                 else:
                     console = Console()
@@ -1120,20 +1135,20 @@ run(env)
             sys.exit(0)
         return namespace, name, description, init_instructions
 
-    def update(self, local_path: str = ".", minor: bool = False, major: bool = False) -> bool:
+    def update(self, local_path: str = ".", minor: bool = False, major: bool = False) -> None:
         """Update the version in an agent's metadata.json file.
 
         Args:
         ----
             local_path: Path to the directory containing the agent to update
-            minor: If True, increment the minor version (0.1.0 -> 0.2.0)
-            major: If True, increment the major version (0.1.0 -> 1.0.0)
-
-        Returns:
-        -------
-            True if update was successful, False otherwise
+            minor: If True, increment the minor version (0.1.0 → 0.2.0)
+            major: If True, increment the major version (0.1.0 → 1.0.0)
 
         """
+        from rich.console import Console
+        from rich.panel import Panel
+        from rich.text import Text
+
         from nearai.cli_helpers import increment_version_by_type, load_and_validate_metadata
 
         # Determine increment type based on flags
@@ -1150,8 +1165,12 @@ run(env)
         # Load and validate metadata
         metadata, error = load_and_validate_metadata(metadata_path)
         if error:
-            print(error)
-            return False
+            console = Console()
+            error_panel = Panel(
+                Text(error, style="bold red"), title="Metadata Error", border_style="red", padding=(1, 2)
+            )
+            console.print(error_panel)
+            return
 
         # At this point, metadata is guaranteed to be not None
         assert metadata is not None, "Metadata should not be None if error is None"
@@ -1163,8 +1182,12 @@ run(env)
         try:
             new_version = increment_version_by_type(current_version, increment_type)
         except ValueError as e:
-            print(f"Error: {str(e)}")
-            return False
+            console = Console()
+            error_panel = Panel(
+                Text(str(e), style="bold red"), title="Version Error", border_style="red", padding=(1, 2)
+            )
+            console.print(error_panel)
+            return
 
         # Update metadata.json with new version
         metadata["version"] = new_version
@@ -1172,12 +1195,35 @@ run(env)
             with open(metadata_path, "w") as f:
                 json.dump(metadata, f, indent=2)
 
-            print(f"Updated {metadata_path}")
-            print(f"Version: {current_version} → {new_version}")
-            return True
+            # Enhanced version update message
+            console = Console()
+            update_panel = Panel(
+                Text.assemble(
+                    ("Agent: ", "dim"),
+                    (f"{metadata['name']}\n\n", "cyan bold"),
+                    ("Update Type: ", "dim"),
+                    (f"{increment_type}\n", "yellow"),
+                    ("Previous version: ", "dim"),
+                    (f"{current_version}\n", "yellow"),
+                    ("New version:     ", "dim"),
+                    (f"{new_version}", "green bold"),
+                ),
+                title="Version Updated",
+                border_style="green",
+                padding=(1, 2),
+            )
+            console.print(update_panel)
+
         except Exception as e:
-            print(f"Error updating metadata.json: {str(e)}")
-            return False
+            console = Console()
+            error_panel = Panel(
+                Text(f"Error updating metadata.json: {str(e)}", style="bold red"),
+                title="Update Error",
+                border_style="red",
+                padding=(1, 2),
+            )
+            console.print(error_panel)
+            sys.exit(1)  # Exit with error code instead of returning False
 
     def upload(self, local_path: str = ".", auto_increment: bool = False) -> Optional[EntryLocation]:
         """Upload agent to the registry.

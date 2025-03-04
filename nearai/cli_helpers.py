@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 from packaging.version import InvalidVersion, Version
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 
 from nearai.registry import parse_location, registry
 
@@ -179,7 +180,18 @@ def check_version_exists(namespace: str, name: str, version: str) -> Tuple[bool,
     """
     entry_location = f"{namespace}/{name}/{version}"
     try:
-        print(f"Checking if version {version} exists in the registry...")
+        console = Console()
+        console.print(
+            Text.assemble(
+                ("\nChecking if version ", "white"),
+                (f"{version}", "green bold"),
+                (" exists for ", "dim"),
+                (f"{name} ", "cyan bold"),
+                ("in the registry under ", "white"),
+                (f"{namespace}", "bold"),
+                ("...", "white"),
+            )
+        )
         existing_entry = registry.info(parse_location(entry_location))
 
         if existing_entry:
