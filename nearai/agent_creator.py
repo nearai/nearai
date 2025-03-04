@@ -66,7 +66,7 @@ def prompt_agent_details() -> Tuple[str, str, str, str]:
         # Validate name format
         if not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$", name):
             console.print(
-                "[red]❌ Invalid name format. " "Please use only letters, numbers, dots, hyphens, or underscores."
+                "[red]❌ Invalid name format. Please use only letters, numbers, dots, hyphens, or underscores."
             )
             continue
         if " " in name:
