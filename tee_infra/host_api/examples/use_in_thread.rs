@@ -1,4 +1,5 @@
 use host_api::{start_server_in_thread, ServerConfig};
+use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 
@@ -10,7 +11,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let config = ServerConfig {
         kp_address: "localhost".to_string(),
         kp_port: 8080,
-        vm_dir: "/tmp".to_string(),
+        vm_dir: PathBuf::from("/tmp"),
     };
 
     // Start the server in a thread

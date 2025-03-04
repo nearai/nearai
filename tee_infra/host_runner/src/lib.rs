@@ -1,5 +1,3 @@
-// src/lib.rs
-
 use anyhow::{anyhow, Context, Result};
 use ini::configparser::ini::Ini;
 use log::{info, warn};
@@ -12,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
+use tracing;
 use uuid::Uuid;
 
 /// Merge two JSON values in a nested/dict-like way, similar to Python's merge2.
@@ -269,12 +268,17 @@ impl DStackManager {
 
     /// Create necessary directories for a new instance, failing if they exist.
     fn create_directories(&self, work_dir: &Path) -> Result<(PathBuf, PathBuf)> {
+        // Check if work_dir exists and is empty
         if work_dir.exists() {
-            return Err(anyhow!(
-                "The instance already exists at {}",
-                work_dir.display()
-            ));
+            let entries = fs::read_dir(work_dir)?;
+            if entries.count() > 0 {
+                return Err(anyhow!(
+                    "Work directory {} is not empty",
+                    work_dir.display()
+                ));
+            }
         }
+
         let shared_dir = work_dir.join("shared");
         let certs_dir = shared_dir.join("certs");
         fs::create_dir_all(&shared_dir)?;
@@ -429,23 +433,51 @@ impl DStackManager {
         Ok(())
     }
 
+    /// Check if QEMU is installed and available
+    fn check_qemu_available(&self) -> Result<()> {
+        tracing::info!(
+            "Checking if QEMU is available at: {}",
+            self.config.qemu_path
+        );
+
+        let output = Command::new(&self.config.qemu_path)
+            .arg("--version")
+            .output()
+            .with_context(|| format!("Failed to execute QEMU at: {}", self.config.qemu_path))?;
+
+        if output.status.success() {
+            let version = String::from_utf8_lossy(&output.stdout);
+            tracing::info!("QEMU version: {}", version.trim());
+            Ok(())
+        } else {
+            let error = String::from_utf8_lossy(&output.stderr);
+            tracing::error!("QEMU check failed: {}", error);
+            Err(anyhow!("QEMU check failed: {}", error))
+        }
+    }
+
     /// Equivalent to `run_instance` in Python. Spawns a QEMU process with TDX options.
     ///
     /// - `vm_dir`: The directory containing `vm-manifest.json` and `shared/`.
-    /// - `memory_str`, `vcpus_opt`: optional overrides for memory/vCPUs.
-    /// - `imgdir`: if the manifest doesn't have an `image_path`, you can supply it here.
-    /// - `kp_port`: The host key provider port. We'll patch `config.json` to point to this.
-    /// - `pin_numa`, `hugepage`: same logic as in Python.
+    /// - `host_port`: The host key provider port. We'll patch `config.json` to point to this.
+    /// - `memory`: Optional memory specification (e.g. "1G", "512M").
+    /// - `vcpus`: Optional number of vCPUs.
+    /// - `imgdir`: Optional path to the image directory if not specified in manifest.
+    /// - `pin_numa`: Whether to pin the VM to the NUMA node of the GPU.
+    /// - `hugepage`: Whether to use hugepages for memory.
     pub fn run_instance(
         &self,
         vm_dir: &Path,
-        memory_str: Option<&str>,
-        vcpus_opt: Option<u32>,
+        host_port: u16,
+        memory: Option<&str>,
+        vcpus: Option<u32>,
         imgdir: Option<&Path>,
-        kp_port: u16,
         pin_numa: bool,
         hugepage: bool,
     ) -> Result<()> {
+        // Check if QEMU is available
+        self.check_qemu_available()?;
+
         // 1) Load vm-manifest.json
         let manifest_path = vm_dir.join("vm-manifest.json");
         if !manifest_path.exists() {
@@ -487,12 +519,15 @@ impl DStackManager {
                 serde_json::from_reader(cf)?
             };
             if let Value::Object(ref mut map) = existing {
-                // e.g. "host_api_url": "http://10.0.2.2:kp_port/api"
+                // e.g. "host_api_url": "http://10.0.2.2:host_port/api"
                 map.insert(
                     "host_api_url".to_string(),
-                    Value::String(format!("http://10.0.2.2:{}/api", kp_port)),
+                    Value::String(format!("http://10.0.2.2:{}/api", host_port)),
                 );
-                map.insert("host_vsock_port".to_string(), Value::Number(kp_port.into()));
+                map.insert(
+                    "host_vsock_port".to_string(),
+                    Value::Number(host_port.into()),
+                );
             }
             let mut wf = BufWriter::new(File::create(&config_file)?);
             serde_json::to_writer_pretty(&mut wf, &existing)?;
@@ -526,12 +561,12 @@ impl DStackManager {
             .ok_or_else(|| anyhow!("Missing 'cmdline' in metadata"))?;
 
         // 5) Build QEMU command
-        let mem_mb = if let Some(m_str) = memory_str {
+        let mem_mb = if let Some(m_str) = memory {
             memory_to_mb(m_str)?
         } else {
             vm_config.memory
         };
-        let vcpus = vcpus_opt.unwrap_or(vm_config.vcpu);
+        let vcpus = vcpus.unwrap_or(vm_config.vcpu);
         let disk_size = vm_config.disk_size;
         let gpus = &vm_config.gpu;
 
@@ -680,15 +715,90 @@ impl DStackManager {
 
         // Print for debugging
         println!("Launching QEMU with command:\n{}", final_cmd.join(" "));
+        tracing::info!("Launching QEMU with command:\n{}", final_cmd.join(" "));
+
+        // Check if the image files exist
+        tracing::info!(
+            "Checking if kernel exists: {}",
+            image_path.join(kernel).display()
+        );
+        if !image_path.join(kernel).exists() {
+            tracing::error!(
+                "Kernel file not found: {}",
+                image_path.join(kernel).display()
+            );
+            return Err(anyhow!(
+                "Kernel file not found: {}",
+                image_path.join(kernel).display()
+            ));
+        }
+
+        tracing::info!(
+            "Checking if initrd exists: {}",
+            image_path.join(initrd).display()
+        );
+        if !image_path.join(initrd).exists() {
+            tracing::error!(
+                "Initrd file not found: {}",
+                image_path.join(initrd).display()
+            );
+            return Err(anyhow!(
+                "Initrd file not found: {}",
+                image_path.join(initrd).display()
+            ));
+        }
+
+        tracing::info!(
+            "Checking if bios exists: {}",
+            image_path.join(bios).display()
+        );
+        if !image_path.join(bios).exists() {
+            tracing::error!("BIOS file not found: {}", image_path.join(bios).display());
+            return Err(anyhow!(
+                "BIOS file not found: {}",
+                image_path.join(bios).display()
+            ));
+        }
+
+        tracing::info!(
+            "Checking if rootfs exists: {}",
+            image_path.join(rootfs).display()
+        );
+        if !image_path.join(rootfs).exists() {
+            tracing::error!(
+                "Rootfs file not found: {}",
+                image_path.join(rootfs).display()
+            );
+            return Err(anyhow!(
+                "Rootfs file not found: {}",
+                image_path.join(rootfs).display()
+            ));
+        }
+
+        // Create log files for QEMU output
+        let stdout_log = PathBuf::from("qemu_stdout.log");
+        let stderr_log = PathBuf::from("qemu_stderr.log");
+
+        tracing::info!("QEMU stdout will be logged to: {}", stdout_log.display());
+        tracing::info!("QEMU stderr will be logged to: {}", stderr_log.display());
+
+        let stdout_file = File::create(&stdout_log).with_context(|| {
+            format!("Failed to create stdout log file: {}", stdout_log.display())
+        })?;
+        let stderr_file = File::create(&stderr_log).with_context(|| {
+            format!("Failed to create stderr log file: {}", stderr_log.display())
+        })?;
 
         // 6) spawn QEMU
         let child = Command::new(&final_cmd[0])
             .args(&final_cmd[1..])
             .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
+            .stdout(Stdio::from(stdout_file))
+            .stderr(Stdio::from(stderr_file))
             .spawn()
             .with_context(|| format!("Failed to launch QEMU: {:?}", final_cmd))?;
+
+        tracing::info!("QEMU process started with PID: {}", child.id());
 
         {
             let mut procs = self.qemu_processes.lock().unwrap();
@@ -701,15 +811,31 @@ impl DStackManager {
     /// Terminates each child QEMU process we have started.
     pub fn shutdown_instances(&self) -> Result<()> {
         let mut procs = self.qemu_processes.lock().unwrap();
+        tracing::info!("Shutting down {} QEMU instances", procs.len());
+
         for child in procs.iter_mut() {
-            println!("Shutting down QEMU instance (pid {})...", child.id());
-            child.kill().ok(); // try SIGTERM
+            let pid = child.id();
+            tracing::info!("Shutting down QEMU instance (pid {})...", pid);
+
+            match child.kill() {
+                Ok(_) => tracing::info!("Sent kill signal to QEMU process {}", pid),
+                Err(e) => {
+                    tracing::warn!("Failed to send kill signal to QEMU process {}: {}", pid, e)
+                }
+            }
+
             match child.wait() {
-                Ok(status) => println!("QEMU exited with status: {:?}", status),
-                Err(e) => println!("Error waiting for QEMU process: {:?}", e),
+                Ok(status) => {
+                    tracing::info!("QEMU process {} exited with status: {:?}", pid, status)
+                }
+                Err(e) => tracing::error!("Error waiting for QEMU process {}: {:?}", pid, e),
             }
         }
+
+        let count = procs.len();
         procs.clear();
+        tracing::info!("Cleared {} QEMU processes from tracking list", count);
+
         Ok(())
     }
 
@@ -734,9 +860,7 @@ impl DStackManager {
     /// - `vm_dir`: The directory containing the VM instance.
     /// - `file_path`: The path to the file to copy, relative to the crate's directory.
     pub fn add_shared_file(&self, vm_dir: &Path, file_path: &str) -> Result<()> {
-        // Get the source path (relative to the crate's directory)
-        let src_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(file_path);
-
+        let src_path = Path::new(file_path);
         // Get the destination path in the VM's shared directory
         let dest_path = vm_dir.join("shared").join(file_path);
 

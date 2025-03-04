@@ -1,9 +1,10 @@
 use host_api::{start_server, ServerConfig};
+use std::path::PathBuf;
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn main() {
     // Initialize tracing
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
@@ -16,9 +17,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let config = Arc::new(ServerConfig {
         kp_address: "localhost".to_string(),
         kp_port: 8080,
-        vm_dir: "/tmp".to_string(),
+        vm_dir: PathBuf::from("/tmp"),
     });
 
     // Start the server
-    start_server(config).await
+    if let Err(e) = start_server(config).await {
+        eprintln!("Error starting server: {}", e);
+        std::process::exit(1);
+    }
 }

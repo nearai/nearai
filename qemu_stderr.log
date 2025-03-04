@@ -1,0 +1,1 @@
+qemu-system-x86_64: -netdev user,id=nic0_td,hostfwd=tcp:0.0.0.0:3307-:8023,hostfwd=tcp:0.0.0.0:3306-:3324,hostfwd=tcp:127.0.0.1:8080-:8056,hostfwd=tcp:127.0.0.1:9001-:9067: Could not set up host forwarding rule 'tcp:127.0.0.1:8080-:8056'

@@ -2,7 +2,7 @@
 
 use std::fs;
 use std::io::Write;
-use tdx_host_lib::DStackManager; // adjust your crate name accordingly
+use host_runner::DStackManager; // adjust your crate name accordingly
 use tempfile::{tempdir, NamedTempFile};
 
 #[test]
