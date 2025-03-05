@@ -59,12 +59,12 @@ def print_login_status():
     """Prints the current authentication status if available in the config file."""
     config = load_config_file()
     if config.get("auth") and config["auth"].get("account_id"):
-        print(f'Auth data for: {config["auth"]["account_id"]}')
-        print(f'signature: {config["auth"]["signature"]}')
-        print(f'public_key: {config["auth"]["public_key"]}')
-        print(f'nonce: {config["auth"]["nonce"]}')
-        print(f'message: {config["auth"]["message"]}')
-        print(f'recipient: {config["auth"]["recipient"]}')
+        print(f"Auth data for: {config['auth']['account_id']}")
+        print(f"signature: {config['auth']['signature']}")
+        print(f"public_key: {config['auth']['public_key']}")
+        print(f"nonce: {config['auth']['nonce']}")
+        print(f"message: {config['auth']['message']}")
+        print(f"recipient: {config['auth']['recipient']}")
     else:
         print("Near auth details not found")
 

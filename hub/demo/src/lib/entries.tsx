@@ -1,70 +1,30 @@
-import {
-  ChartBar,
-  Database,
-  GraduationCap,
-  Graph,
-  Lightbulb,
-  TerminalWindow,
-} from '@phosphor-icons/react';
-import { type ReactElement } from 'react';
 import { type z } from 'zod';
+
+import { env } from '~/env';
 
 import { type EntryCategory, type entryModel, optionalVersion } from './models';
 
-export const ENTRY_CATEGORY_LABELS: Record<
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  EntryCategory | (string & {}),
-  {
-    icon: ReactElement;
-    label: string;
-  }
-> = {
-  agent: {
-    icon: <Lightbulb />,
-    label: 'Agent',
-  },
-  benchmark: {
-    icon: <GraduationCap />,
-    label: 'Benchmark',
-  },
-  dataset: {
-    icon: <Database />,
-    label: 'Dataset',
-  },
-  environment: {
-    icon: <TerminalWindow />,
-    label: 'Environment',
-  },
-  evaluation: {
-    icon: <ChartBar />,
-    label: 'Evaluation',
-  },
-  model: {
-    icon: <Graph />,
-    label: 'Model',
-  },
-};
-
 export function primaryUrlForEntry(
   entry: Pick<z.infer<typeof entryModel>, 'namespace' | 'name' | 'category'>,
+  version = 'latest',
 ) {
   let url: string | undefined;
 
   switch (entry.category as EntryCategory) {
     case 'agent':
-      url = `/agents/${entry.namespace}/${entry.name}/latest`;
+      url = `/agents/${entry.namespace}/${entry.name}/${version}`;
       break;
 
     case 'benchmark':
-      url = `/benchmarks/${entry.namespace}/${entry.name}/latest`;
+      url = `/benchmarks/${entry.namespace}/${entry.name}/${version}`;
       break;
 
     case 'dataset':
-      url = `/datasets/${entry.namespace}/${entry.name}/latest`;
+      url = `/datasets/${entry.namespace}/${entry.name}/${version}`;
       break;
 
     case 'model':
-      url = `/models/${entry.namespace}/${entry.name}/latest`;
+      url = `/models/${entry.namespace}/${entry.name}/${version}`;
       break;
   }
 
@@ -78,13 +38,7 @@ export function benchmarkEvaluationsUrlForEntry(
 
   switch (entry.category as EntryCategory) {
     case 'agent':
-      url = `${primaryUrlForEntry(entry)}/evaluations`;
-      break;
-
     case 'benchmark':
-      url = `${primaryUrlForEntry(entry)}/evaluations`;
-      break;
-
     case 'model':
       url = `${primaryUrlForEntry(entry)}/evaluations`;
       break;
@@ -93,28 +47,49 @@ export function benchmarkEvaluationsUrlForEntry(
   return url;
 }
 
-export function sourceUrlForEntry(entry: z.infer<typeof entryModel>) {
+export function sourceUrlForEntry(
+  entry: Pick<z.infer<typeof entryModel>, 'namespace' | 'name' | 'category'>,
+  version = 'latest',
+) {
   let url: string | undefined;
 
   switch (entry.category as EntryCategory) {
     case 'agent':
-      url = `${primaryUrlForEntry(entry)}/source`;
-      break;
-
     case 'benchmark':
-      url = `${primaryUrlForEntry(entry)}/source`;
-      break;
-
     case 'dataset':
-      url = `${primaryUrlForEntry(entry)}/source`;
-      break;
-
     case 'model':
-      url = `${primaryUrlForEntry(entry)}/source`;
+      url = `${primaryUrlForEntry(entry, version)}/source`;
       break;
   }
 
   return url;
+}
+
+export function rawFileUrlForEntry(
+  entry:
+    | Pick<
+        z.infer<typeof entryModel>,
+        'namespace' | 'name' | 'category' | 'version'
+      >
+    | undefined,
+  path: string | undefined,
+) {
+  if (!entry || !path) return;
+
+  if (
+    path.startsWith('https://') ||
+    path.startsWith('http://') ||
+    path.startsWith('data:image/') ||
+    path.startsWith('#')
+  )
+    return path;
+
+  path = path.replace(/^\.\//, '').replace(/^\//, '');
+
+  const url = sourceUrlForEntry(entry, entry.version);
+  if (!url) return;
+
+  return `${env.NEXT_PUBLIC_BASE_URL}${url}/raw/${path}`;
 }
 
 export function idForEntry(

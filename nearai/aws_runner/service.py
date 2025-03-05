@@ -186,19 +186,31 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
             if os.path.basename(file["filename"]) == "metadata.json":
                 agent_metadata = json.loads(file["content"])
                 if verbose:
-                    agent_info = f"""[DEBUG]   • Name: {agent_metadata.get('name', 'N/A')}
-[DEBUG]   • Version: {agent_metadata.get('version', 'N/A')}
-[DEBUG]   • Description: {agent_metadata.get('description', 'N/A')}
-[DEBUG]   • Category: {agent_metadata.get('category', 'N/A')}
-[DEBUG]   • Tags: {', '.join(agent_metadata.get('tags', [])) if agent_metadata.get('tags') else 'None'}
-[DEBUG]   • Model: {agent_metadata.get('details', {}).get('agent', {}).get('defaults', {}).get('model', 'N/A')}
-[DEBUG]   • Model Provider: {agent_metadata.get('details', {}).get('agent', {}).get('defaults', {})
-                    .get('model_provider', 'N/A')}
-[DEBUG]   • Model Temperature: {agent_metadata.get('details', {}).get('agent', {}).get('defaults', {})
-                    .get('model_temperature', 'N/A')}
-[DEBUG]   • Model Max Tokens: {agent_metadata.get('details', {}).get('agent', {}).get('defaults', {})
-                    .get('model_max_tokens', 'N/A')}
-[DEBUG]   • Show Entry: {agent_metadata.get('show_entry', 'N/A')}
+                    agent_info = f"""[DEBUG]   • Name: {agent_metadata.get("name", "N/A")}
+[DEBUG]   • Version: {agent_metadata.get("version", "N/A")}
+[DEBUG]   • Description: {agent_metadata.get("description", "N/A")}
+[DEBUG]   • Category: {agent_metadata.get("category", "N/A")}
+[DEBUG]   • Tags: {", ".join(agent_metadata.get("tags", [])) if agent_metadata.get("tags") else "None"}
+[DEBUG]   • Model: {agent_metadata.get("details", {}).get("agent", {}).get("defaults", {}).get("model", "N/A")}
+[DEBUG]   • Model Provider: {
+                        agent_metadata.get("details", {})
+                        .get("agent", {})
+                        .get("defaults", {})
+                        .get("model_provider", "N/A")
+                    }
+[DEBUG]   • Model Temperature: {
+                        agent_metadata.get("details", {})
+                        .get("agent", {})
+                        .get("defaults", {})
+                        .get("model_temperature", "N/A")
+                    }
+[DEBUG]   • Model Max Tokens: {
+                        agent_metadata.get("details", {})
+                        .get("agent", {})
+                        .get("defaults", {})
+                        .get("model_max_tokens", "N/A")
+                    }
+[DEBUG]   • Show Entry: {agent_metadata.get("show_entry", "N/A")}
 [DEBUG]    ----------------------------
 """
 

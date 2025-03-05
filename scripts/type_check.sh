@@ -5,6 +5,6 @@
 # Usage: ./scripts/type_check.sh
 
 set -e
-poetry run mypy --config pyproject.toml nearai
-poetry run mypy --config pyproject.toml hub
-poetry run mypy --config pyproject.toml worker
+uv run mypy --config pyproject.toml nearai
+uv run mypy --config pyproject.toml hub
+uv run mypy --config pyproject.toml worker

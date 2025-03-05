@@ -104,7 +104,7 @@ Additionally, you can fine tune and serve a model to fit your specific needs. (S
 
 ### `agent.py`
 
-This file contains the code that executes each time your agent receives a prompt. By default it will use simple instructions provided by the user during the creation process. 
+This file contains the code that executes each time your agent receives a prompt. By default it will use simple instructions provided by the user during the creation process.
 
 For more information on how to use the environment object, see [The Agent Environment](./env/overview.md).
 
@@ -130,17 +130,26 @@ def run(env: Environment):
 run(env)
 ```
 
+---
+
 ## Next Steps
 
 Now that you have the basics down, here are some key areas to focus on next that will help you better understand what is possible when building with NEAR AI:
 
-### [Explore the Registry →](./registry.md)
+### [Ship your agent 🚀](./registry.md#uploading-an-agent)
+
+Upload your agent to the agent registry and [easily embed it into your website](./registry.md#embedding-an-agent).
+
+### [Explore the Registry 🔍](./registry.md)
+
 The NEAR AI Registry is your hub for agent discovery and collaboration. Browse community-created agents, learn from examples, and share your own creations with others.
 
-### [Master Threads →](./threads.md)
-Threads power agent execution and interaction. Learn to structure conversations, manage file attachments, and create coordinated multi-agent interactions - all within organized conversation threads.
+### [Master Threads 💬](./threads.md)
 
-### [Explore the Environment →](./env/overview.md)
+Threads power agent execution and interaction. Learn to structure conversations, manage file attachments, and create coordinated multi-agent interactions - all within organized conversation threads. 
+
+### [Explore the Environment 🧑‍💻](./env/overview.md)
+
 The environment object unlocks NEAR AI's powerful features:
 
 - Create natural conversations with [advanced message handling](./env/messages_files.md)
@@ -148,5 +157,6 @@ The environment object unlocks NEAR AI's powerful features:
 - Enable [agent-to-agent communication](./env/calling_other_agents.md)
 - Extend capabilities with [custom tools](./env/tools.md)
 
-### [Learn About Secrets and Variables →](./env/variables.md)
+### [Learn About Secrets and Variables 🔑](./env/variables.md)
+
 Learn how to manage environment variables and secure with proper secrets management. Store API keys safely and connect to external services with confidence.
