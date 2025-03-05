@@ -7,6 +7,7 @@ import {
   AITP_CLIENT_ID,
 } from '~/components/threads/messages/aitp/schema';
 import { env } from '~/env';
+import { rawFileUrlForEntry } from '~/lib/entries';
 import {
   chatWithAgentModel,
   type entriesModel,
@@ -29,6 +30,7 @@ import { loadEntriesFromDirectory } from '~/trpc/utils/data-source';
 import { conditionallyIncludeAuthorizationHeader } from '~/trpc/utils/headers';
 import { conditionallyRemoveSecret } from '~/trpc/utils/secrets';
 import { fetchThreadContents } from '~/trpc/utils/threads';
+import { filePathIsImage } from '~/utils/file';
 import { createZodFetcher } from '~/utils/zod-fetch';
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc';
@@ -177,6 +179,7 @@ export const hubRouter = createTRPCRouter({
   file: publicProcedure
     .input(
       z.object({
+        category: entryCategory,
         filePath: z.string(),
         namespace: z.string(),
         name: z.string(),
@@ -184,6 +187,15 @@ export const hubRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
+      const isImage = filePathIsImage(input.filePath);
+
+      if (isImage) {
+        return {
+          content: rawFileUrlForEntry(input, input.filePath),
+          path: input.filePath,
+        };
+      }
+
       const response = await fetch(`${env.ROUTER_URL}/registry/download_file`, {
         method: 'POST',
         headers: conditionallyIncludeAuthorizationHeader(ctx.authorization, {
@@ -204,7 +216,8 @@ export const hubRouter = createTRPCRouter({
         throw new Error(`Failed to load file, status: ${response.status}`);
       }
 
-      const content = await (await response.blob()).text();
+      const blob = await response.blob();
+      const content = await blob.text();
 
       return {
         content,
@@ -215,6 +228,7 @@ export const hubRouter = createTRPCRouter({
   filePaths: publicProcedure
     .input(
       z.object({
+        category: entryCategory,
         namespace: z.string(),
         name: z.string(),
         version: z.string(),

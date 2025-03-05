@@ -26,20 +26,20 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install poetry
-      run: pipx install poetry
+    - name: Install uv
+      run: pip install uv
 
-    - name: Get Poetry cache dir
-      id: poetry-cache
-      run: echo "dir=$(poetry config cache-dir)" >> $GITHUB_OUTPUT
+    - name: Get uv cache dir
+      id: uv-cache
+      run: echo "dir=$(uv cache dir)" >> $GITHUB_OUTPUT
 
-    - name: Cache Poetry dependencies
+    - name: Cache uv dependencies
       uses: actions/cache@v3
       with:
-        path: ${{ steps.poetry-cache.outputs.dir }}
-        key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        path: ${{ steps.uv-cache.outputs.dir }}
+        key: ${{ runner.os }}-uv-${{ matrix.python-version }}-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: |
-          ${{ runner.os }}-poetry-${{ matrix.python-version }}-
+          ${{ runner.os }}-uv-${{ matrix.python-version }}-
 
     - name: Install Codespell
       run: pip install codespell
@@ -48,10 +48,10 @@ jobs:
       run: codespell --config .codespellrc
 
     - name: check lock file for inconsistencies
-      run: poetry check --lock
+      run: uv lock --check
 
     - name: Install dependencies
-      run: poetry install --extras explatform --extras hub
+      run: uv sync --group docs --group dev
 
     - name: Lint Check
       run: ./scripts/lint_check.sh
@@ -97,7 +97,7 @@ jobs:
 
   #   - name: Exec Integration Tests
   #     run: |
-  #       docker exec docker-ci-1 poetry run pytest -m integration ./e2e/
+  #       docker exec docker-ci-1 uv run pytest -m integration ./e2e/
     
   #   - name: Stop Docker Compose
   #     run: docker compose -f .docker/compose-e2e.yml down
