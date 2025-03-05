@@ -72,7 +72,7 @@ export async function GET() {
         id: 'country',
         label: 'Country',
         type: 'combobox',
-        autocomplete: 'country-name',
+        autocomplete: 'country',
         options: [
           { value: 'AF', label: 'Afghanistan' },
           { value: 'AX', label: 'Aland Islands' },
