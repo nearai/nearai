@@ -71,7 +71,7 @@ export async function GET() {
       {
         id: 'country',
         label: 'Country',
-        type: 'combobox',
+        type: 'select',
         autocomplete: 'country',
         options: [
           { value: 'AF', label: 'Afghanistan' },
@@ -283,7 +283,10 @@ export async function GET() {
           { value: 'SB', label: 'Solomon Islands' },
           { value: 'SO', label: 'Somalia' },
           { value: 'ZA', label: 'South Africa' },
-          { value: 'GS', label: 'South Georgia and the South Sandwich Islands' },
+          {
+            value: 'GS',
+            label: 'South Georgia and the South Sandwich Islands',
+          },
           { value: 'SS', label: 'South Sudan' },
           { value: 'ES', label: 'Spain' },
           { value: 'LK', label: 'Sri Lanka' },

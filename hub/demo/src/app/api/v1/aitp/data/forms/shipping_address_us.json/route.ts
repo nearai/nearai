@@ -54,7 +54,7 @@ export async function GET() {
       {
         id: 'state',
         label: 'State',
-        type: 'combobox',
+        type: 'select',
         autocomplete: 'address-level1',
         required: true,
         options: [
