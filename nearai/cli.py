@@ -195,10 +195,14 @@ class RegistryCli:
 
         Args:
         ----
-            local_path: Path to the directory containing the agent to update
+            local_path: Path to the directory containing the entry to update
             increment_type: Type of version increment: 'patch', 'minor', or 'major'
 
         """
+        if CONFIG.auth is None:
+            print("Please login with `nearai login`")
+            return
+
         path = resolve_local_path(Path(local_path))
         metadata_path = path / "metadata.json"
 
