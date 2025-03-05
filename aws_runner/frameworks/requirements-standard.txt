@@ -22,7 +22,7 @@ ed25519 == 1.5
 py-multibase==1.0.3
 py-multicodec==0.2.1
 pydantic==2.9.2
-aiohttp==3.9.3
+aiohttp==3.11.0b0
 borsh-construct
 tweepy >= 4.14.0
 tenacity == 9.0.0
