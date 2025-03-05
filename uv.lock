@@ -2315,7 +2315,7 @@ dependencies = [
     { name = "wheel" },
 ]
 
-[package.dev-dependencies]
+[package.optional-dependencies]
 dev = [
     { name = "commitizen" },
     { name = "mypy" },
@@ -2373,44 +2373,79 @@ vllm = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.13.2,<2.0.0" },
+    { name = "apscheduler", marker = "extra == 'hub'", specifier = ">=3.10.4,<4.0.0" },
     { name = "backoff", specifier = ">=2.2.1,<3.0.0" },
     { name = "base58", specifier = "==2.1.1" },
     { name = "boto3", specifier = ">=1.34.100,<2.0.0" },
     { name = "boto3-stubs", specifier = ">=1.34.147,<2.0.0" },
+    { name = "chardet", marker = "extra == 'hub'", specifier = ">=5.2.0,<6.0.0" },
+    { name = "commitizen", marker = "extra == 'dev'", specifier = ">=3.29.0,<4.0.0" },
     { name = "cryptography", specifier = ">=43.0.0" },
     { name = "datasets", specifier = ">=2.20.0,<3.0.0" },
     { name = "ddtrace", specifier = "==2.21.0" },
     { name = "ed25519", specifier = ">=1.5,<2.0" },
+    { name = "fabric", marker = "extra == 'explatform'", specifier = ">=3.2.2,<4.0.0" },
     { name = "fastapi", specifier = ">=0.111.0,<0.112.0" },
+    { name = "fastapi-cli", marker = "extra == 'hub'", specifier = ">=0.0.4,<1.0.0" },
     { name = "fire", specifier = ">=0.6.0,<0.7.0" },
     { name = "fireworks-ai", specifier = ">=0.15.7,<0.16.0" },
+    { name = "flask", marker = "extra == 'explatform'", specifier = ">=3.0.3,<4.0.0" },
     { name = "ftfy", specifier = ">=6.3.1" },
+    { name = "gunicorn", marker = "extra == 'explatform'", specifier = ">=22.0.0,<23.0.0" },
     { name = "jinja2", specifier = ">=3.1.4,<4.0.0" },
+    { name = "lean-dojo", marker = "extra == 'lean'", specifier = ">=2.1.3,<3.0.0" },
     { name = "litellm", specifier = ">=1.60.5,<2.0.0" },
     { name = "loguru", specifier = ">=0.7.2,<0.8.0" },
+    { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.6.0" },
+    { name = "mkdocs-embed-external-markdown", marker = "extra == 'docs'", specifier = ">=3.0.2" },
+    { name = "mkdocs-exclude", marker = "extra == 'docs'", specifier = ">=1.0.2" },
+    { name = "mkdocs-material", extras = ["imaging"], marker = "extra == 'docs'", specifier = ">=9.5.31" },
+    { name = "mkdocs-minify-plugin", marker = "extra == 'docs'", specifier = ">=0.8.0" },
+    { name = "mkdocs-redirects", marker = "extra == 'docs'", specifier = ">=1.2.1" },
+    { name = "mkdocs-simple-hooks", marker = "extra == 'docs'", specifier = ">=0.1.5" },
+    { name = "mkdocstrings", marker = "extra == 'docs'", specifier = ">=0.25.2" },
+    { name = "mkdocstrings-python", marker = "extra == 'docs'", specifier = ">=1.10.7" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.11.0,<2.0.0" },
     { name = "mypy-boto3", specifier = ">=1.34.147,<2.0.0" },
     { name = "mypy-boto3-s3", specifier = ">=1.34.138,<2.0.0" },
     { name = "openai", specifier = ">=1.61.1,<2.0.0" },
+    { name = "openpyxl", marker = "extra == 'hub'", specifier = ">=3.1.5,<4.0.0" },
     { name = "pandas-stubs", specifier = ">=2.2.2.240603,<3.0.0" },
     { name = "pathspec", specifier = ">=0.11.0" },
     { name = "peft", specifier = ">=0.10.0,<0.11.0" },
+    { name = "pillow", marker = "extra == 'docs'", specifier = ">=10.4.0" },
     { name = "psutil", specifier = ">=5.9.5,<6.0.0" },
     { name = "py-near", specifier = ">=1.1.50,<2.0.0" },
     { name = "pydantic", specifier = ">=2.7.1,<3.0.0" },
     { name = "pydantic-core", specifier = ">=2.18.4,<3.0.0" },
     { name = "pymysql", specifier = ">=1.1.0,<2.0.0" },
     { name = "pynacl", specifier = ">=1.5.0,<2.0.0" },
+    { name = "pypdf", marker = "extra == 'hub'", specifier = ">=4.3.1,<5.0.0" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3.3,<9.0.0" },
+    { name = "pytest-random-order", marker = "extra == 'test'", specifier = ">=1.1.1,<2.0.0" },
+    { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.6.1,<4.0.0" },
+    { name = "python-docx", marker = "extra == 'hub'", specifier = ">=1.1.2,<2.0.0" },
+    { name = "python-dotenv", marker = "extra == 'hub'", specifier = ">=1.0.1,<2.0.0" },
+    { name = "python-pptx", marker = "extra == 'hub'", specifier = ">=1.0.2,<2.0.0" },
     { name = "requests", specifier = ">=2.31.0,<3.0.0" },
     { name = "rich", specifier = ">=13.7.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.5.2,<1.0.0" },
     { name = "setuptools", specifier = ">=75.0.0" },
+    { name = "shortuuid", marker = "extra == 'explatform'", specifier = ">=1.0.0,<2.0.0" },
+    { name = "shortuuid", marker = "extra == 'hub'", specifier = ">=1.0.0,<2.0.0" },
+    { name = "sqlmodel", marker = "extra == 'hub'", specifier = ">=0.0.21,<1.0.0" },
     { name = "tabulate", specifier = ">=0.9.0,<0.10.0" },
     { name = "tenacity", specifier = ">=8.2.3,<9.0.0" },
+    { name = "torch", marker = "extra == 'vllm'", specifier = ">=2.2.2,<3.0.0" },
+    { name = "torchao", marker = "extra == 'torch'", specifier = ">=0.3.1,<0.4.0" },
+    { name = "torchtune", marker = "extra == 'torch'", specifier = ">=0.2.0,<0.3.0" },
     { name = "tqdm", specifier = ">=4.66.4,<5.0.0" },
     { name = "transformers", specifier = ">=4.40.2,<5.0.0" },
     { name = "tweepy", specifier = ">=4.14.0,<5.0.0" },
     { name = "typer", specifier = ">=0.12.5,<0.13.0" },
     { name = "types-cffi", specifier = ">=1.16.0.20240331,<2.0.0" },
     { name = "types-colorama", specifier = ">=0.4.15.20240311,<0.5.0" },
+    { name = "types-openpyxl", marker = "extra == 'dev'", specifier = ">=3.1.5.20240822,<4.0.0" },
     { name = "types-psutil", specifier = ">=6.0.0.20240621,<7.0.0" },
     { name = "types-pygments", specifier = ">=2.18.0.20240506,<3.0.0" },
     { name = "types-python-dateutil", specifier = ">=2.9.0.20241206" },
@@ -2419,62 +2454,12 @@ requires-dist = [
     { name = "types-regex", specifier = ">=2024.5.15.20240519,<2025.0.0" },
     { name = "types-setuptools", specifier = ">=71.1.0.20240724,<72.0.0" },
     { name = "types-ujson", specifier = ">=5.10.0.20240515,<6.0.0" },
+    { name = "types-urllib3", marker = "extra == 'dev'", specifier = ">=1.26.25.14,<2.0.0" },
     { name = "uvicorn", specifier = ">=0.32.0,<0.33.0" },
+    { name = "vllm", marker = "extra == 'vllm'", specifier = ">=0.5.3,<0.6.0" },
     { name = "wheel", specifier = ">=0.45.1" },
 ]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "commitizen", specifier = ">=3.29.0,<4.0.0" },
-    { name = "mypy", specifier = ">=1.11.0,<2.0.0" },
-    { name = "ruff", specifier = ">=0.5.2,<1.0.0" },
-    { name = "types-openpyxl", specifier = ">=3.1.5.20240822,<4.0.0" },
-    { name = "types-urllib3", specifier = ">=1.26.25.14,<2.0.0" },
-]
-docs = [
-    { name = "mkdocs", specifier = ">=1.6.0" },
-    { name = "mkdocs-embed-external-markdown", specifier = ">=3.0.2" },
-    { name = "mkdocs-exclude", specifier = ">=1.0.2" },
-    { name = "mkdocs-material", extras = ["imaging"], specifier = ">=9.5.31" },
-    { name = "mkdocs-minify-plugin", specifier = ">=0.8.0" },
-    { name = "mkdocs-redirects", specifier = ">=1.2.1" },
-    { name = "mkdocs-simple-hooks", specifier = ">=0.1.5" },
-    { name = "mkdocstrings", specifier = ">=0.25.2" },
-    { name = "mkdocstrings-python", specifier = ">=1.10.7" },
-    { name = "pillow", specifier = ">=10.4.0" },
-]
-explatform = [
-    { name = "fabric", specifier = ">=3.2.2,<4.0.0" },
-    { name = "flask", specifier = ">=3.0.3,<4.0.0" },
-    { name = "gunicorn", specifier = ">=22.0.0,<23.0.0" },
-    { name = "shortuuid", specifier = ">=1.0.0,<2.0.0" },
-]
-hub = [
-    { name = "apscheduler", specifier = ">=3.10.4,<4.0.0" },
-    { name = "chardet", specifier = ">=5.2.0,<6.0.0" },
-    { name = "fastapi-cli", specifier = ">=0.0.4,<1.0.0" },
-    { name = "openpyxl", specifier = ">=3.1.5,<4.0.0" },
-    { name = "pypdf", specifier = ">=4.3.1,<5.0.0" },
-    { name = "python-docx", specifier = ">=1.1.2,<2.0.0" },
-    { name = "python-dotenv", specifier = ">=1.0.1,<2.0.0" },
-    { name = "python-pptx", specifier = ">=1.0.2,<2.0.0" },
-    { name = "shortuuid", specifier = ">=1.0.0,<2.0.0" },
-    { name = "sqlmodel", specifier = ">=0.0.21,<1.0.0" },
-]
-lean = [{ name = "lean-dojo", specifier = ">=2.1.3,<3.0.0" }]
-test = [
-    { name = "pytest", specifier = ">=8.3.3,<9.0.0" },
-    { name = "pytest-random-order", specifier = ">=1.1.1,<2.0.0" },
-    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
-]
-torch = [
-    { name = "torchao", specifier = ">=0.3.1,<0.4.0" },
-    { name = "torchtune", specifier = ">=0.2.0,<0.3.0" },
-]
-vllm = [
-    { name = "torch", specifier = ">=2.2.2,<3.0.0" },
-    { name = "vllm", specifier = ">=0.5.3,<0.6.0" },
-]
+provides-extras = ["explatform", "hub", "torch", "vllm", "lean", "docs", "dev", "test"]
 
 [[package]]
 name = "nest-asyncio"
