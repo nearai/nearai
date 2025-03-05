@@ -568,9 +568,9 @@ class AgentCli:
         last_message_id = None
         print(f"\n=== Starting interactive session with agent: {agent_id} ===")
         print("")
-        print("Type 'exit' to end the session")
-        print("On Linux/macOS: Press Ctrl+D at the beginning of a new line after the prompt")
+        print("On Linux/macOS: To submit, press Ctrl+D at the beginning of a new line after your prompt")
         print("On Windows: Press Ctrl+Z followed by Enter")
+        print("Type 'exit' to end the session")
         print("")
 
         metadata = get_metadata(agent_path, local)
