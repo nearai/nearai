@@ -38,7 +38,7 @@ import { useEmbeddedWithinIframe } from '~/hooks/embed';
 import { useCurrentEntry } from '~/hooks/entries';
 import { SIGN_IN_CALLBACK_PATH, signIn } from '~/lib/auth';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
-import { rawFileSourceUrlForEntry } from '~/lib/entries';
+import { rawFileUrlForEntry } from '~/lib/entries';
 import { useAuthStore } from '~/stores/auth';
 import { useWalletStore } from '~/stores/wallet';
 import NearAiLogo from '~/svgs/near-ai-logo.svg';
@@ -163,7 +163,7 @@ export const Navigation = () => {
               <div className={s.embeddedLogo}>
                 {currentEntry.details.agent?.embed?.logo ? (
                   <img
-                    src={rawFileSourceUrlForEntry(
+                    src={rawFileUrlForEntry(
                       currentEntry,
                       currentEntry.details.agent.embed.logo,
                     )}

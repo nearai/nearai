@@ -32,7 +32,7 @@ import { env } from '~/env';
 import { useConsumerModeEnabled } from '~/hooks/consumer';
 import { useCurrentEntry, useCurrentEntryParams } from '~/hooks/entries';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
-import { primaryUrlForEntry, rawFileSourceUrlForEntry } from '~/lib/entries';
+import { primaryUrlForEntry, rawFileUrlForEntry } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
 
 import { DevelopButton } from './DevelopButton';
@@ -96,7 +96,7 @@ export const EntryDetailsLayout = ({
             <Flex align="center" gap="m" style={{ marginRight: 'auto' }}>
               <ImageIcon
                 size="l"
-                src={rawFileSourceUrlForEntry(
+                src={rawFileUrlForEntry(
                   currentEntry,
                   currentEntry?.details.icon,
                 )}

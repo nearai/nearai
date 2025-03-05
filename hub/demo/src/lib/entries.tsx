@@ -65,31 +65,31 @@ export function sourceUrlForEntry(
   return url;
 }
 
-export function rawFileSourceUrlForEntry(
+export function rawFileUrlForEntry(
   entry:
     | Pick<
         z.infer<typeof entryModel>,
         'namespace' | 'name' | 'category' | 'version'
       >
     | undefined,
-  filePath: string | undefined,
+  path: string | undefined,
 ) {
-  if (!entry || !filePath) return;
+  if (!entry || !path) return;
 
   if (
-    filePath.startsWith('https://') ||
-    filePath.startsWith('http://') ||
-    filePath.startsWith('data:image/') ||
-    filePath.startsWith('#')
+    path.startsWith('https://') ||
+    path.startsWith('http://') ||
+    path.startsWith('data:image/') ||
+    path.startsWith('#')
   )
-    return filePath;
+    return path;
 
-  filePath = filePath.replace(/^\.\//, '').replace(/^\//, '');
+  path = path.replace(/^\.\//, '').replace(/^\//, '');
 
   const url = sourceUrlForEntry(entry, entry.version);
   if (!url) return;
 
-  return `${env.NEXT_PUBLIC_BASE_URL}${url}/raw/${filePath}`;
+  return `${env.NEXT_PUBLIC_BASE_URL}${url}/raw/${path}`;
 }
 
 export function idForEntry(

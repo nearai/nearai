@@ -11,8 +11,9 @@ import {
   Section,
   SvgIcon,
   Text,
+  Tooltip,
 } from '@near-pagoda/ui';
-import { Folder, LockKey } from '@phosphor-icons/react';
+import { Folder, LinkSimple, LockKey } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 
@@ -20,6 +21,7 @@ import { Code } from '~/components/lib/Code';
 import { Sidebar } from '~/components/lib/Sidebar';
 import { useCurrentEntryParams } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
+import { rawFileUrlForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { trpc } from '~/trpc/TRPCProvider';
@@ -143,9 +145,20 @@ export const EntrySource = ({ entry }: Props) => {
 
         <Sidebar.Main>
           <Flex align="center" gap="m" style={{ marginBlock: '-3px' }}>
-            <Text size="text-l" style={{ marginRight: 'auto' }}>
-              {activeFilePath}
-            </Text>
+            <Flex align="center" gap="s" style={{ marginRight: 'auto' }}>
+              <Text size="text-l">{activeFilePath}</Text>
+
+              <Tooltip asChild content="Open Raw File">
+                <Button
+                  label="Raw"
+                  icon={<LinkSimple />}
+                  size="x-small"
+                  fill="ghost"
+                  href={rawFileUrlForEntry(entry, activeFilePath)}
+                  target="_blank"
+                />
+              </Tooltip>
+            </Flex>
 
             <BreakpointDisplay show="sidebar-small-screen">
               <Button

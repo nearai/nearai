@@ -4,7 +4,7 @@ import { Flex, ImageIcon, Text } from '@near-pagoda/ui';
 import { type z } from 'zod';
 
 import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
-import { rawFileSourceUrlForEntry } from '~/lib/entries';
+import { rawFileUrlForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
 
 import { Markdown } from './lib/Markdown';
@@ -29,7 +29,7 @@ export const AgentWelcome = ({ currentEntry }: Props) => {
       <Flex align="center" gap="m">
         <ImageIcon
           size="l"
-          src={rawFileSourceUrlForEntry(
+          src={rawFileUrlForEntry(
             currentEntry,
             welcome.icon || currentEntry.details.icon,
           )}

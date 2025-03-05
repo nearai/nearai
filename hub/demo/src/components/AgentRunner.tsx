@@ -48,7 +48,7 @@ import { useAgentRequestsWithIframe } from '~/hooks/agent-iframe-requests';
 import { useConsumerModeEnabled } from '~/hooks/consumer';
 import { useCurrentEntry, useEntryEnvironmentVariables } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
-import { rawFileSourceUrlForEntry, sourceUrlForEntry } from '~/lib/entries';
+import { rawFileUrlForEntry, sourceUrlForEntry } from '~/lib/entries';
 import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { useThreadsStore } from '~/stores/threads';
@@ -338,7 +338,7 @@ export const AgentRunner = ({
         (_match, $attribute, $path) => {
           const attribute = $attribute as string;
           const path = $path as string;
-          return `${attribute}="${rawFileSourceUrlForEntry(
+          return `${attribute}="${rawFileUrlForEntry(
             {
               category: 'agent',
               namespace,

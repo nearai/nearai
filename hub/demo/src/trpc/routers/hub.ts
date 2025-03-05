@@ -7,7 +7,7 @@ import {
   AITP_CLIENT_ID,
 } from '~/components/threads/messages/aitp/schema';
 import { env } from '~/env';
-import { rawFileSourceUrlForEntry } from '~/lib/entries';
+import { rawFileUrlForEntry } from '~/lib/entries';
 import {
   chatWithAgentModel,
   type entriesModel,
@@ -191,7 +191,7 @@ export const hubRouter = createTRPCRouter({
 
       if (isImage) {
         return {
-          content: rawFileSourceUrlForEntry(input, input.filePath),
+          content: rawFileUrlForEntry(input, input.filePath),
           path: input.filePath,
         };
       }
