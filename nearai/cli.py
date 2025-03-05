@@ -201,7 +201,7 @@ class RegistryCli:
         """
         if CONFIG.auth is None:
             print("Please login with `nearai login`")
-            return
+            exit(1)
 
         path = resolve_local_path(Path(local_path))
         metadata_path = path / "metadata.json"
