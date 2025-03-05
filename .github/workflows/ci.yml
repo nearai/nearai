@@ -50,8 +50,11 @@ jobs:
     - name: check lock file for inconsistencies
       run: uv lock --check
 
-    - name: Install dependencies
-      run: uv sync --group docs --group dev
+    - name: Install dependencies base
+      run: uv sync
+
+    - name: Install dependencies extras
+      run: uv pip install ".[hub,dev,docs]"
 
     - name: Lint Check
       run: ./scripts/lint_check.sh
