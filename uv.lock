@@ -2261,7 +2261,7 @@ wheels = [
 [[package]]
 name = "nearai"
 version = "0.1.13"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "backoff" },
@@ -2296,8 +2296,6 @@ dependencies = [
     { name = "setuptools" },
     { name = "tabulate" },
     { name = "tenacity" },
-    { name = "tensorboardx" },
-    { name = "torch" },
     { name = "tqdm" },
     { name = "transformers" },
     { name = "tweepy" },
@@ -2404,8 +2402,6 @@ requires-dist = [
     { name = "setuptools", specifier = ">=69.5.1,<70.0.0" },
     { name = "tabulate", specifier = ">=0.9.0,<0.10.0" },
     { name = "tenacity", specifier = ">=8.2.3,<9.0.0" },
-    { name = "tensorboardx", specifier = ">=2.6.2.2,<3.0.0" },
-    { name = "torch", specifier = ">=2.2.2,<3.0.0" },
     { name = "tqdm", specifier = ">=4.66.4,<5.0.0" },
     { name = "transformers", specifier = ">=4.40.2,<5.0.0" },
     { name = "tweepy", specifier = ">=4.14.0,<5.0.0" },
@@ -4437,20 +4433,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a3/4d/6a19536c50b849338fcbe9290d562b52cbdcf30d8963d3588a68a4107df1/tenacity-8.5.0.tar.gz", hash = "sha256:8bc6c0c8a09b31e6cad13c47afbed1a567518250a9a171418582ed8d9c20ca78", size = 47309 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d2/3f/8ba87d9e287b9d385a02a7114ddcef61b26f86411e121c9003eb509a1773/tenacity-8.5.0-py3-none-any.whl", hash = "sha256:b594c2a5945830c267ce6b79a166228323ed52718f30302c1359836112346687", size = 28165 },
-]
-
-[[package]]
-name = "tensorboardx"
-version = "2.6.2.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "protobuf" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/02/9b/c2b5aba53f5e27ffcf249fc38485836119638f97d20b978664b15f97c8a6/tensorboardX-2.6.2.2.tar.gz", hash = "sha256:c6476d7cd0d529b0b72f4acadb1269f9ed8b22f441e87a84f2a3b940bb87b666", size = 4778030 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/44/71/f3e7c9b2ab67e28c572ab4e9d5fa3499e0d252650f96d8a3a03e26677f53/tensorboardX-2.6.2.2-py2.py3-none-any.whl", hash = "sha256:160025acbf759ede23fd3526ae9d9bfbfd8b68eb16c38a010ebe326dc6395db8", size = 101700 },
 ]
 
 [[package]]
