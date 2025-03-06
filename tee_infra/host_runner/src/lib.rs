@@ -474,7 +474,7 @@ impl DStackManager {
         imgdir: Option<&Path>,
         pin_numa: bool,
         hugepage: bool,
-    ) -> Result<()> {
+    ) -> Result<u32> {
         // Check if QEMU is available
         self.check_qemu_available()?;
 
@@ -798,13 +798,14 @@ impl DStackManager {
             .spawn()
             .with_context(|| format!("Failed to launch QEMU: {:?}", final_cmd))?;
 
-        tracing::info!("QEMU process started with PID: {}", child.id());
+        let pid = child.id();
+        tracing::info!("QEMU process started with PID: {}", pid);
 
         {
             let mut procs = self.qemu_processes.lock().unwrap();
             procs.push(child);
         }
-        Ok(())
+        Ok(pid)
     }
 
     /// Similar to the Python's `shutdown_instances`.
@@ -828,14 +829,11 @@ impl DStackManager {
                 Ok(status) => {
                     tracing::info!("QEMU process {} exited with status: {:?}", pid, status)
                 }
-                Err(e) => tracing::error!("Error waiting for QEMU process {}: {:?}", pid, e),
+                Err(e) => tracing::warn!("Failed to wait for QEMU process {}: {}", pid, e),
             }
         }
 
-        let count = procs.len();
         procs.clear();
-        tracing::info!("Cleared {} QEMU processes from tracking list", count);
-
         Ok(())
     }
 
@@ -861,8 +859,14 @@ impl DStackManager {
     /// - `file_path`: The path to the file to copy, relative to the crate's directory.
     pub fn add_shared_file(&self, vm_dir: &Path, file_path: &str) -> Result<()> {
         let src_path = Path::new(file_path);
+
+        // Extract just the filename from the path
+        let file_name = src_path
+            .file_name()
+            .ok_or_else(|| anyhow!("Invalid file path: {}", file_path))?;
+
         // Get the destination path in the VM's shared directory
-        let dest_path = vm_dir.join("shared").join(file_path);
+        let dest_path = vm_dir.join("shared").join(file_name);
 
         // Create parent directories if they don't exist
         if let Some(parent) = dest_path.parent() {
@@ -877,6 +881,8 @@ impl DStackManager {
                 dest_path.display()
             )
         })?;
+
+        tracing::info!("Copied {} to {}", src_path.display(), dest_path.display());
 
         Ok(())
     }

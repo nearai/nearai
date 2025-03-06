@@ -1,4 +1,5 @@
 use anyhow::Context;
+use clap::{Parser, Subcommand};
 use ctrlc;
 use std::fs;
 use std::panic;
@@ -38,11 +39,92 @@ fn check_file(path: &Path, description: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// CLI for managing QEMU instances
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Sets the level of verbosity
+    #[arg(short, long, default_value = "info")]
+    log_level: String,
+
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Create and run a new instance
+    Run {
+        /// Path to the compose file
+        #[arg(short, long, default_value = "compose.yaml")]
+        compose_path: PathBuf,
+
+        /// Path to the image directory
+        #[arg(short, long)]
+        image_path: PathBuf,
+
+        /// Number of CPUs to allocate
+        #[arg(short = 'u', long, default_value = "12")]
+        cpus: u32,
+
+        /// Memory to allocate (e.g., "32G")
+        #[arg(short, long, default_value = "32G")]
+        memory: String,
+
+        /// Disk size (e.g., "500G")
+        #[arg(short, long, default_value = "500G")]
+        disk: String,
+
+        /// Port mappings in format "tcp:host_ip:host_port:guest_port"
+        #[arg(short, long, value_delimiter = ',')]
+        ports: Vec<String>,
+
+        /// GPU devices to pass through
+        #[arg(short, long, value_delimiter = ',')]
+        gpus: Vec<String>,
+
+        /// Use local key provider instead of remote
+        #[arg(long, default_value = "true")]
+        local_key_provider: bool,
+
+        /// Enable NUMA pinning
+        #[arg(long, default_value = "false")]
+        pin_numa: bool,
+
+        /// Enable hugepage support
+        #[arg(long, default_value = "false")]
+        hugepage: bool,
+    },
+
+    /// List all running instances
+    List,
+
+    /// Stop and remove an instance
+    Stop {
+        /// Instance ID to stop
+        #[arg(short, long)]
+        id: Option<String>,
+
+        /// Stop all instances
+        #[arg(short, long)]
+        all: bool,
+    },
+}
+
 fn main() -> anyhow::Result<()> {
-    // Initialize tracing with more verbose output
-    tracing_subscriber::fmt()
-        .with_max_level(Level::TRACE)
-        .init();
+    let cli = Cli::parse();
+
+    // Initialize tracing with the specified log level
+    let log_level = match cli.log_level.to_lowercase().as_str() {
+        "trace" => Level::TRACE,
+        "debug" => Level::DEBUG,
+        "info" => Level::INFO,
+        "warn" => Level::WARN,
+        "error" => Level::ERROR,
+        _ => Level::INFO,
+    };
+
+    tracing_subscriber::fmt().with_max_level(log_level).init();
 
     info!("Starting host runner");
 
@@ -60,115 +142,170 @@ fn main() -> anyhow::Result<()> {
         error!("Cleanup complete after panic");
     }));
 
-    let dir = tempdir().unwrap();
-    debug!("Tempdir created at: {}", dir.path().display());
+    match &cli.command {
+        Commands::Run {
+            compose_path,
+            image_path,
+            cpus,
+            memory,
+            disk,
+            ports,
+            gpus,
+            local_key_provider,
+            pin_numa,
+            hugepage,
+        } => {
+            // Check if compose file exists and is readable
+            check_file(compose_path, "Compose file")?;
 
-    tracing::info!("Starting host API server");
-    let config = host_api::ServerConfig::new(dir.path());
-    let (server_addr, _server_handle) = host_api::start_server_in_thread(config)?;
-    info!("Host API server started at: {}", server_addr);
+            // Check if the image path exists
+            if !image_path.exists() {
+                error!("Image path not found: {}", image_path.display());
+                return Err(anyhow::anyhow!(
+                    "Image path not found: {}",
+                    image_path.display()
+                ));
+            }
 
-    // Create a Path from the string
-    let db_path = Path::new("db.yaml");
+            if !image_path.is_dir() {
+                error!("Image path is not a directory: {}", image_path.display());
+                return Err(anyhow::anyhow!(
+                    "Image path is not a directory: {}",
+                    image_path.display()
+                ));
+            }
 
-    // Check if db.yaml exists and is readable
-    check_file(db_path, "db.yaml")?;
+            info!("Using image path: {}", image_path.display());
 
-    // Use a more reliable path for the image
-    let image_path = PathBuf::from("/home/ubuntu/private-ml-sdk/images/dstack-nvidia-dev-0.3.3");
+            // Check for metadata.json in the image path
+            let metadata_path = image_path.join("metadata.json");
+            check_file(&metadata_path, "Image metadata")?;
 
-    // Check if the image path exists
-    if !image_path.exists() {
-        error!("Image path not found: {}", image_path.display());
-        error!("Please ensure the image path is correct");
-        return Err(anyhow::anyhow!(
-            "Image path not found: {}",
-            image_path.display()
-        ));
-    }
+            // Create temporary directory for instance
+            let dir = tempdir().unwrap();
+            debug!("Tempdir created at: {}", dir.path().display());
 
-    if !image_path.is_dir() {
-        error!("Image path is not a directory: {}", image_path.display());
-        return Err(anyhow::anyhow!(
-            "Image path is not a directory: {}",
-            image_path.display()
-        ));
-    }
+            // Start the host API server
+            info!("Starting host API server");
+            let config = host_api::ServerConfig::new(dir.path());
+            let (server_addr, _server_handle) = host_api::start_server_in_thread(config)?;
+            info!("Host API server started at: {}", server_addr);
 
-    info!("Using image path: {}", image_path.display());
+            // Set up the instance
+            debug!("Setting up instance");
+            manager.setup_instance(
+                compose_path,
+                Some(dir.path().to_path_buf()),
+                image_path,
+                *cpus,
+                memory,
+                disk,
+                gpus,
+                ports,
+                *local_key_provider,
+            )?;
 
-    // Check for metadata.json in the image path
-    let metadata_path = image_path.join("metadata.json");
-    check_file(&metadata_path, "Image metadata")?;
+            // debug!("Adding shared file");
+            // manager.add_shared_file(dir.path(), compose_path.to_str().unwrap())?;
 
-    // Convert string ports to a Vec<String>
-    let ports: Vec<String> = vec![
-        "tcp:0.0.0.0:13307:18023".to_string(), // quote on port 8000
-        "tcp:0.0.0.0:13306:13324".to_string(),
-        "tcp:127.0.0.1:18080:18056".to_string(),
-        "tcp:127.0.0.1:19001:19067".to_string(), // Changed from 9000 to 9001 to avoid conflicts
-    ];
+            // Run the instance
+            info!("Starting QEMU instance");
+            let qemu_pid = match manager.run_instance(
+                dir.path(),
+                server_addr.port(),
+                None,
+                None,
+                None,
+                *pin_numa,
+                *hugepage,
+            ) {
+                Ok(pid) => {
+                    info!("QEMU instance started successfully with PID: {}", pid);
+                    pid
+                }
+                Err(e) => {
+                    error!("Failed to start QEMU instance: {}", e);
+                    return Err(e);
+                }
+            };
 
-    // Empty vector for GPUs
-    let gpus: Vec<String> = Vec::new();
+            // Create a flag to track when to exit
+            let running = Arc::new(AtomicBool::new(true));
+            let r = running.clone();
 
-    debug!("Setting up instance");
+            // Set up signal handler for graceful shutdown
+            ctrlc::set_handler(move || {
+                info!("Received termination signal, shutting down...");
+                r.store(false, Ordering::SeqCst);
+            })
+            .expect("Error setting signal handler");
 
-    manager.setup_instance(
-        db_path,
-        Some(dir.path().to_path_buf()),
-        &image_path,
-        12,
-        "32G",
-        "500G",
-        &gpus,
-        &ports,
-        true,
-    )?;
+            // Keep the main thread running until we receive a signal
+            info!("Host runner is running. Press Ctrl+C to exit or send SIGTERM.");
+            info!(
+                "QEMU logs will be in the current directory: qemu_stdout.log and qemu_stderr.log"
+            );
 
-    debug!("Adding shared file");
-    manager.add_shared_file(dir.path(), "db.yaml")?;
+            // Wait for either the QEMU process to exit or a termination signal
+            loop {
+                // Check if we received a termination signal
+                if !running.load(Ordering::SeqCst) {
+                    break;
+                }
 
-    info!("Starting QEMU instance");
-    match manager.run_instance(
-        dir.path(),
-        server_addr.port(),
-        None,
-        None,
-        None,
-        false,
-        false,
-    ) {
-        Ok(_) => info!("QEMU instance started successfully"),
-        Err(e) => {
-            error!("Failed to start QEMU instance: {}", e);
-            return Err(e);
+                // Check if the QEMU process has exited
+                let status = std::process::Command::new("ps")
+                    .arg("-p")
+                    .arg(qemu_pid.to_string())
+                    .stdout(std::process::Stdio::null())
+                    .stderr(std::process::Stdio::null())
+                    .status();
+
+                match status {
+                    Ok(exit_status) => {
+                        if !exit_status.success() {
+                            // Process no longer exists
+                            info!("QEMU process with PID {} has exited", qemu_pid);
+                            break;
+                        }
+                    }
+                    Err(e) => {
+                        error!("Error checking QEMU process status: {}", e);
+                        break;
+                    }
+                }
+
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+
+            // Shutdown all QEMU instances before exiting
+            info!("Shutting down all QEMU instances...");
+            manager.shutdown_instances()?;
+            info!("All instances shut down. Exiting.");
+        }
+        Commands::List => {
+            info!("Listing all running instances");
+            // Implement listing functionality here
+            // This would depend on how instances are tracked in DStackManager
+            // For now, we'll just print a placeholder message
+            info!("Listing functionality not yet implemented");
+        }
+        Commands::Stop { id, all } => {
+            if *all {
+                info!("Stopping all instances");
+                manager.shutdown_instances()?;
+                info!("All instances stopped successfully");
+            } else if let Some(instance_id) = id {
+                info!("Stopping instance: {}", instance_id);
+                // Implement stopping a specific instance
+                // This would depend on how instances are tracked in DStackManager
+                info!("Stopping specific instances not yet implemented");
+            } else {
+                error!("Either --id or --all must be specified");
+                return Err(anyhow::anyhow!("Either --id or --all must be specified"));
+            }
         }
     }
-
-    // Create a flag to track when to exit
-    let running = Arc::new(AtomicBool::new(true));
-    let r = running.clone();
-
-    // Set up signal handler for graceful shutdown
-    ctrlc::set_handler(move || {
-        info!("Received termination signal, shutting down...");
-        r.store(false, Ordering::SeqCst);
-    })
-    .expect("Error setting signal handler");
-
-    // Keep the main thread running until we receive a signal
-    info!("Host runner is running. Press Ctrl+C to exit or send SIGTERM.");
-    info!("QEMU logs will be in the current directory: qemu_stdout.log and qemu_stderr.log");
-
-    while running.load(Ordering::SeqCst) {
-        std::thread::sleep(std::time::Duration::from_millis(100));
-    }
-
-    // Shutdown all QEMU instances before exiting
-    info!("Shutting down all QEMU instances...");
-    manager.shutdown_instances()?;
-    info!("All instances shut down. Exiting.");
 
     Ok(())
 }
