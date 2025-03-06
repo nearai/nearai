@@ -251,7 +251,7 @@ class TestRegistryCliUpload:
             assert updated_metadata["version"] == "1.2.4"
 
         # Test minor increment
-        cli.update(str(tmp_path), increment_type="minor")
+        cli.update(str(tmp_path), minor=True)
 
         # Assertions
         captured = capsys.readouterr()
@@ -266,7 +266,7 @@ class TestRegistryCliUpload:
             assert updated_metadata["version"] == "1.3.0"
 
         # Test major increment
-        cli.update(str(tmp_path), increment_type="major")
+        cli.update(str(tmp_path), major=True)
 
         # Assertions
         captured = capsys.readouterr()
