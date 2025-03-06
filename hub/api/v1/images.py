@@ -57,10 +57,11 @@ class FireworksImageGenerator:
         fireworks_params = {k: v for k, v in fireworks_params.items() if v is not None}
 
         try:
+            answer: Answer
             if kwargs.get("init_image"):
                 # run image to image if init_image is found
                 # decode the init_image (fireworks expects bytes, PIL or a file -- not base64)
-                base64_image = kwargs.get("init_image")
+                base64_image = str(kwargs.get("init_image"))
                 init_image = self._decode_image(base64_image)
                 fireworks_params.update({"init_image": init_image})
 
@@ -70,13 +71,13 @@ class FireworksImageGenerator:
 
                 # also check if control_image is received
                 if kwargs.get("control_image"):
-                    base64_image = kwargs.get("control_image")
+                    base64_image = str(kwargs.get("control_image"))
                     control_image = self._decode_image(base64_image)
                     fireworks_params.update({"control_image": control_image})
 
-                answer: Answer = self.inference_client.image_to_image(**fireworks_params)
+                answer = self.inference_client.image_to_image(**fireworks_params)
             else:
-                answer: Answer = self.inference_client.text_to_image(**fireworks_params)
+                answer = self.inference_client.text_to_image(**fireworks_params)
             if answer.image is None:
                 raise RuntimeError(f"No return image, {answer.finish_reason}")
 
