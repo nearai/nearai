@@ -22,6 +22,7 @@ from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
 from nearai.cli_helpers import (
+    assert_user_auth,
     check_version_exists,
     display_agents_in_columns,
     has_pending_input,
@@ -209,9 +210,7 @@ class RegistryCli:
         else:
             increment_type = "patch"  # Default
 
-        if CONFIG.auth is None:
-            print("Please login with `nearai login`")
-            return
+        assert_user_auth()
 
         path = resolve_local_path(Path(local_path))
         metadata_path = path / "metadata.json"
@@ -487,8 +486,9 @@ class BenchmarkCli:
 
     def _get_or_create_benchmark(self, benchmark_name: str, solver_name: str, args: Dict[str, Any], force: bool) -> int:
         if CONFIG.auth is None:
-            print("Please login with `nearai login`")
-            exit(1)
+            print("Please login with `nearai login` first")
+        exit(1)
+
         namespace = CONFIG.auth.namespace
 
         # Sort the args to have a consistent representation.
@@ -962,6 +962,7 @@ class AgentCli:
             major: If True, increment the major version (0.1.0 → 1.0.0)
 
         """
+        assert_user_auth()
         # Create an instance of RegistryCli and call its update method with the same flags
         registry_cli = RegistryCli()
         registry_cli.update(local_path, minor=minor, major=major)
@@ -981,6 +982,7 @@ class AgentCli:
             EntryLocation if upload was successful, None otherwise
 
         """
+        assert_user_auth()
         # Create an instance of RegistryCli and call its upload method
         registry_cli = RegistryCli()
         return registry_cli.upload(local_path, auto_increment)
@@ -1188,13 +1190,6 @@ def check_update():
 
     except Exception as _:
         pass
-
-
-def assert_user_auth() -> None:
-    """Ensure the user is authenticated."""
-    if CONFIG.auth is None:
-        print("Please login with `nearai login` first")
-        exit(1)
 
 
 def main() -> None:

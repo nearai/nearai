@@ -216,3 +216,18 @@ def has_pending_input():
     else:  # Unix/Linux/Mac
         rlist, _, _ = select.select([sys.stdin], [], [], 0)
         return bool(rlist)
+
+
+def assert_user_auth() -> None:
+    """Ensure the user is authenticated.
+
+    Raises
+    ------
+        SystemExit: If the user is not authenticated
+
+    """
+    from nearai.config import CONFIG
+
+    if CONFIG.auth is None:
+        print("Please login with `nearai login` first")
+        exit(1)
