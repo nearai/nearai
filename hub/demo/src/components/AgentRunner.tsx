@@ -48,7 +48,7 @@ import { useAgentRequestsWithIframe } from '~/hooks/agent-iframe-requests';
 import { useConsumerModeEnabled } from '~/hooks/consumer';
 import { useCurrentEntry, useEntryEnvironmentVariables } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
-import { sourceUrlForEntry } from '~/lib/entries';
+import { rawFileUrlForEntry, sourceUrlForEntry } from '~/lib/entries';
 import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { useThreadsStore } from '~/stores/threads';
@@ -121,6 +121,9 @@ export const AgentRunner = ({
     useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
 
+  const clearOptimisticMessages = useThreadsStore(
+    (store) => store.clearOptimisticMessages,
+  );
   const addOptimisticMessages = useThreadsStore(
     (store) => store.addOptimisticMessages,
   );
@@ -130,7 +133,6 @@ export const AgentRunner = ({
   const initialUserMessageSent = useRef(false);
   const chatMutationThreadId = useRef('');
   const chatMutationStartedAt = useRef<Date | null>(null);
-  const resetThreadsStore = useThreadsStore((store) => store.reset);
   const setThread = useThreadsStore((store) => store.setThread);
   const threadsById = useThreadsStore((store) => store.threadsById);
   const setAddMessage = useThreadsStore((store) => store.setAddMessage);
@@ -269,7 +271,13 @@ export const AgentRunner = ({
   };
 
   const startNewThread = () => {
-    updateQueryPath({ threadId: null });
+    updateQueryPath({
+      threadId: null,
+      view: null,
+      showLogs: null,
+      initialUserMessage: null,
+    });
+    clearOptimisticMessages();
     form.setValue('new_message', '');
     form.setFocus('new_message');
   };
@@ -322,18 +330,37 @@ export const AgentRunner = ({
   useEffect(() => {
     const htmlFile = files.find((file) => file.filename === 'index.html');
 
-    if (htmlFile) {
-      const htmlContent = htmlFile.content.replaceAll(
-        '{{%agent_id%}}',
-        agentId,
+    function parseHtmlContent(html: string) {
+      html = html.replaceAll('{{%agent_id%}}', agentId);
+
+      html = html.replace(
+        /(src|href)="([^"]+)"/g,
+        (_match, $attribute, $path) => {
+          const attribute = $attribute as string;
+          const path = $path as string;
+          return `${attribute}="${rawFileUrlForEntry(
+            {
+              category: 'agent',
+              namespace,
+              name,
+              version,
+            },
+            path,
+          )}"`;
+        },
       );
-      setHtmlOutput(htmlContent);
+
+      return html;
+    }
+
+    if (htmlFile) {
+      setHtmlOutput(parseHtmlContent(htmlFile.content));
       setView('output');
     } else {
       setHtmlOutput('');
       setView('conversation');
     }
-  }, [files, htmlOutput, agentId, setView]);
+  }, [files, htmlOutput, agentId, setView, namespace, name, version]);
 
   useEffect(() => {
     if (currentEntry && auth) {
@@ -346,9 +373,9 @@ export const AgentRunner = ({
       initialUserMessageSent.current = false;
       chatMutationThreadId.current = '';
       chatMutationStartedAt.current = null;
-      resetThreadsStore();
+      clearOptimisticMessages();
     }
-  }, [threadId, resetThreadsStore]);
+  }, [threadId, clearOptimisticMessages]);
 
   useEffect(() => {
     form.reset();

@@ -4,7 +4,7 @@ import { BookOpenText, CodeBlock } from '@phosphor-icons/react';
 import { type ReactNode } from 'react';
 
 import { EntryDetailsLayout } from '~/components/EntryDetailsLayout';
-import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
+import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
 
 export default function EntryLayout({ children }: { children: ReactNode }) {
   return (
