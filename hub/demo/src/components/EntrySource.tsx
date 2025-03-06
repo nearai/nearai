@@ -11,8 +11,9 @@ import {
   Section,
   SvgIcon,
   Text,
+  Tooltip,
 } from '@near-pagoda/ui';
-import { Folder, LockKey } from '@phosphor-icons/react';
+import { Folder, LinkSimple, LockKey } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 
@@ -20,10 +21,11 @@ import { Code } from '~/components/lib/Code';
 import { Sidebar } from '~/components/lib/Sidebar';
 import { useCurrentEntryParams } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
+import { rawFileUrlForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { trpc } from '~/trpc/TRPCProvider';
-import { filePathToCodeLanguage } from '~/utils/file';
+import { filePathIsImage, filePathToCodeLanguage } from '~/utils/file';
 
 const METADATA_FILE_PATH = 'metadata.json';
 
@@ -38,15 +40,19 @@ export const EntrySource = ({ entry }: Props) => {
   const { createQueryPath, queryParams } = useQueryParams(['file']);
   const params = useCurrentEntryParams();
 
-  const filePathsQuery = trpc.hub.filePaths.useQuery(params, {
-    enabled: isPermittedToViewSource,
-  });
+  const filePathsQuery = trpc.hub.filePaths.useQuery(
+    { ...params, category: entry.category },
+    {
+      enabled: isPermittedToViewSource,
+    },
+  );
   const activeFilePath = queryParams.file ?? filePathsQuery.data?.[0] ?? '';
   const activeFileIsCompressed =
     activeFilePath.endsWith('.zip') || activeFilePath.endsWith('.tar');
+  const activeFileIsImage = filePathIsImage(activeFilePath);
 
   const fileQuery = trpc.hub.file.useQuery(
-    { ...params, filePath: activeFilePath },
+    { ...params, category: entry.category, filePath: activeFilePath },
     {
       enabled:
         !!activeFilePath &&
@@ -139,9 +145,20 @@ export const EntrySource = ({ entry }: Props) => {
 
         <Sidebar.Main>
           <Flex align="center" gap="m" style={{ marginBlock: '-3px' }}>
-            <Text size="text-l" style={{ marginRight: 'auto' }}>
-              {activeFilePath}
-            </Text>
+            <Flex align="center" gap="s" style={{ marginRight: 'auto' }}>
+              <Text size="text-l">{activeFilePath}</Text>
+
+              <Tooltip asChild content="Open Raw File">
+                <Button
+                  label="Raw"
+                  icon={<LinkSimple />}
+                  size="x-small"
+                  fill="ghost"
+                  href={rawFileUrlForEntry(entry, activeFilePath)}
+                  target="_blank"
+                />
+              </Tooltip>
+            </Flex>
 
             <BreakpointDisplay show="sidebar-small-screen">
               <Button
@@ -153,16 +170,25 @@ export const EntrySource = ({ entry }: Props) => {
               />
             </BreakpointDisplay>
           </Flex>
+
           {activeFileIsCompressed ? (
             <Text>This file type {`doesn't`} have a source preview.</Text>
           ) : (
             <>
               {openedFile ? (
-                <Code
-                  bleed
-                  source={openedFile.content}
-                  language={filePathToCodeLanguage(openedFile.path)}
-                />
+                <>
+                  {activeFileIsImage ? (
+                    <div>
+                      <img src={openedFile.content} alt={openedFile.path} />
+                    </div>
+                  ) : (
+                    <Code
+                      bleed
+                      source={openedFile.content}
+                      language={filePathToCodeLanguage(openedFile.path)}
+                    />
+                  )}
+                </>
               ) : (
                 <PlaceholderStack />
               )}

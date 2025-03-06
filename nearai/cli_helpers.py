@@ -1,4 +1,7 @@
 import json
+import os
+import select
+import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
@@ -202,3 +205,14 @@ def check_version_exists(namespace: str, name: str, version: str) -> Tuple[bool,
         if "not found" in str(e).lower() or "does not exist" in str(e).lower():
             return False, None
         return False, f"Error checking registry: {str(e)}"
+
+
+def has_pending_input():
+    """Check if there's input waiting to be read without blocking."""
+    if os.name == "nt":  # Windows
+        import msvcrt
+
+        return msvcrt.kbhit()
+    else:  # Unix/Linux/Mac
+        rlist, _, _ = select.select([sys.stdin], [], [], 0)
+        return bool(rlist)

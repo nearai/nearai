@@ -26,10 +26,10 @@ Agent examples are available here: [nearai examples](https://github.com/nearai/n
    pip install -e .
    ```
 
-   b. using poetry:
+   b. using uv:
 
    ```bash
-   poetry install
+   uv sync --group dev
    ```
 
 2. Set up authentication:

@@ -38,7 +38,8 @@ RUN groupadd --gid $USER_GID $USER \
     && apt-get update \
     && apt-get install -y sudo \
     && echo $USER ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USER \
-    && chmod 0440 /etc/sudoers.d/$USER
+    && chmod 0440 /etc/sudoers.d/$USER \
+    && chmod -R 775 /usr/local
 
 # Install node
 RUN curl -sL https://deb.nodesource.com/setup_${NODE_VERSION} | bash - && \
@@ -54,7 +55,7 @@ RUN npm install -g \
     pnpm@latest-10
 
 USER ${USER}
-RUN python3 -m pip install --user poetry
+RUN python3 -m pip install --user uv
 
 ## Install oh my zsh
 # Uses "Spaceship" theme with some customization. Uses some bundled plugins and installs some more from github

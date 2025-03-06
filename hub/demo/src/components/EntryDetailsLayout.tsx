@@ -31,7 +31,8 @@ import { StarButton } from '~/components/StarButton';
 import { env } from '~/env';
 import { useConsumerModeEnabled } from '~/hooks/consumer';
 import { useCurrentEntry, useCurrentEntryParams } from '~/hooks/entries';
-import { ENTRY_CATEGORY_LABELS, primaryUrlForEntry } from '~/lib/entries';
+import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
+import { primaryUrlForEntry, rawFileUrlForEntry } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
 
 import { DevelopButton } from './DevelopButton';
@@ -95,7 +96,10 @@ export const EntryDetailsLayout = ({
             <Flex align="center" gap="m" style={{ marginRight: 'auto' }}>
               <ImageIcon
                 size="l"
-                src={currentEntry?.details.icon}
+                src={rawFileUrlForEntry(
+                  currentEntry,
+                  currentEntry?.details.icon,
+                )}
                 alt={name}
                 fallbackIcon={ENTRY_CATEGORY_LABELS[category].icon}
                 padding={false}

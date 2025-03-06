@@ -48,7 +48,7 @@ import { useAgentRequestsWithIframe } from '~/hooks/agent-iframe-requests';
 import { useConsumerModeEnabled } from '~/hooks/consumer';
 import { useCurrentEntry, useEntryEnvironmentVariables } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
-import { sourceUrlForEntry } from '~/lib/entries';
+import { rawFileUrlForEntry, sourceUrlForEntry } from '~/lib/entries';
 import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
 import { useThreadsStore } from '~/stores/threads';
@@ -330,18 +330,37 @@ export const AgentRunner = ({
   useEffect(() => {
     const htmlFile = files.find((file) => file.filename === 'index.html');
 
-    if (htmlFile) {
-      const htmlContent = htmlFile.content.replaceAll(
-        '{{%agent_id%}}',
-        agentId,
+    function parseHtmlContent(html: string) {
+      html = html.replaceAll('{{%agent_id%}}', agentId);
+
+      html = html.replace(
+        /(src|href)="([^"]+)"/g,
+        (_match, $attribute, $path) => {
+          const attribute = $attribute as string;
+          const path = $path as string;
+          return `${attribute}="${rawFileUrlForEntry(
+            {
+              category: 'agent',
+              namespace,
+              name,
+              version,
+            },
+            path,
+          )}"`;
+        },
       );
-      setHtmlOutput(htmlContent);
+
+      return html;
+    }
+
+    if (htmlFile) {
+      setHtmlOutput(parseHtmlContent(htmlFile.content));
       setView('output');
     } else {
       setHtmlOutput('');
       setView('conversation');
     }
-  }, [files, htmlOutput, agentId, setView]);
+  }, [files, htmlOutput, agentId, setView, namespace, name, version]);
 
   useEffect(() => {
     if (currentEntry && auth) {

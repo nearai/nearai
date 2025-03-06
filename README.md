@@ -77,8 +77,14 @@ git clone git@github.com:nearai/nearai.git && cd nearai && ./install.sh
 Or, to install to a virtual environment with poetry:
 
 ```bash
-python3 -m poetry install --no-root --with dev
-poetry run nearai version
+python3 -m uv sync
+uv run nearai version
+```
+
+Or you can use pip:
+
+```bash
+python3 -m pip install -e .
 ```
 
 Verify installation:

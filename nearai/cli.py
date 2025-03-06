@@ -23,7 +23,8 @@ from tabulate import tabulate
 from nearai.agents.local_runner import LocalRunner
 from nearai.cli_helpers import (
     check_version_exists,
-    display_agents_in_columns,
+    display_agents_in_columns, 
+    has_pending_input,
     increment_version,
     increment_version_by_type,
     load_and_validate_metadata,
@@ -530,9 +531,9 @@ class BenchmarkCli:
         )
 
         solver_strategy_class: Union[SolverStrategy, None] = SolverStrategyRegistry.get(solver_strategy, None)
-        assert (
-            solver_strategy_class
-        ), f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
+        assert solver_strategy_class, (
+            f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
+        )
 
         name = dataset
         if solver_strategy_class.scoring_method == SolverScoringMethod.Custom:
@@ -754,7 +755,11 @@ class AgentCli:
 
         last_message_id = None
         print(f"\n=== Starting interactive session with agent: {agent_id} ===")
-        print("Type 'exit' to end the session\n")
+        print("")
+        print("On Linux/macOS: To submit, press Ctrl+D at the beginning of a new line after your prompt")
+        print("On Windows: Press Ctrl+Z followed by Enter")
+        print("Type 'exit' to end the session")
+        print("")
 
         metadata = get_metadata(agent_path, local)
         title = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("title")
@@ -765,9 +770,21 @@ class AgentCli:
             print(description)
 
         while True:
-            new_message = input("> ")
-            if new_message.lower() == "exit":
+            first_line = input("> ")
+            if first_line.lower() == "exit":
                 break
+            lines = [first_line]
+            try:
+                pending_input_on_prev_line = False
+                while True:
+                    pending_input_on_this_line = has_pending_input()
+                    line = input("") if (pending_input_on_prev_line or pending_input_on_this_line) else input("> ")
+                    lines.append(line)
+                    pending_input_on_prev_line = pending_input_on_this_line
+            except EOFError:
+                print("")
+
+            new_message = "\n".join(lines)
 
             last_message_id = self._task(
                 agent=agent_id,
