@@ -23,7 +23,7 @@ from tabulate import tabulate
 from nearai.agents.local_runner import LocalRunner
 from nearai.cli_helpers import (
     check_version_exists,
-    display_agents_in_columns, 
+    display_agents_in_columns,
     has_pending_input,
     increment_version,
     increment_version_by_type,
@@ -191,15 +191,24 @@ class RegistryCli:
                     f"There are unregistered common provider models: {unregistered_common_provider_models}. Run 'nearai registry upload-unregistered-common-provider-models' to update registry."  # noqa: E501
                 )
 
-    def update(self, local_path: str = ".", increment_type: str = "patch") -> None:
+    def update(self, local_path: str = ".", minor: bool = False, major: bool = False) -> None:
         """Update the version in metadata.json file.
 
         Args:
         ----
             local_path: Path to the directory containing the entry to update
-            increment_type: Type of version increment: 'patch', 'minor', or 'major'
+            minor: If True, increment the minor version (0.1.0 → 0.2.0)
+            major: If True, increment the major version (0.1.0 → 1.0.0)
 
         """
+        # Determine increment type based on flags
+        if major:
+            increment_type = "major"
+        elif minor:
+            increment_type = "minor"
+        else:
+            increment_type = "patch"  # Default
+
         if CONFIG.auth is None:
             print("Please login with `nearai login`")
             return
@@ -255,18 +264,24 @@ class RegistryCli:
             console.print(error_panel)
             return
 
-        # Update metadata.json with new version
-        metadata["version"] = new_version
         try:
+            # Read the original metadata file to preserve all fields
+            with open(metadata_path, "r") as f:
+                original_metadata = json.load(f)
+
+            # Only update the version field
+            original_metadata["version"] = new_version
+
+            # Write back the updated metadata
             with open(metadata_path, "w") as f:
-                json.dump(metadata, f, indent=2)
+                json.dump(original_metadata, f, indent=2)
 
             # Enhanced version update message
             console = Console()
             update_panel = Panel(
                 Text.assemble(
                     ("Entry: ", "dim"),
-                    (f"{metadata['name']}\n\n", "cyan bold"),
+                    (f"{original_metadata['name']}\n\n", "cyan bold"),
                     ("Update Type: ", "dim"),
                     (f"{increment_type}\n", "yellow"),
                     ("Previous version: ", "dim"),
@@ -531,9 +546,9 @@ class BenchmarkCli:
         )
 
         solver_strategy_class: Union[SolverStrategy, None] = SolverStrategyRegistry.get(solver_strategy, None)
-        assert solver_strategy_class, (
-            f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
-        )
+        assert (
+            solver_strategy_class
+        ), f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
 
         name = dataset
         if solver_strategy_class.scoring_method == SolverScoringMethod.Custom:
@@ -938,6 +953,8 @@ class AgentCli:
     def update(self, local_path: str = ".", minor: bool = False, major: bool = False) -> None:
         """Update the version in an agent's metadata.json file.
 
+        This is an alias for 'nearai registry update'.
+
         Args:
         ----
             local_path: Path to the directory containing the agent to update
@@ -945,17 +962,9 @@ class AgentCli:
             major: If True, increment the major version (0.1.0 → 1.0.0)
 
         """
-        # Determine increment type based on flags
-        if major:
-            increment_type = "major"
-        elif minor:
-            increment_type = "minor"
-        else:
-            increment_type = "patch"  # Default
-
-        from nearai.agent_creator import update_agent_version
-
-        update_agent_version(local_path, increment_type)
+        # Create an instance of RegistryCli and call its update method with the same flags
+        registry_cli = RegistryCli()
+        registry_cli.update(local_path, minor=minor, major=major)
 
     def upload(self, local_path: str = ".", auto_increment: bool = False) -> Optional[EntryLocation]:
         """Upload agent to the registry.

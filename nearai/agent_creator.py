@@ -3,7 +3,6 @@ import platform
 import re
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
@@ -13,8 +12,7 @@ from rich.prompt import Confirm, Prompt
 from rich.text import Text
 
 from nearai.banners import NEAR_AI_BANNER
-from nearai.cli_helpers import increment_version_by_type, load_and_validate_metadata
-from nearai.registry import get_registry_folder, parse_location, registry, resolve_local_path
+from nearai.registry import get_registry_folder, parse_location, registry
 from nearai.shared.client_config import (
     DEFAULT_MODEL,
     DEFAULT_MODEL_MAX_TOKENS,
@@ -406,83 +404,3 @@ def fork_agent(fork: str, namespace: str, new_name: Optional[str]) -> None:
 
     # Display success and interactive options
     display_success_and_options(dest_path)
-
-
-def update_agent_version(local_path: str = ".", increment_type: str = "patch") -> None:
-    """Update the version in an agent's metadata.json file.
-
-    Args:
-    ----
-        local_path: Path to the directory containing the agent to update
-        increment_type: Type of version increment: 'patch', 'minor', or 'major'
-
-    """
-    console = Console()
-    path = resolve_local_path(Path(local_path))
-    metadata_path = path / "metadata.json"
-
-    # Load and validate metadata
-    metadata, error = load_and_validate_metadata(metadata_path)
-    if error:
-        error_panel = Panel(Text(error, style="bold red"), title="Metadata Error", border_style="red", padding=(1, 2))
-        console.print(error_panel)
-        return
-
-    # At this point, metadata is guaranteed to be not None
-    assert metadata is not None, "Metadata should not be None if error is None"
-
-    # Get current version
-    current_version = metadata["version"]
-
-    # Increment version based on increment_type
-    try:
-        new_version = increment_version_by_type(current_version, increment_type)
-    except ValueError as e:
-        error_panel = Panel(
-            Text.assemble(
-                (f"{str(e)}\n\n", "bold red"),
-                ("Valid increment types are:", "yellow"),
-                ("\n• 'patch' - increment patch version (0.0.1 → 0.0.2)", "dim"),
-                ("\n• 'minor' - increment minor version (0.0.1 → 0.1.0)", "dim"),
-                ("\n• 'major' - increment major version (0.0.1 → 1.0.0)", "dim"),
-            ),
-            title="Version Error",
-            border_style="red",
-            padding=(1, 2),
-        )
-        console.print(error_panel)
-        return
-
-    # Update metadata.json with new version
-    metadata["version"] = new_version
-    try:
-        with open(metadata_path, "w") as f:
-            json.dump(metadata, f, indent=2)
-
-        # Enhanced version update message
-        update_panel = Panel(
-            Text.assemble(
-                ("Agent: ", "dim"),
-                (f"{metadata['name']}\n\n", "cyan bold"),
-                ("Update Type: ", "dim"),
-                (f"{increment_type}\n", "yellow"),
-                ("Previous version: ", "dim"),
-                (f"{current_version}\n", "yellow"),
-                ("New version:     ", "dim"),
-                (f"{new_version}", "green bold"),
-            ),
-            title="Version Updated",
-            border_style="green",
-            padding=(1, 2),
-        )
-        console.print(update_panel)
-
-    except Exception as e:
-        error_panel = Panel(
-            Text(f"Error updating metadata.json: {str(e)}", style="bold red"),
-            title="Update Error",
-            border_style="red",
-            padding=(1, 2),
-        )
-        console.print(error_panel)
-        sys.exit(1)  # Exit with error code
