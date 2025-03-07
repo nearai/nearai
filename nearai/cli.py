@@ -27,7 +27,6 @@ from nearai.cli_helpers import (
     display_agents_in_columns,
     has_pending_input,
     increment_version,
-    increment_version_by_type,
     load_and_validate_metadata,
     validate_version,
 )
@@ -37,9 +36,9 @@ from nearai.config import (
     update_config,
 )
 from nearai.finetune import FinetuneCli
-from nearai.lib import parse_location, parse_tags
+from nearai.lib import check_metadata_present, parse_location, parse_tags
 from nearai.log import LogCLI
-from nearai.openapi_client import EntryLocation
+from nearai.openapi_client import EntryLocation, EntryMetadataInput
 from nearai.openapi_client.api.benchmark_api import BenchmarkApi
 from nearai.openapi_client.api.default_api import DefaultApi
 from nearai.openapi_client.api.delegation_api import DelegationApi
@@ -192,117 +191,34 @@ class RegistryCli:
                     f"There are unregistered common provider models: {unregistered_common_provider_models}. Run 'nearai registry upload-unregistered-common-provider-models' to update registry."  # noqa: E501
                 )
 
-    def update(self, local_path: str = ".", minor: bool = False, major: bool = False) -> None:
-        """Update the version in metadata.json file.
-
-        Args:
-        ----
-            local_path: Path to the directory containing the entry to update
-            minor: If True, increment the minor version (0.1.0 → 0.2.0)
-            major: If True, increment the major version (0.1.0 → 1.0.0)
-
-        """
-        # Determine increment type based on flags
-        if major:
-            increment_type = "major"
-        elif minor:
-            increment_type = "minor"
-        else:
-            increment_type = "patch"  # Default
-
-        assert_user_auth()
-
+    def update(self, local_path: str = ".") -> None:
+        """Update metadata of a registry item."""
         path = resolve_local_path(Path(local_path))
+
+        if CONFIG.auth is None:
+            print("Please login with `nearai login`")
+            exit(1)
+
         metadata_path = path / "metadata.json"
+        check_metadata_present(metadata_path)
 
-        # Load and validate metadata
-        metadata, error = load_and_validate_metadata(metadata_path)
-        if error:
-            console = Console()
-            error_panel = Panel(
-                Text(error, style="bold red"), title="Metadata Error", border_style="red", padding=(1, 2)
+        with open(metadata_path) as f:
+            metadata: Dict[str, Any] = json.load(f)
+
+        namespace = CONFIG.auth.namespace
+
+        entry_location = EntryLocation.model_validate(
+            dict(
+                namespace=namespace,
+                name=metadata.pop("name"),
+                version=metadata.pop("version"),
             )
-            console.print(error_panel)
-            return
+        )
+        assert " " not in entry_location.name
 
-        # At this point, metadata is guaranteed to be not None
-        assert metadata is not None, "Metadata should not be None if error is None"
-
-        # Get current version
-        current_version = metadata["version"]
-
-        # Increment version based on increment_type
-        try:
-            new_version = increment_version_by_type(current_version, increment_type)
-            # Validate new version format
-            is_valid, error = validate_version(new_version)
-            if not is_valid:
-                console = Console()
-                error_panel = Panel(
-                    Text(error or "Unknown error", style="bold red"),
-                    title="Version Error",
-                    border_style="red",
-                    padding=(1, 2),
-                )
-                console.print(error_panel)
-                return
-        except ValueError as e:
-            console = Console()
-            error_panel = Panel(
-                Text.assemble(
-                    (f"{str(e)}\n\n", "bold red"),
-                    ("Valid increment types are:", "yellow"),
-                    ("\n• 'patch' - increment patch version (0.0.1 → 0.0.2)", "dim"),
-                    ("\n• 'minor' - increment minor version (0.0.1 → 0.1.0)", "dim"),
-                    ("\n• 'major' - increment major version (0.0.1 → 1.0.0)", "dim"),
-                ),
-                title="Version Error",
-                border_style="red",
-                padding=(1, 2),
-            )
-            console.print(error_panel)
-            return
-
-        try:
-            # Read the original metadata file to preserve all fields
-            with open(metadata_path, "r") as f:
-                original_metadata = json.load(f)
-
-            # Only update the version field
-            original_metadata["version"] = new_version
-
-            # Write back the updated metadata
-            with open(metadata_path, "w") as f:
-                json.dump(original_metadata, f, indent=2)
-
-            # Enhanced version update message
-            console = Console()
-            update_panel = Panel(
-                Text.assemble(
-                    ("Entry: ", "dim"),
-                    (f"{original_metadata['name']}\n\n", "cyan bold"),
-                    ("Update Type: ", "dim"),
-                    (f"{increment_type}\n", "yellow"),
-                    ("Previous version: ", "dim"),
-                    (f"{current_version}\n", "yellow"),
-                    ("New version:     ", "dim"),
-                    (f"{new_version}", "green bold"),
-                ),
-                title="Version Updated",
-                border_style="green",
-                padding=(1, 2),
-            )
-            console.print(update_panel)
-        except Exception as e:
-            console = Console()
-            error_panel = Panel(
-                Text(f"Error updating metadata.json: {str(e)}", style="bold red"),
-                title="Update Error",
-                border_style="red",
-                padding=(1, 2),
-            )
-            console.print(error_panel)
-            return
+        entry_metadata = EntryMetadataInput.model_validate(metadata)
+        result = registry.update(entry_location, entry_metadata)
+        print(json.dumps(result, indent=2))
 
     def upload_unregistered_common_provider_models(self, dry_run: bool = True) -> None:
         """Creates new registry items for unregistered common provider models."""
@@ -487,7 +403,7 @@ class BenchmarkCli:
     def _get_or_create_benchmark(self, benchmark_name: str, solver_name: str, args: Dict[str, Any], force: bool) -> int:
         if CONFIG.auth is None:
             print("Please login with `nearai login` first")
-        exit(1)
+            exit(1)
 
         namespace = CONFIG.auth.namespace
 
