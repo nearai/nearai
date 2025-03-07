@@ -27,8 +27,6 @@ import { useAuthStore } from '~/stores/auth';
 import { trpc } from '~/trpc/TRPCProvider';
 import { filePathIsImage, filePathToCodeLanguage } from '~/utils/file';
 
-const METADATA_FILE_PATH = 'metadata.json';
-
 type Props = {
   entry: z.infer<typeof entryModel>;
 };
@@ -46,7 +44,7 @@ export const EntrySource = ({ entry }: Props) => {
       enabled: isPermittedToViewSource,
     },
   );
-  const activeFilePath = queryParams.file ?? filePathsQuery.data?.[0] ?? '';
+  const activeFilePath = queryParams.file || 'metadata.json';
   const activeFileIsCompressed =
     activeFilePath.endsWith('.zip') || activeFilePath.endsWith('.tar');
   const activeFileIsImage = filePathIsImage(activeFilePath);
@@ -55,33 +53,15 @@ export const EntrySource = ({ entry }: Props) => {
     { ...params, category: entry.category, filePath: activeFilePath },
     {
       enabled:
-        !!activeFilePath &&
-        activeFilePath !== METADATA_FILE_PATH &&
-        !activeFileIsCompressed &&
-        isPermittedToViewSource,
+        !!activeFilePath && !activeFileIsCompressed && isPermittedToViewSource,
     },
   );
 
   const [sidebarOpenForSmallScreens, setSidebarOpenForSmallScreens] =
     useState(false);
 
-  let openedFile =
+  const openedFile =
     activeFilePath === fileQuery.data?.path ? fileQuery.data : undefined;
-  if (activeFilePath === METADATA_FILE_PATH) {
-    const metadata = {
-      category: entry.category,
-      namespace: entry.namespace,
-      name: entry.name,
-      version: entry.version,
-      description: entry.description,
-      tags: entry.tags,
-      details: entry.details,
-    };
-    openedFile = {
-      content: JSON.stringify(metadata ?? '{}', null, 2),
-      path: METADATA_FILE_PATH,
-    };
-  }
 
   useEffect(() => {
     setSidebarOpenForSmallScreens(false);
