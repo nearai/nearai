@@ -1,6 +1,6 @@
 import json
-from pathlib import Path
 import re
+from pathlib import Path
 from textwrap import fill
 from typing import Any, Dict, List, Union
 
