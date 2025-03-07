@@ -14,11 +14,22 @@ from typing import Any, Dict, List, Optional, Union
 
 import fire
 from openai.types.beta.threads.message import Attachment
+from rich.console import Console
+from rich.panel import Panel
 from rich.prompt import Prompt
+from rich.text import Text
 from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
-from nearai.cli_helpers import display_agents_in_columns, has_pending_input
+from nearai.cli_helpers import (
+    assert_user_auth,
+    check_version_exists,
+    display_agents_in_columns,
+    has_pending_input,
+    increment_version_by_type,
+    load_and_validate_metadata,
+    validate_version,
+)
 from nearai.config import (
     CONFIG,
     get_hub_client,
@@ -42,6 +53,9 @@ from nearai.shared.client_config import (
     DEFAULT_MODEL_TEMPERATURE,
     DEFAULT_NAMESPACE,
     DEFAULT_PROVIDER,
+)
+from nearai.shared.client_config import (
+    IDENTIFIER_PATTERN as PATTERN,
 )
 from nearai.shared.naming import NamespacedName, create_registry_name
 from nearai.shared.provider_models import ProviderModels, get_provider_namespaced_model
@@ -83,10 +97,14 @@ class RegistryCli:
         metadata_path = path / "metadata.json"
 
         version = path.name
-        pattern = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa: E501
-        assert re.match(pattern, version), f"Invalid semantic version format: {version}"
+        # Validate version format
+        is_valid, error = validate_version(version)
+        if not is_valid:
+            print(error)
+            return
+
         name = path.parent.name
-        assert not re.match(pattern, name), f"Invalid agent name: {name}"
+        assert not re.match(PATTERN, name), f"Invalid agent name: {name}"
         assert " " not in name
 
         with open(metadata_path, "w") as f:
@@ -254,9 +272,124 @@ class RegistryCli:
             for path in paths:
                 self.upload(str(path))
 
-    def upload(self, local_path: str = ".") -> EntryLocation:
-        """Upload item to the registry."""
-        return registry.upload(resolve_local_path(Path(local_path)), show_progress=True)
+    def upload(
+        self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
+    ) -> Optional[EntryLocation]:
+        """Upload item to the registry.
+
+        Args:
+        ----
+            local_path: Path to the directory containing the agent to upload
+            bump: If True, automatically increment patch version if it already exists
+            minor_bump: If True, bump with minor version increment (0.1.0 → 0.2.0)
+            major_bump: If True, bump with major version increment (0.1.0 → 1.0.0)
+
+        Returns:
+        -------
+            EntryLocation if upload was successful, None otherwise
+
+        """
+        path = resolve_local_path(Path(local_path))
+        metadata_path = path / "metadata.json"
+
+        # Load and validate metadata
+        metadata, error = load_and_validate_metadata(metadata_path)
+        if error:
+            print(error)
+            return None
+
+        # At this point, metadata is guaranteed to be not None
+        assert metadata is not None, "Metadata should not be None if error is None"
+
+        name = metadata["name"]
+        version = metadata["version"]
+
+        # Get namespace from auth
+        if CONFIG.auth is None or CONFIG.auth.namespace is None:
+            print("Please login with `nearai login` before uploading")
+            return None
+
+        namespace = CONFIG.auth.namespace
+
+        # Try to upload, handle version conflict
+        max_attempts = 5  # Prevent infinite loops
+        attempts = 0
+
+        while attempts < max_attempts:
+            attempts += 1
+
+            # Check if this version already exists
+            exists, error = check_version_exists(namespace, name, version)
+            if error:
+                print(error)
+                return None
+
+            if exists:
+                if bump or minor_bump or major_bump:
+                    old_version = version
+
+                    # Determine increment type based on flags
+                    if major_bump:
+                        increment_type = "major"
+                    elif minor_bump:
+                        increment_type = "minor"
+                    else:
+                        increment_type = "patch"  # Default for bump
+
+                    version = increment_version_by_type(version, increment_type)
+
+                    # Enhanced version update message
+                    console = Console()
+                    update_panel = Panel(
+                        Text.assemble(
+                            ("Version Update\n\n", "bold"),
+                            ("Previous version: ", "dim"),
+                            (f"{old_version}\n", "yellow"),
+                            ("New version:     ", "dim"),
+                            (f"{version}", "green bold"),
+                            ("\n\nIncrement type: ", "dim"),
+                            (f"{increment_type}", "cyan"),
+                        ),
+                        title="Bump",
+                        border_style="green",
+                        padding=(1, 2),
+                    )
+                    console.print(update_panel)
+
+                    # Update metadata.json with new version
+                    metadata["version"] = version
+                    with open(metadata_path, "w") as f:
+                        json.dump(metadata, f, indent=2)
+
+                    console.print(f"[dim]Updated [bold]{metadata_path}[/bold] with new version[/dim]")
+                    continue  # Try again with new version
+                else:
+                    console = Console()
+                    error_panel = Panel(
+                        Text.assemble(
+                            (f"Version {version} already exists in the registry.\n\n", "bold red"),
+                            ("To upload a new version:\n", "yellow"),
+                            (f"1. Edit {metadata_path}\n", "dim"),
+                            ('2. Update the "version" field (e.g., increment from "0.0.1" to "0.0.2")\n', "dim"),
+                            ("3. Try uploading again\n\n", "dim"),
+                            ("Or use the following flags:\n", "yellow"),
+                            ("  --bump          # Patch update (0.0.1 → 0.0.2)\n", "green"),
+                            ("  --minor-bump    # Minor update (0.0.1 → 0.1.0)\n", "green"),
+                            ("  --major-bump    # Major update (0.0.1 → 1.0.0)\n", "green"),
+                        ),
+                        title="Version Conflict",
+                        border_style="red",
+                    )
+                    console.print(error_panel)
+                    return None
+
+            # Version doesn't exist, proceed with upload
+            print(f"Uploading version {version}...")
+            return registry.upload(path, show_progress=True)
+
+        # If we get here, we've exceeded max attempts
+        print(f"Error: Exceeded maximum attempts ({max_attempts}) to find an available version")
+        return None
 
     def download(self, entry_location: str, force: bool = False) -> None:
         """Download item."""
@@ -747,6 +880,30 @@ class AgentCli:
             # Create a new agent from scratch
             create_new_agent(namespace, name, description)
 
+    def upload(
+        self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
+    ) -> Optional[EntryLocation]:
+        """Upload agent to the registry.
+
+        This is an alias for 'nearai registry upload'.
+
+        Args:
+        ----
+            local_path: Path to the directory containing the agent to upload
+            bump: If True, automatically increment patch version if it already exists
+            minor_bump: If True, bump with minor version increment (0.1.0 → 0.2.0)
+            major_bump: If True, bump with major version increment (0.1.0 → 1.0.0)
+
+        Returns:
+        -------
+            EntryLocation if upload was successful, None otherwise
+
+        """
+        assert_user_auth()
+        # Create an instance of RegistryCli and call its upload method
+        registry_cli = RegistryCli()
+        return registry_cli.upload(local_path, bump, minor_bump, major_bump)
+
 
 class VllmCli:
     def run(self, *args: Any, **kwargs: Any) -> None:  # noqa: D102
@@ -943,13 +1100,6 @@ def check_update():
 
     except Exception as _:
         pass
-
-
-def assert_user_auth() -> None:
-    """Ensure the user is authenticated."""
-    if CONFIG.auth is None:
-        print("Please login with `nearai login` first")
-        exit(1)
 
 
 def main() -> None:

@@ -12,7 +12,7 @@ from rich.prompt import Confirm, Prompt
 from rich.text import Text
 
 from nearai.banners import NEAR_AI_BANNER
-from nearai.registry import get_registry_folder, registry
+from nearai.registry import get_registry_folder, parse_location, registry
 from nearai.shared.client_config import (
     DEFAULT_MODEL,
     DEFAULT_MODEL_MAX_TOKENS,
@@ -352,8 +352,6 @@ def display_success_and_options(agent_path: Path) -> None:
 def fork_agent(fork: str, namespace: str, new_name: Optional[str]) -> None:
     """Fork an existing agent."""
     import shutil
-
-    from nearai.registry import parse_location
 
     # Parse the fork parameter
     try:
