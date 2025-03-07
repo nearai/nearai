@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import re
 from textwrap import fill
 from typing import Any, Dict, List, Union
 
@@ -108,7 +109,8 @@ def upload_evaluation(
         key += f"_version_{version}"
     if provider != "":
         metrics[EVALUATED_ENTRY_METADATA]["provider"] = provider
-        key += f"_provider_{provider}"
+        clean_provider = re.sub(r'[^a-zA-Z0-9_\-.]', '_', provider)
+        key += f"_provider_{clean_provider}"
 
     entry_path = get_registry_folder() / key
     # Create folder entry_path if not present
