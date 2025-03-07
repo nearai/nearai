@@ -102,7 +102,7 @@ class ProviderModels:
         if provider == "":
             provider = None
         matched_provider, namespaced_model = get_provider_namespaced_model(model, provider)
-        if matched_provider.startswith('https://'):
+        if matched_provider.startswith("https://"):
             return matched_provider, namespaced_model.name
         namespaced_model = namespaced_model.canonical()
         if namespaced_model not in self.provider_models:
