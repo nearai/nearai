@@ -93,6 +93,7 @@ class RegistryCli:
     def metadata_template(self, local_path: str = ".", category: str = "", description: str = ""):
         """Create a metadata template."""
         path = resolve_local_path(Path(local_path))
+
         metadata_path = path / "metadata.json"
 
         version = path.name
@@ -402,9 +403,8 @@ class BenchmarkCli:
 
     def _get_or_create_benchmark(self, benchmark_name: str, solver_name: str, args: Dict[str, Any], force: bool) -> int:
         if CONFIG.auth is None:
-            print("Please login with `nearai login` first")
+            print("Please login with `nearai login`")
             exit(1)
-
         namespace = CONFIG.auth.namespace
 
         # Sort the args to have a consistent representation.
@@ -866,23 +866,6 @@ class AgentCli:
             # Create a new agent from scratch
             create_new_agent(namespace, name, description)
 
-    def update(self, local_path: str = ".", minor: bool = False, major: bool = False) -> None:
-        """Update the version in an agent's metadata.json file.
-
-        This is an alias for 'nearai registry update'.
-
-        Args:
-        ----
-            local_path: Path to the directory containing the agent to update
-            minor: If True, increment the minor version (0.1.0 → 0.2.0)
-            major: If True, increment the major version (0.1.0 → 1.0.0)
-
-        """
-        assert_user_auth()
-        # Create an instance of RegistryCli and call its update method with the same flags
-        registry_cli = RegistryCli()
-        registry_cli.update(local_path, minor=minor, major=major)
-
     def upload(self, local_path: str = ".", auto_increment: bool = False) -> Optional[EntryLocation]:
         """Upload agent to the registry.
 
@@ -1061,16 +1044,9 @@ class CLI:
 
         try:
             client = JobsApi()
-            entry_location_value = location
-            if entry_location_value is None:
-                print("Error: Failed to get entry location")
-                return
-
-            # Now we know entry_location_value is not None
-            result = BodyAddJobV1JobsAddJobPost(entry_location=entry_location_value)
             client.add_job_v1_jobs_add_job_post(
                 worker_kind_t,
-                result,
+                BodyAddJobV1JobsAddJobPost(entry_location=location),
             )
         except Exception as e:
             print("Error: ", e)
