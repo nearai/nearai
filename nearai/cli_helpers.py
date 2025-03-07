@@ -61,25 +61,6 @@ def display_agents_in_columns(agents: list[Path]) -> None:
     console.print("\n")
 
 
-def increment_version(version_str: str) -> str:
-    """Increment the patch version of a semver string.
-
-    Args:
-    ----
-        version_str: The version string to increment
-
-    Returns:
-    -------
-        The incremented version string
-
-    """
-    try:
-        return increment_version_by_type(version_str, "patch")
-    except ValueError:
-        # If version doesn't follow semver, append .1
-        return f"{version_str}.1"
-
-
 def validate_version(version: str) -> Tuple[bool, Optional[str]]:
     """Validate version string according to PEP 440.
 

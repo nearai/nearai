@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from nearai.cli import RegistryCli
-from nearai.cli_helpers import increment_version
 from nearai.openapi_client import EntryLocation
 
 
@@ -94,6 +93,9 @@ class TestRegistryCliUpload:
             assert "Version Conflict" in captured.out
             assert "Version 0.0.1 already exists in the registry" in captured.out
             assert "To upload a new version" in captured.out
+            assert "--bump" in captured.out
+            assert "--minor-bump" in captured.out
+            assert "--major-bump" in captured.out
             mock_registry.upload.assert_not_called()
 
     def test_metadata_file_not_found(self, mock_registry, mock_config, tmp_path, capsys):
@@ -185,7 +187,7 @@ class TestRegistryCliUpload:
             assert "Error checking registry: Connection failed" in captured.out
             mock_registry.upload.assert_not_called()
 
-    def test_auto_increment_version(self, mock_registry, mock_config, tmp_path, capsys):
+    def test_auto_bump_version(self, mock_registry, mock_config, tmp_path, capsys):
         """Test auto-increment feature when version already exists."""
         # Create a real metadata.json for this test
         metadata = {"name": "test-agent", "version": "0.0.1"}
@@ -197,21 +199,22 @@ class TestRegistryCliUpload:
         with (
             patch("nearai.cli.load_and_validate_metadata") as mock_load_metadata,
             patch("nearai.cli.check_version_exists") as mock_check_version,
-            patch("nearai.cli.increment_version", wraps=increment_version) as mock_increment,
+            patch("nearai.cli.increment_version_by_type") as mock_increment,
         ):
             # Setup mocks for first check (version exists) and second check (new version doesn't exist)
             mock_load_metadata.return_value = (metadata, None)
             mock_check_version.side_effect = [(True, None), (False, None)]
+            mock_increment.return_value = "0.0.2"
             mock_registry.upload.return_value = EntryLocation(namespace="user", name="test-agent", version="0.0.2")
 
-            # Call the method with auto_increment=True
+            # Call the method with bump=True
             cli = RegistryCli()
-            result = cli.upload(str(tmp_path), auto_increment=True)
+            result = cli.upload(str(tmp_path), bump=True)
 
             # Assertions
             assert result is not None
             assert result.version == "0.0.2"
-            mock_increment.assert_called_once_with("0.0.1")
+            mock_increment.assert_called_once_with("0.0.1", "patch")
             mock_registry.upload.assert_called_once()
 
             # Check that metadata.json was updated
@@ -221,64 +224,97 @@ class TestRegistryCliUpload:
 
             # Check console output for the new Rich-formatted panel
             captured = capsys.readouterr()
-            assert "Auto-Increment" in captured.out
+            assert "Bump" in captured.out
             assert "Previous version: 0.0.1" in captured.out
             assert "New version:" in captured.out
             assert "0.0.2" in captured.out
+            assert "Increment type: patch" in captured.out
 
-    def test_update_version(self, mock_registry, mock_config, tmp_path, capsys):
-        """Test updating version in metadata.json."""
-        # Create a metadata.json file for testing
-        metadata = {"name": "test-agent", "version": "1.2.3"}
+    def test_minor_bump_version(self, mock_registry, mock_config, tmp_path, capsys):
+        """Test minor bump feature when version already exists."""
+        # Create a real metadata.json for this test
+        metadata = {"name": "test-agent", "version": "0.0.1"}
         metadata_path = tmp_path / "metadata.json"
         with open(metadata_path, "w") as f:
             json.dump(metadata, f)
 
-        # Test patch increment (default)
-        cli = RegistryCli()
-        cli.update(str(tmp_path))
+        # Mock the helper functions
+        with (
+            patch("nearai.cli.load_and_validate_metadata") as mock_load_metadata,
+            patch("nearai.cli.check_version_exists") as mock_check_version,
+            patch("nearai.cli.increment_version_by_type") as mock_increment,
+        ):
+            # Setup mocks for first check (version exists) and second check (new version doesn't exist)
+            mock_load_metadata.return_value = (metadata, None)
+            mock_check_version.side_effect = [(True, None), (False, None)]
+            mock_increment.return_value = "0.1.0"
+            mock_registry.upload.return_value = EntryLocation(namespace="user", name="test-agent", version="0.1.0")
 
-        # Assertions
-        captured = capsys.readouterr()
-        assert "Previous version:" in captured.out
-        assert "1.2.3" in captured.out
-        assert "New version:" in captured.out
-        assert "1.2.4" in captured.out
+            # Call the method with minor_bump=True
+            cli = RegistryCli()
+            result = cli.upload(str(tmp_path), minor_bump=True)
 
-        # Verify metadata was updated
-        with open(metadata_path, "r") as f:
-            updated_metadata = json.load(f)
-            assert updated_metadata["version"] == "1.2.4"
+            # Assertions
+            assert result is not None
+            assert result.version == "0.1.0"
+            mock_increment.assert_called_once_with("0.0.1", "minor")
+            mock_registry.upload.assert_called_once()
 
-        # Test minor increment
-        cli.update(str(tmp_path), minor=True)
+            # Check that metadata.json was updated
+            with open(metadata_path, "r") as f:
+                updated_metadata = json.load(f)
+                assert updated_metadata["version"] == "0.1.0"
 
-        # Assertions
-        captured = capsys.readouterr()
-        assert "Previous version:" in captured.out
-        assert "1.2.4" in captured.out
-        assert "New version:" in captured.out
-        assert "1.3.0" in captured.out
+            # Check console output for the new Rich-formatted panel
+            captured = capsys.readouterr()
+            assert "Bump" in captured.out
+            assert "Previous version: 0.0.1" in captured.out
+            assert "New version:" in captured.out
+            assert "0.1.0" in captured.out
+            assert "Increment type: minor" in captured.out
 
-        # Verify metadata was updated
-        with open(metadata_path, "r") as f:
-            updated_metadata = json.load(f)
-            assert updated_metadata["version"] == "1.3.0"
+    def test_major_bump_version(self, mock_registry, mock_config, tmp_path, capsys):
+        """Test major bump feature when version already exists."""
+        # Create a real metadata.json for this test
+        metadata = {"name": "test-agent", "version": "0.0.1"}
+        metadata_path = tmp_path / "metadata.json"
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f)
 
-        # Test major increment
-        cli.update(str(tmp_path), major=True)
+        # Mock the helper functions
+        with (
+            patch("nearai.cli.load_and_validate_metadata") as mock_load_metadata,
+            patch("nearai.cli.check_version_exists") as mock_check_version,
+            patch("nearai.cli.increment_version_by_type") as mock_increment,
+        ):
+            # Setup mocks for first check (version exists) and second check (new version doesn't exist)
+            mock_load_metadata.return_value = (metadata, None)
+            mock_check_version.side_effect = [(True, None), (False, None)]
+            mock_increment.return_value = "1.0.0"
+            mock_registry.upload.return_value = EntryLocation(namespace="user", name="test-agent", version="1.0.0")
 
-        # Assertions
-        captured = capsys.readouterr()
-        assert "Previous version:" in captured.out
-        assert "1.3.0" in captured.out
-        assert "New version:" in captured.out
-        assert "2.0.0" in captured.out
+            # Call the method with major_bump=True
+            cli = RegistryCli()
+            result = cli.upload(str(tmp_path), major_bump=True)
 
-        # Verify metadata was updated
-        with open(metadata_path, "r") as f:
-            updated_metadata = json.load(f)
-            assert updated_metadata["version"] == "2.0.0"
+            # Assertions
+            assert result is not None
+            assert result.version == "1.0.0"
+            mock_increment.assert_called_once_with("0.0.1", "major")
+            mock_registry.upload.assert_called_once()
+
+            # Check that metadata.json was updated
+            with open(metadata_path, "r") as f:
+                updated_metadata = json.load(f)
+                assert updated_metadata["version"] == "1.0.0"
+
+            # Check console output for the new Rich-formatted panel
+            captured = capsys.readouterr()
+            assert "Bump" in captured.out
+            assert "Previous version: 0.0.1" in captured.out
+            assert "New version:" in captured.out
+            assert "1.0.0" in captured.out
+            assert "Increment type: major" in captured.out
 
     def test_pep440_version_validation(self, mock_registry, mock_config, tmp_path):
         """Test that version validation follows PEP 440 standards."""
@@ -360,3 +396,46 @@ class TestRegistryCliUpload:
             is_valid, error_msg = validate_version(version)
             assert not is_valid, f"Invalid version {version} was accepted"
             assert "Invalid version format" in error_msg or "not a valid version" in error_msg
+
+    def test_auto_increment_version(self, mock_registry, mock_config, tmp_path, capsys):
+        """Test auto-increment feature when version already exists."""
+        # Create a real metadata.json for this test
+        metadata = {"name": "test-agent", "version": "0.0.1"}
+        metadata_path = tmp_path / "metadata.json"
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f)
+
+        # Mock the helper functions
+        with (
+            patch("nearai.cli.load_and_validate_metadata") as mock_load_metadata,
+            patch("nearai.cli.check_version_exists") as mock_check_version,
+            patch("nearai.cli.increment_version_by_type") as mock_increment,
+        ):
+            # Setup mocks for first check (version exists) and second check (new version doesn't exist)
+            mock_load_metadata.return_value = (metadata, None)
+            mock_check_version.side_effect = [(True, None), (False, None)]
+            mock_increment.return_value = "0.0.2"
+            mock_registry.upload.return_value = EntryLocation(namespace="user", name="test-agent", version="0.0.2")
+
+            # Call the method with bump=True
+            cli = RegistryCli()
+            result = cli.upload(str(tmp_path), bump=True)
+
+            # Assertions
+            assert result is not None
+            assert result.version == "0.0.2"
+            mock_increment.assert_called_once_with("0.0.1", "patch")
+            mock_registry.upload.assert_called_once()
+
+            # Check that metadata.json was updated
+            with open(metadata_path, "r") as f:
+                updated_metadata = json.load(f)
+                assert updated_metadata["version"] == "0.0.2"
+
+            # Check console output for the new Rich-formatted panel
+            captured = capsys.readouterr()
+            assert "Bump" in captured.out
+            assert "Previous version: 0.0.1" in captured.out
+            assert "New version:" in captured.out
+            assert "0.0.2" in captured.out
+            assert "Increment type: patch" in captured.out

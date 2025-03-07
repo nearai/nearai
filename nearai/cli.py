@@ -26,7 +26,7 @@ from nearai.cli_helpers import (
     check_version_exists,
     display_agents_in_columns,
     has_pending_input,
-    increment_version,
+    increment_version_by_type,
     load_and_validate_metadata,
     validate_version,
 )
@@ -272,13 +272,17 @@ class RegistryCli:
             for path in paths:
                 self.upload(str(path))
 
-    def upload(self, local_path: str = ".", auto_increment: bool = False) -> Optional[EntryLocation]:
+    def upload(
+        self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
+    ) -> Optional[EntryLocation]:
         """Upload item to the registry.
 
         Args:
         ----
             local_path: Path to the directory containing the agent to upload
-            auto_increment: If True, automatically increment version if it already exists
+            bump: If True, automatically increment patch version if it already exists
+            minor_bump: If True, bump with minor version increment (0.1.0 → 0.2.0)
+            major_bump: If True, bump with major version increment (0.1.0 → 1.0.0)
 
         Returns:
         -------
@@ -321,9 +325,18 @@ class RegistryCli:
                 return None
 
             if exists:
-                if auto_increment:
+                if bump or minor_bump or major_bump:
                     old_version = version
-                    version = increment_version(version)
+
+                    # Determine increment type based on flags
+                    if major_bump:
+                        increment_type = "major"
+                    elif minor_bump:
+                        increment_type = "minor"
+                    else:
+                        increment_type = "patch"  # Default for bump
+
+                    version = increment_version_by_type(version, increment_type)
 
                     # Enhanced version update message
                     console = Console()
@@ -334,8 +347,10 @@ class RegistryCli:
                             (f"{old_version}\n", "yellow"),
                             ("New version:     ", "dim"),
                             (f"{version}", "green bold"),
+                            ("\n\nIncrement type: ", "dim"),
+                            (f"{increment_type}", "cyan"),
                         ),
-                        title="Auto-Increment",
+                        title="Bump",
                         border_style="green",
                         padding=(1, 2),
                     )
@@ -357,11 +372,10 @@ class RegistryCli:
                             (f"1. Edit {metadata_path}\n", "dim"),
                             ('2. Update the "version" field (e.g., increment from "0.0.1" to "0.0.2")\n', "dim"),
                             ("3. Try uploading again\n\n", "dim"),
-                            ("Or use the following commands:\n", "yellow"),
-                            ("  nearai agent update            # Patch update (0.0.1 → 0.0.2)\n", "green"),
-                            ("  nearai agent update --minor    # Minor update (0.0.1 → 0.1.0)\n", "green"),
-                            ("  nearai agent update --major    # Major update (0.0.1 → 1.0.0)\n\n", "green"),
-                            ("Or use --auto-increment to automatically increment the version", "cyan"),
+                            ("Or use the following flags:\n", "yellow"),
+                            ("  --bump          # Patch update (0.0.1 → 0.0.2)\n", "green"),
+                            ("  --minor-bump    # Minor update (0.0.1 → 0.1.0)\n", "green"),
+                            ("  --major-bump    # Major update (0.0.1 → 1.0.0)\n", "green"),
                         ),
                         title="Version Conflict",
                         border_style="red",
@@ -866,7 +880,9 @@ class AgentCli:
             # Create a new agent from scratch
             create_new_agent(namespace, name, description)
 
-    def upload(self, local_path: str = ".", auto_increment: bool = False) -> Optional[EntryLocation]:
+    def upload(
+        self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
+    ) -> Optional[EntryLocation]:
         """Upload agent to the registry.
 
         This is an alias for 'nearai registry upload'.
@@ -874,7 +890,9 @@ class AgentCli:
         Args:
         ----
             local_path: Path to the directory containing the agent to upload
-            auto_increment: If True, automatically increment version if it already exists
+            bump: If True, automatically increment patch version if it already exists
+            minor_bump: If True, bump with minor version increment (0.1.0 → 0.2.0)
+            major_bump: If True, bump with major version increment (0.1.0 → 1.0.0)
 
         Returns:
         -------
@@ -884,7 +902,7 @@ class AgentCli:
         assert_user_auth()
         # Create an instance of RegistryCli and call its upload method
         registry_cli = RegistryCli()
-        return registry_cli.upload(local_path, auto_increment)
+        return registry_cli.upload(local_path, bump, minor_bump, major_bump)
 
 
 class VllmCli:
