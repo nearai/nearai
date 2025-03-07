@@ -127,6 +127,7 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
         if self.provider.startswith("https://"):
             self.client_config.base_url = self.provider
             self.client_config.auth = None
+            self.client_config.default_provider = self.provider
             print(self.client_config)
             self.client = InferenceClient(self.client_config)
 
