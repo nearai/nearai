@@ -109,6 +109,8 @@ def upload_evaluation(
         key += f"_version_{version}"
     if provider != "":
         metrics[EVALUATED_ENTRY_METADATA]["provider"] = provider
+        # Url providers like 'https://api.openai.com/v1' can't be included into registry entry name
+        # because of special characters.
         clean_provider = re.sub(r'[^a-zA-Z0-9_\-.]', '_', provider)
         key += f"_provider_{clean_provider}"
 
