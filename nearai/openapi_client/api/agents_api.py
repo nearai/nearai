@@ -56,7 +56,7 @@ class AgentsApi:
     ) -> str:
         """Run Agent
 
-        Run an agent against an existing or a new thread. Returns the ID of the new thread resulting from the run.
+        Run an agent against an existing or a new thread.  Returns the ID of the new thread resulting from the run.
 
         :param create_thread_and_run_request: (required)
         :type create_thread_and_run_request: CreateThreadAndRunRequest
@@ -124,7 +124,7 @@ class AgentsApi:
     ) -> ApiResponse[str]:
         """Run Agent
 
-        Run an agent against an existing or a new thread. Returns the ID of the new thread resulting from the run.
+        Run an agent against an existing or a new thread.  Returns the ID of the new thread resulting from the run.
 
         :param create_thread_and_run_request: (required)
         :type create_thread_and_run_request: CreateThreadAndRunRequest
@@ -192,7 +192,7 @@ class AgentsApi:
     ) -> RESTResponseType:
         """Run Agent
 
-        Run an agent against an existing or a new thread. Returns the ID of the new thread resulting from the run.
+        Run an agent against an existing or a new thread.  Returns the ID of the new thread resulting from the run.
 
         :param create_thread_and_run_request: (required)
         :type create_thread_and_run_request: CreateThreadAndRunRequest
@@ -331,7 +331,7 @@ class AgentsApi:
     ) -> str:
         """Run Agent
 
-        Run an agent against an existing or a new thread. Returns the ID of the new thread resulting from the run.
+        Run an agent against an existing or a new thread.  Returns the ID of the new thread resulting from the run.
 
         :param create_thread_and_run_request: (required)
         :type create_thread_and_run_request: CreateThreadAndRunRequest
@@ -399,7 +399,7 @@ class AgentsApi:
     ) -> ApiResponse[str]:
         """Run Agent
 
-        Run an agent against an existing or a new thread. Returns the ID of the new thread resulting from the run.
+        Run an agent against an existing or a new thread.  Returns the ID of the new thread resulting from the run.
 
         :param create_thread_and_run_request: (required)
         :type create_thread_and_run_request: CreateThreadAndRunRequest
@@ -467,7 +467,7 @@ class AgentsApi:
     ) -> RESTResponseType:
         """Run Agent
 
-        Run an agent against an existing or a new thread. Returns the ID of the new thread resulting from the run.
+        Run an agent against an existing or a new thread.  Returns the ID of the new thread resulting from the run.
 
         :param create_thread_and_run_request: (required)
         :type create_thread_and_run_request: CreateThreadAndRunRequest

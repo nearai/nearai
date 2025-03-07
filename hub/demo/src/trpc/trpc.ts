@@ -1,27 +1,17 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { type FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import superjson from 'superjson';
-import { type z, ZodError } from 'zod';
+import { ZodError } from 'zod';
 
-import { authorizationModel } from '~/lib/models';
-import { parseCookies } from '~/utils/cookies';
+import { parseAuthCookie } from '~/utils/cookies';
 
-import { AUTH_COOKIE_DELETE, AUTH_COOKIE_NAME } from './routers/auth';
+import { AUTH_COOKIE_DELETE } from './routers/auth';
 
 export const createTRPCContext = async (opts: FetchCreateContextFnOptions) => {
-  const cookies = parseCookies(opts.req.headers.get('Cookie') ?? '');
-  const rawAuth = cookies[AUTH_COOKIE_NAME];
-  let authorization: string | null = null;
-  let signature: z.infer<typeof authorizationModel> | null = null;
+  const { error, authorization, signature } = parseAuthCookie(opts.req);
 
-  if (rawAuth) {
-    try {
-      signature = authorizationModel.parse(JSON.parse(rawAuth));
-      authorization = `Bearer ${JSON.stringify(signature)}`;
-    } catch (error) {
-      console.error(error);
-      opts.resHeaders.set('Set-Cookie', AUTH_COOKIE_DELETE);
-    }
+  if (error) {
+    opts.resHeaders.set('Set-Cookie', AUTH_COOKIE_DELETE);
   }
 
   return {

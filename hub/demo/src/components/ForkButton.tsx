@@ -34,9 +34,9 @@ type Props = {
 };
 
 export const ForkButton = ({ entry, style, variant = 'simple' }: Props) => {
-  const accountId = useAuthStore((store) => store.auth?.account_id);
+  const auth = useAuthStore((store) => store.auth);
   const isPermittedToViewSource =
-    !entry?.details.private_source || accountId === entry.namespace;
+    !entry?.details.private_source || auth?.accountId === entry.namespace;
   const [forkModalIsOpen, setForkModalIsOpen] = useState(false);
   const count = entry?.num_forks ?? 0;
 
@@ -118,7 +118,7 @@ const ForkForm = ({ entry, onFinish }: ForkFormProps) => {
   const entriesQuery = trpc.hub.entries.useQuery(
     {
       category: entry.category,
-      namespace: auth?.account_id,
+      namespace: auth?.accountId,
     },
     {
       enabled: !!auth,
@@ -210,7 +210,7 @@ const ForkForm = ({ entry, onFinish }: ForkFormProps) => {
               <Input
                 label="Namespace"
                 name="namespace"
-                value={auth.account_id}
+                value={auth.accountId}
                 disabled
               />
 

@@ -1,0 +1,36 @@
+  {
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "engines": {
+      "node": ">=14.0.0"
+    },
+    "files": [
+      "dist"
+    ],
+    "scripts": {
+      "build": "tsc --build --force"
+    },
+    "dependencies": {
+      "@coinbase/cdp-agentkit-core": "^0.0.14",
+      "@coinbase/cdp-langchain": "^0.0.15",
+      "@coinbase/coinbase-sdk": "^0.16.0",
+      "openai": "^4.81.0"
+    },
+    "devDependencies": {
+      "@types/node": "^20.17.16",
+      "ts-node": "^10.9.1",
+      "typescript": "^5.0.4"
+    },
+    "name": "ts-agent-runner",
+    "version": "0.0.26",
+    "author": "",
+    "license": "ISC",
+    "description": ""
+  }

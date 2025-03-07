@@ -1,0 +1,20 @@
+# ex base framework
+base58 == 2.1.1
+pynacl >= 1.5.0
+pytz == 2024.2
+python_dateutil >= 2.5.3
+setuptools >= 21.0.0
+urllib3 >= 1.25.3, < 2.1.0
+pydantic >=2.8.2
+typing-extensions >= 4.7.1
+psutil >= 5.9.5
+boto3 >= 1.35.3
+litellm >= 1.60.5
+openai == 1.61.0
+py-near >= 1.1.50
+loguru == 0.7.2
+ed25519 == 1.5
+tweepy >= 4.14.0
+tenacity == 9.0.0
+mcp
+ddtrace == 2.21.0

@@ -11,9 +11,11 @@ __Docker must be run from the root of the repository so the Dockerfile can pull 
 
 Note the dash before the framework name when passing a framework. The deploy script adds the dash but here it must be added manually.
 
-Base framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-base -t nearai-runner:test .`
+Minimal framework `docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-minimal -t nearai-runner:test .`
 
-LangGraph framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-langgraph-1-4 -t nearai-runner:test .`
+Typescript framework `docker build -f aws_runner/ts_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-ts -t nearai-runner:test .`
+
+LangGraph framework `docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-langgraph-1-4 -t nearai-runner:test .`
 
 Then `docker run --platform linux/amd64 -p 9001:8080 nearai-runner:test` will start the server on port 9000.
 
@@ -61,7 +63,9 @@ It might be useful to provide `API_URL` into the `docker run` command to use loc
 If you want to use local files instead of the NEAR AI registry to run agents that are not yet published:
 
 - mount  `~/.nearai/registry` to the docker image (add `-v ~/.nearai/registry:/root/.nearai/registry` to `docker run` command)
-- specify `DATA_SOURCE="local_files"` in both he Hub environment variables (`hub/.env`) and the Hub UI environment variables (`/hub/demo/.env`)
+- specify `DATA_SOURCE="local_files"`:
+  - in the Hub environment variables (`hub/.env`) for runner to use local files 
+  - the Hub UI environment variables (`/hub/demo/.env`) for UI to use local files
 
 ## Deployment
 The docker image is built and pushed to the NEAR AI ECR repository. The image is then deployed to AWS Lambda using the AWS CLI.
@@ -74,6 +78,11 @@ FRAMEWORK=langgraph ENV=production deploy.sh
 Deploy all frameworks to all environments.
 ```shell
 deploy.sh all
+```
+
+Deploying the TypeScript runner requires providing a RUNNER_TYPE environment variable
+```shell
+FRAMEWORK=ts ENV=production RUNNER_TYPE=ts_runner ./aws_runner/deploy.sh
 ```
 
 ## Running against staging

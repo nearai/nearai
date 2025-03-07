@@ -1,15 +1,19 @@
+import { type UseMutateAsyncFunction } from '@tanstack/react-query';
 import { type z } from 'zod';
 import { create, type StateCreator } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
+import { type AgentChatMutationInput } from '~/components/AgentRunner';
 import {
   type chatWithAgentModel,
   type threadFileModel,
+  type threadMessageContentModel,
   type threadMessageModel,
   type threadModel,
   type threadRunModel,
 } from '~/lib/models';
 import { type AppRouterOutputs } from '~/trpc/router';
+import { stringToPotentialJson } from '~/utils/string';
 
 type Thread = z.infer<typeof threadModel> & {
   run?: z.infer<typeof threadRunModel>;
@@ -20,6 +24,12 @@ type Thread = z.infer<typeof threadModel> & {
 };
 
 type ThreadsStore = {
+  addMessage?: UseMutateAsyncFunction<
+    void,
+    Error,
+    AgentChatMutationInput,
+    unknown
+  >;
   optimisticMessages: {
     index: number;
     data: z.infer<typeof threadMessageModel>;
@@ -29,7 +39,8 @@ type ThreadsStore = {
     currentThreadId: string | null | undefined,
     inputs: z.infer<typeof chatWithAgentModel>[],
   ) => void;
-  reset: () => void;
+  clearOptimisticMessages: () => void;
+  setAddMessage: (addMessage: ThreadsStore['addMessage']) => void;
   setThread: (
     thread: Partial<Omit<AppRouterOutputs['hub']['thread'], 'id'>> & {
       id: string;
@@ -38,6 +49,7 @@ type ThreadsStore = {
 };
 
 const store: StateCreator<ThreadsStore> = (set, get) => ({
+  addMessage: undefined,
   optimisticMessages: [],
   threadsById: {},
 
@@ -67,7 +79,7 @@ const store: StateCreator<ThreadsStore> = (set, get) => ({
                 annotations: [],
                 value: input.new_message,
               },
-              type: '',
+              type: 'text',
             },
           ],
           created_at: Date.now(),
@@ -85,7 +97,9 @@ const store: StateCreator<ThreadsStore> = (set, get) => ({
     set({ optimisticMessages });
   },
 
-  reset: () => set({ optimisticMessages: [] }),
+  clearOptimisticMessages: () => set({ optimisticMessages: [] }),
+
+  setAddMessage: (addMessage) => set({ addMessage }),
 
   setThread: ({ messages, files, run, ...data }) => {
     const threadsById = {
@@ -96,7 +110,7 @@ const store: StateCreator<ThreadsStore> = (set, get) => ({
 
     const updatedThread: Thread = {
       created_at: 0,
-      metadata: {},
+      metadata: { agent_ids: [], topic: '' },
       object: '',
       ...data,
       run: run ?? existingThread?.run,
@@ -137,3 +151,31 @@ export const useThreadsStore = create<ThreadsStore>()(
     name,
   }),
 );
+
+export function useThreadMessageContentFilter<
+  T = z.infer<typeof threadMessageContentModel>,
+>(
+  threadId: string,
+  filter: (json: Record<string, unknown> | null, text: string) => T | undefined,
+) {
+  const threadsById = useThreadsStore((store) => store.threadsById);
+  const thread = threadsById[threadId];
+  const messages = thread?.messagesById
+    ? Object.values(thread.messagesById)
+    : [];
+  const allContents = messages.flatMap((m) => m.content);
+  const results: T[] = [];
+
+  allContents.forEach((content) => {
+    const match = filter(
+      stringToPotentialJson(content.text?.value ?? ''),
+      content.text?.value ?? '',
+    );
+
+    if (match) {
+      results.push(match);
+    }
+  });
+
+  return results;
+}

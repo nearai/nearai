@@ -8,7 +8,6 @@ import {
   Section,
   Text,
 } from '@near-pagoda/ui';
-import { ArrowRight } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
@@ -18,9 +17,8 @@ import {
   MESSAGE,
   RECIPIENT,
   returnSignInCallbackUrl,
-  returnSignInNonce,
   returnUrlToRestoreAfterSignIn,
-  signInWithNear,
+  signIn,
 } from '~/lib/auth';
 import { authorizationModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
@@ -38,7 +36,6 @@ export default function SignInCallbackPage() {
     async function parseToken() {
       try {
         const hashParams = extractSignatureFromHashParams();
-        const nonce = returnSignInNonce();
 
         const auth = authorizationModel.parse({
           account_id: hashParams?.accountId,
@@ -47,7 +44,7 @@ export default function SignInCallbackPage() {
           callback_url: returnSignInCallbackUrl(),
           message: MESSAGE,
           recipient: RECIPIENT,
-          nonce,
+          nonce: hashParams?.nonce,
         });
 
         setParsedAuth(auth);
@@ -66,9 +63,22 @@ export default function SignInCallbackPage() {
 
     saveTokenMutation.mutate(parsedAuth, {
       onSuccess: () => {
-        const { setAuth } = useAuthStore.getState();
-        setAuth(parsedAuth);
-        router.replace(returnUrlToRestoreAfterSignIn());
+        const opener = window.opener as WindowProxy | null;
+
+        if (opener) {
+          opener.postMessage(
+            {
+              authenticated: true,
+            },
+            '*',
+          );
+        } else {
+          const { setAuth } = useAuthStore.getState();
+          setAuth({
+            accountId: parsedAuth.account_id,
+          });
+          router.replace(returnUrlToRestoreAfterSignIn());
+        }
       },
       onError: (error) => {
         const { clearAuth } = useAuthStore.getState();
@@ -88,17 +98,12 @@ export default function SignInCallbackPage() {
                 Your token is invalid. Please try signing in again.
               </Text>
 
-              <Button
-                variant="affirmative"
-                label="Sign In"
-                onClick={() => signInWithNear()}
-                iconRight={<ArrowRight />}
-              />
+              <Button label="Sign In" onClick={() => signIn()} />
             </>
           ) : (
             <>
               <Text color="sand-10">Verifying...</Text>
-              <Button icon={<></>} label="Sign In" loading fill="ghost" />
+              <Button label="Sign In" loading fill="ghost" />
             </>
           )}
         </Flex>

@@ -107,7 +107,11 @@ def run(env: Environment):
 
 ## Logging
 
-<!-- Explain what the logs are used for -->
+You can turn on agent logging by passing an environment variable of `DEBUG` with a value of true. 
+In the UI this is set on the Run page of an agent while logged in as the agent author. Once this is set, 
+logs from either of the methods below will be written to the thread. The 'show logs' button (next to send message)
+toggles whether the logs show in the thread.
+
 
 * [`add_system_log`](../../api.md#nearai.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".
 * [`add_agent_log`](../../api.md#nearai.agents.environment.Environment.add_system_log): any agent logs may go here. Saved into "agent_log.txt".

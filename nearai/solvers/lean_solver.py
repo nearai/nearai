@@ -179,7 +179,7 @@ class LeanSolverStrategy(SolverStrategy):
         info["tactics"] = tactics
         for i in range(0, num_attempts):
             if i != 0:
-                info["check_solution_attempts"] = f"{i+1} (max: {num_attempts})"
+                info["check_solution_attempts"] = f"{i + 1} (max: {num_attempts})"
             try:
                 r, m = check_solution(lean_datum, tactics)
                 if r:

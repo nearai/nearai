@@ -1,22 +1,22 @@
-import { type z } from 'zod';
 import { create, type StateCreator } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 import { clearSignInNonce } from '~/lib/auth';
-import { type authorizationModel } from '~/lib/models';
+
+type Auth = {
+  accountId: string;
+};
 
 type AuthStore = {
-  auth: z.infer<typeof authorizationModel> | null;
-  isAuthenticated: boolean;
+  auth: Auth | null;
   unauthorizedErrorHasTriggered: boolean;
 
   clearAuth: () => void;
-  setAuth: (auth: z.infer<typeof authorizationModel>) => void;
+  setAuth: (auth: Auth) => void;
 };
 
 const store: StateCreator<AuthStore> = (set) => ({
   auth: null,
-  isAuthenticated: false,
   unauthorizedErrorHasTriggered: false,
 
   clearAuth: () => {
@@ -24,13 +24,12 @@ const store: StateCreator<AuthStore> = (set) => ({
 
     set({
       auth: null,
-      isAuthenticated: false,
       unauthorizedErrorHasTriggered: false,
     });
   },
 
-  setAuth: (auth: z.infer<typeof authorizationModel>) => {
-    set({ auth, isAuthenticated: true, unauthorizedErrorHasTriggered: false });
+  setAuth: (auth: Auth) => {
+    set({ auth, unauthorizedErrorHasTriggered: false });
   },
 });
 

@@ -17,12 +17,13 @@ import {
   ArrowRight,
   ArrowSquareUpRight,
   BookOpenText,
+  Brain,
   ChartBar,
   ChatCircle,
   Check,
   CloudCheck,
+  Code,
   CodeBlock,
-  Database,
   DownloadSimple,
   GitFork,
   HandCoins,
@@ -30,6 +31,8 @@ import {
   Lightning,
   LockKey,
   MagnifyingGlass,
+  PaperPlaneTilt,
+  ShieldCheck,
   TwitterLogo,
   UserCircle,
   XLogo,
@@ -39,7 +42,7 @@ import { type z } from 'zod';
 
 import { EntryCard } from '~/components/EntryCard';
 import { env } from '~/env';
-import { signInWithNear } from '~/lib/auth';
+import { signIn } from '~/lib/auth';
 import { idMatchesEntry } from '~/lib/entries';
 import { type entriesModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
@@ -49,7 +52,7 @@ import { trpc } from '~/trpc/TRPCProvider';
 import s from './page.module.scss';
 
 export default function HomePage() {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const agentsQuery = trpc.hub.entries.useQuery({
     category: 'agent',
   });
@@ -111,7 +114,7 @@ export default function HomePage() {
               </Text>
 
               <Flex direction="column" gap="s" style={{ marginTop: 'auto' }}>
-                {isAuthenticated ? (
+                {auth ? (
                   <Flex align="center" gap="s">
                     <SvgIcon icon={<Check />} color="sand-10" />
                     <Text color="sand-10">{`You're`} signed in.</Text>
@@ -120,7 +123,7 @@ export default function HomePage() {
                   <Button
                     label="Sign In"
                     fill="outline"
-                    onClick={signInWithNear}
+                    onClick={signIn}
                     iconRight={<ArrowRight />}
                   />
                 )}
@@ -371,29 +374,67 @@ export default function HomePage() {
                 icon: <BookOpenText weight="duotone" />,
                 title: 'Documentation',
                 description: 'Get started with our infrastructure',
-                link: 'Learn More',
+                label: 'Learn More',
                 href: 'https://docs.near.ai',
               },
               {
                 icon: <ChartBar weight="duotone" />,
                 title: 'Evaluations',
                 description: 'Understand our evaluation metrics',
-                link: 'Explore',
+                label: 'Explore',
                 href: '/evaluations',
               },
               {
-                icon: <Database weight="duotone" />,
-                title: 'Datasets',
-                description: 'Contribute to training and evaluation data',
-                link: 'Browse',
-                href: '/datasets',
+                icon: <PaperPlaneTilt weight="duotone" />,
+                title: 'Contact Us',
+                description: 'Let us know how we can support your project',
+                label: 'Get In Touch',
+                href: 'https://airtable.com/appc0ZVhbKj8hMLvH/pag4dQKP3KF3qrTFo/form',
+                target: '_blank',
               },
               {
                 icon: <ChatCircle weight="duotone" />,
                 title: 'Community',
                 description: 'Connect with other researchers',
-                link: 'Join',
+                label: 'Join',
                 href: 'https://t.me/nearaialpha',
+                target: '_blank',
+              },
+              // Second row
+              {
+                icon: <Code weight="duotone" />,
+                title: 'TypeScript Agents',
+                description:
+                  'Learn how to develop TypeScript agents that can utilize a variety of packages, including Coinbase AgentKit',
+                label: 'View Code',
+                href: 'https://github.com/nearai/nearai/tree/main/ts_runner/ts_agent_runner',
+                target: '_blank',
+              },
+              {
+                icon: <Brain weight="duotone" />,
+                title: 'LangChain and Coinbase Python Agents',
+                description:
+                  'Utilize LangChain, LangGraph, and Coinbase AgentKit Python functions on NEAR AI',
+                label: 'Explore',
+                href: 'https://github.com/nearai/nearai_langchain',
+                target: '_blank',
+              },
+              {
+                icon: <ShieldCheck weight="duotone" />,
+                title: 'Trusted Execution Environment',
+                description:
+                  'A secure environment for running LLM workloads with guaranteed privacy and security',
+                label: 'Learn More',
+                href: 'https://github.com/nearai/private-ml-sdk',
+                target: '_blank',
+              },
+              {
+                icon: <Lightning weight="duotone" />,
+                title: 'Agent Interaction and Transaction Protocol (AITP)',
+                description:
+                  'Standard protocol for secure agent-to-agent and user-to-agent communication',
+                label: 'Learn More',
+                href: 'https://aitp.dev/',
                 target: '_blank',
               },
             ].map((resource, index) => (
@@ -404,7 +445,7 @@ export default function HomePage() {
                 </Text>
                 <Text color="sand-11">{resource.description}</Text>
                 <Button
-                  label={resource.link}
+                  label={resource.label}
                   variant="secondary"
                   fill="outline"
                   iconRight={

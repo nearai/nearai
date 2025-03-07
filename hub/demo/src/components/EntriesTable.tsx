@@ -19,9 +19,9 @@ import { type ReactNode } from 'react';
 import { env } from '~/env';
 import { useEntriesSearch } from '~/hooks/entries';
 import { useClientPagination } from '~/hooks/pagination';
+import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
 import {
   benchmarkEvaluationsUrlForEntry,
-  ENTRY_CATEGORY_LABELS,
   primaryUrlForEntry,
   sourceUrlForEntry,
 } from '~/lib/entries';

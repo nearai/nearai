@@ -1,7 +1,8 @@
 'use client';
 
 import { Table } from '@near-pagoda/ui';
-import ReactMarkdown from 'react-markdown';
+import { memo } from 'react';
+import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { visit } from 'unist-util-visit';
 
@@ -15,7 +16,14 @@ type Props = {
 
 type NodeMeta = Partial<{ codeLanguage: string }>;
 
-export const Markdown = (props: Props) => {
+function urlTransform(url: string) {
+  if (url.startsWith('data:image/')) {
+    return url;
+  }
+  return defaultUrlTransform(url);
+}
+
+export const Markdown = memo((props: Props) => {
   const content = props.content?.replace(/\s```/g, '\n```');
 
   return (
@@ -30,6 +38,7 @@ export const Markdown = (props: Props) => {
             });
           },
         ]}
+        urlTransform={urlTransform}
         components={{
           code(props) {
             const { children, ...rest } = props;
@@ -75,4 +84,6 @@ export const Markdown = (props: Props) => {
       </ReactMarkdown>
     </div>
   );
-};
+});
+
+Markdown.displayName = 'Markdown';

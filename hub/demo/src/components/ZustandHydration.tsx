@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { type z } from 'zod';
 
-import { SIGN_IN_CALLBACK_PATH, signInWithNear } from '~/lib/auth';
+import { SIGN_IN_CALLBACK_PATH, signIn } from '~/lib/auth';
 import { authorizationModel } from '~/lib/models';
 import { useAgentSettingsStore } from '~/stores/agent-settings';
 import { name as authStoreName, useAuthStore } from '~/stores/auth';
@@ -52,7 +52,7 @@ export const ZustandHydration = () => {
   const unauthorizedErrorHasTriggered = useAuthStore(
     (store) => store.unauthorizedErrorHasTriggered,
   );
-  const getTokenQuery = trpc.auth.getToken.useQuery();
+  const getTokenQuery = trpc.auth.getSession.useQuery();
   const saveTokenMutation = trpc.auth.saveToken.useMutation();
   const pathname = usePathname();
   const utils = trpc.useUtils();
@@ -80,11 +80,12 @@ export const ZustandHydration = () => {
       clearAuth();
 
       openToast({
+        id: 'auth-session-expired', // Prevents duplicate toasts from spawning in quick succession
         type: 'error',
         title: 'Your session has expired',
         description: 'Please sign in to continue',
         actionText: 'Sign In',
-        action: signInWithNear,
+        action: signIn,
       });
     }
 
@@ -125,7 +126,7 @@ export const ZustandHydration = () => {
     // End auth migration logic --------------
 
     if (unauthorizedErrorHasTriggered) {
-      utils.auth.getToken.setData(undefined, null);
+      utils.auth.getSession.setData(undefined, null);
       handleUnauthorized();
     }
   }, [

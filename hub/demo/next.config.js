@@ -3,17 +3,21 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-/**
- * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
- * for Docker builds.
- */
-
-await import('./src/env.js');
+import { env } from './src/env.js';
 
 /** @type {import("next").NextConfig} */
 const config = {
   experimental: {
     missingSuspenseWithCSRBailout: false,
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: '/api/near-rpc-proxy',
+        destination: env.NEAR_RPC_URL,
+      },
+    ];
   },
 
   webpack(config) {

@@ -1,12 +1,12 @@
 import json
 from enum import Enum
 from os import getenv
-from typing import Callable
+from typing import Callable, List, Union
 
 from dotenv import load_dotenv
 from nearai.shared.client_config import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
 from openai import OpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 load_dotenv()
 
@@ -59,5 +59,22 @@ def get_llm_ai(provider: str) -> OpenAI:
 
 
 class Message(BaseModel):
+    """A chat message."""
+
     role: str
-    content: str
+    content: Union[List, str]
+
+    @field_validator("content", mode="before")
+    @classmethod
+    def ensure_string_content(cls, v):
+        """Ensure content within the messages is always a string."""
+        if v is None:
+            return ""
+
+        # Iterate recursively over the object, converting values to str
+        if isinstance(v, list):
+            return [cls.ensure_string_content(i) for i in v]
+        elif isinstance(v, dict):
+            return {k: cls.ensure_string_content(v) for k, v in v.items()}
+        else:
+            return str(v)

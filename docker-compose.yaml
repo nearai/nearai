@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  runner:
+    build:
+      context: .
+      dockerfile: aws_runner/py_runner/Dockerfile
+      args:
+        FRAMEWORK: -minimal
+      platforms:
+        - linux/amd64
+    image: nearai-runner:test
+    ports:
+      - "9009:8080"
+    volumes:
+      - ~/.nearai/registry:/root/.nearai/registry
+    env_file:
+      - .env
+    environment:
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_APM_ENABLED=false
+      - DD_APM_NON_LOCAL_TRAFFIC=false
+      - DD_ENV=${DD_ENV}
+      - DD_VERSION=${DD_VERSION}
+      - DD_SERVICE=runner-local
+      - DD_LOGS_ENABLED=false
+      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=false
+      - DD_SITE=${DD_SITE} 
+      - DD_TRACE_ENABLED=false
+
+  db:
+    image: ghcr.io/singlestore-labs/singlestoredb-dev:latest
+    platform: linux/amd64
+    environment:
+      - ROOT_PASSWORD=change-me
+    ports:
+      - "3306:3306"
+      - "8080:8080"
+      - "9000:9000"
+ 
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:latest
+    env_file:
+      - .env
+    environment:
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_APM_ENABLED=true
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+      - DD_ENV=${DD_ENV}
+      - DD_VERSION=${DD_VERSION}
+      - DD_SERVICE=${DD_SERVICE}
+      - DD_HOSTNAME=${DD_HOSTNAME}
+      - DD_LOGS_ENABLED=true
+      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
+      - DD_TRACE_AGENT_PORT=${DD_TRACE_AGENT_PORT}
+      - DD_TRACE_AGENT_URL=${DD_TRACE_AGENT_URL}
+      - DD_SITE=${DD_SITE}
+    ports:
+      - "8126:8126"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro

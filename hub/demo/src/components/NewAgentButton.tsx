@@ -40,8 +40,9 @@ import { SignInPrompt } from './SignInPrompt';
 const BASIC_TEMPLATE_AGENT_ID = 'flatirons.near/example-travel-agent/latest';
 const TWITTER_TEMPLATE_AGENT_ID = 'flatirons.near/near-secret-agent/latest';
 const NEAR_TEMPLATE_AGENT_ID = 'zavodil.near/near-agent/latest';
-const AGENT_KIT_TEMPLATE_AGENT_ID = 'TODO.near/TODO/latest';
-const TYPESCRIPT_TEMPLATE_AGENT_ID = 'TODO.near/TODO/latest';
+const AGENT_KIT_TEMPLATE_AGENT_ID =
+  'antonlomonos.near/cdp_langchain_chatbot_example_usage/latest';
+const TYPESCRIPT_TEMPLATE_AGENT_ID = 'zavodil.near/cdp-agent/latest';
 
 type Props = {
   customButton?: ReactNode;
@@ -138,7 +139,7 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
   const entriesQuery = trpc.hub.entries.useQuery(
     {
       category: 'agent',
-      namespace: auth?.account_id,
+      namespace: auth?.accountId,
     },
     {
       enabled: !!auth,
@@ -248,7 +249,7 @@ const NewAgentForm = ({ onFinish }: NewAgentFormProps) => {
               <Input
                 label="Namespace"
                 name="namespace"
-                value={auth.account_id}
+                value={auth.accountId}
                 disabled
               />
 
