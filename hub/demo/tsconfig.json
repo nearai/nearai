@@ -40,6 +40,6 @@
     "**/*.cjs",
     "**/*.js",
     ".next/types/**/*.ts"
-  ],
+, "src/app/settings/NonceList.todo"  ],
   "exclude": ["node_modules"]
 }

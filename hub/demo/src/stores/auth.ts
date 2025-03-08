@@ -1,8 +1,6 @@
 import { create, type StateCreator } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { clearSignInNonce } from '~/lib/auth';
-
 type Auth = {
   accountId: string;
 };
@@ -20,8 +18,6 @@ const store: StateCreator<AuthStore> = (set) => ({
   unauthorizedErrorHasTriggered: false,
 
   clearAuth: () => {
-    clearSignInNonce();
-
     set({
       auth: null,
       unauthorizedErrorHasTriggered: false,

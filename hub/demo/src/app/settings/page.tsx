@@ -6,8 +6,6 @@ import { Gear } from '@phosphor-icons/react';
 import { SignInPromptSection } from '~/components/SignInPrompt';
 import { useAuthStore } from '~/stores/auth';
 
-import { NonceList } from './NonceList';
-
 export default function SettingsPage() {
   const auth = useAuthStore((store) => store.auth);
 
@@ -22,7 +20,8 @@ export default function SettingsPage() {
 
       {auth ? (
         <Section>
-          <NonceList />
+          <Text>Coming soon...</Text>
+          {/* AUTH_TODO: <NonceList /> */}
         </Section>
       ) : (
         <SignInPromptSection />

@@ -36,7 +36,7 @@ import { APP_TITLE } from '~/constants';
 import { env } from '~/env';
 import { useEmbeddedWithinIframe } from '~/hooks/embed';
 import { useCurrentEntry } from '~/hooks/entries';
-import { SIGN_IN_CALLBACK_PATH, signIn } from '~/lib/auth';
+import { signIn } from '~/lib/auth';
 import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
 import { rawFileUrlForEntry } from '~/lib/entries';
 import { useAuthStore } from '~/stores/auth';
@@ -114,7 +114,7 @@ export function computeNavigationHeight() {
 export const Navigation = () => {
   const auth = useAuthStore((store) => store.auth);
   const clearAuth = useAuthStore((store) => store.clearAuth);
-  const clearTokenMutation = trpc.auth.clearToken.useMutation();
+  const signOutMutation = trpc.auth.signOut.useMutation();
   const wallet = useWalletStore((store) => store.wallet);
   const walletModal = useWalletStore((store) => store.modal);
   const walletAccount = useWalletStore((store) => store.account);
@@ -122,24 +122,16 @@ export const Navigation = () => {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
   const { embedded } = useEmbeddedWithinIframe();
-  const hidden = path === SIGN_IN_CALLBACK_PATH;
   const { currentEntry, currentEntryId } = useCurrentEntry('agent', {
     enabled: embedded,
   });
-
-  useEffect(() => {
-    if (hidden) {
-      document.body.style.setProperty('--header-height', '0px');
-      document.body.style.setProperty('--section-fill-height', '100svh');
-    }
-  }, [hidden]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const signOut = () => {
-    void clearTokenMutation.mutate();
+    void signOutMutation.mutate();
     clearAuth();
     if (wallet) {
       void wallet.signOut();
@@ -151,8 +143,6 @@ export const Navigation = () => {
       void wallet.signOut();
     }
   };
-
-  if (hidden) return null;
 
   return (
     <header className={s.navigation}>
@@ -390,12 +380,13 @@ export const Navigation = () => {
                   </>
                 )}
 
-                {!embedded && (
+                {/* AUTH_TODO: Since the nonce list is temporarily disabled, we don't have any settings at the moment */}
+                {/* {!embedded && (
                   <Dropdown.Item href="/settings">
                     <SvgIcon icon={<Gear />} />
                     Settings
                   </Dropdown.Item>
-                )}
+                )} */}
 
                 <Dropdown.Item onSelect={signOut}>
                   <SvgIcon icon={<SignOut />} />
