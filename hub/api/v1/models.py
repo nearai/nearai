@@ -447,9 +447,9 @@ class Delta(SQLModel, table=True):
     id: str = Field(default_factory=lambda: "delta_" + uuid.uuid4().hex[:24], primary_key=True)
     object: str = Field(default="thread.message.delta", nullable=False)
     created_at: datetime = Field(default_factory=datetime.now, nullable=False)
-    content: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
-    step_details: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
-    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", JSON))
+    content: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
+    step_details: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
+    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", UnicodeSafeJSON))
     filename: Optional[str] = Field(default=None)
 
     def to_openai(self) -> OpenAITMessageDeltaEvent:
