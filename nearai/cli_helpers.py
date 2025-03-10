@@ -167,12 +167,12 @@ def check_version_exists(namespace: str, name: str, version: str) -> Tuple[bool,
         console = Console()
         console.print(
             Text.assemble(
-                ("\nChecking if version ", "white"),
+                ("\n🔎 Checking if version ", "white"),
                 (f"{version}", "green bold"),
-                (" exists for ", "dim"),
-                (f"{name} ", "cyan bold"),
+                (" exists for ", "white"),
+                (f"{name} ", "blue bold"),
                 ("in the registry under ", "white"),
-                (f"{namespace}", "bold"),
+                (f"{namespace}", "cyan bold"),
                 ("...", "white"),
             )
         )

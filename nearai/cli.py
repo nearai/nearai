@@ -289,13 +289,16 @@ class RegistryCli:
             EntryLocation if upload was successful, None otherwise
 
         """
+        console = Console()
         path = resolve_local_path(Path(local_path))
         metadata_path = path / "metadata.json"
 
         # Load and validate metadata
         metadata, error = load_and_validate_metadata(metadata_path)
         if error:
-            print(error)
+            console.print(
+                Panel(Text(error, style="bold red"), title="Metadata Error", border_style="red", padding=(1, 2))
+            )
             return None
 
         # At this point, metadata is guaranteed to be not None
@@ -306,90 +309,127 @@ class RegistryCli:
 
         # Get namespace from auth
         if CONFIG.auth is None or CONFIG.auth.namespace is None:
-            print("Please login with `nearai login` before uploading")
+            console.print(
+                Panel(
+                    Text("Please login with `nearai login` before uploading", style="bold red"),
+                    title="Authentication Error",
+                    border_style="red",
+                    padding=(1, 2),
+                )
+            )
             return None
 
         namespace = CONFIG.auth.namespace
 
-        # Try to upload, handle version conflict
-        max_attempts = 5  # Prevent infinite loops
-        attempts = 0
+        # Check if this version already exists
+        exists, error = check_version_exists(namespace, name, version)
 
-        while attempts < max_attempts:
-            attempts += 1
+        if error:
+            console.print(
+                Panel(Text(error, style="bold red"), title="Registry Error", border_style="red", padding=(1, 2))
+            )
+            return None
 
-            # Check if this version already exists
-            exists, error = check_version_exists(namespace, name, version)
-            if error:
-                print(error)
+        # Add explicit feedback about whether the version exists
+        if exists:
+            if bump or minor_bump or major_bump:
+                old_version = version
+
+                # Determine increment type based on flags
+                if major_bump:
+                    increment_type = "major"
+                elif minor_bump:
+                    increment_type = "minor"
+                else:
+                    increment_type = "patch"  # Default for bump
+
+                version = increment_version_by_type(version, increment_type)
+
+                # Enhanced version update message
+                update_panel = Panel(
+                    Text.assemble(
+                        ("Version Update\n\n", "bold"),
+                        ("Previous version: ", "dim"),
+                        (f"{old_version}\n", "yellow"),
+                        ("New version:     ", "dim"),
+                        (f"{version}", "green bold"),
+                        ("\n\nIncrement type: ", "dim"),
+                        (f"{increment_type}", "cyan"),
+                    ),
+                    title="Bump",
+                    border_style="green",
+                    padding=(1, 2),
+                )
+                console.print(update_panel)
+
+                # Update metadata.json with new version
+                metadata["version"] = version
+                with open(metadata_path, "w") as f:
+                    json.dump(metadata, f, indent=2)
+            else:
+                error_panel = Panel(
+                    Text.assemble(
+                        (f"Version {version} already exists in the registry.\n\n", "bold red"),
+                        ("To upload a new version:\n", "yellow"),
+                        (f"1. Edit {metadata_path}\n", "dim"),
+                        ('2. Update the "version" field (e.g., increment from "0.0.1" to "0.0.2")\n', "dim"),
+                        ("3. Try uploading again\n\n", "dim"),
+                        ("Or use the following flags:\n", "yellow"),
+                        ("  --bump          # Patch update (0.0.1 → 0.0.2)\n", "green"),
+                        ("  --minor-bump    # Minor update (0.0.1 → 0.1.0)\n", "green"),
+                        ("  --major-bump    # Major update (0.0.1 → 1.0.0)\n", "green"),
+                    ),
+                    title="Version Conflict",
+                    border_style="red",
+                )
+                console.print(error_panel)
                 return None
 
-            if exists:
-                if bump or minor_bump or major_bump:
-                    old_version = version
+        console.print(
+            f"\n📂 [bold]Uploading[/bold] version [green bold]{version}[/green bold] of [blue bold]{name}[/blue bold] to [cyan bold]{namespace}[/cyan bold]...\n"  # noqa: E501
+        )
 
-                    # Determine increment type based on flags
-                    if major_bump:
-                        increment_type = "major"
-                    elif minor_bump:
-                        increment_type = "minor"
-                    else:
-                        increment_type = "patch"  # Default for bump
+        try:
+            result = registry.upload(path, show_progress=True)
 
-                    version = increment_version_by_type(version, increment_type)
-
-                    # Enhanced version update message
-                    console = Console()
-                    update_panel = Panel(
-                        Text.assemble(
-                            ("Version Update\n\n", "bold"),
-                            ("Previous version: ", "dim"),
-                            (f"{old_version}\n", "yellow"),
-                            ("New version:     ", "dim"),
-                            (f"{version}", "green bold"),
-                            ("\n\nIncrement type: ", "dim"),
-                            (f"{increment_type}", "cyan"),
-                        ),
-                        title="Bump",
-                        border_style="green",
+            if result:
+                success_panel = Panel(
+                    Text.assemble(
+                        ("Upload completed successfully! 🚀 \n\n", "bold green"),
+                        ("Name:      ", "dim"),
+                        (f"{result.name}\n", "cyan"),
+                        ("Version:   ", "dim"),
+                        (f"{result.version}\n", "cyan"),
+                        ("Namespace: ", "dim"),
+                        (f"{result.namespace}", "cyan"),
+                    ),
+                    title="Success",
+                    border_style="green",
+                    padding=(1, 2),
+                )
+                console.print(success_panel)
+                return result
+            else:
+                console.print(
+                    Panel(
+                        Text("Upload failed for unknown reasons", style="bold red"),
+                        title="Upload Error",
+                        border_style="red",
                         padding=(1, 2),
                     )
-                    console.print(update_panel)
+                )
+                return None
 
-                    # Update metadata.json with new version
-                    metadata["version"] = version
-                    with open(metadata_path, "w") as f:
-                        json.dump(metadata, f, indent=2)
-
-                    console.print(f"[dim]Updated [bold]{metadata_path}[/bold] with new version[/dim]")
-                    continue  # Try again with new version
-                else:
-                    console = Console()
-                    error_panel = Panel(
-                        Text.assemble(
-                            (f"Version {version} already exists in the registry.\n\n", "bold red"),
-                            ("To upload a new version:\n", "yellow"),
-                            (f"1. Edit {metadata_path}\n", "dim"),
-                            ('2. Update the "version" field (e.g., increment from "0.0.1" to "0.0.2")\n', "dim"),
-                            ("3. Try uploading again\n\n", "dim"),
-                            ("Or use the following flags:\n", "yellow"),
-                            ("  --bump          # Patch update (0.0.1 → 0.0.2)\n", "green"),
-                            ("  --minor-bump    # Minor update (0.0.1 → 0.1.0)\n", "green"),
-                            ("  --major-bump    # Major update (0.0.1 → 1.0.0)\n", "green"),
-                        ),
-                        title="Version Conflict",
-                        border_style="red",
-                    )
-                    console.print(error_panel)
-                    return None
-
-            # Version doesn't exist, proceed with upload
-            print(f"Uploading version {version}...")
-            return registry.upload(path, show_progress=True)
-
-        # If we get here, we've exceeded max attempts
-        print(f"Error: Exceeded maximum attempts ({max_attempts}) to find an available version")
-        return None
+        except Exception as e:
+            console.print(
+                Panel(
+                    Text(f"Error during upload: {str(e)}", style="bold red"),
+                    title="Upload Error",
+                    border_style="red",
+                    padding=(1, 2),
+                )
+            )
+            return None
 
     def download(self, entry_location: str, force: bool = False) -> None:
         """Download item."""
