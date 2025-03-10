@@ -127,7 +127,6 @@ class InferenceClient(object):
 
         for i in range(0, self._config.num_inference_retries):
             try:
-                print("Call stream", stream)
                 # Create a dictionary for the arguments
                 completion_args = {
                     "model": model,
