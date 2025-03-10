@@ -56,11 +56,6 @@ export const nonceModel = z.object({
 
 export const noncesModel = z.array(nonceModel);
 
-export const revokeNonceModel = z.object({
-  nonce: z.string().regex(/^\d{32}$/),
-  auth: z.string(),
-});
-
 export const entryCategory = z.enum([
   'agent',
   'benchmark',

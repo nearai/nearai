@@ -6,11 +6,6 @@ import { useAuthStore } from '~/stores/auth';
 import { clientUtils } from '~/trpc/TRPCProvider';
 import { getHashParams } from '~/utils/url';
 
-const AUTH_NEAR_URL = env.NEXT_PUBLIC_AUTH_URL;
-
-export const REVOKE_MESSAGE = 'Are you sure? Revoking a nonce';
-export const REVOKE_ALL_MESSAGE = 'Are you sure? Revoking all nonces';
-
 const authenticatedPostMessageModel = z.object({
   authenticated: z.boolean(),
 });
@@ -28,7 +23,7 @@ export function openAuthUrl() {
   const top = screen.height / 2 - height / 2;
 
   const popup = window.open(
-    AUTH_NEAR_URL,
+    env.NEXT_PUBLIC_AUTH_URL,
     '_blank',
     `popup=yes,scrollbars=yes,resizable=yes,width=${width},height=${height},left=${left},top=${top}`,
   );

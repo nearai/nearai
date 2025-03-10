@@ -21,7 +21,6 @@ export default function SettingsPage() {
       {auth ? (
         <Section>
           <Text>Coming soon...</Text>
-          {/* AUTH_TODO: <NonceList /> */}
         </Section>
       ) : (
         <SignInPromptSection />
