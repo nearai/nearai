@@ -874,6 +874,7 @@ class AgentCli:
     ) -> Optional[str]:
         """Runs agent non-interactively with a single task."""
         assert_user_auth()
+        is_streaming = True
 
         hub_client = get_hub_client()
         if thread_id:
@@ -900,11 +901,12 @@ class AgentCli:
             run = hub_client.beta.threads.runs.create(
                 thread_id=thread.id,
                 assistant_id=agent,
-                stream=True
+                stream=True,
+                extra_body={"delegate_execution": True},
             )
             params = {
                 "api_url": CONFIG.api_url,
-                "tool_resources": run.tools,
+                "tool_resources": [],#run.tools,
                 "data_source": "local_files",
                 "user_env_vars": env_vars,
                 "agent_env_vars": {},
@@ -912,9 +914,11 @@ class AgentCli:
             }
             auth = CONFIG.auth
             assert auth is not None
-            LocalRunner(str(local_path), agent, thread.id, run.id, auth, params)
+            run_id = None
             for event in run:
-                print("Event:", event)
+                run_id = event.data.id
+                break
+            LocalRunner(str(local_path), agent, thread.id, run_id, auth, params)
 
         else:
             run = hub_client.beta.threads.runs.create(
