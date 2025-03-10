@@ -1,10 +1,11 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from os import getenv
 from typing import Any, Dict, Iterable, List, Literal, Optional, Union
 
 from collections import defaultdict
 import asyncio
+import json
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
 from fastapi.responses import StreamingResponse
@@ -699,6 +700,100 @@ def create_run(
         # Add the run and messages in DB
         if run.stream:
             run_queues[run_model.id] = asyncio.Queue()
+
+            # Base payload for run events
+            base_payload = {
+                "id": run_model.id,  # e.g., "run_123"
+                "object": "thread.run",
+                "created_at": int(datetime.utcnow().timestamp()),
+                "assistant_id": run.assistant_id,
+                "thread_id": thread_id,
+                "status": "queued",
+                "started_at": None,
+                "expires_at": int((datetime.utcnow() + timedelta(minutes=10)).timestamp()),
+                "cancelled_at": None,
+                "failed_at": None,
+                "completed_at": None,
+                "required_action": None,
+                "last_error": None,
+                "model": run.model,
+                "instructions": (run.instructions or "") + (run.additional_instructions or ""),
+                "tools": run.tools,
+                "metadata": run.metadata,
+                "temperature": run.temperature,
+                "top_p": run.top_p,
+                "max_completion_tokens": run.max_completion_tokens,
+                "max_prompt_tokens": run.max_prompt_tokens,
+                "truncation_strategy": run.truncation_strategy,
+                "incomplete_details": None,
+                "usage": None,
+                "response_format": run.response_format,
+                "tool_choice": run.tool_choice,
+                "parallel_tool_calls": run.parallel_tool_calls,
+            }
+
+            # 1. Event: thread.run.created
+            event_created = {
+                "event": "thread.run.created",
+                "data": base_payload,
+            }
+            asyncio.run(run_queues[run_model.id].put(event_created))
+
+            # 2. Event: thread.run.queued
+            event_queued = {
+                "event": "thread.run.queued",
+                "data": base_payload,
+            }
+            asyncio.run(run_queues[run_model.id].put(event_queued))
+
+            # 3. Event: thread.run.in_progress
+            # Update the payload for in_progress status
+            in_progress_payload = base_payload.copy()
+            in_progress_payload["status"] = "in_progress"
+            in_progress_payload["started_at"] = int(datetime.utcnow().timestamp())
+            event_in_progress = {
+                "event": "thread.run.in_progress",
+                "data": in_progress_payload,
+            }
+            asyncio.run(run_queues[run_model.id].put(event_in_progress))
+
+            # 4. Event: thread.run.step.created
+            step_payload = {
+                "id": "step_001",  # placeholder step id
+                "object": "thread.run.step",
+                "created_at": int(datetime.utcnow().timestamp()),
+                "run_id": run_model.id,
+                "assistant_id": run.assistant_id,
+                "thread_id": thread_id,
+                "type": "message_creation",
+                "status": "in_progress",
+                "cancelled_at": None,
+                "completed_at": None,
+                "expires_at": base_payload["expires_at"],
+                "failed_at": None,
+                "last_error": None,
+                "step_details": {
+                    "type": "message_creation",
+                    "message_creation": {
+                        "message_id": "msg_001",  # placeholder message id
+                    },
+                },
+                "usage": None,
+            }
+            event_step_created = {
+                "event": "thread.run.step.created",
+                "data": step_payload,
+            }
+            asyncio.run(run_queues[run_model.id].put(event_step_created))
+
+            # 5. Event: thread.run.step.in_progress
+            event_step_in_progress = {
+                "event": "thread.run.step.in_progress",
+                "data": step_payload,
+            }
+            asyncio.run(run_queues[run_model.id].put(event_step_in_progress))
+            print('put events', run_model.id)
+
             return StreamingResponse(
                 stream_run_events(run_model.id),
                 media_type="text/event-stream"
@@ -859,10 +954,12 @@ async def stream_run_events(run_id: str):
     """Stream events for a run via SSE until completion."""
     queue = run_queues[run_id]
     while True:
+        print('popping queue', run_id)
         event = await queue.get()
+        print(event)
         if event == "done":
             break
-        yield f"data: {event}\n\n"
+        yield f"data: {json.dumps(event)}\n\n"
     del run_queues[run_id]  # Clean up after stream ends
 
 @threads_router.get("/threads/{thread_id}/runs/{run_id}")

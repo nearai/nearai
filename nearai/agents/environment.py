@@ -1296,19 +1296,37 @@ class Environment(object):
         model: Union[Iterable[ChatCompletionMessageParam], str] = "",
         **kwargs: Any,
     ):
-        #pseudocode
-        #TODO should this be completion(stream=True)?
-        output_token_generator = call stream completion litellm
-        return output_token_generator
+        #TODO merge with completion(stream=True)?
+        stream: bool = True
+        return self._run_inference_completions(messages, model, stream, **kwargs)
 
     def add_reply_streaming(self, results):
-        #pseudocode
-        #TODO should this be add_reply?
-        create message on thread
         for result in results:
-            send tokens to hub for message id
-        send done for message id
-        update message on thread
+            print("Streaming:", result)
+        print("Got here", results, type(results))
+        return
+        #TODO should this be add_reply?
+        #create message on thread
+        message = hub_client.beta.threads.messages.create(
+            thread_id=thread_id,
+            role="assistant",
+            status="in_progress",
+            content="",
+            extra_body={
+                "assistant_id": self.get_primary_agent().identifier,
+                "run_id": self._run_id,
+            },
+            attachments=attachments,
+            metadata={"message_type": message_type} if message_type else None,
+        )
+ 
+        for result in results:
+            #TODO this might be bulky
+            #send tokens to hub for message id
+            hub_client.beta.threads.messages.update(...)
+        #send done for message id
+        #update message on thread
+        hub_client.beta.threads.messages.update(...)
 
     # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
     def completion(
