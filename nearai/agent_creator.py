@@ -237,7 +237,7 @@ def display_success_and_options(agent_path: Path) -> None:
     console.print("\n")
 
     # Create next steps options with proper markup
-    options = ["Upload agent to NEAR AI registry 🚀", "Run agent 💬", "Open agent code in editor 🧑‍💻", "Exit 👋"]
+    options = ["Upload agent to NEAR AI registry 🚀", "Run agent 💬", "Open agent code in editor 💻", "Exit 👋"]
 
     # Create the panel with direct markup
     next_steps_panel = Panel(

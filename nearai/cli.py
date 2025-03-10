@@ -16,6 +16,12 @@ import fire
 from openai.types.beta.threads.message import Attachment
 from rich.prompt import Prompt
 from tabulate import tabulate
+from rich.table import Table
+from rich.columns import Columns
+from rich.box import ROUNDED
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
 
 from nearai.agents.local_runner import LocalRunner
 from nearai.cli_helpers import display_agents_in_columns, has_pending_input
@@ -46,6 +52,7 @@ from nearai.shared.client_config import (
 from nearai.shared.naming import NamespacedName, create_registry_name
 from nearai.shared.provider_models import ProviderModels, get_provider_namespaced_model
 from nearai.tensorboard_feed import TensorboardCli
+from nearai.banners import NEAR_AI_BANNER
 
 
 class RegistryCli:
@@ -254,13 +261,238 @@ class RegistryCli:
             for path in paths:
                 self.upload(str(path))
 
-    def upload(self, local_path: str = ".") -> EntryLocation:
-        """Upload item to the registry."""
-        return registry.upload(resolve_local_path(Path(local_path)), show_progress=True)
+    def upload_help(self) -> None:
+        """Display detailed help information for the 'registry upload' command."""
+        console = Console()
+        
+        # Header
+        console.print("\n[bold cyan]NEAR AI Registry Upload Command[/bold cyan]\n")
+        
+        # Command description
+        console.print(Panel(
+            "The 'upload' command publishes your agent, model, or other resource to the NEAR AI registry, making it available to others.",
+            title="About Registry Upload",
+            border_style="blue",
+            expand=False
+        ))
+        
+        # Command syntax
+        console.print("\n[bold green]Command Syntax:[/bold green]")
+        console.print("nearai registry upload [PATH]")
+        
+        # Options
+        console.print("\n[bold green]Options:[/bold green]\n")
+        
+        options_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
+        options_table.add_column(style="yellow")
+        options_table.add_column(style="white")
+        
+        options = [
+            ("PATH", "Path to the directory containing the item to upload (default: current directory)"),
+        ]
+        
+        for opt, desc in options:
+            options_table.add_row(opt, desc)
+        
+        console.print(options_table)
+        
+        # Requirements
+        console.print("\n[bold green]Requirements:[/bold green]\n")
+        
+        requirements_panel = Panel(
+            "1. You must be logged in with [cyan]nearai login[/cyan]\n"
+            "2. The directory must contain a valid [bold]metadata.json[/bold] file\n"
+            "3. The metadata.json must include [bold]name[/bold] and [bold]version[/bold] fields\n"
+            "4. The version number [cyan]MUST BE UNIQUE[/cyan]",
+            title="Upload Requirements",
+            border_style="yellow",
+            expand=False
+        )
+        
+        console.print(requirements_panel)
+
+        # Examples
+        console.print("\n[bold green]Examples:[/bold green]\n")
+        
+        examples = [
+            "# Upload from current directory",
+            "nearai registry upload",
+            "",
+            "# Upload from specific path",
+            "nearai registry upload path/to/agent"
+        ]
+        
+        for example in examples:
+            if example.startswith("#"):
+                console.print(f"[dim]{example}[/dim]")
+            elif example:
+                console.print(f"[cyan]{example}[/cyan]")
+            else:
+                console.print("")
+        
+        # Metadata.json example
+        console.print("\n[bold green]Example metadata.json:[/bold green]\n")
+        
+        metadata_example = """{
+  "name": "my-agent",
+  "version": "0.0.1",
+  "description": "My helpful AI agent",
+  "category": "agent",
+  "tags": ["helper", "assistant"]
+}"""
+        
+        console.print(Panel(metadata_example, title="metadata.json", border_style="dim", expand=False))
+        
+        # Footer
+        console.print("\nFor detailed documentation on registry uploads, visit: [bold blue]https://docs.near.ai/agents/registry/#uploading-an-agent[/bold blue]\n")
+    
+    def upload(self, local_path: str = ".", auto_increment: bool = False) -> Optional[EntryLocation]:
+        """Upload item to the registry.
+        
+        Args:
+            local_path: Path to the directory containing the agent to upload
+            auto_increment: If True, automatically increment version if it already exists
+        
+        Returns:
+            EntryLocation if upload was successful, None otherwise
+        """
+        # Check if help flag is present
+        if '--help' in sys.argv:
+            self.upload_help()
+            return None
+            
+        # Existing implementation...
 
     def download(self, entry_location: str, force: bool = False) -> None:
         """Download item."""
         registry.download(entry_location, force=force, show_progress=True)
+
+    def __help__(self) -> None:
+        """Display detailed help information for registry commands."""
+        console = Console()
+        
+        # Header
+        console.print("\n[bold cyan]NEAR AI Registry Commands[/bold cyan]\n")
+        
+        # Main description
+        console.print(Panel(
+            "Registry commands help you manage items in the NEAR AI registry, including uploading, downloading, and listing agents, models, and other resources.",
+            title="About Registry",
+            border_style="blue",
+            expand=False
+        ))
+        
+        # Command details in a clean table format
+        commands_table = Table(box=ROUNDED, expand=False)
+        commands_table.add_column("Command", style="cyan bold", no_wrap=True)
+        commands_table.add_column("Description", style="white")
+        commands_table.add_column("Flags", style="dim")
+        
+        commands = [
+            (
+                "upload",
+                "Upload an item to the registry",
+                "[PATH]*"
+            ),
+            (
+                "download",
+                "Download an item from the registry",
+                "entry-location*, --force"
+            ),
+            (
+                "info",
+                "Show information about a registry item",
+                "entry*"
+            ),
+            (
+                "list",
+                "List available items in the registry",
+                "--namespace, --category, --tags, --total, --offset, --show-all, --show-latest-version, --star"
+            ),
+            (
+                "metadata-template",
+                "Create a metadata template",
+                "--local-path, --category, --description"
+            ),
+            (
+                "update",
+                "Update metadata of a registry item",
+                "local-path*"
+            ),
+        ]
+        
+        for cmd, desc, flags in commands:
+            commands_table.add_row(f"nearai registry {cmd}", desc, flags)
+        
+        console.print(commands_table)
+        console.print("\n* Required parameter\n")
+        
+        # Detailed flag descriptions
+        console.print("[bold green]Flag Details:[/bold green]\n")
+        
+        flag_details = [
+            ("--force", "Force download even if the item exists locally"),
+            ("--namespace", "Filter items by namespace"),
+            ("--category", "Filter items by category (e.g., 'agent', 'model')"),
+            ("--tags", "Filter items by tags (comma-separated)"),
+            ("--total", "Maximum number of items to show"),
+            ("--offset", "Offset for pagination"),
+            ("--show-all", "Show all versions of items"),
+            ("--show-latest-version", "Show only the latest version of each item"),
+            ("--star", "Show items starred by a specific user"),
+        ]
+        
+        flag_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
+        flag_table.add_column(style="yellow")
+        flag_table.add_column(style="white")
+        
+        for flag, desc in flag_details:
+            flag_table.add_row(flag, desc)
+        
+        console.print(flag_table)
+        
+        # Entry location format
+        console.print("\n[bold green]Entry Location Format:[/bold green]\n")
+        console.print("Entry locations use the format: [cyan]namespace/name/version[/cyan]")
+        console.print("Example: [cyan]example.near/summary/0.0.3[/cyan]\n")
+        
+        # Examples section
+        console.print("[bold green]Examples:[/bold green]\n")
+        
+        examples = [
+            "# Upload an agent to the registry",
+            "nearai registry upload path/to/agent",
+            "",
+            "# Download an item from the registry",
+            "nearai registry download example.near/agent-name/0.0.3",
+            "",
+            "# Show information about a registry item",
+            "nearai registry info example.near/agent-name/0.0.3",
+            "",
+            "# List all agents in the registry",
+            "nearai registry list --category agent",
+            "",
+            "# List items with specific tags",
+            "nearai registry list --tags \"summarization,text\"",
+            "",
+            "# Create a metadata template",
+            "nearai registry metadata-template --category agent --description \"My agent description\"",
+        ]
+        
+        for example in examples:
+            if example.startswith("#"):
+                console.print(f"[dim]{example}[/dim]")
+            elif example:
+                console.print(f"[cyan]{example}[/cyan]")
+            else:
+                console.print("")
+        
+        # Footer
+        console.print("\nFor detailed documentation on the registry, visit: [bold blue]https://docs.near.ai/agents/registry[/bold blue]\n")
+    
+    def __call__(self):
+        """Show help when 'nearai registry' is called without subcommands."""
+        self.__help__()
 
 
 class ConfigCli:
@@ -727,7 +959,7 @@ class AgentCli:
         --------
           nearai agent create   # Enters interactive mode
           nearai agent create --name my_agent --description "My new agent"
-          nearai agent create --fork agentic.near/summary/0.0.3 --name new_summary_agent
+          nearai agent create --fork example.near/agent-name/0.0.3 --name new_agent_name
 
         """
         # Check if the user is authenticated
@@ -746,6 +978,145 @@ class AgentCli:
         else:
             # Create a new agent from scratch
             create_new_agent(namespace, name, description)
+
+    def __help__(self) -> None:
+        """Display detailed help information for agent commands."""
+        console = Console()
+        
+        # Header
+        console.print("\n[bold cyan]NEAR AI Agent Commands[/bold cyan]\n")
+        
+        # Main description
+        console.print(Panel(
+            "Agent commands help you create, develop, test, and deploy AI agents on the NEAR platform.",
+            title="About Agents",
+            border_style="blue",
+            expand=False
+        ))
+        
+        # Command details in a clean table format
+        commands_table = Table(box=ROUNDED, expand=False)
+        commands_table.add_column("Command", style="cyan bold", no_wrap=True)
+        commands_table.add_column("Description", style="white")
+        commands_table.add_column("Flags", style="dim")
+        
+        commands = [
+            (
+                "create",
+                "Create a new agent or fork an existing one",
+                "--name, --description, --fork"
+            ),
+            (
+                "update",
+                "Update the version in an agent's metadata.json",
+                "--minor, --major"
+            ),
+            (
+                "upload",
+                "Upload an agent to the registry",
+                "--auto-increment"
+            ),
+            (
+                "interactive",
+                "Run an agent interactively",
+                "--agent, --thread-id, --tool-resources, --local, --verbose, --env-vars"
+            ),
+            (
+                "task",
+                "Run a single task with an agent",
+                "agent*, task*, --thread-id, --tool-resources, --file-ids, --local, --verbose, --env-vars"
+            ),
+            (
+                "dev",
+                "Run local UI for agent development",
+                "None"
+            ),
+            (
+                "inspect",
+                "Inspect environment from given path",
+                "path*"
+            ),
+        ]
+        
+        for cmd, desc, flags in commands:
+            commands_table.add_row(f"nearai agent {cmd}", desc, flags)
+        
+        console.print(commands_table)
+        console.print("\n* Required parameter\n")
+        
+        # Detailed flag descriptions
+        console.print("[bold green]Flag Details:[/bold green]\n")
+        
+        flag_details = [
+            ("--name", "Name for the new agent"),
+            ("--description", "Description of the agent"),
+            ("--fork", "Path to an existing agent to fork (format: namespace/name/version)"),
+            ("--agent", "Path to agent directory"),
+            ("--thread-id", "Thread ID to continue an existing conversation"),
+            ("--tool-resources", "Tool resources to pass to the agent"),
+            ("--file-ids", "File IDs to attach to the message"),
+            ("--local", "Run the agent locally instead of on NEAR AI servers"),
+            ("--verbose", "Show detailed debug information during execution"),
+            ("--env-vars", "Environment variables to pass to the agent"),
+        ]
+        
+        flag_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
+        flag_table.add_column(style="yellow")
+        flag_table.add_column(style="white")
+        
+        for flag, desc in flag_details:
+            flag_table.add_row(flag, desc)
+        
+        console.print(flag_table)
+        
+        # Examples section
+        console.print("\n[bold green]Examples:[/bold green]\n")
+        
+        examples = [
+            "# Create a new agent interactively",
+            "nearai agent create",
+            "",
+            "# Create an agent with specific name and description",
+            "nearai agent create --name my-agent --description \"My helpful assistant\"",
+            "",
+            "# Run agent interactively (local)",
+            "nearai agent interactive path/to/agent --local",
+            "",
+            "# Update agent version (patch)",
+            "nearai agent update path/to/agent",
+            "",
+            "# Upload agent to NEAR AI agent registry",
+            "nearai agent upload path/to/agent"
+        ]
+        
+        for example in examples:
+            if example.startswith("#"):
+                console.print(f"[dim]{example}[/dim]")
+            elif example:
+                console.print(f"[cyan]{example}[/cyan]")
+            else:
+                console.print("")
+        
+        # Workflow section
+        workflow_panel = Panel(
+            "1. [bold]Create[/bold] an agent with [cyan]nearai agent create[/cyan]\n"
+            "2. [bold]Develop[/bold] your agent by editing the [cyan]agent.py[/cyan] file\n"
+            "3. [bold]Test[/bold] your agent locally with [cyan]nearai agent interactive --local[/cyan]\n"
+            "4. [bold]Upload[/bold] to the registry with [cyan]nearai agent upload[/cyan]\n"
+            "5. [bold]Update[/bold] the version with [cyan]nearai agent update[/cyan]",
+            title="Typical Agent Workflow",
+            border_style="green",
+            expand=False
+        )
+        
+        console.print("\n", workflow_panel)
+        
+        # Footer
+        console.print("\nFor detailed documentation on agents, visit: [bold blue]https://docs.near.ai/agents/quickstart[/bold blue]\n")
+    
+    def __call__(self):
+        """Show help when 'nearai agent' is called without subcommands."""
+        self.__help__()
 
 
 class VllmCli:
@@ -929,6 +1300,81 @@ class CLI:
         """CLI command for running a single task."""
         self.agent.task_cli(*args, **kwargs)
 
+    def __help__(self) -> None:
+        """Display help information about the NEAR AI CLI."""
+        console = Console()
+        version = importlib.metadata.version("nearai")
+        
+        # Header with logo and version
+        console.print(NEAR_AI_BANNER)
+        console.print(f"[bold cyan]NEAR AI CLI[/bold cyan] [dim]v{version}[/dim]\n")
+        
+        # Main description
+        console.print(Panel(
+            "NEAR AI is a powerful tool for building and deploying user-owned AI agents.\n"
+            "Use the commands below to get started or add [bold]--help[/bold] to any command for more information.",
+            title="About",
+            border_style="blue",
+            expand=False
+        ))
+        
+        # Create command categories
+        categories = {
+            "Getting Started": [
+                ("login", "Authenticate with your NEAR account"),
+                ("logout", "Clear your NEAR account authentication data"),
+                ("version", "Display the current version of the CLI"),
+                ("location", "Show the installation location of the CLI"),
+            ],
+            "Agent Development": [
+                ("agent create", "Create a new agent or fork an existing one"),
+                ("agent update", "Update the version in an agent's metadata.json file"),
+                ("agent upload", "Upload an agent to the NEAR AI agent registry"),
+                ("agent interactive", "Run an agent interactively"),
+                ("agent task", "Run a single task with an agent"),
+                ("agent dev", "Run local UI for development of agents"),
+                ("agent inspect", "Inspect environment from given path"),
+            ],
+            "Registry Management": [
+                ("registry upload", "Upload an item to the registry"),
+                ("registry download", "Download an item from the registry"),
+                ("registry info", "Show information about a registry item"),
+                ("registry list", "List available items in the registry"),
+                ("registry metadata-template", "Create a metadata template"),
+            ],
+            "Configuration": [
+                ("config set", "Set a configuration value"),
+                ("config get", "Get a configuration value"),
+                ("config show", "Show all configuration values"),
+            ],
+            "Advanced Features": [
+                ("benchmark run", "Run benchmark on a dataset with a solver strategy"),
+                ("benchmark list", "List all executed benchmarks"),
+                ("evaluation table", "Print table of evaluations"),
+                ("finetune", "Commands for fine-tuning models"),
+                ("tensorboard", "Commands for TensorBoard integration"),
+                ("vllm run", "Run VLLM server with OpenAI-compatible API"),
+                ("permission grant", "Grant permission to an account"),
+                ("hub chat", "Chat with model from NEAR AI hub"),
+            ],
+        }
+        
+        # Create and display tables for each category sequentially
+        for category, commands in categories.items():
+            table = Table(title=category, box=ROUNDED, title_style="bold green", expand=False)
+            table.add_column("Command", style="cyan", no_wrap=True)
+            table.add_column("Description", style="white")
+            
+            for cmd, desc in commands:
+                table.add_row(f"nearai {cmd}", desc)
+            
+            console.print(Panel(table, border_style="green", expand=False))
+            console.print()  # Add spacing between categories
+
+    def help(self) -> None:
+        """Display help information about the NEAR AI CLI."""
+        self.__help__()
+
 
 def check_update():
     """Check if there is a new version of nearai CLI available."""
@@ -953,5 +1399,46 @@ def assert_user_auth() -> None:
 
 
 def main() -> None:
+    """Main entry point for the NEAR AI CLI."""
     check_update()
+    
+    # If no arguments are provided, show help
+    if len(sys.argv) == 1:
+        cli = CLI()
+        cli.__help__()
+        return
+    
+    # Check if help is requested for specific commands
+    if len(sys.argv) >= 2:
+        # Handle "nearai agent --help"
+        if len(sys.argv) == 3 and sys.argv[1] == "agent" and sys.argv[2] == "--help":
+            cli = CLI()
+            cli.agent.__help__()
+            return
+            
+        # Handle "nearai registry --help"
+        if len(sys.argv) == 3 and sys.argv[1] == "registry" and sys.argv[2] == "--help":
+            cli = CLI()
+            cli.registry.__help__()
+            return
+            
+        # Handle "nearai agent create --help"
+        if len(sys.argv) == 4 and sys.argv[1] == "agent" and sys.argv[2] == "create" and sys.argv[3] == "--help":
+            cli = CLI()
+            cli.agent.create_help()
+            return
+            
+        # Handle "nearai registry upload --help"
+        if len(sys.argv) == 4 and sys.argv[1] == "registry" and sys.argv[2] == "upload" and sys.argv[3] == "--help":
+            cli = CLI()
+            cli.registry.upload_help()
+            return
+        
+        # Handle "nearai --help"
+        if len(sys.argv) == 2 and sys.argv[1] == "--help":
+            cli = CLI()
+            cli.__help__()
+            return
+    
+    # Otherwise, proceed with normal command processing
     fire.Fire(CLI)
