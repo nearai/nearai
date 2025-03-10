@@ -25,7 +25,7 @@ async def handle_stream(resp_stream, add_usage_callback: Callable):
         c = json.dumps(chunk.model_dump())
         response_chunks.append(c)
         yield f"data: {c}\n\n"
-        await asyncio.sleep(0)
+        await asyncio.sleep(0) # lets the event loop yield, otherwise it batches yields
 
     yield "data: [DONE]\n\n"
     full_response_text = "".join(response_chunks)
