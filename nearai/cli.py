@@ -17,6 +17,7 @@ from openai.types.beta.threads.message import Attachment
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
+from rich.rule import Rule
 from rich.text import Text
 from tabulate import tabulate
 
@@ -33,7 +34,6 @@ from nearai.cli_helpers import (
 from nearai.config import (
     CONFIG,
     get_hub_client,
-    get_namespace,
     update_config,
 )
 from nearai.finetune import FinetuneCli
@@ -47,7 +47,7 @@ from nearai.openapi_client.api.evaluation_api import EvaluationApi
 from nearai.openapi_client.api.jobs_api import JobsApi, WorkerKind
 from nearai.openapi_client.api.permissions_api import PermissionsApi
 from nearai.openapi_client.models.body_add_job_v1_jobs_add_job_post import BodyAddJobV1JobsAddJobPost
-from nearai.registry import get_agent_id, get_metadata, get_registry_folder, registry, resolve_local_path
+from nearai.registry import get_agent_id, get_metadata, get_namespace, get_registry_folder, registry, resolve_local_path
 from nearai.shared.client_config import (
     DEFAULT_MODEL,
     DEFAULT_MODEL_MAX_TOKENS,
@@ -308,9 +308,10 @@ class RegistryCli:
         name = metadata["name"]
         version = metadata["version"]
 
-        # Get namespace from auth
-        namespace = get_namespace()
-        if namespace is None:
+        # Get namespace using the function from registry.py
+        try:
+            namespace = get_namespace(path)
+        except ValueError:
             console.print(
                 Panel(
                     Text("Please login with `nearai login` before uploading", style="bold red"),
@@ -330,61 +331,72 @@ class RegistryCli:
             )
             return None
 
-        # Add explicit feedback about whether the version exists
         if exists:
-            if bump or minor_bump or major_bump:
-                old_version = version
+            console.print(f"\n❌ [yellow]Version [cyan]{version}[/cyan] already exists.[/yellow]")
+        else:
+            console.print(f"\n✅ [green]Version [cyan]{version}[/cyan] is available.[/green]")
 
-                # Determine increment type based on flags
-                if major_bump:
-                    increment_type = "major"
-                elif minor_bump:
-                    increment_type = "minor"
-                else:
-                    increment_type = "patch"  # Default for bump
+        bump_requested = bump or minor_bump or major_bump
 
-                version = increment_version_by_type(version, increment_type)
+        if exists and bump_requested:
+            # Handle version bump
+            old_version = version
 
-                # Enhanced version update message
-                update_panel = Panel(
-                    Text.assemble(
-                        ("Version Update\n\n", "bold"),
-                        ("Previous version: ", "dim"),
-                        (f"{old_version}\n", "yellow"),
-                        ("New version:     ", "dim"),
-                        (f"{version}", "green bold"),
-                        ("\n\nIncrement type: ", "dim"),
-                        (f"{increment_type}", "cyan"),
-                    ),
-                    title="Bump",
-                    border_style="green",
-                    padding=(1, 2),
-                )
-                console.print(update_panel)
-
-                # Update metadata.json with new version
-                metadata["version"] = version
-                with open(metadata_path, "w") as f:
-                    json.dump(metadata, f, indent=2)
+            # Determine increment type based on flags
+            if major_bump:
+                increment_type = "major"
+            elif minor_bump:
+                increment_type = "minor"
             else:
-                error_panel = Panel(
-                    Text.assemble(
-                        (f"Version {version} already exists in the registry.\n\n", "bold red"),
-                        ("To upload a new version:\n", "yellow"),
-                        (f"1. Edit {metadata_path}\n", "dim"),
-                        ('2. Update the "version" field (e.g., increment from "0.0.1" to "0.0.2")\n', "dim"),
-                        ("3. Try uploading again\n\n", "dim"),
-                        ("Or use the following flags:\n", "yellow"),
-                        ("  --bump          # Patch update (0.0.1 → 0.0.2)\n", "green"),
-                        ("  --minor-bump    # Minor update (0.0.1 → 0.1.0)\n", "green"),
-                        ("  --major-bump    # Major update (0.0.1 → 1.0.0)\n", "green"),
-                    ),
-                    title="Version Conflict",
-                    border_style="red",
-                )
-                console.print(error_panel)
-                return None
+                increment_type = "patch"  # Default for bump
 
+            version = increment_version_by_type(version, increment_type)
+
+            # Enhanced version update message
+            update_panel = Panel(
+                Text.assemble(
+                    ("Updating Version...\n\n", "bold"),
+                    ("Previous version: ", "dim"),
+                    (f"{old_version}\n", "yellow"),
+                    ("New version:     ", "dim"),
+                    (f"{version}", "green bold"),
+                    ("\n\nIncrement type: ", "dim"),
+                    (f"{increment_type}", "cyan"),
+                ),
+                title="Bump",
+                border_style="green",
+                padding=(1, 2),
+            )
+            console.print(update_panel)
+
+            # Update metadata.json with new version
+            metadata["version"] = version
+            with open(metadata_path, "w") as f:
+                json.dump(metadata, f, indent=2)
+
+            console.print(f"\n✅ Updated [bold]{metadata_path}[/bold] with new version\n")
+            console.print(Rule(style="dim"))
+
+        elif exists and not bump_requested:
+            # Show error panel for version conflict
+            error_panel = Panel(
+                Text.assemble(
+                    ("To upload a new version:\n", "yellow"),
+                    (f"1. Edit {metadata_path}\n", "dim"),
+                    ('2. Update the "version" field (e.g., increment from "0.0.1" to "0.0.2")\n', "dim"),
+                    ("3. Try uploading again\n\n", "dim"),
+                    ("Or use the following flags:\n", "yellow"),
+                    ("  --bump          # Patch update (0.0.1 → 0.0.2)\n", "green"),
+                    ("  --minor-bump    # Minor update (0.0.1 → 0.1.0)\n", "green"),
+                    ("  --major-bump    # Major update (0.0.1 → 1.0.0)\n", "green"),
+                ),
+                title="Version Conflict",
+                border_style="red",
+            )
+            console.print(error_panel)
+            return None
+
+        # Version doesn't exist or has been bumped, proceed with upload
         console.print(
             f"\n📂 [bold]Uploading[/bold] version [green bold]{version}[/green bold] of [blue bold]{name}[/blue bold] to [cyan bold]{namespace}[/cyan bold]...\n"  # noqa: E501
         )
