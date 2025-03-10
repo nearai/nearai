@@ -90,8 +90,8 @@ class TestRegistryCliUpload:
             assert result is None
             captured = capsys.readouterr()
             # Check for the new Rich-formatted output
+            assert "Version 0.0.1 already exists" in captured.out
             assert "Version Conflict" in captured.out
-            assert "Version 0.0.1 already exists in the registry" in captured.out
             assert "To upload a new version" in captured.out
             assert "--bump" in captured.out
             assert "--minor-bump" in captured.out
