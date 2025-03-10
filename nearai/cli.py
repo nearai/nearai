@@ -33,6 +33,7 @@ from nearai.cli_helpers import (
 from nearai.config import (
     CONFIG,
     get_hub_client,
+    get_namespace,
     update_config,
 )
 from nearai.finetune import FinetuneCli
@@ -308,7 +309,8 @@ class RegistryCli:
         version = metadata["version"]
 
         # Get namespace from auth
-        if CONFIG.auth is None or CONFIG.auth.namespace is None:
+        namespace = get_namespace()
+        if namespace is None:
             console.print(
                 Panel(
                     Text("Please login with `nearai login` before uploading", style="bold red"),
@@ -318,8 +320,6 @@ class RegistryCli:
                 )
             )
             return None
-
-        namespace = CONFIG.auth.namespace
 
         # Check if this version already exists
         exists, error = check_version_exists(namespace, name, version)
