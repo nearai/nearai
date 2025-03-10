@@ -1298,6 +1298,26 @@ class Environment(object):
         """
         )
 
+    def stream_completion(
+        self,
+        messages: Union[Iterable[ChatCompletionMessageParam], str],
+        model: Union[Iterable[ChatCompletionMessageParam], str] = "",
+        **kwargs: Any,
+    ):
+        #pseudocode
+        #TODO should this be completion(stream=True)?
+        output_token_generator = call stream completion litellm
+        return output_token_generator
+
+    def add_reply_streaming(self, results):
+        #pseudocode
+        #TODO should this be add_reply?
+        create message on thread
+        for result in results:
+            send tokens to hub for message id
+        send done for message id
+        update message on thread
+
     # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
     def completion(
         self,
