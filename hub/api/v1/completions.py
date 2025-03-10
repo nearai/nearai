@@ -1,4 +1,5 @@
 import json
+import asyncio
 from enum import Enum
 from os import getenv
 from typing import Callable, List, Union
@@ -24,7 +25,7 @@ async def handle_stream(resp_stream, add_usage_callback: Callable):
         c = json.dumps(chunk.model_dump())
         response_chunks.append(c)
         yield f"data: {c}\n\n"
-        #await asyncio.sleep(0.1)
+        await asyncio.sleep(0)
 
     yield "data: [DONE]\n\n"
     full_response_text = "".join(response_chunks)
