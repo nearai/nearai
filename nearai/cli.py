@@ -674,6 +674,27 @@ class AgentCli:
                 thread_id=thread.id,
                 assistant_id=agent,
             )
+        elif is_streaming:
+            #TODO not working
+            run = hub_client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id=agent,
+                stream=True
+            )
+            params = {
+                "api_url": CONFIG.api_url,
+                "tool_resources": run.tools,
+                "data_source": "local_files",
+                "user_env_vars": env_vars,
+                "agent_env_vars": {},
+                "verbose": verbose,
+            }
+            auth = CONFIG.auth
+            assert auth is not None
+            LocalRunner(str(local_path), agent, thread.id, run.id, auth, params)
+            for event in run:
+                print("Event:", event)
+
         else:
             run = hub_client.beta.threads.runs.create(
                 thread_id=thread.id,
@@ -695,7 +716,7 @@ class AgentCli:
         # List new messages
         messages = hub_client.beta.threads.messages.list(thread_id=thread.id, after=last_message_id, order="asc")
         message_list = list(messages)
-        if message_list:
+        if message_list and not is_streaming:
             for msg in message_list:
                 if msg.metadata and msg.metadata.get("message_type"):
                     continue
