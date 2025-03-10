@@ -363,23 +363,9 @@ class TestRegistryCliUpload:
             "version1.0.0",  # Arbitrary text is not allowed
             "hithere",
             "12-212.23",
-            # TODO: Figure out why commented out versions were not rejected
-            # Improper Pre-release Identifiers
-            # "1.0-alpha",              # Should be 1.0a0 or 1.0a1
-            # "1.0-beta-1",             # Should be 1.0b1
-            # Improper Post-release Identifiers
-            # "1.0.0-post",             # Should be 1.0.0.post0
-            # Improper Development Release Identifiers
-            # "1.0.0-dev",              # Should be 1.0.0.dev0
-            # "1.0.dev1.2",             # Should be 1.0.dev2
-            # Unstructured Versions
-            # "2023.04.12",             # Date-based versioning needs specific pattern
-            "1.0_final",  # Underscore is not allowed in this context
-            # Improper Local Versions
-            # "1.0.0+exp.sha.5114f85",  # Complex local identifiers may be rejected
-            # Skipping Patch/Minor Versioning
-            "1..0",  # Empty segments are not allowed
-            "1.0.",  # Trailing dot is not allowed
+            "1.0_final",    # Underscore is not allowed in this context
+            "1..0",         # Empty segments are not allowed
+            "1.0.",         # Trailing dot is not allowed
         ]
 
         for version in invalid_versions:
