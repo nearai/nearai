@@ -24,12 +24,9 @@ from tabulate import tabulate
 from nearai.agents.local_runner import LocalRunner
 from nearai.cli_helpers import (
     assert_user_auth,
-    check_version_exists,
     display_agents_in_columns,
     has_pending_input,
-    increment_version_by_type,
     load_and_validate_metadata,
-    validate_version,
 )
 from nearai.config import (
     CONFIG,
@@ -47,7 +44,17 @@ from nearai.openapi_client.api.evaluation_api import EvaluationApi
 from nearai.openapi_client.api.jobs_api import JobsApi, WorkerKind
 from nearai.openapi_client.api.permissions_api import PermissionsApi
 from nearai.openapi_client.models.body_add_job_v1_jobs_add_job_post import BodyAddJobV1JobsAddJobPost
-from nearai.registry import get_agent_id, get_metadata, get_namespace, get_registry_folder, registry, resolve_local_path
+from nearai.registry import (
+    check_version_exists,
+    get_agent_id,
+    get_metadata,
+    get_namespace,
+    get_registry_folder,
+    increment_version_by_type,
+    registry,
+    resolve_local_path,
+    validate_version,
+)
 from nearai.shared.client_config import (
     DEFAULT_MODEL,
     DEFAULT_MODEL_MAX_TOKENS,
