@@ -948,7 +948,7 @@ class AgentCli:
                 if msg.role == "assistant":
                     print(f"Assistant: {msg.content[0].text.value}")
             last_message_id = message_list[-1].id
-        else:
+        elif not is_streaming:
             print("No new messages")
 
         # Store the thread_id for potential use in interactive mode
