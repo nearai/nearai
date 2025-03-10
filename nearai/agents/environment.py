@@ -1310,7 +1310,7 @@ class Environment(object):
 
     def add_reply_streaming(self, results):
         for result in results:
-            print("Streaming:", result.choices[0].delta.content)
+            print("Streaming:", result.choices[0].delta.content, end='', flush=True)
         print("Got here", results, type(results))
         return
         #TODO should this be add_reply?
