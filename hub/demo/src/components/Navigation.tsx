@@ -15,7 +15,6 @@ import {
   CaretDown,
   ChatCircleDots,
   Cube,
-  Gear,
   GithubLogo,
   List,
   Moon,
