@@ -1106,6 +1106,10 @@ class CLI:
 
         location = self.registry.upload(path)
 
+        if location is None:
+            print("Error: Failed to upload entry")
+            return
+
         delegation_api = DelegationApi()
         delegation_api.delegate_v1_delegation_delegate_post(
             delegate_account_id=CONFIG.scheduler_account_id,
