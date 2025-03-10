@@ -1,6 +1,6 @@
 FROM public.ecr.aws/lambda/python:3.11
 
-RUN yum install -y gcc libffi-devel openssl-devel shadow-utils acl && \
+RUN yum install -y gcc libffi-devel openssl-devel-1:1.0.2k-24.amzn2.0.14 shadow-utils acl && \
     yum clean all && \
     rm -rf /var/cache/yum
 

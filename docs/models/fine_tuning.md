@@ -89,7 +89,7 @@ Under the hood, `nearai` uses [torchtune](https://github.com/pytorch/torchtune) 
 Here is the command we used to fine-tune `llama-3-8b-instruct` on our combined `orca-math-word-problems-200k` and `gsm8k` dataset on an 8-GPU machine:
 
 ```bash
-poetry run python3 -m nearai finetune start \
+uv run python3 -m nearai finetune start \
     --model llama-3-8b-instruct \
     --format llama3-8b \
     --tokenizer llama-3-8b-instruct/tokenizer.model \
@@ -109,7 +109,7 @@ Included in the output of the command is the path to the fine-tuned model checkp
 To serve fine-tuned models, we use [vllm](https://github.com/vllm-project/vllm). Once we serve the fine-tuned model + the baseline model, we will benchmark it against both.
 
 ```
-poetry run python3 -m vllm.entrypoints.openai.api_server \
+uv run python3 -m vllm.entrypoints.openai.api_server \
     --model meta-llama/Meta-Llama-3-8B-Instruct \
     --enable-lora \
     --lora-modules mynewlora=<path_to_checkpoint> \

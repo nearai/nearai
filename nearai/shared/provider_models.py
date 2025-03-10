@@ -30,25 +30,28 @@ def get_provider_model(provider: Optional[str], model: str) -> Tuple[Optional[st
 
 def get_provider_namespaced_model(provider_model: str, provider: Optional[str] = None) -> Tuple[str, NamespacedName]:
     """Given `provider_model` returns provider and namespaced model."""
+    provider_opt, provider_model = get_provider_model(DEFAULT_PROVIDER if not provider else provider, provider_model)
+    provider = cast(str, provider_opt)
+
+    if provider.startswith("https://"):
+        return provider, NamespacedName(name=provider_model)
+    if provider == "local":
+        return provider, NamespacedName(name=provider_model)
+
     provider_model = provider_model.replace("accounts/", "")
     provider_model = provider_model.replace("fireworks/", "")
     provider_model = provider_model.replace("models/", "")
-    provider_opt, model = get_provider_model(DEFAULT_PROVIDER if not provider else provider, provider_model)
-    provider = cast(str, provider_opt)
     if provider == "hyperbolic":
-        model = re.sub(r".*/", "", model)
-        return provider, NamespacedName(model)
+        provider_model = re.sub(r".*/", "", provider_model)
+        return provider, NamespacedName(provider_model)
     if provider == "fireworks":
-        parts = model.split("/")
+        parts = provider_model.split("/")
         if len(parts) == 1:
             return provider, NamespacedName(name=parts[0])
         elif len(parts) == 2:
             return provider, NamespacedName(namespace=parts[0], name=parts[1])
         else:
-            raise ValueError(f"Invalid model format for Fireworks: {model}")
-    if provider == "local":
-        model = re.sub(r".*/", "", model)
-        return provider, NamespacedName(name=model)
+            raise ValueError(f"Invalid model format for Fireworks: {provider_model}")
     raise ValueError(f"Unrecognized provider: {provider}")
 
 
@@ -94,10 +97,13 @@ class ProviderModels:
         4. namespace/model_short_name as used by provider, e.g. "yi-01-ai/yi-large"
         5. model_name as used in registry, e.g. "llama-3-70b-instruct"
         6. namespace/model_name as used in registry, e.g. "near.ai/llama-3-70b-instruct"
+        7. provider base url/model-name, e.g. "https://api.openai.com/v1::gpt-4o"
         """
         if provider == "":
             provider = None
         matched_provider, namespaced_model = get_provider_namespaced_model(model, provider)
+        if matched_provider.startswith("https://"):
+            return matched_provider, namespaced_model.name
         namespaced_model = namespaced_model.canonical()
         if namespaced_model not in self.provider_models:
             raise ValueError(f"Model {namespaced_model} not present in provider models {self.provider_models}")

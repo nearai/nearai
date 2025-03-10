@@ -20,7 +20,7 @@ import { EntryCard } from '~/components/EntryCard';
 import { Sidebar } from '~/components/lib/Sidebar';
 import { useProfileParams } from '~/hooks/profile';
 import { useQueryParams } from '~/hooks/url';
-import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
+import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
 import { type EntryCategory } from '~/lib/models';
 import { trpc } from '~/trpc/TRPCProvider';
 import { toTitleCase } from '~/utils/string';

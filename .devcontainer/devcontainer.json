@@ -16,14 +16,13 @@
 					"editor.formatOnSave": true,
 					"editor.defaultFormatter": "charliermarsh.ruff",
 					"editor.codeActionsOnSave": {
-						"source.fixAll.ruff": true,
-						"source.organizeImports.ruff": true
+						"source.fixAll.ruff": "explicit",
+						"source.organizeImports.ruff": "explicit"
 					}
 				},
 				"ruff.path": [
 					"/workspace/.venv/bin/ruff"
 				],
-				"ruff.lint.run": "onSave",
 				"ruff.configuration": "/workspace/pyproject.toml",
 				"terminal.integrated.defaultProfile.linux": "zsh",
 				"mypy-type-checker.path": [

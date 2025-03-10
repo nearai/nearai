@@ -1,8 +1,11 @@
 import json
 from pathlib import Path
 from shutil import copyfileobj
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+from packaging.version import InvalidVersion, Version
+from rich.console import Console
+from rich.text import Text
 from tqdm import tqdm
 
 # Note: We should import nearai.config on this file to make sure the method setup_api_client is called at least once
@@ -453,6 +456,100 @@ class Registry:
                 )
             result[canonical_namespaced_name] = namespaced_name
         return result
+
+
+def check_version_exists(namespace: str, name: str, version: str) -> Tuple[bool, Optional[str]]:
+    """Check if a version already exists in the registry.
+
+    Args:
+    ----
+        namespace: The namespace
+        name: The agent name
+        version: The version to check
+
+    Returns:
+    -------
+        Tuple of (exists, error)
+        If exists is True, the version exists
+        If error is not None, an error occurred during checking
+
+    """
+    entry_location = f"{namespace}/{name}/{version}"
+    try:
+        console = Console()
+        console.print(
+            Text.assemble(
+                ("\n🔎 Checking if version ", "white"),
+                (f"{version}", "green bold"),
+                (" exists for ", "white"),
+                (f"{name} ", "blue bold"),
+                ("in the registry under ", "white"),
+                (f"{namespace}", "cyan bold"),
+                ("...", "white"),
+            )
+        )
+        existing_entry = registry.info(parse_location(entry_location))
+
+        if existing_entry:
+            return True, None
+        return False, None
+    except Exception as e:
+        # Only proceed if the error indicates the entry doesn't exist
+        if "not found" in str(e).lower() or "does not exist" in str(e).lower():
+            return False, None
+        return False, f"Error checking registry: {str(e)}"
+
+
+def validate_version(version: str) -> Tuple[bool, Optional[str]]:
+    """Validate version string according to PEP 440.
+
+    Args:
+    ----
+        version: Version string to validate
+
+    Returns:
+    -------
+        Tuple of (is_valid, error_message)
+
+    """
+    try:
+        Version(version)
+        return True, None
+    except InvalidVersion as e:
+        return False, f"Invalid version format: {str(e)}. Version must follow PEP 440:https://peps.python.org/pep-0440."
+
+
+def increment_version_by_type(version: str, increment_type: str) -> str:
+    """Increment version according to PEP 440.
+
+    Args:
+    ----
+        version: Current version string
+        increment_type: Type of increment ('major', 'minor', or 'patch')
+
+    Returns:
+    -------
+        New version string
+
+    Raises:
+    ------
+        ValueError: If increment_type is invalid or version is invalid
+
+    """
+    try:
+        v = Version(version)
+        major, minor, micro = v.release[:3]
+
+        if increment_type == "major":
+            return f"{major + 1}.0.0"
+        elif increment_type == "minor":
+            return f"{major}.{minor + 1}.0"
+        elif increment_type == "patch":
+            return f"{major}.{minor}.{micro + 1}"
+        else:
+            raise ValueError(f"Invalid increment type: {increment_type}")
+    except InvalidVersion as e:
+        raise ValueError(f"Invalid version format: {str(e)}") from e
 
 
 registry = Registry()

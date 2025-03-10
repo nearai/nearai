@@ -64,8 +64,8 @@ jobs:
       with:
         python-version: '3.11'
         
-    - name: Install poetry
-      run: pipx install poetry
+    - name: Install uv
+      run: pip install uv
 
     - name: Install Codespell
       run: pip install codespell
@@ -74,10 +74,10 @@ jobs:
       run: codespell --config .codespellrc
 
     - name: check lock file for inconsistencies
-      run: poetry check --lock
+      run: uv lock --check
 
     - name: Install dependencies
-      run: poetry install --extras explatform --extras hub
+      run: uv sync --group docs --group dev
 
     - name: Lint Check
       run: ./scripts/lint_check.sh
@@ -119,11 +119,12 @@ jobs:
       if: ${{ github.event.inputs.publish-docs == 'true' }}
       
     - name: Build package
-      run: poetry build
+      run: uv build
       if: ${{ github.event.inputs.publish-pypi == 'true' }}
       
     - name: Publish to PyPI
       env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
-      run: poetry publish
+          ## TODO: Change the secret name to only PIPI_TOKEN
+          UV_PUBLISH_TOKEN: ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
+      run: uv publish
       if: ${{ github.event.inputs.publish-pypi == 'true' }}

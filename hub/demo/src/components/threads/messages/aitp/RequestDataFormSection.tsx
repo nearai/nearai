@@ -74,9 +74,19 @@ export const RequestDataFormInput = ({
   const { messageContentId } = useThreadMessageContent();
   const hookForm = useFormContext<RequestDataHookFormSchema>();
   const name = requestDataInputNameForField(messageContentId, field, index);
-  const comboboxOptions = useComboboxOptionMapper(field.options, (item) => ({
-    value: item,
-  }));
+
+  const comboboxOptions = useComboboxOptionMapper(field.options, (item) => {
+    if (typeof item === 'string') {
+      return {
+        label: item,
+        value: item,
+      };
+    }
+    return {
+      label: item.label,
+      value: item.value,
+    };
+  });
   const label = field.label || field.id;
 
   if (field.type === 'select' || field.type === 'combobox') {

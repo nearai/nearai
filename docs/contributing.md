@@ -82,7 +82,7 @@ If you discover any errors or omissions in our documentation, please open an iss
 
 If you think you can contribute a fix for the issue, please feel free to open a Pull Request.
 
-To preview your changes locally, you will need to install all the dependencies for the documentation which can be easily installed through `pip` or `poetry`:
+To preview your changes locally, you will need to install all the dependencies for the documentation which can be easily installed through `pip` or `uv`:
 
 === "pip"
 
@@ -90,9 +90,9 @@ To preview your changes locally, you will need to install all the dependencies f
       pip install -e ".[docs]"
       ```
 
-=== "poetry"
+=== "uv"
       ```bash
-      poetry install --with docs
+      uv sync --group docs
       ```
 
 Then simply test your changes locally using `mkdocs serve`

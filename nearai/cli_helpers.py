@@ -1,8 +1,14 @@
 import json
+import os
+import select
+import sys
 from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
 
 from rich.console import Console
 from rich.table import Table
+
+from nearai.registry import validate_version
 
 
 def display_agents_in_columns(agents: list[Path]) -> None:
@@ -51,3 +57,62 @@ def display_agents_in_columns(agents: list[Path]) -> None:
     console.print("\n")
     console.print(table)
     console.print("\n")
+
+
+def load_and_validate_metadata(metadata_path: Path) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """Load and validate metadata file, including version format.
+
+    Args:
+    ----
+        metadata_path: Path to metadata.json file
+
+    Returns:
+    -------
+        Tuple of (metadata_dict, error_message)
+
+    """
+    try:
+        with open(metadata_path) as f:
+            metadata = json.load(f)
+
+        # Validate version format
+        if "version" not in metadata:
+            return None, "Metadata file must contain a 'version' field"
+
+        is_valid, error = validate_version(metadata["version"])
+        if not is_valid:
+            return None, error
+
+        return metadata, None
+    except FileNotFoundError:
+        return None, f"Metadata file not found at {metadata_path}"
+    except json.JSONDecodeError:
+        return None, f"Invalid JSON in metadata file at {metadata_path}"
+    except Exception as e:
+        return None, f"Error reading metadata file: {str(e)}"
+
+
+def has_pending_input():
+    """Check if there's input waiting to be read without blocking."""
+    if os.name == "nt":  # Windows
+        import msvcrt
+
+        return msvcrt.kbhit()
+    else:  # Unix/Linux/Mac
+        rlist, _, _ = select.select([sys.stdin], [], [], 0)
+        return bool(rlist)
+
+
+def assert_user_auth() -> None:
+    """Ensure the user is authenticated.
+
+    Raises
+    ------
+        SystemExit: If the user is not authenticated
+
+    """
+    from nearai.config import CONFIG
+
+    if CONFIG.auth is None:
+        print("Please login with `nearai login` first")
+        exit(1)

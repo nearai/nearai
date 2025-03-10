@@ -1,3 +1,5 @@
+import mime from 'mime';
+
 import { type CodeLanguage } from '~/components/lib/Code';
 
 export function filePathToCodeLanguage(
@@ -23,7 +25,7 @@ export function filePathToCodeLanguage(
 }
 
 export function filePathIsImage(path: string | undefined | null) {
-  const extension = path?.split('.').at(-1) ?? '';
-  const isImage = ['png', 'jpg', 'gif', 'webp'].includes(extension);
+  const type = mime.getType(path || '') || '';
+  const isImage = type.startsWith('image/');
   return isImage;
 }
