@@ -954,9 +954,7 @@ async def stream_run_events(run_id: str):
     """Stream events for a run via SSE until completion."""
     queue = run_queues[run_id]
     while True:
-        print('popping queue', run_id)
         event = await queue.get()
-        print(event)
         if event == "done":
             break
         yield f"data: {json.dumps(event)}\n\n"
