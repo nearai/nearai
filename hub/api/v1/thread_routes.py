@@ -7,6 +7,7 @@ from collections import defaultdict
 import asyncio
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
+from fastapi.responses import StreamingResponse
 from nearai.agents.local_runner import LocalRunner
 from nearai.config import load_config_file
 from nearai.shared.auth_data import AuthData
