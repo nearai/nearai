@@ -363,9 +363,9 @@ class TestRegistryCliUpload:
             "version1.0.0",  # Arbitrary text is not allowed
             "hithere",
             "12-212.23",
-            "1.0_final",    # Underscore is not allowed in this context
-            "1..0",         # Empty segments are not allowed
-            "1.0.",         # Trailing dot is not allowed
+            "1.0_final",  # Underscore is not allowed in this context
+            "1..0",  # Empty segments are not allowed
+            "1.0.",  # Trailing dot is not allowed
         ]
 
         for version in invalid_versions:
