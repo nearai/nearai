@@ -14,11 +14,23 @@ from typing import Any, Dict, List, Optional, Union
 
 import fire
 from openai.types.beta.threads.message import Attachment
+from rich.console import Console
+from rich.panel import Panel
 from rich.prompt import Prompt
+from rich.rule import Rule
+from rich.text import Text
 from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
-from nearai.cli_helpers import display_agents_in_columns, has_pending_input
+from nearai.cli_helpers import (
+    assert_user_auth,
+    check_version_exists,
+    display_agents_in_columns,
+    has_pending_input,
+    increment_version_by_type,
+    load_and_validate_metadata,
+    validate_version,
+)
 from nearai.config import (
     CONFIG,
     get_hub_client,
@@ -35,13 +47,16 @@ from nearai.openapi_client.api.evaluation_api import EvaluationApi
 from nearai.openapi_client.api.jobs_api import JobsApi, WorkerKind
 from nearai.openapi_client.api.permissions_api import PermissionsApi
 from nearai.openapi_client.models.body_add_job_v1_jobs_add_job_post import BodyAddJobV1JobsAddJobPost
-from nearai.registry import get_agent_id, get_metadata, get_registry_folder, registry, resolve_local_path
+from nearai.registry import get_agent_id, get_metadata, get_namespace, get_registry_folder, registry, resolve_local_path
 from nearai.shared.client_config import (
     DEFAULT_MODEL,
     DEFAULT_MODEL_MAX_TOKENS,
     DEFAULT_MODEL_TEMPERATURE,
     DEFAULT_NAMESPACE,
     DEFAULT_PROVIDER,
+)
+from nearai.shared.client_config import (
+    IDENTIFIER_PATTERN as PATTERN,
 )
 from nearai.shared.naming import NamespacedName, create_registry_name
 from nearai.shared.provider_models import ProviderModels, get_provider_namespaced_model
@@ -83,10 +98,14 @@ class RegistryCli:
         metadata_path = path / "metadata.json"
 
         version = path.name
-        pattern = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa: E501
-        assert re.match(pattern, version), f"Invalid semantic version format: {version}"
+        # Validate version format
+        is_valid, error = validate_version(version)
+        if not is_valid:
+            print(error)
+            return
+
         name = path.parent.name
-        assert not re.match(pattern, name), f"Invalid agent name: {name}"
+        assert not re.match(PATTERN, name), f"Invalid agent name: {name}"
         assert " " not in name
 
         with open(metadata_path, "w") as f:
@@ -254,9 +273,175 @@ class RegistryCli:
             for path in paths:
                 self.upload(str(path))
 
-    def upload(self, local_path: str = ".") -> EntryLocation:
-        """Upload item to the registry."""
-        return registry.upload(resolve_local_path(Path(local_path)), show_progress=True)
+    def upload(
+        self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
+    ) -> Optional[EntryLocation]:
+        """Upload item to the registry.
+
+        Args:
+        ----
+            local_path: Path to the directory containing the agent to upload
+            bump: If True, automatically increment patch version if it already exists
+            minor_bump: If True, bump with minor version increment (0.1.0 → 0.2.0)
+            major_bump: If True, bump with major version increment (0.1.0 → 1.0.0)
+
+        Returns:
+        -------
+            EntryLocation if upload was successful, None otherwise
+
+        """
+        console = Console()
+        path = resolve_local_path(Path(local_path))
+        metadata_path = path / "metadata.json"
+
+        # Load and validate metadata
+        metadata, error = load_and_validate_metadata(metadata_path)
+        if error:
+            console.print(
+                Panel(Text(error, style="bold red"), title="Metadata Error", border_style="red", padding=(1, 2))
+            )
+            return None
+
+        # At this point, metadata is guaranteed to be not None
+        assert metadata is not None, "Metadata should not be None if error is None"
+
+        name = metadata["name"]
+        version = metadata["version"]
+
+        # Get namespace using the function from registry.py
+        try:
+            namespace = get_namespace(path)
+        except ValueError:
+            console.print(
+                Panel(
+                    Text("Please login with `nearai login` before uploading", style="bold red"),
+                    title="Authentication Error",
+                    border_style="red",
+                    padding=(1, 2),
+                )
+            )
+            return None
+
+        # Check if this version already exists
+        exists, error = check_version_exists(namespace, name, version)
+
+        if error:
+            console.print(
+                Panel(Text(error, style="bold red"), title="Registry Error", border_style="red", padding=(1, 2))
+            )
+            return None
+
+        if exists:
+            console.print(f"\n❌ [yellow]Version [cyan]{version}[/cyan] already exists.[/yellow]")
+        else:
+            console.print(f"\n✅ [green]Version [cyan]{version}[/cyan] is available.[/green]")
+
+        bump_requested = bump or minor_bump or major_bump
+
+        if exists and bump_requested:
+            # Handle version bump
+            old_version = version
+
+            # Determine increment type based on flags
+            if major_bump:
+                increment_type = "major"
+            elif minor_bump:
+                increment_type = "minor"
+            else:
+                increment_type = "patch"  # Default for bump
+
+            version = increment_version_by_type(version, increment_type)
+
+            # Enhanced version update message
+            update_panel = Panel(
+                Text.assemble(
+                    ("Updating Version...\n\n", "bold"),
+                    ("Previous version: ", "dim"),
+                    (f"{old_version}\n", "yellow"),
+                    ("New version:     ", "dim"),
+                    (f"{version}", "green bold"),
+                    ("\n\nIncrement type: ", "dim"),
+                    (f"{increment_type}", "cyan"),
+                ),
+                title="Bump",
+                border_style="green",
+                padding=(1, 2),
+            )
+            console.print(update_panel)
+
+            # Update metadata.json with new version
+            metadata["version"] = version
+            with open(metadata_path, "w") as f:
+                json.dump(metadata, f, indent=2)
+
+            console.print(f"\n✅ Updated [bold]{metadata_path}[/bold] with new version\n")
+            console.print(Rule(style="dim"))
+
+        elif exists and not bump_requested:
+            # Show error panel for version conflict
+            error_panel = Panel(
+                Text.assemble(
+                    ("To upload a new version:\n", "yellow"),
+                    (f"1. Edit {metadata_path}\n", "dim"),
+                    ('2. Update the "version" field (e.g., increment from "0.0.1" to "0.0.2")\n', "dim"),
+                    ("3. Try uploading again\n\n", "dim"),
+                    ("Or use the following flags:\n", "yellow"),
+                    ("  --bump          # Patch update (0.0.1 → 0.0.2)\n", "green"),
+                    ("  --minor-bump    # Minor update (0.0.1 → 0.1.0)\n", "green"),
+                    ("  --major-bump    # Major update (0.0.1 → 1.0.0)\n", "green"),
+                ),
+                title="Version Conflict",
+                border_style="red",
+            )
+            console.print(error_panel)
+            return None
+
+        # Version doesn't exist or has been bumped, proceed with upload
+        console.print(
+            f"\n📂 [bold]Uploading[/bold] version [green bold]{version}[/green bold] of [blue bold]{name}[/blue bold] to [cyan bold]{namespace}[/cyan bold]...\n"  # noqa: E501
+        )
+
+        try:
+            result = registry.upload(path, show_progress=True)
+
+            if result:
+                success_panel = Panel(
+                    Text.assemble(
+                        ("Upload completed successfully! 🚀 \n\n", "bold green"),
+                        ("Name:      ", "dim"),
+                        (f"{result.name}\n", "cyan"),
+                        ("Version:   ", "dim"),
+                        (f"{result.version}\n", "cyan"),
+                        ("Namespace: ", "dim"),
+                        (f"{result.namespace}", "cyan"),
+                    ),
+                    title="Success",
+                    border_style="green",
+                    padding=(1, 2),
+                )
+                console.print(success_panel)
+                return result
+            else:
+                console.print(
+                    Panel(
+                        Text("Upload failed for unknown reasons", style="bold red"),
+                        title="Upload Error",
+                        border_style="red",
+                        padding=(1, 2),
+                    )
+                )
+                return None
+
+        except Exception as e:
+            console.print(
+                Panel(
+                    Text(f"Error during upload: {str(e)}", style="bold red"),
+                    title="Upload Error",
+                    border_style="red",
+                    padding=(1, 2),
+                )
+            )
+            return None
 
     def download(self, entry_location: str, force: bool = False) -> None:
         """Download item."""
@@ -747,6 +932,30 @@ class AgentCli:
             # Create a new agent from scratch
             create_new_agent(namespace, name, description)
 
+    def upload(
+        self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
+    ) -> Optional[EntryLocation]:
+        """Upload agent to the registry.
+
+        This is an alias for 'nearai registry upload'.
+
+        Args:
+        ----
+            local_path: Path to the directory containing the agent to upload
+            bump: If True, automatically increment patch version if it already exists
+            minor_bump: If True, bump with minor version increment (0.1.0 → 0.2.0)
+            major_bump: If True, bump with major version increment (0.1.0 → 1.0.0)
+
+        Returns:
+        -------
+            EntryLocation if upload was successful, None otherwise
+
+        """
+        assert_user_auth()
+        # Create an instance of RegistryCli and call its upload method
+        registry_cli = RegistryCli()
+        return registry_cli.upload(local_path, bump, minor_bump, major_bump)
+
 
 class VllmCli:
     def run(self, *args: Any, **kwargs: Any) -> None:  # noqa: D102
@@ -897,6 +1106,10 @@ class CLI:
 
         location = self.registry.upload(path)
 
+        if location is None:
+            print("Error: Failed to upload entry")
+            return
+
         delegation_api = DelegationApi()
         delegation_api.delegate_v1_delegation_delegate_post(
             delegate_account_id=CONFIG.scheduler_account_id,
@@ -943,13 +1156,6 @@ def check_update():
 
     except Exception as _:
         pass
-
-
-def assert_user_auth() -> None:
-    """Ensure the user is authenticated."""
-    if CONFIG.auth is None:
-        print("Please login with `nearai login` first")
-        exit(1)
 
 
 def main() -> None:
