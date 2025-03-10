@@ -674,6 +674,7 @@ def create_run(
         )
 
         session.add(run_model)
+        session.commit()
 
         # Add the run and messages in DB
         if run.stream:
@@ -682,7 +683,6 @@ def create_run(
                 stream_run_events(run_model.id),
                 media_type="text/event-stream"
             )
-        session.commit()
 
         if run.delegate_execution:
             return run_model.to_openai()
