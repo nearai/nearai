@@ -23,4 +23,5 @@ nearai-langchain >= 0.0.12
 duckduckgo-search >= 7.3.0
 coinbase-agentkit >= 0.1.2
 coinbase-agentkit-langchain >= 0.1.0
+rich >= 13.9.4
 ddtrace == 2.21.0

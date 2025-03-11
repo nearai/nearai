@@ -24,4 +24,5 @@ pydantic
 faiss-cpu
 tiktoken
 sentence-transformers
+rich >= 13.9.4
 ddtrace == 2.21.0

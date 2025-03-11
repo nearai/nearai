@@ -17,4 +17,5 @@ ed25519 == 1.5
 tweepy >= 4.14.0
 tenacity == 9.0.0
 mcp
+rich >= 13.9.4
 ddtrace == 2.21.0

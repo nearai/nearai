@@ -17,4 +17,5 @@ tweepy >= 4.14.0
 langgraph >= 0.1.4
 langchain-fireworks >= 0.1.4
 openai == 1.51.2
+rich >= 13.9.4
 ddtrace == 2.21.0
