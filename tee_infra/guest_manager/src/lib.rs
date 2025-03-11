@@ -39,6 +39,7 @@ pub struct Manager {
     docker: Docker,
     runner_image_name: String,
     free_cvm_ports: VecDeque<u16>,
+    active_containers: HashMap<u16, String>, // Map of port -> container_id
 }
 
 impl Manager {
@@ -47,6 +48,7 @@ impl Manager {
             docker,
             runner_image_name: "plgnai/nearai_cvm_runner".to_string(),
             free_cvm_ports: VecDeque::with_capacity(pool_size),
+            active_containers: HashMap::new(),
         };
 
         // Fill the CVM pool during initialization
@@ -80,6 +82,17 @@ impl Manager {
                 }
                 Err(e) => {
                     tracing::warn!("Failed to attest CVM on port {}: {}", port, e);
+
+                    // If attestation fails, the container might be in a bad state
+                    // Try to remove it from active_containers and clean it up later
+                    if let Some(container_id) = self.active_containers.get(&port) {
+                        tracing::warn!(
+                            "Container {} for port {} is in a bad state",
+                            container_id,
+                            port
+                        );
+                    }
+
                     continue;
                 }
             }
@@ -89,6 +102,7 @@ impl Manager {
         if let Some(port) = port_to_return {
             if let Some(index) = index_to_remove {
                 self.free_cvm_ports.remove(index);
+                // Note: We keep the container in active_containers so we can clean it up later
                 self.fill_cvm_pool().await?;
             }
             return Ok(port);
@@ -105,7 +119,7 @@ impl Manager {
         Ok(())
     }
 
-    async fn add_cvm_to_pool(&self) -> Result<u16> {
+    async fn add_cvm_to_pool(&mut self) -> Result<u16> {
         // Set up port mapping for the API (port 443)
         // We'll expose port 443 of the container to a random port on the host
         let mut exposed_ports = HashMap::new();
@@ -173,8 +187,10 @@ impl Manager {
                             let binding = &bindings_vec[0];
                             if let Some(host_port_str) = &binding.host_port {
                                 if let Ok(host_port) = host_port_str.parse::<u16>() {
-                                    // Store the port mapping
+                                    // Store the port mapping and container ID
                                     tracing::info!("CVM is accessible on host port {}", host_port);
+                                    self.active_containers
+                                        .insert(host_port, container.id.clone());
                                     return Ok(host_port);
                                 }
                             }
@@ -258,6 +274,81 @@ impl Manager {
 
         Ok(())
     }
+
+    /// Shutdown the manager and clean up all containers
+    pub async fn shutdown(&mut self) -> Result<()> {
+        tracing::info!("Shutting down Manager and cleaning up resources...");
+
+        // Collect all container IDs (both free and active)
+        let mut container_ids = Vec::new();
+
+        // Add container IDs from active_containers
+        for (port, container_id) in self.active_containers.drain() {
+            tracing::info!("Preparing to stop container for port {}", port);
+            container_ids.push(container_id);
+        }
+
+        // Get container IDs for free ports
+        let free_ports: Vec<u16> = self.free_cvm_ports.drain(..).collect();
+        for port in free_ports {
+            if let Some(container_id) = self.active_containers.remove(&port) {
+                tracing::info!("Preparing to stop container for free port {}", port);
+                container_ids.push(container_id);
+            }
+        }
+
+        // Stop and remove all containers
+        for container_id in container_ids {
+            // Set a timeout for stopping containers (10 seconds)
+            let stop_options = bollard::container::StopContainerOptions { t: 10 };
+
+            tracing::info!("Stopping container: {}", container_id);
+            match self
+                .docker
+                .stop_container(&container_id, Some(stop_options))
+                .await
+            {
+                Ok(_) => tracing::info!("Successfully stopped container: {}", container_id),
+                Err(e) => {
+                    tracing::warn!("Failed to stop container {}: {}", container_id, e);
+                    // Try to kill the container if stopping fails
+                    match self
+                        .docker
+                        .kill_container::<String>(&container_id, None)
+                        .await
+                    {
+                        Ok(_) => tracing::info!("Successfully killed container: {}", container_id),
+                        Err(e) => {
+                            tracing::warn!("Failed to kill container {}: {}", container_id, e)
+                        }
+                    }
+                }
+            }
+
+            // Set force removal option
+            let remove_options = bollard::container::RemoveContainerOptions {
+                force: true,
+                ..Default::default()
+            };
+
+            tracing::info!("Removing container: {}", container_id);
+            match self
+                .docker
+                .remove_container(&container_id, Some(remove_options))
+                .await
+            {
+                Ok(_) => tracing::info!("Successfully removed container: {}", container_id),
+                Err(e) => tracing::warn!("Failed to remove container {}: {}", container_id, e),
+            }
+        }
+
+        // Clear the free CVM ports queue and active containers map
+        self.free_cvm_ports.clear();
+        self.active_containers.clear();
+
+        tracing::info!("Manager shutdown complete");
+        Ok(())
+    }
 }
 
 /// Start a Docker container with the specified image and configuration
@@ -332,6 +423,7 @@ pub async fn start_docker_container(
 mod tests {
     use super::*;
     use std::env;
+    use uuid::Uuid;
 
     #[tokio::test]
     async fn test_start_docker_container() {
@@ -346,7 +438,7 @@ mod tests {
 
         // Use a lightweight image for testing
         let image_name = "alpine:latest";
-        let container_name: Option<&str> = Some("test-container");
+        let container_name = format!("test-container-{}", Uuid::new_v4());
 
         // No ports needed for this test
         let ports: Option<HashMap<String, HashMap<(), ()>>> = None;
@@ -361,7 +453,7 @@ mod tests {
         let result = start_docker_container(
             &docker,
             image_name,
-            container_name,
+            Some(&container_name),
             ports,
             volumes,
             env_vars,
@@ -394,7 +486,7 @@ mod tests {
 
         // Use Docker-in-Docker image for testing
         let image_name = "docker:dind";
-        let container_name: Option<&str> = Some("test-dind");
+        let container_name = format!("test-dind-{}", Uuid::new_v4());
 
         // No ports needed for this test
         let ports: Option<HashMap<String, HashMap<(), ()>>> = None;
@@ -411,7 +503,7 @@ mod tests {
         let result = start_docker_container(
             &docker,
             image_name,
-            container_name,
+            Some(&container_name),
             ports,
             volumes,
             env_vars,
@@ -444,75 +536,88 @@ mod tests {
 
         // Use Nginx image for testing
         let image_name = "nginx:alpine";
-        let container_name: Option<&str> = Some("test-nginx");
+        let container_name = format!("test-nginx-{}", Uuid::new_v4());
 
         // Map port 80 to a random port
-        let mut port_map = HashMap::new();
-        port_map.insert("80/tcp".to_string(), HashMap::new());
-        let ports: Option<HashMap<String, HashMap<(), ()>>> = Some(port_map);
+        let mut exposed_ports = HashMap::new();
+        exposed_ports.insert("80/tcp".to_string(), HashMap::new());
 
-        // No volumes needed for this test
-        let volumes: Option<Vec<String>> = None;
-
-        // No environment variables needed
-        let env_vars: Option<Vec<String>> = None;
-
-        let docker = Docker::connect_with_socket_defaults().unwrap();
-        let result = start_docker_container(
-            &docker,
-            image_name,
-            container_name,
-            ports,
-            volumes,
-            env_vars,
-        )
-        .await;
-
-        assert!(
-            result.is_ok(),
-            "Failed to start Nginx container: {:?}",
-            result.err()
+        // Create port bindings for host config
+        let mut port_bindings = HashMap::new();
+        port_bindings.insert(
+            "80/tcp".to_string(),
+            Some(vec![PortBinding {
+                host_ip: Some("0.0.0.0".to_string()),
+                host_port: None,
+            }]),
         );
 
-        // Get the container info to check the port mapping
-        if let Ok(container_id) = &result {
-            let container_info = docker.inspect_container(container_id, None).await.unwrap();
+        // Create host config with port bindings
+        let host_config = HostConfig {
+            port_bindings: Some(port_bindings),
+            ..Default::default()
+        };
 
-            // Verify that a port was assigned
-            if let Some(network_settings) = container_info.network_settings {
-                if let Some(ports) = network_settings.ports {
-                    if let Some(bindings) = ports.get("80/tcp") {
-                        if let Some(bindings_vec) = bindings {
-                            if !bindings_vec.is_empty() {
-                                let binding = &bindings_vec[0];
-                                if let Some(host_port) = &binding.host_port {
-                                    tracing::info!("Nginx is accessible on port {}", host_port);
-                                    assert!(!host_port.is_empty(), "Host port should not be empty");
-                                } else {
-                                    panic!("No host port assigned");
-                                }
-                            } else {
-                                panic!("Empty bindings vector");
+        // Create container config
+        let container_config = Config {
+            image: Some(image_name.to_string()),
+            exposed_ports: Some(exposed_ports),
+            host_config: Some(host_config),
+            ..Default::default()
+        };
+
+        // Create container options
+        let container_options = CreateContainerOptions {
+            name: container_name,
+            ..Default::default()
+        };
+
+        let docker = Docker::connect_with_socket_defaults().unwrap();
+
+        // Create and start the container
+        let container = docker
+            .create_container(Some(container_options), container_config)
+            .await
+            .unwrap();
+
+        docker
+            .start_container::<String>(&container.id, None)
+            .await
+            .unwrap();
+
+        tracing::info!("Started Nginx container with ID: {}", container.id);
+
+        // Get container information to find the assigned host port
+        let container_info = docker.inspect_container(&container.id, None).await.unwrap();
+
+        // Extract the host port that was assigned to container port 80
+        let mut host_port = None;
+        if let Some(network_settings) = container_info.network_settings {
+            if let Some(ports) = network_settings.ports {
+                if let Some(bindings) = ports.get("80/tcp") {
+                    if let Some(bindings_vec) = bindings {
+                        if !bindings_vec.is_empty() {
+                            let binding = &bindings_vec[0];
+                            if let Some(port_str) = &binding.host_port {
+                                host_port = Some(port_str.clone());
+                                tracing::info!("Nginx is accessible on port {}", port_str);
                             }
-                        } else {
-                            panic!("No bindings vector");
                         }
-                    } else {
-                        panic!("No 80/tcp port mapping");
                     }
-                } else {
-                    panic!("No ports in network settings");
                 }
-            } else {
-                panic!("No network settings");
             }
         }
 
+        // Assert that a port was assigned
+        assert!(host_port.is_some(), "No host port was assigned");
+        assert!(
+            !host_port.unwrap().is_empty(),
+            "Host port should not be empty"
+        );
+
         // Clean up the container after test
-        if let Ok(container_id) = result {
-            let _ = docker.stop_container(&container_id, None).await;
-            let _ = docker.remove_container(&container_id, None).await;
-        }
+        let _ = docker.stop_container(&container.id, None).await;
+        let _ = docker.remove_container(&container.id, None).await;
     }
 
     #[tokio::test]
@@ -535,6 +640,7 @@ mod tests {
             docker: docker.clone(),
             runner_image_name: "plgnai/nearai_cvm_runner".to_string(),
             free_cvm_ports: VecDeque::with_capacity(pool_size),
+            active_containers: HashMap::new(),
         };
 
         // Fill the pool

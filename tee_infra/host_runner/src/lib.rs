@@ -568,7 +568,8 @@ impl DStackManager {
         };
         let vcpus = vcpus.unwrap_or(vm_config.vcpu);
         let disk_size = vm_config.disk_size;
-        let gpus = &vm_config.gpu;
+        // We're ignoring GPUs for now as we're removing device passthrough
+        // let gpus = &vm_config.gpu;
 
         // create disk if needed
         let vda = vm_dir.join("hda.img");
@@ -650,68 +651,14 @@ impl DStackManager {
         cmd.push("-netdev".to_string());
         cmd.push(netdev);
 
-        // If we have any GPUs, we replicate the Python logic to:
-        // 1) prepend "sudo"
-        // 2) add extra devices
-        let mut final_cmd = Vec::new();
-        if !gpus.is_empty() {
-            final_cmd.push("sudo".to_string());
-        }
-        final_cmd.extend(cmd);
-
-        if !gpus.is_empty() {
-            final_cmd.push("-device".to_string());
-            final_cmd.push("pcie-root-port,id=pci.1,bus=pcie.0".to_string());
-            final_cmd.push("-fw_cfg".to_string());
-            final_cmd.push("name=opt/ovmf/X-PciMmio64,string=262144".to_string());
-            for (i, gpu_id) in gpus.iter().enumerate() {
-                final_cmd.push("-object".to_string());
-                final_cmd.push(format!("iommufd,id=iommufd{}", i));
-                final_cmd.push("-device".to_string());
-                final_cmd.push(format!(
-                    "vfio-pci,host={},bus=pci.1,iommufd=iommufd{}",
-                    gpu_id, i
-                ));
-            }
-        }
+        // Removed GPU passthrough and related configurations
+        let mut final_cmd = cmd;
 
         // Append cmdline
         final_cmd.push("-append".to_string());
         final_cmd.push(cmdline.to_string());
 
-        // If pin_numa and exactly one GPU, do the same sysfs-based approach as Python
-        if pin_numa && gpus.len() == 1 {
-            let sys_path = format!("/sys/bus/pci/devices/0000:{}/numa_node", gpus[0]);
-            let numa_node = fs::read_to_string(&sys_path)
-                .with_context(|| format!("Failed to read NUMA node from {}", sys_path))?
-                .trim()
-                .to_string();
-
-            let cpu_list_path = format!("/sys/devices/system/node/node{}/cpulist", numa_node);
-            let cpus_list = fs::read_to_string(&cpu_list_path)
-                .with_context(|| format!("Failed to read CPU list from {}", cpu_list_path))?
-                .trim()
-                .to_string();
-
-            // Prepend "taskset -c <cpus_list>" to final_cmd
-            let mut pinned = vec!["taskset".to_string(), "-c".to_string(), cpus_list.clone()];
-            pinned.append(&mut final_cmd);
-            final_cmd = pinned;
-
-            if hugepage {
-                // We also add:
-                //   -numa node,nodeid=0,cpus=0-(vcpus-1),memdev=mem0
-                //   -object memory-backend-file,id=mem0,size={mem_mb}M,mem-path=/dev/hugepages,share=on,prealloc=yes,host-nodes={numa_node},policy=bind
-                let huge_obj = format!(
-                    "memory-backend-file,id=mem0,size={}M,mem-path=/dev/hugepages,share=on,prealloc=yes,host-nodes={},policy=bind",
-                    mem_mb, numa_node
-                );
-                final_cmd.push("-numa".to_string());
-                final_cmd.push(format!("node,nodeid=0,cpus=0-{},memdev=mem0", vcpus - 1));
-                final_cmd.push("-object".to_string());
-                final_cmd.push(huge_obj);
-            }
-        }
+        // Removed NUMA pinning and hugepage configuration
 
         // Print for debugging
         println!("Launching QEMU with command:\n{}", final_cmd.join(" "));
