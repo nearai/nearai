@@ -77,7 +77,7 @@ jobs:
       run: uv lock --check
 
     - name: Install dependencies
-      run: uv sync --group docs --group dev
+      run: uv pip install ".[dev,docs]"
 
     - name: Lint Check
       run: ./scripts/lint_check.sh
