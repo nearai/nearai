@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 
 from nearai.registry import validate_version
 
@@ -116,3 +117,33 @@ def assert_user_auth() -> None:
     if CONFIG.auth is None:
         print("Please login with `nearai login` first")
         exit(1)
+
+
+def display_version_check(namespace: str, name: str, version: str, exists: bool) -> None:
+    """Display formatted message about version existence check.
+
+    Args:
+    ----
+        namespace: The namespace
+        name: The agent name
+        version: The version being checked
+        exists: Whether the version exists
+
+    """
+    console = Console()
+    console.print(
+        Text.assemble(
+            ("\n🔎 Checking if version ", "white"),
+            (f"{version}", "green bold"),
+            (" exists for ", "white"),
+            (f"{name} ", "blue bold"),
+            ("in the registry under ", "white"),
+            (f"{namespace}", "cyan bold"),
+            ("...", "white"),
+        )
+    )
+
+    if exists:
+        console.print(f"\n❌ [yellow]Version [cyan]{version}[/cyan] already exists.[/yellow]")
+    else:
+        console.print(f"\n✅ [green]Version [cyan]{version}[/cyan] is available.[/green]")

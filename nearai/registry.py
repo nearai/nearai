@@ -4,8 +4,6 @@ from shutil import copyfileobj
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from packaging.version import InvalidVersion, Version
-from rich.console import Console
-from rich.text import Text
 from tqdm import tqdm
 
 # Note: We should import nearai.config on this file to make sure the method setup_api_client is called at least once
@@ -476,18 +474,6 @@ def check_version_exists(namespace: str, name: str, version: str) -> Tuple[bool,
     """
     entry_location = f"{namespace}/{name}/{version}"
     try:
-        console = Console()
-        console.print(
-            Text.assemble(
-                ("\n🔎 Checking if version ", "white"),
-                (f"{version}", "green bold"),
-                (" exists for ", "white"),
-                (f"{name} ", "blue bold"),
-                ("in the registry under ", "white"),
-                (f"{namespace}", "cyan bold"),
-                ("...", "white"),
-            )
-        )
         existing_entry = registry.info(parse_location(entry_location))
 
         if existing_entry:

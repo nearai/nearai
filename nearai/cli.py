@@ -25,6 +25,7 @@ from nearai.agents.local_runner import LocalRunner
 from nearai.cli_helpers import (
     assert_user_auth,
     display_agents_in_columns,
+    display_version_check,
     has_pending_input,
     load_and_validate_metadata,
 )
@@ -338,10 +339,8 @@ class RegistryCli:
             )
             return None
 
-        if exists:
-            console.print(f"\n❌ [yellow]Version [cyan]{version}[/cyan] already exists.[/yellow]")
-        else:
-            console.print(f"\n✅ [green]Version [cyan]{version}[/cyan] is available.[/green]")
+        # Display the version check result
+        display_version_check(namespace, name, version, exists)
 
         bump_requested = bump or minor_bump or major_bump
 
