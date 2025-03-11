@@ -789,7 +789,7 @@ class AgentCli:
             pending_input_on_this_line = has_pending_input()
             if multiline or pending_input_on_this_line:
                 try:
-                    pending_input_on_prev_line = True
+                    pending_input_on_prev_line = pending_input_on_this_line
                     while True:
                         pending_input_on_this_line = has_pending_input()
                         if pending_input_on_prev_line or pending_input_on_this_line:
