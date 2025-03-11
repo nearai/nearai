@@ -7,3 +7,4 @@ services:
         - "2222:22"
       volumes:
         - /var/run/tappd.sock:/var/run/tappd.sock
+        - /var/run/docker.sock:/var/run/docker.sock

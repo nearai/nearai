@@ -1,0 +1,24 @@
+[package]
+name = "cvm_client"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+url = "2.4"
+sha2 = "0.10"
+hex = "0.4"
+tracing = "0.1"
+tempfile = "3.8"
+openssl = { version = "0.10", features = ["vendored"] }
+base64 = "0.22"
+dcap-qvl = "0.2"
+futures = "0.3"
+
+[dev-dependencies]
+mockito = "1.2"
+tracing-subscriber = "0.3"
