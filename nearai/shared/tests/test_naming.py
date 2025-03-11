@@ -63,9 +63,10 @@ class TestGetCanonicalName(unittest.TestCase):
 
     def test_extensions(self):  # noqa: D102
         self.assertEqual(get_canonical_name("john_smith.near"), get_canonical_name("john_smith"))
-        self.assertEqual(get_canonical_name("john_smith.ai"), get_canonical_name("john_smith.ai"))
-        self.assertEqual(get_canonical_name("john_smith.alpha"), get_canonical_name("john_smith.alpha"))
-        self.assertEqual(get_canonical_name("john_smith.a"), get_canonical_name("john_smith.a"))
+        self.assertNotEqual(get_canonical_name("john_smith.ai"), get_canonical_name("john_smith"))
+        self.assertNotEqual(get_canonical_name("john_smith.alpha"), get_canonical_name("john_smith"))
+        self.assertNotEqual(get_canonical_name("john_smith.a"), get_canonical_name("john_smith"))
+        self.assertNotEqual(get_canonical_name("john_smith.a"), get_canonical_name("john_smith.ai"))
 
 
 if __name__ == "__main__":
