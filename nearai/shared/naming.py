@@ -8,7 +8,7 @@ def get_canonical_name(name: str) -> str:
 
     Applies such transformations:
     1. All letters lowercase.
-    2. Strips '.near' and '.ai' extensions.
+    2. Strips '.near' extensions.
     3. Convert '.' between digits to 'p'.
     4. Convert '<not letter>v<digit>' -> '<not letter><digit>'
     5. Remove all non-alphanumeric characters except between digits.
@@ -22,9 +22,6 @@ def get_canonical_name(name: str) -> str:
     # Strip .near extension if present
     if name.endswith(".near"):
         name = name[:-5]  # Remove last 5 characters ('.near')
-    # Strip .ai extension if present
-    if name.endswith(".ai"):
-        name = name[:-3]  # Remove last 3 characters ('.ai')
     # Convert '.' between digits to 'p'
     name = re.sub(r"(\d)\.(\d)", r"\1p\2", name)
     # Convert '<digit>v<digit>' -> '<digit>_<digit>'
