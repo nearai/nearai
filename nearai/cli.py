@@ -786,6 +786,11 @@ class AgentCli:
                 print_multiline_prompt()
                 continue
             lines = [first_line]
+
+            # NOTE: the code below tries to catch copy-paste by calling has_pending_input().
+            # This is OS-specific functionality and has been tested on Unix/Linux/Mac:
+            # 1. Works well with blocks of text of 3 lines and more.
+            # 2. Alas, does not trigger with text of 2 lines or less.
             pending_input_on_this_line = has_pending_input()
             if multiline or pending_input_on_this_line:
                 try:
