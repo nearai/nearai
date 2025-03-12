@@ -145,6 +145,7 @@ def completions(
     ## remove tools from the model as it is not supported by the completions API
     model = request.model_dump(exclude={"provider", "response_format"})
     model.pop("tools", None)
+    print("Calling completions", model)
 
     resp = llm.completions.create(**model)
 
@@ -184,6 +185,7 @@ def chat_completions(
     except NotImplementedError:
         raise HTTPException(status_code=400, detail="Provider not supported") from None
 
+    print("/chat/completions", request.model_dump())
     try:
         resp = llm.chat.completions.create(**request.model_dump(exclude={"provider"}), timeout=DEFAULT_TIMEOUT)
     except Exception as e:

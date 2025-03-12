@@ -866,6 +866,7 @@ class AgentCli:
     ) -> Optional[str]:
         """Runs agent non-interactively with a single task."""
         assert_user_auth()
+        is_streaming = True
 
         hub_client = get_hub_client()
         if thread_id:
@@ -887,6 +888,30 @@ class AgentCli:
                 thread_id=thread.id,
                 assistant_id=agent,
             )
+        elif is_streaming:
+            #TODO not working
+            run = hub_client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id=agent,
+                stream=True,
+                extra_body={"delegate_execution": True},
+            )
+            params = {
+                "api_url": CONFIG.api_url,
+                "tool_resources": [],#run.tools,
+                "data_source": "local_files",
+                "user_env_vars": env_vars,
+                "agent_env_vars": {},
+                "verbose": verbose,
+            }
+            auth = CONFIG.auth
+            assert auth is not None
+            run_id = None
+            for event in run:
+                run_id = event.data.id
+                break
+            LocalRunner(str(local_path), agent, thread.id, run_id, auth, params)
+
         else:
             run = hub_client.beta.threads.runs.create(
                 thread_id=thread.id,
@@ -908,14 +933,14 @@ class AgentCli:
         # List new messages
         messages = hub_client.beta.threads.messages.list(thread_id=thread.id, after=last_message_id, order="asc")
         message_list = list(messages)
-        if message_list:
+        if message_list and not is_streaming:
             for msg in message_list:
                 if msg.metadata and msg.metadata.get("message_type"):
                     continue
                 if msg.role == "assistant":
                     print(f"Assistant: {msg.content[0].text.value}")
             last_message_id = message_list[-1].id
-        else:
+        elif not is_streaming:
             print("No new messages")
 
         # Store the thread_id for potential use in interactive mode
