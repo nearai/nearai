@@ -12,9 +12,9 @@ from litellm import completion as litellm_completion
 from litellm.types.completion import ChatCompletionMessageParam
 from openai import NOT_GIVEN, NotGiven
 from openai.types.beta.thread import Thread
+from openai.types.file_object import FileObject
 from openai.types.vector_store import VectorStore
 from openai.types.vector_stores import VectorStoreFile
-from openai.types.file_object import FileObject
 
 from nearai.shared.client_config import (
     DEFAULT_MAX_RETRIES,
