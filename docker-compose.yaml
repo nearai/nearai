@@ -18,7 +18,7 @@ services:
     env_file:
       - .env
     environment:
-      - RUNNER_API_KEY=key1
+      - RUNNER_API_KEY=${RUNNER_API_KEY}
       - DD_API_KEY=${DD_API_KEY}
       - DD_APM_ENABLED=false
       - DD_APM_NON_LOCAL_TRAFFIC=false
@@ -45,7 +45,6 @@ services:
     env_file:
       - .env
     environment:
-      - DD_ENABLED=${DD_ENABLED}
       - DD_API_KEY=${DD_API_KEY}
       - DD_APM_ENABLED=true
       - DD_APM_NON_LOCAL_TRAFFIC=true
