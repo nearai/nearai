@@ -1,4 +1,5 @@
 import json
+import asyncio
 from enum import Enum
 from os import getenv
 from typing import Callable, List, Union
@@ -20,11 +21,11 @@ class Provider(Enum):
 async def handle_stream(resp_stream, add_usage_callback: Callable):
     response_chunks = []
 
-    async for chunk in resp_stream:
+    for chunk in resp_stream:
         c = json.dumps(chunk.model_dump())
         response_chunks.append(c)
-        print(c)
         yield f"data: {c}\n\n"
+        await asyncio.sleep(0) # lets the event loop yield, otherwise it batches yields
 
     yield "data: [DONE]\n\n"
     full_response_text = "".join(response_chunks)
