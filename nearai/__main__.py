@@ -1,6 +1,6 @@
 import fire
 
-from .cli import CLI
+from nearai.cli import CLI
 
 
 def main() -> None:
