@@ -8,10 +8,9 @@ import time
 import urllib.parse as urlparse
 from pathlib import Path
 
-import shared.near.sign as near
-from shared.auth_data import AuthData
-
+import nearai.shared.near.sign as near
 from nearai.config import load_config_file, save_config_file
+from nearai.shared.auth_data import AuthData
 
 RECIPIENT = "ai.near"
 MESSAGE = "Welcome to NEAR AI"
@@ -60,12 +59,12 @@ def print_login_status():
     """Prints the current authentication status if available in the config file."""
     config = load_config_file()
     if config.get("auth") and config["auth"].get("account_id"):
-        print(f'Auth data for: {config["auth"]["account_id"]}')
-        print(f'signature: {config["auth"]["signature"]}')
-        print(f'public_key: {config["auth"]["public_key"]}')
-        print(f'nonce: {config["auth"]["nonce"]}')
-        print(f'message: {config["auth"]["message"]}')
-        print(f'recipient: {config["auth"]["recipient"]}')
+        print(f"Auth data for: {config['auth']['account_id']}")
+        print(f"signature: {config['auth']['signature']}")
+        print(f"public_key: {config['auth']['public_key']}")
+        print(f"nonce: {config['auth']['nonce']}")
+        print(f"message: {config['auth']['message']}")
+        print(f"recipient: {config['auth']['recipient']}")
     else:
         print("Near auth details not found")
 
@@ -150,11 +149,11 @@ def generate_nonce():
 def generate_and_save_signature(account_id, private_key):
     """Generates a signature for the given account ID and private key, then updates the auth configuration."""
     nonce = generate_nonce()
-    payload = near.Payload(MESSAGE, nonce, RECIPIENT, None)
+    payload = near.Payload(MESSAGE, nonce, RECIPIENT, "")
 
     signature, public_key = near.create_signature(private_key, payload)
 
-    if update_auth_config(account_id, signature, public_key, None, nonce):
+    if update_auth_config(account_id, signature, public_key, "", nonce):
         print_login_status()
 
 

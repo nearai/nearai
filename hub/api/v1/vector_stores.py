@@ -1,27 +1,29 @@
 import logging
+from datetime import datetime
+from typing import Any, List, Optional
 
 import boto3
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from openai.types.beta.vector_store import ExpiresAfter as OpenAIExpiresAfter
-from openai.types.beta.vector_store import FileCounts, VectorStore
-from pydantic import BaseModel
-from shared.models import (
+from nearai.shared.models import (
     CreateVectorStoreFromSourceRequest,
     CreateVectorStoreRequest,
     GitHubSource,
     GitLabSource,
     VectorStoreFileCreate,
 )
+from openai import BaseModel
+from openai.types.beta.vector_store import ExpiresAfter as OpenAIExpiresAfter
+from openai.types.beta.vector_store import FileCounts, VectorStore
 
-from hub.api.v1.auth import AuthToken, revokable_auth
-from hub.api.v1.sql import SqlClient
+from hub.api.v1.auth import AuthToken, get_auth
+from hub.api.v1.sql import SqlClient, VectorStoreFile
 from hub.tasks.embedding_generation import (
     generate_embedding,
     generate_embeddings_for_file,
     generate_embeddings_for_vector_store,
 )
-from hub.tasks.github_import import process_github_source
+from hub.tasks.github_import import create_file_from_content, process_github_source
 
 vector_stores_router = APIRouter(tags=["Vector Stores"])
 
@@ -32,7 +34,7 @@ s3_client = boto3.client("s3")
 
 @vector_stores_router.post("/vector_stores", response_model=VectorStore)
 async def create_vector_store(
-    request: CreateVectorStoreRequest, background_tasks: BackgroundTasks, auth: AuthToken = Depends(revokable_auth)
+    request: CreateVectorStoreRequest, background_tasks: BackgroundTasks, auth: AuthToken = Depends(get_auth)
 ):
     """Create a new vector store.
 
@@ -59,7 +61,7 @@ async def create_vector_store(
         name=request.name,
         file_ids=request.file_ids or [],
         expires_after=dict(request.expires_after) if request.expires_after else None,
-        chunking_strategy=request.chunking_strategy.model_dump() if request.chunking_strategy else None,
+        chunking_strategy=dict[str, Any](request.chunking_strategy) if request.chunking_strategy else None,
         metadata=request.metadata,
     )
 
@@ -99,7 +101,7 @@ async def create_vector_store(
 
 
 @vector_stores_router.get("/vector_stores")
-async def list_vector_stores(auth: AuthToken = Depends(revokable_auth)):
+async def list_vector_stores(auth: AuthToken = Depends(get_auth)):
     """List all vector stores for the authenticated account.
 
     Args:
@@ -118,7 +120,7 @@ async def list_vector_stores(auth: AuthToken = Depends(revokable_auth)):
 
 
 @vector_stores_router.get("/vector_stores/{vector_store_id}")
-async def get_vector_store(vector_store_id: str, auth: AuthToken = Depends(revokable_auth)):
+async def get_vector_store(vector_store_id: str, auth: AuthToken = Depends(get_auth)):
     """Retrieve a specific vector store.
 
     Args:
@@ -180,7 +182,7 @@ async def get_vector_store(vector_store_id: str, auth: AuthToken = Depends(revok
     )
 
 
-@vector_stores_router.patch("/vector_stores/{vector_store_id}")
+@vector_stores_router.patch("/vector_stores")
 async def update_vector_store():
     """Update a vector store. (Not implemented).
 
@@ -191,7 +193,7 @@ async def update_vector_store():
 
 
 @vector_stores_router.delete("/vector_stores/{vector_store_id}")
-async def delete_vector_store(vector_store_id: str, auth: AuthToken = Depends(revokable_auth)):
+async def delete_vector_store(vector_store_id: str, auth: AuthToken = Depends(get_auth)):
     """Delete a vector store.
 
     Args:
@@ -237,7 +239,7 @@ async def create_vector_store_file(
     vector_store_id: str,
     file_data: VectorStoreFileCreate,
     background_tasks: BackgroundTasks,
-    auth: AuthToken = Depends(revokable_auth),
+    auth: AuthToken = Depends(get_auth),
 ):
     """Attach a file to an existing vector store and initiate embedding generation.
 
@@ -300,7 +302,9 @@ async def create_vector_store_file(
         )
 
     logger.info(f"Queueing embedding generation for file in vector store: {vector_store_id}")
-    background_tasks.add_task(generate_embeddings_for_file, file_data.file_id, vector_store_id)
+    background_tasks.add_task(
+        generate_embeddings_for_file, file_data.file_id, vector_store_id, vector_store.chunking_strategy
+    )
     logger.info(f"Embedding generation queued for file: {file_data.file_id}")
 
     return VectorStore(
@@ -326,17 +330,27 @@ async def create_vector_store_file(
     )
 
 
+@vector_stores_router.delete("/vector_stores/{vector_store_id}/files/{file_id}")
+async def remove_file_from_vector_stores(file_id: str, auth: AuthToken = Depends(get_auth)):
+    """Remove a file from all vector stores."""
+    sql_client = SqlClient()
+
+    deleted = sql_client.delete_file(file_id, auth.account_id)
+
+    # Deleted is false if file_id not found or not owned by the user
+    return JSONResponse(content={"deleted": deleted}, status_code=200)
+
+
 class QueryVectorStoreRequest(BaseModel):
     """Request model for querying a vector store."""
 
     query: str
+    full_files: bool = False
     """Text to run similarity search on."""
 
 
 @vector_stores_router.post("/vector_stores/{vector_store_id}/search")
-async def query_vector_store(
-    vector_store_id: str, request: QueryVectorStoreRequest, _: AuthToken = Depends(revokable_auth)
-):
+async def query_vector_store(vector_store_id: str, request: QueryVectorStoreRequest, _: AuthToken = Depends(get_auth)):
     """Perform a similarity search on the specified vector store.
 
     Args:
@@ -362,20 +376,61 @@ async def query_vector_store(
             raise HTTPException(status_code=404, detail="Vector store not found")
 
         emb = await generate_embedding(request.query, query=True)
-        results = sql.similarity_search(vector_store_id, emb)
-
-        logger.info(f"Similarity search completed for vector store: {vector_store_id}")
-        return results
+        if request.full_files:
+            return sql.similarity_search_full_files(vector_store_id, emb)
+        else:
+            return sql.similarity_search(vector_store_id, emb)
     except Exception as e:
         logger.error(f"Error querying vector store: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to query vector store") from None
+
+
+@vector_stores_router.get("/vector_stores/{vector_store_id}/list/files/filename/{filename}")
+async def get_vector_store_file(vector_store_id: str, filename: str, auth: AuthToken = Depends(get_auth)):
+    sql = SqlClient()
+    vector_store = sql.get_vector_store(vector_store_id)
+    if not vector_store:
+        logger.warning(f"Vector store not found: {vector_store_id}")
+        raise HTTPException(status_code=404, detail="Vector store not found")
+
+    return sql.get_file_details_by_filename(vector_store_id, filename)
+
+
+@vector_stores_router.get("/vector_stores/{vector_store_id}/files")
+async def list_vector_store_files(vector_store_id: str, auth: AuthToken = Depends(get_auth)):
+    """List all files in a vector store."""
+    logger.info(f"Queueing list of files for vector store: {vector_store_id}")
+
+    sql = SqlClient()
+    vector_store = sql.get_vector_store_by_account(account_id=auth.account_id, vector_store_id=vector_store_id)
+
+    if not vector_store:
+        logger.warning(f"Vector store not found: {vector_store_id}")
+        raise HTTPException(status_code=404, detail="Vector store not found")
+
+    files: Optional[List[VectorStoreFile]] = sql.list_vector_store_files(vector_store_id)
+
+    def serialize_file(file):
+        file_dict = file.__dict__.copy()
+        file_dict["created_at"] = (
+            file.created_at.isoformat() if isinstance(file.created_at, datetime) else file.created_at
+        )
+        file_dict["updated_at"] = (
+            file.updated_at.isoformat() if isinstance(file.updated_at, datetime) else file.updated_at
+        )
+        return file_dict
+
+    files_list = [serialize_file(file) for file in files] if files else []
+
+    # JSON serialize the files, otherwise the datetime objects will not be serializable
+    return JSONResponse(content={"data": files_list})
 
 
 @vector_stores_router.post("/vector_stores/from_source", response_model=VectorStore)
 async def create_vector_store_from_source(
     request: CreateVectorStoreFromSourceRequest,
     background_tasks: BackgroundTasks,
-    auth: AuthToken = Depends(revokable_auth),
+    auth: AuthToken = Depends(get_auth),
 ):
     """Create a new vector store from a source (currently only GitHub).
 
@@ -449,3 +504,92 @@ async def create_vector_store_from_source(
         expires_after=OpenAIExpiresAfter(**vector_store.expires_after) if vector_store.expires_after else None,
         expires_at=expires_at,
     )
+
+
+@vector_stores_router.post("/vector_stores/memory/query")
+async def query_user_memory(
+    request: QueryVectorStoreRequest,
+    auth: AuthToken = Depends(get_auth),
+):
+    """Get relevant memory/context for a user based on a query.
+
+    This endpoint searches a dedicated vector store containing the user's memory/context
+    and returns relevant matches based on the query.
+
+    Args:
+    ----
+        request: The request containing the query text
+        auth: The auth token of the requesting user
+
+    Returns:
+    -------
+        List of relevant memory entries with their content and metadata
+
+    """
+    logger.info(f"Querying user memory for account: {auth.account_id}")
+
+    sql_client = SqlClient()
+
+    memory_store_id = sql_client.get_user_memory(auth.account_id)
+    if not memory_store_id:
+        logger.info("No memory store id found, creating new memory store")
+        vs_id = sql_client.create_vector_store(
+            account_id=auth.account_id, name=f"Memory Store: {auth.account_id}", file_ids=[]
+        )
+        sql_client.set_user_memory(auth.account_id, vs_id)
+        vs = sql_client.get_vector_store(vs_id)
+    else:
+        vs = sql_client.get_vector_store(memory_store_id)
+
+    if not vs:
+        raise HTTPException(status_code=500, detail="Failed to retrieve memory store")
+
+    return await query_vector_store(vs.id, request, auth)
+
+
+class AddUserMemoryRequest(BaseModel):
+    memory: str
+
+
+class AddUserMemoryResponse(BaseModel):
+    """Response model for adding user memory."""
+
+    status: str
+    memory_id: str
+    object: str = "memory.created"  # Add this field to match OpenAI response patterns
+
+
+@vector_stores_router.post("/vector_stores/memory")
+async def add_user_memory(
+    request: AddUserMemoryRequest,
+    background_tasks: BackgroundTasks,
+    auth: AuthToken = Depends(get_auth),
+) -> AddUserMemoryResponse:  # Add explicit return type annotation
+    """Add a new memory entry to the user's memory store."""
+    logger.info(f"Adding memory for account: {auth.account_id}")
+    sql_client = SqlClient()
+    memory_store_id = sql_client.get_user_memory(auth.account_id)
+    logger.info(f"Memory store id: {memory_store_id}")
+    if not memory_store_id:
+        logger.info("No memory store id found, creating new memory store")
+        vs_id = sql_client.create_vector_store(
+            account_id=auth.account_id, name=f"Memory Store: {auth.account_id}", file_ids=[]
+        )
+        sql_client.set_user_memory(auth.account_id, vs_id)
+        vs = sql_client.get_vector_store(vs_id)
+    else:
+        logger.info(f"Memory store id found: {memory_store_id}, querying DB")
+        vs = sql_client.get_vector_store(memory_store_id)
+
+    if not vs:
+        raise HTTPException(status_code=500, detail="Failed to retrieve memory store")
+
+    file_id = await create_file_from_content(auth.account_id, "memory", request.memory, "assistants")
+
+    if not file_id:
+        raise HTTPException(status_code=500, detail="Failed to create file from memory")
+
+    file_data = VectorStoreFileCreate(file_id=file_id)
+    await create_vector_store_file(vs.id, file_data, background_tasks, auth)
+
+    return AddUserMemoryResponse(status="success", memory_id=file_id, object="memory.created")

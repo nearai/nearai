@@ -89,8 +89,11 @@ class ToolRegistry:
             else:
                 json_type = param_type.__name__.lower()
 
+            if json_type == "union":
+                json_type = [t.__name__.lower() for t in param_type.__args__][0]
+
             json_type = {"int": "integer", "float": "number", "str": "string", "bool": "boolean"}.get(
-                json_type, json_type
+                json_type, "string"
             )
 
             # Add parameter to the definition

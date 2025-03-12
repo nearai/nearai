@@ -4,7 +4,7 @@ import mimetypes
 import os
 import uuid
 from os import getenv
-from typing import Literal, Optional
+from typing import Literal, Tuple
 
 import boto3
 import chardet
@@ -17,7 +17,7 @@ from openai.types.file_create_params import FileTypes
 from openai.types.file_object import FileObject
 from pydantic import BaseModel
 
-from hub.api.v1.auth import AuthToken, revokable_auth
+from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.models import (
     FILE_URI_PREFIX,
     S3_BUCKET,
@@ -121,7 +121,7 @@ async def upload_file_to_storage(content: bytes, object_key: str) -> str:
 async def upload_file(
     file: UploadFile = File(...),
     purpose: Literal["assistants", "batch", "fine-tune", "vision"] = Form(...),
-    auth: AuthToken = Depends(revokable_auth),
+    auth: AuthToken = Depends(get_auth),
 ) -> FileObject:
     """Upload a file to the system and create a corresponding database record.
 
@@ -179,7 +179,10 @@ async def upload_file(
         )
 
     # Check encoding for text files
-    detected_encoding = check_text_encoding(content) if content_type.startswith("text/") else None
+    if content_type.startswith("text/"):
+        detected_encoding, content = check_text_encoding(content)
+    else:
+        detected_encoding = None
 
     # Generate object key and upload to storage
     object_key = f"vector-store-files/{auth.account_id}/{file.filename}"
@@ -222,6 +225,18 @@ async def upload_file(
     )
 
 
+@files_router.delete("/files/{file_id}")
+async def delete_file(
+    file_id: str = Path(..., description="The ID of the file to delete"),
+    auth: AuthToken = Depends(get_auth),
+):
+    sql_client = SqlClient()
+    deleted = sql_client.delete_file(file_id=file_id, account_id=auth.account_id)
+    if not deleted:
+        raise HTTPException(status_code=500, detail="Failed to delete file")
+    return {"status": "success"}
+
+
 def determine_content_type(file: UploadFile) -> str:
     """Determine the content type of the uploaded file.
 
@@ -235,7 +250,8 @@ def determine_content_type(file: UploadFile) -> str:
 
     """
     filename = file.filename or ""
-    content_type = file.content_type or mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    # content_type = file.content_type or mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
     if content_type == "application/octet-stream":
         file_extension = os.path.splitext(filename)[1].lower()
         for mime_type, extensions in SUPPORTED_MIME_TYPES.items():
@@ -244,8 +260,8 @@ def determine_content_type(file: UploadFile) -> str:
     return content_type
 
 
-def check_text_encoding(content: bytes) -> Optional[str]:
-    """Check the encoding of text content.
+def check_text_encoding(content: bytes) -> Tuple[str, bytes]:
+    """Check or convert the encoding of text content to  ASCII, UTF-8 or UTF-16 only.
 
     Args:
     ----
@@ -253,25 +269,34 @@ def check_text_encoding(content: bytes) -> Optional[str]:
 
     Returns:
     -------
-        Optional[str]: The detected encoding if supported, None otherwise.
+        Tuple[str, bytes]: The enforced encoding (either  'ascii', 'utf-8', 'utf-16') and the converted content.
 
     Raises:
     ------
-        HTTPException: If the encoding is not supported.
+        HTTPException: If the encoding cannot be converted to UTF-8 or UTF-16.
 
     """
     detected_encoding = chardet.detect(content).get("encoding")
-    if not detected_encoding or detected_encoding.lower() not in SUPPORTED_TEXT_ENCODINGS:
-        raise HTTPException(
-            status_code=400, detail=f"Unsupported text encoding. Must be one of: {', '.join(SUPPORTED_TEXT_ENCODINGS)}"
-        )
-    return detected_encoding
+
+    # Check if the detected encoding is in supported encodings
+    if detected_encoding and detected_encoding.lower() in SUPPORTED_TEXT_ENCODINGS:
+        return detected_encoding.lower(), content
+    else:
+        try:
+            # Decode as the detected encoding and re-encode as utf-8
+            decoded_content = content.decode(detected_encoding or "utf-8", errors="ignore").encode("utf-8")
+            return "utf-8", decoded_content
+        except (UnicodeDecodeError, TypeError):
+            raise HTTPException(
+                status_code=400,
+                detail="Failed to convert encoding to UTF-8 or UTF-16. Please use UTF-8 or UTF-16 encoded files.",
+            ) from None
 
 
 @files_router.get("/files/{file_id}")
 async def retrieve_file(
     file_id: str = Path(..., description="The ID of the file to retrieve"),
-    auth: AuthToken = Depends(revokable_auth),
+    auth: AuthToken = Depends(get_auth),
 ) -> FileObject:
     """Retrieve information about a specific file.
 
@@ -319,7 +344,7 @@ async def retrieve_file(
 @files_router.get("/files/{file_id}/content")
 async def retrieve_file_content(
     file_id: str = Path(..., description="The ID of the file to retrieve"),
-    auth: AuthToken = Depends(revokable_auth),
+    auth: AuthToken = Depends(get_auth),
 ):
     """Retrieve the contents of a specific file.
 

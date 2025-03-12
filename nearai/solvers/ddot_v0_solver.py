@@ -7,13 +7,13 @@ from typing import List, Tuple
 
 import httpx as hx
 import tenacity
-from shared.client_config import ClientConfig
-from shared.inference_client import InferenceClient
 
 from nearai.agents.agent import Agent
 from nearai.agents.environment import Environment
 from nearai.config import CONFIG, DATA_FOLDER, get_hub_client
 from nearai.dataset import Dataset
+from nearai.shared.client_config import ClientConfig
+from nearai.shared.inference_client import InferenceClient
 
 from . import SolverStrategy
 
@@ -85,7 +85,6 @@ class DDOTSEnvironment(Environment):
             client,
             self.hub_client,
             thread.id,
-            "todo",
             "todo",
             approvals={"confirm_execution": lambda _: False},
         )

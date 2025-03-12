@@ -8,12 +8,11 @@ from random import randint
 from subprocess import run
 from typing import Any, Optional, Tuple
 
-from openapi_client import EntryMetadata
-
 import nearai
 from nearai import timestamp
 from nearai.config import DATA_FOLDER, ETC_FOLDER
 from nearai.model import get_model
+from nearai.openapi_client import EntryMetadata
 from nearai.registry import registry
 
 

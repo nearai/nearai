@@ -1,61 +1,61 @@
 'use client';
 
 import {
+  BreakpointDisplay,
+  Button,
+  Card,
+  CardList,
+  Flex,
+  Form,
+  handleClientError,
+  InputTextarea,
+  openToast,
+  PlaceholderSection,
+  PlaceholderStack,
+  Text,
+  Tooltip,
+} from '@near-pagoda/ui';
+import { formatBytes } from '@near-pagoda/ui/utils';
+import {
   ArrowRight,
-  Chats,
-  Copy,
+  CodeBlock,
   Eye,
-  Gear,
+  Folder,
+  Info,
   List,
 } from '@phosphor-icons/react';
+import { useMutation } from '@tanstack/react-query';
 import {
   type KeyboardEventHandler,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
-import { Controller, type SubmitHandler } from 'react-hook-form';
+import { type SubmitHandler, useForm } from 'react-hook-form';
 import { type z } from 'zod';
 
 import { AgentPermissionsModal } from '~/components/AgentPermissionsModal';
 import { AgentWelcome } from '~/components/AgentWelcome';
 import { EntryEnvironmentVariables } from '~/components/EntryEnvironmentVariables';
-import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
-import { Button } from '~/components/lib/Button';
-import { Card, CardList } from '~/components/lib/Card';
-import { Code, filePathToCodeLanguage } from '~/components/lib/Code';
-import { Dialog } from '~/components/lib/Dialog';
-import { Flex } from '~/components/lib/Flex';
-import { Form } from '~/components/lib/Form';
 import { IframeWithBlob } from '~/components/lib/IframeWithBlob';
-import { InputTextarea } from '~/components/lib/InputTextarea';
 import { Sidebar } from '~/components/lib/Sidebar';
-import { Slider } from '~/components/lib/Slider';
-import { Text } from '~/components/lib/Text';
-import { Tooltip } from '~/components/lib/Tooltip';
-import { Messages } from '~/components/Messages';
 import { SignInPrompt } from '~/components/SignInPrompt';
-import { ThreadsSidebar } from '~/components/ThreadsSidebar';
-import { env } from '~/env';
-import { useAgentRequestsWithIframe } from '~/hooks/agent';
-import {
-  useCurrentEntry,
-  useCurrentEntryEnvironmentVariables,
-} from '~/hooks/entries';
-import { useZodForm } from '~/hooks/form';
-import { useThreads } from '~/hooks/threads';
+import { ThreadMessages } from '~/components/threads/ThreadMessages';
+import { ThreadsSidebar } from '~/components/threads/ThreadsSidebar';
+import { useAgentRequestsWithIframe } from '~/hooks/agent-iframe-requests';
+import { useConsumerModeEnabled } from '~/hooks/consumer';
+import { useCurrentEntry, useEntryEnvironmentVariables } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
-import { chatWithAgentModel, type messageModel } from '~/lib/models';
+import { rawFileUrlForEntry, sourceUrlForEntry } from '~/lib/entries';
+import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
-import { copyTextToClipboard } from '~/utils/clipboard';
-import { handleClientError } from '~/utils/error';
-import { formatBytes } from '~/utils/number';
+import { useThreadsStore } from '~/stores/threads';
+import { trpc } from '~/trpc/TRPCProvider';
+import { WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS } from '~/utils/wallet';
 
-import { PlaceholderSection } from './lib/Placeholder';
-
-type RunView = 'conversation' | 'output' | undefined;
+import { ThreadFileModal } from './threads/ThreadFileModal';
 
 type Props = {
   namespace: string;
@@ -64,44 +64,53 @@ type Props = {
   showLoadingPlaceholder?: boolean;
 };
 
+type RunView = 'conversation' | 'output' | undefined;
+
+type FormSchema = Pick<
+  z.infer<typeof chatWithAgentModel>,
+  'max_iterations' | 'new_message'
+>;
+
+export type AgentChatMutationInput = FormSchema &
+  Partial<z.infer<typeof chatWithAgentModel>>;
+
 export const AgentRunner = ({
   namespace,
   name,
   version,
   showLoadingPlaceholder,
 }: Props) => {
+  const { consumerModeEnabled, embedded } = useConsumerModeEnabled();
   const { currentEntry, currentEntryId: agentId } = useCurrentEntry('agent', {
-    namespace,
-    name,
-    version,
+    overrides: {
+      namespace,
+      name,
+      version,
+    },
   });
 
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const { queryParams, updateQueryPath } = useQueryParams([
-    'environmentId',
+    'showLogs',
+    'threadId',
+    'theme',
     'view',
-    'transactionHashes',
-    'transactionRequestId',
+    'initialUserMessage',
+    'mockedAitpMessages',
+    ...WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
   ]);
-  const entryEnvironmentVariables = useCurrentEntryEnvironmentVariables(
-    'agent',
+  const entryEnvironmentVariables = useEntryEnvironmentVariables(
+    currentEntry,
     Object.keys(queryParams),
   );
-  const environmentId = queryParams.environmentId ?? '';
-  const chatMutation = api.hub.chatWithAgent.useMutation();
-  const { threadsQuery } = useThreads();
-  const utils = api.useUtils();
+  const utils = trpc.useUtils();
+  const threadId = queryParams.threadId ?? '';
+  const showLogs = queryParams.showLogs === 'true';
 
-  const {
-    agentRequestsNeedingPermissions,
-    setAgentRequestsNeedingPermissions,
-    conditionallyProcessAgentRequests,
-    iframePostMessage,
-    onIframePostMessage,
-  } = useAgentRequestsWithIframe(currentEntry, chatMutation, environmentId);
-
-  const form = useZodForm(chatWithAgentModel, {
-    defaultValues: { agent_id: agentId, max_iterations: 1 },
+  const form = useForm<FormSchema>({
+    defaultValues: {
+      max_iterations: 1,
+    },
   });
 
   const [htmlOutput, setHtmlOutput] = useState('');
@@ -112,31 +121,121 @@ export const AgentRunner = ({
     useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  const environmentQuery = api.hub.environment.useQuery(
+  const clearOptimisticMessages = useThreadsStore(
+    (store) => store.clearOptimisticMessages,
+  );
+  const addOptimisticMessages = useThreadsStore(
+    (store) => store.addOptimisticMessages,
+  );
+  const optimisticMessages = useThreadsStore(
+    (store) => store.optimisticMessages,
+  );
+  const initialUserMessageSent = useRef(false);
+  const chatMutationThreadId = useRef('');
+  const chatMutationStartedAt = useRef<Date | null>(null);
+  const setThread = useThreadsStore((store) => store.setThread);
+  const threadsById = useThreadsStore((store) => store.threadsById);
+  const setAddMessage = useThreadsStore((store) => store.setAddMessage);
+  const thread = threadsById[chatMutationThreadId.current || threadId];
+
+  const _chatMutation = trpc.hub.chatWithAgent.useMutation();
+  const chatMutation = useMutation({
+    mutationFn: async (data: AgentChatMutationInput) => {
+      try {
+        chatMutationStartedAt.current = new Date();
+
+        const input = {
+          thread_id: threadId || undefined,
+          agent_id: agentId,
+          agent_env_vars: entryEnvironmentVariables.metadataVariablesByKey,
+          user_env_vars: entryEnvironmentVariables.urlVariablesByKey,
+          ...data,
+        };
+
+        addOptimisticMessages(threadId, [input]);
+        const response = await _chatMutation.mutateAsync(input);
+
+        setThread({
+          ...response.thread,
+          files: [],
+          messages: [response.message],
+          run: response.run,
+        });
+
+        chatMutationThreadId.current = response.thread.id;
+        updateQueryPath({ threadId: response.thread.id }, 'replace', false);
+
+        void utils.hub.threads.refetch();
+      } catch (error) {
+        handleClientError({ error, title: 'Failed to run agent' });
+      }
+    },
+  });
+
+  const isRunning =
+    _chatMutation.isPending ||
+    thread?.run?.status === 'requires_action' ||
+    thread?.run?.status === 'queued' ||
+    thread?.run?.status === 'in_progress';
+
+  const isLoading = !!auth && !!threadId && !thread && !isRunning;
+
+  const threadQuery = trpc.hub.thread.useQuery(
     {
-      environmentId,
+      afterMessageId: thread?.latestMessageId,
+      mockedAitpMessages: queryParams.mockedAitpMessages === 'true',
+      runId: thread?.run?.id,
+      threadId,
     },
     {
-      enabled: false,
+      enabled: !!auth && !!threadId,
+      refetchInterval: isRunning ? 150 : 1500,
+      retry: false,
     },
   );
 
-  const environment = environmentQuery.data;
-  const openedFile = openedFileName
-    ? environment?.files?.[openedFileName]
-    : undefined;
+  const logMessages = useMemo(() => {
+    const result = (thread ? Object.values(thread.messagesById) : []).filter(
+      (message) => message.metadata?.message_type?.startsWith('system:'),
+    );
+    return result;
+  }, [thread]);
 
-  const latestAssistantMessages: z.infer<typeof messageModel>[] = [];
-  if (environment) {
-    for (let i = environment.conversation.length - 1; i >= 0; i--) {
-      const message = environment.conversation[i];
-      if (message?.role === 'assistant') {
-        latestAssistantMessages.push(message);
+  const messages = useMemo(() => {
+    const result = [
+      ...(thread ? Object.values(thread.messagesById) : []),
+      ...optimisticMessages.map((message) => message.data),
+    ].filter(
+      (message) =>
+        showLogs || !message.metadata?.message_type?.startsWith('system:'),
+    );
+    return result;
+  }, [thread, optimisticMessages, showLogs]);
+
+  const files = useMemo(() => {
+    return thread ? Object.values(thread.filesByName) : [];
+  }, [thread]);
+
+  const latestAssistantMessages = useMemo(() => {
+    const result: z.infer<typeof threadMessageModel>[] = [];
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i]!;
+      if (message.role === 'assistant') {
+        result.unshift(message);
       } else {
         break;
       }
     }
-  }
+    return result;
+  }, [messages]);
+
+  const {
+    agentRequestsNeedingPermissions,
+    setAgentRequestsNeedingPermissions,
+    conditionallyProcessAgentRequests,
+    iframePostMessage,
+    onIframePostMessage,
+  } = useAgentRequestsWithIframe(currentEntry, threadId);
 
   const [__view, __setView] = useState<RunView>();
   const view = (queryParams.view as RunView) ?? __view;
@@ -157,57 +256,9 @@ export const AgentRunner = ({
     [updateQueryPath],
   );
 
-  const onSubmit: SubmitHandler<z.infer<typeof chatWithAgentModel>> = async (
-    data,
-  ) => {
-    try {
-      if (!data.new_message.trim()) return;
-
-      if (environmentId) {
-        data.environment_id = environmentId;
-      }
-
-      utils.hub.environment.setData(
-        {
-          environmentId,
-        },
-        {
-          conversation: [
-            ...(environment?.conversation ?? []),
-            {
-              content: data.new_message,
-              role: 'user',
-            },
-          ],
-          environmentId: environment?.environmentId ?? '',
-          files: environment?.files ?? {},
-        },
-      );
-
-      form.setValue('new_message', '');
-
-      data.agent_env_vars = entryEnvironmentVariables.metadataVariablesByKey;
-      data.user_env_vars = entryEnvironmentVariables.urlVariablesByKey;
-
-      const response = await chatMutation.mutateAsync(data);
-
-      utils.hub.environment.setData(
-        {
-          environmentId: response.environmentId,
-        },
-        response,
-      );
-
-      updateQueryPath(
-        { environmentId: response.environmentId },
-        'replace',
-        false,
-      );
-
-      void threadsQuery.refetch();
-    } catch (error) {
-      handleClientError({ error, title: 'Failed to communicate with agent' });
-    }
+  const onSubmit: SubmitHandler<FormSchema> = async (data) => {
+    form.setValue('new_message', '');
+    await chatMutation.mutateAsync(data);
   };
 
   const onKeyDownContent: KeyboardEventHandler<HTMLTextAreaElement> = (
@@ -220,58 +271,173 @@ export const AgentRunner = ({
   };
 
   const startNewThread = () => {
-    updateQueryPath({ environmentId: undefined });
+    updateQueryPath({
+      threadId: null,
+      view: null,
+      showLogs: null,
+      initialUserMessage: null,
+    });
+    clearOptimisticMessages();
     form.setValue('new_message', '');
     form.setFocus('new_message');
   };
 
   useEffect(() => {
-    const files = environmentQuery?.data?.files;
-    const htmlFile = files?.['index.html'];
+    // This logic simply provides helpful logs for debugging in production
+
+    if (!threadQuery.isFetching && (threadQuery.data || threadQuery.error)) {
+      const now = new Date();
+      const elapsedSecondsSinceRunStart = chatMutationStartedAt.current
+        ? (now.getTime() - chatMutationStartedAt.current.getTime()) / 1000
+        : null;
+
+      console.log(
+        `Thread polling fetch responded at: ${now.toLocaleTimeString()}`,
+        {
+          data: threadQuery.data,
+          error: threadQuery.error,
+          elapsedSecondsSinceRunStart,
+        },
+      );
+    }
+  }, [threadQuery.data, threadQuery.error, threadQuery.isFetching]);
+
+  useEffect(() => {
+    if (
+      threadQuery.data?.metadata.topic &&
+      thread?.metadata.topic !== threadQuery.data?.metadata.topic
+    ) {
+      // This will trigger once the inferred thread topic generator background task has resolved
+      void utils.hub.threads.refetch();
+    }
+
+    if (threadQuery.data) {
+      setThread(threadQuery.data);
+    }
+  }, [setThread, threadQuery.data, thread?.metadata.topic, utils]);
+
+  useEffect(() => {
+    if (threadQuery.error?.data?.code === 'FORBIDDEN') {
+      openToast({
+        type: 'error',
+        title: 'Failed to load thread',
+        description: `Your account doesn't have permission to access requested thread`,
+      });
+      updateQueryPath({ threadId: null });
+    }
+  }, [threadQuery.error, updateQueryPath]);
+
+  useEffect(() => {
+    const htmlFile = files.find((file) => file.filename === 'index.html');
+
+    function parseHtmlContent(html: string) {
+      html = html.replaceAll('{{%agent_id%}}', agentId);
+
+      html = html.replace(
+        /(src|href)="([^"]+)"/g,
+        (_match, $attribute, $path) => {
+          const attribute = $attribute as string;
+          const path = $path as string;
+          return `${attribute}="${rawFileUrlForEntry(
+            {
+              category: 'agent',
+              namespace,
+              name,
+              version,
+            },
+            path,
+          )}"`;
+        },
+      );
+
+      return html;
+    }
 
     if (htmlFile) {
-      const htmlContent = htmlFile.content.replaceAll(
-        '{{%agent_id%}}',
-        agentId,
-      );
-      setHtmlOutput(htmlContent);
+      setHtmlOutput(parseHtmlContent(htmlFile.content));
       setView('output');
     } else {
       setHtmlOutput('');
       setView('conversation');
     }
-  }, [environmentQuery, htmlOutput, agentId, setView]);
+  }, [files, htmlOutput, agentId, setView, namespace, name, version]);
 
   useEffect(() => {
-    if (environmentId && environmentId !== environment?.environmentId) {
-      void environmentQuery.refetch();
-    }
-  }, [environment, environmentId, environmentQuery]);
-
-  useEffect(() => {
-    if (!environmentId) {
-      utils.hub.environment.setData(
-        {
-          environmentId: '',
-        },
-        {
-          conversation: [],
-          environmentId: '',
-          files: {},
-        },
-      );
-    }
-  }, [environmentId, utils]);
-
-  useEffect(() => {
-    if (currentEntry && isAuthenticated) {
+    if (currentEntry && auth) {
       form.setFocus('new_message');
     }
-  }, [environmentId, currentEntry, isAuthenticated, form]);
+  }, [threadId, currentEntry, auth, form]);
+
+  useEffect(() => {
+    if (threadId !== chatMutationThreadId.current) {
+      initialUserMessageSent.current = false;
+      chatMutationThreadId.current = '';
+      chatMutationStartedAt.current = null;
+      clearOptimisticMessages();
+    }
+  }, [threadId, clearOptimisticMessages]);
+
+  useEffect(() => {
+    form.reset();
+  }, [agentId, form]);
+
+  useEffect(() => {
+    if (currentEntry && !form.formState.isDirty) {
+      const maxIterations =
+        currentEntry.details.agent?.defaults?.max_iterations ?? 1;
+      form.setValue('max_iterations', maxIterations);
+    }
+  }, [currentEntry, form]);
 
   useEffect(() => {
     setThreadsOpenForSmallScreens(false);
-  }, [environmentId]);
+  }, [threadId]);
+
+  useEffect(() => {
+    const agentDetails = currentEntry?.details.agent;
+    const initialUserMessage =
+      queryParams.initialUserMessage || agentDetails?.initial_user_message;
+    const maxIterations = agentDetails?.defaults?.max_iterations ?? 1;
+
+    if (
+      currentEntry &&
+      initialUserMessage &&
+      !threadId &&
+      !initialUserMessageSent.current
+    ) {
+      initialUserMessageSent.current = true;
+      void conditionallyProcessAgentRequests([
+        {
+          action: 'initial_user_message',
+          input: {
+            max_iterations: maxIterations,
+            new_message: initialUserMessage,
+          },
+        },
+      ]);
+    }
+  }, [
+    queryParams,
+    currentEntry,
+    threadId,
+    chatMutation,
+    conditionallyProcessAgentRequests,
+  ]);
+
+  useEffect(() => {
+    /*
+      This allows child components within <AgentRunner> to add messages to the 
+      current thread via Zustand:
+
+      const addMessage = useThreadsStore((store) => store.addMessage);
+    */
+
+    setAddMessage(chatMutation.mutateAsync);
+
+    () => {
+      setAddMessage(undefined);
+    };
+  }, [chatMutation.mutateAsync, setAddMessage]);
 
   if (!currentEntry) {
     if (showLoadingPlaceholder) return <PlaceholderSection />;
@@ -279,7 +445,7 @@ export const AgentRunner = ({
   }
 
   return (
-    <Form stretch onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
+    <>
       <Sidebar.Root>
         <ThreadsSidebar
           onRequestNewThread={startNewThread}
@@ -288,106 +454,179 @@ export const AgentRunner = ({
         />
 
         <Sidebar.Main>
-          {view === 'output' ? (
+          {isLoading ? (
+            <PlaceholderStack style={{ marginBottom: 'auto' }} />
+          ) : (
             <>
-              <IframeWithBlob
-                html={htmlOutput}
-                onPostMessage={onIframePostMessage}
-                postMessage={iframePostMessage}
-              />
+              {view === 'output' ? (
+                <>
+                  <IframeWithBlob
+                    html={htmlOutput}
+                    height={currentEntry.details.agent?.html_height}
+                    onPostMessage={onIframePostMessage}
+                    postMessage={iframePostMessage}
+                  />
 
-              {latestAssistantMessages.length > 0 && (
-                <Messages
-                  loading={environmentQuery.isLoading}
-                  messages={latestAssistantMessages}
-                  threadId={agentId}
+                  {latestAssistantMessages.length > 0 &&
+                    currentEntry.details.agent
+                      ?.html_show_latest_messages_below && (
+                      <ThreadMessages
+                        grow={false}
+                        messages={latestAssistantMessages}
+                        scroll={false}
+                        threadId={threadId}
+                      />
+                    )}
+                </>
+              ) : (
+                <ThreadMessages
+                  messages={messages}
+                  threadId={threadId}
+                  welcomeMessage={<AgentWelcome currentEntry={currentEntry} />}
                 />
               )}
             </>
-          ) : (
-            <Messages
-              loading={environmentQuery.isLoading}
-              messages={environment?.conversation ?? []}
-              threadId={agentId}
-              welcomeMessage={<AgentWelcome details={currentEntry.details} />}
-            />
           )}
 
           <Sidebar.MainStickyFooter>
-            <Flex direction="column" gap="m">
-              <InputTextarea
-                placeholder="Write your message and press enter..."
-                onKeyDown={onKeyDownContent}
-                disabled={!isAuthenticated}
-                {...form.register('new_message')}
-              />
+            <Form onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
+              <Flex direction="column" gap="m">
+                <InputTextarea
+                  placeholder="Write your message and press enter..."
+                  onKeyDown={onKeyDownContent}
+                  disabled={!auth}
+                  {...form.register('new_message', {
+                    required: 'Please enter a message',
+                  })}
+                />
 
-              {isAuthenticated ? (
-                <Flex align="start" gap="m">
-                  <Text size="text-xs" style={{ marginRight: 'auto' }}>
-                    <b>Shift + Enter</b> to add a new line
-                  </Text>
-
-                  <Flex align="start" gap="xs">
-                    <BreakpointDisplay show="sidebar-small-screen">
-                      <Button
-                        label="Select Thread"
-                        icon={<List />}
-                        size="small"
-                        fill="ghost"
-                        onClick={() => setThreadsOpenForSmallScreens(true)}
-                      />
+                {auth ? (
+                  <Flex align="start" gap="m" justify="space-between">
+                    <BreakpointDisplay
+                      show="larger-than-phone"
+                      style={{ marginRight: 'auto' }}
+                    >
+                      <Text size="text-xs">
+                        <b>Shift + Enter</b> to add a new line
+                      </Text>
                     </BreakpointDisplay>
 
-                    <BreakpointDisplay show="sidebar-small-screen">
-                      <Button
-                        label="Edit Parameters"
-                        icon={<Gear />}
-                        size="small"
-                        fill="ghost"
-                        onClick={() => setParametersOpenForSmallScreens(true)}
-                      />
-                    </BreakpointDisplay>
-                  </Flex>
-
-                  {htmlOutput && (
-                    <>
-                      {view === 'output' ? (
-                        <Tooltip asChild content="Switch to conversation view">
+                    <Flex
+                      align="start"
+                      gap="s"
+                      style={{ paddingRight: '0.15rem' }}
+                    >
+                      <BreakpointDisplay show="sidebar-small-screen">
+                        <Tooltip asChild content="View all threads">
                           <Button
-                            label="Toggle View"
-                            icon={<Chats />}
+                            label="Select Thread"
+                            icon={<List />}
                             size="small"
                             variant="secondary"
-                            onClick={() => setView('conversation', true)}
+                            fill="ghost"
+                            onClick={() => setThreadsOpenForSmallScreens(true)}
                           />
                         </Tooltip>
-                      ) : (
-                        <Tooltip asChild content="Switch to output view">
+                      </BreakpointDisplay>
+
+                      <BreakpointDisplay show="sidebar-small-screen">
+                        <Tooltip
+                          asChild
+                          content="View output files & agent settings"
+                        >
                           <Button
-                            label="Toggle View"
-                            icon={<Eye />}
+                            label={files.length.toString()}
+                            iconLeft={<Folder />}
                             size="small"
                             variant="secondary"
-                            onClick={() => setView('output', true)}
+                            fill="ghost"
+                            style={{ paddingInline: '0.5rem' }}
+                            onClick={() =>
+                              setParametersOpenForSmallScreens(true)
+                            }
+                          />
+                        </Tooltip>
+                      </BreakpointDisplay>
+
+                      {htmlOutput && (
+                        <Tooltip
+                          asChild
+                          content={
+                            view === 'output'
+                              ? 'View conversation'
+                              : 'View rendered output'
+                          }
+                        >
+                          <Button
+                            label="Toggle View"
+                            icon={
+                              <Eye
+                                weight={view === 'output' ? 'fill' : 'regular'}
+                              />
+                            }
+                            size="small"
+                            variant="secondary"
+                            fill="ghost"
+                            onClick={() =>
+                              view === 'output'
+                                ? setView('conversation', true)
+                                : setView('output', true)
+                            }
                           />
                         </Tooltip>
                       )}
-                    </>
-                  )}
 
-                  <Button
-                    label="Send Message"
-                    type="submit"
-                    icon={<ArrowRight weight="bold" />}
-                    size="small"
-                    loading={chatMutation.isPending}
-                  />
-                </Flex>
-              ) : (
-                <SignInPrompt />
-              )}
-            </Flex>
+                      <Tooltip
+                        asChild
+                        content={
+                          showLogs ? 'Hide system logs' : 'Show system logs'
+                        }
+                      >
+                        <Button
+                          label={logMessages.length.toString()}
+                          iconLeft={
+                            <Info weight={showLogs ? 'fill' : 'regular'} />
+                          }
+                          size="small"
+                          variant="secondary"
+                          fill="ghost"
+                          style={{ paddingInline: '0.5rem' }}
+                          onClick={() =>
+                            updateQueryPath(
+                              { showLogs: showLogs ? undefined : 'true' },
+                              'replace',
+                              false,
+                            )
+                          }
+                        />
+                      </Tooltip>
+
+                      {consumerModeEnabled && !embedded && (
+                        <Tooltip asChild content="Inspect agent source">
+                          <Button
+                            label="Agent Source"
+                            icon={<CodeBlock />}
+                            size="small"
+                            fill="ghost"
+                            href={`https://app.near.ai${sourceUrlForEntry(currentEntry)}`}
+                          />
+                        </Tooltip>
+                      )}
+                    </Flex>
+
+                    <Button
+                      label="Send Message"
+                      type="submit"
+                      icon={<ArrowRight weight="bold" />}
+                      size="small"
+                      loading={isRunning}
+                    />
+                  </Flex>
+                ) : (
+                  <SignInPrompt />
+                )}
+              </Flex>
+            </Form>
           </Sidebar.MainStickyFooter>
         </Sidebar.Main>
 
@@ -401,76 +640,61 @@ export const AgentRunner = ({
                 Output
               </Text>
 
-              {environment?.files && Object.keys(environment.files).length ? (
-                <CardList>
-                  {Object.values(environment.files).map((file) => (
-                    <Card
-                      padding="s"
-                      gap="s"
-                      key={file.name}
-                      background="sand-2"
-                      onClick={() => {
-                        setOpenedFileName(file.name);
-                      }}
-                    >
-                      <Flex align="center" gap="s">
-                        <Text
-                          size="text-s"
-                          color="violet-11"
-                          clickableHighlight
-                          weight={500}
-                          clampLines={1}
-                          style={{ marginRight: 'auto' }}
-                        >
-                          {file.name}
-                        </Text>
-
-                        <Text size="text-xs">{formatBytes(file.size)}</Text>
-                      </Flex>
-                    </Card>
-                  ))}
-                </CardList>
+              {isLoading ? (
+                <PlaceholderStack />
               ) : (
-                <Text size="text-s" color="sand-10">
-                  No files generated yet.
-                </Text>
+                <>
+                  {files.length ? (
+                    <CardList>
+                      {files.map((file) => (
+                        <Card
+                          padding="s"
+                          gap="s"
+                          key={file.id}
+                          background="sand-2"
+                          onClick={() => {
+                            setOpenedFileName(file.filename);
+                          }}
+                        >
+                          <Flex align="center" gap="s">
+                            <Text
+                              size="text-s"
+                              color="sand-12"
+                              weight={500}
+                              clampLines={1}
+                              style={{ marginRight: 'auto' }}
+                            >
+                              {file.filename}
+                            </Text>
+
+                            <Text size="text-xs">
+                              {formatBytes(file.bytes)}
+                            </Text>
+                          </Flex>
+                        </Card>
+                      ))}
+                    </CardList>
+                  ) : (
+                    <Text size="text-s" color="sand-10">
+                      No files generated yet.
+                    </Text>
+                  )}
+                </>
               )}
             </Flex>
 
-            {!env.NEXT_PUBLIC_CONSUMER_MODE && (
-              <>
-                <EntryEnvironmentVariables
-                  entry={currentEntry}
-                  variables={entryEnvironmentVariables}
-                />
-
-                <Flex direction="column" gap="m">
-                  <Text size="text-xs" weight={600} uppercase>
-                    Parameters
-                  </Text>
-
-                  <Controller
-                    control={form.control}
-                    name="max_iterations"
-                    render={({ field }) => (
-                      <Slider
-                        label="Max Iterations"
-                        max={20}
-                        min={1}
-                        step={1}
-                        assistive="The maximum number of iterations to run the agent for, usually 1. Each iteration will loop back through your agent allowing it to act and reflect on LLM results."
-                        {...field}
-                      />
-                    )}
-                  />
-                </Flex>
-              </>
+            {!consumerModeEnabled && (
+              <EntryEnvironmentVariables
+                entry={currentEntry}
+                excludeQueryParamKeys={Object.keys(queryParams)}
+              />
             )}
           </Flex>
         </Sidebar.Sidebar>
       </Sidebar.Root>
 
       <AgentPermissionsModal
+        agent={currentEntry}
         onAllow={(requests) =>
           conditionallyProcessAgentRequests(requests, true)
         }
@@ -478,33 +702,11 @@ export const AgentRunner = ({
         clearRequests={() => setAgentRequestsNeedingPermissions(null)}
       />
 
-      <Dialog.Root
-        open={openedFileName !== null}
-        onOpenChange={() => setOpenedFileName(null)}
-      >
-        <Dialog.Content
-          title={openedFileName}
-          size="l"
-          header={
-            <Button
-              label="Copy file to clipboard"
-              icon={<Copy />}
-              size="small"
-              fill="outline"
-              onClick={() =>
-                openedFile && copyTextToClipboard(openedFile?.content)
-              }
-              style={{ marginLeft: 'auto' }}
-            />
-          }
-        >
-          <Code
-            bleed
-            source={openedFile?.content}
-            language={filePathToCodeLanguage(openedFileName)}
-          />
-        </Dialog.Content>
-      </Dialog.Root>
-    </Form>
+      <ThreadFileModal
+        filesByName={thread?.filesByName}
+        openedFileName={openedFileName}
+        setOpenedFileName={setOpenedFileName}
+      />
+    </>
   );
 };

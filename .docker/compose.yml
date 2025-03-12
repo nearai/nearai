@@ -8,6 +8,10 @@ services:
       - ..:/workspace:Z
       - ~/.nearai:/home/user/.nearai
       - ~/.cache:/home/user/.cache
+    devices:
+      - /dev/net/tun
+    cap_add:
+      - NET_ADMIN
     command: "sleep infinity"
     platform: linux/amd64
     shm_size: '2gb'

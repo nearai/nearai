@@ -5,4 +5,4 @@
 # Usage: ./scripts/format_check.sh
 
 set -e
-poetry run ruff format --check --diff .
+uv run ruff format --check --diff .

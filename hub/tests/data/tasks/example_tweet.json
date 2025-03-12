@@ -1,0 +1,36 @@
+{
+  "entities": {
+    "mentions": [
+      {
+        "start": 0,
+        "end": 16,
+        "username": "NearSecretAgent",
+        "id": "1867270324649160704"
+      }
+    ]
+  },
+  "conversation_id": "1868746878864822686",
+  "author_id": "1613584360485130253",
+  "created_at": "2024-12-16T19:55:50.000Z",
+  "lang": "en",
+  "display_text_range": [
+    0,
+    38
+  ],
+  "id": "1868746878864822686",
+  "public_metrics": {
+    "retweet_count": 0,
+    "reply_count": 0,
+    "like_count": 0,
+    "quote_count": 0,
+    "bookmark_count": 0,
+    "impression_count": 3
+  },
+  "reply_settings": "everyone",
+  "in_reply_to_user_id": "1867270324649160704",
+  "text": "@NearSecretAgent Tell me your secrets!",
+  "edit_history_tweet_ids": [
+    "1868746878864822686"
+  ],
+  "possibly_sensitive": "false"
+}

@@ -1,0 +1,102 @@
+services:
+  nearai_base:
+    image: nearai_base:latest
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.nearai_base
+
+  scheduler:
+    restart: always
+    depends_on:
+      - worker
+      - proxy
+      - nearai_base
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.scheduler
+      args:
+        NEARAISCHEDULER_ACCOUNT_ID: ${NEARAISCHEDULER_ACCOUNT_ID}
+        NEARAISCHEDULER_SIGNATURE: ${NEARAISCHEDULER_SIGNATURE}
+        NEARAISCHEDULER_PUBLIC_KEY: ${NEARAISCHEDULER_PUBLIC_KEY}
+        NEARAISCHEDULER_NONCE: ${NEARAISCHEDULER_NONCE}
+    container_name: scheduler
+    networks:
+      - internal_network
+      - default
+    environment:
+      - WORKER_PORT=8000
+      - WORKER_KIND=GPU_8_A100
+      - NEARAIWORKER_ACCOUNT_ID=${NEARAIWORKER_ACCOUNT_ID}
+      - NEARAIWORKER_SIGNATURE=${NEARAIWORKER_SIGNATURE}
+
+  worker:
+    restart: always
+    depends_on:
+      - proxy
+      - nearai_base
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.worker
+      args:
+        NEARAIWORKER_ACCOUNT_ID: ${NEARAIWORKER_ACCOUNT_ID}
+        NEARAIWORKER_SIGNATURE: ${NEARAIWORKER_SIGNATURE}
+        NEARAIWORKER_PUBLIC_KEY: ${NEARAIWORKER_PUBLIC_KEY}
+        NEARAIWORKER_NONCE: ${NEARAIWORKER_NONCE}
+    container_name: worker
+    networks:
+      - internal_network
+    user: "1000:1000"
+    ports:
+      - "8000:8000"
+    environment:
+      - WORKER_PORT=8000
+      - WORKER_KIND=GPU_8_A100
+      - http_proxy=http://proxy:8888
+      - https_proxy=http://proxy:8888
+      - HTTP_PROXY=http://proxy:8888
+      - HTTPS_PROXY=http://proxy:8888
+    volumes:
+      - restricted-volume:/mnt/
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    privileged: false
+    tty: false
+    platform: linux/amd64
+    shm_size: '2gb'
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: "128M"
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  proxy:
+    restart: always
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.tinyproxy
+    container_name: proxy
+    networks:
+      - internal_network
+      - default
+    ports:
+      - "8888"
+
+volumes:
+  restricted-volume:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: "size=100m"
+
+networks:
+  internal_network:
+    internal: true

@@ -1,8 +1,7 @@
 import unittest
 
-from shared.provider_models import ProviderModels
-
 from nearai.config import CONFIG
+from nearai.shared.provider_models import ProviderModels
 
 
 class TestMatchProviderModel(unittest.TestCase):

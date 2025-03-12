@@ -1,41 +1,50 @@
 'use client';
 
+import {
+  BreakpointDisplay,
+  Button,
+  Card,
+  CardList,
+  Checkbox,
+  CheckboxGroup,
+  Dialog,
+  Flex,
+  Grid,
+  Input,
+  PlaceholderStack,
+  Table,
+  Text,
+  Tooltip,
+  useTable,
+} from '@near-pagoda/ui';
 import { Eye, Minus, Plus, Table as TableIcon } from '@phosphor-icons/react';
-import Link from 'next/link';
-import { type ChangeEventHandler, useEffect, useMemo, useState } from 'react';
+import { type ChangeEventHandler, useMemo, useState } from 'react';
 import { type z } from 'zod';
 
 import {
   EntrySelector,
   type EntrySelectorOnSelectHandler,
 } from '~/components/EntrySelector';
-import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
-import { Button } from '~/components/lib/Button';
-import { Card, CardList } from '~/components/lib/Card';
-import { Checkbox, CheckboxGroup } from '~/components/lib/Checkbox';
-import { Dialog } from '~/components/lib/Dialog';
-import { Flex } from '~/components/lib/Flex';
-import { Grid } from '~/components/lib/Grid';
-import { Input } from '~/components/lib/Input';
-import { PlaceholderStack } from '~/components/lib/Placeholder';
 import { Sidebar } from '~/components/lib/Sidebar';
-import { Table } from '~/components/lib/Table';
-import { useTable } from '~/components/lib/Table/hooks';
-import { Text } from '~/components/lib/Text';
-import { Tooltip } from '~/components/lib/Tooltip';
 import { useDebouncedValue } from '~/hooks/debounce';
 import { useQueryParams } from '~/hooks/url';
 import { DEFAULT_BENCHMARK_COLUMNS } from '~/lib/benchmarks';
 import { idForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 import { wordsMatchFuzzySearch } from '~/utils/search';
 
 type Props = {
+  benchmarkColumns?: string[];
   entry?: z.infer<typeof entryModel>;
+  title?: string;
 };
 
-export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
+export const EvaluationsTable = ({
+  benchmarkColumns: controlledBenchmarkColumns,
+  entry: entryToEvaluate,
+  title = 'Evaluations',
+}: Props) => {
   const { updateQueryPath, queryParams } = useQueryParams([
     'benchmarks',
     'columns',
@@ -47,17 +56,18 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
     useState(false);
   const searchQueryDebounced = useDebouncedValue(searchQuery, 150);
 
-  const evaluationsQuery = api.hub.evaluations.useQuery();
-  const benchmarksQuery = api.hub.entries.useQuery({
+  const evaluationsQuery = trpc.hub.evaluations.useQuery();
+  const benchmarksQuery = trpc.hub.entries.useQuery({
     category: 'benchmark',
   });
 
   const defaultBenchmarkColumns = useMemo(() => {
     return (
+      controlledBenchmarkColumns ??
       evaluationsQuery.data?.defaultBenchmarkColumns ??
       DEFAULT_BENCHMARK_COLUMNS
     );
-  }, [evaluationsQuery.data]);
+  }, [controlledBenchmarkColumns, evaluationsQuery.data]);
 
   const selectedBenchmarkIds = useMemo(() => {
     const ids = queryParams.benchmarks ? queryParams.benchmarks.split(',') : [];
@@ -119,10 +129,12 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
       }
     }
 
-    if (!evaluations || !searchQueryDebounced) return evaluations;
+    if (!evaluations) return evaluations;
 
-    return evaluations.filter((evaluation) =>
-      wordsMatchFuzzySearch(
+    return evaluations.filter((evaluation) => {
+      if (!searchQueryDebounced) return true;
+
+      return wordsMatchFuzzySearch(
         [
           evaluation.namespace,
           evaluation.agentId ?? evaluation.agent,
@@ -131,8 +143,8 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
           evaluation.version,
         ],
         searchQueryDebounced,
-      ),
-    );
+      );
+    });
   }, [evaluationsQuery.data, searchQueryDebounced, entryToEvaluate]);
 
   const { sorted, ...tableProps } = useTable({
@@ -146,7 +158,7 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
 
     const columns = evaluationsQuery.data.benchmarkColumns.filter(
       (column) =>
-        column === benchmark.name || column.startsWith(`${benchmark.name}/`),
+        column === benchmark.name || column.startsWith(`${benchmark.name}`),
     );
 
     if (!columns.length) {
@@ -171,7 +183,7 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
       columns = [...new Set([...columns, ...relatedColumns])];
     }
 
-    updateQueryPath({ columns: columns.join(',') }, 'replace');
+    updateQueryPath({ columns: columns.join(',') }, 'replace', false);
   };
 
   const onFilteredBenchmarkColumnChange: ChangeEventHandler<
@@ -185,7 +197,7 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
       columns = columns.filter((benchmark) => benchmark !== event.target.value);
     }
 
-    updateQueryPath({ columns: columns.join(',') }, 'replace');
+    updateQueryPath({ columns: columns.join(',') }, 'replace', false);
   };
 
   const onSelectBenchmark: EntrySelectorOnSelectHandler = (entry, selected) => {
@@ -204,19 +216,10 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
     updateQueryPath(
       { benchmarks: ids.join(','), columns: columns.join(',') },
       'replace',
+      false,
     );
     setBenchmarkSelectorIsOpen(false);
   };
-
-  useEffect(() => {
-    if (selectedBenchmarkColumns.length === 0 && selectedBenchmarks) {
-      selectedBenchmarks.forEach((benchmark) => {
-        toggleAllColumnsForBenchmark(benchmark);
-      });
-    }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBenchmarks, selectedBenchmarkColumns]);
 
   return (
     <>
@@ -256,9 +259,14 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
                         <Text size="text-s" weight={500} color="sand-12">
                           {benchmark.name} {benchmark.version}
                         </Text>
-                        <Link href={`/profiles/${benchmark.namespace}`}>
-                          <Text size="text-xs">@{benchmark.namespace}</Text>
-                        </Link>
+                        <Text
+                          size="text-xs"
+                          color="sand-11"
+                          href={`/profiles/${benchmark.namespace}`}
+                          decoration="none"
+                        >
+                          @{benchmark.namespace}
+                        </Text>
                       </Flex>
 
                       <Tooltip asChild content="Toggle all columns">
@@ -284,7 +292,7 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
                       </Tooltip>
                     </Flex>
 
-                    <CheckboxGroup name="columns">
+                    <CheckboxGroup aria-label="Include Evaluation Columns">
                       {columnsForBenchmark(benchmark).map((column) => (
                         <Flex as="label" align="center" gap="s" key={column}>
                           <Checkbox
@@ -317,7 +325,7 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
           >
             <Flex align="center" gap="m">
               <Text as="h1" size="text-2xl">
-                Evaluations
+                {title}
               </Text>
 
               <BreakpointDisplay show="sidebar-small-screen">
@@ -389,6 +397,7 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
                               as="span"
                               size="text-2xs"
                               color="current"
+                              noWrap
                               style={{
                                 marginBottom: '-0.1rem',
                                 display: 'inline-block',
@@ -402,6 +411,7 @@ export const EvaluationsTable = ({ entry: entryToEvaluate }: Props) => {
                             size="text-s"
                             weight={600}
                             color="current"
+                            noWrap
                           >
                             {column.split('/').at(-1)}
                           </Text>

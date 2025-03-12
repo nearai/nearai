@@ -1,71 +1,88 @@
 'use client';
 
-import { Copy, Folder } from '@phosphor-icons/react';
+import {
+  BreakpointDisplay,
+  Button,
+  Card,
+  CardList,
+  Container,
+  Flex,
+  PlaceholderStack,
+  Section,
+  SvgIcon,
+  Text,
+  Tooltip,
+} from '@near-pagoda/ui';
+import { Folder, LinkSimple, LockKey } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 
-import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
-import { Button } from '~/components/lib/Button';
-import { Card, CardList } from '~/components/lib/Card';
-import { Code, filePathToCodeLanguage } from '~/components/lib/Code';
-import { Flex } from '~/components/lib/Flex';
-import {
-  PlaceholderCard,
-  PlaceholderStack,
-} from '~/components/lib/Placeholder';
+import { Code } from '~/components/lib/Code';
 import { Sidebar } from '~/components/lib/Sidebar';
-import { Text } from '~/components/lib/Text';
-import { useEntryParams } from '~/hooks/entries';
+import { useCurrentEntryParams } from '~/hooks/entries';
 import { useQueryParams } from '~/hooks/url';
+import { rawFileUrlForEntry } from '~/lib/entries';
 import { type entryModel } from '~/lib/models';
-import { api } from '~/trpc/react';
-import { copyTextToClipboard } from '~/utils/clipboard';
-
-const METADATA_FILE_PATH = 'metadata.json';
+import { useAuthStore } from '~/stores/auth';
+import { trpc } from '~/trpc/TRPCProvider';
+import { filePathIsImage, filePathToCodeLanguage } from '~/utils/file';
 
 type Props = {
   entry: z.infer<typeof entryModel>;
 };
 
 export const EntrySource = ({ entry }: Props) => {
+  const auth = useAuthStore((store) => store.auth);
+  const isPermittedToViewSource =
+    !entry.details.private_source || auth?.accountId === entry.namespace;
   const { createQueryPath, queryParams } = useQueryParams(['file']);
-  const params = useEntryParams();
-  const filePathsQuery = api.hub.filePaths.useQuery(params);
-  const activeFilePath = queryParams.file ?? filePathsQuery.data?.[0] ?? '';
+  const params = useCurrentEntryParams();
+
+  const filePathsQuery = trpc.hub.filePaths.useQuery(
+    { ...params, category: entry.category },
+    {
+      enabled: isPermittedToViewSource,
+    },
+  );
+  const activeFilePath = queryParams.file || 'metadata.json';
   const activeFileIsCompressed =
     activeFilePath.endsWith('.zip') || activeFilePath.endsWith('.tar');
-  const fileQuery = api.hub.file.useQuery(
-    { ...params, filePath: activeFilePath },
+  const activeFileIsImage = filePathIsImage(activeFilePath);
+
+  const fileQuery = trpc.hub.file.useQuery(
+    { ...params, category: entry.category, filePath: activeFilePath },
     {
       enabled:
-        !!activeFilePath &&
-        activeFilePath !== METADATA_FILE_PATH &&
-        !activeFileIsCompressed,
+        !!activeFilePath && !activeFileIsCompressed && isPermittedToViewSource,
     },
   );
 
   const [sidebarOpenForSmallScreens, setSidebarOpenForSmallScreens] =
     useState(false);
 
-  let openedFile =
+  const openedFile =
     activeFilePath === fileQuery.data?.path ? fileQuery.data : undefined;
-  if (activeFilePath === METADATA_FILE_PATH) {
-    const metadata = {
-      category: entry.category,
-      name: entry.name,
-      namespace: entry.namespace,
-      tags: entry.tags,
-      details: entry.details,
-    };
-    openedFile = {
-      content: JSON.stringify(metadata ?? '{}', null, 2),
-      path: METADATA_FILE_PATH,
-    };
-  }
 
   useEffect(() => {
     setSidebarOpenForSmallScreens(false);
   }, [queryParams.file]);
+
+  if (!isPermittedToViewSource) {
+    return (
+      <Section grow="available">
+        <Container size="s" style={{ margin: 'auto', textAlign: 'center' }}>
+          <Flex direction="column" gap="m" align="center">
+            <SvgIcon icon={<LockKey />} size="l" color="amber-11" />
+            <Text size="text-xl">Private Source Code</Text>
+            <Text>
+              You {`don't`} have permission to view the source code for this{' '}
+              {entry.category}.
+            </Text>
+          </Flex>
+        </Container>
+      </Section>
+    );
+  }
 
   return (
     <>
@@ -91,8 +108,7 @@ export const EntrySource = ({ entry }: Props) => {
                   >
                     <Text
                       size="text-s"
-                      color="violet-11"
-                      clickableHighlight
+                      color="sand-12"
                       weight={500}
                       clampLines={1}
                     >
@@ -109,9 +125,20 @@ export const EntrySource = ({ entry }: Props) => {
 
         <Sidebar.Main>
           <Flex align="center" gap="m" style={{ marginBlock: '-3px' }}>
-            <Text size="text-l" style={{ marginRight: 'auto' }}>
-              {activeFilePath}
-            </Text>
+            <Flex align="center" gap="s" style={{ marginRight: 'auto' }}>
+              <Text size="text-l">{activeFilePath}</Text>
+
+              <Tooltip asChild content="Open Raw File">
+                <Button
+                  label="Raw"
+                  icon={<LinkSimple />}
+                  size="x-small"
+                  fill="ghost"
+                  href={rawFileUrlForEntry(entry, activeFilePath)}
+                  target="_blank"
+                />
+              </Tooltip>
+            </Flex>
 
             <BreakpointDisplay show="sidebar-small-screen">
               <Button
@@ -122,29 +149,28 @@ export const EntrySource = ({ entry }: Props) => {
                 onClick={() => setSidebarOpenForSmallScreens(true)}
               />
             </BreakpointDisplay>
-
-            <Button
-              label="Copy file to clipboard"
-              icon={<Copy />}
-              size="small"
-              fill="outline"
-              onClick={() =>
-                openedFile && copyTextToClipboard(openedFile.content)
-              }
-              disabled={activeFileIsCompressed}
-            />
           </Flex>
+
           {activeFileIsCompressed ? (
             <Text>This file type {`doesn't`} have a source preview.</Text>
           ) : (
             <>
               {openedFile ? (
-                <Code
-                  source={openedFile.content}
-                  language={filePathToCodeLanguage(openedFile.path)}
-                />
+                <>
+                  {activeFileIsImage ? (
+                    <div>
+                      <img src={openedFile.content} alt={openedFile.path} />
+                    </div>
+                  ) : (
+                    <Code
+                      bleed
+                      source={openedFile.content}
+                      language={filePathToCodeLanguage(openedFile.path)}
+                    />
+                  )}
+                </>
               ) : (
-                <PlaceholderCard />
+                <PlaceholderStack />
               )}
             </>
           )}

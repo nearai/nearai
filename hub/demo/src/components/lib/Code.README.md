@@ -7,7 +7,7 @@ import { Code } from '~/components/lib/Code';
 
 ...
 
-<Code language="javascript" source={`() => console.log('hi!')`}>
+<Code language="javascript" source={`() => alert('hi!')`}>
 ```
 
 View the demo link above to see all supported `language` values.

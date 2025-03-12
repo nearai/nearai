@@ -2,8 +2,8 @@ import re
 from typing import Annotated
 
 from fastapi import Form, HTTPException
+from nearai.shared.client_config import IDENTIFIER_PATTERN
 from pydantic import AfterValidator, BaseModel
-from shared.client_config import IDENTIFIER_PATTERN
 
 
 def valid_identifier(identifier: str) -> str:
@@ -34,6 +34,10 @@ class EntryLocation(BaseModel):
             name=match.group("name"),
             version=match.group("version"),
         )
+
+    def to_str(self) -> str:
+        """Returns the location as a string in the format namespace/name/version."""
+        return f"{self.namespace}/{self.name}/{self.version}"
 
     @classmethod
     def as_form(cls, namespace: str = Form(...), name: str = Form(...), version: str = Form(...)):

@@ -1,39 +1,73 @@
 import importlib.metadata
 import json
 import os
+import re
 import runpy
+import shutil
 import sys
 from collections import OrderedDict
 from dataclasses import asdict
+from datetime import datetime, timedelta
 from pathlib import Path
 from textwrap import fill
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
-import boto3
 import fire
-from openapi_client import EntryLocation, EntryMetadataInput
-from openapi_client.api.benchmark_api import BenchmarkApi
-from openapi_client.api.default_api import DefaultApi
-from openapi_client.api.evaluation_api import EvaluationApi
-from shared.client_config import (
-    DEFAULT_MODEL,
-    DEFAULT_MODEL_MAX_TOKENS,
-    DEFAULT_MODEL_TEMPERATURE,
-    DEFAULT_NAMESPACE,
-    DEFAULT_PROVIDER,
-)
-from shared.naming import NamespacedName, create_registry_name
-from shared.provider_models import ProviderModels, get_provider_namespaced_model
+from openai.types.beta.threads.message import Attachment
+from rich.console import Console
+from rich.panel import Panel
+from rich.prompt import Prompt
+from rich.rule import Rule
+from rich.text import Text
 from tabulate import tabulate
 
+from nearai.agents.local_runner import LocalRunner
+from nearai.cli_helpers import (
+    assert_user_auth,
+    display_agents_in_columns,
+    display_version_check,
+    has_pending_input,
+    load_and_validate_metadata,
+)
 from nearai.config import (
     CONFIG,
     get_hub_client,
     update_config,
 )
 from nearai.finetune import FinetuneCli
-from nearai.lib import check_metadata, parse_location, parse_tags
-from nearai.registry import get_registry_folder, registry
+from nearai.lib import check_metadata_present, parse_location, parse_tags
+from nearai.log import LogCLI
+from nearai.openapi_client import EntryLocation, EntryMetadataInput
+from nearai.openapi_client.api.benchmark_api import BenchmarkApi
+from nearai.openapi_client.api.default_api import DefaultApi
+from nearai.openapi_client.api.delegation_api import DelegationApi
+from nearai.openapi_client.api.evaluation_api import EvaluationApi
+from nearai.openapi_client.api.jobs_api import JobsApi, WorkerKind
+from nearai.openapi_client.api.permissions_api import PermissionsApi
+from nearai.openapi_client.models.body_add_job_v1_jobs_add_job_post import BodyAddJobV1JobsAddJobPost
+from nearai.registry import (
+    check_version_exists,
+    get_agent_id,
+    get_metadata,
+    get_namespace,
+    get_registry_folder,
+    increment_version_by_type,
+    registry,
+    resolve_local_path,
+    validate_version,
+)
+from nearai.shared.client_config import (
+    DEFAULT_MODEL,
+    DEFAULT_MODEL_MAX_TOKENS,
+    DEFAULT_MODEL_TEMPERATURE,
+    DEFAULT_NAMESPACE,
+    DEFAULT_PROVIDER,
+)
+from nearai.shared.client_config import (
+    IDENTIFIER_PATTERN as PATTERN,
+)
+from nearai.shared.naming import NamespacedName, create_registry_name
+from nearai.shared.provider_models import ProviderModels, get_provider_namespaced_model
 from nearai.tensorboard_feed import TensorboardCli
 
 
@@ -67,17 +101,25 @@ class RegistryCli:
 
     def metadata_template(self, local_path: str = ".", category: str = "", description: str = ""):
         """Create a metadata template."""
-        path = Path(local_path)
+        path = resolve_local_path(Path(local_path))
 
         metadata_path = path / "metadata.json"
 
-        # Get the name of the folder
-        folder_name = path.name
+        version = path.name
+        # Validate version format
+        is_valid, error = validate_version(version)
+        if not is_valid:
+            print(error)
+            return
+
+        name = path.parent.name
+        assert not re.match(PATTERN, name), f"Invalid agent name: {name}"
+        assert " " not in name
 
         with open(metadata_path, "w") as f:
             metadata: Dict[str, Any] = {
-                "name": folder_name,
-                "version": "0.0.1",
+                "name": name,
+                "version": version,
                 "description": description,
                 "category": category,
                 "tags": [],
@@ -87,12 +129,18 @@ class RegistryCli:
 
             if category == "agent":
                 metadata["details"]["agent"] = {}
+                metadata["details"]["agent"]["welcome"] = {
+                    "title": name,
+                    "description": description,
+                }
                 metadata["details"]["agent"]["defaults"] = {
                     "model": DEFAULT_MODEL,
                     "model_provider": DEFAULT_PROVIDER,
                     "model_temperature": DEFAULT_MODEL_TEMPERATURE,
                     "model_max_tokens": DEFAULT_MODEL_MAX_TOKENS,
+                    "max_iterations": 1,
                 }
+                metadata["details"]["agent"]["framework"] = "minimal"
 
             json.dump(metadata, f, indent=2)
 
@@ -155,19 +203,19 @@ class RegistryCli:
 
     def update(self, local_path: str = ".") -> None:
         """Update metadata of a registry item."""
-        path = Path(local_path)
+        path = resolve_local_path(Path(local_path))
 
         if CONFIG.auth is None:
             print("Please login with `nearai login`")
             exit(1)
 
         metadata_path = path / "metadata.json"
-        check_metadata(metadata_path)
+        check_metadata_present(metadata_path)
 
         with open(metadata_path) as f:
             metadata: Dict[str, Any] = json.load(f)
 
-        namespace = CONFIG.auth.account_id
+        namespace = CONFIG.auth.namespace
 
         entry_location = EntryLocation.model_validate(
             dict(
@@ -176,6 +224,7 @@ class RegistryCli:
                 version=metadata.pop("version"),
             )
         )
+        assert " " not in entry_location.name
 
         entry_metadata = EntryMetadataInput.model_validate(metadata)
         result = registry.update(entry_location, entry_metadata)
@@ -232,9 +281,173 @@ class RegistryCli:
             for path in paths:
                 self.upload(str(path))
 
-    def upload(self, local_path: str = ".") -> None:
-        """Upload item to the registry."""
-        registry.upload(Path(local_path), show_progress=True)
+    def upload(
+        self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
+    ) -> Optional[EntryLocation]:
+        """Upload item to the registry.
+
+        Args:
+        ----
+            local_path: Path to the directory containing the agent to upload
+            bump: If True, automatically increment patch version if it already exists
+            minor_bump: If True, bump with minor version increment (0.1.0 → 0.2.0)
+            major_bump: If True, bump with major version increment (0.1.0 → 1.0.0)
+
+        Returns:
+        -------
+            EntryLocation if upload was successful, None otherwise
+
+        """
+        console = Console()
+        path = resolve_local_path(Path(local_path))
+        metadata_path = path / "metadata.json"
+
+        # Load and validate metadata
+        metadata, error = load_and_validate_metadata(metadata_path)
+        if error:
+            console.print(
+                Panel(Text(error, style="bold red"), title="Metadata Error", border_style="red", padding=(1, 2))
+            )
+            return None
+
+        # At this point, metadata is guaranteed to be not None
+        assert metadata is not None, "Metadata should not be None if error is None"
+
+        name = metadata["name"]
+        version = metadata["version"]
+
+        # Get namespace using the function from registry.py
+        try:
+            namespace = get_namespace(path)
+        except ValueError:
+            console.print(
+                Panel(
+                    Text("Please login with `nearai login` before uploading", style="bold red"),
+                    title="Authentication Error",
+                    border_style="red",
+                    padding=(1, 2),
+                )
+            )
+            return None
+
+        # Check if this version already exists
+        exists, error = check_version_exists(namespace, name, version)
+
+        if error:
+            console.print(
+                Panel(Text(error, style="bold red"), title="Registry Error", border_style="red", padding=(1, 2))
+            )
+            return None
+
+        # Display the version check result
+        display_version_check(namespace, name, version, exists)
+
+        bump_requested = bump or minor_bump or major_bump
+
+        if exists and bump_requested:
+            # Handle version bump
+            old_version = version
+
+            # Determine increment type based on flags
+            if major_bump:
+                increment_type = "major"
+            elif minor_bump:
+                increment_type = "minor"
+            else:
+                increment_type = "patch"  # Default for bump
+
+            version = increment_version_by_type(version, increment_type)
+
+            # Enhanced version update message
+            update_panel = Panel(
+                Text.assemble(
+                    ("Updating Version...\n\n", "bold"),
+                    ("Previous version: ", "dim"),
+                    (f"{old_version}\n", "yellow"),
+                    ("New version:     ", "dim"),
+                    (f"{version}", "green bold"),
+                    ("\n\nIncrement type: ", "dim"),
+                    (f"{increment_type}", "cyan"),
+                ),
+                title="Bump",
+                border_style="green",
+                padding=(1, 2),
+            )
+            console.print(update_panel)
+
+            # Update metadata.json with new version
+            metadata["version"] = version
+            with open(metadata_path, "w") as f:
+                json.dump(metadata, f, indent=2)
+
+            console.print(f"\n✅ Updated [bold]{metadata_path}[/bold] with new version\n")
+            console.print(Rule(style="dim"))
+
+        elif exists and not bump_requested:
+            # Show error panel for version conflict
+            error_panel = Panel(
+                Text.assemble(
+                    ("To upload a new version:\n", "yellow"),
+                    (f"1. Edit {metadata_path}\n", "dim"),
+                    ('2. Update the "version" field (e.g., increment from "0.0.1" to "0.0.2")\n', "dim"),
+                    ("3. Try uploading again\n\n", "dim"),
+                    ("Or use the following flags:\n", "yellow"),
+                    ("  --bump          # Patch update (0.0.1 → 0.0.2)\n", "green"),
+                    ("  --minor-bump    # Minor update (0.0.1 → 0.1.0)\n", "green"),
+                    ("  --major-bump    # Major update (0.0.1 → 1.0.0)\n", "green"),
+                ),
+                title="Version Conflict",
+                border_style="red",
+            )
+            console.print(error_panel)
+            return None
+
+        # Version doesn't exist or has been bumped, proceed with upload
+        console.print(
+            f"\n📂 [bold]Uploading[/bold] version [green bold]{version}[/green bold] of [blue bold]{name}[/blue bold] to [cyan bold]{namespace}[/cyan bold]...\n"  # noqa: E501
+        )
+
+        try:
+            result = registry.upload(path, show_progress=True)
+
+            if result:
+                success_panel = Panel(
+                    Text.assemble(
+                        ("Upload completed successfully! 🚀 \n\n", "bold green"),
+                        ("Name:      ", "dim"),
+                        (f"{result.name}\n", "cyan"),
+                        ("Version:   ", "dim"),
+                        (f"{result.version}\n", "cyan"),
+                        ("Namespace: ", "dim"),
+                        (f"{result.namespace}", "cyan"),
+                    ),
+                    title="Success",
+                    border_style="green",
+                    padding=(1, 2),
+                )
+                console.print(success_panel)
+                return result
+            else:
+                console.print(
+                    Panel(
+                        Text("Upload failed for unknown reasons", style="bold red"),
+                        title="Upload Error",
+                        border_style="red",
+                        padding=(1, 2),
+                    )
+                )
+                return None
+
+        except Exception as e:
+            console.print(
+                Panel(
+                    Text(f"Error during upload: {str(e)}", style="bold red"),
+                    title="Upload Error",
+                    border_style="red",
+                    padding=(1, 2),
+                )
+            )
+            return None
 
     def download(self, entry_location: str, force: bool = False) -> None:
         """Download item."""
@@ -264,7 +477,7 @@ class BenchmarkCli:
         if CONFIG.auth is None:
             print("Please login with `nearai login`")
             exit(1)
-        namespace = CONFIG.auth.account_id
+        namespace = CONFIG.auth.namespace
 
         # Sort the args to have a consistent representation.
         solver_args = json.dumps(OrderedDict(sorted(args.items())))
@@ -321,9 +534,9 @@ class BenchmarkCli:
         )
 
         solver_strategy_class: Union[SolverStrategy, None] = SolverStrategyRegistry.get(solver_strategy, None)
-        assert (
-            solver_strategy_class
-        ), f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
+        assert solver_strategy_class, (
+            f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
+        )
 
         name = dataset
         if solver_strategy_class.scoring_method == SolverScoringMethod.Custom:
@@ -337,7 +550,14 @@ class BenchmarkCli:
                 map(lambda n: n in name, solver_strategy_obj.compatible_datasets())
             ), f"Solver strategy {solver_strategy} is not compatible with dataset {name}"
 
-        be = BenchmarkExecutor(DatasetInfo(name, subset, dataset), solver_strategy_obj, benchmark_id=benchmark_id)
+        dest_path = get_registry_folder() / name
+        metadata_path = dest_path / "metadata.json"
+        with open(metadata_path, "r") as file:
+            metadata = json.load(file)
+
+        be = BenchmarkExecutor(
+            DatasetInfo(name, subset, dataset, metadata), solver_strategy_obj, benchmark_id=benchmark_id
+        )
 
         cpu_count = os.cpu_count()
         max_concurrent = (cpu_count if cpu_count is not None else 1) if max_concurrent < 0 else max_concurrent
@@ -394,7 +614,7 @@ class EvaluationCli:
         from nearai.evaluation import print_evaluation_table
 
         api = EvaluationApi()
-        table = api.get_evaluation_table_v1_evaluation_table_get()
+        table = api.table_v1_evaluation_table_get()
 
         print_evaluation_table(
             table.rows,
@@ -406,8 +626,61 @@ class EvaluationCli:
             metric_name_max_length,
         )
 
+    def read_solutions(self, entry: str, status: Optional[bool] = None, verbose: bool = False) -> None:
+        """Reads solutions.json from evaluation entry."""
+        entry_path = registry.download(entry)
+        solutions_file = entry_path / "solutions.json"
+
+        if not solutions_file.exists():
+            print(f"No solutions file found for entry: {entry}")
+            return
+
+        try:
+            with open(solutions_file) as f:
+                solutions = json.load(f)
+        except json.JSONDecodeError:
+            print(f"Error reading solutions file for entry: {entry}")
+            return
+
+        # Filter solutions if status is specified
+        if status is not None:
+            solutions = [s for s in solutions if s.get("status") == status]
+        if not solutions:
+            print("No solutions found matching criteria")
+            return
+        print(f"\nFound {len(solutions)} solutions{' with status=' + str(status) if status is not None else ''}")
+
+        for i, solution in enumerate(solutions, 1):
+            print("-" * 80)
+            print(f"\nSolution {i}/{len(solutions)}:")
+            datum = solution.get("datum")
+            print(f"datum: {json.dumps(datum, indent=2, ensure_ascii=False)}")
+            status = solution.get("status")
+            print(f"status: {status}")
+            info: dict = solution.get("info", {})
+            if not verbose:
+                info.pop("verbose")
+            print(f"info: {json.dumps(info, indent=2, ensure_ascii=False)}")
+            if i == 1:
+                print("Enter to continue, type 'exit' to quit.")
+            new_message = input("> ")
+            if new_message.lower() == "exit":
+                break
+
 
 class AgentCli:
+    def dev(self) -> int:
+        """Run local UI for development of agents that have their own UI."""
+        if not os.path.exists("hub/demo/.env"):
+            shutil.copy("hub/demo/.env.example", "hub/demo/.env")
+
+        ret_val = os.system("npm install --prefix hub/demo")
+        if ret_val != 0:
+            print("Node.js is required to run the development server.")
+            print("Please install Node.js from https://nodejs.org/")
+        ret_val = os.system("npm run dev --prefix hub/demo")
+        return ret_val
+
     def inspect(self, path: str) -> None:
         """Inspect environment from given path."""
         import subprocess
@@ -417,24 +690,136 @@ class AgentCli:
 
     def interactive(
         self,
-        agents: str,
+        agent: Optional[str] = None,
         thread_id: Optional[str] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
+        local: bool = False,
+        verbose: bool = False,
+        env_vars: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Runs agent interactively."""
+        """Runs agent interactively.
+
+        Args:
+        ----
+            agent: Optional path to the agent directory. If not provided, will show agent selection menu
+            thread_id: Optional thread ID to continue an existing conversation
+            tool_resources: Optional tool resources to pass to the agent
+            local: Whether to run the agent locally (default: False)
+            verbose: Whether to show detailed debug information during execution
+            env_vars: Optional environment variables to pass to the agent
+
+        """
+        assert_user_auth()
+
+        if agent is None:
+            # List available agents in the registry folder
+            registry_path = Path(get_registry_folder())
+            if not registry_path.exists():
+                print("Error: Registry folder not found. Please create an agent first.")
+                return
+
+            agents = []
+            # Walk through registry to find agents
+            for namespace in registry_path.iterdir():
+                if namespace.is_dir():
+                    for agent_name in namespace.iterdir():
+                        if agent_name.is_dir():
+                            for version in agent_name.iterdir():
+                                if version.is_dir():
+                                    agents.append(version)
+
+            if not agents:
+                print("No agents found. Please create an agent first with 'nearai agent create'")
+                return
+
+            # Sort agents by namespace then name
+            agents = sorted(agents, key=lambda x: (x.parts[-3], x.parts[-2]))
+            display_agents_in_columns(agents)
+
+            while True:
+                try:
+                    choice = int(Prompt.ask("[blue bold]Select an agent (enter number)")) - 1
+                    if 0 <= choice < len(agents):
+                        agent = str(agents[choice])
+                        break
+                    print("Invalid selection. Please try again.")
+                except ValueError:
+                    print("Please enter a valid number.")
+                except KeyboardInterrupt:
+                    print("\nOperation cancelled.")
+                    return
+
+        # Convert agent path to Path object if it's a string
+        agent_path = Path(agent)
+        if local:
+            agent_path = resolve_local_path(agent_path)
+
+        agent_id = get_agent_id(agent_path, local)
+
         last_message_id = None
+        print(f"\n=== Starting interactive session with agent: {agent_id} ===")
+        print("")
+        print("Type 'exit' to end the session")
+        print("Type 'multiline' to enter multiline mode")
+        print("")
+
+        metadata = get_metadata(agent_path, local)
+        title = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("title")
+        if title:
+            print(title)
+        description = metadata.get("details", {}).get("agent", {}).get("welcome", {}).get("description")
+        if description:
+            print(description)
+
+        multiline = False
+
+        def print_multiline_prompt():
+            print("On Linux/macOS: To submit, press Ctrl+D at the beginning of a new line after your prompt")
+            print("On Windows: Press Ctrl+Z followed by Enter")
+
         while True:
-            new_message = input("> ")
-            if new_message.lower() == "exit":
+            first_line = input("> ")
+            if first_line.lower() == "exit":
                 break
+            if not multiline and first_line.lower() == "multiline":
+                multiline = True
+                print_multiline_prompt()
+                continue
+            lines = [first_line]
+
+            # NOTE: the code below tries to catch copy-paste by calling has_pending_input().
+            # This is OS-specific functionality and has been tested on Unix/Linux/Mac:
+            # 1. Works well with blocks of text of 3 lines and more.
+            # 2. Alas, does not trigger with text of 2 lines or less.
+            pending_input_on_this_line = has_pending_input()
+            if multiline or pending_input_on_this_line:
+                try:
+                    pending_input_on_prev_line = pending_input_on_this_line
+                    while True:
+                        pending_input_on_this_line = has_pending_input()
+                        if pending_input_on_prev_line or pending_input_on_this_line:
+                            line = input("")
+                        else:
+                            if not multiline:
+                                multiline = True
+                                print_multiline_prompt()
+                            line = input("> ")
+                        lines.append(line)
+                        pending_input_on_prev_line = pending_input_on_this_line
+                except EOFError:
+                    print("")
+
+            new_message = "\n".join(lines)
 
             last_message_id = self._task(
-                agents=agents,
+                agent=agent_id,
                 task=new_message,
                 thread_id=thread_id,
                 tool_resources=tool_resources,
-                record_run=False,
                 last_message_id=last_message_id,
+                local_path=agent_path if local else None,
+                verbose=verbose,
+                env_vars=env_vars,
             )
 
             # Update thread_id for the next iteration
@@ -443,34 +828,45 @@ class AgentCli:
 
     def task(
         self,
-        agents: str,
+        agent: str,
         task: str,
         thread_id: Optional[str] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
+        file_ids: Optional[List[str]] = None,
+        local: bool = False,
+        verbose: bool = False,
+        env_vars: Optional[Dict[str, Any]] = None,
     ) -> None:
         """CLI wrapper for the _task method."""
         last_message_id = self._task(
-            agents=agents,
+            agent=agent,
             task=task,
             thread_id=thread_id,
             tool_resources=tool_resources,
-            record_run=True,
+            file_ids=file_ids,
+            local_path=resolve_local_path(Path(agent)) if local else None,
+            verbose=verbose,
+            env_vars=env_vars,
         )
-
         if last_message_id:
             print(f"Task completed. Thread ID: {self.last_thread_id}")
             print(f"Last message ID: {last_message_id}")
 
     def _task(
         self,
-        agents: str,
+        agent: str,
         task: str,
         thread_id: Optional[str] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
-        record_run: bool = True,
+        file_ids: Optional[List[str]] = None,
         last_message_id: Optional[str] = None,
+        local_path: Optional[Path] = None,
+        verbose: bool = False,
+        env_vars: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
         """Runs agent non-interactively with a single task."""
+        assert_user_auth()
+
         hub_client = get_hub_client()
         if thread_id:
             thread = hub_client.beta.threads.retrieve(thread_id)
@@ -479,24 +875,43 @@ class AgentCli:
                 tool_resources=tool_resources,
             )
 
-        hub_client.beta.threads.runs.create_and_poll(
+        hub_client.beta.threads.messages.create(
             thread_id=thread.id,
-            assistant_id=agents,
-            instructions="You are a helpful assistant. Complete the given task.",
-            additional_messages=[
-                {
-                    "role": "user",
-                    "content": task,
-                }
-            ],
-            model="fireworks::accounts/fireworks/models/llama-v3p1-405b-instruct",
+            role="user",
+            content=task,
+            attachments=[Attachment(file_id=file_id) for file_id in file_ids] if file_ids else None,
         )
+
+        if not local_path:
+            hub_client.beta.threads.runs.create_and_poll(
+                thread_id=thread.id,
+                assistant_id=agent,
+            )
+        else:
+            run = hub_client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id=agent,
+                extra_body={"delegate_execution": True},
+            )
+            params = {
+                "api_url": CONFIG.api_url,
+                "tool_resources": run.tools,
+                "data_source": "local_files",
+                "user_env_vars": env_vars,
+                "agent_env_vars": {},
+                "verbose": verbose,
+            }
+            auth = CONFIG.auth
+            assert auth is not None
+            LocalRunner(str(local_path), agent, thread.id, run.id, auth, params)
 
         # List new messages
         messages = hub_client.beta.threads.messages.list(thread_id=thread.id, after=last_message_id, order="asc")
         message_list = list(messages)
         if message_list:
             for msg in message_list:
+                if msg.metadata and msg.metadata.get("message_type"):
+                    continue
                 if msg.role == "assistant":
                     print(f"Assistant: {msg.content[0].text.value}")
             last_message_id = message_list[-1].id
@@ -508,43 +923,66 @@ class AgentCli:
 
         return last_message_id
 
-    def run_remote(
-        self,
-        agents: str,
-        new_message: str = "",
-        environment_id: str = "",
-        provider: str = "aws_lambda",
-        params: object = None,
-        framework: str = "base",
-        environment: str = "production",
-    ) -> None:
-        """Invoke a Container based AWS lambda function to run agents on a given environment."""
-        from nearai.clients.lambda_client import LambdaWrapper
+    def create(self, name: Optional[str] = None, description: Optional[str] = None, fork: Optional[str] = None) -> None:
+        """Create a new agent or fork an existing one.
 
-        if not CONFIG.auth:
-            print("Please login with `nearai login`")
-            return
-        if provider != "aws_lambda":
-            print(f"Provider {provider} is not supported.")
-            return
-        if not params:
-            params = {"max_iterations": 1}
+        Usage:
+          nearai agent create  # Enters interactive mode
+          nearai agent create --name <agent_name> --description <description>
+          nearai agent create --fork <namespace/agent_name/version> [--name <new_agent_name>]
 
-        wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2"))
-        try:
-            new_environment = wrapper.invoke_function(
-                f"{environment}-agent-runner-{framework}",
-                {
-                    "agents": agents,
-                    "environment_id": environment_id,
-                    "auth": CONFIG.auth.model_dump(),
-                    "new_message": new_message,
-                    "params": params,
-                },
-            )
-            print(f"Agent run finished. New environment is {new_environment}")
-        except Exception as e:
-            print(f"Error running agent remotely: {e}")
+        Options:
+          --name          Name of the new agent (optional).
+          --description   Description of the new agent (optional).
+          --fork          Fork an existing agent specified by namespace/agent_name/version.
+
+        Examples
+        --------
+          nearai agent create   # Enters interactive mode
+          nearai agent create --name my_agent --description "My new agent"
+          nearai agent create --fork agentic.near/summary/0.0.3 --name new_summary_agent
+
+        """
+        # Check if the user is authenticated
+        if CONFIG.auth is None or CONFIG.auth.namespace is None:
+            print("Please login with `nearai login` before creating an agent.")
+            return
+
+        namespace = CONFIG.auth.namespace
+
+        # Import the agent creator functions
+        from nearai.agent_creator import create_new_agent, fork_agent
+
+        if fork:
+            # Fork an existing agent
+            fork_agent(fork, namespace, name)
+        else:
+            # Create a new agent from scratch
+            create_new_agent(namespace, name, description)
+
+    def upload(
+        self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
+    ) -> Optional[EntryLocation]:
+        """Upload agent to the registry.
+
+        This is an alias for 'nearai registry upload'.
+
+        Args:
+        ----
+            local_path: Path to the directory containing the agent to upload
+            bump: If True, automatically increment patch version if it already exists
+            minor_bump: If True, bump with minor version increment (0.1.0 → 0.2.0)
+            major_bump: If True, bump with major version increment (0.1.0 → 1.0.0)
+
+        Returns:
+        -------
+            EntryLocation if upload was successful, None otherwise
+
+        """
+        assert_user_auth()
+        # Create an instance of RegistryCli and call its upload method
+        registry_cli = RegistryCli()
+        return registry_cli.upload(local_path, bump, minor_bump, major_bump)
 
 
 class VllmCli:
@@ -565,12 +1003,12 @@ class VllmCli:
 
 class HubCLI:
     def chat(self, **kwargs):
-        """Chat with model from NearAI hub.
+        """Chat with model from NEAR AI hub.
 
         Args:
         ----
             query (str): User's query to model
-            endpoint (str): NearAI HUB's url
+            endpoint (str): NEAR AI HUB's url
             model (str): Name of a model
             provider (str): Name of a provider
             info (bool): Display system info
@@ -657,12 +1095,26 @@ class LoginCLI:
             print("Missing data")
 
 
+class PermissionCli:
+    def __init__(self) -> None:  # noqa: D107
+        self.client = PermissionsApi()
+
+    def grant(self, account_id: str, permission: str):
+        """Grant permission to an account."""
+        self.client.grant_permission_v1_permissions_grant_permission_post(account_id, permission)
+
+    def revoke(self, account_id: str, permission: str = ""):
+        """Revoke permission from an account. If permission is empty all permissions are revoked."""
+        self.client.revoke_permission_v1_permissions_revoke_permission_post(account_id, permission)
+
+
 class CLI:
     def __init__(self) -> None:  # noqa: D107
         self.registry = RegistryCli()
         self.login = LoginCLI()
         self.logout = LogoutCLI()
         self.hub = HubCLI()
+        self.log = LogCLI()
 
         self.config = ConfigCli()
         self.benchmark = BenchmarkCli()
@@ -671,6 +1123,38 @@ class CLI:
         self.finetune = FinetuneCli()
         self.tensorboard = TensorboardCli()
         self.vllm = VllmCli()
+        self.permission = PermissionCli()
+
+    def submit(self, path: Optional[str] = None, worker_kind: str = WorkerKind.GPU_8_A100.value):
+        """Submit a task to be executed by a worker."""
+        if path is None:
+            path = os.getcwd()
+
+        worker_kind_t = WorkerKind(worker_kind)
+
+        location = self.registry.upload(path)
+
+        if location is None:
+            print("Error: Failed to upload entry")
+            return
+
+        delegation_api = DelegationApi()
+        delegation_api.delegate_v1_delegation_delegate_post(
+            delegate_account_id=CONFIG.scheduler_account_id,
+            expires_at=datetime.now() + timedelta(days=1),
+        )
+
+        try:
+            client = JobsApi()
+            client.add_job_v1_jobs_add_job_post(
+                worker_kind_t,
+                BodyAddJobV1JobsAddJobPost(entry_location=location),
+            )
+        except Exception as e:
+            print("Error: ", e)
+            delegation_api.revoke_delegation_v1_delegation_revoke_delegation_post(
+                delegate_account_id=CONFIG.scheduler_account_id,
+            )
 
     def location(self) -> None:  # noqa: D102
         """Show location where nearai is installed."""

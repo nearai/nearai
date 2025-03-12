@@ -1,6 +1,7 @@
 import { type Account, type Near } from 'near-api-js';
 import { type BrowserLocalStorageKeyStore } from 'near-api-js/lib/key_stores';
-import { create } from 'zustand';
+import { create, type StateCreator } from 'zustand';
+import { devtools } from 'zustand/middleware';
 
 type NearStore = {
   keyStore: BrowserLocalStorageKeyStore | null;
@@ -12,7 +13,7 @@ type NearStore = {
   setViewAccount: (viewAccount: Account | null) => void;
 };
 
-export const useNearStore = create<NearStore>((set) => ({
+const store: StateCreator<NearStore> = (set) => ({
   keyStore: null,
   near: null,
   viewAccount: null,
@@ -20,4 +21,12 @@ export const useNearStore = create<NearStore>((set) => ({
   setKeyStore: (keyStore) => set({ keyStore }),
   setNear: (near) => set({ near }),
   setViewAccount: (viewAccount) => set({ viewAccount }),
-}));
+});
+
+const name = 'NearStore';
+
+export const useNearStore = create<NearStore>()(
+  devtools(store, {
+    name,
+  }),
+);

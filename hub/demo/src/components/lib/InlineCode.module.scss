@@ -1,0 +1,28 @@
+.inlineCode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 22px;
+  padding: 0 4px;
+  margin: 0 2px;
+  border-radius: 6px;
+  border: none;
+  box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+  font-family: monospace;
+  color: var(--violet-12);
+  background-color: var(--violet-4);
+  text-align: left;
+  flex-shrink: 0;
+  outline: none;
+  cursor: pointer;
+  transition: var(--transitions);
+
+  &:hover {
+    background: var(--violet-5);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--violet-7);
+  }
+}

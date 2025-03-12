@@ -4,9 +4,8 @@ from datetime import timezone
 from pathlib import Path
 from typing import Any, List, Tuple, Union
 
-from openapi_client.models.entry_location import EntryLocation
-
 from nearai.config import CONFIG
+from nearai.openapi_client.models.entry_location import EntryLocation
 
 entry_location_pattern = re.compile("^(?P<namespace>[^/]+)/(?P<name>[^/]+)/(?P<version>[^/]+)$")
 
@@ -59,7 +58,7 @@ def log(*, target: str, **content: Any) -> None:
     print("WARNING: Logging is disabled")
 
 
-def check_metadata(path: Path):
+def check_metadata_present(path: Path):
     if not path.exists():
         print(f"Metadata file not found: {path.absolute()}")
         print("Create a metadata file with `nearai registry metadata_template`")

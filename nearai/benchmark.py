@@ -6,10 +6,10 @@ from itertools import islice
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 from datasets import Dataset, DatasetDict  # type: ignore[attr-defined]
-from openapi_client.api.benchmark_api import BenchmarkApi
 from tqdm import tqdm
 
-from nearai.evaluation import record_evaluation_metrics, record_single_score_evaluation
+from nearai.evaluation import load_benchmark_entry_info, record_evaluation_metrics, record_single_score_evaluation
+from nearai.openapi_client.api.benchmark_api import BenchmarkApi
 from nearai.solvers import SolverScoringMethod, SolverStrategy
 
 
@@ -18,6 +18,7 @@ class DatasetInfo:
     name: str
     subset: Optional[str]
     dataset: Union[Dataset, DatasetDict]
+    metadata: dict
 
     def get_dataset(self) -> Dataset:  # noqa: D102
         if isinstance(self.dataset, DatasetDict):
@@ -27,6 +28,19 @@ class DatasetInfo:
             return self.dataset
         else:
             raise ValueError(f"Expected a Dataset or DatasetDict, got {type(self.dataset)}")
+
+    def get_dataset_evaluation_name(self) -> str:  # noqa: D102
+        details = self.metadata["details"]
+        if benchmark_metadata := details.get("benchmark", None):
+            evaluation_name = benchmark_metadata.get("evaluation_name", "")
+            if not evaluation_name:
+                return ""
+            if not self.subset:
+                return evaluation_name
+            evaluation_separator = benchmark_metadata.get("evaluation_separator", "_")
+            return f"{evaluation_name}{evaluation_separator}{self.subset}"
+        else:
+            return ""
 
 
 class BenchmarkExecutor:
@@ -40,6 +54,7 @@ class BenchmarkExecutor:
         self.solver_strategy = solver_strategy
         self.benchmark_id = benchmark_id
         self.client = BenchmarkApi()
+        self.solver_strategy.dataset_evaluation_name = self.dataset_info.get_dataset_evaluation_name()
 
     def run(self, progress: bool = True, max_concurrent: int = 32, record: bool = False) -> None:  # noqa: D102
         data_tasks = (
@@ -50,7 +65,7 @@ class BenchmarkExecutor:
 
         cache_ = self.client.get_benchmark_result_v1_benchmark_get_result_get(benchmark_id=self.benchmark_id)
         # Need to do json.loads twice to convert back to the same data returned by solvers.
-        cache = {result.index: (result.solved, json.loads(json.loads(result.info))) for result in cache_}
+        cache = {result.index: (result.solved, load_benchmark_entry_info(result.info)) for result in cache_}
 
         n_true_results = 0
         remaining = len(data_tasks)
@@ -83,7 +98,7 @@ class BenchmarkExecutor:
                         n_true_results += 1
                     if self.solver_strategy.scoring_method == SolverScoringMethod.TrueOrFalseList:
                         bar.set_description(
-                            f"Correct/Seen - {n_true_results}/{total - remaining} - {n_true_results/(total - remaining):.2%}"  # noqa: E501
+                            f"Correct/Seen - {n_true_results}/{total - remaining} - {n_true_results / (total - remaining):.2%}"  # noqa: E501
                         )
                     elif info != "":
                         bar.set_description(f"{info}")
@@ -96,14 +111,16 @@ class BenchmarkExecutor:
             bar.close()  # Ensure the progress bar is closed
 
         if self.solver_strategy.scoring_method == SolverScoringMethod.TrueOrFalseList:
-            print(f"Final score: {n_true_results}/{total} - {n_true_results/total:.2%}")
+            print(f"Final score: {n_true_results}/{total} - {n_true_results / total:.2%}")
             if record:
-                record_single_score_evaluation(self.solver_strategy, round(n_true_results / total * 100, 2))
+                record_single_score_evaluation(
+                    self.solver_strategy, self.benchmark_id, data_tasks, round(n_true_results / total * 100, 2)
+                )
         else:
             evaluation_metrics = self.solver_strategy.get_evaluation_metrics(results)
             print(evaluation_metrics)
             if record:
-                record_evaluation_metrics(self.solver_strategy, evaluation_metrics)
+                record_evaluation_metrics(self.solver_strategy, self.benchmark_id, data_tasks, evaluation_metrics)
 
 
 def solve_task(

@@ -2,8 +2,10 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useTheme } from '@near-pagoda/ui';
+import { Button, copyTextToClipboard, Tooltip } from '@near-pagoda/ui';
+import { Copy } from '@phosphor-icons/react';
+import { memo, useEffect, useState } from 'react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import {
   atomOneDark,
@@ -12,10 +14,12 @@ import {
 
 import s from './Code.module.scss';
 
-type CodeLanguage =
+export type CodeLanguage =
+  | 'shell'
   | 'css'
   | 'html'
   | 'javascript'
+  | 'typescript'
   | 'markdown'
   | 'python'
   | 'json'
@@ -27,61 +31,85 @@ type CodeLanguage =
 type Props = {
   bleed?: boolean;
   language: CodeLanguage;
+  showCopyButton?: boolean;
   showLineNumbers?: boolean;
   source: string | undefined | null;
 };
 
-export const Code = ({
-  bleed,
-  language,
-  showLineNumbers = true,
-  source,
-}: Props) => {
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+function normalizeLanguage(input: string | null | undefined) {
+  if (!input) return '';
 
-  const style =
-    mounted && resolvedTheme === 'dark' ? atomOneDark : atomOneLight;
+  let value: CodeLanguage = input;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-
-  return (
-    <div className={s.code} data-bleed={bleed}>
-      {source && (
-        <SyntaxHighlighter
-          language={language ?? ''}
-          style={style}
-          showLineNumbers={language === 'markdown' ? false : showLineNumbers}
-        >
-          {source}
-        </SyntaxHighlighter>
-      )}
-    </div>
-  );
-};
-
-export function filePathToCodeLanguage(
-  path: string | undefined | null,
-): CodeLanguage {
-  const extension = path?.split('.').at(-1);
-  if (!extension) return '';
-
-  switch (extension) {
-    case 'css':
-      return 'css';
-    case 'html':
-      return 'html';
-    case 'js':
-      return 'javascript';
-    case 'py':
-      return 'python';
-    case 'md':
-      return 'markdown';
+  if (['js', 'jsx'].includes(value)) {
+    value = 'javascript';
+  } else if (['ts', 'tsx'].includes(value)) {
+    value = 'typescript';
+  } else if (value === 'py') {
+    value = 'python';
+  } else if (value === 'md') {
+    value = 'markdown';
   }
 
-  return '';
+  return value;
 }
+
+export const Code = memo(
+  ({
+    bleed,
+    showCopyButton = true,
+    showLineNumbers = true,
+    ...props
+  }: Props) => {
+    const { resolvedTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+    const language = normalizeLanguage(props.language);
+    const source = props.source?.replace(/[\n]+$/, '').replace(/^[\n]+/, '');
+
+    const style =
+      mounted && resolvedTheme === 'dark' ? atomOneDark : atomOneLight;
+
+    useEffect(() => {
+      setMounted(true);
+    }, []);
+
+    if (!mounted) return null;
+
+    return (
+      <div
+        className={s.code}
+        data-bleed={bleed}
+        data-copy={showCopyButton}
+        data-language={language}
+      >
+        {showCopyButton && (
+          <Tooltip asChild content="Copy to clipboard">
+            <Button
+              label="Copy code to clipboard"
+              icon={<Copy />}
+              variant="secondary"
+              size="small"
+              fill="ghost"
+              onClick={() => source && copyTextToClipboard(source)}
+              className={s.copyButton}
+              tabIndex={-1}
+            />
+          </Tooltip>
+        )}
+
+        {source && (
+          <SyntaxHighlighter
+            PreTag="div"
+            language={language ?? ''}
+            style={style}
+            showLineNumbers={showLineNumbers}
+          >
+            {source}
+          </SyntaxHighlighter>
+        )}
+      </div>
+    );
+  },
+);
+
+Code.displayName = 'Code';

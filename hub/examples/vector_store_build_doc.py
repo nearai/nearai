@@ -6,8 +6,8 @@ import tempfile
 import time
 from typing import Any, Dict, List
 
-from shared.client_config import ClientConfig
-from shared.inference_client import InferenceClient
+from nearai.shared.client_config import ClientConfig
+from nearai.shared.inference_client import InferenceClient
 from nearai.config import Config, load_config_file
 
 # BUILD VECTOR STORE FROM FILES + USE IT FOR LLM RESPONSE
@@ -124,7 +124,7 @@ def generate_llm_response(messages, processed_results):
     Use the provided vector store results to inform your response, but don't mention the vector store directly.
     """
 
-    model = "llama-v3p1-405b-instruct"
+    model = "qwen2p5-72b-instruct"
 
     vs_results = "\n=========\n".join(
         [f"{result.get('chunk_text', 'No text available')}" for result in processed_results]
@@ -145,7 +145,7 @@ retrieved_store = client.beta.vector_stores.retrieve(vs_id)
 print(f"Vector Store details: {retrieved_store}")
 
 # Let's run a LLM completions using vector store we just created
-search_query = """Create markdown documentation for the new NearAI feature: Vector Stores. Provide a general
+search_query = """Create markdown documentation for the new NEAR AI feature: Vector Stores. Provide a general
 explanation of what Vector Stores are and how they function.
 - Explain how to create a Vector Store, including uploading files, retrieving them, and deleting them.
 - Describe how to search within the Vector Store.

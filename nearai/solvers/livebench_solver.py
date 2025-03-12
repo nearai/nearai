@@ -85,8 +85,8 @@ class LiveBenchSolverStrategy(SolverStrategy):
     @property
     def evaluated_entry_name(self) -> str:  # noqa: D102
         name = ""
-        if self.agent_obj:
-            name = self.agent_obj.name
+        if self.agent:
+            name = self.agent_name()
             if self.model_name != "":
                 name += f"_with_model_{self.model_name}"
         else:

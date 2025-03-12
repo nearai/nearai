@@ -1,5 +1,5 @@
 [Unit]
-Description=NearAI Supervisor
+Description=NEAR AI Supervisor
 After=network.target
 
 [Service]

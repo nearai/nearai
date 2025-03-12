@@ -1,141 +1,152 @@
 import { useCallback, useMemo } from 'react';
+import { type z } from 'zod';
 
+import { type threadMessageModel, type threadModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { api, type RouterOutputs } from '~/trpc/react';
+import { type AppRouterOutputs } from '~/trpc/router';
+import { trpc } from '~/trpc/TRPCProvider';
 
-export type Thread = {
+import { useEmbeddedWithinIframe } from './embed';
+import { useCurrentEntryParams } from './entries';
+import { useQueryParams } from './url';
+
+export type ThreadSummary = z.infer<typeof threadModel> & {
   agent: {
     name: string;
     namespace: string;
     version: string;
     url: string;
   };
-  description: string;
-  environments: RouterOutputs['hub']['entries'];
-  environmentId: string;
   lastMessageAt: Date | null;
   messageCount: number;
   url: string;
 };
 
 export function useThreads() {
-  const accountId = useAuthStore((store) => store.auth?.account_id);
-  const utils = api.useUtils();
+  const { embedded } = useEmbeddedWithinIframe();
+  const currentEntryParams = useCurrentEntryParams();
+  const auth = useAuthStore((store) => store.auth);
+  const utils = trpc.useUtils();
 
-  const entriesQuery = api.hub.entries.useQuery(
-    {
-      category: 'environment',
-      namespace: accountId,
-    },
-    {
-      enabled: !!accountId,
-    },
-  );
+  const threadsQuery = trpc.hub.threads.useQuery(undefined, {
+    enabled: !!auth,
+  });
 
-  const setThreadEnvironmentData = useCallback(
-    (id: number, data: Partial<RouterOutputs['hub']['entries'][number]>) => {
-      const environments = [...(entriesQuery.data ?? [])].map((environment) => {
-        if (environment.id === id) {
+  const setThreadData = useCallback(
+    (id: string, data: Partial<AppRouterOutputs['hub']['threads'][number]>) => {
+      const threads = [...(threadsQuery.data ?? [])].map((thread) => {
+        if (thread.id === id) {
           return {
-            ...environment,
+            ...thread,
             ...data,
           };
         }
 
-        return environment;
+        return thread;
       });
 
-      utils.hub.entries.setData(
-        {
-          category: 'environment',
-          namespace: accountId,
-        },
-        environments,
-      );
+      utils.hub.threads.setData(undefined, threads);
     },
-    [accountId, utils, entriesQuery.data],
+    [utils, threadsQuery.data],
   );
 
   const threads = useMemo(() => {
-    const result: Thread[] = [];
-    if (!accountId) return [];
-    if (!entriesQuery.data) return;
+    if (!auth) return [];
+    if (!threadsQuery.data) return;
 
-    // If an environment has a nullish `base_id`, it's a parent (the start of a thread)
-    const parents = entriesQuery.data.filter(
-      (environment) => !environment.details.base_id,
-    );
-    const children = entriesQuery.data.filter(
-      (environment) => !!environment.details.base_id,
-    );
+    const result: ThreadSummary[] = [];
 
-    for (const parent of parents) {
-      const environments = followThread(children, parent);
-      const firstEnvironment = environments[0];
-      const lastEnvironment = environments.at(-1);
+    for (const data of threadsQuery.data) {
+      const rootAgentId = data.metadata.agent_ids?.[0];
+      if (!rootAgentId) continue;
 
-      if (firstEnvironment && lastEnvironment) {
-        const environmentId = `${accountId}/${lastEnvironment.name}/${lastEnvironment.version}`;
-        const name = lastEnvironment.details.primary_agent_name;
-        const namespace = lastEnvironment.details.primary_agent_namespace;
-        const version = lastEnvironment.details.primary_agent_version;
+      const [namespace, name, version, ...otherSegments] =
+        rootAgentId.split('/');
+      if (!namespace || !name || !version || otherSegments.length > 0) continue;
 
-        if (!name || !namespace || !version) continue;
-
-        const agentUrl = `/agents/${namespace}/${name}/${version}`;
-        const threadUrl = `${agentUrl}/run?environmentId=${encodeURIComponent(environmentId)}`;
-
-        let description = firstEnvironment.description;
-        if (description.startsWith('Agent remote run')) {
-          description = name;
-        }
-
-        result.push({
-          agent: {
-            name,
-            namespace,
-            version,
-            url: agentUrl,
-          },
-          description,
-          environments,
-          environmentId,
-          lastMessageAt: lastEnvironment.details.timestamp
-            ? new Date(lastEnvironment.details.timestamp)
-            : null,
-          messageCount: environments.length,
-          url: threadUrl,
-        });
+      if (
+        embedded &&
+        (currentEntryParams.namespace !== namespace ||
+          currentEntryParams.name !== name)
+      ) {
+        // When embedded within an iframe, only show threads for the embedded agent
+        continue;
       }
+
+      const agentUrl = `/agents/${namespace}/${name}/${version}`;
+      const threadUrl = `${agentUrl}/run?threadId=${encodeURIComponent(data.id)}`;
+
+      result.push({
+        ...data,
+        metadata: {
+          ...data.metadata,
+          topic: data.metadata.topic || name,
+        },
+        agent: {
+          name,
+          namespace,
+          version,
+          url: agentUrl,
+        },
+        lastMessageAt: new Date(),
+        messageCount: 0,
+        url: threadUrl,
+      });
     }
 
     return result;
-  }, [accountId, entriesQuery.data]);
+  }, [
+    auth,
+    threadsQuery.data,
+    embedded,
+    currentEntryParams.name,
+    currentEntryParams.namespace,
+  ]);
 
   return {
-    setThreadEnvironmentData,
+    setThreadData,
     threads,
-    threadsQuery: entriesQuery,
+    threadsQuery,
   };
 }
 
-function followThread(
-  children: RouterOutputs['hub']['entries'],
-  current: RouterOutputs['hub']['entries'][number],
-  result: RouterOutputs['hub']['entries'] = [],
+export type MessageGroup = {
+  isRootThread: boolean;
+  threadId: string;
+  messages: z.infer<typeof threadMessageModel>[];
+};
+
+export function useGroupedThreadMessages(
+  messages: z.infer<typeof threadMessageModel>[],
 ) {
-  result.push(current);
+  const { queryParams } = useQueryParams(['threadId']);
+  const rootThreadId = queryParams.threadId!;
 
-  const next = children.find(
-    (c) =>
-      current.details.run_id &&
-      c.details.base_id?.includes(current.details.run_id),
-  );
+  const groupedMessages = useMemo(() => {
+    const result: MessageGroup[] = [];
 
-  if (next) {
-    followThread(children, next, result);
+    messages.forEach((message) => {
+      const latestGroup = result.length > 0 ? result.at(-1) : undefined;
+
+      if (latestGroup?.threadId === message.thread_id) {
+        latestGroup.messages.push(message);
+        return;
+      } else {
+        result.push({
+          isRootThread:
+            message.thread_id === rootThreadId ||
+            message.thread_id === '' ||
+            !rootThreadId,
+          threadId: message.thread_id,
+          messages: [message],
+        });
+      }
+    });
+
     return result;
-  }
+  }, [messages, rootThreadId]);
 
-  return result;
+  return {
+    groupedMessages,
+  };
 }

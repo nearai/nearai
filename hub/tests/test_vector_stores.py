@@ -9,12 +9,12 @@ import pytest
 from fastapi.testclient import TestClient
 from hub.app import app
 from nearai.login import generate_nonce
-from hub.api.v1.auth import revokable_auth, AuthToken
+from hub.api.v1.auth import get_auth, AuthToken
 from hub.api.v1.vector_stores import VectorStore, CreateVectorStoreRequest
 
 @pytest.fixture
 def client():
-    app.dependency_overrides[revokable_auth] = override_dependency
+    app.dependency_overrides[get_auth] = override_dependency
     return TestClient(app)
 
 @pytest.fixture
@@ -54,7 +54,7 @@ def test_create_and_get_vector_store(openai_client):
         metadata={"key": "value"},
         expires_after={"anchor": "last_active_at", "days": 7},
     )
-    
+
     # Now retrieve the created vector store
     retrieved_store = openai_client.beta.vector_stores.retrieve(created_store.id)
 
@@ -70,7 +70,7 @@ def test_openai_upload_file(openai_client, in_memory_file):
         purpose="batch",
     )
     print(response)
-    
+
     openai_client.beta.vector_stores.files.create(
         file_id=response.id,
         purpose="batch",
@@ -81,18 +81,18 @@ def test_attach_file_to_vector_store(openai_client, in_memory_file, client):
         name="test_retrieve_vector_store",
     )
     print(f"Vector store response: {vs}")
-    
+
     f = openai_client.files.create(
         file=in_memory_file,
         purpose="assistants",
     )
     print(f"File response: {f}")
-    
+
     resp = openai_client.beta.vector_stores.files.create(
       vector_store_id=vs.id,
       file_id=f.id,
     )
     print(f"File attached to vector store: {resp}")
-    
+
     resp = client.post(f"/v1/vector_stores/{vs.id}/search", json={"query": "How to list my vector stores?"})
     print(f"Search response: {resp.json()}")

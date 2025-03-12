@@ -1,23 +1,15 @@
+# ruff: noqa: E402  # two blocks of imports makes the linter sad
 import logging
+import os
 
+from ddtrace import patch_all
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, status
-from fastapi.exceptions import RequestValidationError
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
-from hub.api.v1.agent_routes import run_agent_router
-from hub.api.v1.benchmark import v1_router as benchmark_router
-from hub.api.v1.evaluation import v1_router as evaluation_router
-from hub.api.v1.exceptions import TokenValidationError
-from hub.api.v1.files import files_router
-from hub.api.v1.hub_secrets import hub_secrets_router
-from hub.api.v1.registry import v1_router as registry_router
-from hub.api.v1.routes import v1_router
-from hub.api.v1.stars import v1_router as stars_router
-from hub.api.v1.streaming import streaming_router
-from hub.api.v1.thread_routes import threads_router
-from hub.api.v1.vector_stores import vector_stores_router
+# Initialize env vars, logging, and Datadog tracing before any other imports
+load_dotenv()
+
+if os.environ.get("DD_ENABLED"):
+    patch_all()
 
 # Configure logging
 logging.basicConfig(
@@ -26,7 +18,33 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-load_dotenv()
+# next round of imports
+
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from hub.api.v1.agent_data import agent_data_router
+from hub.api.v1.agent_routes import run_agent_router
+from hub.api.v1.benchmark import v1_router as benchmark_router
+from hub.api.v1.delegation import v1_router as delegation_router
+from hub.api.v1.evaluation import v1_router as evaluation_router
+from hub.api.v1.exceptions import TokenValidationError
+from hub.api.v1.files import files_router
+from hub.api.v1.hub_secrets import hub_secrets_router
+from hub.api.v1.jobs import v1_router as job_router
+from hub.api.v1.logs import logs_router
+from hub.api.v1.permissions import v1_router as permission_router
+from hub.api.v1.registry import v1_router as registry_router
+from hub.api.v1.routes import v1_router
+from hub.api.v1.scheduled_run import scheduled_run_router
+from hub.api.v1.stars import v1_router as stars_router
+from hub.api.v1.streaming import streaming_router
+from hub.api.v1.thread_routes import threads_router
+from hub.api.v1.vector_stores import vector_stores_router
+
+# No lifespan function - FastAPI will use default behavior
 app = FastAPI()
 
 origins = ["*"]
@@ -42,13 +60,21 @@ app.add_middleware(
 app.include_router(v1_router, prefix="/v1")
 app.include_router(registry_router, prefix="/v1")
 app.include_router(run_agent_router, prefix="/v1")
+app.include_router(agent_data_router, prefix="/v1")
 app.include_router(benchmark_router, prefix="/v1")
+app.include_router(stars_router, prefix="/v1")
+app.include_router(job_router, prefix="/v1")
+app.include_router(permission_router, prefix="/v1")
+app.include_router(evaluation_router, prefix="/v1")
+app.include_router(delegation_router, prefix="/v1")
+app.include_router(logs_router, prefix="/v1")
+
+# TODO: OpenAPI can't be generated for the following routes.
 app.include_router(vector_stores_router, prefix="/v1")
 app.include_router(files_router, prefix="/v1")
-app.include_router(evaluation_router, prefix="/v1")
-app.include_router(stars_router, prefix="/v1")
-app.include_router(hub_secrets_router, prefix="/v1")
 app.include_router(threads_router, prefix="/v1")
+app.include_router(hub_secrets_router, prefix="/v1")
+app.include_router(scheduled_run_router, prefix="/v1")
 app.include_router(streaming_router, prefix="/v1")
 
 

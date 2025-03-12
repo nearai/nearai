@@ -1,0 +1,23 @@
+FROM nearai_base:latest
+ARG NEARAISCHEDULER_ACCOUNT_ID
+ARG NEARAISCHEDULER_SIGNATURE
+ARG NEARAISCHEDULER_PUBLIC_KEY
+ARG NEARAISCHEDULER_NONCE
+
+RUN mkdir -p ~/.nearai && \
+    cat <<EOF > ~/.nearai/config.json
+{
+    "api_url": "https://redacted.api.near.ai",
+    "auth": {
+        "account_id": "${NEARAISCHEDULER_ACCOUNT_ID}",
+        "signature": "${NEARAISCHEDULER_SIGNATURE}",
+        "public_key": "${NEARAISCHEDULER_PUBLIC_KEY}",
+        "callback_url": "http://localhost:47083/capture",
+        "nonce": "${NEARAISCHEDULER_NONCE}",
+        "recipient": "ai.near",
+        "message": "Welcome to NEAR AI",
+        "on_behalf_of": null
+    }
+}
+EOF
+CMD ["poetry", "run", "python", "-m", "worker", "scheduler"]

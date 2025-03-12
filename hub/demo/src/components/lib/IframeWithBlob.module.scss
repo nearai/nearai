@@ -1,29 +1,43 @@
 .iframeWrapper {
+  display: flex;
+  align-items: stretch;
   width: 100%;
   position: relative;
   flex-grow: 1;
 }
 
-.hiddenHeightCalculationIframe {
-  height: 0;
-  width: 100%;
-  border: none;
+.placeholder {
+  transition: opacity 300ms;
   opacity: 0;
-  overflow: hidden;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  pointer-events: none;
+  user-select: none;
+
+  > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 10;
+    transition: opacity 300ms;
+    opacity: 0;
+  }
+
+  [data-loading='true'] & {
+    opacity: 1;
+  }
 }
 
-.visibleIframe {
+.iframe {
   border: none;
   width: 100%;
-  box-shadow: var(--shadow-card-with-outline);
   outline: none;
+  position: relative;
+  z-index: 5;
+  background: transparent;
   transition: opacity 300ms;
 
-  &[data-loading='true'] {
+  [data-loading='true'] & {
     opacity: 0;
   }
 }

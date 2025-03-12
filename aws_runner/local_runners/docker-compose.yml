@@ -1,0 +1,20 @@
+services:
+  nearai-runner:
+    image: nearai-runner:test
+    platform: linux/amd64
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+    ports:
+      - "9009-9011:8080"
+    environment:
+      TZ: ${RUNNER_TZ:-"UTC"}
+      API_URL: ${API_URL:-"http://host.docker.internal:8081"}
+      FASTNEAR_APY_KEY: ${FASTNEAR_APY_KEY:-""}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-""}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-""}
+      RUNNER_API_KEY: ${RUNNER_API_KEY:-""}
+      DD_APM_ENABLED: false
+      DD_LOGS_ENABLED: false
+    volumes:
+      - ~/.nearai/registry:/root/.nearai/registry

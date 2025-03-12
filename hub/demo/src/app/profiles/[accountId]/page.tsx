@@ -1,25 +1,28 @@
 'use client';
 
+import {
+  Badge,
+  BreakpointDisplay,
+  Button,
+  Checkbox,
+  CheckboxGroup,
+  Dropdown,
+  Flex,
+  HR,
+  PlaceholderSection,
+  Text,
+} from '@near-pagoda/ui';
 import { ArrowsDownUp, SlidersHorizontal } from '@phosphor-icons/react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { EntryCard } from '~/components/EntryCard';
-import { Badge } from '~/components/lib/Badge';
-import { BreakpointDisplay } from '~/components/lib/BreakpointDisplay';
-import { Button } from '~/components/lib/Button';
-import { Checkbox, CheckboxGroup } from '~/components/lib/Checkbox';
-import { Dropdown } from '~/components/lib/Dropdown';
-import { Flex } from '~/components/lib/Flex';
-import { HR } from '~/components/lib/HorizontalRule';
-import { PlaceholderSection } from '~/components/lib/Placeholder';
 import { Sidebar } from '~/components/lib/Sidebar';
-import { Text } from '~/components/lib/Text';
 import { useProfileParams } from '~/hooks/profile';
 import { useQueryParams } from '~/hooks/url';
-import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
+import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
 import { type EntryCategory } from '~/lib/models';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 import { toTitleCase } from '~/utils/string';
 
 const categories: EntryCategory[] = ['agent', 'benchmark', 'dataset', 'model'];
@@ -33,7 +36,7 @@ export default function ProfilePage() {
   const [sidebarOpenForSmallScreens, setSidebarOpenForSmallScreens] =
     useState(false);
 
-  const entriesQuery = api.hub.entries.useQuery({
+  const entriesQuery = trpc.hub.entries.useQuery({
     namespace: starred ? undefined : accountId,
     starredBy: starred ? accountId : undefined,
   });
@@ -71,14 +74,14 @@ export default function ProfilePage() {
           openForSmallScreens={sidebarOpenForSmallScreens}
           setOpenForSmallScreens={setSidebarOpenForSmallScreens}
         >
-          <CheckboxGroup name="categoryFilter">
+          <CheckboxGroup aria-label="Category Filter">
             <Flex as="label" align="center" gap="s">
               <Checkbox
                 name="categoryFilter"
                 value="all"
                 type="radio"
                 checked={!queryParams.category}
-                onChange={() => updateQueryPath({ category: undefined })}
+                onChange={() => updateQueryPath({ category: null })}
               />
               <Text>All</Text>
             </Flex>

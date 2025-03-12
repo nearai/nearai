@@ -1,7 +1,7 @@
-# NearAI AWS Runner
-A docker container that runs on AWS Lambda to run NearAI agents.
- * This is invoked by the NearAI Api server or the NearAI cli agent run_remote command.
- * The runner calls back to the NearAI Api server for inference, to fetch agent code, 
+# NEAR AI AWS Runner
+A docker container that runs on AWS Lambda to run NEAR AI agents.
+ * This is invoked by the NEAR AI Api server or the NEAR AI cli agent run_remote command.
+ * The runner calls back to the NEAR AI Api server for inference, to fetch agent code, 
 and to fetch and store environments. An environment is the files that result from an agent run, which will always
 include chat.txt and system.log.txt files.
 
@@ -11,11 +11,13 @@ __Docker must be run from the root of the repository so the Dockerfile can pull 
 
 Note the dash before the framework name when passing a framework. The deploy script adds the dash but here it must be added manually.
 
-Base framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-base -t nearai-runner:test .`
+Minimal framework `docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-minimal -t nearai-runner:test .`
 
-LangGraph framework `docker build -f aws_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-langgraph-1-4 -t nearai-runner:test .`
+Typescript framework `docker build -f aws_runner/ts_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-ts -t nearai-runner:test .`
 
-Then `docker run --platform linux/amd64 -p 9000:8080 nearai-runner:test` will start the server on port 9000.
+LangGraph framework `docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-langgraph-1-4 -t nearai-runner:test .`
+
+Then `docker run --platform linux/amd64 -p 9001:8080 nearai-runner:test` will start the server on port 9000.
 
 To call the server you will need a signedMessage for the auth param.
 Then you can call the server with the following curl command.
@@ -51,20 +53,22 @@ CUSTOM_RUNNER_URL=http://localhost:9000/2015-03-31/functions/function/invocation
 API_URL=http://host.docker.internal:8081
 ```
 
-It might be useful to provide `API_URL` into the `docker run` command to use local Hub API instead of NearAI Hub API.
+It might be useful to provide `API_URL` into the `docker run` command to use local Hub API instead of NEAR AI Hub API.
 
 `docker run -e API_URL=http://host.docker.internal:8081 --platform linux/amd64 -p 9009:8080 nearai-runner:test`
 
 
 ### Local data source 
 
-If you want to use local files instead of the NearAI registry to run agents that are not yet published:
+If you want to use local files instead of the NEAR AI registry to run agents that are not yet published:
 
 - mount  `~/.nearai/registry` to the docker image (add `-v ~/.nearai/registry:/root/.nearai/registry` to `docker run` command)
-- specify `DATA_SOURCE="local_files"` in both he Hub environment variables (`hub/.env`) and the Hub UI environment variables (`/hub/demo/.env`)
+- specify `DATA_SOURCE="local_files"`:
+  - in the Hub environment variables (`hub/.env`) for runner to use local files 
+  - the Hub UI environment variables (`/hub/demo/.env`) for UI to use local files
 
 ## Deployment
-The docker image is built and pushed to the NearAI ECR repository. The image is then deployed to AWS Lambda using the AWS CLI.
+The docker image is built and pushed to the NEAR AI ECR repository. The image is then deployed to AWS Lambda using the AWS CLI.
 
 Deploy a single framework to a single environment.
 ```shell
@@ -74,6 +78,11 @@ FRAMEWORK=langgraph ENV=production deploy.sh
 Deploy all frameworks to all environments.
 ```shell
 deploy.sh all
+```
+
+Deploying the TypeScript runner requires providing a RUNNER_TYPE environment variable
+```shell
+FRAMEWORK=ts ENV=production RUNNER_TYPE=ts_runner ./aws_runner/deploy.sh
 ```
 
 ## Running against staging

@@ -8,7 +8,7 @@ from typing import Dict, Optional
 import chardet
 import requests
 from dotenv import load_dotenv
-from shared.models import GitHubSource
+from nearai.shared.models import GitHubSource
 
 from hub.api.v1.files import upload_file_to_storage
 from hub.api.v1.sql import SqlClient
@@ -231,6 +231,6 @@ async def process_github_source(
             file_ids=vector_store.file_ids + [file_id],
             account_id=account_id,
         )
-        await generate_embeddings_for_file(file_id, vector_store_id)
+        await generate_embeddings_for_file(file_id, vector_store_id, vector_store.chunking_strategy)
 
     logger.info(f"Completed processing GitHub source for vector store: {vector_store_id}")

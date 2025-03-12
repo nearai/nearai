@@ -1,5 +1,22 @@
 import {
+  Button,
+  Card,
+  CardList,
+  copyTextToClipboard,
+  Dialog,
+  Flex,
+  Form,
+  handleClientError,
+  Input,
+  InputTextarea,
+  SvgIcon,
+  Text,
+  Tooltip,
+} from '@near-pagoda/ui';
+import {
   CodeBlock,
+  Eye,
+  EyeSlash,
   LinkSimple,
   LockKey,
   Pencil,
@@ -12,39 +29,43 @@ import { type z } from 'zod';
 
 import {
   type EntryEnvironmentVariable,
-  type useCurrentEntryEnvironmentVariables,
+  useCurrentEntryParams,
+  useEntryEnvironmentVariables,
 } from '~/hooks/entries';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
-import { copyTextToClipboard } from '~/utils/clipboard';
-import { handleClientError } from '~/utils/error';
+import { trpc } from '~/trpc/TRPCProvider';
 
-import { Button } from './lib/Button';
-import { Card, CardList } from './lib/Card';
-import { Dialog } from './lib/Dialog';
-import { Flex } from './lib/Flex';
-import { Form } from './lib/Form';
-import { Input } from './lib/Input';
-import { InputTextarea } from './lib/InputTextarea';
 import { Sidebar } from './lib/Sidebar';
-import { SvgIcon } from './lib/SvgIcon';
-import { Text } from './lib/Text';
-import { Tooltip } from './lib/Tooltip';
 import { SignInPrompt } from './SignInPrompt';
 
 type Props = {
   entry: z.infer<typeof entryModel>;
-  variables: ReturnType<typeof useCurrentEntryEnvironmentVariables>;
+  excludeQueryParamKeys?: string[];
 };
 
 export const EntryEnvironmentVariables = ({
   entry,
-  variables: { variables },
+  excludeQueryParamKeys,
 }: Props) => {
+  const { variables } = useEntryEnvironmentVariables(
+    entry,
+    excludeQueryParamKeys,
+  );
   const [selectedVariable, setSelectedVariable] =
     useState<EntryEnvironmentVariable | null>(null);
   const [secretModalIsOpen, setSecretModalIsOpen] = useState(false);
+  const [revealedSecretKeys, setRevealedSecretKeys] = useState<string[]>([]);
+
+  const toggleRevealSecret = (key: string) => {
+    const revealed = revealedSecretKeys.find((k) => k === key);
+    setRevealedSecretKeys((keys) => {
+      if (!revealed) {
+        return [...keys, key];
+      }
+      return keys.filter((k) => k !== key);
+    });
+  };
 
   const descriptionForMetadataValue = (variable: EntryEnvironmentVariable) => {
     let description = `Value provided by ${entry.category} metadata (details.env_vars).`;
@@ -98,36 +119,70 @@ export const EntryEnvironmentVariables = ({
                 key={variable.key}
               >
                 <Flex align="baseline" gap="s">
-                  <Tooltip content="Copy key to clipboard">
+                  <Tooltip content="Copy to clipboard">
                     <Text
                       size="text-s"
                       weight={500}
                       color="sand-12"
                       forceWordBreak
+                      indicateParentClickable
                       onClick={() => copyTextToClipboard(variable.key)}
                     >
                       {variable.key}
                     </Text>
                   </Tooltip>
 
-                  <Tooltip asChild content="Configure Secret">
-                    <Button
-                      label="Configure Secret"
-                      icon={<Pencil />}
-                      size="x-small"
-                      fill="ghost"
-                      variant="primary"
-                      onClick={() => {
-                        setSelectedVariable(variable);
-                        setSecretModalIsOpen(true);
-                      }}
-                      style={{
-                        position: 'relative',
-                        top: '0.15rem',
-                        marginLeft: 'auto',
-                      }}
-                    />
-                  </Tooltip>
+                  <Flex
+                    gap="xs"
+                    style={{
+                      position: 'relative',
+                      top: '0.15rem',
+                      marginLeft: 'auto',
+                    }}
+                  >
+                    {variable.secret && (
+                      <Tooltip
+                        asChild
+                        content={`${revealedSecretKeys.includes(variable.key) ? 'Hide' : 'Show'} secret`}
+                      >
+                        <Button
+                          label="Show/Hide Secret"
+                          icon={
+                            revealedSecretKeys.includes(variable.key) ? (
+                              <EyeSlash />
+                            ) : (
+                              <Eye />
+                            )
+                          }
+                          size="x-small"
+                          fill="ghost"
+                          variant="primary"
+                          onClick={() => {
+                            toggleRevealSecret(variable.key);
+                          }}
+                        />
+                      </Tooltip>
+                    )}
+
+                    <Tooltip
+                      asChild
+                      content={
+                        variable.secret ? 'Edit secret' : 'Configure as secret'
+                      }
+                    >
+                      <Button
+                        label="Configure Secret"
+                        icon={<Pencil />}
+                        size="x-small"
+                        fill="ghost"
+                        variant="primary"
+                        onClick={() => {
+                          setSelectedVariable(variable);
+                          setSecretModalIsOpen(true);
+                        }}
+                      />
+                    </Tooltip>
+                  </Flex>
                 </Flex>
 
                 {variable.metadataValue && (
@@ -145,11 +200,12 @@ export const EntryEnvironmentVariables = ({
                       />
                     </Tooltip>
 
-                    <Tooltip content="Copy value to clipboard">
+                    <Tooltip content="Copy to clipboard">
                       <Text
                         size="text-xs"
                         family="monospace"
                         forceWordBreak
+                        indicateParentClickable
                         onClick={() =>
                           copyTextToClipboard(variable?.metadataValue ?? '')
                         }
@@ -181,11 +237,12 @@ export const EntryEnvironmentVariables = ({
                       />
                     </Tooltip>
 
-                    <Tooltip content="Copy value to clipboard">
+                    <Tooltip content="Copy to clipboard">
                       <Text
                         size="text-xs"
                         family="monospace"
                         forceWordBreak
+                        indicateParentClickable
                         onClick={() =>
                           copyTextToClipboard(variable?.urlValue ?? '')
                         }
@@ -216,16 +273,19 @@ export const EntryEnvironmentVariables = ({
                       />
                     </Tooltip>
 
-                    <Tooltip content="Copy value to clipboard">
+                    <Tooltip content="Copy to clipboard">
                       <Text
                         size="text-xs"
                         family="monospace"
                         forceWordBreak
+                        indicateParentClickable
                         onClick={() =>
                           copyTextToClipboard(variable.secret?.value ?? '')
                         }
                       >
-                        {variable.secret.value}
+                        {revealedSecretKeys.includes(variable.key)
+                          ? variable.secret.value
+                          : '*****'}
                       </Text>
                     </Tooltip>
                   </Flex>
@@ -266,10 +326,11 @@ type SecretFormSchema = {
 
 const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
   const form = useForm<SecretFormSchema>({});
-  const addMutation = api.hub.addSecret.useMutation();
-  const removeMutation = api.hub.removeSecret.useMutation();
-  const utils = api.useUtils();
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const addMutation = trpc.hub.addSecret.useMutation();
+  const removeMutation = trpc.hub.removeSecret.useMutation();
+  const utils = trpc.useUtils();
+  const auth = useAuthStore((store) => store.auth);
+  const params = useCurrentEntryParams();
 
   useEffect(() => {
     if (!form.formState.isDirty) {
@@ -289,23 +350,13 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
 
   const onSubmit: SubmitHandler<SecretFormSchema> = async (data) => {
     try {
-      if (existingVariable?.secret) {
-        await removeMutation.mutateAsync({
-          category: entry.category,
-          key: existingVariable.key,
-          name: entry.name,
-          namespace: entry.namespace,
-          version: entry.version,
-        });
-      }
-
       await addMutation.mutateAsync({
         category: entry.category,
         key: data.key,
         name: entry.name,
         namespace: entry.namespace,
         value: data.value,
-        version: entry.version,
+        version: params.version || entry.version,
       });
 
       await utils.hub.secrets.refetch();
@@ -323,11 +374,8 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
       }
 
       await removeMutation.mutateAsync({
+        ...existingVariable.secret,
         category: entry.category,
-        key: existingVariable.key,
-        name: entry.name,
-        namespace: entry.namespace,
-        version: entry.version,
       });
 
       await utils.hub.secrets.refetch();
@@ -341,7 +389,7 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
   return (
     <Form onSubmit={form.handleSubmit(onSubmit)}>
       <Flex direction="column" gap="l">
-        {isAuthenticated ? (
+        {auth ? (
           <>
             <Flex direction="column" gap="m">
               <Text size="text-s">
@@ -355,6 +403,18 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
                 query parameter variable with the same key.
               </Text>
             </Flex>
+
+            {auth.accountId === entry.namespace && (
+              <Card background="amber-2" border="amber-4">
+                <Text color="amber-11" size="text-s">
+                  You are the owner of this {entry.category}. Any secrets you
+                  save will be inherited (but NOT visible) when other users run
+                  this {entry.category}. Users of your {entry.category} can add
+                  their own secrets to override these default values for
+                  themselves.
+                </Text>
+              </Card>
+            )}
 
             <Input
               label="Key"

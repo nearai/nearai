@@ -9,14 +9,22 @@ about the awesome projects it made possible, or even simply ⭐️ the repositor
 
 **This guide was heavily inspired by the [huggingface transformers guide to contributing](https://github.com/huggingface/transformers/blob/main/CONTRIBUTING.md).**
 
-## Ways to contribute
+---
+
+# Ways to contribute
 
 There are several ways you can contribute to `nearai`:
 
-* Fix outstanding issues with the existing code.
-* Submit issues related to bugs or desired new features.
-* Implement new features (including but not limited to solvers, agents, or benchmarks).
-* Contribute to the examples or to the documentation.
+- [Contribute to `nearai`](#contribute-to-nearai)
+- [Ways to contribute](#ways-to-contribute)
+  - [Fixing outstanding issues](#fixing-outstanding-issues)
+  - [Submitting a bug-related issue or feature request](#submitting-a-bug-related-issue-or-feature-request)
+    - [Did you find a bug?](#did-you-find-a-bug)
+    - [Do you want a new feature?](#do-you-want-a-new-feature)
+  - [Contribute Documentation](#contribute-documentation)
+  - [Create a Pull Request](#create-a-pull-request)
+    - [Pull request checklist](#pull-request-checklist)
+    - [Sync a forked repository with upstream main](#sync-a-forked-repository-with-upstream-main)
 
 ## Fixing outstanding issues
 
@@ -64,6 +72,36 @@ If there is a new feature you'd like to see in `nearai`, please open an issue an
 3. Provide a *code snippet* that demonstrates the feature usage.
 4. If the feature is related to a paper, please include a link.
 
+## Contribute Documentation
+
+If you discover any errors or omissions in our documentation, please open an issue and describe:
+
+* Which explanation or code snippet is incorrect
+* What concept is not clear or missing
+* If you know, what would be the correct explanation or code snippet
+
+If you think you can contribute a fix for the issue, please feel free to open a Pull Request.
+
+To preview your changes locally, you will need to install all the dependencies for the documentation which can be easily installed through `pip` or `uv`:
+
+=== "pip"
+
+      ```bash
+      pip install -e ".[docs]"
+      ```
+
+=== "uv"
+      ```bash
+      uv sync --group docs
+      ```
+
+Then simply test your changes locally using `mkdocs serve`
+
+!!! failure "Cairo Graphics"
+
+      If you encounter a problem with `cairo`, please follow the [mkdocs-material Requirements Guide](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/#cairo-graphics)
+
+
 ## Create a Pull Request
 
 Before writing any code, we strongly advise you to search through the existing PRs or
@@ -104,16 +142,20 @@ Follow the steps below to start contributing:
 
    As you work on your code, you should make sure it functions as intended.
 
-   `nearai` relies on `ruff` and `mypy` to format and type check its source code
+   `nearai` relies on [`ruff`](https://docs.astral.sh/ruff/) and [`mypy`](https://mypy.readthedocs.io/en/stable/) to format and type check its source code
    consistently. After you make your changes and are ready to PR them, ensure that
    your code is formatted and type-checked by running:
     
    ```bash
-   ./scripts/lint_format.sh
+   ./scripts/format_check.sh
+   ```
+   
+   ```bash
+   ./scripts/lint_check.sh
    ```
 
    ```bash
-   ./scripts/typecheck.sh
+   ./scripts/type_check.sh
    ```
 
    Once you're happy with your changes, add the changed files with `git add` and

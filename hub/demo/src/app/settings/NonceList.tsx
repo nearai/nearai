@@ -1,27 +1,29 @@
+import {
+  Badge,
+  Button,
+  Dropdown,
+  Flex,
+  SvgIcon,
+  Table,
+  Text,
+  Timestamp,
+} from '@near-pagoda/ui';
 import { DotsThree, Prohibit } from '@phosphor-icons/react';
 import { useEffect } from 'react';
 
-import { Badge } from '~/components/lib/Badge';
-import { Button } from '~/components/lib/Button';
-import { Dropdown } from '~/components/lib/Dropdown';
-import { Flex } from '~/components/lib/Flex';
-import { SvgIcon } from '~/components/lib/SvgIcon';
-import { Table } from '~/components/lib/Table';
-import { Text } from '~/components/lib/Text';
-import { Timestamp } from '~/components/lib/Timestamp';
 import { RECIPIENT, REVOKE_ALL_MESSAGE, REVOKE_MESSAGE } from '~/lib/auth';
 import {
   extractSignatureFromHashParams,
   generateNonce,
-  redirectToAuthNearLink,
+  openAuthUrl,
 } from '~/lib/auth';
 import { authorizationModel } from '~/lib/models';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
 export const NonceList = () => {
-  const noncesQuery = api.hub.nonces.useQuery();
-  const revokeNonceMutation = api.hub.revokeNonce.useMutation();
-  const revokeAllNoncesMutation = api.hub.revokeAllNonces.useMutation();
+  const noncesQuery = trpc.hub.nonces.useQuery();
+  const revokeNonceMutation = trpc.hub.revokeNonce.useMutation();
+  const revokeAllNoncesMutation = trpc.hub.revokeAllNonces.useMutation();
 
   const startRevokeNonce = (revokeNonce?: string) => {
     const nonce = generateNonce();
@@ -29,10 +31,10 @@ export const NonceList = () => {
     let callbackUrl = location.origin + '/settings?nonce=' + nonce;
     if (revokeNonce) {
       callbackUrl += '&revoke_nonce=' + revokeNonce;
-      redirectToAuthNearLink(REVOKE_MESSAGE, RECIPIENT, nonce, callbackUrl);
+      openAuthUrl(REVOKE_MESSAGE, RECIPIENT, nonce, callbackUrl);
     } else {
       // If no nonce is provided, it will revoke all nonces
-      redirectToAuthNearLink(REVOKE_ALL_MESSAGE, RECIPIENT, nonce, callbackUrl);
+      openAuthUrl(REVOKE_ALL_MESSAGE, RECIPIENT, nonce, callbackUrl);
     }
   };
 

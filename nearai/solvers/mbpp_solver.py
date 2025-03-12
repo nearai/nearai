@@ -76,7 +76,8 @@ class MBPPSolverStrategy(SolverStrategy):
         self.shots = shots
 
     def evaluation_name(self) -> str:  # noqa: D102
-        return f"mbpp_{self.shots}shots"
+        prefix = self.dataset_evaluation_name if self.dataset_evaluation_name else "mbpp"
+        return f"{prefix}_{self.shots}shots"
 
     def compatible_datasets(self) -> List[str]:  # noqa: D102
         return ["mbpp"]

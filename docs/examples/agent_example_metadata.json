@@ -17,7 +17,7 @@
         "max_iterations": 1,
         "models": [
           {
-            "model": "llama-v3p1-405b-instruct-long",
+            "model": "qwen2p5-72b-instruct",
             "model_provider": "fireworks",
             "model_temperature": 1.0,
             "model_max_tokens": 1024

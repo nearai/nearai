@@ -1,42 +1,56 @@
 'use client';
 
-import { CaretDown, Copy } from '@phosphor-icons/react';
-import Link from 'next/link';
+import {
+  Badge,
+  Button,
+  copyTextToClipboard,
+  Dropdown,
+  Flex,
+  ImageIcon,
+  PlaceholderSection,
+  Section,
+  SvgIcon,
+  Tabs,
+  Text,
+  Tooltip,
+} from '@near-pagoda/ui';
+import {
+  CaretDown,
+  ChatCircleDots,
+  Code,
+  CodeBlock,
+  GitFork,
+  LockKey,
+  ShareFat,
+} from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
-import { type ReactElement, type ReactNode, useEffect } from 'react';
+import { type ReactElement, type ReactNode, useEffect, useState } from 'react';
 
 import { ErrorSection } from '~/components/ErrorSection';
-import { Badge } from '~/components/lib/Badge';
-import { Button } from '~/components/lib/Button';
-import { Dropdown } from '~/components/lib/Dropdown';
-import { Flex } from '~/components/lib/Flex';
-import { ImageIcon } from '~/components/lib/ImageIcon';
-import { PlaceholderSection } from '~/components/lib/Placeholder';
-import { Section } from '~/components/lib/Section';
-import { SvgIcon } from '~/components/lib/SvgIcon';
-import { Tabs } from '~/components/lib/Tabs';
-import { Text } from '~/components/lib/Text';
 import { StarButton } from '~/components/StarButton';
 import { env } from '~/env';
-import { useCurrentEntry, useEntryParams } from '~/hooks/entries';
-import { ENTRY_CATEGORY_LABELS } from '~/lib/entries';
+import { useConsumerModeEnabled } from '~/hooks/consumer';
+import { useCurrentEntry, useCurrentEntryParams } from '~/hooks/entries';
+import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
+import { primaryUrlForEntry, rawFileUrlForEntry } from '~/lib/entries';
 import { type EntryCategory } from '~/lib/models';
-import { copyTextToClipboard } from '~/utils/clipboard';
 
-import { Tooltip } from './lib/Tooltip';
+import { DevelopButton } from './DevelopButton';
+import { EmbedAgentModal } from './EmbedAgentModal';
+import { ForkButton } from './ForkButton';
 
 type Props = {
   category: EntryCategory;
   children: ReactNode;
   defaultConsumerModePath?: string;
-  tabs:
-    | {
-        path: string;
-        label: string;
-        icon: ReactElement;
-      }[]
-    | null;
+  tabs: {
+    path: string;
+    label: string;
+    icon: ReactElement;
+  }[];
 };
+
+export const ENTRY_DETAILS_LAYOUT_SIZE_NAME = 'entry-details-layout';
 
 export const EntryDetailsLayout = ({
   category,
@@ -44,8 +58,9 @@ export const EntryDetailsLayout = ({
   defaultConsumerModePath,
   tabs,
 }: Props) => {
+  const { consumerModeEnabled } = useConsumerModeEnabled();
   const pathname = usePathname();
-  const { namespace, name, version } = useEntryParams();
+  const { namespace, name, version } = useCurrentEntryParams();
   const { currentEntry, currentEntryIsHidden, currentVersions } =
     useCurrentEntry(category);
   const baseUrl = `/${category}s/${namespace}/${name}`;
@@ -56,6 +71,8 @@ export const EntryDetailsLayout = ({
     env.NEXT_PUBLIC_CONSUMER_MODE &&
     defaultConsumerModePath &&
     !pathname.includes(defaultConsumerPath);
+  const isLatestVersion = version === 'latest';
+  const [showEmbedAgentModal, setShowEmbedAgentModal] = useState(false);
 
   useEffect(() => {
     if (shouldRedirectToDefaultConsumerPath) {
@@ -69,41 +86,87 @@ export const EntryDetailsLayout = ({
 
   return (
     <>
-      <Section background="sand-0" bleed gap="m" tabs={!!tabs}>
-        <Flex
-          align="center"
-          gap="m"
-          phone={{ direction: 'column', align: 'start', gap: 'l' }}
-        >
+      {!consumerModeEnabled && (
+        <Section background="sand-0" bleed gap="m" tabs>
           <Flex
             align="center"
             gap="m"
-            style={{ width: '100%' }}
-            phone={{ justify: 'space-between' }}
+            tablet={{ direction: 'column', align: 'stretch', gap: 'l' }}
           >
-            <Flex align="center" gap="m">
+            <Flex align="center" gap="m" style={{ marginRight: 'auto' }}>
               <ImageIcon
                 size="l"
-                src={currentEntry?.details.icon}
+                src={rawFileUrlForEntry(
+                  currentEntry,
+                  currentEntry?.details.icon,
+                )}
                 alt={name}
                 fallbackIcon={ENTRY_CATEGORY_LABELS[category].icon}
+                padding={false}
               />
 
-              <Flex gap="none" direction="column" align="start">
-                <Flex align="center" gap="m">
-                  <Link href={baseUrl}>
-                    <Text as="h1" size="text-l" weight={600} color="sand-12">
-                      {name}
-                    </Text>
-                  </Link>
+              <Flex
+                align="baseline"
+                gap="m"
+                phone={{ direction: 'column', align: 'start', gap: 'xs' }}
+              >
+                <Flex gap="none" direction="column">
+                  <Text
+                    href={`${baseUrl}/${version}`}
+                    size="text-l"
+                    color="sand-12"
+                    decoration="none"
+                  >
+                    {name}
+                  </Text>
 
+                  <Text
+                    href={`/profiles/${namespace}`}
+                    size="text-s"
+                    color="sand-11"
+                    decoration="none"
+                    weight={500}
+                  >
+                    @{namespace}
+                  </Text>
+                </Flex>
+
+                <Flex align="center" gap="s">
                   <Dropdown.Root>
                     <Dropdown.Trigger asChild>
                       <Badge
                         button
-                        label={version}
+                        label={
+                          isLatestVersion ? (
+                            <Flex as="span" align="center" gap="s">
+                              Latest
+                              <Text
+                                size="text-2xs"
+                                color="sand-10"
+                                weight={500}
+                                clampLines={1}
+                                style={{ maxWidth: '3rem' }}
+                              >
+                                {currentVersions?.[0]?.version}
+                              </Text>
+                            </Flex>
+                          ) : (
+                            <Flex as="span" align="center" gap="s">
+                              Fixed
+                              <Text
+                                size="text-2xs"
+                                color="amber-11"
+                                weight={500}
+                                clampLines={1}
+                                style={{ maxWidth: '3rem' }}
+                              >
+                                {version}
+                              </Text>
+                            </Flex>
+                          )
+                        }
                         iconRight={<CaretDown />}
-                        variant="neutral"
+                        variant={isLatestVersion ? 'neutral' : 'warning'}
                       />
                     </Dropdown.Trigger>
 
@@ -114,10 +177,15 @@ export const EntryDetailsLayout = ({
                             Versions
                           </Text>
                         </Dropdown.SectionContent>
-
+                        <Dropdown.Item
+                          href={`${baseUrl}/latest${activeTabPath}`}
+                          key="latest"
+                        >
+                          Latest
+                        </Dropdown.Item>
                         {currentVersions?.map((entry) => (
                           <Dropdown.Item
-                            href={`${baseUrl}/${entry.version}`}
+                            href={`${baseUrl}/${entry.version}${activeTabPath}`}
                             key={entry.version}
                           >
                             {entry.version}
@@ -127,41 +195,124 @@ export const EntryDetailsLayout = ({
                     </Dropdown.Content>
                   </Dropdown.Root>
 
-                  {!env.NEXT_PUBLIC_CONSUMER_MODE && (
+                  {currentEntry?.fork_of && (
                     <Tooltip
-                      asChild
-                      content={`Copy ${category} path to clipboard`}
+                      content={
+                        <Text size="text-xs" color="current">
+                          This {category} is a fork of{' '}
+                          <Text
+                            size="text-xs"
+                            href={primaryUrlForEntry({
+                              category: currentEntry.category,
+                              namespace: currentEntry.fork_of.namespace,
+                              name: currentEntry.fork_of.name,
+                            })}
+                          >
+                            {currentEntry.fork_of.namespace}/
+                            {currentEntry.fork_of.name}
+                          </Text>
+                        </Text>
+                      }
+                      root={{ disableHoverableContent: false }}
                     >
-                      <Button
-                        label="Copy"
-                        icon={<Copy />}
-                        size="x-small"
-                        variant="secondary"
-                        fill="ghost"
-                        onClick={() =>
-                          copyTextToClipboard(`${namespace}/${name}/${version}`)
-                        }
+                      <SvgIcon
+                        icon={<GitFork weight="fill" />}
+                        size="xs"
+                        color="sand-9"
+                        style={{ cursor: 'help' }}
+                      />
+                    </Tooltip>
+                  )}
+
+                  {currentEntry?.details.private_source && (
+                    <Tooltip
+                      content={`The source code for this ${category} is private`}
+                    >
+                      <SvgIcon
+                        icon={<LockKey weight="fill" />}
+                        size="xs"
+                        color="sand-9"
+                        style={{ cursor: 'help' }}
                       />
                     </Tooltip>
                   )}
                 </Flex>
-
-                <Link
-                  href={`/profiles/${namespace}`}
-                  style={{ marginTop: '-0.1rem' }}
-                >
-                  <Text size="text-s" weight={500}>
-                    @{namespace}
-                  </Text>
-                </Link>
               </Flex>
+            </Flex>
+
+            <Flex align="center" gap="s" wrap="wrap">
+              <DevelopButton entry={currentEntry} />
+              <StarButton entry={currentEntry} variant="detailed" />
+              <ForkButton entry={currentEntry} variant="detailed" />
+
+              {category === 'agent' ? (
+                <Dropdown.Root>
+                  <Tooltip asChild content={`Share or embed this ${category}`}>
+                    <Dropdown.Trigger asChild>
+                      <Button
+                        label="Share"
+                        icon={<SvgIcon size="xs" icon={<ShareFat />} />}
+                        size="small"
+                        fill="outline"
+                      />
+                    </Dropdown.Trigger>
+                  </Tooltip>
+
+                  <Dropdown.Content>
+                    <Dropdown.Section>
+                      <Dropdown.Item
+                        onSelect={() =>
+                          currentEntry &&
+                          copyTextToClipboard(
+                            `https://app.near.ai${primaryUrlForEntry(currentEntry)}`,
+                          )
+                        }
+                      >
+                        <SvgIcon icon={<CodeBlock />} />
+                        Copy Developer URL
+                      </Dropdown.Item>
+
+                      <Dropdown.Item
+                        onSelect={() =>
+                          currentEntry &&
+                          copyTextToClipboard(
+                            `https://chat.near.ai${primaryUrlForEntry(currentEntry)}`,
+                          )
+                        }
+                      >
+                        <SvgIcon icon={<ChatCircleDots />} />
+                        Copy Chat URL
+                      </Dropdown.Item>
+
+                      <Dropdown.Item
+                        onSelect={() => setShowEmbedAgentModal(true)}
+                      >
+                        <SvgIcon icon={<Code />} />
+                        Embed Agent
+                      </Dropdown.Item>
+                    </Dropdown.Section>
+                  </Dropdown.Content>
+                </Dropdown.Root>
+              ) : (
+                <Tooltip asChild content={`Share this ${category}`}>
+                  <Button
+                    label="Share"
+                    icon={<SvgIcon size="xs" icon={<ShareFat />} />}
+                    size="small"
+                    fill="outline"
+                    onClick={() =>
+                      currentEntry &&
+                      copyTextToClipboard(
+                        `https://app.near.ai${primaryUrlForEntry(currentEntry)}`,
+                        `Shareable URL for ${currentEntry.name}`,
+                      )
+                    }
+                  />
+                </Tooltip>
+              )}
             </Flex>
           </Flex>
 
-          <StarButton entry={currentEntry} variant="detailed" />
-        </Flex>
-
-        {tabs && (
           <Tabs.Root value={activeTabPath}>
             <Tabs.List>
               {tabs.map((tab) => (
@@ -176,14 +327,22 @@ export const EntryDetailsLayout = ({
               ))}
             </Tabs.List>
           </Tabs.Root>
-        )}
-      </Section>
+        </Section>
+      )}
 
       {(!currentEntry || shouldRedirectToDefaultConsumerPath) && (
         <PlaceholderSection />
       )}
 
       {!shouldRedirectToDefaultConsumerPath && children}
+
+      {category === 'agent' && (
+        <EmbedAgentModal
+          entry={currentEntry}
+          isOpen={showEmbedAgentModal}
+          setIsOpen={setShowEmbedAgentModal}
+        />
+      )}
     </>
   );
 };

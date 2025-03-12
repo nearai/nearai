@@ -1,3 +1,4 @@
+import { Placeholder } from '@near-pagoda/ui';
 import { type ComponentProps, useEffect, useRef, useState } from 'react';
 
 import { useDebouncedFunction } from '~/hooks/debounce';
@@ -11,25 +12,28 @@ export type IframePostMessageEventHandler<T = any> = (
   },
 ) => unknown;
 
-type Props = ComponentProps<'iframe'> & {
+type Props = Omit<ComponentProps<'iframe'>, 'nonce'> & {
   html: string;
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  height?: 'auto' | (string & {});
+  fixedHeight?: string;
   onPostMessage?: IframePostMessageEventHandler;
   postMessage?: unknown;
 };
 
 export const IframeWithBlob = ({
   className = '',
+  height = 'auto',
   html,
   onPostMessage,
   postMessage,
   ...props
 }: Props) => {
-  const hiddenHeightCalculationIframeRef = useRef<HTMLIFrameElement | null>(
-    null,
-  );
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [dataUrl, setDataUrl] = useState('');
-  const [height, setHeight] = useState(0);
+  const [computedHeight, __setComputedHeight] = useState(0);
+  const isLoading = height === 'auto' ? !computedHeight : false;
 
   const executePostMessage = useDebouncedFunction((message: unknown) => {
     console.log('Sending postMessage to <IframeWithBlob />', message);
@@ -41,17 +45,34 @@ export const IframeWithBlob = ({
     */
   }, 10);
 
-  const resizeIframe = () => {
-    const iframe = hiddenHeightCalculationIframeRef.current;
-    setHeight((iframe?.contentWindow?.document.body.scrollHeight ?? 0) + 1);
-  };
+  const setComputedHeight = useDebouncedFunction((value: number) => {
+    if (height !== 'auto') return;
+    __setComputedHeight(() => {
+      const newHeight = Math.max(wrapperRef.current?.offsetHeight ?? 0, value);
+      return newHeight;
+    });
+  }, 10);
+
+  const resetComputedHeight = useDebouncedFunction(() => {
+    __setComputedHeight(-1);
+  }, 150);
 
   useEffect(() => {
-    const blob = new Blob([html], { type: 'text/html;charset=UTF-8' });
+    function resize() {
+      resetComputedHeight();
+    }
+    window.addEventListener('resize', resize);
+    () => {
+      window.removeEventListener('resize', resize);
+    };
+  }, [resetComputedHeight]);
+
+  useEffect(() => {
+    const extendedHtml = extendHtml(html);
+    const blob = new Blob([extendedHtml], { type: 'text/html;charset=UTF-8' });
     const url = URL.createObjectURL(blob);
 
     setDataUrl(url);
-    resizeIframe();
 
     return () => {
       URL.revokeObjectURL(url);
@@ -59,19 +80,24 @@ export const IframeWithBlob = ({
   }, [html]);
 
   useEffect(() => {
-    function resizeListener() {
-      resizeIframe();
-    }
-    window.addEventListener('resize', resizeListener);
-    () => {
-      window.removeEventListener('resize', resizeListener);
-    };
-  }, []);
-
-  useEffect(() => {
     function messageListener(event: MessageEvent) {
       if (event.source !== iframeRef.current?.contentWindow) return;
-      console.log('Received postMessage from <IframeWithBlob />', event.data);
+      const data: unknown = event.data;
+
+      if (data && typeof data === 'object') {
+        if ('type' in data) {
+          if (
+            data.type === 'SET_HEIGHT' &&
+            'height' in data &&
+            typeof data.height === 'number'
+          ) {
+            setComputedHeight(data.height || 0);
+            return;
+          }
+        }
+      }
+
+      console.log('Received postMessage from <IframeWithBlob />', data);
       onPostMessage?.(event);
     }
 
@@ -80,7 +106,7 @@ export const IframeWithBlob = ({
     return () => {
       window.removeEventListener('message', messageListener);
     };
-  }, [onPostMessage]);
+  }, [onPostMessage, setComputedHeight]);
 
   useEffect(() => {
     if (postMessage) {
@@ -103,25 +129,103 @@ export const IframeWithBlob = ({
   */
 
   return (
-    <div className={s.iframeWrapper}>
-      <iframe
-        height={0}
-        ref={hiddenHeightCalculationIframeRef}
-        src={dataUrl}
-        onLoad={resizeIframe}
-        sandbox="allow-same-origin"
-        className={s.hiddenHeightCalculationIframe}
-      />
+    <div className={s.iframeWrapper} data-loading={isLoading} ref={wrapperRef}>
+      <div className={s.placeholder}>
+        <Placeholder />
+      </div>
 
       <iframe
-        height={height}
         ref={iframeRef}
         src={dataUrl}
         sandbox="allow-scripts allow-popups"
-        className={`${s.visibleIframe} ${className}`}
-        data-loading={height < 10}
+        className={`${s.iframe} ${className}`}
+        style={{
+          height:
+            height === 'auto'
+              ? computedHeight === -1
+                ? undefined
+                : `${computedHeight}px`
+              : height,
+          paddingRight: computedHeight === -1 ? '1px' : undefined,
+
+          /*
+            When computedHeight is -1, we adjust the styles above to trigger a 
+            ResizeObserver event within the iframe. This will then trigger a 
+            SET_HEIGHT postMessage from the iframe to update computedHeight 
+            with an updated value.
+          */
+        }}
         {...props}
       />
     </div>
   );
 };
+
+function extendHtml(html: string) {
+  let wrappedHtml = html;
+  const bodyStyle = getComputedStyle(document.body, null);
+  const bodyBackgroundColor = bodyStyle.getPropertyValue('background-color');
+
+  const globalStyles = `
+    <style>
+      * { box-sizing: border-box !important; }
+    </style>
+  `;
+
+  if (!html.includes('</body>')) {
+    wrappedHtml = `<html><head></head><body>${html}</body></html>`;
+  }
+
+  const script = `
+    <script>
+      let hasLoaded = false;
+      
+      function setStyles() {
+        document.documentElement.style.height = '100%';
+        document.documentElement.style.background = '${bodyBackgroundColor}';
+        document.body.style.margin = '0px';
+        document.body.style.overflow = 'auto';
+      }
+
+      function setHeight() {
+        if (!hasLoaded) return;
+
+        setStyles();
+
+        let height = 0;
+        height = document.body.scrollHeight;
+
+        window.parent.postMessage({
+          type: "SET_HEIGHT",
+          height
+        }, '*');
+      }
+
+      setStyles();
+
+      const mutationObserver = new MutationObserver(setHeight);
+      mutationObserver.observe(document.body, {
+        attributes: true,
+        childList: true,
+        subtree: true
+      });
+
+      const resizeObserver = new ResizeObserver(setHeight);
+      resizeObserver.observe(document.body);
+
+      window.addEventListener('load', () => {
+        hasLoaded = true;
+        setHeight();
+      });
+    </script>
+  `;
+
+  const viewportMeta =
+    '<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">';
+
+  const extendedHtml = wrappedHtml
+    .replace('</body>', `${script}${globalStyles}</body>`)
+    .replace('</head>', `${viewportMeta}</head>`);
+
+  return extendedHtml;
+}

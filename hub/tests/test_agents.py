@@ -9,14 +9,14 @@ import io
 from fastapi.testclient import TestClient
 from hub.app import app
 from nearai.login import generate_nonce
-from hub.api.v1.auth import revokable_auth, AuthToken
+from hub.api.v1.auth import get_auth, AuthToken
 from hub.api.v1.vector_stores import VectorStore, CreateVectorStoreRequest
 from openai.types.beta.thread_create_params import Message
 
 class TestAgentsRoutes(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
-        app.dependency_overrides[revokable_auth] = self.override_dependency
+        app.dependency_overrides[get_auth] = self.override_dependency
 
     @staticmethod
     async def override_dependency():
@@ -25,8 +25,8 @@ class TestAgentsRoutes(unittest.TestCase):
 
     def create_openai_client(self):
         url = str(self.client.base_url) + "/v1"
-        return openai.OpenAI(api_key="sk-test", base_url=url, http_client=self.client)        
-        
+        return openai.OpenAI(api_key="sk-test", base_url=url, http_client=self.client)
+
     def test_run_agent(self):
         client = self.create_openai_client()
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Form, HTTPException
 from sqlmodel import select
 
-from hub.api.v1.auth import AuthToken, revokable_auth
+from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.models import Stars, get_session
 
 v1_router = APIRouter(
@@ -11,7 +11,7 @@ v1_router = APIRouter(
 
 
 @v1_router.post("/add_star")
-async def add_star(auth: AuthToken = Depends(revokable_auth), namespace: str = Form(...), name: str = Form(...)):
+async def add_star(auth: AuthToken = Depends(get_auth), namespace: str = Form(...), name: str = Form(...)):
     with get_session() as session:
         result = session.exec(
             select(Stars).where(Stars.account_id == auth.account_id, Stars.namespace == namespace, Stars.name == name)
@@ -25,7 +25,7 @@ async def add_star(auth: AuthToken = Depends(revokable_auth), namespace: str = F
 
 
 @v1_router.post("/remove_star")
-async def remove_star(auth: AuthToken = Depends(revokable_auth), namespace: str = Form(...), name: str = Form(...)):
+async def remove_star(auth: AuthToken = Depends(get_auth), namespace: str = Form(...), name: str = Form(...)):
     with get_session() as session:
         result = session.exec(
             select(Stars).where(Stars.account_id == auth.account_id, Stars.namespace == namespace, Stars.name == name)

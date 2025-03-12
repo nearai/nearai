@@ -1,0 +1,30 @@
+---
+url: {{url}}
+commit: {{commit}}
+filepath: {{filepath}}
+theorem_name: {{theorem_name}}
+---
+
+You are given a theorem formalized in Lean4, and your task is to provide the solution in Lean4 as well.
+
+
+## Requirements:
+
+1. The solution should be provided as a list of tactics written in Lean4.
+2. Each tactic should be an individual string and the full answer should be formatted as a JSON.
+3. The JSON should be enclosed between BEGIN and END in the following format:
+
+BEGIN
+{
+    "tactics": ["rewrite h₁", "rewrite h₂"]
+}
+END
+
+## Problem
+
+Your goal is to prove the following theorem in Lean4:
+
+theorem {{theorem_name}}
+{{theorem_raw}}
+
+Please respond with your solution using the required format.

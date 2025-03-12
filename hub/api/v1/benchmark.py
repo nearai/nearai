@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy import Integer, func
 from sqlmodel import col, select
 
-from hub.api.v1.auth import AuthToken, revokable_auth
+from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.models import Benchmark, BenchmarkResult, get_session
 
 load_dotenv()
@@ -27,7 +27,7 @@ v1_router = APIRouter(
 )
 
 
-def requires_login(auth: AuthToken = Depends(revokable_auth)):
+def requires_login(auth: AuthToken = Depends(get_auth)):
     return auth.account_id
 
 

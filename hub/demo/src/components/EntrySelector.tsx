@@ -1,21 +1,24 @@
 'use client';
 
+import {
+  Button,
+  Card,
+  CardList,
+  Flex,
+  Input,
+  PlaceholderStack,
+  Text,
+} from '@near-pagoda/ui';
 import { Minus, Plus } from '@phosphor-icons/react';
 import { useEffect, useRef } from 'react';
 import { type z } from 'zod';
 
-import { Flex } from '~/components/lib/Flex';
-import { Input } from '~/components/lib/Input';
 import { useEntriesSearch } from '~/hooks/entries';
 import { idForEntry } from '~/lib/entries';
 import { type EntryCategory, type entryModel } from '~/lib/models';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
 import { EntryCard } from './EntryCard';
-import { Button } from './lib/Button';
-import { Card, CardList } from './lib/Card';
-import { PlaceholderStack } from './lib/Placeholder';
-import { Text } from './lib/Text';
 
 export type EntrySelectorOnSelectHandler = (
   item: z.infer<typeof entryModel>,
@@ -36,11 +39,9 @@ export const EntrySelector = ({
   onSelect,
 }: Props) => {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const entriesQuery = api.hub.entries.useQuery({ category });
+  const entriesQuery = trpc.hub.entries.useQuery({ category });
 
-  const { searched, searchQuery, setSearchQuery } = useEntriesSearch(
-    entriesQuery.data,
-  );
+  const { searched, setSearchQuery } = useEntriesSearch(entriesQuery.data);
 
   searched?.sort((a, b) => {
     let sort = b.num_stars - a.num_stars;
@@ -62,7 +63,6 @@ export const EntrySelector = ({
         type="search"
         name="search"
         placeholder="Search"
-        value={searchQuery}
         onInput={(event) => setSearchQuery(event.currentTarget.value)}
         ref={searchInputRef}
       />

@@ -1,9 +1,10 @@
+import datetime
 import json
 import logging
 import re
 from collections import defaultdict
 from os import getenv
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import boto3
 import botocore
@@ -11,13 +12,13 @@ import botocore.exceptions
 from dotenv import load_dotenv
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-from shared.client_config import DEFAULT_NAMESPACE
-from sqlmodel import delete, select, text
+from nearai.shared.client_config import DEFAULT_NAMESPACE
+from pydantic import BaseModel, field_validator, model_validator
+from sqlmodel import col, delete, select, text
 
-from hub.api.v1.auth import AuthToken, revokable_auth
+from hub.api.v1.auth import AuthToken, get_auth, get_optional_auth
 from hub.api.v1.entry_location import EntryLocation, valid_identifier
-from hub.api.v1.models import RegistryEntry, Tags, get_session
+from hub.api.v1.models import Fork, RegistryEntry, Tags, get_session, sanitize
 
 DEFAULT_NAMESPACE_WRITE_ACCESS_LIST = [
     "spensa2.near",
@@ -64,7 +65,7 @@ def with_write_access(use_forms=False):
 
     def fn_with_write_access(
         entry_location: EntryLocation = default,
-        auth: AuthToken = Depends(revokable_auth),
+        auth: AuthToken = Depends(get_auth),
     ) -> EntryLocation:
         """Check the user has write access to the entry."""
         if auth.account_id == entry_location.namespace:
@@ -104,6 +105,10 @@ def get_or_create(entry_location: EntryLocation = Depends(with_write_access())) 
 
 def get(entry_location: EntryLocation = Body()) -> RegistryEntry:
     logger.debug(f"Getting entry: {entry_location}")
+
+    if entry_location.version == "latest":
+        return latest_version(entry_location)
+
     with get_session() as session:
         entry = session.exec(
             select(RegistryEntry).where(
@@ -120,12 +125,58 @@ def get(entry_location: EntryLocation = Body()) -> RegistryEntry:
         return entry
 
 
+def get_read_access(
+    entry: RegistryEntry = Depends(get),
+    auth: Optional[AuthToken] = Depends(get_optional_auth),
+) -> RegistryEntry:
+    current_account_id = auth.account_id if auth else None
+    if entry.is_private() and entry.namespace != current_account_id:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    return entry
+
+
+def latest_version(entry_location: EntryLocation = Body()) -> RegistryEntry:
+    with get_session() as session:
+        entry = session.exec(
+            select(RegistryEntry)
+            .where(
+                RegistryEntry.namespace == entry_location.namespace,
+                RegistryEntry.name == entry_location.name,
+            )
+            .order_by(col(RegistryEntry.id).desc())
+            .limit(1)
+        ).first()
+
+        if entry is None:
+            raise HTTPException(status_code=404, detail=f"Entry '{entry_location}' not found")
+
+        return entry
+
+
 class EntryMetadataInput(BaseModel):
     category: str
     description: str
     tags: List[str]
     details: Dict
     show_entry: bool
+
+    @model_validator(mode="before")
+    @classmethod
+    def preprocess_all_fields(cls, data: Any) -> Any:
+        """Global preprocessing validator that sanitizes all input data before validation."""
+        return sanitize(data)
+
+    @field_validator("tags", mode="after")
+    @classmethod
+    def process_tags(cls, tags: List[str]) -> List[str]:
+        """Post-sanitization processing for tags.
+
+        1. Remove empty/whitespace-only tags
+        2. Deduplicate while preserving order
+        3. Enforce case consistency
+        """
+        # Use dictionary keys to preserve order and remove duplicates
+        return list({tag.strip().lower(): None for tag in tags if tag.strip()}.keys())
 
 
 class EntryMetadata(EntryMetadataInput):
@@ -162,14 +213,14 @@ async def upload_file(
 
 
 @v1_router.post("/download_file")
-async def download_file_async(
-    entry: RegistryEntry = Depends(get),
+def download_file(
+    entry: RegistryEntry = Depends(get_read_access),
     path: str = Body(),
 ):
-    return StreamingResponse(download_file(entry, path).iter_chunks())
+    return StreamingResponse(download_file_inner(entry, path).iter_chunks())
 
 
-def download_file(
+def download_file_inner(
     entry: RegistryEntry,
     path: str = Body(),
 ):
@@ -223,11 +274,11 @@ async def upload_metadata(registry_entry_id: int = Depends(get_or_create), metad
 
 
 @v1_router.post("/download_metadata")
-async def download_metadata_async(entry: RegistryEntry = Depends(get)) -> EntryMetadata:
-    return download_metadata(entry)
+def download_metadata(entry: RegistryEntry = Depends(get_read_access)) -> EntryMetadata:
+    return download_metadata_inner(entry)
 
 
-def download_metadata(entry: RegistryEntry) -> EntryMetadata:
+def download_metadata_inner(entry: RegistryEntry) -> EntryMetadata:
     with get_session() as session:
         q_tags = select(Tags).where(Tags.registry_id == entry.id)
         tags = [tag.tag for tag in session.exec(q_tags).all()]
@@ -248,14 +299,14 @@ class Filename(BaseModel):
 
 
 @v1_router.post("/list_files")
-async def list_files_async(entry: RegistryEntry = Depends(get)) -> List[Filename]:
-    """Lists all files that belong to a entry."""
+def list_files(entry: RegistryEntry = Depends(get_read_access)) -> List[Filename]:
+    """Lists all files that belong to an entry."""
     logger.info(f"Listing files for entry: {entry}")
-    return list_files(entry)
+    return list_files_inner(entry)
 
 
-def list_files(entry: RegistryEntry) -> List[Filename]:
-    """Lists all files that belong to a entry."""
+def list_files_inner(entry: RegistryEntry) -> List[Filename]:
+    """Lists all files that belong to an entry."""
     source = entry.details.get("_source")
 
     if source is None:
@@ -276,36 +327,28 @@ def list_files(entry: RegistryEntry) -> List[Filename]:
     return files
 
 
+class ForkOf(BaseModel):
+    namespace: str
+    name: str
+
+
 class EntryInformation(BaseModel):
     id: int
     namespace: str
     name: str
     version: str
+    updated: datetime.datetime
     category: str
     description: str
     details: Dict[str, Any]
     tags: List[str]
+    num_forks: int
     num_stars: int
     starred_by_point_of_view: bool
+    fork_of: Optional[ForkOf]
 
 
 @v1_router.post("/list_entries")
-async def list_entries_async(
-    namespace: str = "",
-    category: str = "",
-    tags: str = "",
-    total: int = 32,
-    offset: int = 0,
-    show_hidden: bool = False,
-    show_latest_version: bool = True,
-    starred_by: str = "",
-    star_point_of_view: str = "",
-) -> List[EntryInformation]:
-    return list_entries(
-        namespace, category, tags, total, offset, show_hidden, show_latest_version, starred_by, star_point_of_view
-    )
-
-
 def list_entries(
     namespace: str = "",
     category: str = "",
@@ -316,6 +359,37 @@ def list_entries(
     show_latest_version: bool = True,
     starred_by: str = "",
     star_point_of_view: str = "",
+    fork_of_name: str = "",
+    fork_of_namespace: str = "",
+) -> List[EntryInformation]:
+    return list_entries_inner(
+        namespace=namespace,
+        category=category,
+        tags=tags,
+        total=total,
+        offset=offset,
+        show_hidden=show_hidden,
+        show_latest_version=show_latest_version,
+        starred_by=starred_by,
+        star_point_of_view=star_point_of_view,
+        fork_of_name=fork_of_name,
+        fork_of_namespace=fork_of_namespace,
+    )
+
+
+def list_entries_inner(
+    namespace: str = "",
+    category: str = "",
+    tags: str = "",
+    custom_where: str = "",
+    total: int = 32,
+    offset: int = 0,
+    show_hidden: bool = False,
+    show_latest_version: bool = True,
+    starred_by: str = "",
+    star_point_of_view: str = "",
+    fork_of_name: str = "",
+    fork_of_namespace: str = "",
 ) -> List[EntryInformation]:
     tags_list = list({tag for tag in tags.split(",") if tag})
 
@@ -337,12 +411,23 @@ def list_entries(
     else:
         namespace_condition = ""
 
+    if fork_of_name and fork_of_namespace:
+        fork_of_namespace = valid_identifier(fork_of_namespace)
+        fork_of_condition = "AND fork_from_namespace = :fork_of_namespace AND fork_from_name = :fork_of_name"
+        bind_params["fork_of_name"] = fork_of_name
+        bind_params["fork_of_namespace"] = fork_of_namespace
+    else:
+        fork_of_condition = ""
+
     latest_version_condition = (
         """JOIN (SELECT MAX(id) as id FROM registry_entry GROUP BY namespace, name) last_entry
              ON last_entry.id = registry.id"""
         if show_latest_version
         else ""
     )
+
+    # TODO add extra protection to avoid SQL INJECTION?
+    custom_where_condition = f" AND ({custom_where})" if custom_where else ""
 
     bind_params["star_point_of_view"] = star_point_of_view
     bind_params["starred_by"] = starred_by
@@ -363,18 +448,48 @@ def list_entries(
                 CASE WHEN MAX(account_id = :starred_by) THEN 1 ELSE 0 END as starred_by_target
                 FROM stars
                 GROUP BY namespace, name
+            ),
+            CountedForks AS (
+                SELECT
+                    category as counted_forks_category,
+                    from_namespace as counted_forks_from_namespace,
+                    from_name as counted_forks_from_name,
+                    COUNT(to_namespace) as num_forks
+                FROM forks
+                GROUP BY counted_forks_category, counted_forks_from_namespace, counted_forks_from_name
+            ),
+            Fork AS (
+                SELECT
+                    category as fork_category,
+                    from_namespace as fork_from_namespace,
+                    from_name as fork_from_name,
+                    to_namespace as fork_to_namespace,
+                    to_name as fork_to_name
+                FROM forks
             )
-            SELECT registry.id, registry.namespace, registry.name, registry.version,
-            registry.category, registry.description, registry.details,
-            CountedStars.num_stars, CountedStars.starred_by_pov
+            SELECT
+                registry.id, registry.namespace, registry.name, registry.version,
+                registry.category, registry.description, registry.details, registry.time,
+                CountedStars.num_stars, CountedStars.starred_by_pov, CountedForks.num_forks,
+                Fork.fork_from_namespace, Fork.fork_from_name
             FROM registry_entry registry
             LEFT JOIN CountedStars
-            ON registry.namespace = CountedStars.namespace AND registry.name = CountedStars.name
+                ON registry.namespace = CountedStars.namespace AND registry.name = CountedStars.name
+            LEFT JOIN CountedForks
+                ON registry.category = CountedForks.counted_forks_category
+                    AND registry.namespace = CountedForks.counted_forks_from_namespace
+                    AND registry.name = CountedForks.counted_forks_from_name
+            LEFT JOIN Fork
+                ON registry.category = Fork.fork_category
+                    AND registry.namespace = Fork.fork_to_namespace
+                    AND registry.name = Fork.fork_to_name
             {latest_version_condition}
             WHERE show_entry >= :show_entry
                 {category_condition}
                 {namespace_condition}
                 {starred_by_condition}
+                {fork_of_condition}
+                {custom_where_condition}
             ORDER BY registry.id DESC
             LIMIT :total
             OFFSET :offset
@@ -394,29 +509,63 @@ def list_entries(
                         FROM stars
                         GROUP BY namespace, name
                     ),
+                    CountedForks AS (
+                        SELECT
+                            category as counted_forks_category,
+                            from_namespace as counted_forks_from_namespace,
+                            from_name as counted_forks_from_name,
+                            COUNT(to_namespace) as num_forks
+                        FROM forks
+                        GROUP BY counted_forks_category, counted_forks_from_namespace, counted_forks_from_name
+                    ),
+                    Fork AS (
+                        SELECT
+                            category as fork_category,
+                            from_namespace as fork_from_namespace,
+                            from_name as fork_from_name,
+                            to_namespace as fork_to_namespace,
+                            to_name as fork_to_name
+                        FROM forks
+                    ),
                     FilteredRegistry AS (
-                        SELECT registry.id, CountedStars.num_stars, CountedStars.starred_by_pov
+                        SELECT
+                            registry.id, CountedStars.num_stars, CountedStars.starred_by_pov,
+                            CountedForks.num_forks, Fork.fork_from_namespace, Fork.fork_from_name
                         FROM registry_entry registry
                         {latest_version_condition}
                         JOIN entry_tags ON registry.id = entry_tags.registry_id
                         LEFT JOIN CountedStars
-                        ON registry.namespace = CountedStars.namespace AND registry.name = CountedStars.name
+                            ON registry.namespace = CountedStars.namespace
+                            AND registry.name = CountedStars.name
+                        LEFT JOIN CountedForks
+                            ON registry.category = CountedForks.counted_forks_category
+                                AND registry.namespace = CountedForks.counted_forks_from_namespace
+                                AND registry.name = CountedForks.counted_forks_from_name
+                        LEFT JOIN Fork
+                            ON registry.category = Fork.fork_category
+                                AND registry.namespace = Fork.fork_to_namespace
+                                AND registry.name = Fork.fork_to_name
                         WHERE show_entry >= :show_entry
                             AND entry_tags.tag IN :tags
                             {category_condition}
                             {namespace_condition}
                             {starred_by_condition}
+                            {fork_of_condition}
+                            {custom_where_condition}
                         GROUP BY registry.id
                         HAVING COUNT(DISTINCT entry_tags.tag) = :ntags
                     ),
                     RankedRegistry AS (
-                        SELECT id, num_stars, starred_by_pov, ROW_NUMBER() OVER (ORDER BY id DESC) AS col_rank
+                        SELECT
+                            id, num_stars, starred_by_pov, num_forks, fork_from_namespace, fork_from_name,
+                            ROW_NUMBER() OVER (ORDER BY id DESC) AS col_rank
                         FROM FilteredRegistry
                     )
 
                     SELECT registry.id, registry.namespace, registry.name, registry.version,
-                           registry.category, registry.description, registry.details,
-                           ranked.num_stars, ranked.starred_by_pov
+                           registry.category, registry.description, registry.details, registry.time,
+                           ranked.num_stars, ranked.starred_by_pov, num_forks, fork_from_namespace,
+                           fork_from_name
                     FROM RankedRegistry ranked
                     JOIN registry_entry registry ON ranked.id = registry.id
                     WHERE   ranked.col_rank >= :lower_bound AND
@@ -429,22 +578,41 @@ def list_entries(
             bind_params["tags"] = tags_list
             bind_params["ntags"] = len(tags_list)
 
-        for id, namespace_, name, version, category_, description, details, num_stars, pov in session.exec(
-            text(query_text).bindparams(**bind_params)
-        ).all():  # type: ignore
-            print(namespace_, name, version, num_stars)
+        for (
+            id,
+            namespace_,
+            name,
+            version,
+            category_,
+            description,
+            details,
+            timestamp,
+            num_stars,
+            pov,
+            num_forks,
+            fork_from_namespace,
+            fork_from_name,
+        ) in session.exec(text(query_text).bindparams(**bind_params)).all():  # type: ignore
+            fork_of = None
+
+            if fork_from_namespace and fork_from_name:
+                fork_of = ForkOf(namespace=fork_from_namespace, name=fork_from_name)
+
             entries_info.append(
                 EntryInformation(
                     id=id,
                     namespace=namespace_,
                     name=name,
                     version=version,
+                    updated=timestamp.replace(tzinfo=datetime.timezone.utc),
                     category=category_,
                     description=description,
                     details=json.loads(details),
                     tags=[],
+                    num_forks=num_forks or 0,
                     num_stars=num_stars or 0,
                     starred_by_point_of_view=bool(pov),
+                    fork_of=fork_of,
                 )
             )
 
@@ -464,3 +632,91 @@ def list_entries(
         entries_info.sort(key=lambda x: x.id, reverse=True)
 
         return entries_info
+
+
+class ForkEntryModifications(BaseModel):
+    name: str
+    description: str
+    version: str
+
+
+class ForkResult(BaseModel):
+    status: str
+    entry: EntryLocation
+
+
+@v1_router.post("/fork")
+def fork_entry(
+    modifications: ForkEntryModifications = Body(),
+    entry: RegistryEntry = Depends(get_read_access),
+    auth: AuthToken = Depends(get_auth),
+) -> ForkResult:
+    """Fork an existing registry entry to the current user's namespace."""
+    with get_session() as session:
+        new_entry = RegistryEntry(
+            namespace=auth.account_id,
+            name=modifications.name,
+            version=modifications.version,
+            category=entry.category,
+            description=modifications.description,
+            details=entry.details,
+            show_entry=True,
+        )
+
+        # Remove X (Twitter) event triggers from the forked entry's details
+        if "triggers" in new_entry.details:
+            triggers = new_entry.details["triggers"]
+            if "events" in triggers:
+                events = triggers["events"]
+                if "x_mentions" in events:
+                    del events["x_mentions"]
+                # Optional: Remove the events object if empty after deletion
+                if not events:
+                    del triggers["events"]
+            # Optional: Remove the triggers object if empty after deletions
+            if not triggers:
+                del new_entry.details["triggers"]
+
+        new_entry_collision_check = session.exec(
+            select(RegistryEntry).where(
+                RegistryEntry.category == new_entry.category,
+                RegistryEntry.namespace == new_entry.namespace,
+                RegistryEntry.name == new_entry.name,
+            )
+        ).first()
+
+        if new_entry_collision_check is not None:
+            logger.debug(f"Fork request collides with existing entry: {new_entry_collision_check}")
+            raise HTTPException(
+                status_code=409, detail="Fork request collides with existing entry. Choose a different name."
+            )
+
+        session.add(new_entry)
+
+        session.add(
+            Fork(
+                category=entry.category,
+                from_namespace=entry.namespace,
+                from_name=entry.name,
+                to_namespace=new_entry.namespace,
+                to_name=new_entry.name,
+            )
+        )
+
+        session.commit()
+
+        files = list_files_inner(entry)
+        assert isinstance(S3_BUCKET, str)
+        bucket = S3_BUCKET
+
+        for file in files:
+            key = entry.get_key(file.filename)
+            new_key = new_entry.get_key(file.filename)
+            s3.copy_object(Bucket=bucket, Key=new_key, CopySource={"Bucket": bucket, "Key": key})
+
+        result = ForkResult(
+            status="Entry forked and uploaded",
+            entry=EntryLocation(name=new_entry.name, namespace=new_entry.namespace, version=new_entry.version),
+        )
+
+        return result

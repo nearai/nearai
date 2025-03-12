@@ -1,18 +1,21 @@
 import '~/styles/globals.scss';
+import '@near-pagoda/ui/styles.css';
 import '@near-wallet-selector/modal-ui/styles.css';
 
-import { ThemeProvider } from 'next-themes';
+import { type Metadata } from 'next';
 import { type ReactNode } from 'react';
 
-import { Footer } from '~/components/Footer';
-import { Toaster } from '~/components/lib/Toast';
-import { Navigation } from '~/components/Navigation';
-import { NearInitializer } from '~/components/NearInitializer';
-import { ZustandHydration } from '~/components/ZustandHydration';
-import { env } from '~/env';
-import { TRPCReactProvider } from '~/trpc/react';
+import { Layout } from '~/components/Layout';
+import { APP_TITLE } from '~/constants';
 
-import s from './layout.module.scss';
+const title = `NEAR AI ${APP_TITLE}`;
+
+export const metadata: Metadata = {
+  title: {
+    template: `%s | ${title}`,
+    default: title,
+  },
+};
 
 /*
   The suppressHydrationWarning on <html> is required by <ThemeProvider>:
@@ -20,12 +23,9 @@ import s from './layout.module.scss';
 */
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  const title = env.NEXT_PUBLIC_CONSUMER_MODE ? 'AI Chat' : 'AI Hub';
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>{title}</title>
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, minimum-scale=1"
@@ -35,19 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
 
       <body>
-        <ThemeProvider attribute="class">
-          <TRPCReactProvider>
-            <NearInitializer />
-            <ZustandHydration />
-            <Toaster />
-
-            <div className={s.wrapper}>
-              <Navigation />
-              <main className={s.main}>{children}</main>
-              <Footer conditional />
-            </div>
-          </TRPCReactProvider>
-        </ThemeProvider>
+        <Layout>{children}</Layout>
       </body>
     </html>
   );

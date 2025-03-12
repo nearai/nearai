@@ -1,10 +1,5 @@
+import { Button, Container, Flex, Section, Text } from '@near-pagoda/ui';
 import { ArrowRight } from '@phosphor-icons/react';
-
-import { Button } from './lib/Button';
-import { Container } from './lib/Container';
-import { Flex } from './lib/Flex';
-import { Section } from './lib/Section';
-import { Text } from './lib/Text';
 
 type Props = {
   error: '404' | 'unknown';
@@ -26,7 +21,9 @@ export const ErrorSection = ({ error }: Props) => {
     <Section grow="available">
       <Container size="s" style={{ margin: 'auto', textAlign: 'center' }}>
         <Flex direction="column" gap="l" align="center">
-          <Text as="h1">{title}</Text>
+          <Text as="h1" color="red-10">
+            {title}
+          </Text>
           <Text>{description}</Text>
           <Button href="/" label="Go Home" iconRight={<ArrowRight />} />
         </Flex>

@@ -1,0 +1,32 @@
+# ex web-agent framework
+base58 == 2.1.1
+pynacl >= 1.5.0
+pytz == 2024.2
+python_dateutil >= 2.5.3
+setuptools >= 21.0.0
+urllib3 >= 1.25.3, < 2.1.0
+pydantic >=2.8.2
+typing-extensions >= 4.7.1
+psutil >= 5.9.5
+boto3 >= 1.35.3
+litellm >= 1.60.5
+openai == 1.61.0
+chardet
+bs4
+googlesearch-python >= 1.2.5
+PyPDF2
+youtube_transcript_api >= 0.6.2
+py-near >= 1.1.50
+loguru == 0.7.2
+ed25519 == 1.5
+py-multibase==1.0.3
+py-multicodec==0.2.1
+pydantic==2.9.2
+aiohttp==3.11.0b0
+borsh-construct
+tweepy >= 4.14.0
+tenacity == 9.0.0
+web3 >= 7.8.0
+eth-account >= 0.13.5
+numpy >= 1.21.0
+ddtrace == 2.21.0

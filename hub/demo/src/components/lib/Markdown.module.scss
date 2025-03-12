@@ -1,0 +1,53 @@
+.markdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-m);
+  width: 100%;
+  color: var(--sand-12);
+  font: var(--text-base);
+  text-align: left;
+  overflow-wrap: break-word;
+
+  a {
+    color: var(--violet-10);
+    font-weight: 500;
+    text-underline-offset: 0.2em;
+    text-decoration: underline;
+    transition: var(--transitions);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--violet-11) !important;
+    }
+  }
+
+  ul,
+  ol {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-xs);
+    margin-left: 1.5rem;
+  }
+
+  ol {
+    gap: var(--gap-m);
+  }
+
+  li {
+    white-space: normal;
+    p {
+      white-space: pre-wrap;
+    }
+  }
+
+  blockquote {
+    font-style: italic;
+    border-left: 3px solid var(--sand-8);
+    padding-left: var(--gap-m);
+    white-space: normal;
+
+    p {
+      white-space: pre-line;
+    }
+  }
+}

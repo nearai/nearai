@@ -1,0 +1,133 @@
+services:
+  nearai_base:
+    image: nearai_base:latest
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.nearai_base
+    command: sleep infinity
+
+  minio:
+    image: minio/minio
+    volumes:
+      - minio_data:/data
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio_make_bucket:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set minio-local http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb minio-local/kholinar-registry --ignore-existing;
+      /usr/bin/mc ls minio-local/kholinar-registry || exit 1;
+      sleep infinity;
+      "      
+
+  singlestore:
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.singlestore
+    volumes:
+      - singlestore_data:/var/lib/memsql
+    environment:
+      SINGLESTORE_LICENSE: ${SINGLESTORE_LICENSE}
+      ROOT_PASSWORD: change-me
+    ports:
+      - "3306:3306"
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "memsqlctl list-nodes | grep Online || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  vllm:
+    image: thecmrfrd/vllm-cpu:v0.6.1
+    ## Build optionally from local Dockerfile
+    # build:
+    #   context: ..
+    #   dockerfile: .docker/Dockerfile.vllm.cpu
+    environment:
+      VLLM_ENGINE_ITERATION_TIMEOUT_S: 3600
+    ipc: host
+    ports:
+      - 8000:8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: --model Qwen/Qwen2.5-0.5B-Instruct --enable-auto-tool-choice --tool-call-parser mistral
+
+  nearaihub:
+    depends_on:
+      - nearai_base
+      - vllm
+      - singlestore
+      - minio
+      - minio_make_bucket
+    restart: unless-stopped
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.hub
+    ports:  
+      - 8081:8081
+    environment:
+      SERVER_ENVIRONMENT: local
+      S3_ENDPOINT: http://minio:9000
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      S3_BUCKET: kholinar-registry
+      S3_PREFIX: hub
+      DATABASE_HOST: singlestore
+      DATABASE_USER: root
+      DATABASE_PASSWORD: change-me
+      DATABASE_NAME: hub
+      STORAGE_TYPE: s3
+      PROVIDER_LOCAL_BASE_URL: http://vllm:8000/v1
+      PROVIDER_LOCAL_API_KEY: n/a
+      CUSTOM_RUNNER_URL: http://agent_runner:8080/2015-03-31/functions/function/invocations
+      RUNNER_ENVIRONMENT: custom_runner
+      API_URL: http://nearaihub:8081
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  agent_runner:
+    depends_on:
+      - nearaihub
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.agent_runner
+      args:
+        FRAMEWORK: -minimal
+  
+  ci:
+    depends_on:
+      - nearai_base
+      - nearaihub
+      - agent_runner
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.ci
+      args:
+        NEARAICI_SIGNATURE: ${NEARAICI_SIGNATURE}
+    command: sleep 3000 && exit 1
+
+volumes:
+  minio_data:
+  singlestore_data:

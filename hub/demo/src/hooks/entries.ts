@@ -1,3 +1,4 @@
+import { useDebouncedFunction } from '@near-pagoda/ui';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { type z } from 'zod';
@@ -5,61 +6,74 @@ import { type z } from 'zod';
 import {
   type entriesModel,
   type EntryCategory,
+  type entryModel,
   type entrySecretModel,
 } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 import { wordsMatchFuzzySearch } from '~/utils/search';
 
-import { useDebouncedValue } from './debounce';
-
-export function useEntryParams(overrides?: {
+export function useCurrentEntryParams(overrides?: {
   namespace?: string;
   name?: string;
   version?: string;
 }) {
   const params = useParams();
-  const namespace = overrides?.namespace ?? params.namespace;
-  const name = overrides?.name ?? params.name;
-  const version = overrides?.version ?? params.version;
-  const id = `${namespace as string}/${name as string}/${version as string}`;
+  const namespace = decodeURIComponent(
+    (overrides?.namespace ?? params.namespace ?? '') as string,
+  );
+  const name = decodeURIComponent(
+    (overrides?.name ?? params.name ?? '') as string,
+  );
+  const version = decodeURIComponent(
+    (overrides?.version ?? params.version ?? '') as string,
+  );
+  const id = `${namespace}/${name}/${version}`;
 
   return {
     id,
-    namespace: namespace as string,
-    name: name as string,
-    version: version as string,
+    namespace,
+    name,
+    version,
   };
 }
 
 export function useCurrentEntry(
   category: EntryCategory,
-  overrides?: {
-    namespace?: string;
-    name?: string;
-    version?: string;
+  options?: {
+    enabled?: boolean;
+    refetchOnMount?: boolean;
+    overrides?: {
+      namespace?: string;
+      name?: string;
+      version?: string;
+    };
   },
 ) {
-  const { id, namespace, name, version } = useEntryParams(overrides);
-
-  const entriesQuery = api.hub.entries.useQuery({
-    category,
-    namespace,
-    showLatestVersion: false,
-  });
-
-  const currentVersions = entriesQuery.data?.filter(
-    (item) => item.name === name,
+  const { id, namespace, name, version } = useCurrentEntryParams(
+    options?.overrides,
   );
 
-  const currentEntry = currentVersions?.find(
-    (item) => item.version === version,
+  const entryQuery = trpc.hub.entry.useQuery(
+    {
+      category,
+      name,
+      namespace,
+      version,
+    },
+    {
+      refetchOnMount: options?.refetchOnMount,
+      enabled: typeof options?.enabled === 'boolean' ? options.enabled : true,
+    },
   );
+
+  const currentEntry = entryQuery.data?.entry;
+  const currentVersions = entryQuery.data?.versions;
 
   return {
     currentEntry,
     currentEntryId: id,
-    currentEntryIsHidden: !!entriesQuery.data && !currentEntry,
+    currentEntryIsHidden: !!entryQuery.data && !currentEntry,
     currentVersions,
   };
 }
@@ -67,19 +81,22 @@ export function useCurrentEntry(
 export function useEntriesSearch(
   data: z.infer<typeof entriesModel> | undefined,
 ) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const searchQueryDebounced = useDebouncedValue(searchQuery, 150);
+  const [searchQuery, _setSearchQuery] = useState('');
+
+  const setSearchQuery = useDebouncedFunction((value: string) => {
+    _setSearchQuery(value);
+  }, 150);
 
   const searched = useMemo(() => {
-    if (!data || !searchQueryDebounced) return data;
+    if (!data || !searchQuery) return data;
 
     return data.filter((item) =>
       wordsMatchFuzzySearch(
         [item.namespace, item.name, ...item.tags],
-        searchQueryDebounced,
+        searchQuery,
       ),
     );
-  }, [data, searchQueryDebounced]);
+  }, [data, searchQuery]);
 
   return {
     searched,
@@ -95,22 +112,21 @@ export type EntryEnvironmentVariable = {
   secret?: z.infer<typeof entrySecretModel>;
 };
 
-export function useCurrentEntryEnvironmentVariables(
-  category: EntryCategory,
+export function useEntryEnvironmentVariables(
+  entry: z.infer<typeof entryModel> | undefined,
   excludeQueryParamKeys?: string[],
 ) {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
-  const { currentEntry } = useCurrentEntry(category);
+  const auth = useAuthStore((store) => store.auth);
   const searchParams = useSearchParams();
-  const secretsQuery = api.hub.secrets.useQuery(
+  const secretsQuery = trpc.hub.secrets.useQuery(
     {},
     {
-      enabled: isAuthenticated,
+      enabled: !!auth,
     },
   );
 
   const result = useMemo(() => {
-    const metadataVariablesByKey = currentEntry?.details.env_vars ?? {};
+    const metadataVariablesByKey = entry?.details.env_vars ?? {};
     const urlVariablesByKey: Record<string, string> = {};
 
     searchParams.forEach((value, key) => {
@@ -140,12 +156,12 @@ export function useCurrentEntryEnvironmentVariables(
     });
 
     const secrets = secretsQuery.data?.filter((secret) => {
-      if (!currentEntry) return false;
+      if (!entry) return false;
       return (
-        secret.category === currentEntry.category &&
-        secret.namespace === currentEntry.namespace &&
-        secret.name === currentEntry.name &&
-        secret.version === currentEntry.version
+        secret.category === entry.category &&
+        secret.namespace === entry.namespace &&
+        secret.name === entry.name &&
+        (secret.version === entry.version || !secret.version)
       );
     });
 
@@ -172,7 +188,7 @@ export function useCurrentEntryEnvironmentVariables(
     };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentEntry, searchParams, secretsQuery.data]);
+  }, [entry, searchParams, secretsQuery.data]);
 
   return result;
 }

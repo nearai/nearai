@@ -1,4 +1,4 @@
-import { type ComboboxOption } from '~/components/lib/Combobox';
+import { type ComboboxOption } from '@near-pagoda/ui';
 
 export const PROVIDER_OPTIONS: ComboboxOption[] = [
   { label: 'Fireworks', value: 'fireworks' },

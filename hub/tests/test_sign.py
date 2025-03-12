@@ -2,7 +2,7 @@ import unittest
 
 # how to run:
 # python -m unittest discover -s hub/tests
-import shared.near.sign as near
+import nearai.shared.near.sign as near
 
 
 class TestSignatureVerification(unittest.TestCase):

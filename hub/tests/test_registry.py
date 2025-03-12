@@ -6,7 +6,7 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 from hub.app import app
-from hub.api.v1.auth import revokable_auth, AuthToken
+from hub.api.v1.auth import get_auth, AuthToken
 
 def auth_token():
     return AuthToken(
@@ -20,7 +20,7 @@ def auth_token():
 async def override_dependency():
     return auth_token()
 
-app.dependency_overrides[revokable_auth] = override_dependency
+app.dependency_overrides[get_auth] = override_dependency
 client = TestClient(app)
 
 def test_fetch_health():

@@ -1,22 +1,59 @@
 'use client';
 
-import { X } from '@phosphor-icons/react';
-import { type ReactNode } from 'react';
+import { SvgIcon } from '@near-pagoda/ui';
+import { CaretDown } from '@phosphor-icons/react';
+import { type CSSProperties, type ReactNode, useEffect, useRef } from 'react';
 
 import { Footer } from '~/components/Footer';
 
-import { Button } from '../Button';
 import s from './Sidebar.module.scss';
 
 export const Root = (props: { children: ReactNode }) => {
-  return <div className={s.root} {...props} />;
+  const elementRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    function calculateSize() {
+      if (!element) return;
+      const rect = element.getBoundingClientRect();
+      const top = Math.max(0, rect.top);
+      element.style.setProperty(`--sidebar-root-top`, `${top}px`);
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      calculateSize();
+    });
+
+    calculateSize();
+    resizeObserver.observe(element);
+    window.addEventListener('scroll', calculateSize);
+
+    () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('scroll', calculateSize);
+    };
+  }, []);
+
+  return <div className={s.root} ref={elementRef} {...props} />;
 };
 
-export const Main = ({ children }: { children: ReactNode }) => {
+export const Main = ({
+  children,
+  showFooter = true,
+  style,
+}: {
+  children: ReactNode;
+  showFooter?: boolean;
+  style?: CSSProperties;
+}) => {
   return (
     <div className={s.main}>
-      <div className={s.mainContent}>{children}</div>
-      <Footer />
+      <div className={s.mainContent} style={style}>
+        {children}
+      </div>
+      {showFooter && <Footer />}
     </div>
   );
 };
@@ -29,29 +66,34 @@ type SidebarProps = {
   children: ReactNode;
   openForSmallScreens: boolean;
   setOpenForSmallScreens: (open: boolean) => unknown;
-  width?: string;
 };
 
 export const Sidebar = ({
   children,
   openForSmallScreens,
   setOpenForSmallScreens,
-  width,
 }: SidebarProps) => {
   return (
     <div className={s.sidebar} data-open-small-screens={openForSmallScreens}>
-      <div className={s.sidebarContent} style={{ width, minWidth: width }}>
-        <div className={s.sidebarContentInner}>
-          <Button
-            label="Close"
-            icon={<X weight="bold" />}
-            onClick={() => setOpenForSmallScreens(false)}
-            className={s.sidebarCloseButton}
-            size="x-small"
-          />
+      <div className={s.sidebarContent}>
+        <button
+          type="button"
+          onPointerDownCapture={(event) => {
+            event.stopPropagation();
+            setOpenForSmallScreens(false);
+          }}
+          onPointerUpCapture={(event) => {
+            event.stopPropagation();
+          }}
+          onClickCapture={(event) => {
+            event.stopPropagation();
+          }}
+          className={s.sidebarCloseButton}
+        >
+          <SvgIcon icon={<CaretDown weight="bold" />} size="s" />
+        </button>
 
-          {children}
-        </div>
+        <div className={s.sidebarContentInner}>{children}</div>
       </div>
     </div>
   );

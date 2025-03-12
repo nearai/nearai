@@ -1,16 +1,13 @@
+import { Button, openToast, SvgIcon, Tooltip } from '@near-pagoda/ui';
 import { Star } from '@phosphor-icons/react';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { type z } from 'zod';
 
-import { signInWithNear } from '~/lib/auth';
+import { signIn } from '~/lib/auth';
 import { type entryModel } from '~/lib/models';
 import { useAuthStore } from '~/stores/auth';
-import { api } from '~/trpc/react';
+import { trpc } from '~/trpc/TRPCProvider';
 
-import { Button } from './lib/Button';
-import { SvgIcon } from './lib/SvgIcon';
-import { openToast } from './lib/Toast';
-import { Tooltip } from './lib/Tooltip';
 import s from './StarButton.module.scss';
 
 type Props = {
@@ -20,12 +17,12 @@ type Props = {
 };
 
 export const StarButton = ({ entry, style, variant = 'simple' }: Props) => {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const [starred, setStarred] = useState(false);
   const [count, setCount] = useState(0);
   const [clicked, setClicked] = useState(false);
-  const starMutation = api.hub.starEntry.useMutation();
-  const visuallyStarred = isAuthenticated && starred;
+  const starMutation = trpc.hub.starEntry.useMutation();
+  const visuallyStarred = !!auth && starred;
 
   useEffect(() => {
     setCount(entry?.num_stars ?? 0);
@@ -40,14 +37,14 @@ export const StarButton = ({ entry, style, variant = 'simple' }: Props) => {
   const toggleStar = () => {
     if (!entry) return;
 
-    if (!isAuthenticated) {
+    if (!auth) {
       openToast({
         type: 'info',
         title: 'Please Sign In',
         description:
           'Signing in will allow you to star and interact with agents and other resources',
         actionText: 'Sign In',
-        action: signInWithNear,
+        action: signIn,
         duration: Infinity,
       });
       return;
@@ -77,8 +74,11 @@ export const StarButton = ({ entry, style, variant = 'simple' }: Props) => {
   return (
     <Tooltip
       asChild
-      content={visuallyStarred ? 'Unstar' : 'Star'}
-      disabled={variant === 'detailed' && !visuallyStarred}
+      content={
+        visuallyStarred
+          ? `Unstar this ${entry?.category ?? 'agent'}`
+          : `Star this ${entry?.category ?? 'agent'}`
+      }
     >
       <Button
         label={
@@ -92,18 +92,23 @@ export const StarButton = ({ entry, style, variant = 'simple' }: Props) => {
           visuallyStarred ? (
             <SvgIcon size="xs" icon={<Star weight="fill" />} color="amber-10" />
           ) : (
-            <SvgIcon size="xs" icon={<Star />} color="sand-9" />
+            <SvgIcon size="xs" icon={<Star />} />
           )
         }
         count={variant === 'detailed' ? count : undefined}
         size="small"
-        variant="secondary"
+        variant={variant === 'simple' ? 'secondary' : 'primary'}
         fill={variant === 'simple' ? 'ghost' : 'outline'}
         onClick={toggleStar}
-        style={{
-          ...style,
-          fontVariantNumeric: 'tabular-nums',
-        }}
+        style={
+          variant === 'simple'
+            ? {
+                ...style,
+                fontVariantNumeric: 'tabular-nums',
+                paddingInline: 'var(--gap-s)',
+              }
+            : style
+        }
         className={s.starButton}
         data-clicked={clicked}
         data-starred={visuallyStarred}
