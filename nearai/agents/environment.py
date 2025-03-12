@@ -29,8 +29,8 @@ from openai import NOT_GIVEN, NotGiven, OpenAI
 from openai.types.beta.threads.message import Message
 from openai.types.beta.threads.message_create_params import Attachment
 from openai.types.beta.threads.run import Run
-from openai.types.beta.vector_store import VectorStore
-from openai.types.beta.vector_stores import VectorStoreFile
+from openai.types.vector_store import VectorStore
+from openai.types.vector_stores import VectorStoreFile
 from openai.types.file_object import FileObject
 from py_near.account import Account
 from py_near.constants import DEFAULT_ATTACHED_GAS
