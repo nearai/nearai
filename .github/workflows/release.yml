@@ -58,6 +58,11 @@ jobs:
         token: ${{ steps.generate-token.outputs.token }}
         fetch-depth: 0
         persist-credentials: false
+      
+    - name: Make repository writable
+      run: |
+        sudo chown -R $(whoami):$(id -gn) .
+        chmod -R u+w .
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -99,7 +104,6 @@ jobs:
 
     - name: Update lock file and amend commit
       run: |
-        chmod -R 666 .git
         uv lock
         git add uv.lock
         git commit --amend --no-edit
