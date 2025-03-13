@@ -160,7 +160,6 @@ class SqlClient:
             # Refresh to get the auto-generated ID
             session.refresh(completion)
 
-
     def get_user_usage(self, account_id: str):  # noqa: D102
         query = f"SELECT * FROM completions WHERE account_id = '{account_id}'"
         return self.__fetch_all(query)
