@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional, Union
 import boto3
 import requests
 from botocore.config import Config
+from ddtrace import tracer
+from ddtrace.propagation.http import HTTPPropagator
 from fastapi import APIRouter, Depends, HTTPException
 from nearai.agents.local_runner import LocalRunner
 from nearai.clients.lambda_client import LambdaWrapper
@@ -129,6 +131,12 @@ def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: Auth
         if isinstance(auth_data["nonce"], bytes):
             auth_data["nonce"] = auth_data["nonce"].decode("utf-8")
 
+    # Get the current trace context
+    span = tracer.current_span()
+    propagator = HTTPPropagator()
+    trace_headers = {}
+    propagator.inject(span, trace_headers)
+
     result = wrapper.invoke_function(
         function_name,
         {
@@ -137,6 +145,11 @@ def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: Auth
             "run_id": run_id,
             "auth": auth_data,
             "params": params,
+            "_datadog": {
+                "x-datadog-trace-id": trace_headers.get("x-datadog-trace-id"),
+                "x-datadog-parent-id": trace_headers.get("x-datadog-parent-id"),
+                "x-datadog-sampling-priority": trace_headers.get("x-datadog-sampling-priority"),
+            }
         },
     )
 
