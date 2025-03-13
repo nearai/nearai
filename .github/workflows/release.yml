@@ -99,11 +99,12 @@ jobs:
 
     - name: Update lock file and amend commit
       run: |
-        git config --global --add safe.directory "$GITHUB_WORKSPACE"        
         uv lock
         git add uv.lock
         git commit --amend --no-edit
         git push origin main
+      env:
+        GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
       if: ${{ github.event.inputs.make-release == 'true' }}
 
     - name: Create release
