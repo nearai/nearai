@@ -243,7 +243,7 @@ module = [
     "openai.types.*",
     "openai.types.beta.*",
     "openai.types.beta.threads.*",
-    "openai.types.beta.vector_store.*",
+    "openai.types.vector_store.*",
     "openai.types.file_object.*",
     "psutil.*",
     "sqlalchemy.*",

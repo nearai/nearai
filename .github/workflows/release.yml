@@ -99,6 +99,7 @@ jobs:
 
     - name: Update lock file and amend commit
       run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"        
         uv lock
         git add uv.lock
         git commit --amend --no-edit
