@@ -153,7 +153,7 @@ def upgrade() -> None:
                     "ctd": json.dumps(usage_data.get("completion_tokens_details"))
                     if usage_data.get("completion_tokens_details")
                     else None,
-                    "ptd": json.dumps(usage_data.get("prompt_tokens_details")) # noqa
+                    "ptd": json.dumps(usage_data.get("prompt_tokens_details"))
                     if usage_data.get("prompt_tokens_details")
                     else None,
                 }
@@ -179,9 +179,9 @@ def upgrade() -> None:
                             prompt_tokens = :pt,
                             total_tokens = :tt,
                             completion_tokens_details = :ctd,
-                            prompt_tokens_details = :ptd
+                            prompt_tokens_details = :ptd 
                         WHERE id = :id
-                    """), # noqa
+                    """),
                     batch_updates,  # List of updates in a batch
                 )
 
