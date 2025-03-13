@@ -99,7 +99,7 @@ jobs:
 
     - name: Update lock file and amend commit
       run: |
-        chmod -R u+rw .git/
+        sudo chmod -R ugo+rw .git/
         uv lock
         echo "Lock file changes are staged and ready"
         git add uv.lock
