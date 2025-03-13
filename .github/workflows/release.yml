@@ -91,9 +91,18 @@ jobs:
     - name: Bump version and generate changelog
       uses: commitizen-tools/commitizen-action@master
       with:
+        push: false
         github_token: ${{ steps.generate-token.outputs.token }}
         changelog_increment_filename: body.md
         increment: ${{ github.event.inputs.bump }}
+      if: ${{ github.event.inputs.make-release == 'true' }}
+
+    - name: Update lock file and amend commit
+      run: |
+        uv lock
+        git add uv.lock
+        git commit --amend --no-edit
+        git push origin main
       if: ${{ github.event.inputs.make-release == 'true' }}
 
     - name: Create release
