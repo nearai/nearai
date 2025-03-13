@@ -52,7 +52,7 @@ for file_path in md_files:
         )
         file_ids.append(uploaded_file.id)
 
-vs = client.beta.vector_stores.create(
+vs = client.vector_stores.create(
     name="my-vector-store",
     file_ids=file_ids,
     # chunking_strategy={
@@ -82,7 +82,7 @@ print(f"Vector store created: {vs.id}")
     )
 
     # Attach file to the vector store
-    client.beta.vector_stores.files.create(
+    client.vector_stores.files.create(
         vector_store_id=vector_store.id,
         file_id=uploaded_file.id,
     )
@@ -96,7 +96,7 @@ After you attach files to a vector store they will be processed in the backgroun
 
 ```python
 while True:
-    status = client.beta.vector_stores.retrieve(vector_store.id)
+    status = client.vector_stores.retrieve(vector_store.id)
     if status.file_counts.completed == 1:
         break
     time.sleep(1)
@@ -111,7 +111,7 @@ print("File processed! The vector store is ready.")
 You can delete a specific file from the vector store by providing both the store’s and file’s IDs. This operation removes the file and its embeddings, helping to manage and update your stored data.
 
 ```python
-client.beta.vector_stores.files.delete(
+client.vector_stores.files.delete(
     vector_store_id=vector_store.id,
     file_id=file_id
 )
