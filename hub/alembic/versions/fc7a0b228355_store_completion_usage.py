@@ -179,7 +179,7 @@ def upgrade() -> None:
                             prompt_tokens = :pt,
                             total_tokens = :tt,
                             completion_tokens_details = :ctd,
-                            prompt_tokens_details = :ptd 
+                            prompt_tokens_details = :ptd
                         WHERE id = :id
                     """),
                     batch_updates,  # List of updates in a batch
