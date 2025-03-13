@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 from nearai.shared.models import SimilaritySearch, SimilaritySearchFile
 from pydantic import BaseModel, RootModel
 
+from hub.api.v1.models import Completion, get_session
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -102,13 +104,61 @@ class SqlClient:
         return cursor.fetchone()
 
     def add_user_usage(self, account_id: str, query: str, response: str, model: str, provider: str, endpoint: str):  # noqa: D102
-        # Escape single quotes in query and response strings
-        query = query.replace("'", "''")
-        response = response.replace("'", "''")
+        """Store completion usage data with robust JSON handling.
 
-        query = f"INSERT INTO completions (account_id, query, response, model, provider, endpoint) VALUES ('{account_id}', '{query}', '{response}', '{model}', '{provider}', '{endpoint}')"  # noqa: E501
-        self.db.cursor().execute(query)
-        self.db.commit()
+        Args:
+        ----
+            account_id: User account identifier
+            query: Raw query string or JSON string
+            response: Raw response or JSON string
+            model: Model identifier
+            provider: Provider name
+            endpoint: API endpoint used
+
+        """
+        # Default usage data
+        token_data = {
+            "completion_tokens": 0,
+            "prompt_tokens": 0,
+            "total_tokens": 0,
+            "completion_tokens_details": None,
+            "prompt_tokens_details": None,
+        }
+
+        try:
+            response_dict = json.loads(response)
+        except Exception as e:
+            logger.error(f"Error parsing response JSON: {e}")
+            response_dict = {"value": str(response)}
+
+        try:
+            query_dict = json.loads(query)
+        except Exception as e:
+            logger.error(f"Error parsing response JSON: {e}")
+            query_dict = {"value": query}
+
+        if isinstance(response, dict) and "usage" in response:
+            token_data.update(response["usage"])
+
+        completion = Completion(
+            account_id=account_id,
+            query=query_dict,
+            response=response_dict,
+            model=model,
+            provider=provider,
+            endpoint=endpoint,
+            completion_tokens=token_data.get("completion_tokens", 0),
+            prompt_tokens=token_data.get("prompt_tokens", 0),
+            total_tokens=token_data.get("total_tokens", 0),
+            completion_tokens_details=token_data.get("completion_tokens_details"),
+            prompt_tokens_details=token_data.get("prompt_tokens_details"),
+        )
+
+        with get_session() as session:
+            session.add(completion)
+            session.commit()
+            # Refresh to get the auto-generated ID
+            session.refresh(completion)
 
     def get_user_usage(self, account_id: str):  # noqa: D102
         query = f"SELECT * FROM completions WHERE account_id = '{account_id}'"
