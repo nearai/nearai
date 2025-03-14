@@ -2,7 +2,7 @@ import json
 import unicodedata
 import uuid
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from os import getenv
 from typing import Dict, Iterator, List, Optional
@@ -17,6 +17,7 @@ from openai.types.beta.threads.message_content import MessageContent
 from openai.types.beta.threads.run import Run as OpenAIRun
 from openai.types.beta.threads.text import Text
 from openai.types.beta.threads.text_content_block import TextContentBlock
+from sqlalchemy import Index
 from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.types import TypeDecorator
 from sqlmodel import Column, Field, Session, SQLModel, create_engine
@@ -102,17 +103,80 @@ class UnicodeSafeJSON(TypeDecorator):
         return value
 
 
+class Org(SQLModel, table=True):
+    """Organization entity with unique namespace ownership."""
+
+    __tablename__ = "orgs"
+
+    name: str = Field(primary_key=True, nullable=False)  # Matches registry_entry.namespace
+    display_name: str = Field(nullable=False)  # Human-readable name
+    created_by: str = Field(nullable=False)  # NEAR account of creator
+    created_at: datetime = Field(default_factory=datetime.now)
+    meta: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))  # Custom settings/stats
+
+    __table_args__ = (
+        Index("idx_org_created_by", "created_by"),  # Faster lookup of user's orgs
+    )
+
+    @classmethod
+    def exists(cls, org_name: str) -> bool:
+        """Check if an organization exists."""
+        with get_session() as session:
+            return session.query(Org).filter(Org.name == org_name).count() > 0
+
+
+class OrgMember(SQLModel, table=True):
+    """Organization membership with granular permissions."""
+
+    __tablename__ = "org_members"
+
+    org_name: str = Field(foreign_key="orgs.name", primary_key=True)
+    member_id: str = Field(primary_key=True)  # NEAR account
+    role: str = Field(Enum("admin", "maintainer", "member"), default="member")
+    permissions: List[str] = Field(
+        default_factory=list,
+        sa_column=Column(UnicodeSafeJSON),
+        description="List of allowed actions: ['entry.write', 'secrets.manage', ...]",
+    )
+    joined_at: datetime = Field(default_factory=datetime.now)
+
+    __table_args__ = (
+        Index("idx_org_member", "member_id", "org_name"),  # Optimize both lookup directions
+    )
+
+
+class OrgInvitation(SQLModel, table=True):
+    """Pending organization invitations system."""
+
+    __tablename__ = "org_invitations"
+
+    id: str = Field(default_factory=lambda: uuid.uuid4().hex, primary_key=True)
+    org_name: str = Field(foreign_key="orgs.name", nullable=False)
+    inviter_id: str = Field(nullable=False)  # NEAR account of who invited
+    invitee_id: str = Field(nullable=False)  # NEAR account being invited
+    role: str = Field(Enum("admin", "maintainer", "member"), default="member")
+    permissions: List[str] = Field(default_factory=list, sa_column=Column(UnicodeSafeJSON))
+    created_at: datetime = Field(default_factory=datetime.now)
+    expires_at: datetime = Field(default_factory=lambda: datetime.now() + timedelta(days=7))
+    status: str = Field(Enum("pending", "accepted", "revoked"), default="pending")
+
+
 class RegistryEntry(SQLModel, table=True):
     """Entry stored in the registry."""
 
     __tablename__ = "registry_entry"
-    __table_args__ = {
-        "mysql_collate": "utf8mb4_unicode_ci",  # Use case-insensitive Unicode collation for full text search
-    }
+    __table_args__ = (
+        Index("idx_namespace_owner_type", "namespace", "owner_type", unique=True),
+        {"mysql_collate": "utf8mb4_unicode_ci"},  # Use case-insensitive Unicode collation for full text search
+    )
 
     id: int = Field(default=None, primary_key=True)
     namespace: str = Field(nullable=False)
     """Namespace under which the entry is stored. Usually the username (NEAR account id) of the owner."""
+    owner_type: str = Field(Enum("user", "org"), nullable=False, default="user")
+    """Type of the owner of the entry. Either 'user' or 'org'."""
+    author: Optional[str] = Field(nullable=True)
+    """For org entries: author of the entry."""
     name: str = Field(nullable=False)
     """Name of the entry."""
     version: str = Field(nullable=False)
@@ -156,6 +220,19 @@ class RegistryEntry(SQLModel, table=True):
         """Check if the entry is private."""
         return self.details.get("private_source", False)
 
+    @classmethod
+    def create_for_org(cls, org_name: str, author: str, **kwargs):
+        """Safe entry creation with org validation."""
+        if not Org.exists(org_name):
+            raise ValueError(f"Org {org_name} not registered")
+
+        return cls(
+            namespace=org_name,
+            owner_type="org",
+            author=author,  # Actual owner's account
+            **kwargs,
+        )
+
 
 class AgentData(SQLModel, table=True):
     """Agent key value storage."""
@@ -163,6 +240,7 @@ class AgentData(SQLModel, table=True):
     __tablename__ = "agent_data"
 
     namespace: str = Field(primary_key=True)
+    owner_type: str = Field(Enum("user", "org"), default="user")
     name: str = Field(primary_key=True)
     key: str = Field(primary_key=True)
     value: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))
@@ -179,6 +257,8 @@ class HubSecrets(SQLModel, table=True):
 
     owner_namespace: str = Field(nullable=False)
     """Owner of the secret"""
+    owner_type: str = Field(Enum("user", "org"), default="user")
+    """Type of the owner of the secret. Either 'user' or 'org'."""
 
     namespace: str = Field(nullable=False)
     """Namespace of the secret recipient"""
@@ -210,6 +290,7 @@ class Tags(SQLModel, table=True):
 class Stars(SQLModel, table=True):
     account_id: str = Field(primary_key=True)
     namespace: str = Field(primary_key=True)
+    owner_type: str = Field(Enum("user", "org"), default="user")
     name: str = Field(primary_key=True)
 
 
