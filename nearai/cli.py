@@ -658,8 +658,8 @@ class EvaluationCli:
             status = solution.get("status")
             print(f"status: {status}")
             info: dict = solution.get("info", {})
-            if not verbose:
-                info.pop("verbose")
+            if not verbose and isinstance(info, dict):
+                info.pop("verbose", {})
             print(f"info: {json.dumps(info, indent=2, ensure_ascii=False)}")
             if i == 1:
                 print("Enter to continue, type 'exit' to quit.")
