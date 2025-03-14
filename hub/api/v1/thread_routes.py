@@ -545,11 +545,12 @@ def modify_message(
 ) -> Message:
     with get_session() as session:
         message_model = session.get(MessageModel, message_id)
+        if message_model is None:
+            raise HTTPException(status_code=404, detail="Message not found")
+
         thread_id = message_model.thread_id
         _check_thread_permissions(auth, session, thread_id)
 
-        if message_model is None:
-            raise HTTPException(status_code=404, detail="Message not found")
         message_model.meta_data = message["metadata"] if isinstance(message["metadata"], dict) else None
         session.commit()
         return message_model.to_openai()
