@@ -17,6 +17,7 @@ services:
     env_file:
       - .env
     environment:
+      - RUNNER_API_KEY=key1
       - DD_API_KEY=${DD_API_KEY}
       - DD_APM_ENABLED=false
       - DD_APM_NON_LOCAL_TRAFFIC=false
@@ -26,7 +27,7 @@ services:
       - DD_LOGS_ENABLED=false
       - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=false
       - DD_SITE=${DD_SITE} 
-      - DD_TRACE_ENABLED=false
+      - DD_TRACE_ENABLED=true
 
   db:
     image: ghcr.io/singlestore-labs/singlestoredb-dev:latest
