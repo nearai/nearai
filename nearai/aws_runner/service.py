@@ -61,7 +61,7 @@ def load_protected_variables():
             del os.environ[key]
 
     if "RUNNER_API_KEY" not in variables:
-        variables["RUNNER_API_KEY"] = "key1" # default value for CLI
+        variables["RUNNER_API_KEY"] = "key1"  # default value for CLI
 
     return variables
 
