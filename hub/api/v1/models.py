@@ -2,7 +2,7 @@ import json
 import unicodedata
 import uuid
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from os import getenv
 from typing import Dict, Iterator, List, Optional
@@ -20,6 +20,7 @@ from openai.types.beta.threads.text_content_block import TextContentBlock
 from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.types import TypeDecorator
 from sqlmodel import Column, Field, Session, SQLModel, create_engine
+from ulid import ULID
 
 from hub.api.v1.entry_location import EntryLocation
 
@@ -100,6 +101,37 @@ class UnicodeSafeJSON(TypeDecorator):
             # - SingleStore's binary storage peculiarities
             return json.loads(str(value))
         return value
+
+
+class User(SQLModel, table=True):
+    __tablename__ = "users"
+
+    id: str = Field(primary_key=True, default=f"user_{str(ULID())}")
+    namespace: Optional[str] = Field(default=None)
+    email: Optional[str] = Field(default=None)
+    near_account_id: Optional[str] = Field(default=None)
+    eth_account_id: Optional[str] = Field(default=None)
+    avatar_url: Optional[str] = Field(default=None)
+    created_at: datetime = Field(default=datetime.now(timezone.utc))
+
+
+class UserRefreshToken(SQLModel, table=True):
+    __tablename__ = "user_refresh_tokens"
+
+    id: str = Field(primary_key=True, default=f"refresh_{str(ULID())}")
+    user_id: str
+    created_at: datetime = Field(default=datetime.now(timezone.utc))
+
+    @staticmethod
+    def valid_number_of_days():
+        """Refresh tokens are only considered valid for this many days."""
+        return 30
+
+    @staticmethod
+    def oldest_valid_datetime():
+        """Returns current datetime subtracted by valid_number_of_days()."""
+        result = datetime.now(timezone.utc) - timedelta(days=UserRefreshToken.valid_number_of_days())
+        return result
 
 
 class RegistryEntry(SQLModel, table=True):
