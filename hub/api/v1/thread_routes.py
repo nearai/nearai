@@ -7,6 +7,8 @@ from collections import defaultdict
 import asyncio
 import json
 
+import threading
+
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
 from fastapi.responses import StreamingResponse
 from nearai.agents.local_runner import LocalRunner
@@ -775,6 +777,9 @@ def create_run(
             asyncio.run(run_queues[run_model.id].put(event_step_in_progress))
             print('put events', run_model.id)
 
+            thread = threading.Thread(target=_run_agent, args=(thread_id, run_model.id, None, auth))
+            thread.start()
+
             return StreamingResponse(
                 stream_run_events(run_model.id),
                 media_type="text/event-stream"
@@ -932,14 +937,21 @@ def _run_agent(
         return run_model.to_openai()
 
 async def stream_run_events(run_id: str):
-    """Stream events for a run via SSE until completion."""
-    queue = run_queues[run_id]
+    last_timestamp = datetime.min
     while True:
-        event = await queue.get()
-        if event == "done":
-            break
-        yield f"data: {json.dumps(event)}\n\n"
-    del run_queues[run_id]  # Clean up after stream ends
+        with get_session() as session:
+            query = select(Delta).where(
+                Delta.object == "thread.run.event",
+                Delta.meta_data["run_id"].astext == run_id,
+                Delta.created_at > last_timestamp
+            ).order_by(Delta.created_at)
+            events = session.exec(query).all()
+            for event in events:
+                yield f"data: {json.dumps(event.content)}\n\n"
+                last_timestamp = event.created_at
+            if events and event.content["event_type"] in ["thread.run.completed", "thread.run.failed"]:
+                break
+        await asyncio.sleep(0.1)
 
 @threads_router.get("/threads/{thread_id}/runs/{run_id}")
 def get_run(
