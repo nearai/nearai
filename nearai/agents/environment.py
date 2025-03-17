@@ -1308,15 +1308,11 @@ class Environment(object):
         stream: bool = True
         return self._run_inference_completions(messages, model, stream, **kwargs)
 
-    def add_reply_streaming(self, results):
-        for result in results:
-            if result.choices[0].delta.content:
-                print(result.choices[0].delta.content, end='', flush=True)
-        print()
-        return
-        #TODO should this be add_reply?
-        #create message on thread
-        message = hub_client.beta.threads.messages.create(
+    def add_reply_streaming(self, results, thread_id=None, attachments=None, message_type=None):
+        thread_id = thread_id or self._thread_id
+        content = ""
+        # Create a message with status="in_progress"
+        message = self.hub_client.beta.threads.messages.create(
             thread_id=thread_id,
             role="assistant",
             status="in_progress",
@@ -1328,14 +1324,29 @@ class Environment(object):
             attachments=attachments,
             metadata={"message_type": message_type} if message_type else None,
         )
- 
+        message_id = message.id
+
         for result in results:
-            #TODO this might be bulky
-            #send tokens to hub for message id
-            hub_client.beta.threads.messages.update(...)
-        #send done for message id
-        #update message on thread
-        hub_client.beta.threads.messages.update(...)
+            delta_content = result.choices[0].delta.content
+            if delta_content:
+                # Create Delta entry
+                delta = {"text": {"value": delta_content}}
+                self.hub_client.beta.threads.messages.deltas.create(
+                    thread_id=thread_id,
+                    message_id=message_id,
+                    content=delta
+                )
+                print(delta_content, end='', flush=True)
+                content += delta_content
+        print()
+
+        # Update message to completed
+        self.hub_client.beta.threads.messages.update(
+            message_id=message_id,
+            content=content,
+            thread_id=thread_id,
+            status="completed",
+        )
 
     # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
     def completion(
