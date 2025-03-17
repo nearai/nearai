@@ -1,0 +1,103 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "🐞 [Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "## 🐞 Bug Report"
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      placeholder: "A clear and concise description of the bug you encountered."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Steps to Reproduce"
+      placeholder: "1. Go to '...'
+2. Click on '....'
+3. Scroll down to '....'
+4. See error"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected Behavior"
+      placeholder: "What did you expect to happen?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: "Actual Behavior"
+      placeholder: "What actually happened? Include any error messages, screenshots, or logs if available."
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: "NEAR AI CLI Version"
+      placeholder: "e.g., 0.1.6"
+    validations:
+      required: true
+
+  - type: input
+    id: python_version
+    attributes:
+      label: "Python Version"
+      placeholder: "e.g., 3.11.2"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package_manager
+    attributes:
+      label: "Package Manager"
+      options:
+        - "pip"
+        - "poetry"
+        - "uv"
+        - "conda"
+        - "Other (please specify in Additional Info)"
+    validations:
+      required: true
+
+  - type: input
+    id: virtual_env
+    attributes:
+      label: "Virtual Environment"
+      placeholder: "e.g., venv, poetry, conda, none"
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: "Operating System"
+      options:
+        - "Windows"
+        - "macOS"
+        - "Linux/Ubuntu"
+        - "Linux/Other"
+        - "Other (please specify in Additional Info)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: python_tools
+    attributes:
+      label: "Python Tools & Libraries"
+      placeholder: "List any relevant Python tools and libraries you're using in this context (e.g., pytest, black, mypy, torch version)"
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: "Additional Information"
+      placeholder: "Any other relevant information about your environment, configuration, or context that might help in diagnosing the issue."
