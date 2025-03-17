@@ -684,6 +684,28 @@ def create_run(
         if run.stream:
             run_queues[run_model.id] = asyncio.Queue()
 
+        # Background task to monitor Delta table
+        async def monitor_deltas(run_id: str):
+            last_id = 0
+            while True:
+                with get_session() as session:
+                    events = session.exec(
+                        select(Delta).where(
+                            Delta.meta_data["run_id"].astext == run_id,
+                            Delta.id > last_id
+                        ).order_by(Delta.id)
+                    ).all()
+                    for event in events:
+                        if event.content.get("event_type") == "thread.run.completed":
+                            await run_queues[run_id].put("done")
+                            return
+                        else:
+                            await run_queues[run_id].put(event.to_openai())
+                        last_id = event.id
+                await asyncio.sleep(0.1)  # Poll every 0.1s
+
+            # Background task to monitor Delta table
+
             # Base payload for run events
             base_payload = {
                 "id": run_model.id,  # e.g., "run_123"
@@ -937,21 +959,14 @@ def _run_agent(
         return run_model.to_openai()
 
 async def stream_run_events(run_id: str):
-    last_timestamp = datetime.min
+    queue = run_queues[run_id]
     while True:
-        with get_session() as session:
-            query = select(Delta).where(
-                Delta.object == "thread.run.event",
-                Delta.meta_data["run_id"].astext == run_id,
-                Delta.created_at > last_timestamp
-            ).order_by(Delta.created_at)
-            events = session.exec(query).all()
-            for event in events:
-                yield f"data: {json.dumps(event.content)}\n\n"
-                last_timestamp = event.created_at
-            if events and event.content["event_type"] in ["thread.run.completed", "thread.run.failed"]:
-                break
-        await asyncio.sleep(0.1)
+        event = await queue.get()
+        if event == "done":
+            break
+        yield f"data: {json.dumps(event)}\n\n"
+        await asyncio.sleep(0) # lets the event loop yield, otherwise it batches yields
+    del run_queues[run_id]
 
 @threads_router.get("/threads/{thread_id}/runs/{run_id}")
 def get_run(
