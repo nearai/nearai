@@ -54,11 +54,12 @@ export function useCurrentEntry(
     options?.overrides,
   );
 
-  const entriesQuery = trpc.hub.entries.useQuery(
+  const entryQuery = trpc.hub.entry.useQuery(
     {
       category,
+      name,
       namespace,
-      showLatestVersion: false,
+      version,
     },
     {
       refetchOnMount: options?.refetchOnMount,
@@ -66,21 +67,13 @@ export function useCurrentEntry(
     },
   );
 
-  const currentVersions = entriesQuery.data?.filter(
-    (item) => item.name === name,
-  );
-
-  currentVersions?.sort((a, b) => b.id - a.id);
-
-  const currentEntry =
-    version === 'latest'
-      ? currentVersions?.[0]
-      : currentVersions?.find((item) => item.version === version);
+  const currentEntry = entryQuery.data?.entry;
+  const currentVersions = entryQuery.data?.versions;
 
   return {
     currentEntry,
     currentEntryId: id,
-    currentEntryIsHidden: !!entriesQuery.data && !currentEntry,
+    currentEntryIsHidden: !!entryQuery.data && !currentEntry,
     currentVersions,
   };
 }

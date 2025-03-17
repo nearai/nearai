@@ -2260,7 +2260,7 @@ wheels = [
 
 [[package]]
 name = "nearai"
-version = "0.1.13"
+version = "0.1.16"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
@@ -2408,7 +2408,7 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.11.0,<2.0.0" },
     { name = "mypy-boto3", specifier = ">=1.34.147,<2.0.0" },
     { name = "mypy-boto3-s3", specifier = ">=1.34.138,<2.0.0" },
-    { name = "openai", specifier = ">=1.61.1,<2.0.0" },
+    { name = "openai", specifier = ">=1.66.2,<2.0.0" },
     { name = "openpyxl", marker = "extra == 'hub'", specifier = ">=3.1.5,<4.0.0" },
     { name = "pandas-stubs", specifier = ">=2.2.2.240603,<3.0.0" },
     { name = "pathspec", specifier = ">=0.11.0" },
@@ -2738,7 +2738,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.65.2"
+version = "1.66.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -2750,9 +2750,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f6/03/0bbf201a7e44920d892db0445874c8111be4255cb9495379df18d6d36ea1/openai-1.65.2.tar.gz", hash = "sha256:729623efc3fd91c956f35dd387fa5c718edd528c4bed9f00b40ef290200fb2ce", size = 359185 }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/e1/b3e1fda1aa32d4f40d4de744e91de4de65c854c3e53c63342e4b5f9c5995/openai-1.66.2.tar.gz", hash = "sha256:9b3a843c25f81ee09b6469d483d9fba779d5c6ea41861180772f043481b0598d", size = 397041 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2c/3b/722ed868cb56f70264190ed479b38b3e46d14daa267d559a3fe3bd9061cf/openai-1.65.2-py3-none-any.whl", hash = "sha256:27d9fe8de876e31394c2553c4e6226378b6ed85e480f586ccfe25b7193fb1750", size = 473206 },
+    { url = "https://files.pythonhosted.org/packages/2c/6f/3315b3583ffe3e31c55b446cb22d2a7c235e65ca191674fffae62deb3c11/openai-1.66.2-py3-none-any.whl", hash = "sha256:75194057ee6bb8b732526387b6041327a05656d976fc21c064e21c8ac6b07999", size = 567268 },
 ]
 
 [[package]]

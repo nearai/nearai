@@ -39,7 +39,7 @@ print(f"Vector store creation initiated: {vs}")
 # Poll the vector store status until processing is complete
 print("Polling vector store status...")
 while True:
-    status = client.beta.vector_stores.retrieve(vs['id'])
+    status = client.vector_stores.retrieve(vs['id'])
     if status.file_counts.completed == status.file_counts.total:
         print("All files processed. Vector store is ready.")
         break
@@ -59,12 +59,12 @@ print(f"Search results for '{search_query}':")
 print(f"- {search_response}")
 
 # Retrieve the vector store details
-retrieved_store = client.beta.vector_stores.retrieve(vs['id'])
+retrieved_store = client.vector_stores.retrieve(vs['id'])
 print(f"\nVector store details:")
 print(f"- Name: {retrieved_store.name}")
 print(f"- Total files: {retrieved_store.file_counts.total}")
 print(f"- Usage bytes: {retrieved_store.usage_bytes}")
 
 # Clean up: Delete the vector store
-res = client.beta.vector_stores.delete(vs['id'])
+res = client.vector_stores.delete(vs['id'])
 print(f"\nVector store deleted: {res}")
