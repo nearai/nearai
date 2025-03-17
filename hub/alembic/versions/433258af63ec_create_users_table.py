@@ -23,33 +23,35 @@ def upgrade() -> None:
         "users",
         sa.Column(
             "id",
-            sa.String(36),  # user_{ulid} https://pypi.org/project/python-ulid
+            sa.String(36),
             primary_key=True,
-            comment="Unique, immutable, internal user ID (ULID)",
+            comment="Unique, immutable, internal user ID",
         ),
         sa.Column(
             "namespace",
             sa.String(64),
             index=True,
-            comment="Unique, human-readable user ID (used in urls)",
+            comment="Unique, human-readable, public user ID (used for display and urls)",
         ),
         sa.Column(
             "near_account_id",
-            sa.String(255),
-        ),
-        sa.Column(
-            "eth_account_id",
-            sa.String(255),
+            sa.String(64),
+            comment="Unique NEAR account ID linked to this account via signed messaged login",
         ),
         sa.Column(
             "email",
             sa.String(255),
+            comment="Unique email linked to this account via social login (google/github)",
         ),
         sa.Column(
             "avatar_url",
             sa.Text,
         ),
-        sa.Column("created_at", sa.DateTime, nullable=False),
+        sa.Column(
+            "is_anonymous",
+            sa.Boolean,
+        ),
+        sa.Column("created_at", sa.DateTime, nullable=False, comment="UTC timestamp"),
     )
 
 

@@ -23,7 +23,7 @@ def upgrade() -> None:
         "user_refresh_tokens",
         sa.Column(
             "id",
-            sa.String(36),  # refresh_{ulid} https://pypi.org/project/python-ulid
+            sa.String(36),
             primary_key=True,
         ),
         sa.Column(
@@ -31,7 +31,7 @@ def upgrade() -> None:
             sa.String(36),
             nullable=False,
         ),
-        sa.Column("created_at", sa.DateTime, nullable=False),
+        sa.Column("created_at", sa.DateTime, nullable=False, comment="UTC timestamp"),
     )
 
 
