@@ -11,9 +11,8 @@ export const authRouter = createTRPCRouter({
     };
   }),
 
-  signOut: publicProcedure.mutation(({ ctx }) => {
+  signOut: publicProcedure.mutation(() => {
     // TODO: Call auth sign out endpoint to clear cookie?
-    // ctx.resHeaders.set('Set-Cookie', AUTH_COOKIE_DELETE);
     return true;
   }),
 });
