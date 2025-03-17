@@ -350,7 +350,9 @@ class QueryVectorStoreRequest(BaseModel):
 
 
 @vector_stores_router.post("/vector_stores/{vector_store_id}/search")
-async def query_vector_store(vector_store_id: str, request: QueryVectorStoreRequest, _: NearAuthToken = Depends(get_auth)):
+async def query_vector_store(
+    vector_store_id: str, request: QueryVectorStoreRequest, _: NearAuthToken = Depends(get_auth)
+):
     """Perform a similarity search on the specified vector store.
 
     Args:

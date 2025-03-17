@@ -371,7 +371,9 @@ def version() -> str:
 
 @v1_router.post("/images/generations")
 def generate_images(
-    db: DatabaseSession, request: ImageGenerationRequest = Depends(convert_request), auth: NearAuthToken = Depends(get_auth)
+    db: DatabaseSession,
+    request: ImageGenerationRequest = Depends(convert_request),
+    auth: NearAuthToken = Depends(get_auth),
 ):
     logger.info(f"Received image generation request: {request.model_dump()}")
 
