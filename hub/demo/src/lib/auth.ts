@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { env } from '~/env';
 import { useAuthStore } from '~/stores/auth';
 import { clientUtils } from '~/trpc/TRPCProvider';
-import { getHashParams } from '~/utils/url';
 
 const authenticatedPostMessageModel = z.object({
   authenticated: z.boolean(),
@@ -60,21 +59,4 @@ export function openAuthUrl() {
       }
     }, 500);
   }
-}
-
-export function extractSignatureFromHashParams() {
-  const hashParams = getHashParams(location.hash);
-
-  if (!hashParams.signature) {
-    return null;
-  }
-
-  const accountId = hashParams.accountId;
-  const publicKey = hashParams.publicKey;
-  const signature = hashParams.signature;
-  const nonce = hashParams.nonce;
-  const message = hashParams.message;
-  const recipient = hashParams.recipient;
-
-  return { accountId, publicKey, signature, nonce, message, recipient };
 }

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import asc, select, update
 
-from hub.api.v1.auth import AuthToken
+from hub.api.v1.auth import NearAuthToken
 from hub.api.v1.models import Job, RegistryEntry, get_session
 from hub.api.v1.permissions import PermissionVariant, requires_permission
 from hub.api.v1.registry import get_read_access
@@ -32,7 +32,7 @@ class WorkerKind(Enum):
 async def add_job(
     worker_kind: WorkerKind,
     entry: RegistryEntry = Depends(get_read_access),
-    auth: AuthToken = Depends(requires_permission(PermissionVariant.SUBMIT_JOB)),
+    auth: NearAuthToken = Depends(requires_permission(PermissionVariant.SUBMIT_JOB)),
 ) -> Job:
     with get_session() as session:
         job = Job(
@@ -58,7 +58,7 @@ class SelectedJob(BaseModel):
 def get_pending_job(
     worker_id: str,
     worker_kind: WorkerKind,
-    auth: AuthToken = Depends(requires_permission(PermissionVariant.WORKER)),
+    auth: NearAuthToken = Depends(requires_permission(PermissionVariant.WORKER)),
 ) -> SelectedJob:
     with get_session() as session:
         for _ in range(5):
@@ -105,7 +105,7 @@ def get_pending_job(
 def list_jobs(
     account_id: Optional[str],
     status: Optional[JobStatus],
-    auth: AuthToken = Depends(requires_permission(PermissionVariant.WORKER)),
+    auth: NearAuthToken = Depends(requires_permission(PermissionVariant.WORKER)),
 ) -> List[Job]:
     with get_session() as session:
         query = select(Job)
@@ -126,7 +126,7 @@ async def update_job(
     job_id: int,
     status: JobStatus,
     result_json: str = "",
-    auth: AuthToken = Depends(requires_permission(PermissionVariant.WORKER)),
+    auth: NearAuthToken = Depends(requires_permission(PermissionVariant.WORKER)),
 ):
     with get_session() as session:
         result = session.exec(select(Job).where(Job.id == job_id)).first()

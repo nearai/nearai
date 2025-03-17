@@ -13,7 +13,7 @@ from nearai.shared.models import RunMode
 from sqlmodel import select
 
 # Import necessary modules from the hub package
-from hub.api.v1.auth import AuthToken
+from hub.api.v1.auth import NearAuthToken
 from hub.api.v1.models import ScheduledRun, get_session
 from hub.api.v1.thread_routes import RunCreateParamsBase, ThreadModel, _create_thread, create_run
 from hub.tasks.near_events import near_events_task, process_near_events_initial_state
@@ -62,7 +62,7 @@ def load_auth_token():
     return app_config.auth
 
 
-async def process_due_tasks(auth_token: AuthToken):
+async def process_due_tasks(auth_token: NearAuthToken):
     """Process tasks that are due to run."""
     due_tasks = get_due_tasks()
 

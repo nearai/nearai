@@ -3,7 +3,7 @@ import time
 
 from fastapi.testclient import TestClient
 from hub.app import app
-from hub.api.v1.auth import get_auth, AuthToken
+from hub.api.v1.auth import get_auth, NearAuthToken
 
 class TestThreadRoutes(unittest.TestCase):
     def setUp(self):
@@ -18,7 +18,7 @@ class TestThreadRoutes(unittest.TestCase):
 
     @staticmethod
     async def override_dependency():
-        return AuthToken(
+        return NearAuthToken(
             account_id="unittest2.near",
             public_key="unittest",
             signature="unittest",

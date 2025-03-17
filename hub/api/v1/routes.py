@@ -14,7 +14,7 @@ from nearai.shared.provider_models import PROVIDER_MODEL_SEP, get_provider_model
 from openai.types.beta.assistant_response_format_option import AssistantResponseFormatOption
 from pydantic import BaseModel, field_validator
 
-from hub.api.v1.auth import AuthToken, get_auth, validate_signature
+from hub.api.v1.auth import NearAuthToken, get_auth, validate_signature
 from hub.api.v1.completions import Message, Provider, get_llm_ai, handle_stream
 from hub.api.v1.images import get_images_ai
 from hub.api.v1.sign import get_hub_key, get_signed_completion, is_trusted_runner_api_key
@@ -132,7 +132,7 @@ def convert_request(
 
 @v1_router.post("/completions")
 def completions(
-    db: DatabaseSession, request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth)
+    db: DatabaseSession, request: CompletionsRequest = Depends(convert_request), auth: NearAuthToken = Depends(get_auth)
 ):
     logger.info(f"Received completions request: {request.model_dump()}")
 
@@ -174,7 +174,7 @@ def get_agent_public_key(agent_name: str = Query(...)):
 def chat_completions(
     db: DatabaseSession,
     request: ChatCompletionsRequest = Depends(convert_request),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ):
     logger.info(f"Received chat completions request: {request.model_dump()}")
 
@@ -291,7 +291,7 @@ def get_models() -> JSONResponse:
 
 @v1_router.post("/embeddings")
 def embeddings(
-    db: DatabaseSession, request: EmbeddingsRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth)
+    db: DatabaseSession, request: EmbeddingsRequest = Depends(convert_request), auth: NearAuthToken = Depends(get_auth)
 ):
     logger.info(f"Received embeddings request: {request.model_dump()}")
 
@@ -322,7 +322,7 @@ class RevokeNonce(BaseModel):
 
 
 @v1_router.post("/nonce/revoke")
-def revoke_nonce(db: DatabaseSession, nonce: RevokeNonce, auth: AuthToken = Depends(validate_signature)):
+def revoke_nonce(db: DatabaseSession, nonce: RevokeNonce, auth: NearAuthToken = Depends(validate_signature)):
     """Revoke a nonce for the account."""
     logger.info(f"Received request to revoke nonce {nonce} for account {auth.account_id}")
     if auth.message != REVOKE_MESSAGE:
@@ -335,7 +335,7 @@ def revoke_nonce(db: DatabaseSession, nonce: RevokeNonce, auth: AuthToken = Depe
 
 
 @v1_router.post("/nonce/revoke/all")
-def revoke_all_nonces(db: DatabaseSession, auth: AuthToken = Depends(validate_signature)):
+def revoke_all_nonces(db: DatabaseSession, auth: NearAuthToken = Depends(validate_signature)):
     """Revoke all nonces for the account."""
     logger.info(f"Received request to revoke all nonces for account {auth.account_id}")
     if auth.message != REVOKE_ALL_MESSAGE:
@@ -348,7 +348,7 @@ def revoke_all_nonces(db: DatabaseSession, auth: AuthToken = Depends(validate_si
 
 
 @v1_router.get("/nonce/list")
-def list_nonces(db: DatabaseSession, auth: AuthToken = Depends(get_auth)):
+def list_nonces(db: DatabaseSession, auth: NearAuthToken = Depends(get_auth)):
     """List all nonces for the account."""
     nonces = db.get_account_nonces(auth.account_id)
     res = nonces.model_dump_json()
@@ -371,7 +371,7 @@ def version() -> str:
 
 @v1_router.post("/images/generations")
 def generate_images(
-    db: DatabaseSession, request: ImageGenerationRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth)
+    db: DatabaseSession, request: ImageGenerationRequest = Depends(convert_request), auth: NearAuthToken = Depends(get_auth)
 ):
     logger.info(f"Received image generation request: {request.model_dump()}")
 

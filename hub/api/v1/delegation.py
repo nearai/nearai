@@ -4,7 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends
 from sqlmodel import delete, select
 
-from hub.api.v1.auth import AuthToken, get_auth
+from hub.api.v1.auth import NearAuthToken, get_auth
 from hub.api.v1.models import Delegation, get_session
 
 v1_router = APIRouter(
@@ -14,7 +14,7 @@ v1_router = APIRouter(
 
 
 @v1_router.post("/delegate")
-def delegate(delegate_account_id: str, expires_at: datetime, auth: AuthToken = Depends(get_auth)):
+def delegate(delegate_account_id: str, expires_at: datetime, auth: NearAuthToken = Depends(get_auth)):
     # First revoke any existing delegation to this account
     revoke_delegation(delegate_account_id, auth)
 
@@ -30,7 +30,7 @@ def delegate(delegate_account_id: str, expires_at: datetime, auth: AuthToken = D
 
 
 @v1_router.post("/list_delegations")
-def list_delegation(auth: AuthToken = Depends(get_auth)) -> List[Delegation]:
+def list_delegation(auth: NearAuthToken = Depends(get_auth)) -> List[Delegation]:
     with get_session() as session:
         query = select(Delegation).where(Delegation.original_account_id == auth.account_id)
         return session.exec(query).all()  # type: ignore
@@ -39,7 +39,7 @@ def list_delegation(auth: AuthToken = Depends(get_auth)) -> List[Delegation]:
 @v1_router.post("/revoke_delegation")
 def revoke_delegation(
     delegate_account_id: str,
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ):
     with get_session() as session:
         query = delete(Delegation).where(Delegation.original_account_id == auth.account_id)  # type: ignore

@@ -16,7 +16,7 @@ from nearai.shared.client_config import DEFAULT_NAMESPACE
 from pydantic import BaseModel, field_validator, model_validator
 from sqlmodel import col, delete, select, text
 
-from hub.api.v1.auth import AuthToken, get_auth, get_optional_auth
+from hub.api.v1.auth import NearAuthToken, get_auth, get_optional_auth
 from hub.api.v1.entry_location import EntryLocation, valid_identifier
 from hub.api.v1.models import Fork, RegistryEntry, Tags, get_session, sanitize
 
@@ -65,7 +65,7 @@ def with_write_access(use_forms=False):
 
     def fn_with_write_access(
         entry_location: EntryLocation = default,
-        auth: AuthToken = Depends(get_auth),
+        auth: NearAuthToken = Depends(get_auth),
     ) -> EntryLocation:
         """Check the user has write access to the entry."""
         if auth.account_id == entry_location.namespace:
@@ -127,7 +127,7 @@ def get(entry_location: EntryLocation = Body()) -> RegistryEntry:
 
 def get_read_access(
     entry: RegistryEntry = Depends(get),
-    auth: Optional[AuthToken] = Depends(get_optional_auth),
+    auth: Optional[NearAuthToken] = Depends(get_optional_auth),
 ) -> RegistryEntry:
     current_account_id = auth.account_id if auth else None
     if entry.is_private() and entry.namespace != current_account_id:
@@ -649,7 +649,7 @@ class ForkResult(BaseModel):
 def fork_entry(
     modifications: ForkEntryModifications = Body(),
     entry: RegistryEntry = Depends(get_read_access),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> ForkResult:
     """Fork an existing registry entry to the current user's namespace."""
     with get_session() as session:

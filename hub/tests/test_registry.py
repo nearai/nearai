@@ -6,10 +6,10 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 from hub.app import app
-from hub.api.v1.auth import get_auth, AuthToken
+from hub.api.v1.auth import get_auth, NearAuthToken
 
 def auth_token():
-    return AuthToken(
+    return NearAuthToken(
         account_id="unittest.near",
         public_key="unittest",
         signature="unittest",

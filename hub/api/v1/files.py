@@ -17,7 +17,7 @@ from openai.types.file_create_params import FileTypes
 from openai.types.file_object import FileObject
 from pydantic import BaseModel
 
-from hub.api.v1.auth import AuthToken, get_auth
+from hub.api.v1.auth import NearAuthToken, get_auth
 from hub.api.v1.models import (
     FILE_URI_PREFIX,
     S3_BUCKET,
@@ -121,7 +121,7 @@ async def upload_file_to_storage(content: bytes, object_key: str) -> str:
 async def upload_file(
     file: UploadFile = File(...),
     purpose: Literal["assistants", "batch", "fine-tune", "vision"] = Form(...),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> FileObject:
     """Upload a file to the system and create a corresponding database record.
 
@@ -228,7 +228,7 @@ async def upload_file(
 @files_router.delete("/files/{file_id}")
 async def delete_file(
     file_id: str = Path(..., description="The ID of the file to delete"),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ):
     sql_client = SqlClient()
     deleted = sql_client.delete_file(file_id=file_id, account_id=auth.account_id)
@@ -296,7 +296,7 @@ def check_text_encoding(content: bytes) -> Tuple[str, bytes]:
 @files_router.get("/files/{file_id}")
 async def retrieve_file(
     file_id: str = Path(..., description="The ID of the file to retrieve"),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> FileObject:
     """Retrieve information about a specific file.
 
@@ -344,7 +344,7 @@ async def retrieve_file(
 @files_router.get("/files/{file_id}/content")
 async def retrieve_file_content(
     file_id: str = Path(..., description="The ID of the file to retrieve"),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ):
     """Retrieve the contents of a specific file.
 

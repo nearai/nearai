@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import select
 
-from hub.api.v1.auth import AuthToken, get_auth
+from hub.api.v1.auth import NearAuthToken, get_auth
 from hub.api.v1.entry_location import EntryLocation
 from hub.api.v1.models import AgentData, get_session
 from hub.api.v1.sign import is_trusted_runner_api_key
@@ -23,7 +23,7 @@ class AgentDataRequest(BaseModel):
 
 
 @agent_data_router.post("/agent_data", response_model=AgentData)
-def save_agent_data(request_data: AgentDataRequest, auth: AuthToken = Depends(get_auth)):
+def save_agent_data(request_data: AgentDataRequest, auth: NearAuthToken = Depends(get_auth)):
     agent = agent_from_trusted_runner_data(auth)
 
     # 10KB max size per entry
@@ -67,7 +67,7 @@ def agent_from_trusted_runner_data(auth) -> EntryLocation:
 
 
 @agent_data_router.get("/agent_data", response_model=List[AgentData])
-def get_agent_data(auth: AuthToken = Depends(get_auth)) -> List[AgentData]:
+def get_agent_data(auth: NearAuthToken = Depends(get_auth)) -> List[AgentData]:
     agent = agent_from_trusted_runner_data(auth)
 
     return _fetch_agent_data(agent.namespace, agent.name)
@@ -80,7 +80,7 @@ def _fetch_agent_data(namespace, name):
 
 
 @agent_data_router.get("/agent_data/{key}", response_model=Optional[AgentData])
-def get_agent_data_by_key(key: str, auth: AuthToken = Depends(get_auth)) -> Optional[AgentData]:
+def get_agent_data_by_key(key: str, auth: NearAuthToken = Depends(get_auth)) -> Optional[AgentData]:
     agent = agent_from_trusted_runner_data(auth)
     return _fetch_agent_data_by_key(agent.namespace, agent.name, key)
 
@@ -94,7 +94,7 @@ def _fetch_agent_data_by_key(namespace, name, key):
 
 
 @agent_data_router.get("/agent_data_admin/{namespace}/{name}", response_model=List[AgentData])
-def get_agent_data_for_author(namespace: str, name: str, auth: AuthToken = Depends(get_auth)) -> List[AgentData]:
+def get_agent_data_for_author(namespace: str, name: str, auth: NearAuthToken = Depends(get_auth)) -> List[AgentData]:
     if not (auth.account_id == namespace):
         raise HTTPException(status_code=403, detail="Not authorized to retrieve data for this agent")
 
@@ -103,7 +103,7 @@ def get_agent_data_for_author(namespace: str, name: str, auth: AuthToken = Depen
 
 @agent_data_router.get("/agent_data_admin/{namespace}/{name}/{key}", response_model=Optional[AgentData])
 def get_agent_data_by_key_for_author(
-    namespace: str, name: str, key: str, auth: AuthToken = Depends(get_auth)
+    namespace: str, name: str, key: str, auth: NearAuthToken = Depends(get_auth)
 ) -> Optional[AgentData]:
     if not (auth.account_id == namespace):
         raise HTTPException(status_code=403, detail="Not authorized to retrieve data for this agent")

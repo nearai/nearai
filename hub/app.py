@@ -28,8 +28,8 @@ from httpx_oauth.integrations.fastapi import OAuth2AuthorizeCallbackError
 
 from hub.api.v1.agent_data import agent_data_router
 from hub.api.v1.agent_routes import run_agent_router
-from hub.api.v1.auth_routes import redirect_oauth_failure
-from hub.api.v1.auth_routes import v1_router as auth_router
+from hub.api.v1.auth import redirect_oauth_failure
+from hub.api.v1.auth import v1_router as auth_router
 from hub.api.v1.benchmark import v1_router as benchmark_router
 from hub.api.v1.delegation import v1_router as delegation_router
 from hub.api.v1.evaluation import v1_router as evaluation_router

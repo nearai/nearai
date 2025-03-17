@@ -2,7 +2,7 @@ import json
 import unicodedata
 import uuid
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from enum import Enum
 from os import getenv
 from typing import Dict, Iterator, List, Optional
@@ -22,6 +22,7 @@ from sqlalchemy.types import TypeDecorator
 from sqlmodel import Column, Field, Session, SQLModel, create_engine
 from ulid import ULID
 
+from hub.api.v1.auth_config import auth_refresh_token_expiration
 from hub.api.v1.entry_location import EntryLocation
 
 load_dotenv()
@@ -35,6 +36,22 @@ DB_PASSWORD = getenv("DATABASE_PASSWORD")
 DB_NAME = getenv("DATABASE_NAME")
 STORAGE_TYPE = getenv("STORAGE_TYPE", "file")
 DB_POOL_SIZE = int(getenv("DATABASE_POOL_SIZE", 10))
+
+
+def namespaced_ulid(namespace: str):
+    return f"{namespace}_{str(ULID())}"  # https://pypi.org/project/python-ulid
+
+
+def ulid_user_refresh_token():
+    return namespaced_ulid("refresh")
+
+
+def ulid_user():
+    return namespaced_ulid("user")
+
+
+def now_utc():
+    return datetime.now(timezone.utc)
 
 
 class Framework(Enum):
@@ -106,31 +123,26 @@ class UnicodeSafeJSON(TypeDecorator):
 class User(SQLModel, table=True):
     __tablename__ = "users"
 
-    id: str = Field(primary_key=True, default=f"user_{str(ULID())}")
+    id: str = Field(primary_key=True, default_factory=ulid_user)
     namespace: Optional[str] = Field(default=None)
     email: Optional[str] = Field(default=None)
     near_account_id: Optional[str] = Field(default=None)
-    eth_account_id: Optional[str] = Field(default=None)
     avatar_url: Optional[str] = Field(default=None)
-    created_at: datetime = Field(default=datetime.now(timezone.utc))
+    is_anonymous: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=now_utc, nullable=False)
 
 
 class UserRefreshToken(SQLModel, table=True):
     __tablename__ = "user_refresh_tokens"
 
-    id: str = Field(primary_key=True, default=f"refresh_{str(ULID())}")
+    id: str = Field(primary_key=True, default_factory=ulid_user_refresh_token)
     user_id: str
-    created_at: datetime = Field(default=datetime.now(timezone.utc))
-
-    @staticmethod
-    def valid_number_of_days():
-        """Refresh tokens are only considered valid for this many days."""
-        return 30
+    created_at: datetime = Field(default_factory=now_utc, nullable=False)
 
     @staticmethod
     def oldest_valid_datetime():
-        """Returns current datetime subtracted by valid_number_of_days()."""
-        result = datetime.now(timezone.utc) - timedelta(days=UserRefreshToken.valid_number_of_days())
+        """Returns current, naive (non TZ) UTC datetime subtracted by configured timedelta."""
+        result = datetime.utcnow() - auth_refresh_token_expiration
         return result
 
 
@@ -198,7 +210,7 @@ class AgentData(SQLModel, table=True):
     name: str = Field(primary_key=True)
     key: str = Field(primary_key=True)
     value: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))
-    created_at: datetime = Field(default=datetime.now(timezone.utc), nullable=False)
+    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.now, nullable=False)
 
 
