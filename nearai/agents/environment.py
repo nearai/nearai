@@ -567,7 +567,7 @@ class Environment(object):
             try:
                 return client.save_agent_data(key, data)
             except Exception as ex:
-                self.add_system_log(f"Error saving agent data: {ex}", logging.ERROR)
+                self.add_system_log(f"Error saving agent data by key {key}: {ex}", logging.ERROR)
                 return None
 
         self.save_agent_data = save_agent_data
@@ -584,8 +584,8 @@ class Environment(object):
             name = self.get_primary_agent().name
             try:
                 result = client.get_agent_data_by_key(key)
-            except Exception as e:
-                self.add_system_log(f"Error getting agent data by key: {e}", logging.ERROR)
+            except Exception as ex:
+                self.add_system_log(f"Error getting agent data by key {key}: {ex}", logging.ERROR)
                 result = None
             return (
                 result
