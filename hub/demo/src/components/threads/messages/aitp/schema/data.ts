@@ -22,7 +22,12 @@ export const requestDataFormFieldSchema = z
         'tel',
       ])
       .default('text'),
-    options: z.string().array().optional(),
+    options: z
+      .union([
+        z.string().array(),
+        z.object({ label: z.string(), value: z.string() }).array(),
+      ])
+      .optional(),
     required: z.boolean().default(false),
     autocomplete: z.string().optional(), // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete
   })

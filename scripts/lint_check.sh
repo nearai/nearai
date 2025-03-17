@@ -5,4 +5,4 @@
 # Usage: ./scripts/lint_check.sh
 
 set -e
-poetry run ruff check .
+uv run ruff check .

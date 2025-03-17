@@ -30,10 +30,10 @@ RUN groupadd --gid $USER_GID $USER \
     && chown -R $USER:$USER /home/$USER
 
 USER ${USER}
-RUN python3 -m pip install --user poetry
+RUN python3 -m pip install --user uv
 WORKDIR /home/${USER}/
 ENV PATH="/home/${USER}/.local/bin:${PATH}"
-COPY poetry.lock pyproject.toml poetry.toml ./
-RUN python3 -m poetry install --extras "hub" --no-root
+COPY uv.lock ./
+RUN python3 -m uv sync
 COPY --chown=${USER_UID}:${USER_GID} . .
-RUN python3 -m poetry install --extras "hub"
+RUN python3 -m uv sync

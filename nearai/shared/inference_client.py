@@ -12,9 +12,9 @@ from litellm import completion as litellm_completion
 from litellm.types.completion import ChatCompletionMessageParam
 from openai import NOT_GIVEN, NotGiven
 from openai.types.beta.thread import Thread
-from openai.types.beta.vector_store import VectorStore
-from openai.types.beta.vector_stores import VectorStoreFile
 from openai.types.file_object import FileObject
+from openai.types.vector_store import VectorStore
+from openai.types.vector_stores import VectorStoreFile
 
 from nearai.shared.client_config import (
     DEFAULT_MAX_RETRIES,
@@ -107,7 +107,10 @@ class InferenceClient(object):
         1. full path `provider::model_full_path`.
         2. `model_short_name`. Default provider will be used.
         """
-        provider, model = self.provider_models.match_provider_model(model)
+        if self._config.base_url != self._config.default_provider:
+            provider, model = self.provider_models.match_provider_model(model)
+        else:
+            provider = self._config.default_provider
 
         if temperature is None:
             temperature = DEFAULT_MODEL_TEMPERATURE
@@ -124,23 +127,28 @@ class InferenceClient(object):
 
         for i in range(0, self._config.num_inference_retries):
             try:
-                result: Union[ModelResponse, CustomStreamWrapper] = litellm_completion(
-                    model,
-                    messages,
-                    stream=stream,
-                    custom_llm_provider=self._config.custom_llm_provider,
-                    input_cost_per_token=0,
-                    output_cost_per_token=0,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    base_url=self._config.base_url,
-                    provider=provider,
-                    api_key=self._auth,
-                    timeout=DEFAULT_TIMEOUT,
-                    request_timeout=DEFAULT_TIMEOUT,
-                    num_retries=1,
-                    **kwargs,
-                )
+                # Create a dictionary for the arguments
+                completion_args = {
+                    "model": model,
+                    "messages": messages,
+                    "stream": stream,
+                    "custom_llm_provider": self._config.custom_llm_provider,
+                    "input_cost_per_token": 0,
+                    "output_cost_per_token": 0,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                    "base_url": self._config.base_url,
+                    "api_key": self._auth,
+                    "timeout": DEFAULT_TIMEOUT,
+                    "request_timeout": DEFAULT_TIMEOUT,
+                    "num_retries": 1,
+                }
+                # Only add provider parameter if base_url is different from default_provider
+                if self._config.base_url != self._config.default_provider:
+                    completion_args["provider"] = provider
+                # Add any additional kwargs
+                completion_args.update(kwargs)
+                result: Union[ModelResponse, CustomStreamWrapper] = litellm_completion(**completion_args)
                 break
             except Exception as e:
                 print("Completions exception:", e)
@@ -200,12 +208,12 @@ class InferenceClient(object):
     def add_file_to_vector_store(self, vector_store_id: str, file_id: str) -> VectorStoreFile:
         """Adds a file to vector store."""
         client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
-        return client.beta.vector_stores.files.create(vector_store_id=vector_store_id, file_id=file_id)
+        return client.vector_stores.files.create(vector_store_id=vector_store_id, file_id=file_id)
 
     def get_vector_store_files(self, vector_store_id: str) -> Optional[List[VectorStoreFile]]:
         """Adds a file to vector store."""
         client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
-        return client.beta.vector_stores.files.list(vector_store_id=vector_store_id).data
+        return client.vector_stores.files.list(vector_store_id=vector_store_id).data
 
     def create_vector_store_from_source(
         self,
@@ -275,7 +283,7 @@ class InferenceClient(object):
         :return: Returns the created vector store or error.
         """
         client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
-        return client.beta.vector_stores.create(
+        return client.vector_stores.create(
             file_ids=file_ids,
             name=name,
             expires_after=expires_after,

@@ -13,8 +13,8 @@ from nearai.shared.models import (
     VectorStoreFileCreate,
 )
 from openai import BaseModel
-from openai.types.beta.vector_store import ExpiresAfter as OpenAIExpiresAfter
-from openai.types.beta.vector_store import FileCounts, VectorStore
+from openai.types.vector_store import ExpiresAfter as OpenAIExpiresAfter
+from openai.types.vector_store import FileCounts, VectorStore
 
 from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.sql import SqlClient, VectorStoreFile

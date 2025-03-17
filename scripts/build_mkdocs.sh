@@ -5,4 +5,4 @@
 # Usage: ./scripts/build_mkdocs.sh
 
 set -e
-poetry run mkdocs build --strict
+uv run mkdocs build --strict

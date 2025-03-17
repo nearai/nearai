@@ -12,7 +12,7 @@ auth = config["auth"]
 client = openai.OpenAI(base_url=base_url, api_key=json.dumps(auth))
 
 # Create a vector store for recipes
-vs = client.beta.vector_stores.create(name="recipe_vector_store")
+vs = client.vector_stores.create(name="recipe_vector_store")
 print(f"Recipe vector store created: {vs}")
 
 # Upload and attach recipe files to the vector store
@@ -22,7 +22,7 @@ for file in os.listdir(recipe_dir):
         file=open(os.path.join(recipe_dir, file), "rb"),
         purpose="assistants",
     )
-    attached_file = client.beta.vector_stores.files.create(
+    attached_file = client.vector_stores.files.create(
         vector_store_id=vs.id,
         file_id=uploaded_file.id,
     )
@@ -31,7 +31,7 @@ for file in os.listdir(recipe_dir):
 # Poll the vector store status until processing is complete
 print("Polling vector store status...")
 while True:
-    status = client.beta.vector_stores.retrieve(vs.id)
+    status = client.vector_stores.retrieve(vs.id)
     if status.file_counts.completed == len(os.listdir(recipe_dir)):
         print("All files processed. Proceeding with search query.")
         break
@@ -50,9 +50,9 @@ print(f"Search results for '{search_query}':")
 print(f"- {search_response}")
 
 # Retrieve the vector store details
-retrieved_store = client.beta.vector_stores.retrieve(vs.id)
+retrieved_store = client.vector_stores.retrieve(vs.id)
 print(f"Recipe vector store details:")
 print(f"- Details: {retrieved_store}")
 
-res = client.beta.vector_stores.delete(vs.id)
+res = client.vector_stores.delete(vs.id)
 print(f"Recipe vector store deleted: {res}")

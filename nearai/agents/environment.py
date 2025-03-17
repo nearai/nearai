@@ -29,9 +29,9 @@ from openai import NOT_GIVEN, NotGiven, OpenAI
 from openai.types.beta.threads.message import Message
 from openai.types.beta.threads.message_create_params import Attachment
 from openai.types.beta.threads.run import Run
-from openai.types.beta.vector_store import VectorStore
-from openai.types.beta.vector_stores import VectorStoreFile
 from openai.types.file_object import FileObject
+from openai.types.vector_store import VectorStore
+from openai.types.vector_stores import VectorStoreFile
 from py_near.account import Account
 from py_near.constants import DEFAULT_ATTACHED_GAS
 
@@ -564,7 +564,11 @@ class Environment(object):
 
         def save_agent_data(key, data: Dict[str, Any]):
             """Save agent data."""
-            return client.save_agent_data(key, data)
+            try:
+                return client.save_agent_data(key, data)
+            except Exception as ex:
+                self.add_system_log(f"Error saving agent data by key {key}: {ex}", logging.ERROR)
+                return None
 
         self.save_agent_data = save_agent_data
 
@@ -578,7 +582,11 @@ class Environment(object):
             """Get agent data by key."""
             namespace = self.get_primary_agent().namespace
             name = self.get_primary_agent().name
-            result = client.get_agent_data_by_key(key)
+            try:
+                result = client.get_agent_data_by_key(key)
+            except Exception as ex:
+                self.add_system_log(f"Error getting agent data by key {key}: {ex}", logging.ERROR)
+                result = None
             return (
                 result
                 if result
@@ -602,9 +610,6 @@ class Environment(object):
             thread_id: str = self._thread_id,
         ):
             """Assistant adds a message to the environment."""
-            if message_type is None or not message_type.startswith("system:"):
-                print(f"add_reply: {message}")
-
             # NOTE: message from `user` are not stored in the memory
 
             return hub_client.beta.threads.messages.create(
@@ -633,8 +638,6 @@ class Environment(object):
             attachments: Optional[Iterable[Attachment]] = None,
             **kwargs: Any,
         ):
-            print(f"add_message [{role}]: {message}")
-
             return hub_client.beta.threads.messages.create(
                 thread_id=self._thread_id,
                 role=role,  # type: ignore

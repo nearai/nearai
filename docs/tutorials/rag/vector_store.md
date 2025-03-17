@@ -4,7 +4,11 @@ In our case, we will store all NEAR documentation in a vector store, this way if
 
 !!! info
     The Vector Store is built separately from the agent, and can be used in multiple places.
+
+!!! info
+This tutorial assumes OpenAI version 1.66.2 or greater. For previous versions the vector store methods can be found at `client.beta.vector_stores` instead of `client.vector_stores`.
 ---
+
 
 ## How Vector Stores Work
 
@@ -81,7 +85,7 @@ for file_path in md_files:
         )
         file_ids.append(uploaded_file.id)
 
-vs = client.beta.vector_stores.create(
+vs = client.vector_stores.create(
     name="docs-vector-store-chunks",
     file_ids=file_ids,
     # chunking_strategy={
@@ -134,7 +138,7 @@ for file_path in md_files:
 Finally, we create a vector store with the uploaded files and print its `id`
 
 ```python
-vs = client.beta.vector_stores.create(
+vs = client.vector_stores.create(
     name="docs-vector-store-chunks",
     file_ids=file_ids,
     # chunking_strategy={
