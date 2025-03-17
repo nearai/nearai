@@ -225,10 +225,10 @@ def get_auth(auth: Optional[NearAuthToken] = Depends(get_optional_auth)):
     return auth
 
 
-github_oauth_client = GitHubOAuth2(getenv("GITHUB_OAUTH_CLIENT_ID"), getenv("GITHUB_OAUTH_CLIENT_SECRET"))
+github_oauth_client = GitHubOAuth2(getenv("GITHUB_OAUTH_CLIENT_ID", ""), getenv("GITHUB_OAUTH_CLIENT_SECRET", ""))
 github_authorize_callback = OAuth2AuthorizeCallback(github_oauth_client, "callback_github")
 
-google_oauth_client = GoogleOAuth2(getenv("GOOGLE_OAUTH_CLIENT_ID"), getenv("GOOGLE_OAUTH_CLIENT_SECRET"))
+google_oauth_client = GoogleOAuth2(getenv("GOOGLE_OAUTH_CLIENT_ID", ""), getenv("GOOGLE_OAUTH_CLIENT_SECRET", ""))
 google_authorize_callback = OAuth2AuthorizeCallback(google_oauth_client, "callback_google")
 
 
@@ -443,7 +443,8 @@ def refresh(input: RefreshInput):
             raise HTTPException(status_code=401)
 
         # Delete expired refresh tokens for this user:
-        session.exec(
+        session.exec(  # type: ignore
+            # https://github.com/fastapi/sqlmodel/discussions/831
             delete(UserRefreshToken).where(
                 UserRefreshToken.user_id == refresh_token.user_id,
                 UserRefreshToken.created_at < UserRefreshToken.oldest_valid_datetime(),

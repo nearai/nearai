@@ -1,9 +1,9 @@
 from datetime import timedelta
 from os import getenv
 
-auth_ui_url = getenv("AUTH_UI_URL")
-auth_jwt_private_key = getenv("AUTH_JWT_RSA_PRIVATE_KEY")
-auth_jwt_public_key = getenv("AUTH_JWT_RSA_PUBLIC_KEY")
+auth_ui_url = getenv("AUTH_UI_URL", "")
+auth_jwt_private_key = getenv("AUTH_JWT_RSA_PRIVATE_KEY", "")
+auth_jwt_public_key = getenv("AUTH_JWT_RSA_PUBLIC_KEY", "")
 
 """
 How long an access token (JWT) is valid before a refresh is required (passed as the JWT's "exp" value).
