@@ -316,6 +316,59 @@ export const AgentRunner = ({
     }
   }, [setThread, threadQuery.data, thread?.metadata.topic, utils]);
 
+  // SSE for streaming updates
+  useEffect(() => {
+    if (!threadId) return;
+
+    const eventSource = new EventSource(`/api/threads/${threadId}/stream`);
+
+    eventSource.addEventListener('initial', (event) => {
+      const data = JSON.parse(event.data);
+      setThread(data);
+    });
+
+    eventSource.addEventListener('message', (event) => {
+      const data = JSON.parse(event.data);
+      useThreadsStore.setState((state) => {
+        const currentThread = state.threadsById[threadId];
+        return {
+          threadsById: {
+            ...state.threadsById,
+            [threadId]: {
+              ...currentThread,
+              messages: [...currentThread.messages, data.message],
+            },
+          },
+        };
+      });
+    });
+
+    eventSource.addEventListener('run_update', (event) => {
+      const data = JSON.parse(event.data);
+      useThreadsStore.setState((state) => {
+        const currentThread = state.threadsById[threadId];
+        return {
+          threadsById: {
+            ...state.threadsById,
+            [threadId]: {
+              ...currentThread,
+              run: data.run,
+            },
+          },
+        };
+      });
+    });
+
+    eventSource.onerror = (error) => {
+      console.error('SSE error:', error);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [threadId, setThread, useThreadsStore]);
+
   useEffect(() => {
     if (threadQuery.error?.data?.code === 'FORBIDDEN') {
       openToast({
