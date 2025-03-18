@@ -157,7 +157,11 @@ def completions(
                 auth.account_id, request.prompt, response_text, request.model, request.provider, "/completions"
             )
 
-        return StreamingResponse(handle_stream(resp, add_usage_callback), media_type="text/event-stream")
+        # TODO get from params
+        thread_id = None
+        run_id = None
+        message_id = None
+        return StreamingResponse(handle_stream(thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream")
     else:
         c = json.dumps(resp.model_dump())
 
@@ -235,8 +239,12 @@ def chat_completions(
                 request.provider,
                 "/chat/completions",
             )
+        # TODO get from params
+        thread_id = None
+        run_id = None
+        message_id = None
 
-        return StreamingResponse(handle_stream(resp, add_usage_callback), media_type="text/event-stream")
+        return StreamingResponse(handle_stream(thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream")
 
     else:
         c = json.dumps(resp.model_dump())

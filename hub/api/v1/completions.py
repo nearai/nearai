@@ -18,7 +18,7 @@ class Provider(Enum):
     LOCAL = "local"
 
 
-async def handle_stream(resp_stream, add_usage_callback: Callable):
+async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_callback: Callable):
     response_chunks = []
 
     for chunk in resp_stream:
