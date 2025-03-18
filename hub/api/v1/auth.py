@@ -52,7 +52,7 @@ v1_router = APIRouter(
 
 class AccessTokenJwtPayloadUser(BaseModel):
     id: str
-    namespace: str | None
+    namespace: Optional[str]
 
 
 class AccessTokenJwtPayload(BaseModel):
