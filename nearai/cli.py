@@ -753,6 +753,14 @@ class AgentCli:
         agent_path = Path(agent)
         if local:
             agent_path = resolve_local_path(agent_path)
+        else:
+            try:
+                parse_location(str(agent_path))
+            except Exception:
+                print(
+                    f'Registry entry format is <namespace>/<name>/<version>, but "{agent_path}" was provided. Did you mean to run with a flag --local?'  # noqa: E501
+                )
+                exit(1)
 
         agent_id = get_agent_id(agent_path, local)
 
