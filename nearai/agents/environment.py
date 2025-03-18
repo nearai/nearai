@@ -1124,11 +1124,11 @@ class Environment(object):
         attachments: Optional[Iterable[Attachment]] = None,
         message_type: Optional[str] = None,
         **kwargs: Any,
-    ) -> Union[ModelResponse, str]:
+    ) -> ModelResponse:
         """Returns all completions for given messages using the given model.
 
-        When stream=False, returns a ModelResponse. When stream=True, processes the stream
-        and returns the fully concatenated string. The server handles thread updates if thread_id is provided.
+        Always returns a ModelResponse object. When stream=True, aggregates the streamed
+        content into a ModelResponse. When stream=False, returns the ModelResponse directly.
         """
         params, kwargs = self.get_inference_parameters(messages, model, stream, **kwargs)
         if stream:
@@ -1136,12 +1136,26 @@ class Environment(object):
             stream_results = self._run_inference_completions(
                 messages, model, True, thread_id=thread_id, attachments=attachments, message_type=message_type, **kwargs
             )
-            content = ""
-            for result in stream_results:
-                delta_content = result.choices[0].delta.content
-                if delta_content:
-                    content += delta_content
-            return content
+            full_content = ""
+            for chunk in stream_results:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    delta_content = chunk.choices[0].delta.content
+                    full_content += delta
+                    print(delta_content, end='', flush=True)
+            print()
+            response = ModelResponse(
+                id="streamed_completion",
+                object="chat.completion",
+                created=int(time.time()),
+                model=params.model,
+                choices=[Choices(
+                    index=0,
+                    message={"role": "assistant", "content": full_content},
+                    finish_reason="stop"
+                )],
+                usage={"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+            )
+            return response
         else:
             return self._run_inference_completions(messages, model, False, **kwargs)
 
