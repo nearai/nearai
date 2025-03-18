@@ -623,47 +623,7 @@ class Environment(object):
                 attachments=attachments,
                 metadata={"message_type": message_type} if message_type else None,
             )
-        def add_reply_streaming(results, thread_id=None, attachments=None, message_type=None):
-            thread_id = thread_id or self._thread_id
-            content = ""
-            # Create a message with status="in_progress"
-            message = hub_client.beta.threads.messages.create(
-                thread_id=thread_id,
-                role="assistant",
-                status="in_progress",
-                content="",
-                extra_body={
-                    "assistant_id": self.get_primary_agent().identifier,
-                    "run_id": self._run_id,
-                },
-                attachments=attachments,
-                metadata={"message_type": message_type} if message_type else None,
-            )
-            message_id = message.id
 
-            for result in results:
-                delta_content = result.choices[0].delta.content
-                if delta_content:
-                    print(delta_content, end='', flush=True)
-                    # Create Delta entry
-                    delta = {"text": {"value": delta_content}}
-                    hub_client.beta.threads.messages.deltas.create(
-                        thread_id=thread_id,
-                        #message_id=message_id,
-                        content=delta
-                    )
-                    content += delta_content
-            print()
-
-            # Update message to completed
-            hub_client.beta.threads.messages.update(
-                message_id=message_id,
-                content=content,
-                thread_id=thread_id,
-                status="completed",
-            )
-
-        self.add_reply_streaming = add_reply_streaming
         self.add_reply = add_reply
 
         def get_thread(thread_id=self._thread_id):
@@ -1160,10 +1120,30 @@ class Environment(object):
         messages: Union[Iterable[ChatCompletionMessageParam], str],
         model: Union[Iterable[ChatCompletionMessageParam], str] = "",
         stream: bool = False,
+        thread_id: Optional[str] = None,
+        attachments: Optional[Iterable[Attachment]] = None,
+        message_type: Optional[str] = None,
         **kwargs: Any,
-    ) -> Union[ModelResponse, CustomStreamWrapper]:
-        """Returns all completions for given messages using the given model."""
-        return self._run_inference_completions(messages, model, stream, **kwargs)
+    ) -> Union[ModelResponse, str]:
+        """Returns all completions for given messages using the given model.
+
+        When stream=False, returns a ModelResponse. When stream=True, processes the stream
+        and returns the fully concatenated string. The server handles thread updates if thread_id is provided.
+        """
+        params, kwargs = self.get_inference_parameters(messages, model, stream, **kwargs)
+        if stream:
+            # Pass thread_id, attachments, and message_type to the server
+            stream_results = self._run_inference_completions(
+                messages, model, True, thread_id=thread_id, attachments=attachments, message_type=message_type, **kwargs
+            )
+            content = ""
+            for result in stream_results:
+                delta_content = result.choices[0].delta.content
+                if delta_content:
+                    content += delta_content
+            return content
+        else:
+            return self._run_inference_completions(messages, model, False, **kwargs)
 
     def verify_signed_message(
         self,
@@ -1337,16 +1317,6 @@ class Environment(object):
             - Put the entire function call reply on one line
         """
         )
-
-    def stream_completion(
-        self,
-        messages: Union[Iterable[ChatCompletionMessageParam], str],
-        model: Union[Iterable[ChatCompletionMessageParam], str] = "",
-        **kwargs: Any,
-    ):
-        #TODO merge with completion(stream=True)?
-        stream: bool = True
-        return self._run_inference_completions(messages, model, stream, **kwargs)
 
     # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
     def completion(
