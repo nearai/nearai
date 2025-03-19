@@ -137,8 +137,10 @@ class SqlClient:
             logger.error(f"Error parsing response JSON: {e}")
             query_dict = {"value": query}
 
-        if isinstance(response, dict) and "usage" in response:
-            token_data.update(response["usage"])
+        if isinstance(response_dict, dict) and "usage" in response_dict:
+            token_data.update(response_dict["usage"])
+        else:
+            logger.warning("No usage data found in response")
 
         completion = Completion(
             account_id=account_id,
