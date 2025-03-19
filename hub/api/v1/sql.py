@@ -288,7 +288,7 @@ class SqlClient:
         """Get all vector stores for a given account."""
         query = "SELECT * FROM vector_stores WHERE account_id = %s"
         results = self.__fetch_all(query, (account_id,))
-        
+
         vector_stores = []
         for result in results:
             result["file_ids"] = json.loads(result["file_ids"])
@@ -296,7 +296,7 @@ class SqlClient:
             result["chunking_strategy"] = json.loads(result["chunking_strategy"])
             result["metadata"] = json.loads(result["metadata"]) if result["metadata"] else None
             vector_stores.append(VectorStore(**result))
-            
+
         return vector_stores
 
     def get_user_memory(self, account_id: str) -> Optional[str]:
