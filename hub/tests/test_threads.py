@@ -26,6 +26,7 @@ class TestThreadRoutes(unittest.TestCase):
             message="unittest",
             nonce=TestThreadRoutes.generate_nonce(),
         )
+
     def test_create_subthread(self):
         # Create a parent thread first
         parent_thread = {
@@ -57,6 +58,85 @@ class TestThreadRoutes(unittest.TestCase):
         self.assertIn("id", response.json())
         self.assertIn("object", response.json())
         self.assertEqual(response.json()["object"], "thread")
+
+    def test_thread_permissions(self):
+        # Create a thread first
+        thread_data = {
+            "messages": [
+                {
+                    "content": "Test message",
+                    "role": "user",
+                    "metadata": {}
+                }
+            ]
+        }
+        response = self.client.post("/v1/threads", json=thread_data)
+        self.assertEqual(response.status_code, 200)
+        thread_id = response.json()["id"]
+
+        # Override auth with a different user
+        async def different_user_auth():
+            return AuthToken(
+                account_id="different.near",
+                public_key="unittest",
+                signature="unittest",
+                callback_url="unittest",
+                message="unittest",
+                nonce=TestThreadRoutes.generate_nonce(),
+            )
+
+        # Try to access thread with different user
+        original_override = app.dependency_overrides[get_auth]
+        app.dependency_overrides[get_auth] = different_user_auth
+        response = self.client.get(f"/v1/threads/{thread_id}")
+        self.assertEqual(response.status_code, 403)
+
+        # Restore original auth and verify access
+        app.dependency_overrides[get_auth] = original_override
+        response = self.client.get(f"/v1/threads/{thread_id}")
+        self.assertEqual(response.status_code, 200)
+
+    def test_thread_message_permissions(self):
+        # Create a thread
+        thread_data = {
+        }
+        response = self.client.post("/v1/threads", json=thread_data)
+        self.assertEqual(response.status_code, 200)
+        thread_id = response.json()["id"]
+
+        # Add a message to the thread
+        new_message = {
+            "content": "Another test message",
+            "role": "user",
+            "metadata": {"test": "data"}
+        }
+        response = self.client.post(f"/v1/threads/{thread_id}/messages", json=new_message)
+        self.assertEqual(response.status_code, 200)
+
+        # Override auth with a different user
+        async def different_user_auth():
+            return AuthToken(
+                account_id="different.near",
+                public_key="unittest",
+                signature="unittest",
+                callback_url="unittest",
+                message="unittest",
+                nonce=TestThreadRoutes.generate_nonce(),
+            )
+
+        # Try to access thread messages with different user
+        original_override = app.dependency_overrides[get_auth]
+        app.dependency_overrides[get_auth] = different_user_auth
+        response = self.client.get(f"/v1/threads/{thread_id}/messages")
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["detail"], "You don't have permission to access messages from this thread")
+
+        # Restore original auth and verify messages can be accessed
+        app.dependency_overrides[get_auth] = original_override
+        response = self.client.get(f"/v1/threads/{thread_id}/messages")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.json()['data']) > 0)
+
 
 if __name__ == '__main__':
     unittest.main()

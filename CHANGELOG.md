@@ -1,3 +1,13 @@
+## v0.1.16 (2025-03-13)
+
+### Feat
+
+- upgrade openai dependency to 1.66.2 (#1022)
+
+### Fix
+
+- release action commit with uv sync (#1025)
+
 ## v0.1.15 (2025-03-12)
 
 ### Fix

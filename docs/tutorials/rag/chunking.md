@@ -19,7 +19,7 @@ This process - known as text chunking - makes it easier to process the documents
 When creating the vector store we left a parameter commented out in the code - `chunking_strategy`. This parameter allows you to specify how the documents are "split" into chunks before being processed by the model.
 
 ```python
-vs = client.beta.vector_stores.create(
+vs = client.vector_stores.create(
     name="docs-vector-store-chunks",
     file_ids=file_ids,
     # chunking_strategy={

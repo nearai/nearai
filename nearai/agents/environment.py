@@ -564,7 +564,11 @@ class Environment(object):
 
         def save_agent_data(key, data: Dict[str, Any]):
             """Save agent data."""
-            return client.save_agent_data(key, data)
+            try:
+                return client.save_agent_data(key, data)
+            except Exception as ex:
+                self.add_system_log(f"Error saving agent data by key {key}: {ex}", logging.ERROR)
+                return None
 
         self.save_agent_data = save_agent_data
 
@@ -578,7 +582,11 @@ class Environment(object):
             """Get agent data by key."""
             namespace = self.get_primary_agent().namespace
             name = self.get_primary_agent().name
-            result = client.get_agent_data_by_key(key)
+            try:
+                result = client.get_agent_data_by_key(key)
+            except Exception as ex:
+                self.add_system_log(f"Error getting agent data by key {key}: {ex}", logging.ERROR)
+                result = None
             return (
                 result
                 if result

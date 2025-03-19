@@ -53,15 +53,24 @@ def get_namespace(local_path: Path) -> str:
     try:
         # Check if the path matches the expected structure
         relative_path = local_path.relative_to(registry_folder)
+
+    except ValueError:
+        # If local_path is not relative to registry_folder, try resolving it to an absolute path
+        local_path = local_path.resolve()
+        try:
+            # Retry checking if the now absolute path is within registry_folder
+            relative_path = local_path.relative_to(registry_folder)
+        except ValueError:
+            relative_path = None
+            pass
+
+    if relative_path:
         parts = relative_path.parts
 
         # If the path has 3 parts (namespace, item_name, version),
         # return the first part as the namespace
         if len(parts) == 3:
             return str(parts[0])
-    except ValueError:
-        # relative_to() raises ValueError if local_path is not relative to registry_folder
-        pass
 
     # If we couldn't extract a namespace from the path, return the default
     if CONFIG.auth is None:
