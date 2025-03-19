@@ -22,6 +22,10 @@ from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.types import TypeDecorator
 from sqlmodel import Column, Field, Session, SQLModel, create_engine
 
+from ulid import ULID
+import hashlib
+import re
+
 from hub.api.v1.entry_location import EntryLocation
 
 load_dotenv()
@@ -101,6 +105,62 @@ class UnicodeSafeJSON(TypeDecorator):
             # - SingleStore's binary storage peculiarities
             return json.loads(str(value))
         return value
+
+
+# ID Generation Utilities
+def generate_prefixed_ulid(prefix: str) -> str:
+    """Generate a ULID with prefix for human readability"""
+    return f"{prefix}_{str(ULID())}"
+
+def generate_hashed_id(original_name: str, salt: str) -> str:
+    """Generate deterministic hashed ID for ImmutableID system"""
+    return hashlib.blake2b(
+        (original_name + salt).encode(),
+        digest_size=16
+    ).hexdigest()
+
+
+class ImmutableID(SQLModel, table=True):
+    """Immutable ID system tracking all name changes"""
+    __tablename__ = "immutable_ids"
+
+    id: str = Field(
+        primary_key=True,
+        default_factory=lambda: generate_prefixed_ulid("id"),
+        description="Unique prefixed ULID identifier"
+    )
+    original_name: str = Field(
+        index=True,
+        description="Original name at creation time",
+        max_length=64
+    )
+    current_name: str = Field(
+        index=True,
+        description="Current display name (can change)",
+        max_length=64
+    )
+    entity_type: str = Field(
+        sa_column=Column(Enum("user", "org", "agent", name="entity_types")),
+        description="Type of entity: user, org, or agent"
+    )
+    created_at: datetime = Field(
+        default_factory=datetime.now,
+        description="Creation timestamp"
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.now,
+        description="Last update timestamp"
+    )
+    is_locked: bool = Field(
+        default=False,
+        description="Prevent name changes when locked"
+    )
+
+    __table_args__ = (
+        Index("ux_entity_current", "entity_type", "current_name", unique=True),
+        Index("ix_original_names", "original_name"),
+        {"comment": "Central registry for immutable IDs and name history"},
+    )
 
 
 class Org(SQLModel, table=True):
