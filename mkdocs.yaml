@@ -157,6 +157,8 @@ nav:
       - Event-Driven Agents:
         - NEAR Event-Triggered Agents: 'near_events.md'
         - Twitter (X) Triggered Agents: 'agent_triggers.md'
+      - Orchestration:
+        - Orchestrating Multiple Agents: 'agents/orchestration.md'
     - Tutorials:
       - Documentation Agent (RAG):
         - Introduction: 'tutorials/rag/introduction.md'
@@ -169,10 +171,12 @@ nav:
     - 'models/home.md'
     - Fine-tuning: 'models/fine_tuning.md'
     - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
-  - Assistants:
-    - Overview: 'assistants/overview.md'
-    - Integrate: 'assistants/integrate.md'
-  - API: 'api.md'
+  - Integration:
+    - Overview: 'integration/overview.md'
+    - Quickstart: 'integration/quickstart.md'
+  - APIs:
+    - Web API: 'https://api.near.ai/openapi.json'
+    - Library API: 'api.md'
 
 plugins:
   - social
