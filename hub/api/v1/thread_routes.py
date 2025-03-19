@@ -684,25 +684,25 @@ def create_run(
         if run.stream:
             run_queues[run_model.id] = asyncio.Queue()
 
-        # Background task to monitor Delta table
-        async def monitor_deltas(run_id: str):
-            last_id = 0
-            while True:
-                with get_session() as session:
-                    events = session.exec(
-                        select(Delta).where(
-                            Delta.meta_data["run_id"].astext == run_id,
-                            Delta.id > last_id
-                        ).order_by(Delta.id)
-                    ).all()
-                    for event in events:
-                        if event.content.get("event_type") == "thread.run.completed":
-                            await run_queues[run_id].put("done")
-                            return
-                        else:
-                            await run_queues[run_id].put(event.to_openai())
-                        last_id = event.id
-                await asyncio.sleep(0.1)  # Poll every 0.1s
+            # Background task to monitor Delta table
+            async def monitor_deltas(run_id: str):
+                last_id = 0
+                while True:
+                    with get_session() as session:
+                        events = session.exec(
+                            select(Delta).where(
+                                Delta.meta_data["run_id"].astext == run_id,
+                                Delta.id > last_id
+                            ).order_by(Delta.id)
+                        ).all()
+                        for event in events:
+                            if event.content.get("event_type") == "thread.run.completed":
+                                await run_queues[run_id].put("done")
+                                return
+                            else:
+                                await run_queues[run_id].put(event.to_openai())
+                            last_id = event.id
+                    await asyncio.sleep(0.1)  # Poll every 0.1s
 
             # Background task to monitor Delta table
 
