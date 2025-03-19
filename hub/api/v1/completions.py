@@ -44,6 +44,16 @@ async def handle_stream(db, thread_id, run_id, message_id, resp_stream, add_usag
         yield f"data: {c}\n\n"
         await asyncio.sleep(0) # lets the event loop yield, otherwise it batches yields
 
+    # TODO: do this at the end of the agent run
+    delta = Delta(
+        event="thread.run.completed",
+        created_at=datetime.now(),
+        meta_data={"run_id": run_id, "thread_id": thread_id, "message_id": message_id},
+    )
+    session.add(delta)
+    session.commit()
+    ##
+
     yield "data: [DONE]\n\n"
     full_response_text = "".join(response_chunks)
 

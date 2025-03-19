@@ -958,27 +958,28 @@ async def monitor_deltas(run_id: str):
                 if(len(events) > 0):
                     print("LEN", len(events))
                 if event:
-                    if event.object == "thread.run.completed":
+                    print(event,"+++++")
+                    if event.content is None:
                         # Signal completion and stop monitoring
                         await run_queues[run_id].put("done") # TODO this needs to come at the end of the agent.
                         session.delete(event)
+                        session.commit()
                         return
                     else:
-                        if event.content is not None:
-                            # 4. Event: thread.run.step.created
-                            payload = {
-                                "id": event.meta_data["message_id"],  # Message ID, assumed to be in meta_data
-                                "object": event.object,               # "thread.message.delta"
-                                "delta": event.content                # Delta content, e.g., {"content": [{"index": 0, ...}]}
-                            }
-                            event_step_created = {
-                                "event": event.object,
-                                "data": payload,
-                            }
-                            await run_queues[run_id].put(event_step_created)
+                        # 4. Event: thread.run.step.created
+                        payload = {
+                            "id": event.meta_data["message_id"],  # Message ID, assumed to be in meta_data
+                            "object": event.object,               # "thread.message.delta"
+                            "delta": event.content                # Delta content, e.g., {"content": [{"index": 0, ...}]}
+                        }
+                        event_step_created = {
+                            "event": event.object,
+                            "data": payload,
+                        }
+                        await run_queues[run_id].put(event_step_created)
 
-                            session.delete(event)
-                            session.commit()
+                    session.delete(event)
+                    session.commit()
                 await asyncio.sleep(0.1)  # Poll every 0.1s
         except Exception as e:
             logger.error(f"Error in monitor_deltas for run_id {run_id}: {e}")

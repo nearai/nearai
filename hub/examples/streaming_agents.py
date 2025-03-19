@@ -43,9 +43,9 @@ run_id = 0
 for event in run:
     if event.event == "thread.run.queued":
         logger.info("Run queued")
-    elif event.event == "thread.run.started":
-        logger.info("Run started")
-        run_id=event.id
+    elif event.event == "thread.run.created":
+        logger.info("Run started", event)
+        run_id=event.data.id
     elif event.event == "thread.run.in_progress":
         logger.info("Run in progress")
     elif event.event == "thread.run.requires_action":
