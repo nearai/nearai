@@ -10,6 +10,7 @@ import subprocess
 import tarfile
 import tempfile
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -1140,7 +1141,7 @@ class Environment(object):
             for chunk in stream_results:
                 if chunk.choices and chunk.choices[0].delta.content:
                     delta_content = chunk.choices[0].delta.content
-                    full_content += delta
+                    full_content += delta_content
                     print(delta_content, end='', flush=True)
             print()
             response = ModelResponse(
