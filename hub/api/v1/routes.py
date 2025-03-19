@@ -179,7 +179,7 @@ def chat_completions(
     db: DatabaseSession,
     request: ChatCompletionsRequest = Depends(convert_request),
     auth: AuthToken = Depends(get_auth),
-    x_run_id: Optional[str] = Header(default=None),
+    x_run_id: Optional[str] = Header(default=None), # TOOD move to extra body
     x_thread_id: Optional[str] = Header(default=None),
     x_message_id: Optional[str] = Header(default=None),
 ):
