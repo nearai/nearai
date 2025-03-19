@@ -1,7 +1,7 @@
 name: 💡 Feature Request
 description: Request a new feature
 title: "[FEAT] "
-labels: ["issue"]
+labels: ["issue", "enhancement"]
 body:
 
   - type: textarea
