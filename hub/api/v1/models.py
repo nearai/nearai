@@ -469,7 +469,6 @@ class Completion(SQLModel, table=True):
 
     id: int = Field(default=None, sa_column=Column(BigInteger, primary_key=True, autoincrement=True))
     account_id: str = Field(max_length=64, nullable=False)
-    # query: Optional[dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
     query: List[dict] = Field(sa_column=Column(UnicodeSafeJSON))
     response: Optional[dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
     model: str = Field(sa_column=Column(LONGTEXT))
