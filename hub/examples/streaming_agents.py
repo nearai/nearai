@@ -31,7 +31,7 @@ logger.info(f"Thread created with ID: {thread.id}")
 logger.info("Creating a streaming run")
 run = client.beta.threads.runs.create(
     thread_id=thread.id,
-    assistant_id="getaiceo.near/helloworld/0.0.1",
+    assistant_id="getaiceo.near/helloworld/0.0.2",
     instructions="Please provide a helpful response.",
     model="fireworks::llama-v3p1-70b-instruct",
     stream=True
@@ -59,7 +59,7 @@ for event in run:
     elif event.event == "thread.run.expired":
         logger.info("Run expired")
     elif event.event == "thread.message.delta":
-        delta = event.data['delta']['content'][0]['text']['value']
+        delta = event.data.delta.content[0].text.value
         logger.info(f"Streamed content: {delta}", extra={'no_newline': True})
     elif event.event == "done":
         logger.info("Streaming finished")

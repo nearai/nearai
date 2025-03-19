@@ -2,7 +2,9 @@ import json
 import asyncio
 from enum import Enum
 from os import getenv
+from hub.api.v1.models import Delta, Message, get_session
 from typing import Callable, List, Union
+from datetime import datetime
 
 from dotenv import load_dotenv
 from nearai.shared.client_config import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
@@ -18,12 +20,27 @@ class Provider(Enum):
     LOCAL = "local"
 
 
-async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_callback: Callable):
+async def handle_stream(db, thread_id, run_id, message_id, resp_stream, add_usage_callback: Callable):
     response_chunks = []
 
     for chunk in resp_stream:
         c = json.dumps(chunk.model_dump())
         response_chunks.append(c)
+
+        with get_session() as session:
+            txt = chunk.choices[0].delta.content
+            if txt is not None:
+                content = {"content":[{"index":0,"type":"text","text":{"value":txt}}]}
+                delta = Delta(
+                    event="thread.message.delta",
+                    content=content,
+                    created_at=datetime.now(),
+                    meta_data={"run_id": run_id, "thread_id": thread_id, "message_id": message_id},
+                )
+                session.add(delta)
+                session.commit()
+                print("Writing Delta obect",run_id,thread_id, message_id)
+
         yield f"data: {c}\n\n"
         await asyncio.sleep(0) # lets the event loop yield, otherwise it batches yields
 

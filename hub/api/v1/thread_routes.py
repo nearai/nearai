@@ -42,6 +42,7 @@ from hub.api.v1.models import get_session
 from hub.api.v1.models import Thread as ThreadModel
 from hub.api.v1.models import get_session
 from hub.api.v1.routes import DEFAULT_TIMEOUT, get_llm_ai
+from hub.api.v1.models import Delta, get_session
 from hub.api.v1.sql import SqlClient
 from hub.tasks.scheduler import get_scheduler
 
@@ -684,28 +685,6 @@ def create_run(
         if run.stream:
             run_queues[run_model.id] = asyncio.Queue()
 
-            # Background task to monitor Delta table
-            async def monitor_deltas(run_id: str):
-                last_id = 0
-                while True:
-                    with get_session() as session:
-                        events = session.exec(
-                            select(Delta).where(
-                                Delta.meta_data["run_id"].astext == run_id,
-                                Delta.id > last_id
-                            ).order_by(Delta.id)
-                        ).all()
-                        for event in events:
-                            if event.content.get("event_type") == "thread.run.completed":
-                                await run_queues[run_id].put("done")
-                                return
-                            else:
-                                await run_queues[run_id].put(event.to_openai())
-                            last_id = event.id
-                    await asyncio.sleep(0.1)  # Poll every 0.1s
-
-            # Background task to monitor Delta table
-
             # Base payload for run events
             base_payload = {
                 "id": run_model.id,  # e.g., "run_123"
@@ -958,14 +937,63 @@ def _run_agent(
                         _run_agent(thread_id, parent_run.id, auth=auth)
         return run_model.to_openai()
 
+async def monitor_deltas(run_id: str):
+    # TODO: remove when reliable
+    with get_session() as session:
+        session.query(Delta).delete()
+        session.commit()
+    while True:
+        try:
+            with get_session() as session:
+                # Fetch the oldest Delta for this run_id
+                event = session.exec(
+                    #select(Delta).where(Delta.run_id == run_id).order_by(Delta.created_at).limit(1)
+                    select(Delta).order_by(Delta.created_at).limit(1)
+                ).first()
+
+                events = session.exec(
+                    #select(Delta).where(Delta.run_id == run_id).order_by(Delta.created_at).limit(1)
+                    select(Delta).order_by(Delta.created_at)
+                ).all()
+                if(len(events) > 0):
+                    print("LEN", len(events))
+                if event:
+                    if event.object == "thread.run.completed":
+                        # Signal completion and stop monitoring
+                        await run_queues[run_id].put("done") # TODO this needs to come at the end of the agent.
+                        session.delete(event)
+                        return
+                    else:
+                        if event.content is not None:
+                            # 4. Event: thread.run.step.created
+                            payload = {
+                                "id": event.meta_data["message_id"],  # Message ID, assumed to be in meta_data
+                                "object": event.object,               # "thread.message.delta"
+                                "delta": event.content                # Delta content, e.g., {"content": [{"index": 0, ...}]}
+                            }
+                            event_step_created = {
+                                "event": event.object,
+                                "data": payload,
+                            }
+                            await run_queues[run_id].put(event_step_created)
+
+                            session.delete(event)
+                            session.commit()
+                await asyncio.sleep(0.1)  # Poll every 0.1s
+        except Exception as e:
+            logger.error(f"Error in monitor_deltas for run_id {run_id}: {e}")
+            await asyncio.sleep(1)  # Wait before retrying
+
 async def stream_run_events(run_id: str):
+    task = asyncio.create_task(monitor_deltas(run_id))
+    print(f"Started monitor_deltas task for run_id {run_id}")
     queue = run_queues[run_id]
     while True:
         event = await queue.get()
         if event == "done":
             break
         yield f"data: {json.dumps(event)}\n\n"
-        await asyncio.sleep(0) # lets the event loop yield, otherwise it batches yields
+        await asyncio.sleep(0)
     del run_queues[run_id]
 
 @threads_router.get("/threads/{thread_id}/runs/{run_id}")

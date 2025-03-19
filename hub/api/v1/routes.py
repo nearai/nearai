@@ -4,7 +4,7 @@ import logging
 import time
 from typing import Annotated, Iterable, List, Optional, Union
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Header
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from nearai.shared.cache import mem_cache_with_timeout
@@ -132,7 +132,10 @@ def convert_request(
 
 @v1_router.post("/completions")
 def completions(
-    db: DatabaseSession, request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth)
+    db: DatabaseSession, request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth),
+    x_run_id: Optional[str] = Header(default=None),
+    x_thread_id: Optional[str] = Header(default=None),
+    x_message_id: Optional[str] = Header(default=None),
 ):
     logger.info(f"Received completions request: {request.model_dump()}")
 
@@ -157,11 +160,7 @@ def completions(
                 auth.account_id, request.prompt, response_text, request.model, request.provider, "/completions"
             )
 
-        # TODO get from params
-        thread_id = None
-        run_id = None
-        message_id = None
-        return StreamingResponse(handle_stream(thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream")
+        return StreamingResponse(handle_stream(db, thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream")
     else:
         c = json.dumps(resp.model_dump())
 
@@ -180,6 +179,9 @@ def chat_completions(
     db: DatabaseSession,
     request: ChatCompletionsRequest = Depends(convert_request),
     auth: AuthToken = Depends(get_auth),
+    x_run_id: Optional[str] = Header(default=None),
+    x_thread_id: Optional[str] = Header(default=None),
+    x_message_id: Optional[str] = Header(default=None),
 ):
     logger.info(f"Received chat completions request: {request.model_dump()}")
 
@@ -239,12 +241,8 @@ def chat_completions(
                 request.provider,
                 "/chat/completions",
             )
-        # TODO get from params
-        thread_id = None
-        run_id = None
-        message_id = None
 
-        return StreamingResponse(handle_stream(thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream")
+        return StreamingResponse(handle_stream(db, x_thread_id, x_run_id, x_message_id, resp, add_usage_callback), media_type="text/event-stream")
 
     else:
         c = json.dumps(resp.model_dump())
