@@ -1,11 +1,8 @@
-name: Bug Report
+name: "🐞 Bug Report"
 description: Report a bug or unexpected behavior
-title: "🐞 [Bug] "
+title: "[BUG] "
 labels: ["bug"]
 body:
-  - type: markdown
-    attributes:
-      value: "## 🐞 Bug Report"
 
   - type: textarea
     id: description
