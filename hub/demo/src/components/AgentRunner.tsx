@@ -320,7 +320,7 @@ export const AgentRunner = ({
   useEffect(() => {
     if (!threadId) return;
 
-    const eventSource = new EventSource(`/api/threads/${threadId}/stream`);
+    const eventSource = new EventSource(`/api/v1/threads/${threadId}/stream`);
 
     eventSource.addEventListener('initial', (event) => {
       const data = JSON.parse(event.data);

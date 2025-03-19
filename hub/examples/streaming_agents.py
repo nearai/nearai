@@ -68,7 +68,7 @@ for event in run:
 
 # Retrieve the run details after streaming is complete
 logger.info("Retrieving the run details")
-run_details = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+run_details = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run_id)
 logger.info(f"Run details: {run_details}")
 
 logger.info("Streaming agent execution process completed")

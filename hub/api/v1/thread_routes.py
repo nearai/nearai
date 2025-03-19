@@ -782,7 +782,7 @@ def create_run(
             thread.start()
 
             return StreamingResponse(
-                stream_run_events(run_model.id),
+                stream_run_events(run_model.id, True),
                 media_type="text/event-stream"
             )
 
@@ -937,19 +937,24 @@ def _run_agent(
                         _run_agent(thread_id, parent_run.id, auth=auth)
         return run_model.to_openai()
 
-async def monitor_deltas(run_id: str):
-    # TODO: remove when reliable
+async def monitor_deltas(run_id: str, delete:bool):
     with get_session() as session:
-        session.query(Delta).delete()
-        session.commit()
-    while True:
-        try:
-            with get_session() as session:
+        # TODO: remove when reliable
+        if(delete):
+            session.query(Delta).delete()
+            session.commit()
+        seen_ids = set()
+
+        while True:
+            try:
                 # Fetch the oldest Delta for this run_id
                 event = session.exec(
-                    #select(Delta).where(Delta.run_id == run_id).order_by(Delta.created_at).limit(1)
-                    select(Delta).order_by(Delta.created_at).limit(1)
+                    select(Delta).where(
+                        #Delta.run_id == run_id,
+                        Delta.id.notin_(list(seen_ids))
+                    ).order_by(Delta.created_at).limit(1)
                 ).first()
+                seen_ids.add(event.id)
 
                 events = session.exec(
                     #select(Delta).where(Delta.run_id == run_id).order_by(Delta.created_at).limit(1)
@@ -964,6 +969,11 @@ async def monitor_deltas(run_id: str):
                         await run_queues[run_id].put("done") # TODO this needs to come at the end of the agent.
                         session.delete(event)
                         session.commit()
+
+                        # TODO: Filter by run id
+                        if(delete):
+                            session.query(Delta).delete()
+                            session.commit()
                         return
                     else:
                         # 4. Event: thread.run.step.created
@@ -981,12 +991,12 @@ async def monitor_deltas(run_id: str):
                     session.delete(event)
                     session.commit()
                 await asyncio.sleep(0.1)  # Poll every 0.1s
-        except Exception as e:
-            logger.error(f"Error in monitor_deltas for run_id {run_id}: {e}")
-            await asyncio.sleep(1)  # Wait before retrying
+            except Exception as e:
+                logger.error(f"Error in monitor_deltas for run_id {run_id}: {e}")
+                await asyncio.sleep(1)  # Wait before retrying
 
-async def stream_run_events(run_id: str):
-    task = asyncio.create_task(monitor_deltas(run_id))
+async def stream_run_events(run_id: str, delete:bool):
+    task = asyncio.create_task(monitor_deltas(run_id, delete))
     print(f"Started monitor_deltas task for run_id {run_id}")
     queue = run_queues[run_id]
     while True:
@@ -996,6 +1006,26 @@ async def stream_run_events(run_id: str):
         yield f"data: {json.dumps(event)}\n\n"
         await asyncio.sleep(0)
     del run_queues[run_id]
+
+@threads_router.get("/threads/{thread_id}/stream")
+async def thread_subscribe(
+    thread_id: str
+):
+    """
+    Subscribe to deltas for a thread (for testing or future use).
+    Currently a placeholder; primary streaming is handled via runs.
+    """
+    with get_session() as session:
+        # Basic thread existence check
+        from hub.api.v1.models import Thread  # Import here to avoid circularity
+        thread = session.get(Thread, thread_id)
+        if not thread:
+            raise HTTPException(status_code=404, detail="Thread not found")
+        
+        return StreamingResponse(
+            stream_run_events("runidhere", False),
+            media_type="text/event-stream"
+        )
 
 @threads_router.get("/threads/{thread_id}/runs/{run_id}")
 def get_run(
