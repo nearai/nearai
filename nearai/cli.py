@@ -582,6 +582,119 @@ class ConfigCli:
         for key, value in asdict(CONFIG).items():
             print(f"{key}: {value}")
 
+    def __help__(self) -> None:
+        """Display detailed help information for config commands."""
+        console = Console()
+
+        # Header
+        console.print("\n[bold cyan]NEAR AI Configuration Commands[/bold cyan]\n")
+
+        # Main description
+        console.print(
+            Panel(
+                "Configuration commands help you manage your NEAR AI CLI settings. "
+                "You can view, set, and modify various configuration values that control how the CLI behaves.",
+                title="About Configuration",
+                border_style="blue",
+                expand=False,
+            )
+        )
+
+        # Command details in a clean table format
+        commands_table = Table(box=ROUNDED, expand=False)
+        commands_table.add_column("Command", style="cyan bold", no_wrap=True)
+        commands_table.add_column("Description", style="white")
+        commands_table.add_column("Parameters", style="dim")
+
+        commands = [
+            ("set", "Add or update a configuration value", "key*, value*, --local"),
+            ("get", "Retrieve a configuration value", "key*"),
+            ("show", "Display all configuration values", ""),
+        ]
+
+        for cmd, desc, params in commands:
+            commands_table.add_row(f"nearai config {cmd}", desc, params)
+
+        console.print(commands_table)
+        console.print("\n* Required parameter\n")
+
+        # Detailed parameter descriptions
+        console.print("[bold green]Parameter Details:[/bold green]\n")
+
+        param_details = [
+            ("key", "The configuration key to set or get"),
+            ("value", "The value to assign to the configuration key"),
+            ("--local", "Store the configuration value in the local config file (default: global)"),
+        ]
+
+        param_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
+        param_table.add_column(style="yellow")
+        param_table.add_column(style="white")
+
+        for param, desc in param_details:
+            param_table.add_row(param, desc)
+
+        console.print(param_table)
+
+        # Common configuration keys
+        console.print("\n[bold green]Common Configuration Keys:[/bold green]\n")
+
+        keys_table = Table(box=ROUNDED, expand=False)
+        keys_table.add_column("Key", style="yellow")
+        keys_table.add_column("Description", style="white")
+        keys_table.add_column("Default Value", style="dim")
+
+        common_keys = [
+            ("api_url", "The URL of the NEAR AI API", "https://api.near.ai"),
+            ("auth.namespace", "Your NEAR account namespace", "account.near"),
+            ("num_inference_retries", "Number of retries for model inference calls", "10"),
+            ("model", "Default model to use", "claude-3-sonnet-20240229"),
+            ("model_provider", "Default model provider", "anthropic"),
+            # Add any other common config values you want to document here
+        ]
+
+        for key, desc, default in common_keys:
+            keys_table.add_row(key, desc, default)
+
+        console.print(keys_table)
+
+        # Examples section
+        console.print("\n[bold green]Examples:[/bold green]\n")
+
+        examples = [
+            "# View all configuration values",
+            "nearai config show",
+            "",
+            "# Get a specific configuration value",
+            "nearai config get api_url",
+            "",
+            "# Set a configuration value (globally)",
+            "nearai config set model claude-3-opus-20240229",
+            "",
+            "# Set a configuration value (locally for current project)",
+            "nearai config set model claude-3-opus-20240229 --local",
+            "",
+            "# Change the API URL",
+            "nearai config set api_url https://custom-api.example.com",
+        ]
+
+        for example in examples:
+            if example.startswith("#"):
+                console.print(f"[dim]{example}[/dim]")
+            elif example:
+                console.print(f"[cyan]{example}[/cyan]")
+            else:
+                console.print("")
+
+        # Footer
+        console.print(
+            "\nFor detailed documentation on configuration, visit: [bold blue]https://docs.near.ai/reference/configuration[/bold blue]\n"
+        )
+
+    def __call__(self) -> None:
+        """Show help when 'nearai config' is called without subcommands."""
+        self.__help__()
+
 
 class BenchmarkCli:
     def __init__(self):
@@ -1674,6 +1787,12 @@ def main() -> None:
         if len(sys.argv) == 3 and sys.argv[1] == "registry" and sys.argv[2] == "--help":
             cli = CLI()
             cli.registry.__help__()
+            return
+
+        # Handle "nearai config --help"
+        if len(sys.argv) == 3 and sys.argv[1] == "config" and sys.argv[2] == "--help":
+            cli = CLI()
+            cli.config.__help__()
             return
 
         # Handle "nearai agent create --help"
