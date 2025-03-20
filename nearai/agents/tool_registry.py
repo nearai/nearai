@@ -1,5 +1,6 @@
 import inspect
-from typing import Any, Callable, Dict, Literal, Optional, _GenericAlias, get_type_hints  # type: ignore
+from typing import Any, Callable, Dict, Literal, Optional, _GenericAlias, get_type_hints, List, TypedDict, Union  # type: ignore
+from nearai.agents.models.tool_definition import ToolDefinition
 
 
 class ToolRegistry:
@@ -34,6 +35,30 @@ class ToolRegistry:
     def register_tool(self, tool: Callable) -> None:  # noqa: D102
         """Register a tool."""
         self.tools[tool.__name__] = tool
+
+    def register_tool_from_definition(self, definition: ToolDefinition, call_tool: Callable) -> None:  # noqa: D102
+        """Register a tool callable from its definition."""
+
+        function = definition.function
+        tool_name = function.name
+        tool_description = function.description
+        properties = function.parameters.properties
+
+        tool_args = "\n".join(f"{key}: {value.description}" for key, value in properties.items())
+
+        async def tool(**kwargs):
+            """{description}"""
+
+            try:
+                return await call_tool(tool_name, kwargs)
+            except Exception as e:
+                raise Exception(f"Error calling tool {tool_name}: {e}")
+
+        tool.__name__ = tool_name
+        tool.__doc__ = tool.__doc__.format(description=tool_description)
+        tool.__doc__ += f"\n\n{tool_args}"
+
+        self.tools[tool_name] = tool
 
     def get_tool(self, name: str) -> Optional[Callable]:  # noqa: D102
         """Get a tool by name."""
