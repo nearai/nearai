@@ -2,6 +2,7 @@ import csv
 import glob
 import json
 import os
+import re
 import subprocess
 import time
 from typing import Any, Dict, List, Tuple, Union
@@ -91,8 +92,8 @@ class LiveBenchSolverStrategy(SolverStrategy):
                 name += f"_with_model_{self.model_name}"
         else:
             name = self.model_name
-        assert "/" not in name
-        return name.lower()
+        clean_name = re.sub(r"[^a-zA-Z0-9_\-.]", "_", name)
+        return clean_name.lower()
 
     @SolverStrategyClassProperty
     def scoring_method(self) -> SolverScoringMethod:  # noqa: D102
