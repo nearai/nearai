@@ -1,12 +1,13 @@
-# Assistants/Agents API overview
+# Integrating Applications
+NEAR AI agents are compatible with the OpenAI Assistants API, allowing for easy integration of agents into your own web, mobile or other applications.
 
-The Assistants API allows you to build AI assistants within your own applications. An Assistant has instructions and can leverage models, tools, and files to respond to user queries. 
+The full NEAR AI OpenAPI specification can be found at [https://api.near.ai/openapi.json](https://api.near.ai/openapi.json). 
+
+An Assistant has instructions and can leverage models, tools, and files to respond to user queries. 
 
 ## How Assistants work
 
 The Assistants API is designed to help developers build powerful AI assistants capable of performing a variety of tasks.
-
-The Assistants API is in beta and we are actively working on adding more functionality.
 
 1. Assistants can call various models with specific instructions to tune their personality and capabilities.
 2. Assistants can access multiple tools.
@@ -25,4 +26,4 @@ The Assistants API is in beta and we are actively working on adding more functio
 | Service Agent | A specialized Agent called by the Assistant to accomplish a task such as purchasing, undertaking a swap, or generating a smart contract.                                                                                     |
 
 ## Next Steps
-[Integrate an Assistant into your application](./integrate.md)
+[Integrate an Assistant into your application](./quickstart.md)

@@ -43,6 +43,7 @@ Create venv and install the dependencies:
 python -m venv venv
 source venv/bin/activate
 pip install -e .
+pip install -e .[hub]  # on MacOS use `pip install -e .\[hub\]`
 ```
 
 Start the dev server with:
