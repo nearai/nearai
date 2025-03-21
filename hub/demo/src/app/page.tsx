@@ -72,11 +72,8 @@ export default function HomePage() {
 
   return (
     <>
-      <Section background="sand-0" padding="hero" className={s.heroSection}>
+      <Section background="sand-0" padding="hero">
         <Flex direction="column" gap="xl" align="center">
-          <div className={s.dragonLogo} />
-          <div className={s.dragonLogoOutline} />
-
           <Flex
             direction="column"
             gap="l"

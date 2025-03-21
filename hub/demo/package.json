@@ -15,7 +15,6 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix --max-warnings 0",
     "lint:strict": "next lint --max-warnings 0",
-    "pre-commit": "npm run format && npm run lint:strict && npm run ts:check",
     "start": "next start",
     "ts:check": "tsc --noEmit --incremental",
     "prepare": "cd .. && cd .. && husky hub/demo/.husky"
@@ -81,6 +80,7 @@
   },
   "lint-staged": {
     "./src/**/*.{ts,tsx}": [
+      "bash -c 'npm run ts:check'",
       "eslint --fix --max-warnings 0"
     ],
     "./src/**/*": [

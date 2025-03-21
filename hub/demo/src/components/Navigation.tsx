@@ -177,7 +177,7 @@ export const Navigation = () => {
         </>
       ) : (
         <Link className={s.logo} href="/">
-          <span className={s.logoNearAi}>NEAR AI</span>
+          <NearAiLogo className={s.logoNearAi} />
           <span className={s.logoTitle}>{APP_TITLE}</span>
         </Link>
       )}

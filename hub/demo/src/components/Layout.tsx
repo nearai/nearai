@@ -2,9 +2,10 @@
 
 import { NearAiUiProvider, Toaster } from '@nearai/ui';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { type ComponentProps, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { type ReactNode, Suspense } from 'react';
 
+import { useEmbedStore } from '@/stores/embed';
 import { TRPCProvider } from '@/trpc/TRPCProvider';
 
 import { Footer } from './Footer';
@@ -14,14 +15,12 @@ import { NearInitializer } from './NearInitializer';
 import { ZustandHydration } from './ZustandHydration';
 
 export const Layout = ({ children }: { children: ReactNode }) => {
-  const params = useSearchParams();
+  const forcedTheme = useEmbedStore((store) => store.forcedTheme);
 
   return (
     <NearAiUiProvider
       value={{
-        forcedTheme: params.get('theme') as NonNullable<
-          ComponentProps<typeof NearAiUiProvider>['value']
-        >['forcedTheme'],
+        forcedTheme,
         Link,
         useRouter,
       }}
@@ -31,11 +30,13 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         <ZustandHydration />
         <Toaster />
 
-        <div className={s.wrapper}>
-          <Navigation />
-          <main className={s.main}>{children}</main>
-          <Footer conditional />
-        </div>
+        <Suspense>
+          <div className={s.wrapper}>
+            <Navigation />
+            <main className={s.main}>{children}</main>
+            <Footer conditional />
+          </div>
+        </Suspense>
       </TRPCProvider>
     </NearAiUiProvider>
   );
