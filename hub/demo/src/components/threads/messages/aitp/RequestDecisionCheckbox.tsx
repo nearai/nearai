@@ -8,12 +8,12 @@ import {
   Form,
   openToast,
   Text,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 import { type z } from 'zod';
 
-import { useThreadsStore } from '~/stores/threads';
-import { stringToHtmlAttribute } from '~/utils/string';
+import { useThreadsStore } from '@/stores/threads';
+import { stringToHtmlAttribute } from '@/utils/string';
 
 import { useThreadMessageContent } from '../../ThreadMessageContentProvider';
 import { Message } from './Message';

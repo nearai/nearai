@@ -48,6 +48,7 @@ const aitpSchema = z.union([
   requestDecisionSchema,
 ]);
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const aitpSchemaWithoutPassthrough = z.union([
   dataSchema.strip(),
   decisionSchema.strip(),

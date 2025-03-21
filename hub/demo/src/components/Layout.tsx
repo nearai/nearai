@@ -1,11 +1,11 @@
 'use client';
 
-import { PagodaUiProvider, Toaster } from '@near-pagoda/ui';
+import { NearAiUiProvider, Toaster } from '@nearai/ui';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type ComponentProps, type ReactNode } from 'react';
 
-import { TRPCProvider } from '~/trpc/TRPCProvider';
+import { TRPCProvider } from '@/trpc/TRPCProvider';
 
 import { Footer } from './Footer';
 import s from './Layout.module.scss';
@@ -17,10 +17,10 @@ export const Layout = ({ children }: { children: ReactNode }) => {
   const params = useSearchParams();
 
   return (
-    <PagodaUiProvider
+    <NearAiUiProvider
       value={{
         forcedTheme: params.get('theme') as NonNullable<
-          ComponentProps<typeof PagodaUiProvider>['value']
+          ComponentProps<typeof NearAiUiProvider>['value']
         >['forcedTheme'],
         Link,
         useRouter,
@@ -37,6 +37,6 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           <Footer conditional />
         </div>
       </TRPCProvider>
-    </PagodaUiProvider>
+    </NearAiUiProvider>
   );
 };

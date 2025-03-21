@@ -7,7 +7,7 @@ import {
   SvgIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import {
   BookOpenText,
   DownloadSimple,
@@ -16,10 +16,10 @@ import {
 import { type CSSProperties, useState } from 'react';
 import { type z } from 'zod';
 
-import { idForEntry } from '~/lib/entries';
-import { type entryModel } from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { toTitleCase } from '~/utils/string';
+import { idForEntry } from '@/lib/entries';
+import { type entryModel } from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import { toTitleCase } from '@/utils/string';
 
 import { Code } from './lib/Code';
 

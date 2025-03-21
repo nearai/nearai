@@ -1,6 +1,6 @@
 import mime from 'mime';
 
-import { type CodeLanguage } from '~/components/lib/Code';
+import { type CodeLanguage } from '@/components/lib/Code';
 
 export function filePathToCodeLanguage(
   path: string | undefined | null,

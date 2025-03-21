@@ -1,11 +1,11 @@
 'use client';
 
-import { Flex, ImageIcon, Text } from '@near-pagoda/ui';
+import { Flex, ImageIcon, Text } from '@nearai/ui';
 import { type z } from 'zod';
 
-import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
-import { rawFileUrlForEntry } from '~/lib/entries';
-import { type entryModel } from '~/lib/models';
+import { ENTRY_CATEGORY_LABELS } from '@/lib/categories';
+import { rawFileUrlForEntry } from '@/lib/entries';
+import { type entryModel } from '@/lib/models';
 
 import { Markdown } from './lib/Markdown';
 

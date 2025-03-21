@@ -11,22 +11,22 @@ import {
   Text,
   Tooltip,
   useTable,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { ChatCircleDots, CodeBlock, Play } from '@phosphor-icons/react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { type ReactNode } from 'react';
 
-import { env } from '~/env';
-import { useEntriesSearch } from '~/hooks/entries';
-import { useClientPagination } from '~/hooks/pagination';
-import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
+import { env } from '@/env';
+import { useEntriesSearch } from '@/hooks/entries';
+import { useClientPagination } from '@/hooks/pagination';
+import { ENTRY_CATEGORY_LABELS } from '@/lib/categories';
 import {
   benchmarkEvaluationsUrlForEntry,
   primaryUrlForEntry,
   sourceUrlForEntry,
-} from '~/lib/entries';
-import { type EntryCategory } from '~/lib/models';
-import { trpc } from '~/trpc/TRPCProvider';
+} from '@/lib/entries';
+import { type EntryCategory } from '@/lib/models';
+import { trpc } from '@/trpc/TRPCProvider';
 
 import { ForkButton } from './ForkButton';
 import { NewAgentButton } from './NewAgentButton';

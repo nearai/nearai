@@ -24,7 +24,7 @@ export function getPrimaryDomainFromUrl(str: string | null | undefined) {
   try {
     const url = new URL(str);
     return url.hostname.replace('www.', '');
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }

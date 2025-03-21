@@ -1,12 +1,12 @@
-import { parseStringOrNumber } from '@near-pagoda/ui/utils';
+import { parseStringOrNumber } from '@nearai/ui/utils';
 import { z } from 'zod';
 
 import {
   AITP_CAPABILITIES,
   AITP_CLIENT_ID,
-} from '~/components/threads/messages/aitp/schema';
-import { env } from '~/env';
-import { rawFileUrlForEntry } from '~/lib/entries';
+} from '@/components/threads/messages/aitp/schema';
+import { env } from '@/env';
+import { rawFileUrlForEntry } from '@/lib/entries';
 import {
   chatWithAgentModel,
   entryCategory,
@@ -23,12 +23,12 @@ import {
   threadModel,
   threadRunModel,
   threadsModel,
-} from '~/lib/models';
-import { conditionallyIncludeAuthorizationHeader } from '~/trpc/utils/headers';
-import { conditionallyRemoveSecret } from '~/trpc/utils/secrets';
-import { fetchThreadContents } from '~/trpc/utils/threads';
-import { filePathIsImage } from '~/utils/file';
-import { createZodFetcher } from '~/utils/zod-fetch';
+} from '@/lib/models';
+import { conditionallyIncludeAuthorizationHeader } from '@/trpc/utils/headers';
+import { conditionallyRemoveSecret } from '@/trpc/utils/secrets';
+import { fetchThreadContents } from '@/trpc/utils/threads';
+import { filePathIsImage } from '@/utils/file';
+import { createZodFetcher } from '@/utils/zod-fetch';
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc';
 import {

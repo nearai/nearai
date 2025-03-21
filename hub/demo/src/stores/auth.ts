@@ -1,7 +1,7 @@
 import { create, type StateCreator } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { clearSignInNonce } from '~/lib/auth';
+import { clearSignInNonce } from '@/lib/auth';
 
 type Auth = {
   accountId: string;

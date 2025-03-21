@@ -14,8 +14,8 @@ import {
   PlaceholderStack,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
-import { formatBytes } from '@near-pagoda/ui/utils';
+} from '@nearai/ui';
+import { formatBytes } from '@nearai/ui/utils';
 import {
   ArrowRight,
   CodeBlock,
@@ -36,24 +36,24 @@ import {
 import { type SubmitHandler, useForm } from 'react-hook-form';
 import { type z } from 'zod';
 
-import { AgentPermissionsModal } from '~/components/AgentPermissionsModal';
-import { AgentWelcome } from '~/components/AgentWelcome';
-import { EntryEnvironmentVariables } from '~/components/EntryEnvironmentVariables';
-import { IframeWithBlob } from '~/components/lib/IframeWithBlob';
-import { Sidebar } from '~/components/lib/Sidebar';
-import { SignInPrompt } from '~/components/SignInPrompt';
-import { ThreadMessages } from '~/components/threads/ThreadMessages';
-import { ThreadsSidebar } from '~/components/threads/ThreadsSidebar';
-import { useAgentRequestsWithIframe } from '~/hooks/agent-iframe-requests';
-import { useConsumerModeEnabled } from '~/hooks/consumer';
-import { useCurrentEntry, useEntryEnvironmentVariables } from '~/hooks/entries';
-import { useQueryParams } from '~/hooks/url';
-import { rawFileUrlForEntry, sourceUrlForEntry } from '~/lib/entries';
-import { type chatWithAgentModel, type threadMessageModel } from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { useThreadsStore } from '~/stores/threads';
-import { trpc } from '~/trpc/TRPCProvider';
-import { WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS } from '~/utils/wallet';
+import { AgentPermissionsModal } from '@/components/AgentPermissionsModal';
+import { AgentWelcome } from '@/components/AgentWelcome';
+import { EntryEnvironmentVariables } from '@/components/EntryEnvironmentVariables';
+import { IframeWithBlob } from '@/components/lib/IframeWithBlob';
+import { Sidebar } from '@/components/lib/Sidebar';
+import { SignInPrompt } from '@/components/SignInPrompt';
+import { ThreadMessages } from '@/components/threads/ThreadMessages';
+import { ThreadsSidebar } from '@/components/threads/ThreadsSidebar';
+import { useAgentRequestsWithIframe } from '@/hooks/agent-iframe-requests';
+import { useConsumerModeEnabled } from '@/hooks/consumer';
+import { useCurrentEntry, useEntryEnvironmentVariables } from '@/hooks/entries';
+import { useQueryParams } from '@/hooks/url';
+import { rawFileUrlForEntry, sourceUrlForEntry } from '@/lib/entries';
+import { type chatWithAgentModel, type threadMessageModel } from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import { useThreadsStore } from '@/stores/threads';
+import { trpc } from '@/trpc/TRPCProvider';
+import { WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS } from '@/utils/wallet';
 
 import { ThreadFileModal } from './threads/ThreadFileModal';
 

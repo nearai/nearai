@@ -1,10 +1,10 @@
 import { useCallback, useMemo } from 'react';
 import { type z } from 'zod';
 
-import { type threadMessageModel, type threadModel } from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { type AppRouterOutputs } from '~/trpc/router';
-import { trpc } from '~/trpc/TRPCProvider';
+import { type threadMessageModel, type threadModel } from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import { type AppRouterOutputs } from '@/trpc/router';
+import { trpc } from '@/trpc/TRPCProvider';
 
 import { useEmbeddedWithinIframe } from './embed';
 import { useCurrentEntryParams } from './entries';

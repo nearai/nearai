@@ -1,4 +1,4 @@
-import { Card, Flex, SvgIcon, Text } from '@near-pagoda/ui';
+import { Card, Flex, SvgIcon, Text } from '@nearai/ui';
 import { WarningCircle } from '@phosphor-icons/react';
 
 type Props = {

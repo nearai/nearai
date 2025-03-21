@@ -1,9 +1,9 @@
 'use client';
 
-import { Badge, Flex, Section, Text } from '@near-pagoda/ui';
+import { Badge, Flex, Section, Text } from '@nearai/ui';
 import { type z } from 'zod';
 
-import { type entryModel } from '~/lib/models';
+import { type entryModel } from '@/lib/models';
 
 import { EntriesTable } from './EntriesTable';
 import { ForkButton } from './ForkButton';

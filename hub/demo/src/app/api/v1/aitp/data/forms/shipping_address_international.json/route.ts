@@ -1,6 +1,6 @@
 import { type z } from 'zod';
 
-import { type requestDataFormSchema } from '~/components/threads/messages/aitp/schema/data';
+import { type requestDataFormSchema } from '@/components/threads/messages/aitp/schema/data';
 
 // See "Generic Formats": https://www.uxmatters.com/mt/archives/2008/06/international-address-fields-in-web-forms.php
 
