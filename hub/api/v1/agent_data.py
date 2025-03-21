@@ -16,8 +16,6 @@ agent_data_router = APIRouter(
     tags=["agents, assistants"],
 )
 
-print("asdf")
-
 
 class AgentDataRequest(BaseModel):
     key: str
