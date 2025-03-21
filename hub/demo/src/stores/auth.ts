@@ -3,6 +3,8 @@ import { devtools } from 'zustand/middleware';
 
 import { clearSignInNonce } from '@/lib/auth';
 
+const f = 'asfd';
+
 type Auth = {
   accountId: string;
 };
