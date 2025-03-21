@@ -18,7 +18,7 @@
     "pre-commit": "npm run format && npm run lint:strict && npm run ts:check",
     "start": "next start",
     "ts:check": "tsc --noEmit --incremental",
-    "prepare": "husky"
+    "prepare": "cd .. && cd .. && husky hub/demo/.husky"
   },
   "dependencies": {
     "@gera2ld/tarjs": "^0.3.1",
@@ -74,8 +74,17 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
     "postcss": "^8.4.34",
     "prettier": "^3.5.3",
     "typescript": "^5"
+  },
+  "lint-staged": {
+    "src/*.{ts,tsx}": [
+      "next lint --cache --fix --max-warnings 0"
+    ],
+    "src/*": [
+      "prettier --write"
+    ]
   }
 }
