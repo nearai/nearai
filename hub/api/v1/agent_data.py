@@ -17,9 +17,6 @@ agent_data_router = APIRouter(
 )
 
 
-print("asdf")
-
-
 class AgentDataRequest(BaseModel):
     key: str
     value: Union[dict[Any, Any]]
