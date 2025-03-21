@@ -83,7 +83,7 @@
     "./src/**/*.{ts,tsx}": [
       "eslint --fix --max-warnings 0"
     ],
-    "./src": [
+    "./src/**/*": [
       "prettier --write"
     ]
   }

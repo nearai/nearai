@@ -3,7 +3,7 @@ import { devtools } from 'zustand/middleware';
 
 import { clearSignInNonce } from '@/lib/auth';
 
-const foo = "asdf";
+const foo = 'fdfd';
 console.log(foo);
 
 type Auth = {
