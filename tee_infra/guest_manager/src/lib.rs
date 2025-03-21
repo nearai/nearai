@@ -44,9 +44,32 @@ pub struct Manager {
 
 impl Manager {
     pub async fn new(docker: Docker, pool_size: usize) -> Result<Self> {
+        let runner_image_name = "plgnai/nearai_cvm_runner".to_string(); // TDOO: fix to specific version.
+
+        // Pull the image first
+        tracing::info!("Pulling CVM runner image...");
+        let image_name = runner_image_name.clone();
+        let mut stream = docker.create_image(
+            Some(CreateImageOptions {
+                from_image: image_name.as_str(),
+                tag: "latest",
+                ..Default::default()
+            }),
+            None,
+            None,
+        );
+
+        while let Some(result) = stream.next().await {
+            match result {
+                Ok(output) => tracing::debug!("Pull progress: {:?}", output),
+                Err(e) => return Err(anyhow::anyhow!("Failed to pull image: {}", e)),
+            }
+        }
+        tracing::info!("CVM runner image pulled successfully");
+
         let mut manager = Self {
             docker,
-            runner_image_name: "plgnai/nearai_cvm_runner".to_string(),
+            runner_image_name,
             free_cvm_ports: VecDeque::with_capacity(pool_size),
             active_containers: HashMap::new(),
         };

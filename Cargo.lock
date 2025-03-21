@@ -1060,6 +1060,7 @@ dependencies = [
  "cvm_client",
  "futures",
  "near_auth",
+ "rand 0.9.0",
  "reqwest 0.12.12",
  "serde",
  "serde_json",

@@ -20,3 +20,5 @@ Dockerfile
 # Misc
 *.md
 !README.md 
+
+**/*.env

@@ -3,7 +3,7 @@ from attestation.client import CvmClient
 
 def test_attest():
     # Create client - it will automatically fetch and store the server's certificate
-    client = CvmClient("https://localhost:4433")
+    client = CvmClient("https://localhost:32772")
 
     # Any request will automatically trigger attestation if needed
     health = client.is_assigned()
