@@ -24,9 +24,12 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from httpx_oauth.integrations.fastapi import OAuth2AuthorizeCallbackError
 
 from hub.api.v1.agent_data import agent_data_router
 from hub.api.v1.agent_routes import run_agent_router
+from hub.api.v1.auth import redirect_oauth_failure
+from hub.api.v1.auth import v1_router as auth_router
 from hub.api.v1.benchmark import v1_router as benchmark_router
 from hub.api.v1.delegation import v1_router as delegation_router
 from hub.api.v1.evaluation import v1_router as evaluation_router
@@ -62,6 +65,7 @@ app.include_router(run_agent_router, prefix="/v1")
 app.include_router(agent_data_router, prefix="/v1")
 app.include_router(benchmark_router, prefix="/v1")
 app.include_router(stars_router, prefix="/v1")
+app.include_router(auth_router, prefix="/v1")
 app.include_router(job_router, prefix="/v1")
 app.include_router(permission_router, prefix="/v1")
 app.include_router(evaluation_router, prefix="/v1")
@@ -79,6 +83,12 @@ app.include_router(scheduled_run_router, prefix="/v1")
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.exception_handler(OAuth2AuthorizeCallbackError)
+async def oauth2_authorize_callback_error_handler(request: Request, exc: OAuth2AuthorizeCallbackError):
+    logger.error(f"OAuth2 access token authorization failed: {exc}")
+    return redirect_oauth_failure(exc.detail)
 
 
 @app.exception_handler(TokenValidationError)

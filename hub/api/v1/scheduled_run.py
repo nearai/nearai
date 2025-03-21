@@ -5,7 +5,7 @@ from typing import Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from hub.api.v1.auth import AuthToken, get_auth
+from hub.api.v1.auth import NearAuthToken, get_auth
 from hub.api.v1.entry_location import EntryLocation
 from hub.api.v1.models import ScheduledRun, get_session
 from hub.api.v1.models import Thread as ThreadModel
@@ -28,7 +28,7 @@ class CreateScheduleRunRequest(BaseModel):
 @scheduled_run_router.post("/schedule_run")
 def schedule_run(
     request: CreateScheduleRunRequest,
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ):
     """Endpoint to schedule a new run."""
     logger.info(f"Creating scheduled run for agent {request.run_at}: {datetime.now()}")

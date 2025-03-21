@@ -27,7 +27,7 @@ from hub.api.v1.agent_routes import (
     invoke_agent_via_lambda,
     invoke_agent_via_url,
 )
-from hub.api.v1.auth import AuthToken, get_auth
+from hub.api.v1.auth import NearAuthToken, get_auth
 from hub.api.v1.completions import Provider
 from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import Run as RunModel
@@ -123,7 +123,7 @@ SUMMARY_PROMPT = """You are an expert at summarizing conversations in a maximum 
 @threads_router.post("/threads")
 def create_thread(
     thread: ThreadCreateParams = Body(...),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> Thread:
     thread_model = ThreadModel(
         messages=thread["messages"] if "messages" in thread else [],
@@ -135,7 +135,7 @@ def create_thread(
     return _create_thread(thread_model, auth)
 
 
-def _create_thread(thread_model: ThreadModel, auth: AuthToken = Depends(get_auth)) -> Thread:
+def _create_thread(thread_model: ThreadModel, auth: NearAuthToken = Depends(get_auth)) -> Thread:
     with get_session() as session:
         thread_model.owner_id = auth.account_id
         session.add(thread_model)
@@ -148,7 +148,7 @@ def list_threads(
     include_subthreads: Optional[bool] = Query(
         True, description="Include threads that have a parent_id - defaults to true"
     ),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> List[Thread]:
     with get_session() as session:
         statement = select(ThreadModel).where(ThreadModel.owner_id == auth.account_id)
@@ -163,7 +163,7 @@ def list_threads(
 @threads_router.get("/threads/{thread_id}")
 def get_thread(
     thread_id: str,
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> Thread:
     with get_session() as session:
         thread_model = _check_thread_permissions(auth, session, thread_id)
@@ -183,7 +183,7 @@ class ThreadUpdateParams(BaseModel):
 def update_thread(
     thread_id: str,
     thread: ThreadUpdateParams = Body(...),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> Thread:
     with get_session() as session:
         thread_model = _check_thread_permissions(auth, session, thread_id)
@@ -208,7 +208,7 @@ class ThreadDeletionStatus(BaseModel):
 @threads_router.delete("/threads/{thread_id}")
 def delete_thread(
     thread_id: str,
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> ThreadDeletionStatus:
     with get_session() as session:
         thread_model = _check_thread_permissions(auth, session, thread_id)
@@ -261,7 +261,7 @@ class ThreadForkResponse(BaseModel):
 @threads_router.post("/threads/{thread_id}/fork")
 def fork_thread(
     thread_id: str,
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> ThreadForkResponse:
     with get_session() as session:
         original_thread = _check_thread_permissions(auth, session, thread_id)
@@ -311,7 +311,7 @@ class SubthreadCreateParams(BaseModel):
 def create_subthread(
     parent_id: str,
     subthread_params: SubthreadCreateParams = Body(...),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> Thread:
     with get_session() as session:
         parent_thread = session.get(ThreadModel, parent_id)
@@ -375,7 +375,7 @@ def create_message(
     thread_id: str,
     background_tasks: BackgroundTasks,
     message: MessageCreateParams = Body(...),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> Message:
     with get_session() as session:
         thread = _check_thread_permissions(auth, session, thread_id)
@@ -468,7 +468,7 @@ def list_messages(
         "desc", description="Sort order by the `created_at` timestamp of the objects."
     ),
     run_id: str = Query(None, description="Filter messages by the run ID that generated them."),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
     include_subthreads: bool = True,
 ) -> ListMessagesResponse:
     logger.debug(f"Listing messages for thread: {thread_id}")
@@ -541,7 +541,7 @@ def list_messages(
 def modify_message(
     message_id: str,
     message: MessageUpdateParams = Body(...),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> Message:
     with get_session() as session:
         message_model = session.get(MessageModel, message_id)
@@ -615,7 +615,7 @@ class RunCreateParamsBase(BaseModel):
 def create_run(
     thread_id: str,
     run: RunCreateParamsBase = Body(...),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
     scheduler=Depends(get_scheduler),
 ) -> OpenAIRun:
     logger.info(f"Creating run for thread: {thread_id}")
@@ -692,7 +692,7 @@ def run_agent(
     thread_id: str,
     run_id: str,
     background_tasks: BackgroundTasks,
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> OpenAIRun:
     """Task to run an agent in the background."""
     return _run_agent(thread_id, run_id, background_tasks, auth)
@@ -702,7 +702,7 @@ def _run_agent(
     thread_id: str,
     run_id: str,
     background_tasks: Optional[BackgroundTasks] = None,
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> OpenAIRun:
     with get_session() as session:
         run_model = session.get(RunModel, run_id)
@@ -829,7 +829,7 @@ def _run_agent(
 def get_run(
     thread_id: str = Path(..., description="The ID of the thread"),
     run_id: str = Path(..., description="The ID of the run"),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> OpenAIRun:
     """Get details of a specific run for a thread."""
     with get_session() as session:
@@ -856,7 +856,7 @@ def update_run(
     thread_id: str,
     run_id: str,
     run: RunUpdateParams = Body(...),
-    auth: AuthToken = Depends(get_auth),
+    auth: NearAuthToken = Depends(get_auth),
 ) -> OpenAIRun:
     with get_session() as session:
         _check_thread_permissions(auth, session, thread_id)

@@ -9,7 +9,7 @@ import httpx
 from dotenv import load_dotenv
 from nearai.shared.models import RunMode
 
-from hub.api.v1.auth import AuthToken
+from hub.api.v1.auth import NearAuthToken
 from hub.api.v1.thread_routes import RunCreateParamsBase, ThreadModel, _create_thread, create_run
 from hub.tasks.scheduler import get_async_scheduler
 
@@ -143,7 +143,7 @@ async def _persist_block_state():
 
 
 # Asynchronous function to load a block by its ID
-async def load_block(block_id: int, auth_token: AuthToken) -> bool:
+async def load_block(block_id: int, auth_token: NearAuthToken) -> bool:
     """Process block with duplicate check."""
     if block_id in _processed_blocks:
         logger.debug(f"Block {block_id} already processed")
@@ -200,7 +200,7 @@ async def process_log(log, receipt_execution_outcome, auth_token):
                     )
 
 
-async def run_agent(agent, content, auth_token: AuthToken):
+async def run_agent(agent, content, auth_token: NearAuthToken):
     if not agent or not content:
         return logger.error("Missing data in scheduled call to run_agent")
 
@@ -263,7 +263,7 @@ async def run_agent(agent, content, auth_token: AuthToken):
 #         return False
 
 
-async def near_events_task(auth_token: AuthToken):
+async def near_events_task(auth_token: NearAuthToken):
     """Main processing workflow with duplicate protection."""
     async with processing_lock:
         await initialize_block_state()  # Ensure state is initialized

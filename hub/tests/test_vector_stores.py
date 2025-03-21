@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from hub.app import app
 from nearai.login import generate_nonce
-from hub.api.v1.auth import get_auth, AuthToken
+from hub.api.v1.auth import get_auth, NearAuthToken
 from hub.api.v1.vector_stores import VectorStore, CreateVectorStoreRequest
 
 @pytest.fixture
@@ -19,7 +19,7 @@ def client():
 
 @pytest.fixture
 def auth_token():
-    return AuthToken(
+    return NearAuthToken(
         account_id="unittest2.near",
         public_key="unittest",
         signature="unittest",

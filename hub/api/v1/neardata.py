@@ -11,7 +11,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from nearai.shared.client_config import DEFAULT_MODEL
 from nearai.shared.models import RunMode
 
-from hub.api.v1.auth import AuthToken
+from hub.api.v1.auth import NearAuthToken
 from hub.api.v1.thread_routes import RunCreateParamsBase, ThreadModel, _create_thread, create_run
 
 RESET_BLOCK_ID_ON_START = True
@@ -136,7 +136,7 @@ def load_auth_token():
     return app_config.auth
 
 
-async def run_agent(agent, message, signer_id, data, auth_token: AuthToken):
+async def run_agent(agent, message, signer_id, data, auth_token: NearAuthToken):
     if not (agent and message):
         return print("Missing data")
 
@@ -198,7 +198,7 @@ async def process_blocks(auth_token):
         return False
 
 
-async def periodic_task(auth_token: AuthToken):
+async def periodic_task(auth_token: NearAuthToken):
     # Try to catch up reading NUMBER_OF_BLOCKS_TO_READ_IF_NOT_SYNCED blocks per run
     for _ in range(NUMBER_OF_BLOCKS_TO_READ_IF_NOT_SYNCED):
         block_found = await process_blocks(auth_token)

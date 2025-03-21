@@ -17,7 +17,6 @@ import {
   modelsModel,
   noncesModel,
   optionalVersion,
-  revokeNonceModel,
   threadMessageModel,
   threadMetadataModel,
   threadModel,
@@ -223,47 +222,6 @@ export const hubRouter = createTRPCRouter({
 
     return nonces;
   }),
-
-  revokeNonce: protectedProcedure
-    .input(revokeNonceModel)
-    .mutation(async ({ input }) => {
-      const url = `${env.ROUTER_URL}/nonce/revoke`;
-
-      // We can't use regular auth since we need to use the signed revoke message.
-      const response = await fetch(url, {
-        headers: {
-          Authorization: input.auth,
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: JSON.stringify({ nonce: input.nonce }),
-      });
-
-      const data: unknown = await response.json().catch(() => response.text());
-      if (!response.ok) throw data;
-
-      return data;
-    }),
-
-  revokeAllNonces: protectedProcedure
-    .input(z.object({ auth: z.string() }))
-    .mutation(async ({ input }) => {
-      const url = `${env.ROUTER_URL}/nonce/revoke/all`;
-
-      // We can't use regular auth since we need to use the signed revoke message.
-      const response = await fetch(url, {
-        headers: {
-          Authorization: input.auth,
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-      });
-
-      const data: unknown = await response.json().catch(() => response.text());
-      if (!response.ok) throw data;
-
-      return data;
-    }),
 
   secrets: protectedProcedure
     .input(

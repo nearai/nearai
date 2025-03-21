@@ -9,7 +9,7 @@ import io
 from fastapi.testclient import TestClient
 from hub.app import app
 from nearai.login import generate_nonce
-from hub.api.v1.auth import get_auth, AuthToken
+from hub.api.v1.auth import get_auth, NearAuthToken
 from hub.api.v1.vector_stores import VectorStore, CreateVectorStoreRequest
 from openai.types.beta.thread_create_params import Message
 
@@ -20,7 +20,7 @@ class TestAgentsRoutes(unittest.TestCase):
 
     @staticmethod
     async def override_dependency():
-        return AuthToken(account_id="unittest2.near", public_key="unittest",
+        return NearAuthToken(account_id="unittest2.near", public_key="unittest",
                          signature="unittest", callback_url="unittest", message="unittest", nonce=generate_nonce(), )
 
     def create_openai_client(self):

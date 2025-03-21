@@ -15,7 +15,7 @@ from nearai.shared.client_config import DEFAULT_TIMEOUT
 from pydantic import BaseModel, Field
 from sqlalchemy import and_, func, inspect, text
 
-from hub.api.v1.auth import AuthToken, get_auth
+from hub.api.v1.auth import NearAuthToken, get_auth
 from hub.api.v1.entry_location import EntryLocation
 from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import RegistryEntry, get_session
@@ -79,7 +79,7 @@ available_local_runners = deque(
 agent_runners_ports: dict[str, int] = {}  # Mapping of agents to their assigned ports
 
 
-def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: AuthToken, params):
+def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: NearAuthToken, params):
     auth_data = auth.model_dump()
 
     if auth_data["nonce"]:
@@ -120,7 +120,7 @@ def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: Aut
         raise Exception(f"Request failed with status code {response.status_code}: {response.text}")
 
 
-def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: AuthToken, params):
+def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: NearAuthToken, params):
     config = Config(read_timeout=DEFAULT_TIMEOUT, connect_timeout=DEFAULT_TIMEOUT, retries=None)
     wrapper = LambdaWrapper(boto3.client("lambda", region_name="us-east-2", config=config), thread_id, run_id)
     auth_data = auth.model_dump()
@@ -145,7 +145,7 @@ def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: Auth
 
 @run_agent_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
 @run_agent_router.post("/agent/runs", tags=["Agents", "Assistants"])
-def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_auth)) -> str:
+def run_agent(body: CreateThreadAndRunRequest, auth: NearAuthToken = Depends(get_auth)) -> str:
     """Run an agent against an existing or a new thread.
 
     Returns the ID of the new thread resulting from the run.
@@ -304,7 +304,7 @@ class FilterAgentsRequest(BaseModel):
 
 
 @run_agent_router.post("/find_agents", response_model=List[RegistryEntry])
-def find_agents(request_data: FilterAgentsRequest, auth: AuthToken = Depends(get_auth)) -> List[RegistryEntry]:
+def find_agents(request_data: FilterAgentsRequest, auth: NearAuthToken = Depends(get_auth)) -> List[RegistryEntry]:
     """Find agents based on various parameters."""
     with get_session() as session:
         # Start building the base query
