@@ -23,29 +23,13 @@ body:
     validations:
       required: true
 
-  - type: textarea
-    id: expected
-    attributes:
-      label: "Expected Behavior"
-      placeholder: "What did you expect to happen?"
-    validations:
-      required: true
-
-  - type: textarea
-    id: actual
-    attributes:
-      label: "Actual Behavior"
-      placeholder: "What actually happened? Include any error messages, screenshots, or logs if available."
-    validations:
-      required: true
-
   - type: input
     id: version
     attributes:
       label: "NEAR AI CLI Version"
       placeholder: "e.g., 0.1.6"
     validations:
-      required: true
+      required: false
 
   - type: input
     id: python_version
@@ -53,7 +37,7 @@ body:
       label: "Python Version"
       placeholder: "e.g., 3.11.2"
     validations:
-      required: true
+      required: false
 
   - type: dropdown
     id: package_manager
@@ -66,13 +50,7 @@ body:
         - "conda"
         - "Other (please specify in Additional Info)"
     validations:
-      required: true
-
-  - type: input
-    id: virtual_env
-    attributes:
-      label: "Virtual Environment"
-      placeholder: "e.g., venv, poetry, conda, none"
+      required: false
 
   - type: dropdown
     id: os
@@ -85,13 +63,7 @@ body:
         - "Linux/Other"
         - "Other (please specify in Additional Info)"
     validations:
-      required: true
-
-  - type: textarea
-    id: python_tools
-    attributes:
-      label: "Python Tools & Libraries"
-      placeholder: "List any relevant Python tools and libraries you're using in this context (e.g., pytest, black, mypy, torch version)"
+      required: false
 
   - type: textarea
     id: additional
