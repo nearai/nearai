@@ -17,7 +17,7 @@
     "lint:strict": "next lint --max-warnings 0",
     "start": "next start",
     "ts:check": "tsc --noEmit --incremental",
-    "prepare": "cd .. && cd .. && husky hub/demo/.husky"
+    "prepare": "cd ../../ && husky hub/demo/.husky"
   },
   "dependencies": {
     "@gera2ld/tarjs": "^0.3.1",
