@@ -1,12 +1,12 @@
 'use client';
 
-import { Button, Dialog, Flex, SvgIcon, Text } from '@near-pagoda/ui';
+import { Button, Dialog, Flex, SvgIcon, Text } from '@nearai/ui';
 import { PencilSimple } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';
 
-import { useQueryParams } from '~/hooks/url';
-import { useThreadMessageContentFilter } from '~/stores/threads';
+import { useQueryParams } from '@/hooks/url';
+import { useThreadMessageContentFilter } from '@/stores/threads';
 
 import { Message } from './Message';
 import { RequestDataForm } from './RequestDataForm';

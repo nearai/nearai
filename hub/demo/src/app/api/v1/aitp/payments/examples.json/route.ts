@@ -5,7 +5,7 @@ import {
   type paymentAuthorizationSchema,
   type paymentResultSchema,
   type quoteSchema,
-} from '~/components/threads/messages/aitp/schema/payments';
+} from '@/components/threads/messages/aitp/schema/payments';
 
 export async function GET() {
   const paymentAuthorization: z.infer<typeof paymentAuthorizationSchema> = {

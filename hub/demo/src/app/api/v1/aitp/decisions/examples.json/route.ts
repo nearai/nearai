@@ -3,13 +3,13 @@ import { type z } from 'zod';
 import {
   CURRENT_AITP_DECISIONS_SCHEMA_URL,
   type decisionSchema,
-} from '~/components/threads/messages/aitp/schema/decisions';
+} from '@/components/threads/messages/aitp/schema/decisions';
 import {
   mockRequestDecisionCheckbox,
   mockRequestDecisionConfirmation,
   mockRequestDecisionProducts,
   mockRequestDecisionRadio,
-} from '~/trpc/utils/mock-aitp';
+} from '@/trpc/utils/mock-aitp';
 
 export async function GET() {
   const decision: z.infer<typeof decisionSchema> = {

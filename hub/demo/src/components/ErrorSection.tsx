@@ -1,4 +1,4 @@
-import { Button, Container, Flex, Section, Text } from '@near-pagoda/ui';
+import { Button, Container, Flex, Section, Text } from '@nearai/ui';
 import { ArrowRight } from '@phosphor-icons/react';
 
 type Props = {

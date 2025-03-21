@@ -9,7 +9,7 @@ import {
   SvgIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import {
   Check,
   Eye,
@@ -21,22 +21,22 @@ import {
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 
-import { APP_TITLE } from '~/constants';
-import { useEntryEnvironmentVariables } from '~/hooks/entries';
-import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
+import { APP_TITLE } from '@/constants';
+import { useEntryEnvironmentVariables } from '@/hooks/entries';
+import { ENTRY_CATEGORY_LABELS } from '@/lib/categories';
 import {
   idForEntry,
   idMatchesEntry,
   parseEntryIdWithOptionalVersion,
-} from '~/lib/entries';
+} from '@/lib/entries';
 import {
   type agentAddSecretsRequestModel,
   type agentNearSendTransactionsRequestModel,
   type chatWithAgentModel,
   type entryModel,
-} from '~/lib/models';
-import { useAgentSettingsStore } from '~/stores/agent-settings';
-import { useAuthStore } from '~/stores/auth';
+} from '@/lib/models';
+import { useAgentSettingsStore } from '@/stores/agent-settings';
+import { useAuthStore } from '@/stores/auth';
 
 import { type AgentChatMutationInput } from './AgentRunner';
 import { Code } from './lib/Code';

@@ -1,9 +1,9 @@
 'use client';
 
-import { Card, Flex, Text } from '@near-pagoda/ui';
+import { Card, Flex, Text } from '@nearai/ui';
 import { type ReactNode } from 'react';
 
-import { useCurrentEntry } from '~/hooks/entries';
+import { useCurrentEntry } from '@/hooks/entries';
 
 import { useThreadMessageContent } from '../ThreadMessageContentProvider';
 

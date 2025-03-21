@@ -11,19 +11,19 @@ import {
   HR,
   PlaceholderSection,
   Text,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { ArrowsDownUp, SlidersHorizontal } from '@phosphor-icons/react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { EntryCard } from '~/components/EntryCard';
-import { Sidebar } from '~/components/lib/Sidebar';
-import { useProfileParams } from '~/hooks/profile';
-import { useQueryParams } from '~/hooks/url';
-import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
-import { type EntryCategory } from '~/lib/models';
-import { trpc } from '~/trpc/TRPCProvider';
-import { toTitleCase } from '~/utils/string';
+import { EntryCard } from '@/components/EntryCard';
+import { Sidebar } from '@/components/lib/Sidebar';
+import { useProfileParams } from '@/hooks/profile';
+import { useQueryParams } from '@/hooks/url';
+import { ENTRY_CATEGORY_LABELS } from '@/lib/categories';
+import { type EntryCategory } from '@/lib/models';
+import { trpc } from '@/trpc/TRPCProvider';
+import { toTitleCase } from '@/utils/string';
 
 const categories: EntryCategory[] = ['agent', 'benchmark', 'dataset', 'model'];
 

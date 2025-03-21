@@ -1,6 +1,6 @@
 'use client';
 
-import { ImageIcon, useTheme } from '@near-pagoda/ui';
+import { ImageIcon, useTheme } from '@nearai/ui';
 import {
   BreakpointDisplay,
   Button,
@@ -9,7 +9,7 @@ import {
   SvgIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import {
   BookOpenText,
   CaretDown,
@@ -32,17 +32,17 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { APP_TITLE } from '~/constants';
-import { env } from '~/env';
-import { useEmbeddedWithinIframe } from '~/hooks/embed';
-import { useCurrentEntry } from '~/hooks/entries';
-import { SIGN_IN_CALLBACK_PATH, signIn } from '~/lib/auth';
-import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
-import { rawFileUrlForEntry } from '~/lib/entries';
-import { useAuthStore } from '~/stores/auth';
-import { useWalletStore } from '~/stores/wallet';
-import NearAiLogo from '~/svgs/near-ai-logo.svg';
-import { trpc } from '~/trpc/TRPCProvider';
+import { APP_TITLE } from '@/constants';
+import { env } from '@/env';
+import { useEmbeddedWithinIframe } from '@/hooks/embed';
+import { useCurrentEntry } from '@/hooks/entries';
+import { SIGN_IN_CALLBACK_PATH, signIn } from '@/lib/auth';
+import { ENTRY_CATEGORY_LABELS } from '@/lib/categories';
+import { rawFileUrlForEntry } from '@/lib/entries';
+import { useAuthStore } from '@/stores/auth';
+import { useWalletStore } from '@/stores/wallet';
+import NearAiLogo from '@/svgs/near-ai-logo.svg';
+import { trpc } from '@/trpc/TRPCProvider';
 
 import s from './Navigation.module.scss';
 import { NewAgentButton } from './NewAgentButton';
@@ -177,7 +177,7 @@ export const Navigation = () => {
         </>
       ) : (
         <Link className={s.logo} href="/">
-          <span className={s.logoNearAi}>NEAR AI</span>
+          <NearAiLogo className={s.logoNearAi} />
           <span className={s.logoTitle}>{APP_TITLE}</span>
         </Link>
       )}

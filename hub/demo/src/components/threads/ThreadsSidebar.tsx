@@ -16,7 +16,7 @@ import {
   SvgIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import {
   DotsThree,
   Lightbulb,
@@ -29,12 +29,12 @@ import {
 import { useEffect, useState } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 
-import { Sidebar } from '~/components/lib/Sidebar';
-import { useConsumerModeEnabled } from '~/hooks/consumer';
-import { type ThreadSummary, useThreads } from '~/hooks/threads';
-import { useQueryParams } from '~/hooks/url';
-import { useAuthStore } from '~/stores/auth';
-import { trpc } from '~/trpc/TRPCProvider';
+import { Sidebar } from '@/components/lib/Sidebar';
+import { useConsumerModeEnabled } from '@/hooks/consumer';
+import { type ThreadSummary, useThreads } from '@/hooks/threads';
+import { useQueryParams } from '@/hooks/url';
+import { useAuthStore } from '@/stores/auth';
+import { trpc } from '@/trpc/TRPCProvider';
 
 type Props = {
   onRequestNewThread: () => unknown;

@@ -8,7 +8,7 @@ export function useDebouncedFunction<T = void>(
   delay: number,
   leading = false,
 ) {
-  const ref = useRef<(argument: T) => unknown>();
+  const ref = useRef<(argument: T) => unknown>(undefined);
 
   useEffect(() => {
     ref.current = callback;
@@ -19,10 +19,7 @@ export function useDebouncedFunction<T = void>(
       ref.current?.(argument);
     };
 
-    return debounce(func, delay, {
-      leading,
-      trailing: !leading,
-    });
+    return debounce(func, delay, { leading, trailing: !leading });
   }, [delay, leading]);
 
   return debouncedCallback;

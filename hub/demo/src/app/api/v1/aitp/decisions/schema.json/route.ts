@@ -5,7 +5,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import {
   decisionSchema,
   requestDecisionSchema,
-} from '~/components/threads/messages/aitp/schema/decisions';
+} from '@/components/threads/messages/aitp/schema/decisions';
 
 export async function GET() {
   const schema = zodToJsonSchema(
@@ -17,7 +17,6 @@ export async function GET() {
 
   migrate.draft2020(schema);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { $schema, ...rest } = schema;
 
   return Response.json({

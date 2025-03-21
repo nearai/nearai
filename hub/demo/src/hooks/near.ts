@@ -2,7 +2,7 @@ import { connect, keyStores, type Near } from 'near-api-js';
 import { useRef } from 'react';
 import { useEffect } from 'react';
 
-import { useNearStore } from '~/stores/near';
+import { useNearStore } from '@/stores/near';
 
 export function useNearInitializer() {
   const connectPromise = useRef<Promise<Near> | null>(null);

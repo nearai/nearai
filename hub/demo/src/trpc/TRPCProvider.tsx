@@ -8,7 +8,7 @@ import { observable } from '@trpc/server/observable';
 import { useState } from 'react';
 import superjson from 'superjson';
 
-import { useAuthStore } from '~/stores/auth';
+import { useAuthStore } from '@/stores/auth';
 
 import { makeQueryClient } from './query-client';
 import type { AppRouter } from './router';

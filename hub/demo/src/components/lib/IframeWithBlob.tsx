@@ -1,7 +1,7 @@
-import { Placeholder } from '@near-pagoda/ui';
+import { Placeholder } from '@nearai/ui';
 import { type ComponentProps, useEffect, useRef, useState } from 'react';
 
-import { useDebouncedFunction } from '~/hooks/debounce';
+import { useDebouncedFunction } from '@/hooks/debounce';
 
 import s from './IframeWithBlob.module.scss';
 
@@ -14,7 +14,6 @@ export type IframePostMessageEventHandler<T = any> = (
 
 type Props = Omit<ComponentProps<'iframe'>, 'nonce'> & {
   html: string;
-  // eslint-disable-next-line @typescript-eslint/ban-types
   height?: 'auto' | (string & {});
   fixedHeight?: string;
   onPostMessage?: IframePostMessageEventHandler;

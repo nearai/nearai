@@ -10,7 +10,7 @@ import {
   Section,
   SvgIcon,
   Text,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import {
   ArrowSquareOut,
   Book,
@@ -25,7 +25,7 @@ import {
 } from '@phosphor-icons/react';
 import React from 'react';
 
-import ModelTrainingSeries from '~/app/competitions/ModelTrainingSeries';
+import ModelTrainingSeries from '@/app/competitions/ModelTrainingSeries';
 
 const CompetitionsPage = () => {
   const visionStuff = (

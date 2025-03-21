@@ -16,7 +16,7 @@ import {
   Text,
   Tooltip,
   useTable,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { Eye, Minus, Plus, Table as TableIcon } from '@phosphor-icons/react';
 import { type ChangeEventHandler, useMemo, useState } from 'react';
 import { type z } from 'zod';
@@ -24,15 +24,15 @@ import { type z } from 'zod';
 import {
   EntrySelector,
   type EntrySelectorOnSelectHandler,
-} from '~/components/EntrySelector';
-import { Sidebar } from '~/components/lib/Sidebar';
-import { useDebouncedValue } from '~/hooks/debounce';
-import { useQueryParams } from '~/hooks/url';
-import { DEFAULT_BENCHMARK_COLUMNS } from '~/lib/benchmarks';
-import { idForEntry } from '~/lib/entries';
-import { type entryModel } from '~/lib/models';
-import { trpc } from '~/trpc/TRPCProvider';
-import { wordsMatchFuzzySearch } from '~/utils/search';
+} from '@/components/EntrySelector';
+import { Sidebar } from '@/components/lib/Sidebar';
+import { useDebouncedValue } from '@/hooks/debounce';
+import { useQueryParams } from '@/hooks/url';
+import { DEFAULT_BENCHMARK_COLUMNS } from '@/lib/benchmarks';
+import { idForEntry } from '@/lib/entries';
+import { type entryModel } from '@/lib/models';
+import { trpc } from '@/trpc/TRPCProvider';
+import { wordsMatchFuzzySearch } from '@/utils/search';
 
 type Props = {
   benchmarkColumns?: string[];

@@ -8,8 +8,8 @@ import {
   ImageIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
-import { formatDollar } from '@near-pagoda/ui/utils';
+} from '@nearai/ui';
+import { formatDollar } from '@nearai/ui/utils';
 import {
   ArrowRight,
   ArrowsClockwise,
@@ -23,22 +23,22 @@ import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type z } from 'zod';
 
-import { useQueryParams } from '~/hooks/url';
+import { useQueryParams } from '@/hooks/url';
 import {
   useThreadMessageContentFilter,
   useThreadsStore,
-} from '~/stores/threads';
-import { useWalletStore } from '~/stores/wallet';
+} from '@/stores/threads';
+import { useWalletStore } from '@/stores/wallet';
 import {
   dollarsToUsdcAtomicAmount,
   MAINNET_NEAR_USDC_CONTRACT_ID,
-} from '~/utils/usdc';
+} from '@/utils/usdc';
 import {
   generateWalletTransactionCallbackUrl,
   UNSET_WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
   WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
   type WalletTransactionRequestOrigin,
-} from '~/utils/wallet';
+} from '@/utils/wallet';
 
 import { Message } from './Message';
 import {

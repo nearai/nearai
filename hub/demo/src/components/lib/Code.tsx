@@ -1,9 +1,7 @@
-`use client`;
+'use client';
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
-import { useTheme } from '@near-pagoda/ui';
-import { Button, copyTextToClipboard, Tooltip } from '@near-pagoda/ui';
+import { useTheme } from '@nearai/ui';
+import { Button, copyTextToClipboard, Tooltip } from '@nearai/ui';
 import { Copy } from '@phosphor-icons/react';
 import { memo, useEffect, useState } from 'react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
@@ -23,7 +21,6 @@ export type CodeLanguage =
   | 'markdown'
   | 'python'
   | 'json'
-  // eslint-disable-next-line @typescript-eslint/ban-types
   | (string & {})
   | undefined
   | null;

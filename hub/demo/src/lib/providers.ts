@@ -1,4 +1,4 @@
-import { type ComboboxOption } from '@near-pagoda/ui';
+import { type ComboboxOption } from '@nearai/ui';
 
 export const PROVIDER_OPTIONS: ComboboxOption[] = [
   { label: 'Fireworks', value: 'fireworks' },

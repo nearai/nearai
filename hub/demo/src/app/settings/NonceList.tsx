@@ -7,18 +7,18 @@ import {
   Table,
   Text,
   Timestamp,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { DotsThree, Prohibit } from '@phosphor-icons/react';
 import { useEffect } from 'react';
 
-import { RECIPIENT, REVOKE_ALL_MESSAGE, REVOKE_MESSAGE } from '~/lib/auth';
+import { RECIPIENT, REVOKE_ALL_MESSAGE, REVOKE_MESSAGE } from '@/lib/auth';
 import {
   extractSignatureFromHashParams,
   generateNonce,
   openAuthUrl,
-} from '~/lib/auth';
-import { authorizationModel } from '~/lib/models';
-import { trpc } from '~/trpc/TRPCProvider';
+} from '@/lib/auth';
+import { authorizationModel } from '@/lib/models';
+import { trpc } from '@/trpc/TRPCProvider';
 
 export const NonceList = () => {
   const noncesQuery = trpc.hub.nonces.useQuery();

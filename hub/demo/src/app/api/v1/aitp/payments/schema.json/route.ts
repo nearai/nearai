@@ -6,7 +6,7 @@ import {
   paymentAuthorizationSchema,
   paymentResultSchema,
   quoteSchema,
-} from '~/components/threads/messages/aitp/schema/payments';
+} from '@/components/threads/messages/aitp/schema/payments';
 
 export async function GET() {
   const schema = zodToJsonSchema(
@@ -18,7 +18,6 @@ export async function GET() {
 
   migrate.draft2020(schema);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { $schema, ...rest } = schema;
 
   return Response.json({

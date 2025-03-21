@@ -3,13 +3,13 @@ import { type z } from 'zod';
 import {
   CURRENT_AITP_DATA_SCHEMA_URL,
   type requestDataSchema,
-} from '~/components/threads/messages/aitp/schema/data';
+} from '@/components/threads/messages/aitp/schema/data';
 import {
   CURRENT_AITP_DECISIONS_SCHEMA_URL,
   type requestDecisionSchema,
-} from '~/components/threads/messages/aitp/schema/decisions';
-import { type nestedQuoteSchema } from '~/components/threads/messages/aitp/schema/payments';
-import { type threadMessageModel } from '~/lib/models';
+} from '@/components/threads/messages/aitp/schema/decisions';
+import { type nestedQuoteSchema } from '@/components/threads/messages/aitp/schema/payments';
+import { type threadMessageModel } from '@/lib/models';
 
 function generateMockedQuote(
   priceUsd: number,

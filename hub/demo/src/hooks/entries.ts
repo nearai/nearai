@@ -1,4 +1,4 @@
-import { useDebouncedFunction } from '@near-pagoda/ui';
+import { useDebouncedFunction } from '@nearai/ui';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { type z } from 'zod';
@@ -8,10 +8,10 @@ import {
   type EntryCategory,
   type entryModel,
   type entrySecretModel,
-} from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { trpc } from '~/trpc/TRPCProvider';
-import { wordsMatchFuzzySearch } from '~/utils/search';
+} from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import { trpc } from '@/trpc/TRPCProvider';
+import { wordsMatchFuzzySearch } from '@/utils/search';
 
 export function useCurrentEntryParams(overrides?: {
   namespace?: string;

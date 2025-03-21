@@ -9,15 +9,15 @@ import {
   ImageIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { CodeBlock, Play } from '@phosphor-icons/react';
 import { type ReactNode } from 'react';
 import { type z } from 'zod';
 
-import { StarButton } from '~/components/StarButton';
-import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
-import { primaryUrlForEntry, rawFileUrlForEntry } from '~/lib/entries';
-import { type entryModel } from '~/lib/models';
+import { StarButton } from '@/components/StarButton';
+import { ENTRY_CATEGORY_LABELS } from '@/lib/categories';
+import { primaryUrlForEntry, rawFileUrlForEntry } from '@/lib/entries';
+import { type entryModel } from '@/lib/models';
 
 import { ForkButton } from './ForkButton';
 

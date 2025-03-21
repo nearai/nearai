@@ -1,11 +1,11 @@
 'use client';
 
-import { Flex, SvgIcon, Text } from '@near-pagoda/ui';
+import { Flex, SvgIcon, Text } from '@nearai/ui';
 import { CheckSquare, ShoppingCart } from '@phosphor-icons/react';
 import { type z } from 'zod';
 
-import { useQueryParams } from '~/hooks/url';
-import { useThreadMessageContentFilter } from '~/stores/threads';
+import { useQueryParams } from '@/hooks/url';
+import { useThreadMessageContentFilter } from '@/stores/threads';
 
 import { Message } from './Message';
 import { type decisionSchema, requestDecisionSchema } from './schema/decisions';

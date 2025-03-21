@@ -3,7 +3,7 @@ import { type z } from 'zod';
 import { create, type StateCreator } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { type AgentChatMutationInput } from '~/components/AgentRunner';
+import { type AgentChatMutationInput } from '@/components/AgentRunner';
 import {
   type chatWithAgentModel,
   type threadFileModel,
@@ -11,9 +11,9 @@ import {
   type threadMessageModel,
   type threadModel,
   type threadRunModel,
-} from '~/lib/models';
-import { type AppRouterOutputs } from '~/trpc/router';
-import { stringToPotentialJson } from '~/utils/string';
+} from '@/lib/models';
+import { type AppRouterOutputs } from '@/trpc/router';
+import { stringToPotentialJson } from '@/utils/string';
 
 type Thread = z.infer<typeof threadModel> & {
   run?: z.infer<typeof threadRunModel>;

@@ -1,12 +1,12 @@
-import '~/styles/globals.scss';
-import '@near-pagoda/ui/styles.css';
+import '@/styles/globals.scss';
+import '@nearai/ui/styles.css';
 import '@near-wallet-selector/modal-ui/styles.css';
 
 import { type Metadata } from 'next';
 import { type ReactNode } from 'react';
 
-import { Layout } from '~/components/Layout';
-import { APP_TITLE } from '~/constants';
+import { Layout } from '@/components/Layout';
+import { APP_TITLE } from '@/constants';
 
 const title = `NEAR AI ${APP_TITLE}`;
 

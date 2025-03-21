@@ -9,13 +9,13 @@ import {
   Text,
   Tooltip,
   useTable,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { useMemo, useState } from 'react';
 
-import { useDebouncedValue } from '~/hooks/debounce';
-import { DEFAULT_BENCHMARK_COLUMNS } from '~/lib/benchmarks';
-import { trpc } from '~/trpc/TRPCProvider';
-import { wordsMatchFuzzySearch } from '~/utils/search';
+import { useDebouncedValue } from '@/hooks/debounce';
+import { DEFAULT_BENCHMARK_COLUMNS } from '@/lib/benchmarks';
+import { trpc } from '@/trpc/TRPCProvider';
+import { wordsMatchFuzzySearch } from '@/utils/search';
 
 type Props = {
   competitionId: string;

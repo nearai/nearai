@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { TRPCError } from '@trpc/server';
@@ -14,9 +13,7 @@ type Schema<TData> =
         safeParse: (data: unknown) => z.SafeParseReturnType<unknown, TData>;
       };
     }
-  | {
-      safeParse: (data: unknown) => z.SafeParseReturnType<unknown, TData>;
-    };
+  | { safeParse: (data: unknown) => z.SafeParseReturnType<unknown, TData> };
 
 type ZodFetcher<TFetcher extends AnyFetcher> = <TData>(
   schema: Schema<TData>,
@@ -30,7 +27,7 @@ const defaultFetcher = async (...args: Parameters<typeof fetch>) => {
     try {
       const body = await response.json().catch(() => response.text());
       console.error(body);
-    } catch (error) {}
+    } catch (_error) {}
 
     throw new TRPCError({
       code: statusCodeToTRPCErrorCode(response.status),

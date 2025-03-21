@@ -1,11 +1,11 @@
 import mime from 'mime';
 import { type NextRequest } from 'next/server';
 
-import { env } from '~/env';
-import { type EntryCategory } from '~/lib/models';
-import { fetchEntryMetadataJson } from '~/trpc/utils/entries';
-import { conditionallyIncludeAuthorizationHeader } from '~/trpc/utils/headers';
-import { parseAuthCookie } from '~/utils/cookies';
+import { env } from '@/env';
+import { type EntryCategory } from '@/lib/models';
+import { fetchEntryMetadataJson } from '@/trpc/utils/entries';
+import { conditionallyIncludeAuthorizationHeader } from '@/trpc/utils/headers';
+import { parseAuthCookie } from '@/utils/cookies';
 
 export type FetchRawFileInput = {
   params: Promise<{

@@ -1,8 +1,8 @@
 import { env } from 'process';
 
-import { entrySecretModel } from '~/lib/models';
-import { type AppRouterInputs } from '~/trpc/router';
-import { createZodFetcher } from '~/utils/zod-fetch';
+import { entrySecretModel } from '@/lib/models';
+import { type AppRouterInputs } from '@/trpc/router';
+import { createZodFetcher } from '@/utils/zod-fetch';
 
 const fetchWithZod = createZodFetcher();
 

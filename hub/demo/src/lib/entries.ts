@@ -1,6 +1,6 @@
 import { type z } from 'zod';
 
-import { env } from '~/env';
+import { env } from '@/env';
 
 import { type EntryCategory, type entryModel, optionalVersion } from './models';
 

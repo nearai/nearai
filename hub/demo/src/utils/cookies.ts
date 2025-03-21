@@ -1,7 +1,7 @@
 import { type z } from 'zod';
 
-import { authorizationModel } from '~/lib/models';
-import { AUTH_COOKIE_NAME } from '~/trpc/routers/auth';
+import { authorizationModel } from '@/lib/models';
+import { AUTH_COOKIE_NAME } from '@/trpc/routers/auth';
 
 export function parseCookies(str: string) {
   const result: Record<string, string> = {};

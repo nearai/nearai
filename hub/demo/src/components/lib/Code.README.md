@@ -3,7 +3,7 @@
 This component wraps [React Syntax Highlighter](https://react-syntax-highlighter.github.io/react-syntax-highlighter/demo/).
 
 ```tsx
-import { Code } from '~/components/lib/Code';
+import { Code } from '@/components/lib/Code';
 
 ...
 

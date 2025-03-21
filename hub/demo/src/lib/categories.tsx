@@ -11,7 +11,6 @@ import { type ReactElement } from 'react';
 import { type EntryCategory } from './models';
 
 export const ENTRY_CATEGORY_LABELS: Record<
-  // eslint-disable-next-line @typescript-eslint/ban-types
   EntryCategory | (string & {}),
   {
     icon: ReactElement;

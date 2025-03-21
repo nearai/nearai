@@ -5,7 +5,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import {
   dataSchema,
   requestDataSchema,
-} from '~/components/threads/messages/aitp/schema/data';
+} from '@/components/threads/messages/aitp/schema/data';
 
 export async function GET() {
   const schema = zodToJsonSchema(z.union([dataSchema, requestDataSchema]), {
@@ -14,7 +14,6 @@ export async function GET() {
 
   migrate.draft2020(schema);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { $schema, ...rest } = schema;
 
   return Response.json({

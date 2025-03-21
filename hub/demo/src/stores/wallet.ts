@@ -12,7 +12,7 @@ import { devtools } from 'zustand/middleware';
 import {
   MAINNET_NEAR_USDC_CONTRACT_ID,
   usdcAtomicAmountToDollars,
-} from '~/utils/usdc';
+} from '@/utils/usdc';
 
 import { useNearStore } from './near';
 

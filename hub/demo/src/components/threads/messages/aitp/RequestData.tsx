@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Dialog, Flex, Text } from '@near-pagoda/ui';
+import { Button, Dialog, Flex, Text } from '@nearai/ui';
 import { PencilSimple } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';

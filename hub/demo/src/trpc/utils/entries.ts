@@ -1,8 +1,8 @@
 import path from 'path';
 import { z } from 'zod';
 
-import { env } from '~/env';
-import { type entriesModel, entryCategory, entryModel } from '~/lib/models';
+import { env } from '@/env';
+import { type entriesModel, entryCategory, entryModel } from '@/lib/models';
 
 import { type AppRouterContext } from '../router';
 import { loadEntriesFromDirectory } from './data-source';

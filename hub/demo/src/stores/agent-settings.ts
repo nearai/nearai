@@ -2,8 +2,8 @@ import { type z } from 'zod';
 import { create, type StateCreator } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
-import { idForEntry } from '~/lib/entries';
-import { type entryModel } from '~/lib/models';
+import { idForEntry } from '@/lib/entries';
+import { type entryModel } from '@/lib/models';
 
 type AgentSettings = Partial<{
   allowRemoteRunCallsToOtherAgents: boolean;

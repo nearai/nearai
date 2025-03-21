@@ -1,9 +1,9 @@
 'use client';
 
-import { Button, Flex, Text } from '@near-pagoda/ui';
+import { Button, Flex, Text } from '@nearai/ui';
 import { ArrowLeft, ArrowRight } from '@phosphor-icons/react';
 
-import { type ClientPagination } from '~/hooks/pagination';
+import { type ClientPagination } from '@/hooks/pagination';
 
 type Props = Pick<
   ClientPagination,

@@ -7,7 +7,7 @@ This setup was implemented following this guide to support server components and
 ```tsx
 'use client';
 
-import { trpc } from '~/trpc/TRPCProvider';
+import { trpc } from '@/trpc/TRPCProvider';
 
 export const MyClientComponent = () => {
   const agentsQuery = trpc.hub.entries.useQuery({
@@ -21,7 +21,7 @@ export const MyClientComponent = () => {
 ## Usage in server components
 
 ```tsx
-import { trpc } from '~/trpc/server';
+import { trpc } from '@/trpc/server';
 
 export const MyServerComponent = async () => {
   const agents = await trpc.hub.entries.useQuery({

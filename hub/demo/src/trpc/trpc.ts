@@ -3,7 +3,7 @@ import { type FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import superjson from 'superjson';
 import { ZodError } from 'zod';
 
-import { parseAuthCookie } from '~/utils/cookies';
+import { parseAuthCookie } from '@/utils/cookies';
 
 import { AUTH_COOKIE_DELETE } from './routers/auth';
 

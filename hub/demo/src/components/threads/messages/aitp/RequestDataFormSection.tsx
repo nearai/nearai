@@ -6,13 +6,13 @@ import {
   Input,
   InputTextarea,
   useComboboxOptionMapper,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { useEffect } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { type z } from 'zod';
 
-import { validateEmail } from '~/utils/inputs';
-import { stringToHtmlAttribute } from '~/utils/string';
+import { validateEmail } from '@/utils/inputs';
+import { stringToHtmlAttribute } from '@/utils/string';
 
 import { useThreadMessageContent } from '../../ThreadMessageContentProvider';
 import { type RequestDataHookFormSchema } from './RequestDataForm';

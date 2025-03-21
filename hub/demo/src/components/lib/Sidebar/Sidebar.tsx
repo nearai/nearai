@@ -1,10 +1,10 @@
 'use client';
 
-import { SvgIcon } from '@near-pagoda/ui';
+import { SvgIcon } from '@nearai/ui';
 import { CaretDown } from '@phosphor-icons/react';
 import { type CSSProperties, type ReactNode, useEffect, useRef } from 'react';
 
-import { Footer } from '~/components/Footer';
+import { Footer } from '@/components/Footer';
 
 import s from './Sidebar.module.scss';
 

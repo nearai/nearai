@@ -1,6 +1,6 @@
 'use client';
 
-import { Table } from '@near-pagoda/ui';
+import { Table } from '@nearai/ui';
 import { memo } from 'react';
 import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';

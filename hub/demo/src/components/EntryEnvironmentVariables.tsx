@@ -12,7 +12,7 @@ import {
   SvgIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import {
   CodeBlock,
   Eye,
@@ -31,10 +31,10 @@ import {
   type EntryEnvironmentVariable,
   useCurrentEntryParams,
   useEntryEnvironmentVariables,
-} from '~/hooks/entries';
-import { type entryModel } from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { trpc } from '~/trpc/TRPCProvider';
+} from '@/hooks/entries';
+import { type entryModel } from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import { trpc } from '@/trpc/TRPCProvider';
 
 import { Sidebar } from './lib/Sidebar';
 import { SignInPrompt } from './SignInPrompt';
