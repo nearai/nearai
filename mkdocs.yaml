@@ -157,7 +157,7 @@ nav:
       - Event-Driven Agents:
         - NEAR Event-Triggered Agents: 'agents/patterns/near_events.md'
         - Twitter (X) Triggered Agents: 'agents/patterns/agent_triggers.md'
-      - Orchestration:
+      - Using Multiple Agents:
         - Orchestrating Multiple Agents: 'agents/patterns/orchestration.md'
         - Agent to Agent Communication: 'agents/patterns/agent_to_agent.md'
     - Tutorials:
