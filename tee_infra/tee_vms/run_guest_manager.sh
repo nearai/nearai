@@ -11,7 +11,7 @@ rm -rf $DATA_DIR/$DIR_NAME
 
 echo "Creating dstack instance..."
 # Run dstack new and check for failure
-dstack new guest_manager.yaml -o $DATA_DIR/$DIR_NAME --image $PRIVATE_ML_SDK_DIR/images/dstack-dev-0.3.5/ -c 12 -m 32G -d 2T --port tcp:10022:22 --port tcp:10080:80 --port tcp:32768:32768-32868
+dstack new guest_manager.yaml -o $DATA_DIR/$DIR_NAME --image $PRIVATE_ML_SDK_DIR/images/dstack-dev-0.3.5/ -c 12 -m 32G -d 2T --port tcp:10022:22 --port tcp:0.0.0.0:10080:80 --port tcp:0.0.0.0:32768:32768-32868
 if [ $? -ne 0 ]; then
     echo "Error: Failed to create dstack instance"
     exit 1
