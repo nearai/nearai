@@ -1,0 +1,46 @@
+name: Install Dependencies
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  install-dependencies:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Setup SSH key
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: SSH into server, install poetry, and run deploy.sh
+      run: |
+        ssh -o StrictHostKeyChecking=no user@your-server-ip << 'EOF'
+          # Install Poetry if it's not installed
+          if ! command -v poetry &> /dev/null
+          then
+            curl -sSL https://install.python-poetry.org | python3 -
+          fi
+
+          # Navigate to your project directory
+          cd /path/to/your/project
+
+          # Install dependencies using Poetry inside the SSH instance
+          poetry install --no-root
+
+          # Run deploy script
+          bash ./deploy.sh
+        EOF
