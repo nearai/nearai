@@ -938,7 +938,13 @@ def _run_agent(
 
 async def monitor_deltas(run_id: str, delete:bool):
     with get_session() as session:
+        start_time = datetime.utcnow()
         seen_ids = set()
+        async def handle_delete():
+            if delete:
+                await asyncio.sleep(3) # Let the other listeners get this event
+                session.query(Delta).filter(Delta.run_id == run_id).delete()
+                session.commit()
 
         while True:
             try:
@@ -949,6 +955,13 @@ async def monitor_deltas(run_id: str, delete:bool):
                         Delta.id.notin_(list(seen_ids))
                     ).order_by(Delta.id).limit(1)
                 ).first()
+                # Timeout after 5 minutes from the start of monitoring
+                if datetime.utcnow() - start_time >= timedelta(minutes=5):
+                    logger.error(f"Timeout reached for monitor_deltas on run_id {run_id}")
+                    await run_queues[run_id].put("done")
+                    await handle_delete()
+
+                    return
                 if not event:
                     await asyncio.sleep(1)  # Wait before retrying
                     continue
@@ -958,11 +971,7 @@ async def monitor_deltas(run_id: str, delete:bool):
                     if event.content is None:
                         # Signal completion and stop monitoring
                         await run_queues[run_id].put("done")
-
-                        if delete:
-                            await asyncio.sleep(3) # Let the other listeners get this event
-                            session.query(Delta).filter(Delta.run_id == run_id).delete()
-                            session.commit()
+                        await handle_delete()
                         return
                     else:
                         # 4. Event: thread.run.step.created
