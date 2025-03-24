@@ -1,14 +1,14 @@
 Vector Stores are a special kind of database that stores documents and allows retrieving them through natural language. 
 
-In our case, we will store all NEAR documentation in a vector store, this way if a user asks "What types of access keys are there in NEAR?", the vector store will help us find our access keys docs, so we can use it to answer the question. 
+In our case, we will store all NEAR documentation in a vector store, this way if a user asks "What types of access keys are there in NEAR?", the vector store will help us find our access keys docs, so we can use it to answer the question.
 
-!!! info
+!!! tip
     The Vector Store is built separately from the agent, and can be used in multiple places.
 
 !!! info
-This tutorial assumes OpenAI version 1.66.2 or greater. For previous versions the vector store methods can be found at `client.beta.vector_stores` instead of `client.vector_stores`.
----
+    This tutorial assumes OpenAI version 1.66.2 or greater. For previous versions the vector store methods can be found at `client.beta.vector_stores` instead of `client.vector_stores`.
 
+---
 
 ## How Vector Stores Work
 
@@ -16,7 +16,7 @@ Vector Stores use AI models to convert text documents into low-dimensional numer
 
 For example, the [Nomic v1.5](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5) model can take our entire [`cli.md`](https://github.com/near/docs/blob/master/docs/4.tools/cli.md) documentation file and represent it as a compact vector:
 
-```
+```bash
 [0.01025390625, 0.048309326171875, -0.166015625, ... , -0.004741668701171875, -0.048553466796875]
 ```
 
