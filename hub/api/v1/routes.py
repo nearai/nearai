@@ -132,10 +132,9 @@ def convert_request(
 
 @v1_router.post("/completions")
 def completions(
-    db: DatabaseSession,
-    request: CompletionsRequest = Depends(convert_request),
-    auth: AuthToken = Depends(get_auth),
+    db: DatabaseSession, request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth)
 ):
+    logger.info(f"Received completions request: {request.model_dump()}")
 
     try:
         assert request.provider is not None
@@ -146,7 +145,6 @@ def completions(
     ## remove tools from the model as it is not supported by the completions API
     model = request.model_dump(exclude={"provider", "response_format"})
     model.pop("tools", None)
-    print("Calling completions", model)
 
     resp = llm.completions.create(**model)
 
@@ -193,7 +191,6 @@ def chat_completions(
     except NotImplementedError:
         raise HTTPException(status_code=400, detail="Provider not supported") from None
 
-    print("/chat/completions", request.model_dump())
     try:
         resp = llm.chat.completions.create(**request.model_dump(exclude={"provider"}), timeout=DEFAULT_TIMEOUT)
     except Exception as e:

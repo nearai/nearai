@@ -776,7 +776,6 @@ def create_run(
                 "data": step_payload,
             }
             asyncio.run(run_queues[run_model.id].put(event_step_in_progress))
-            print('put events', run_model.id)
 
             thread = threading.Thread(target=_run_agent, args=(thread_id, run_model.id, None, auth))
             thread.start()
