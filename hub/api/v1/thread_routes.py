@@ -978,9 +978,9 @@ async def monitor_deltas(run_id: str, delete:bool):
                     else:
                         # 4. Event: thread.run.step.created
                         payload = {
-                            "id": event.meta_data["message_id"],  # Message ID, assumed to be in meta_data
-                            "object": event.object,               # "thread.message.delta"
-                            "delta": event.content                # Delta content, e.g., {"content": [{"index": 0, ...}]}
+                            "id": event.message_id,
+                            "object": event.object,
+                            "delta": event.content
                         }
                         event_step_created = {
                             "event": event.object,

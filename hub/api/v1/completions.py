@@ -48,7 +48,9 @@ async def handle_stream(db, thread_id, run_id, message_id, resp_stream, add_usag
     delta = Delta(
         event="thread.run.completed",
         created_at=datetime.now(),
-        meta_data={"run_id": run_id, "thread_id": thread_id, "message_id": message_id},
+        run_id=run_id,
+        thread_id=thread_id,
+        message_id=message_id
     )
     session.add(delta)
     session.commit()
