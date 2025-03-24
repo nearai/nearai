@@ -939,10 +939,6 @@ def _run_agent(
 
 async def monitor_deltas(run_id: str, delete:bool):
     with get_session() as session:
-        # TODO: remove when reliable
-        if(delete):
-            session.query(Delta).delete()
-            session.commit()
         seen_ids = set()
 
         while True:
@@ -962,13 +958,11 @@ async def monitor_deltas(run_id: str, delete:bool):
                 if event:
                     if event.content is None:
                         # Signal completion and stop monitoring
-                        await run_queues[run_id].put("done") # TODO this needs to come at the end of the agent.
-                        session.delete(event)
-                        session.commit()
+                        await run_queues[run_id].put("done")
 
-                        # TODO: Filter by run id
-                        if(delete):
-                            session.query(Delta).delete()
+                        if delete:
+                            await asyncio.sleep(3) # Let the other listeners get this event
+                            session.query(Delta).filter(Delta.run_id == run_id).delete()
                             session.commit()
                         return
                     else:
