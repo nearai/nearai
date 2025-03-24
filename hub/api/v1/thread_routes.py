@@ -1016,12 +1016,16 @@ async def thread_subscribe(
     with get_session() as session:
         # Basic thread existence check
         from hub.api.v1.models import Thread  # Import here to avoid circularity
-        thread = session.get(Thread, thread_id)
-        if not thread:
-            raise HTTPException(status_code=404, detail="Thread not found")
+        run = session.exec(
+            select(RunModel)
+            .where(RunModel.thread_id == thread_id)
+            .order_by(RunModel.created_at.desc())
+        ).first()
+        if not run:
+            raise HTTPException(status_code=404, detail="Run for thread not found")
         
         return StreamingResponse(
-            stream_run_events("runidhere", False),
+            stream_run_events(run.id, False),
             media_type="text/event-stream"
         )
 

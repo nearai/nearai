@@ -1,9 +1,9 @@
 // In App Router API routes, we use the native Request type instead of NextApiRequest/NextApiResponse
-import { env } from '~/env';
-import { parseAuthCookie } from '~/utils/cookies';
+import { env } from '@/env';
+import { parseAuthCookie } from '@/utils/cookies';
 
-export async function GET(request: Request, { params }: { params: { threadId: string } }) {
-  const threadId = params.threadId;
+export async function GET(request: Request, { params }: { params: Promise<{ threadId: string }> }) {
+  const { threadId } = await params;
 
   // Extract authorization (adapt parseAuthCookie if needed for the Request object)
   const { authorization } = parseAuthCookie(request);

@@ -114,6 +114,7 @@ export const AgentRunner = ({
   });
 
   const [htmlOutput, setHtmlOutput] = useState('');
+  const [streamingText, setStreamingText] = useState<string>('');
   const [openedFileName, setOpenedFileName] = useState<string | null>(null);
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
@@ -322,45 +323,18 @@ export const AgentRunner = ({
 
     const eventSource = new EventSource(`/api/v1/threads/${threadId}/stream`);
 
-    eventSource.addEventListener('initial', (event) => {
-      const data = JSON.parse(event.data);
-      setThread(data);
+    eventSource.addEventListener('initial', () => {
+      setStreamingText("");
     });
 
     eventSource.addEventListener('message', (event) => {
       const data = JSON.parse(event.data);
-      useThreadsStore.setState((state) => {
-        const currentThread = state.threadsById[threadId];
-        return {
-          threadsById: {
-            ...state.threadsById,
-            [threadId]: {
-              ...currentThread,
-              messages: [...currentThread.messages, data.message],
-            },
-          },
-        };
-      });
-    });
-
-    eventSource.addEventListener('run_update', (event) => {
-      const data = JSON.parse(event.data);
-      useThreadsStore.setState((state) => {
-        const currentThread = state.threadsById[threadId];
-        return {
-          threadsById: {
-            ...state.threadsById,
-            [threadId]: {
-              ...currentThread,
-              run: data.run,
-            },
-          },
-        };
-      });
+      const appendText = data.data.delta.content[0].text.value;
+      setStreamingText(prevText => prevText + appendText);
     });
 
     eventSource.onerror = (error) => {
-      console.error('SSE error:', error);
+      console.log('SSE error:', error);
       eventSource.close();
     };
 
@@ -507,6 +481,7 @@ export const AgentRunner = ({
         />
 
         <Sidebar.Main>
+          <div>Streaming: {streamingText}</div>
           {isLoading ? (
             <PlaceholderStack style={{ marginBottom: 'auto' }} />
           ) : (
