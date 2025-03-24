@@ -954,6 +954,9 @@ async def monitor_deltas(run_id: str, delete:bool):
                         Delta.id.notin_(list(seen_ids))
                     ).order_by(Delta.id).limit(1)
                 ).first()
+                if not event:
+                    await asyncio.sleep(1)  # Wait before retrying
+                    continue
                 seen_ids.add(event.id)
 
                 events = session.exec(

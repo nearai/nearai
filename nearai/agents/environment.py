@@ -1133,6 +1133,9 @@ class Environment(object):
         """
         params, kwargs = self.get_inference_parameters(messages, model, stream, **kwargs)
         if stream:
+            message_id = None
+            kwargs.setdefault('extra_headers', {}).update({k: v for k, v in {'run_id': self._run_id, 'thread_id': thread_id, 'message_id': message_id}.items() if v is not None})
+
             # Pass thread_id, attachments, and message_type to the server
             stream_results = self._run_inference_completions(
                 messages, model, True, thread_id=thread_id, attachments=attachments, message_type=message_type, **kwargs

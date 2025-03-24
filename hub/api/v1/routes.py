@@ -4,7 +4,7 @@ import logging
 import time
 from typing import Annotated, Iterable, List, Optional, Union
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Header
+from fastapi import APIRouter, Depends, HTTPException, Query, Header, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from nearai.shared.cache import mem_cache_with_timeout
@@ -132,12 +132,16 @@ def convert_request(
 
 @v1_router.post("/completions")
 def completions(
-    db: DatabaseSession, request: CompletionsRequest = Depends(convert_request), auth: AuthToken = Depends(get_auth),
-    x_run_id: Optional[str] = Header(default=None),
-    x_thread_id: Optional[str] = Header(default=None),
-    x_message_id: Optional[str] = Header(default=None),
+    db: DatabaseSession,
+    req: Request,
+    request: CompletionsRequest = Depends(convert_request),
+    auth: AuthToken = Depends(get_auth),
 ):
     logger.info(f"Received completions request: {request.model_dump()}")
+    headers = dict(req.headers)
+    run_id = headers.get("run_id")
+    thread_id = headers.get("thread_id")
+    message_id = headers.get("message_id")
 
     try:
         assert request.provider is not None
@@ -177,12 +181,15 @@ def get_agent_public_key(agent_name: str = Query(...)):
 @v1_router.post("/chat/completions")
 def chat_completions(
     db: DatabaseSession,
+    req: Request,
     request: ChatCompletionsRequest = Depends(convert_request),
-    auth: AuthToken = Depends(get_auth),
-    x_run_id: Optional[str] = Header(default=None), # TOOD move to extra body
-    x_thread_id: Optional[str] = Header(default=None),
-    x_message_id: Optional[str] = Header(default=None),
+    auth: AuthToken = Depends(get_auth)
 ):
+    headers = dict(req.headers)
+    run_id = headers.get("run_id")
+    thread_id = headers.get("thread_id")
+    message_id = headers.get("message_id")
+
     logger.info(f"Received chat completions request: {request.model_dump()}")
 
     try:
@@ -242,7 +249,7 @@ def chat_completions(
                 "/chat/completions",
             )
 
-        return StreamingResponse(handle_stream(db, x_thread_id, x_run_id, x_message_id, resp, add_usage_callback), media_type="text/event-stream")
+        return StreamingResponse(handle_stream(db, thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream")
 
     else:
         c = json.dumps(resp.model_dump())
