@@ -1042,28 +1042,6 @@ class RunUpdateParams(BaseModel):
     failed_at: Optional[datetime] = None
     metadata: Optional[dict] = None
 
-@threads_router.post("/runs/{run_id}/complete")
-def complete_run(
-    run_id: str,
-    auth: AuthToken = Depends(get_auth),
-) -> OpenAIRun:
-    """Mark a run as completed and close its stream if active."""
-    with get_session() as session:
-        run_model = session.get(RunModel, run_id)
-        if not run_model:
-            raise HTTPException(status_code=404, detail="Run not found")
-        run_model.status = "completed"
-        run_model.completed_at = datetime.now()
-        session.commit()
-
-        if run_id in run_queues:
-            final_event = run_model.to_openai().json()
-            asyncio.run(run_queues[run_id].put(final_event))
-            asyncio.run(run_queues[run_id].put("done"))
-
-        return run_model.to_openai()
-
-
 @threads_router.post("/threads/{thread_id}/runs/{run_id}")
 def update_run(
     thread_id: str,
