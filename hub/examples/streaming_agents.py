@@ -31,7 +31,7 @@ logger.info(f"Thread created with ID: {thread.id}")
 logger.info("Creating a streaming run")
 run = client.beta.threads.runs.create(
     thread_id=thread.id,
-    assistant_id="getaiceo.near/helloworld/0.0.2",
+    assistant_id="streaming.near/helloworldstreaming/0.0.1",
     instructions="Please provide a helpful response.",
     model="fireworks::llama-v3p1-70b-instruct",
     stream=True
