@@ -950,7 +950,7 @@ async def monitor_deltas(run_id: str, delete:bool):
                 # Fetch the oldest Delta for this run_id
                 event = session.exec(
                     select(Delta).where(
-                        #Delta.run_id == run_id,
+                        Delta.run_id == run_id,
                         Delta.id.notin_(list(seen_ids))
                     ).order_by(Delta.id).limit(1)
                 ).first()
@@ -959,14 +959,7 @@ async def monitor_deltas(run_id: str, delete:bool):
                     continue
                 seen_ids.add(event.id)
 
-                events = session.exec(
-                    #select(Delta).where(Delta.run_id == run_id).order_by(Delta.created_at).limit(1)
-                    select(Delta).order_by(Delta.created_at)
-                ).all()
-                if(len(events) > 0):
-                    print("LEN", len(events))
                 if event:
-                    print(event,"+++++")
                     if event.content is None:
                         # Signal completion and stop monitoring
                         await run_queues[run_id].put("done") # TODO this needs to come at the end of the agent.

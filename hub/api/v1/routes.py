@@ -137,7 +137,6 @@ def completions(
     request: CompletionsRequest = Depends(convert_request),
     auth: AuthToken = Depends(get_auth),
 ):
-    logger.info(f"Received completions request: {request.model_dump()}")
     headers = dict(req.headers)
     run_id = headers.get("run_id")
     thread_id = headers.get("thread_id")
