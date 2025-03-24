@@ -660,6 +660,7 @@ dependencies = [
  "futures",
  "hex",
  "mockito",
+ "near_auth",
  "openssl",
  "reqwest 0.12.12",
  "serde",

@@ -4,6 +4,7 @@ use dcap_qvl::collateral::get_collateral;
 use dcap_qvl::collateral::get_collateral_and_verify;
 use dcap_qvl::verify::VerifiedReport;
 use dcap_qvl::verify::verify;
+use near_auth::AuthData;
 use reqwest::{Client, header};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha512};
@@ -13,13 +14,6 @@ use std::process::Command;
 use std::time::Duration;
 use tempfile::NamedTempFile;
 use url::Url;
-
-/// Auth data for CVM client
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AuthData {
-    pub token: String,
-    // Add other auth fields as needed
-}
 
 /// Request to assign an agent to a CVM
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -93,7 +87,7 @@ pub struct CvmClient {
 
 impl CvmClient {
     /// Create a new CVM client
-    pub fn new(url: &str, auth: Option<AuthData>) -> Result<Self> {
+    pub fn new(url: &str, auth: &AuthData) -> Result<Self> {
         // Parse URL to extract hostname and port
         let parsed_url = Url::parse(url).context("Failed to parse URL")?;
         let hostname = parsed_url.host_str().unwrap_or("localhost").to_string();
@@ -108,16 +102,12 @@ impl CvmClient {
 
         // Create headers with auth if provided
         let mut headers = header::HeaderMap::new();
-        if let Some(auth_data) = auth {
-            let auth_json =
-                serde_json::to_string(&auth_data).context("Failed to serialize auth data")?;
-            let auth_header = format!("Bearer {}", auth_json);
-            headers.insert(
-                header::AUTHORIZATION,
-                header::HeaderValue::from_str(&auth_header)
-                    .context("Failed to create auth header")?,
-            );
-        }
+        let auth_json = serde_json::to_string(auth).context("Failed to serialize auth data")?;
+        let auth_header = format!("Bearer {}", auth_json);
+        headers.insert(
+            header::AUTHORIZATION,
+            header::HeaderValue::from_str(&auth_header).context("Failed to create auth header")?,
+        );
 
         // Create temporary file for certificate
         let cert_file = NamedTempFile::new().context("Failed to create temp file")?;

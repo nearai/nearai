@@ -4,6 +4,7 @@ use bollard::container::{Config, CreateContainerOptions};
 use bollard::image::CreateImageOptions;
 use bollard::models::{HostConfig, PortBinding};
 use futures::StreamExt;
+use near_auth::AuthData;
 use std::collections::{HashMap, VecDeque};
 
 pub struct RunConfig {
@@ -80,7 +81,7 @@ impl Manager {
         Ok(manager)
     }
 
-    pub async fn get_cvm(&mut self) -> Result<u16> {
+    async fn get_and_assign_cvm(&mut self, auth: &AuthData) -> Result<u16> {
         let mut port_to_return = None;
         let mut index_to_remove = None;
 
@@ -88,7 +89,7 @@ impl Manager {
         for (i, &port) in self.free_cvm_ports.iter().enumerate() {
             let mut client = match cvm_client::CvmClient::new(
                 format!("https://localhost:{}", port).as_str(),
-                None,
+                auth,
             ) {
                 Ok(client) => client,
                 Err(e) => {
@@ -232,12 +233,13 @@ impl Manager {
         thread_id: String,
         agent_id: String,
         run_config: RunConfig,
+        auth: &AuthData,
     ) -> Result<u16> {
         // Get a free CVM
-        let port = self.get_cvm().await?;
+        let port = self.get_and_assign_cvm(auth).await?;
 
         // Configure the CVM with the provided parameters
-        self.configure_cvm(port, run_id, thread_id, agent_id, run_config)
+        self.configure_cvm(port, run_id, thread_id, agent_id, run_config, auth)
             .await?;
 
         Ok(port)
@@ -250,10 +252,11 @@ impl Manager {
         thread_id: String,
         agent_id: String,
         run_config: RunConfig,
+        auth: &AuthData,
     ) -> Result<()> {
         // Create a client for the CVM
         let mut client =
-            cvm_client::CvmClient::new(format!("https://localhost:{}", port).as_str(), None)
+            cvm_client::CvmClient::new(format!("https://localhost:{}", port).as_str(), auth)
                 .context("Failed to create CVM client")?;
 
         // Perform attestation to verify the CVM

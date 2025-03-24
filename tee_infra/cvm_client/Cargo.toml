@@ -18,6 +18,7 @@ openssl = { version = "0.10", features = ["vendored"] }
 base64 = "0.22"
 dcap-qvl = "0.2"
 futures = "0.3"
+near_auth = { path = "../near_auth" }
 
 [dev-dependencies]
 mockito = "1.2"

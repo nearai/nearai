@@ -6,7 +6,7 @@ use axum::{
 };
 use bollard::Docker;
 use guest_manager::{Manager, RunConfig};
-use near_auth::{AuthData, verify_signed_message};
+use near_auth::{AuthData, axum_integration, verify_signed_message};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -140,14 +140,11 @@ async fn health_check() -> StatusCode {
 #[axum::debug_handler]
 async fn assign_cvm(
     State(state): State<Arc<AppState>>,
-    // auth: AuthData,
+    auth: AuthData,
     Json(payload): Json<AssignCvmRequest>,
 ) -> Result<Json<AssignCvmResponse>, (StatusCode, String)> {
-    // Verify the signature
-    // if !verify_signed_message(&auth).await {
-    //     return Err((StatusCode::UNAUTHORIZED, "Invalid auth token".to_string()));
-    // }
-
+    // TODO: Verify the signature
+    tracing::info!("Received auth: {:?}", auth);
     // Create RunConfig from the request
     let run_config = RunConfig::new(
         payload.provider,
@@ -168,6 +165,7 @@ async fn assign_cvm(
             payload.thread_id,
             payload.agent_id,
             run_config,
+            &auth,
         )
         .await
     {

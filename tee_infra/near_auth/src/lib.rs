@@ -84,7 +84,7 @@ pub struct Payload {
 }
 
 // Authentication data structure
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Serialize)]
 pub struct AuthData {
     pub account_id: String,
     pub public_key: String,
