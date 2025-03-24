@@ -871,10 +871,10 @@ class AgentCli:
         local_path: Optional[Path] = None,
         verbose: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
+        streaming: bool = True
     ) -> Optional[str]:
         """Runs agent non-interactively with a single task."""
         assert_user_auth()
-        is_streaming = True
 
         hub_client = get_hub_client()
         if thread_id:
@@ -896,8 +896,7 @@ class AgentCli:
                 thread_id=thread.id,
                 assistant_id=agent,
             )
-        elif is_streaming:
-            #TODO not working
+        elif streaming:
             run = hub_client.beta.threads.runs.create(
                 thread_id=thread.id,
                 assistant_id=agent,
@@ -906,7 +905,7 @@ class AgentCli:
             )
             params = {
                 "api_url": CONFIG.api_url,
-                "tool_resources": [],#run.tools,
+                "tool_resources": [],#run.tools, TODO this is not returned from the streaming run
                 "data_source": "local_files",
                 "user_env_vars": env_vars,
                 "agent_env_vars": {},
@@ -941,14 +940,14 @@ class AgentCli:
         # List new messages
         messages = hub_client.beta.threads.messages.list(thread_id=thread.id, after=last_message_id, order="asc")
         message_list = list(messages)
-        if message_list and not is_streaming:
+        if message_list and not streaming:
             for msg in message_list:
                 if msg.metadata and msg.metadata.get("message_type"):
                     continue
                 if msg.role == "assistant":
                     print(f"Assistant: {msg.content[0].text.value}")
             last_message_id = message_list[-1].id
-        elif not is_streaming:
+        elif not streaming:
             print("No new messages")
 
         # Store the thread_id for potential use in interactive mode
