@@ -658,8 +658,8 @@ class EvaluationCli:
             status = solution.get("status")
             print(f"status: {status}")
             info: dict = solution.get("info", {})
-            if not verbose:
-                info.pop("verbose")
+            if not verbose and isinstance(info, dict):
+                info.pop("verbose", {})
             print(f"info: {json.dumps(info, indent=2, ensure_ascii=False)}")
             if i == 1:
                 print("Enter to continue, type 'exit' to quit.")
@@ -753,6 +753,14 @@ class AgentCli:
         agent_path = Path(agent)
         if local:
             agent_path = resolve_local_path(agent_path)
+        else:
+            try:
+                parse_location(str(agent_path))
+            except Exception:
+                print(
+                    f'Registry entry format is <namespace>/<name>/<version>, but "{agent_path}" was provided. Did you mean to run with a flag --local?'  # noqa: E501
+                )
+                exit(1)
 
         agent_id = get_agent_id(agent_path, local)
 

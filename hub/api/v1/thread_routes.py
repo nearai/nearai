@@ -166,11 +166,7 @@ def get_thread(
     auth: AuthToken = Depends(get_auth),
 ) -> Thread:
     with get_session() as session:
-        thread_model = session.get(ThreadModel, thread_id)
-        if thread_model is None:
-            raise HTTPException(status_code=404, detail="Thread not found")
-        if thread_model.owner_id != auth.account_id:
-            raise HTTPException(status_code=403, detail="You don't have permission to access this thread")
+        thread_model = _check_thread_permissions(auth, session, thread_id)
         return thread_model.to_openai()
 
 
@@ -190,12 +186,7 @@ def update_thread(
     auth: AuthToken = Depends(get_auth),
 ) -> Thread:
     with get_session() as session:
-        thread_model = session.get(ThreadModel, thread_id)
-        if thread_model is None:
-            raise HTTPException(status_code=404, detail="Thread not found")
-
-        if thread_model.owner_id != auth.account_id:
-            raise HTTPException(status_code=403, detail="You don't have permission to update this thread")
+        thread_model = _check_thread_permissions(auth, session, thread_id)
 
         if thread.metadata is not None:
             thread_model.meta_data = thread.metadata
@@ -220,12 +211,7 @@ def delete_thread(
     auth: AuthToken = Depends(get_auth),
 ) -> ThreadDeletionStatus:
     with get_session() as session:
-        thread_model = session.get(ThreadModel, thread_id)
-        if thread_model is None:
-            raise HTTPException(status_code=404, detail="Thread not found")
-
-        if thread_model.owner_id != auth.account_id:
-            raise HTTPException(status_code=403, detail="You don't have permission to delete this thread")
+        thread_model = _check_thread_permissions(auth, session, thread_id)
 
         session.delete(thread_model)
         session.commit()
@@ -278,13 +264,7 @@ def fork_thread(
     auth: AuthToken = Depends(get_auth),
 ) -> ThreadForkResponse:
     with get_session() as session:
-        # Get the original thread
-        original_thread = session.get(ThreadModel, thread_id)
-        if original_thread is None:
-            raise HTTPException(status_code=404, detail="Thread not found")
-
-        if original_thread.owner_id != auth.account_id:
-            raise HTTPException(status_code=403, detail="You don't have permission to fork this thread")
+        original_thread = _check_thread_permissions(auth, session, thread_id)
 
         # Create a new thread as a copy of the original
         forked_thread = ThreadModel(
@@ -398,9 +378,7 @@ def create_message(
     auth: AuthToken = Depends(get_auth),
 ) -> Message:
     with get_session() as session:
-        thread = session.get(ThreadModel, thread_id)
-        if thread is None:
-            raise HTTPException(status_code=404, detail="Thread not found")
+        thread = _check_thread_permissions(auth, session, thread_id)
 
         if not message.content:
             message.content = " "  # OpenAI format requires content to be non-empty
@@ -495,6 +473,8 @@ def list_messages(
 ) -> ListMessagesResponse:
     logger.debug(f"Listing messages for thread: {thread_id}")
     with get_session() as session:
+        _check_thread_permissions(auth, session, thread_id)
+
         child_threads = (
             session.exec(select(ThreadModel.id).where(ThreadModel.parent_id == thread_id)).all()
             if include_subthreads
@@ -559,7 +539,6 @@ def list_messages(
 
 @threads_router.patch("/threads/{thread_id}/messages/{message_id}")
 def modify_message(
-    thread_id: str,
     message_id: str,
     message: MessageUpdateParams = Body(...),
     auth: AuthToken = Depends(get_auth),
@@ -568,6 +547,10 @@ def modify_message(
         message_model = session.get(MessageModel, message_id)
         if message_model is None:
             raise HTTPException(status_code=404, detail="Message not found")
+
+        thread_id = message_model.thread_id
+        _check_thread_permissions(auth, session, thread_id)
+
         message_model.meta_data = message["metadata"] if isinstance(message["metadata"], dict) else None
         session.commit()
         return message_model.to_openai()
@@ -637,9 +620,7 @@ def create_run(
 ) -> OpenAIRun:
     logger.info(f"Creating run for thread: {thread_id}")
     with get_session() as session:
-        thread_model = session.get(ThreadModel, thread_id)
-        if thread_model is None:
-            raise HTTPException(status_code=404, detail="Thread not found")
+        thread_model = _check_thread_permissions(auth, session, thread_id)
 
         if not thread_model.meta_data:
             thread_model.meta_data = {}
@@ -852,6 +833,7 @@ def get_run(
 ) -> OpenAIRun:
     """Get details of a specific run for a thread."""
     with get_session() as session:
+        _check_thread_permissions(auth, session, thread_id)
         run_model = session.get(RunModel, run_id)
         if run_model is None:
             raise HTTPException(status_code=404, detail="Run not found")
@@ -877,6 +859,7 @@ def update_run(
     auth: AuthToken = Depends(get_auth),
 ) -> OpenAIRun:
     with get_session() as session:
+        _check_thread_permissions(auth, session, thread_id)
         run_model = session.get(RunModel, run_id)
         if run_model is None:
             raise HTTPException(status_code=404, detail="Run not found")
@@ -893,3 +876,12 @@ def update_run(
         session.add(run_model)
         session.commit()
         return run_model.to_openai()
+
+
+def _check_thread_permissions(auth, session, thread_id) -> ThreadModel:
+    thread = session.get(ThreadModel, thread_id)
+    if thread is None:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    if thread.owner_id != auth.account_id:
+        raise HTTPException(status_code=403, detail="You don't have permission to access messages from this thread")
+    return thread

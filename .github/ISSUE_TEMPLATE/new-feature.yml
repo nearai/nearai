@@ -1,0 +1,37 @@
+name: 💡 Feature Request
+description: Request a new feature
+title: "[FEAT] "
+labels: ["issue", "enhancement"]
+body:
+
+  - type: textarea
+    id: background
+    attributes:
+      label: "Background"
+      placeholder: "Brief description of what this feature will accomplish. What is the goal and why should this be done?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: "User Story"
+      placeholder: "Describe who are we solving for, their need, and why. (Example: \"As an agent developer, I need to have a way to...\")"
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: "Acceptance Criteria"
+      placeholder: "What exactly needs to be done to mark this issue as complete?(Add a task list if needed)"
+      value:
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: "Resources & Additional Notes"
+      placeholder: "Any relevant resources, extra context, links, or screenshots?"
+

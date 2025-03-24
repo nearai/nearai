@@ -1,0 +1,58 @@
+name: 📚 Documentation Request
+description: Request new documentation or improvements to existing documentation
+title: "[DOCS] "
+labels: ["documentation"]
+body:
+
+  - type: dropdown
+    id: doc_type
+    attributes:
+      label: "Documentation Type"
+      options:
+        - "New documentation"
+        - "Update existing documentation"
+        - "Fix errors in documentation"
+        - "Clarification needed"
+        - "Other (please specify in Description)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      placeholder: "Clearly describe what documentation is needed or what improvements should be made. What information is missing or unclear?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: "Motivation"
+      placeholder: "Why is this documentation important? Who will benefit from it and how?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_content
+    attributes:
+      label: "Proposed Content"
+      placeholder: "If you have suggestions for the content, please provide them here. Include any relevant examples, code snippets, or explanations."
+    validations:
+      required: false
+
+  - type: input
+    id: related_pages
+    attributes:
+      label: "Related Documentation Pages"
+      placeholder: "Links to existing documentation pages that are related or should be updated"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: "Additional Information"
+      placeholder: "Any other relevant information, context, or references that might help in addressing this documentation request."
+    validations:
+      required: false

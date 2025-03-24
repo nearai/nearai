@@ -157,6 +157,16 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
 
     agents = body.agent_id or body.assistant_id or ""
     thread_id = body.thread_id
+    if thread_id:
+        with get_session() as session:
+            thread = session.get(ThreadModel, thread_id)
+            if thread is None:
+                raise HTTPException(status_code=404, detail="Thread not found")
+            if thread.owner_id != auth.account_id:
+                raise HTTPException(
+                    status_code=403, detail="You don't have permission to access messages from this thread"
+                )
+
     new_message = body.new_message
 
     runner = _runner_for_env()

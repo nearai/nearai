@@ -188,7 +188,7 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
         if self.provider != "":
             return self.provider
         if self.agent != "":
-            agent_obj = Agent.load_agent(self.agent, self.client_config)
+            agent_obj = Agent.load_agent(self.agent, self.client_config, local=True)
             return agent_obj.model_provider
         return ""
 
