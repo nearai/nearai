@@ -133,14 +133,9 @@ def convert_request(
 @v1_router.post("/completions")
 def completions(
     db: DatabaseSession,
-    req: Request,
     request: CompletionsRequest = Depends(convert_request),
     auth: AuthToken = Depends(get_auth),
 ):
-    headers = dict(req.headers)
-    run_id = headers.get("run_id")
-    thread_id = headers.get("thread_id")
-    message_id = headers.get("message_id")
 
     try:
         assert request.provider is not None
@@ -163,6 +158,7 @@ def completions(
                 auth.account_id, request.prompt, response_text, request.model, request.provider, "/completions"
             )
 
+        run_id = thread_id = message_id = None
         return StreamingResponse(handle_stream(db, thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream")
     else:
         c = json.dumps(resp.model_dump())
