@@ -952,7 +952,7 @@ async def monitor_deltas(run_id: str, delete:bool):
                     select(Delta).where(
                         #Delta.run_id == run_id,
                         Delta.id.notin_(list(seen_ids))
-                    ).order_by(Delta.created_at).limit(1)
+                    ).order_by(Delta.id).limit(1)
                 ).first()
                 seen_ids.add(event.id)
 
