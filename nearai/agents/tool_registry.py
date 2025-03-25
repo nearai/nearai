@@ -48,8 +48,7 @@ class ToolRegistry:
 
         tool.__name__ = mcp_tool.name
         tool.__doc__ = mcp_tool.description
-
-        tool.__schema__ = mcp_tool.inputSchema
+        tool.__setattr__("__schema__", mcp_tool.inputSchema)
 
         self.tools[mcp_tool.name] = tool
 
@@ -89,14 +88,11 @@ class ToolRegistry:
 
         parameters: Dict[str, Any] = {"type": "object", "properties": {}, "required": []}
 
-        tool_definition = {
-            "type": "function",
-            "function": {"name": tool.__name__, "description": function_description, "parameters": parameters},
-        }
-
         if hasattr(tool, "__schema__"):
-            tool_definition["function"]["parameters"] = tool.__schema__
-            return tool_definition
+            return {
+                "type": "function",
+                "function": {"name": tool.__name__, "description": function_description, "parameters": tool.__schema__},
+            }
 
         # Iterate through function parameters
         for param in signature.parameters.values():
@@ -128,10 +124,12 @@ class ToolRegistry:
 
             # Params without default values are required params
             if param.default == inspect.Parameter.empty:
-                tool_definition["function"]["parameters"]["required"].append(param_name)
+                parameters["required"].append(param_name)
 
-        tool_definition["function"]["parameters"] = parameters
-        return tool_definition
+        return {
+            "type": "function",
+            "function": {"name": tool.__name__, "description": function_description, "parameters": parameters},
+        }
 
     def get_all_tool_definitions(self) -> list[Dict]:  # noqa: D102
         definitions = []
