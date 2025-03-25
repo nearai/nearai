@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Callable, Dict, Literal, Optional, _GenericAlias, get_type_hints
+from typing import Any, Callable, Dict, Literal, Optional, _GenericAlias, get_type_hints  # type: ignore
 from nearai.agents.models.tool_definition import MCPTool
 
 class ToolRegistry:

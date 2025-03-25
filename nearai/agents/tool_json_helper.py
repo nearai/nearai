@@ -1,12 +1,12 @@
 import json
 import re
 
+
 def _ending_transform(x):
     if x.endswith('}"') or x.endswith("}}"):
         return json.loads(x[:-1])
     else:
         raise json.JSONDecodeError("Try next transform", x, len(x))
-
 
 def parse_json_args(signature: dict, args: str):
     """Parses LLM generated JSON args, trying various repair strategies if args are not valid JSON."""

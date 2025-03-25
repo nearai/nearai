@@ -1,5 +1,6 @@
 from typing import Any
 from pydantic import BaseModel, ConfigDict
+
 class MCPTool(BaseModel):
     """Definition for a tool the client can call."""
 
