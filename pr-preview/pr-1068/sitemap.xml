@@ -5,10 +5,6 @@
          <lastmod>2025-03-25</lastmod>
     </url>
     <url>
-         <loc>https://docs.near.ai/agent_triggers/</loc>
-         <lastmod>2025-03-25</lastmod>
-    </url>
-    <url>
          <loc>https://docs.near.ai/api/</loc>
          <lastmod>2025-03-25</lastmod>
     </url>
@@ -26,10 +22,6 @@
     </url>
     <url>
          <loc>https://docs.near.ai/inference/</loc>
-         <lastmod>2025-03-25</lastmod>
-    </url>
-    <url>
-         <loc>https://docs.near.ai/near_events/</loc>
          <lastmod>2025-03-25</lastmod>
     </url>
     <url>
@@ -57,10 +49,6 @@
          <lastmod>2025-03-25</lastmod>
     </url>
     <url>
-         <loc>https://docs.near.ai/agents/env/calling_other_agents/</loc>
-         <lastmod>2025-03-25</lastmod>
-    </url>
-    <url>
          <loc>https://docs.near.ai/agents/env/inference/</loc>
          <lastmod>2025-03-25</lastmod>
     </url>
@@ -85,11 +73,27 @@
          <lastmod>2025-03-25</lastmod>
     </url>
     <url>
-         <loc>https://docs.near.ai/assistants/integrate/</loc>
+         <loc>https://docs.near.ai/agents/patterns/agent_to_agent/</loc>
          <lastmod>2025-03-25</lastmod>
     </url>
     <url>
-         <loc>https://docs.near.ai/assistants/overview/</loc>
+         <loc>https://docs.near.ai/agents/patterns/agent_triggers/</loc>
+         <lastmod>2025-03-25</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.near.ai/agents/patterns/near_events/</loc>
+         <lastmod>2025-03-25</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.near.ai/agents/patterns/orchestration/</loc>
+         <lastmod>2025-03-25</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.near.ai/integration/overview/</loc>
+         <lastmod>2025-03-25</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.near.ai/integration/quickstart/</loc>
          <lastmod>2025-03-25</lastmod>
     </url>
     <url>
