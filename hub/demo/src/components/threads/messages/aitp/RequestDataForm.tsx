@@ -1,13 +1,13 @@
 'use client';
 
-import { Button, Flex, Form, PlaceholderStack } from '@near-pagoda/ui';
+import { Button, Flex, Form, PlaceholderStack } from '@nearai/ui';
 import { useEffect, useState } from 'react';
 import { FormProvider, type SubmitHandler, useForm } from 'react-hook-form';
 import { type z } from 'zod';
 
-import { ErrorMessage } from '~/components/ErrorMessage';
-import { useThreadsStore } from '~/stores/threads';
-import { trpc } from '~/trpc/TRPCProvider';
+import { ErrorMessage } from '@/components/ErrorMessage';
+import { useThreadsStore } from '@/stores/threads';
+import { trpc } from '@/trpc/TRPCProvider';
 
 import { useThreadMessageContent } from '../../ThreadMessageContentProvider';
 import {

@@ -12,9 +12,9 @@ from litellm import completion as litellm_completion
 from litellm.types.completion import ChatCompletionMessageParam
 from openai import NOT_GIVEN, NotGiven
 from openai.types.beta.thread import Thread
-from openai.types.beta.vector_store import VectorStore
-from openai.types.beta.vector_stores import VectorStoreFile
 from openai.types.file_object import FileObject
+from openai.types.vector_store import VectorStore
+from openai.types.vector_stores import VectorStoreFile
 
 from nearai.shared.client_config import (
     DEFAULT_MAX_RETRIES,
@@ -208,12 +208,12 @@ class InferenceClient(object):
     def add_file_to_vector_store(self, vector_store_id: str, file_id: str) -> VectorStoreFile:
         """Adds a file to vector store."""
         client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
-        return client.beta.vector_stores.files.create(vector_store_id=vector_store_id, file_id=file_id)
+        return client.vector_stores.files.create(vector_store_id=vector_store_id, file_id=file_id)
 
     def get_vector_store_files(self, vector_store_id: str) -> Optional[List[VectorStoreFile]]:
         """Adds a file to vector store."""
         client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
-        return client.beta.vector_stores.files.list(vector_store_id=vector_store_id).data
+        return client.vector_stores.files.list(vector_store_id=vector_store_id).data
 
     def create_vector_store_from_source(
         self,
@@ -283,7 +283,7 @@ class InferenceClient(object):
         :return: Returns the created vector store or error.
         """
         client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
-        return client.beta.vector_stores.create(
+        return client.vector_stores.create(
             file_ids=file_ids,
             name=name,
             expires_after=expires_after,

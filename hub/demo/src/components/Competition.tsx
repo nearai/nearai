@@ -1,6 +1,6 @@
 'use client';
 
-import { Flex, Section, SvgIcon, Text } from '@near-pagoda/ui';
+import { Flex, Section, SvgIcon, Text } from '@nearai/ui';
 import { CalendarDots } from '@phosphor-icons/react';
 import { type ReactNode } from 'react';
 

@@ -1,10 +1,10 @@
 'use client';
 
-import { Flex, Text } from '@near-pagoda/ui';
+import { Flex, Text } from '@nearai/ui';
 import { useEffect, useState } from 'react';
 
-import { APP_TITLE } from '~/constants';
-import { useEmbeddedWithinIframe } from '~/hooks/embed';
+import { APP_TITLE } from '@/constants';
+import { useEmbeddedWithinIframe } from '@/hooks/embed';
 
 import s from './Footer.module.scss';
 

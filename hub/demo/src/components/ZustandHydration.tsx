@@ -2,16 +2,16 @@
 
 'use client';
 
-import { openToast } from '@near-pagoda/ui';
+import { openToast } from '@nearai/ui';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { type z } from 'zod';
 
-import { SIGN_IN_CALLBACK_PATH, signIn } from '~/lib/auth';
-import { authorizationModel } from '~/lib/models';
-import { useAgentSettingsStore } from '~/stores/agent-settings';
-import { name as authStoreName, useAuthStore } from '~/stores/auth';
-import { trpc } from '~/trpc/TRPCProvider';
+import { SIGN_IN_CALLBACK_PATH, signIn } from '@/lib/auth';
+import { authorizationModel } from '@/lib/models';
+import { useAgentSettingsStore } from '@/stores/agent-settings';
+import { name as authStoreName, useAuthStore } from '@/stores/auth';
+import { trpc } from '@/trpc/TRPCProvider';
 
 function migrateLocalStorageStoreNames() {
   /*
@@ -36,13 +36,10 @@ function returnLocalStorageAuthStoreToMigrate() {
 
   if (raw) {
     try {
-      auth = authorizationModel.parse(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        JSON.parse(raw)?.state?.auth,
-      );
+      auth = authorizationModel.parse(JSON.parse(raw)?.state?.auth);
 
       localStorage.removeItem(authStoreName);
-    } catch (error) {}
+    } catch (_error) {}
   }
 
   return auth;

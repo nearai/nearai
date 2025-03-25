@@ -4,7 +4,7 @@ import { type z } from 'zod';
 import {
   type threadMessageContentModel,
   type threadMessageModel,
-} from '~/lib/models';
+} from '@/lib/models';
 
 type ThreadMessageContent = {
   content: z.infer<typeof threadMessageContentModel>;

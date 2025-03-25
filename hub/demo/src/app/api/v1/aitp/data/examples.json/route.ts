@@ -3,11 +3,11 @@ import { type z } from 'zod';
 import {
   CURRENT_AITP_DATA_SCHEMA_URL,
   type dataSchema,
-} from '~/components/threads/messages/aitp/schema/data';
+} from '@/components/threads/messages/aitp/schema/data';
 import {
   mockRequestDataFavorites,
   mockRequestDataShippingAddressInternational,
-} from '~/trpc/utils/mock-aitp';
+} from '@/trpc/utils/mock-aitp';
 
 export async function GET() {
   const data: z.infer<typeof dataSchema> = {

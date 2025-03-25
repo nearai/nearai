@@ -1,10 +1,10 @@
-import { handleClientError } from '@near-pagoda/ui';
+import { handleClientError } from '@nearai/ui';
 import { z } from 'zod';
 
-import { env } from '~/env';
-import { useAuthStore } from '~/stores/auth';
-import { clientUtils } from '~/trpc/TRPCProvider';
-import { getHashParams } from '~/utils/url';
+import { env } from '@/env';
+import { useAuthStore } from '@/stores/auth';
+import { clientUtils } from '@/trpc/TRPCProvider';
+import { getHashParams } from '@/utils/url';
 
 const AUTH_NEAR_URL = env.NEXT_PUBLIC_AUTH_URL;
 

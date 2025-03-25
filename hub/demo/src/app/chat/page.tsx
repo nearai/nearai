@@ -1,8 +1,8 @@
 'use client';
 
-import { AgentRunner } from '~/components/AgentRunner';
-import { env } from '~/env';
-import { parseEntryId } from '~/lib/entries';
+import { AgentRunner } from '@/components/AgentRunner';
+import { env } from '@/env';
+import { parseEntryId } from '@/lib/entries';
 
 export default function ChatPage() {
   const { namespace, name, version } = parseEntryId(

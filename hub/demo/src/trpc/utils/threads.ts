@@ -1,14 +1,14 @@
 import { type z } from 'zod';
 
-import { env } from '~/env';
+import { env } from '@/env';
 import {
   threadFileModel,
   threadMessagesModel,
   threadModel,
   threadRunModel,
-} from '~/lib/models';
-import { filePathIsImage } from '~/utils/file';
-import { createZodFetcher } from '~/utils/zod-fetch';
+} from '@/lib/models';
+import { filePathIsImage } from '@/utils/file';
+import { createZodFetcher } from '@/utils/zod-fetch';
 
 const fetchWithZod = createZodFetcher();
 

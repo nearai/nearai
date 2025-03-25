@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
 
-import { entryModel } from '~/lib/models';
+import { entryModel } from '@/lib/models';
 
 type EntryModel = z.infer<typeof entryModel>;
 
@@ -68,7 +68,7 @@ export async function loadEntriesFromDirectory(
                 _results.push(metadata);
               }
             }
-          } catch (error) {
+          } catch (_error) {
             // Ignore error if agent.py doesn't exist or any other read error
           }
         }

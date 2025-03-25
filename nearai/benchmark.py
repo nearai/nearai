@@ -22,7 +22,11 @@ class DatasetInfo:
 
     def get_dataset(self) -> Dataset:  # noqa: D102
         if isinstance(self.dataset, DatasetDict):
-            assert self.subset is not None, f"Subset must be: {', '.join(self.dataset.keys())}"
+            if self.subset is None:
+                print(
+                    f"Please specify subset with a --subset flag. Available subsets: {', '.join(self.dataset.keys())}"
+                )
+                exit(1)
             return self.dataset[self.subset]
         elif isinstance(self.dataset, Dataset):
             return self.dataset

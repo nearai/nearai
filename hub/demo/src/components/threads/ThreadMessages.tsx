@@ -1,6 +1,6 @@
 'use client';
 
-import { Accordion, Flex, SvgIcon, Text } from '@near-pagoda/ui';
+import { Accordion, Flex, SvgIcon, Text } from '@nearai/ui';
 import { ChatCircleDots } from '@phosphor-icons/react';
 import {
   Fragment,
@@ -12,11 +12,11 @@ import {
 } from 'react';
 import { type z } from 'zod';
 
-import { useConsumerModeEnabled } from '~/hooks/consumer';
-import { type MessageGroup, useGroupedThreadMessages } from '~/hooks/threads';
-import { type threadMessageModel } from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { stringToPotentialJson } from '~/utils/string';
+import { useConsumerModeEnabled } from '@/hooks/consumer';
+import { type MessageGroup, useGroupedThreadMessages } from '@/hooks/threads';
+import { type threadMessageModel } from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import { stringToPotentialJson } from '@/utils/string';
 
 import { computeNavigationHeight } from '../Navigation';
 import { JsonMessage } from './messages/JsonMessage';

@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 
-import { Code } from '~/components/lib/Code';
+import { Code } from '@/components/lib/Code';
 
 import { Data } from './aitp/Data';
 import { Decision } from './aitp/Decision';

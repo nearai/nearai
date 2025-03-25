@@ -12,20 +12,20 @@ import {
   SvgIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { Folder, LinkSimple, LockKey } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 
-import { Code } from '~/components/lib/Code';
-import { Sidebar } from '~/components/lib/Sidebar';
-import { useCurrentEntryParams } from '~/hooks/entries';
-import { useQueryParams } from '~/hooks/url';
-import { rawFileUrlForEntry } from '~/lib/entries';
-import { type entryModel } from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { trpc } from '~/trpc/TRPCProvider';
-import { filePathIsImage, filePathToCodeLanguage } from '~/utils/file';
+import { Code } from '@/components/lib/Code';
+import { Sidebar } from '@/components/lib/Sidebar';
+import { useCurrentEntryParams } from '@/hooks/entries';
+import { useQueryParams } from '@/hooks/url';
+import { rawFileUrlForEntry } from '@/lib/entries';
+import { type entryModel } from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import { trpc } from '@/trpc/TRPCProvider';
+import { filePathIsImage, filePathToCodeLanguage } from '@/utils/file';
 
 type Props = {
   entry: z.infer<typeof entryModel>;

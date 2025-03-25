@@ -1,5 +1,5 @@
-import { env } from '~/env';
-import { authorizationModel } from '~/lib/models';
+import { env } from '@/env';
+import { authorizationModel } from '@/lib/models';
 
 import { createTRPCRouter, publicProcedure } from '../trpc';
 

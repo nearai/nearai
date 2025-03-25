@@ -7,7 +7,7 @@ import {
   handleClientError,
   Section,
   Text,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
@@ -19,10 +19,10 @@ import {
   returnSignInCallbackUrl,
   returnUrlToRestoreAfterSignIn,
   signIn,
-} from '~/lib/auth';
-import { authorizationModel } from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { trpc } from '~/trpc/TRPCProvider';
+} from '@/lib/auth';
+import { authorizationModel } from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import { trpc } from '@/trpc/TRPCProvider';
 
 export default function SignInCallbackPage() {
   const saveTokenMutation = trpc.auth.saveToken.useMutation();

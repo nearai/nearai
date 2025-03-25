@@ -139,24 +139,27 @@ nav:
   - Agents:
     - Building Agents:
       - Quickstart: 'agents/quickstart.md'
-      - "Agent Environment":
+      - "Environment":
         - 'agents/env/overview.md'
         - 'agents/env/messages_files.md'
         - 'agents/env/inference.md'
-        - 'agents/env/calling_other_agents.md'
         - 'agents/env/tools.md'
         - Secrets & Variables: 'agents/env/variables.md'
         - NEAR Blockchain: 'agents/env/near.md'
-      - Agent Registry: 'agents/registry.md'
+      - Registry: 'agents/registry.md'
       - Core Features:
         - Threads: 'agents/threads.md'
         - Vector Stores: 'agents/vector-stores.md'
         - Inference (OpenAI): 'inference.md'
         - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
         - Local & Remote Runs: 'agents/running.md'
+    - Agent Patterns:
       - Event-Driven Agents:
-        - NEAR Event-Triggered Agents: 'near_events.md'
-        - Twitter (X) Triggered Agents: 'agent_triggers.md'
+        - NEAR Event-Triggered Agents: 'agents/patterns/near_events.md'
+        - Twitter (X) Triggered Agents: 'agents/patterns/agent_triggers.md'
+      - Using Multiple Agents:
+        - Orchestrating Multiple Agents: 'agents/patterns/orchestration.md'
+        - Agent to Agent Communication: 'agents/patterns/agent_to_agent.md'
     - Tutorials:
       - Documentation Agent (RAG):
         - Introduction: 'tutorials/rag/introduction.md'
@@ -169,10 +172,12 @@ nav:
     - 'models/home.md'
     - Fine-tuning: 'models/fine_tuning.md'
     - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
-  - Assistants:
-    - Overview: 'assistants/overview.md'
-    - Integrate: 'assistants/integrate.md'
-  - API: 'api.md'
+  - Integration:
+    - Overview: 'integration/overview.md'
+    - Quickstart: 'integration/quickstart.md'
+  - APIs:
+    - Library API: 'api.md'
+    - Web API: 'https://api.near.ai/openapi.json'
 
 plugins:
   - social
@@ -192,3 +197,8 @@ plugins:
   - redirects:
       redirect_maps:
         'agents/secrets.md': 'agents/env/variables.md'
+        'assistants/overview.md': 'integration/overview.md'
+        'assistants/integrate.md': 'integration/quickstart.md'
+        'agents/env/calling_other_agents.md': 'agents/patterns/agent_to_agent.md'
+        'near_events.md': 'agents/patterns/near_events.md'
+        'agent_triggers.md': 'agents/patterns/agent_triggers.md'

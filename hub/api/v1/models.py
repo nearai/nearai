@@ -21,6 +21,7 @@ from openai.types.beta.threads.message_delta_event import MessageDeltaEvent as O
 from openai.types.beta.threads.run import Run as OpenAIRun
 from openai.types.beta.threads.text import Text
 from openai.types.beta.threads.text_content_block import TextContentBlock
+from sqlalchemy import BigInteger
 from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.types import TypeDecorator
 from sqlmodel import Column, Field, Session, SQLModel, create_engine
@@ -481,6 +482,24 @@ class Delta(SQLModel, table=True):
             delta=OpenAITMessageDelta(role="assistant", content=self.content),
             metadata=self.meta_data,
         )
+
+class Completion(SQLModel, table=True):
+    __tablename__ = "completions"
+
+    id: int = Field(default=None, sa_column=Column(BigInteger, primary_key=True, autoincrement=True))
+    account_id: str = Field(max_length=64, nullable=False)
+    query: List[dict] = Field(sa_column=Column(UnicodeSafeJSON))
+    response: Optional[dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
+    model: str = Field(sa_column=Column(LONGTEXT))
+    provider: str = Field(sa_column=Column(LONGTEXT))
+    endpoint: str = Field(sa_column=Column(LONGTEXT))
+    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
+    completion_tokens: int = Field(nullable=False)
+    prompt_tokens: int = Field(nullable=False)
+    total_tokens: int = Field(nullable=False)
+    completion_tokens_details: Optional[dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
+    prompt_tokens_details: Optional[dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
+
 
 db_url = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}?charset=utf8mb4&use_unicode=1&binary_prefix=true"
 engine = create_engine(db_url, pool_size=DB_POOL_SIZE)

@@ -154,7 +154,7 @@ The environment object unlocks NEAR AI's powerful features:
 
 - Create natural conversations with [advanced message handling](./env/messages_files.md)
 - Leverage AI models for [intelligent decision-making](./env/inference.md)
-- Enable [agent-to-agent communication](./env/calling_other_agents.md)
+- Enable [agent-to-agent communication](./patterns/agent_to_agent.md)
 - Extend capabilities with [custom tools](./env/tools.md)
 
 ### [Learn About Secrets and Variables 🔑](./env/variables.md)

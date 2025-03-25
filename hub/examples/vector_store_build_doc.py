@@ -76,7 +76,7 @@ def convert_to_utf8(file_path, temp_dir):
 
 if vs_id is None:
     # Create a vector store for vector store docs
-    vs = client.beta.vector_stores.create(name="vector_store_docs")
+    vs = client.vector_stores.create(name="vector_store_docs")
     print(f"Vector store created: {vs}")
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -92,7 +92,7 @@ if vs_id is None:
                     file=open(temp_file_path, "rb"),
                     purpose="assistants",
                 )
-                attached_file = client.beta.vector_stores.files.create(
+                attached_file = client.vector_stores.files.create(
                     vector_store_id=vs.id,
                     file_id=uploaded_file.id,
                 )
@@ -101,7 +101,7 @@ if vs_id is None:
     # Poll the vector store status until processing is complete
     print("Polling vector store status...")
     while True:
-        status = client.beta.vector_stores.retrieve(vs.id)
+        status = client.vector_stores.retrieve(vs.id)
         if status.file_counts.completed == len(all_files):
             print("All files processed. Proceeding with search query.")
             break
@@ -141,7 +141,7 @@ def generate_llm_response(messages, processed_results):
 
 
 # Retrieve the vector store details
-retrieved_store = client.beta.vector_stores.retrieve(vs_id)
+retrieved_store = client.vector_stores.retrieve(vs_id)
 print(f"Vector Store details: {retrieved_store}")
 
 # Let's run a LLM completions using vector store we just created

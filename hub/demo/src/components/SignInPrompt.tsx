@@ -1,8 +1,8 @@
 'use client';
 
-import { Button, Container, Flex, Section, Text } from '@near-pagoda/ui';
+import { Button, Container, Flex, Section, Text } from '@nearai/ui';
 
-import { signIn } from '~/lib/auth';
+import { signIn } from '@/lib/auth';
 
 type Props = {
   layout?: 'horizontal-right' | 'horizontal-justified';
