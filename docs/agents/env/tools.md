@@ -18,10 +18,16 @@ You do not need to call `env.add_message` for these responses.
 This behavior allows the LLM to see its call then tool responses in the message list on the next iteration or next run. 
 This can be disabled by passing `add_to_messages=False` to the method.
 
+## Registering Tools
+* [`get_tool_registry`](../../api.md#nearai.agents.environment.Environment.get_tool_registry): returns the  tool registry, a dictionary of tools that can be called by the agent. By default
+it is populated with the tools listed above for working with files and commands plus [`request_user_input`]
+(../../api.md#nearai.agents.environment.Environment.request_user_input). To register a function as
+a new tool, call [`register_tool`](../../api.md#nearai.agents.tool_registry.ToolRegistry.register_tool) on
+the tool registry, passing it your function.
 
- * [`get_tool_registry`](../../api.md#nearai.agents.environment.Environment.get_tool_registry): returns the tool registry, a dictionary of tools that can be called by the agent. By default
-it is populated with the tools listed above for working with files and commands plus [`request_user_input`](../../api.md#nearai.agents.environment.Environment.request_user_input). To register a function as
-a new tool, call [`register_tool`](../../api.md#nearai.agents.tool_registry.ToolRegistry.register_tool) on the tool registry, passing it your function. 
+The tool registry provides two ways to register tools:
+
+1. Using `register_tool` for regular Python functions/callables:
 ```python
 def my_tool():
     """A simple tool that returns a string. This docstring helps the LLM know when to call the tool."""
@@ -31,6 +37,32 @@ tool_registry = env.get_tool_registry()
 tool_registry.register_tool(my_tool)
 tool_def = tool_registry.get_tool_definition('my_tool')
 response = env.completions_and_run_tools(messages, tools=[tool_def])
+```
+
+2. Using `register_mcp_tool` for MCP tools:
+```python
+from nearai.agents.models.tool_definition import MCPTool
+
+mcp_tool = MCPTool(
+    name="weather",
+    description="Get the current weather in a location",
+    inputSchema={
+        "type": "object",
+        "properties": {
+            "location": {
+                "type": "string",
+                "description": "The city and state, e.g. San Francisco, CA"
+            }
+        },
+        "required": ["location"]
+    }
+)
+
+async def call_weather_api(name: str, args: dict):
+    # Implementation of the weather API call
+    return f"Weather in {args['location']}: Sunny"
+
+tool_registry.register_mcp_tool(mcp_tool, call_weather_api)
 ```
 
 To pass all the built in tools plus any you have registered use the `get_all_tool_definitions` method.
