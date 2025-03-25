@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
-use bollard::Docker;
 use bollard::container::{Config, CreateContainerOptions};
 use bollard::image::CreateImageOptions;
 use bollard::models::{HostConfig, PortBinding};
+use bollard::Docker;
 use futures::StreamExt;
 use near_auth::AuthData;
 use std::collections::{HashMap, VecDeque};
@@ -518,9 +518,8 @@ mod tests {
         let ports: Option<HashMap<String, HashMap<(), ()>>> = None;
 
         // Mount Docker socket
-        let volumes: Option<Vec<String>> = Some(vec![
-            "/var/run/docker.sock:/var/run/docker.sock".to_string(),
-        ]);
+        let volumes: Option<Vec<String>> =
+            Some(vec!["/var/run/docker.sock:/var/run/docker.sock".to_string()]);
 
         // No environment variables needed
         let env_vars: Option<Vec<String>> = None;

@@ -136,26 +136,13 @@ def invoke_agent_in_cvm(
 ):
     cvm_runner_host = getenv("CVM_RUNNER_HOST", "cvm.near.ai")
     cvm_runner_pool_port = getenv("CVM_RUNNER_POOL_PORT", "1234")
-    cvm_runner_pool_url = f"http://{cvm_runner_host}:{cvm_runner_pool_port}"
+    cvm_manager_url = f"http://{cvm_runner_host}:{cvm_runner_pool_port}"
 
     worker = None
     while not worker:
-        logger.info(f"Getting CVM worker from {cvm_runner_pool_url}")
+        logger.info(f"Getting CVM worker from {cvm_manager_url}")
         try:
-            worker = Worker(**requests.post(f"{cvm_runner_pool_url}/get_worker").json())
-            logger.info(f"CVM worker: {worker}")
-        except Exception as e:
-            logger.info(f"Error getting CVM worker: {e}")
-        time.sleep(1)
-
-    cvm_url = f"https://{cvm_runner_host}:{worker.port}"
-
-    client = CvmClient(cvm_url, auth)
-
-    try:
-        logger.info(f"Assigning agent {agent_id} to CVM at {cvm_url}")
-        client.assign(
-            AssignRequest(
+            assign_request = AssignRequest(
                 agent_id=agent_id,
                 thread_id=thread_id,
                 api_url=api_url,
@@ -165,8 +152,19 @@ def invoke_agent_in_cvm(
                 max_tokens=max_tokens,
                 max_iterations=max_iterations,
                 env_vars={"agent_env_vars": "test"},
-            ),
-        )
+            )
+            worker = Worker(**requests.post(f"{cvm_manager_url}/assign_cvm", json=assign_request.model_dump()).json())
+            logger.info(f"Assigned agent {agent_id} to CVM at {worker.port}")
+
+        except Exception as e:
+            logger.info(f"Error getting CVM worker: {e}")
+        time.sleep(1)
+
+    cvm_url = f"https://{cvm_runner_host}:{worker.port}"
+
+    client = CvmClient(cvm_url, auth)
+
+    try:
         logger.info(f"Running agent {agent_id} in CVM at {cvm_url}")
         client.run(
             RunRequest(
