@@ -162,13 +162,13 @@ The UI should now be available in your browser at `http://localhost:3000`. It wi
 
 With this setup, you can fully emulate the production runner environment and debug AI agents efficiently.
 
-## Running CLI Agents with Custom Runner
-The custom runner authenticates to the Hub API using the `RUNNER_API_KEY` set in the `aws_runner/local_runners.env` file 
+## Running Agents via the CLI with a Custom Runner
+The custom runner authenticates to the Hub API using the `RUNNER_API_KEY` set in the `aws_runner/local_runners/.env` file 
 or with the default value in `aws_runner/local_runners/docker-compose.yml`. This should match one of the `TRUSTED_RUNNER_API_KEYS` 
 set in `hub/.env`. To run agents from the CLI when your local hub is using a custom runner, pass a `RUNNER_API_KEY` environment variable.
 
 ```sh
-RUNNER_API_KEY=your_runner_api_key nearai agent interactive <agent_name> --local
+RUNNER_API_KEY=your_runner_api_key nearai agent interactive <path_to_local_agent> --local
 ```
 
 This allows agent and runner based features such as agent key value storage and signed completions to work correctly.
