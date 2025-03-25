@@ -8,6 +8,7 @@ def _ending_transform(x):
     else:
         raise json.JSONDecodeError("Try next transform", x, len(x))
 
+
 def parse_json_args(signature: dict, args: str):
     """Parses LLM generated JSON args, trying various repair strategies if args are not valid JSON."""
     # if args is empty or an empty json object check if the function has no arguments
@@ -68,4 +69,3 @@ def parse_json_args_based_on_signature(signature: dict, args: str):
             raw_value = raw_value[1:-1]
         parameter_values[param] = raw_value
     return parameter_values
-
