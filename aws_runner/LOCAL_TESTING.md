@@ -168,10 +168,11 @@ edge cases to consider.
 
 The custom runner authenticates to the Hub API using the `RUNNER_API_KEY` set in the `aws_runner/local_runners/.env` file 
 or with the default value in `aws_runner/local_runners/docker-compose.yml`. This should match one of the `TRUSTED_RUNNER_API_KEYS` 
-set in `hub/.env`. To run agents from the CLI when your local hub is using a custom runner, pass a `RUNNER_API_KEY` environment variable.
+set in `hub/.env`. To run agents from the CLI when your local hub is using a custom runner, pass the `RUNNER_API_KEY` environment variable
+with the command, like so:
 
 ```sh
-RUNNER_API_KEY=your_runner_api_key nearai agent interactive <path_to_local_agent> --local
+RUNNER_API_KEY=custom-local-runner nearai agent interactive <path_to_local_agent> --local
 ```
 
 This allows agent and runner based features such as agent key value storage and signed completions to work correctly.
