@@ -1,6 +1,8 @@
 import inspect
 from typing import Any, Callable, Dict, Literal, Optional, _GenericAlias, get_type_hints  # type: ignore
+
 from nearai.agents.models.tool_definition import MCPTool
+
 
 class ToolRegistry:
     """A registry for tools that can be called by the agent.
@@ -42,7 +44,7 @@ class ToolRegistry:
             try:
                 return await call_tool(mcp_tool.name, kwargs)
             except Exception as e:
-                raise Exception(f"Error calling tool {mcp_tool.name} with arguments {kwargs}: {e}")
+                raise Exception(f"Error calling tool {mcp_tool.name} with arguments {kwargs}: {e}") from e
 
         tool.__name__ = mcp_tool.name
         tool.__doc__ = mcp_tool.description
