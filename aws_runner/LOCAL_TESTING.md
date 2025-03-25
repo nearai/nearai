@@ -50,10 +50,10 @@ Start a pool of three Docker container runners on ports `9009`, `9010`, and `901
 docker-compose -f aws_runner/local_runners/docker-compose.yml up
 ```
  * aws_runner/local_runners/docker-compose.yml mounts the local agents registry, ~/.nearai/registry, to the container. This allows you to run agents from your local disk. 
- * this pool allows working with multiple agents at once; for example, agents that perform cross agent calls and callbacks
+ * this pool allows working with multiple agents at once; for example, agents that perform cross agent calls and callbacks.
 
 Notes:
- * On each run, the runner will reload most files mounted from the local registry. For some cases, you may need to restart the local Docker instance to refresh files certain file types or file loading patterns.
+ * On each run, the runner will reload most files mounted from the local registry. For some cases, you may need to restart the local Docker instance to refresh certain file types or file loading patterns.
 
 ---
 
