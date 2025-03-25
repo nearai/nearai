@@ -176,8 +176,8 @@ nav:
     - Overview: 'integration/overview.md'
     - Quickstart: 'integration/quickstart.md'
   - APIs:
-    - Web API: 'https://api.near.ai/openapi.json'
     - Library API: 'api.md'
+    - Web API: 'https://api.near.ai/openapi.json'
 
 plugins:
   - social
