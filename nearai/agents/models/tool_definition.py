@@ -1,6 +1,8 @@
 from typing import Any
 from pydantic import BaseModel, ConfigDict
 
+# TODO: We should import the mcp Tool types from the MCP package
+# This is temporary since we have some dependencies conflicting with the MCP package
 class MCPTool(BaseModel):
     """Definition for a tool the client can call."""
 
