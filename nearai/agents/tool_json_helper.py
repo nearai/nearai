@@ -1,8 +1,6 @@
 import json
 import re
 
-from nearai.agents.models.tool_definition import ToolDefinition, ToolFunction, ToolParameterProperty, ToolParameters
-
 def _ending_transform(x):
     if x.endswith('}"') or x.endswith("}}"):
         return json.loads(x[:-1])
@@ -71,30 +69,3 @@ def parse_json_args_based_on_signature(signature: dict, args: str):
         parameter_values[param] = raw_value
     return parameter_values
 
-
-def parse_tool_definition_based_on_mcp_tool(mcp_tool) -> ToolDefinition:
-    """Parses an MCP tool into a registry tool definition."""
-    tool_parameters = ToolParameters(
-        type="object",
-        properties={},
-        required=[],
-    )
-    for param_name, param_schema in mcp_tool.inputSchema.get("properties", {}).items():
-        param_property = ToolParameterProperty(
-            type=param_schema.get("type", "string"),
-            description=param_schema.get("description", ""),
-        )
-
-        if param_schema.get("enum", None):
-            param_property.enum = param_schema.get("enum", None)
-
-        tool_parameters.properties[param_name] = param_property
-
-    return ToolDefinition(
-        type="function",
-        function=ToolFunction(
-            name=mcp_tool.name,
-            description=mcp_tool.description,
-            parameters=tool_parameters
-        )
-    )

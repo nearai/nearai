@@ -1,7 +1,6 @@
 import inspect
-from typing import Any, Callable, Dict, Literal, Optional, _GenericAlias, get_type_hints, List, TypedDict, Union  # type: ignore
-from nearai.agents.models.tool_definition import ToolDefinition
-
+from typing import Any, Callable, Dict, Literal, Optional, _GenericAlias, get_type_hints
+from nearai.agents.models.tool_definition import MCPTool
 
 class ToolRegistry:
     """A registry for tools that can be called by the agent.
@@ -36,29 +35,21 @@ class ToolRegistry:
         """Register a tool."""
         self.tools[tool.__name__] = tool
 
-    def register_tool_from_definition(self, definition: ToolDefinition, call_tool: Callable) -> None:  # noqa: D102
+    def register_mcp_tool(self, mcp_tool: MCPTool, call_tool: Callable) -> None:  # noqa: D102
         """Register a tool callable from its definition."""
 
-        function = definition.function
-        tool_name = function.name
-        tool_description = function.description
-        properties = function.parameters.properties
-
-        tool_args = "\n".join(f"{key}: {value.description}" for key, value in properties.items())
-
         async def tool(**kwargs):
-            """{description}"""
-
             try:
-                return await call_tool(tool_name, kwargs)
+                return await call_tool(mcp_tool.name, kwargs)
             except Exception as e:
-                raise Exception(f"Error calling tool {tool_name}: {e}")
+                raise Exception(f"Error calling tool {mcp_tool.name} with arguments {kwargs}: {e}")
 
-        tool.__name__ = tool_name
-        tool.__doc__ = tool.__doc__.format(description=tool_description)
-        tool.__doc__ += f"\n\n{tool_args}"
+        tool.__name__ = mcp_tool.name
+        tool.__doc__ = mcp_tool.description
 
-        self.tools[tool_name] = tool
+        tool.__schema__ = mcp_tool.inputSchema
+
+        self.tools[mcp_tool.name] = tool
 
     def get_tool(self, name: str) -> Optional[Callable]:  # noqa: D102
         """Get a tool by name."""
@@ -96,6 +87,15 @@ class ToolRegistry:
 
         parameters: Dict[str, Any] = {"type": "object", "properties": {}, "required": []}
 
+        tool_definition = {
+            "type": "function",
+            "function": {"name": tool.__name__, "description": function_description, "parameters": parameters},
+        }
+
+        if hasattr(tool, "__schema__"):
+            tool_definition["function"]["parameters"] = tool.__schema__
+            return tool_definition
+
         # Iterate through function parameters
         for param in signature.parameters.values():
             param_name = param.name
@@ -126,12 +126,10 @@ class ToolRegistry:
 
             # Params without default values are required params
             if param.default == inspect.Parameter.empty:
-                parameters["required"].append(param_name)
+                tool_definition["function"]["parameters"]["required"].append(param_name)
 
-        return {
-            "type": "function",
-            "function": {"name": tool.__name__, "description": function_description, "parameters": parameters},
-        }
+        tool_definition["function"]["parameters"] = parameters
+        return tool_definition
 
     def get_all_tool_definitions(self) -> list[Dict]:  # noqa: D102
         definitions = []

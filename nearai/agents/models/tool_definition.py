@@ -1,45 +1,12 @@
-from typing import Dict, List, Literal
+from typing import Any
 from pydantic import BaseModel, ConfigDict
+class MCPTool(BaseModel):
+    """Definition for a tool the client can call."""
 
-class ToolParameterProperty(BaseModel):
-    """Properties for a tool parameter."""
-    type: str
-    description: str
-    enum: List[str] | None = None
-
-    model_config = ConfigDict(
-        extra='forbid',
-        validate_assignment=True
-    )
-
-class ToolParameters(BaseModel):
-    """Parameters configuration for a tool."""
-    type: Literal["object"]
-    properties: Dict[str, ToolParameterProperty]
-    required: List[str]
-
-    model_config = ConfigDict(
-        extra='forbid',
-        validate_assignment=True
-    )
-
-class ToolFunction(BaseModel):
-    """Function definition for a tool."""
     name: str
-    description: str
-    parameters: ToolParameters
-
-    model_config = ConfigDict(
-        extra='forbid',
-        validate_assignment=True
-    )
-
-class ToolDefinition(BaseModel):
-    """Complete tool definition."""
-    type: Literal["function"]
-    function: ToolFunction
-
-    model_config = ConfigDict(
-        extra='forbid',
-        validate_assignment=True
-    )
+    """The name of the tool."""
+    description: str | None = None
+    """A human-readable description of the tool."""
+    inputSchema: dict[str, Any]
+    """A JSON Schema object defining the expected parameters for the tool."""
+    model_config = ConfigDict(extra="allow")
