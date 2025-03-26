@@ -7,10 +7,40 @@ NEAR AI CLI allows you to [create and deploy agents](./agents/quickstart.md), [t
 ## Installing NEAR AI CLI
 
 !!! warning
-    Requires Python version **`3.11`** _(Currently does not work with `3.12` or `3.13`)_
+    Requires Python version **`3.9 - 3.11`** _(Currently does not work with `3.12` or `3.13`)_
 
-!!! tip
-     Although not required, this project uses [uv](https://docs.astral.sh/uv/) for Python package management and it is suggested that you use it as well if you would like to make contributions to this project.
+!!! abstract "Python Version Management"
+
+    If you do not have Python, or your version is not compatible, we recommend using a version management tool as they allow you to easily install and switch between python versions. 
+    
+    Here are a few options to choose from:
+    
+    - [uv](https://docs.astral.sh/uv/) - Fast Python package manager _(Preferred tool by `nearai` core contributors)_
+    - [pyenv](https://github.com/pyenv/pyenv) - Simple Python version management tool
+    - [miniconda](https://docs.anaconda.com/miniconda/install/) - Miniature installation of Anaconda Distribution 
+
+    === "uv"
+
+        ```bash
+        uv venv --python 3.11
+        source .venv/bin/activate
+        ```
+    
+    === "pyenv"
+
+        ```bash
+        pyenv install 3.11
+        pyenv local 3.11 # or use global
+        ```
+
+    === "conda"
+
+        ``` bash
+        conda create -n myenv python=3.11
+        conda activate myenv
+        ```
+
+---
 
 === "pip"
 
@@ -20,13 +50,75 @@ NEAR AI CLI allows you to [create and deploy agents](./agents/quickstart.md), [t
 
 === "local"
 
+    Clone project:
+    
     ``` bash
     git clone git@github.com:nearai/nearai.git
     cd nearai
-    ./install.sh
     ```
+    
+    Install `nearai`:
+
+    === "uv"
+
+        Download, create, and activate a virtual Python 3.11 environment:
+
+        ```bash
+        uv venv --python 3.11
+        source .venv/bin/activate
+        ```
+        
+        Install `nearai` from repo:
+        
+        ```bash
+        pip install -e .
+        ```
+
+    === "conda"
+
+        Download, create, and activate a virtual Python `3.11` environment:
+        
+        ```bash
+        conda create -n nearai python=3.11
+        conda activate nearai
+        ```
+
+        Install `nearai`:
+        ```bash
+        pip install -e .
+        ```
+
+    === "pyenv" 
+
+        If needed, install Python 3.11 with `pyenv`:
+
+        ```bash
+        pyenv install 3.11
+        ```
+
+        Set local version to `3.11`:
+        
+        ```bash
+        pyenv local 3.11
+        ```
+        
+        Create and activate a virtual environment:
+        
+        ```bash
+        python -m venv .venv
+        source .venv/bin/activate
+        ```
+
+        Install `nearai` from local repo:
+
+        ```bash
+        pip install --upgrade pip
+        pip install -e .
+        ```
 
 ---
+
+
 
 ## Login to NEAR AI
 
