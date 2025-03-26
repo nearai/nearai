@@ -14,6 +14,8 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
+from mcp import ClientSession
+from mcp.client.sse import sse_client
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
 
 import psutil
@@ -1484,6 +1486,65 @@ class Environment(object):
         else:
             # By default the user starts the conversation.
             return "user"
+
+    async def _handle_mcp_tool_calls(self, completion: SimpleNamespace, session: ClientSession, add_responses_to_messages: bool = True) -> Optional[str]:
+        for tool_call in completion.tool_calls:
+            tool_result = await session.call_tool(
+                tool_call.function.name,
+                json.loads(tool_call.function.arguments)
+            )
+            if not tool_result or not hasattr(tool_result, 'content'):
+                if add_responses_to_messages:
+                    self.add_reply("No content received from tool")
+                return None
+
+            for content in tool_result.content:
+                try:
+                    result_json = json.loads(content.text)
+                    if add_responses_to_messages:
+                        self.add_reply(json.dumps(result_json, indent=2))
+                    else:
+                        return json.dumps(result_json, indent=2)
+                except json.JSONDecodeError:
+                    if add_responses_to_messages:
+                        self.add_reply(content.text)
+                    else:
+                        return content.text
+
+    async def add_mcp_server(self, mcp_server_url: str, add_responses_to_messages: bool = True) -> Optional[str]:
+        """Add an MCP server to the environment."""
+        if not mcp_server_url:
+            raise ValueError("MCP server URL is not set")
+
+        self.add_system_log(f"Connecting to MCP Server at {mcp_server_url}...")
+        tool_registry = self.get_tool_registry(new=True)
+
+        async with sse_client(f"{mcp_server_url}/sse") as streams:
+            async with ClientSession(streams[0], streams[1]) as session:
+                await session.initialize()
+                self.add_system_log("Successfully connected to MCP Server.")
+
+                mcp_tools = (await session.list_tools()).tools
+                self.add_system_log(f"Found {len(mcp_tools)} tools")
+
+                for mcp_tool in mcp_tools:
+                    tool_registry.register_mcp_tool(mcp_tool, session.call_tool)
+                    mcp_tools = tool_registry.get_all_tool_definitions()
+
+                self.add_system_log("All tools registered!")
+
+                completion = self.completion_and_get_tools_calls(
+                    [{"role": "system", "content": "You are an assistant and you can use a list of tools to help answer user questions."}] + self.list_messages(),
+                    tools=mcp_tools,
+                )
+
+                if hasattr(completion, 'tool_calls') and completion.tool_calls:
+                    return await self._handle_mcp_tool_calls(completion, session, add_responses_to_messages)
+                elif completion.message:
+                    if add_responses_to_messages:
+                        self.add_reply(completion.message)
+                    else:
+                        return completion.message
 
     def run(
         self,
