@@ -41,9 +41,9 @@ response = env.completions_and_run_tools(messages, tools=[tool_def])
 
 2. Using `register_mcp_tool` for MCP tools:
 ```python
-from nearai.agents.models.tool_definition import MCPTool
+from mcp.types import Tool
 
-mcp_tool = MCPTool(
+mcp_tool = Tool(
     name="weather",
     description="Get the current weather in a location",
     inputSchema={
@@ -70,6 +70,7 @@ To pass all the built in tools plus any you have registered use the `get_all_too
 all_tools = env.get_tool_registry().get_all_tool_definitions()
 response = env.completions_and_run_tools(messages, tools=all_tools)
 ```
+
 If you do not want to use the built-in tools, use `get_tool_registry(new=True)`
 ```python
     tool_registry = env.get_tool_registry(new=True)
