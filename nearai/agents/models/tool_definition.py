@@ -10,7 +10,7 @@ class MCPTool(BaseModel):
 
     name: str
     """The name of the tool."""
-    description: str | None = None
+    description: str = ""
     """A human-readable description of the tool."""
     inputSchema: dict[str, Any]  # noqa: N815
     """A JSON Schema object defining the expected parameters for the tool."""
