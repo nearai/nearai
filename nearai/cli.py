@@ -1702,7 +1702,6 @@ class CLI:
             ],
             "Agent Development": [
                 ("agent create", "Create a new agent or fork an existing one"),
-                ("agent update", "Update the version in an agent's metadata.json file"),
                 ("agent upload", "Upload an agent to the NEAR AI agent registry"),
                 ("agent interactive", "Run an agent interactively"),
                 ("agent task", "Run a single task with an agent"),
@@ -1714,14 +1713,10 @@ class CLI:
                 ("registry download", "Download an item from the registry"),
                 ("registry info", "Show information about a registry item"),
                 ("registry list", "List available items in the registry"),
+                ("registry update", "Update the remote version in an agent's metadata.json file"),
                 ("registry metadata-template", "Create a metadata template"),
             ],
-            "Configuration": [
-                ("config set", "Set a configuration value"),
-                ("config get", "Get a configuration value"),
-                ("config show", "Show all configuration values"),
-            ],
-            "Advanced Features": [
+            "Model Operations": [
                 ("benchmark run", "Run benchmark on a dataset with a solver strategy"),
                 ("benchmark list", "List all executed benchmarks"),
                 ("evaluation table", "Print table of evaluations"),
@@ -1730,6 +1725,11 @@ class CLI:
                 ("vllm run", "Run VLLM server with OpenAI-compatible API"),
                 ("permission grant", "Grant permission to an account"),
                 ("hub chat", "Chat with model from NEAR AI hub"),
+            ],
+            "Configuration": [
+                ("config set", "Set a configuration value"),
+                ("config get", "Get a configuration value"),
+                ("config show", "Show all configuration values"),
             ],
         }
 
