@@ -16,7 +16,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from mcp import ClientSession
 from mcp.client.sse import sse_client
-from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
+from mcp.client.stdio import stdio_client, StdioServerParameters
+from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast, Callable
 
 import psutil
 from litellm.types.completion import ChatCompletionMessageParam
@@ -58,6 +59,7 @@ from nearai.shared.near.sign import (
     validate_completion_signature,
 )
 from nearai.shared.secure_openai_clients import SecureAsyncOpenAI, SecureOpenAI
+from nearai.agents.models.mcp import MCPServerConfig, MCPTransportType
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
@@ -1511,40 +1513,56 @@ class Environment(object):
                     else:
                         return content.text
 
-    async def add_mcp_server(self, mcp_server_url: str, add_responses_to_messages: bool = True) -> Optional[str]:
-        """Add an MCP server to the environment."""
-        if not mcp_server_url:
-            raise ValueError("MCP server URL is not set")
+    async def _get_transport_method(self, mcp_server_config: MCPServerConfig) -> Tuple[Callable, Any]:
+        self.add_system_log(f"MCP SERVER CONFIG: {mcp_server_config}")
 
-        self.add_system_log(f"Connecting to MCP Server at {mcp_server_url}...")
+        if not "url" in mcp_server_config and not "command" in mcp_server_config:
+            raise ValueError("MCP server needs either a url or a command to be set")
+
+        transport_type = MCPTransportType.SSE if "url" in mcp_server_config else MCPTransportType.STDIO
+        self.add_system_log(f"Connecting to MCP Server at {mcp_server_config.get('url')}...")
+
+        transport_method = sse_client if transport_type == MCPTransportType.SSE else stdio_client
+
+        transport_params = (
+            f"{mcp_server_config.get('url')}/sse" if transport_type == MCPTransportType.SSE
+            else StdioServerParameters(command=mcp_server_config.get('command'), args=mcp_server_config.get('args'), env=mcp_server_config.get('env'))
+        )
+        return transport_method, transport_params
+
+    async def add_mcp_servers(self, mcp_server_configs: List[MCPServerConfig], add_responses_to_messages: bool = True) -> None:
+        """Add MCP servers to the environment."""
+
         tool_registry = self.get_tool_registry(new=True)
 
-        async with sse_client(f"{mcp_server_url}/sse") as streams:
-            async with ClientSession(streams[0], streams[1]) as session:
-                await session.initialize()
-                self.add_system_log("Successfully connected to MCP Server.")
+        for mcp_server_config in mcp_server_configs:
+            (transport_method, transport_params) = await self._get_transport_method(mcp_server_config)
 
-                mcp_tools = (await session.list_tools()).tools
-                self.add_system_log(f"Found {len(mcp_tools)} tools")
+            async with transport_method(transport_params) as streams:
+                async with ClientSession(streams[0], streams[1]) as session:
+                    await session.initialize()
+                    self.add_system_log("Successfully connected to MCP Server.")
 
-                for mcp_tool in mcp_tools:
-                    tool_registry.register_mcp_tool(mcp_tool, session.call_tool)
-                    mcp_tools = tool_registry.get_all_tool_definitions()
+                    mcp_tools = (await session.list_tools()).tools
+                    self.add_system_log(f"Found {len(mcp_tools)} tools")
 
-                self.add_system_log("All tools registered!")
+                    for mcp_tool in mcp_tools:
+                        tool_registry.register_mcp_tool(mcp_tool, session.call_tool)
 
-                completion = self.completion_and_get_tools_calls(
-                    [{"role": "system", "content": "You are an assistant and you can use a list of tools to help answer user questions."}] + self.list_messages(),
-                    tools=mcp_tools,
-                )
+                    self.add_system_log("All tools registered!")
 
-                if hasattr(completion, 'tool_calls') and completion.tool_calls:
-                    return await self._handle_mcp_tool_calls(completion, session, add_responses_to_messages)
-                elif completion.message:
-                    if add_responses_to_messages:
-                        self.add_reply(completion.message)
-                    else:
-                        return completion.message
+        self.add_system_log("All MCP servers added!")
+        self.add_system_log(f"TOOL REGISTRY: {json.dumps(tool_registry.get_all_tool_definitions(), indent=2)}")
+
+        completion = self.completion_and_get_tools_calls(
+            [{"role": "system", "content": "You are an assistant and you can use a list of tools to help answer user questions."}] + self.list_messages(),
+            tools=tool_registry.get_all_tool_definitions(),
+        )
+
+        if hasattr(completion, 'tool_calls') and completion.tool_calls:
+            self.add_system_log(f"TOOL CALLS FOUND: {completion.tool_calls}", logging.INFO)
+        elif completion.message:
+            self.add_reply(completion.message)
 
     def run(
         self,
