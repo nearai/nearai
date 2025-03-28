@@ -176,7 +176,7 @@ nav:
     - Overview: 'integration/overview.md'
     - Quickstart: 'integration/quickstart.md'
   - APIs:
-    - Library API: 'api.md'
+    - Agent SDK API: 'api.md'
     - Web API Docs: 'https://api.near.ai/redoc'
     - Interactive API: 'https://api.near.ai/docs'
     - OpenAPI Specs: 'https://api.near.ai/openapi.json'
