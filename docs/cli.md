@@ -4,107 +4,67 @@ NEAR AI CLI allows you to [create and deploy agents](./agents/quickstart.md), [t
 
 ---
 
-!!! warning
-    Requires Python version **`3.9 - 3.11`** _(Currently does not work with `3.12` or `3.13`)_
+### Pre-Requisite: Python 3.9 - 3.11
 
-!!! abstract "Python Version Management"
+To use NEAR AI CLI, you need to have Python `3.9 - 3.11` installed on your machine. Currently the CLI does not work with Python `3.12` or `3.13`.
 
-    New to Python or don't have a compatible version? Try using a version management tool as they allow you to easily install and switch between Python versions. 
-    
-    Here are some popular options:
-    
-    - [uv](https://docs.astral.sh/uv/) - Fast Python package manager _(Preferred tool by `nearai` core contributors)_
-    - [pyenv](https://github.com/pyenv/pyenv) - Simple Python version management tool
-    - [miniconda](https://docs.anaconda.com/miniconda/install/) - Miniature installation of Anaconda Distribution 
+We recommend you to create a virtual environment to avoid conflicts with other Python packages.
+
+
+=== "uv"
+
+    ```bash
+    # Create a virtual environment with python 3.11
+    uv venv --python 3.11
+    source .venv/bin/activate
+    ```
+
+=== "conda"
+
+    ```bash
+    # Create a virtual environment with python 3.11
+    conda create -n nearai python=3.11
+    conda activate nearai
+    ```
+
+=== "pyenv" 
+
+    ```bash
+    # Install python 3.11
+    pyenv install 3.11
+    pyenv local 3.11
+
+    # Create a virtual environment
+    python -m venv .venv
+    source .venv/bin/activate
+    ```
+
+---
 
 ## Installing NEAR AI CLI
 
 === "pip"
 
     ``` bash
-    python3 -m pip install nearai
+    pip install nearai  # OR: python3 -m pip install nearai
     ```
 
 === "local"
 
-    Clone project:
-    
     ``` bash
+    # Clone the repository:
     git clone git@github.com:nearai/nearai.git
     cd nearai
+
+    # Install dependencies:
+    pip install -e .  # OR: python3 -m pip install -e .
     ```
-    
-    Install `nearai`:
 
-    === "Install Script"
 
-        ```bash
-        ./install.sh
-        ```
-
-        This script uses Python3's built in virtual environment creator `venv`.
-        
-        **Please ensure you are using Python `3.9-3.11` before running.**
-
-    === "uv"
-
-        Download, create, and activate a virtual Python `3.11` environment:
-
-        ```bash
-        uv venv --python 3.11
-        source .venv/bin/activate
-        ```
-        
-        Install `nearai` from repo:
-        
-        ```bash
-        pip install -e .
-        ```
-
-    === "conda"
-
-        Download, create, and activate a virtual Python `3.11` environment:
-        
-        ```bash
-        conda create -n nearai python=3.11
-        conda activate nearai
-        ```
-
-        Install `nearai` from local repo:
-        ```bash
-        pip install -e .
-        ```
-
-    === "pyenv" 
-
-        If needed, install Python `3.11` with `pyenv`:
-
-        ```bash
-        pyenv install 3.11
-        ```
-
-        Set local version to `3.11`:
-        
-        ```bash
-        pyenv local 3.11
-        ```
-        
-        Create and activate a virtual environment:
-        
-        ```bash
-        python -m venv .venv
-        source .venv/bin/activate
-        ```
-
-        Install `nearai` from local repo:
-
-        ```bash
-        pip install --upgrade pip
-        pip install -e .
-        ```
+!!! warning "Python version"
+    NEARAI CLI requires python **`3.9 - 3.11`**, we recommend you to [create a virtual environment](#pre-requisite-python-39---311) to avoid conflicts with other Python packages.
 
 ---
-
 
 
 ## Login to NEAR AI
