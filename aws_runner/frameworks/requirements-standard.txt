@@ -15,6 +15,7 @@ chardet
 bs4
 googlesearch-python >= 1.2.5
 PyPDF2
+reportlab
 youtube_transcript_api >= 0.6.2
 py-near >= 1.1.50
 loguru == 0.7.2
