@@ -1,5 +1,6 @@
-import json
 import asyncio
+import json
+from datetime import datetime
 from enum import Enum
 from os import getenv
 from typing import Callable, List, Union
@@ -8,6 +9,8 @@ from dotenv import load_dotenv
 from nearai.shared.client_config import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
 from openai import OpenAI
 from pydantic import BaseModel, field_validator
+
+from hub.api.v1.models import Delta, get_session
 
 load_dotenv()
 
@@ -18,18 +21,50 @@ class Provider(Enum):
     LOCAL = "local"
 
 
-async def handle_stream(resp_stream, add_usage_callback: Callable):
+async def handle_stream(db, thread_id, run_id, message_id, resp_stream, add_usage_callback: Callable):
     response_chunks = []
 
-    for chunk in resp_stream:
-        c = json.dumps(chunk.model_dump())
-        response_chunks.append(c)
-        yield f"data: {c}\n\n"
-        await asyncio.sleep(0) # lets the event loop yield, otherwise it batches yields
+    if run_id is not None:
+        with get_session() as session:
+            for chunk in resp_stream:
+                c = json.dumps(chunk.model_dump())
+                response_chunks.append(c)
+
+                txt = chunk.choices[0].delta.content
+                if txt is not None:
+                    content = {"content": [{"index": 0, "type": "text", "text": {"value": txt}}]}
+                    delta = Delta(
+                        event="thread.message.delta",
+                        content=content,
+                        created_at=datetime.now(),
+                        run_id=run_id,
+                        thread_id=thread_id,
+                        message_id=message_id,
+                    )
+                    session.add(delta)
+                    session.commit()
+                    print("Writing Delta obect", run_id, thread_id, message_id)
+                yield f"data: {c}\n\n"
+                await asyncio.sleep(0)  # lets the event loop yield, otherwise it batches yields
+        delta = Delta(
+            event="thread.run.completed",
+            created_at=datetime.now(),
+            run_id=run_id,
+            thread_id=thread_id,
+            message_id=message_id,
+        )
+        session.add(delta)
+        session.commit()
+
+    else:
+        for chunk in resp_stream:
+            c = json.dumps(chunk.model_dump())
+            response_chunks.append(c)
+            yield f"data: {c}\n\n"
+            await asyncio.sleep(0)  # lets the event loop yield, otherwise it batches yields
 
     yield "data: [DONE]\n\n"
     full_response_text = "".join(response_chunks)
-
     add_usage_callback(full_response_text)
 
 

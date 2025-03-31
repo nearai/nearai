@@ -13,8 +13,6 @@ from nearai.shared.models import RunMode
 from openai.types.beta.thread import Thread as OpenAITThread
 from openai.types.beta.threads.message import Attachment
 from openai.types.beta.threads.message import Message as OpenAITThreadMessage
-from openai.types.beta.threads.message_delta_event import MessageDeltaEvent as OpenAITMessageDeltaEvent
-from openai.types.beta.threads.message_delta import MessageDelta as OpenAITMessageDelta
 from openai.types.beta.threads.message_content import MessageContent
 from openai.types.beta.threads.message_delta import MessageDelta as OpenAITMessageDelta
 from openai.types.beta.threads.message_delta_event import MessageDeltaEvent as OpenAITMessageDeltaEvent
@@ -274,24 +272,27 @@ class Log(SQLModel, table=True):
     target: str = Field(nullable=False)
     info: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))
 
+
 class Delta(SQLModel, table=True):
     __tablename__ = "deltas"
 
     id: str = Field(default_factory=lambda: "delta_" + uuid.uuid4().hex[:24], primary_key=True)
     object: str = Field(default="thread.message.delta", nullable=False)
     created_at: datetime = Field(default_factory=datetime.now, nullable=False)
-    content: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
-    step_details: Optional[Dict] = Field(default=None, sa_column=Column(JSON))
-    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", JSON))
+    content: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
+    step_details: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
+    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", UnicodeSafeJSON))
     filename: Optional[str] = Field(default=None)
+    run_id: Optional[str] = Field(default=None, index=True)
+    thread_id: Optional[str] = Field(default=None, index=True)
+    message_id: Optional[str] = Field(default=None, index=True)
 
     def to_openai(self) -> OpenAITMessageDeltaEvent:
         """Convert to OpenAI MessageDeltaEvent."""
         return OpenAITMessageDeltaEvent(
-            metadata=self.meta_data,
-            delta=OpenAITMessageDelta(role="assistant", content=self.content),
             id=self.id,
             object=self.object,
+            delta=OpenAITMessageDelta(role="assistant", content=self.content),
         )
 
 
@@ -465,23 +466,28 @@ class Run(SQLModel, table=True):
             parallel_tool_calls=self.parallel_tool_calls,
         )
 
-class Delta(SQLModel, table=True):
-    __tablename__ = "deltas"
-    id: str = Field(default_factory=lambda: "delta_" + uuid.uuid4().hex[:24], primary_key=True)
-    object: str = Field(default="thread.message.delta", nullable=False)
-    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
-    content: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
-    step_details: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
-    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", UnicodeSafeJSON))
-    filename: Optional[str] = Field(default=None)
 
-    def to_openai(self) -> OpenAITMessageDeltaEvent:
-        return OpenAITMessageDeltaEvent(
-            id=self.id,
-            object=self.object,
-            delta=OpenAITMessageDelta(role="assistant", content=self.content),
-            metadata=self.meta_data,
-        )
+class Delegation(SQLModel, table=True):
+    __tablename__ = "delegation"
+
+    id: int = Field(default=None, primary_key=True)
+    original_account_id: str = Field(nullable=False)
+    delegation_account_id: str = Field(nullable=False)
+    expires_at: Optional[datetime] = Field(default=None)
+
+
+class ScheduledRun(SQLModel, table=True):
+    __tablename__ = "scheduled_runs"
+    id: int = Field(default=None, primary_key=True)
+    thread_id: str = Field(nullable=True)
+    agent: str = Field(nullable=False)
+    input_message: str = Field(nullable=False)
+    run_params: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))
+    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
+    created_by: str = Field(nullable=False)
+    run_at: datetime = Field(nullable=False)
+    has_run: bool = Field(default=False, nullable=False)
+
 
 class Completion(SQLModel, table=True):
     __tablename__ = "completions"

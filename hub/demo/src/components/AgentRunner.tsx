@@ -114,6 +114,7 @@ export const AgentRunner = ({
   });
 
   const [htmlOutput, setHtmlOutput] = useState('');
+  const [streamingText, setStreamingText] = useState<string>('');
   const [openedFileName, setOpenedFileName] = useState<string | null>(null);
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
@@ -316,6 +317,32 @@ export const AgentRunner = ({
     }
   }, [setThread, threadQuery.data, thread?.metadata.topic, utils]);
 
+  // SSE for streaming updates
+  useEffect(() => {
+    if (!threadId) return;
+
+    const eventSource = new EventSource(`/api/v1/threads/${threadId}/stream`);
+
+    eventSource.addEventListener('initial', () => {
+      setStreamingText('');
+    });
+
+    eventSource.addEventListener('message', (event) => {
+      const data = JSON.parse(event.data);
+      const appendText = data.data.delta.content[0].text.value;
+      setStreamingText((prevText) => prevText + appendText);
+    });
+
+    eventSource.onerror = (error) => {
+      console.log('SSE error:', error);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [threadId, setThread]);
+
   useEffect(() => {
     if (threadQuery.error?.data?.code === 'FORBIDDEN') {
       openToast({
@@ -454,6 +481,7 @@ export const AgentRunner = ({
         />
 
         <Sidebar.Main>
+          <div>Streaming: {streamingText}</div>
           {isLoading ? (
             <PlaceholderStack style={{ marginBottom: 'auto' }} />
           ) : (

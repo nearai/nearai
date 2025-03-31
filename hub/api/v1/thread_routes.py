@@ -1,11 +1,11 @@
+import asyncio
+import json
 import logging
+import threading
+from collections import defaultdict
 from datetime import datetime, timedelta
 from os import getenv
 from typing import Any, Dict, Iterable, List, Literal, Optional, Union
-
-from collections import defaultdict
-import asyncio
-import json
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
 from fastapi.responses import StreamingResponse
@@ -34,11 +34,10 @@ from hub.api.v1.agent_routes import (
 )
 from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.completions import Provider
+from hub.api.v1.models import Delta, get_session
 from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import Run as RunModel
-from hub.api.v1.models import get_session
 from hub.api.v1.models import Thread as ThreadModel
-from hub.api.v1.models import get_session
 from hub.api.v1.routes import DEFAULT_TIMEOUT, get_llm_ai
 from hub.api.v1.sql import SqlClient
 from hub.tasks.scheduler import get_scheduler
@@ -50,6 +49,7 @@ threads_router = APIRouter(
 logger = logging.getLogger(__name__)
 
 run_queues = defaultdict(asyncio.Queue)
+
 
 class FilterThreadRequestsLogs(logging.Filter):
     """Custom logging filter to suppress spammy healthcheck/status requests.
@@ -624,7 +624,7 @@ def create_run(
     run: RunCreateParamsBase = Body(...),
     auth: AuthToken = Depends(get_auth),
     scheduler=Depends(get_scheduler),
-) -> OpenAIRun:
+) -> Union[OpenAIRun, StreamingResponse]:
     logger.info(f"Creating run for thread: {thread_id}")
     with get_session() as session:
         thread_model = _check_thread_permissions(auth, session, thread_id)
@@ -686,12 +686,12 @@ def create_run(
             base_payload = {
                 "id": run_model.id,  # e.g., "run_123"
                 "object": "thread.run",
-                "created_at": int(datetime.utcnow().timestamp()),
+                "created_at": int(datetime.now(datetime.UTC).timestamp()),
                 "assistant_id": run.assistant_id,
                 "thread_id": thread_id,
                 "status": "queued",
                 "started_at": None,
-                "expires_at": int((datetime.utcnow() + timedelta(minutes=10)).timestamp()),
+                "expires_at": int((datetime.now(datetime.UTC) + timedelta(minutes=10)).timestamp()),
                 "cancelled_at": None,
                 "failed_at": None,
                 "completed_at": None,
@@ -731,7 +731,7 @@ def create_run(
             # Update the payload for in_progress status
             in_progress_payload = base_payload.copy()
             in_progress_payload["status"] = "in_progress"
-            in_progress_payload["started_at"] = int(datetime.utcnow().timestamp())
+            in_progress_payload["started_at"] = int(datetime.now(datetime.UTC).timestamp())
             event_in_progress = {
                 "event": "thread.run.in_progress",
                 "data": in_progress_payload,
@@ -742,7 +742,7 @@ def create_run(
             step_payload = {
                 "id": "step_001",  # placeholder step id
                 "object": "thread.run.step",
-                "created_at": int(datetime.utcnow().timestamp()),
+                "created_at": int(datetime.now(datetime.UTC).timestamp()),
                 "run_id": run_model.id,
                 "assistant_id": run.assistant_id,
                 "thread_id": thread_id,
@@ -773,12 +773,11 @@ def create_run(
                 "data": step_payload,
             }
             asyncio.run(run_queues[run_model.id].put(event_step_in_progress))
-            print('put events', run_model.id)
 
-            return StreamingResponse(
-                stream_run_events(run_model.id),
-                media_type="text/event-stream"
-            )
+            thread = threading.Thread(target=_run_agent, args=(thread_id, run_model.id, None, auth))
+            thread.start()
+
+            return StreamingResponse(stream_run_events(run_model.id, True), media_type="text/event-stream")
 
         if run.delegate_execution:
             return run_model.to_openai()
@@ -931,15 +930,92 @@ def _run_agent(
                         _run_agent(thread_id, parent_run.id, auth=auth)
         return run_model.to_openai()
 
-async def stream_run_events(run_id: str):
-    """Stream events for a run via SSE until completion."""
+
+async def monitor_deltas(run_id: str, delete: bool):
+    with get_session() as session:
+        start_time = datetime.now(datetime.UTC)
+        seen_ids = set()
+
+        async def handle_delete():
+            if delete:
+                await asyncio.sleep(3)  # Let the other listeners get this event
+                session.query(Delta).filter(Delta.run_id == run_id).delete()
+                session.commit()
+
+        while True:
+            try:
+                # Fetch the oldest Delta for this run_id
+                event = session.exec(
+                    select(Delta)
+                    .where(Delta.run_id == run_id, Delta.id.notin_(list(seen_ids)))
+                    .order_by(Delta.id)
+                    .limit(1)
+                ).first()
+                # Timeout after 5 minutes from the start of monitoring
+                if datetime.now(datetime.UTC) - start_time >= timedelta(minutes=5):
+                    logger.error(f"Timeout reached for monitor_deltas on run_id {run_id}")
+                    await run_queues[run_id].put("done")
+                    await handle_delete()
+
+                    return
+                if not event:
+                    await asyncio.sleep(1)  # Wait before retrying
+                    continue
+                seen_ids.add(event.id)
+
+                if event:
+                    if event.content is None:
+                        # Signal completion and stop monitoring
+                        await run_queues[run_id].put("done")
+                        await handle_delete()
+                        return
+                    else:
+                        # 4. Event: thread.run.step.created
+                        payload = {"id": event.message_id, "object": event.object, "delta": event.content}
+                        event_step_created = {
+                            "event": event.object,
+                            "data": payload,
+                        }
+                        await run_queues[run_id].put(event_step_created)
+
+                    session.delete(event)
+                    session.commit()
+                await asyncio.sleep(0.1)  # Poll every 0.1s
+            except Exception as e:
+                logger.error(f"Error in monitor_deltas for run_id {run_id}: {e}")
+                await asyncio.sleep(1)  # Wait before retrying
+
+
+async def stream_run_events(run_id: str, delete: bool):
+    asyncio.create_task(monitor_deltas(run_id, delete))
+    print(f"Started monitor_deltas task for run_id {run_id}")
     queue = run_queues[run_id]
     while True:
         event = await queue.get()
         if event == "done":
             break
         yield f"data: {json.dumps(event)}\n\n"
-    del run_queues[run_id]  # Clean up after stream ends
+        await asyncio.sleep(0)
+    del run_queues[run_id]
+
+
+@threads_router.get("/threads/{thread_id}/stream")
+async def thread_subscribe(thread_id: str):
+    """Subscribe to deltas for a thread (for testing or future use).
+
+    Currently a placeholder; primary streaming is handled via runs.
+    """
+    with get_session() as session:
+        # Basic thread existence check
+
+        run = session.exec(
+            select(RunModel).where(RunModel.thread_id == thread_id).order_by(RunModel.created_at.desc())
+        ).first()
+        if not run:
+            raise HTTPException(status_code=404, detail="Run for thread not found")
+
+        return StreamingResponse(stream_run_events(run.id, False), media_type="text/event-stream")
+
 
 @threads_router.get("/threads/{thread_id}/runs/{run_id}")
 def get_run(
@@ -965,27 +1041,6 @@ class RunUpdateParams(BaseModel):
     completed_at: Optional[datetime] = None
     failed_at: Optional[datetime] = None
     metadata: Optional[dict] = None
-
-@threads_router.post("/runs/{run_id}/complete")
-def complete_run(
-    run_id: str,
-    auth: AuthToken = Depends(get_auth),
-) -> OpenAIRun:
-    """Mark a run as completed and close its stream if active."""
-    with get_session() as session:
-        run_model = session.get(RunModel, run_id)
-        if not run_model:
-            raise HTTPException(status_code=404, detail="Run not found")
-        run_model.status = "completed"
-        run_model.completed_at = datetime.now()
-        session.commit()
-
-        if run_id in run_queues:
-            final_event = run_model.to_openai().json()
-            asyncio.run(run_queues[run_id].put(final_event))
-            asyncio.run(run_queues[run_id].put("done"))
-
-        return run_model.to_openai()
 
 
 @threads_router.post("/threads/{thread_id}/runs/{run_id}")

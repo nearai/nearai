@@ -10,6 +10,7 @@ import subprocess
 import tarfile
 import tempfile
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -1120,10 +1121,51 @@ class Environment(object):
         messages: Union[Iterable[ChatCompletionMessageParam], str],
         model: Union[Iterable[ChatCompletionMessageParam], str] = "",
         stream: bool = False,
+        thread_id: Optional[str] = None,
+        attachments: Optional[Iterable[Attachment]] = None,
+        message_type: Optional[str] = None,
         **kwargs: Any,
-    ) -> Union[ModelResponse, CustomStreamWrapper]:
-        """Returns all completions for given messages using the given model."""
-        return self._run_inference_completions(messages, model, stream, **kwargs)
+    ) -> ModelResponse:
+        """Returns all completions for given messages using the given model.
+
+        Always returns a ModelResponse object. When stream=True, aggregates the streamed
+        content into a ModelResponse. When stream=False, returns the ModelResponse directly.
+        """
+        params, kwargs = self.get_inference_parameters(messages, model, stream, **kwargs)
+        if stream:
+            message_id = None
+            kwargs.setdefault("extra_headers", {}).update(
+                {
+                    k: v
+                    for k, v in {"run_id": self._run_id, "thread_id": thread_id, "message_id": message_id}.items()
+                    if v is not None
+                }
+            )
+
+            # Pass thread_id, attachments, and message_type to the server
+            stream_results = self._run_inference_completions(
+                messages, model, True, thread_id=thread_id, attachments=attachments, message_type=message_type, **kwargs
+            )
+            full_content = ""
+            for chunk in stream_results:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    delta_content = chunk.choices[0].delta.content
+                    full_content += delta_content
+                    print(delta_content, end="", flush=True)
+            print()
+            response = ModelResponse(
+                id="streamed_completion",
+                object="chat.completion",
+                created=int(time.time()),
+                model=params.model,
+                choices=[
+                    Choices(index=0, message={"role": "assistant", "content": full_content}, finish_reason="stop")
+                ],
+                usage={"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+            )
+            return response
+        else:
+            return self._run_inference_completions(messages, model, False, **kwargs)
 
     def verify_signed_message(
         self,
@@ -1297,45 +1339,6 @@ class Environment(object):
             - Put the entire function call reply on one line
         """
         )
-
-    def stream_completion(
-        self,
-        messages: Union[Iterable[ChatCompletionMessageParam], str],
-        model: Union[Iterable[ChatCompletionMessageParam], str] = "",
-        **kwargs: Any,
-    ):
-        #TODO merge with completion(stream=True)?
-        stream: bool = True
-        return self._run_inference_completions(messages, model, stream, **kwargs)
-
-    def add_reply_streaming(self, results):
-        for result in results:
-            if result.choices[0].delta.content:
-                print(result.choices[0].delta.content, end='', flush=True)
-        print()
-        return
-        #TODO should this be add_reply?
-        #create message on thread
-        message = hub_client.beta.threads.messages.create(
-            thread_id=thread_id,
-            role="assistant",
-            status="in_progress",
-            content="",
-            extra_body={
-                "assistant_id": self.get_primary_agent().identifier,
-                "run_id": self._run_id,
-            },
-            attachments=attachments,
-            metadata={"message_type": message_type} if message_type else None,
-        )
- 
-        for result in results:
-            #TODO this might be bulky
-            #send tokens to hub for message id
-            hub_client.beta.threads.messages.update(...)
-        #send done for message id
-        #update message on thread
-        hub_client.beta.threads.messages.update(...)
 
     # TODO(286): `messages` may be model and `model` may be messages temporarily to support deprecated API.
     def completion(
