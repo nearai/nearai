@@ -11,6 +11,7 @@ import tarfile
 import tempfile
 import threading
 import uuid
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -1489,12 +1490,27 @@ class Environment(object):
             # By default the user starts the conversation.
             return "user"
 
-    async def _handle_mcp_tool_calls(self, completion: SimpleNamespace, session: ClientSession, add_responses_to_messages: bool = True) -> Optional[str]:
+    async def _handle_mcp_tool_calls(self, completion: SimpleNamespace, tool_server_map: Dict[str, Any], add_responses_to_messages: bool = True) -> Optional[str]:
         for tool_call in completion.tool_calls:
-            tool_result = await session.call_tool(
-                tool_call.function.name,
-                json.loads(tool_call.function.arguments)
-            )
+            server = tool_server_map.get(tool_call.function.name)
+            if not server:
+                self.add_system_log(f"Tool {tool_call.function.name} not found in tool_server_map", logging.ERROR)
+                continue
+
+            connection_method = server.get("connect")
+            if not connection_method:
+                self.add_system_log(f"Tool {tool_call.function.name} not found in tool_server_map", logging.ERROR)
+                continue
+
+            async with connection_method as streams:
+                async with ClientSession(streams[0], streams[1]) as session:
+                    await session.initialize()
+                    self.add_system_log(f"Successfully connected to {server.get('server_name')}.")
+                    tool_result = await session.call_tool(
+                        tool_call.function.name,
+                        json.loads(tool_call.function.arguments)
+                    )
+
             if not tool_result or not hasattr(tool_result, 'content'):
                 if add_responses_to_messages:
                     self.add_reply("No content received from tool")
@@ -1520,7 +1536,7 @@ class Environment(object):
             raise ValueError("MCP server needs either a url or a command to be set")
 
         transport_type = MCPTransportType.SSE if "url" in mcp_server_config else MCPTransportType.STDIO
-        self.add_system_log(f"Connecting to MCP Server at {mcp_server_config.get('url')}...")
+        self.add_system_log(f"Connecting to MCP Server {mcp_server_config.get('name')} using {transport_type}...")
 
         transport_method = sse_client if transport_type == MCPTransportType.SSE else stdio_client
 
@@ -1534,25 +1550,34 @@ class Environment(object):
         """Add MCP servers to the environment."""
 
         tool_registry = self.get_tool_registry(new=True)
+        tool_server_map = {} # { [tool_name]: [{ server_name: str}]}
+        mcp_servers_added = []
 
         for mcp_server_config in mcp_server_configs:
             (transport_method, transport_params) = await self._get_transport_method(mcp_server_config)
+            try:
+                mcp_server_name = mcp_server_config.get('name')
+                async with transport_method(transport_params) as streams:
+                    async with ClientSession(streams[0], streams[1]) as session:
+                        await session.initialize()
+                        mcp_servers_added.append(mcp_server_name)
+                        self.add_system_log(f"Successfully connected to {mcp_server_name}.")
 
-            async with transport_method(transport_params) as streams:
-                async with ClientSession(streams[0], streams[1]) as session:
-                    await session.initialize()
-                    self.add_system_log("Successfully connected to MCP Server.")
+                        mcp_tools = (await session.list_tools()).tools
+                        self.add_system_log(f"Found {len(mcp_tools)} tools")
 
-                    mcp_tools = (await session.list_tools()).tools
-                    self.add_system_log(f"Found {len(mcp_tools)} tools")
+                        for mcp_tool in mcp_tools:
+                            tool_registry.register_mcp_tool(mcp_tool, session.call_tool)
+                            tool_server_map[mcp_tool.name] = {
+                                "server_name": mcp_server_name,
+                                "connect": transport_method(transport_params)
+                            }
+            except Exception as e:
+                self.add_system_log(f"Error connecting to MCP Server ({mcp_server_name}): {traceback.format_exc()}", logging.ERROR)
 
-                    for mcp_tool in mcp_tools:
-                        tool_registry.register_mcp_tool(mcp_tool, session.call_tool)
-
-                    self.add_system_log("All tools registered!")
-
-        self.add_system_log("All MCP servers added!")
-        self.add_system_log(f"TOOL REGISTRY: {json.dumps(tool_registry.get_all_tool_definitions(), indent=2)}")
+        self.add_system_log(f"Added MCP servers: {', '.join(mcp_servers_added)}")
+        self.add_system_log(f"{len(mcp_servers_added)}/{len(mcp_server_configs)} MCP servers added!")
+        self.add_system_log(f"{len(tool_registry.get_all_tool_definitions())} tools registered!")
 
         completion = self.completion_and_get_tools_calls(
             [{"role": "system", "content": "You are an assistant and you can use a list of tools to help answer user questions."}] + self.list_messages(),
@@ -1560,7 +1585,9 @@ class Environment(object):
         )
 
         if hasattr(completion, 'tool_calls') and completion.tool_calls:
-            self.add_system_log(f"TOOL CALLS FOUND: {completion.tool_calls}", logging.INFO)
+            if len(completion.tool_calls) > 0:
+                self.add_system_log(f"TOOL CALLS FOUND: {completion.tool_calls}", logging.INFO)
+                await self._handle_mcp_tool_calls(completion, tool_server_map, add_responses_to_messages=True)
         elif completion.message:
             self.add_reply(completion.message)
 
