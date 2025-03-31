@@ -36,13 +36,24 @@ Before starting, ensure you have the following installed:
      docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-minimal -t nearai-runner:test .
      ```
 
-3. Start the Docker container and mount all your local agents to agent registry:
-   ```sh
-   docker run --platform linux/amd64 -p 9009:8080 -v ~/.nearai/registry:/root/.nearai/registry nearai-runner:test
-   ```
-   This will start the runner on port `9009`.
+3. Start the Docker container and mount all your local agents to the agent registry:
+    ```sh
+    docker run --platform linux/amd64 -p 9009:8080 -v ~/.nearai/registry:/root/.nearai/registry nearai-runner:test
+    ```
+    This will start the runner on port `9009`.
 
-    Note: Sometimes, you may need to restart the local Docker instance to refresh files mounted from the local agents registry.
+
+Alternative: 
+
+Start a pool of three Docker container runners on ports `9009`, `9010`, and `9011`.
+```sh
+docker-compose -f aws_runner/local_runners/docker-compose.yml up
+```
+ * aws_runner/local_runners/docker-compose.yml mounts the local agents registry, ~/.nearai/registry, to the container. This allows you to run agents from your local disk. 
+ * this pool allows working with multiple agents at once; for example, agents that perform cross agent calls and callbacks.
+
+Notes:
+ * On each run, the runner will reload most files mounted from the local registry. For some cases, you may need to restart the local Docker instance to refresh certain file types or file loading patterns.
 
 ---
 
@@ -150,3 +161,18 @@ The UI should now be available in your browser at `http://localhost:3000`. It wi
 - **Local Hub Logs:** Check the logs from the NEAR AI Hub API and Local UI
 
 With this setup, you can fully emulate the production runner environment and debug AI agents efficiently.
+
+## Running Agents via the CLI with a Custom Runner
+If you have all this running, you will likely want to run agents from the UI. If running from the CLI, there are some
+edge cases to consider.
+
+The custom runner authenticates to the Hub API using the `RUNNER_API_KEY` set in the `aws_runner/local_runners/.env` file 
+or with the default value in `aws_runner/local_runners/docker-compose.yml`. This should match one of the `TRUSTED_RUNNER_API_KEYS` 
+set in `hub/.env`. To run agents from the CLI when your local hub is using a custom runner, pass the `RUNNER_API_KEY` environment variable
+with the command, like so:
+
+```sh
+RUNNER_API_KEY=custom-local-runner nearai agent interactive <path_to_local_agent> --local
+```
+
+This allows agent and runner based features such as agent key value storage and signed completions to work correctly.
