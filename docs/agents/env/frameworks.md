@@ -2,12 +2,10 @@ NEAR AI supports several framework configurations, each with its own set of Pyth
 
 | Framework | Setting | Description |
 |-----------|--------|-------------|
-| [Minimal](#minimal-framework) | `minimal` | Basic essential packages |
-| [Standard](#standard-framework) | `standard` | Default Agent Framework |
+| [Minimal](#minimal-framework) | `minimal` | Basic essential packages - `DEFAULT` |
+| [Standard](#standard-framework) | `standard` | More robust Agent Framework|
 | [TypeScript](#typescript-framework) | `ts` | For creating agents with TypeScript  |
-| [LangGraph 0.1.4](#langgraph-014-framework) | `langgraph-0-1-4` | For use with [LangGraph](https://github.com/langchain-ai/langgraph) |
-| [LangGraph 0.2.26](#langgraph-0226-framework) | `langgraph-0-2-26` | For use with [LangGraph](https://github.com/langchain-ai/langgraph) |
-| [AgentKit](#agentkit-framework) | `agentkit` | For use with [Coinbase's Agentkit](https://github.com/coinbase/agentkit) |
+| [AgentKit](#agentkit-framework) | `agentkit` | For use with [LangChain](https://github.com/langchain-ai/langchain), [LangGraph](https://github.com/langchain-ai/langgraph), or [Coinbase's Agentkit](https://github.com/coinbase/agentkit) |
 
 !!! info "Need a package that is not currently supported?"
 
@@ -56,25 +54,9 @@ For use when creating TypeScript agents.
 --8<-- "aws_runner/frameworks/requirements-ts.txt"
 ```
 
-### LangGraph 0.1.4 Framework
-
-For use with [LangGraph](https://github.com/langchain-ai/langgraph)
-
-```python
---8<-- "aws_runner/frameworks/requirements-langgraph-0-1-4.txt"
-```
-
-### LangGraph 0.2.26 Framework
-
-For use with [LangGraph](https://github.com/langchain-ai/langgraph)
-
-```python
---8<-- "aws_runner/frameworks/requirements-langgraph-0-2-26.txt"
-```
-
 ### AgentKit Framework
 
-For use with [Coinbase's Agentkit](https://github.com/coinbase/agentkit)
+For use with [LangChain](https://github.com/langchain-ai/langchain), [LangGraph](https://github.com/langchain-ai/langgraph), or [Coinbase's Agentkit](https://github.com/coinbase/agentkit)
 
 ```python
 --8<-- "aws_runner/frameworks/requirements-agentkit.txt"

@@ -103,7 +103,7 @@ This file contains your agent information and configuration settings.
 
 #### AI Model
 
-[Llama 3.1 70B Instruct](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) is the currently the default model for agents but you can easily change it by selecting one from [app.near.ai/models](https://app.near.ai/models) and updating your JSON file.
+[Llama 3.1 70B Instruct](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) is currently the default model for agents but you can easily change it by selecting one from [app.near.ai/models](https://app.near.ai/models) and updating your JSON file.
 
 You can also fine tune and serve a model to fit your specific needs. (See [Fine Tuning](../models/fine_tuning.md))
 
