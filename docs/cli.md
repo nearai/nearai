@@ -4,12 +4,12 @@ NEAR AI CLI allows you to [create and deploy agents](./agents/quickstart.md), [t
 
 ---
 
-### Pre-Requisite: Python 3.9 - 3.11
+### Requirements
 
-To use NEAR AI CLI, you need to have Python `3.9 - 3.11` installed on your machine. Currently the CLI does not work with Python `3.12` or `3.13`.
+- Python 3.9 - 3.11 **(3.12 - 3.13 is NOT supported)**
+- [NEAR Account](#login-to-near-ai)
 
-We recommend you to create a virtual environment to avoid conflicts with other Python packages.
-
+Additionally, we recommend creating a virtual environment to avoid conflicts with other Python packages.
 
 === "uv"
 
@@ -62,7 +62,7 @@ We recommend you to create a virtual environment to avoid conflicts with other P
 
 
 !!! warning "Python version"
-    NEARAI CLI requires python **`3.9 - 3.11`**, we recommend you to [create a virtual environment](#pre-requisite-python-39---311) to avoid conflicts with other Python packages.
+    NEAR AI requires python **`3.9 - 3.11`**. We recommend you to [create a virtual environment](#requirements) to avoid conflicts with other Python packages or globally installing dependencies if installing locally w/ repo. 
 
 ---
 
