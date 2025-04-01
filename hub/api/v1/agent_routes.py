@@ -13,6 +13,8 @@ from nearai.clients.lambda_client import LambdaWrapper
 from nearai.shared.auth_data import AuthData
 from nearai.shared.client_config import DEFAULT_TIMEOUT
 from pydantic import BaseModel, Field
+from runners.nearai_cvm.app.main import AssignRequest
+from runners.nearai_cvm.pool.main import Worker
 from sqlalchemy import and_, func, inspect, text
 
 from hub.api.v1.auth import AuthToken, get_auth
@@ -141,6 +143,57 @@ def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: Auth
     )
 
     return result
+
+
+def invoke_agent_in_cvm(
+    agent_id: str,
+    thread_id: str,
+    run_id: str,
+    auth: AuthData,
+    api_url: str,
+    provider: str,
+    model: str,
+    temperature: float,
+    max_tokens: int,
+    max_iterations: int,
+):
+    cvm_runner_host = getenv("CVM_RUNNER_HOST", "cvm.near.ai")
+    cvm_runner_pool_port = getenv("CVM_RUNNER_POOL_PORT", "1234")
+    cvm_manager_url = f"http://{cvm_runner_host}:{cvm_runner_pool_port}"
+
+    worker = None
+
+    while not worker:
+        logger.info(f"Getting CVM worker from {cvm_manager_url}")
+        try:
+            assign_request = AssignRequest(
+                run_id=run_id,
+                agent_id=agent_id,
+                thread_id=thread_id,
+                api_url=api_url,
+                provider=provider,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                max_iterations=max_iterations,
+                env_vars={"agent_env_vars": "test"},
+            )
+            headers = {"Authorization": f"Bearer {auth.model_dump_json()}"}
+            worker = Worker(
+                **requests.post(
+                    f"{cvm_manager_url}/assign_cvm", json=assign_request.model_dump(), headers=headers
+                ).json()
+            )
+            # TODO: add attestation when SSL certificate is available from guest manager
+            # manager_client = CvmClient(cvm_manager_url, auth)
+
+            logger.info(f"Assigned and running agent {agent_id} in CVM at {worker.port}")
+
+        except Exception as e:
+            logger.info(f"Error getting CVM worker: {e}")
+        time.sleep(1)
+
+    return worker
 
 
 @run_agent_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
