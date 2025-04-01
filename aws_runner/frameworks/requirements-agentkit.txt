@@ -1,26 +1,100 @@
+# AgentKit Framework
+# For use with LangChain, LangGraph, or Coinbase's Agentkit
+
+# Base58 encoding/decoding library
+# https://github.com/keis/base58
 base58 == 2.1.1
-pynacl >= 1.5.0
-pytz == 2024.2
-python_dateutil >= 2.5.3
-setuptools >= 21.0.0
-urllib3 >= 1.25.3
-pydantic >=2.8.2
-typing-extensions >= 4.7.1
-psutil >= 5.9.5
+
+# AWS SDK for Python
+# https://github.com/boto/boto3
 boto3 >= 1.35.3
-litellm >= 1.41.0
-py-near >= 1.1.50
-loguru == 0.7.2
-ed25519 == 1.5
-tweepy >= 4.14.0
+
+# Coinbase SDK for crypto integration
+# https://github.com/coinbase/cdp-sdk-python
 cdp-sdk >= 0.15.0
-web3 >= 7.6.0
-langchain >= 0.3.4
-langchain-openai >= 0.2.4
-langchain-community >= 0.3.16
-langgraph >= 0.2.39
-nearai-langchain >= 0.0.12
-duckduckgo-search >= 7.3.0
+
+# Coinbase AgentKit Integration
+# https://github.com/coinbase/agentkit
 coinbase-agentkit >= 0.1.2
+
+# LangChain integration for Coinbase AgentKit
+# https://github.com/coinbase/agentkit
 coinbase-agentkit-langchain >= 0.1.0
+
+# Datadog tracing library
+# https://github.com/DataDog/dd-trace-py
 ddtrace == 2.21.0
+
+# DuckDuckGo search API
+# https://github.com/deedy5/duckduckgo_search
+duckduckgo-search >= 7.3.0
+
+# Ed25519 cryptographic signatures
+# https://github.com/warner/python-ed25519
+ed25519 == 1.5
+
+# LangChain Agent Development Framework
+# https://github.com/langchain-ai/langchain
+langchain >= 0.3.4
+langchain-community >= 0.3.16
+langchain-openai >= 0.2.4
+
+# LangGraph for agent orchestration
+# https://github.com/langchain-ai/langgraph
+langgraph >= 0.2.39
+
+# LiteLLM for unified LLM API access
+# https://github.com/BerriAI/litellm
+litellm >= 1.41.0
+
+# Loguru for better logging
+# https://github.com/Delgan/loguru
+loguru == 0.7.2
+
+# NEAR AI LangChain integration
+# https://github.com/nearai/nearai_langchain
+nearai-langchain >= 0.0.12
+
+# Process and system utilities
+# https://github.com/giampaolo/psutil
+psutil >= 5.9.5
+
+# Data validation using Python type annotations
+# https://github.com/pydantic/pydantic
+pydantic >=2.8.2
+
+# Python binding to the Networking and Cryptography library
+# https://github.com/pyca/pynacl
+pynacl >= 1.5.0
+
+# Python dateutil for handling dates and times
+# https://github.com/dateutil/dateutil
+python_dateutil >= 2.5.3
+
+# World timezone definitions
+# https://github.com/stub42/pytz
+pytz == 2024.2
+
+# NEAR Protocol Python SDK
+# https://github.com/pvolnov/py-near
+py-near >= 1.1.50
+
+# Package development tools
+# https://github.com/pypa/setuptools
+setuptools >= 21.0.0
+
+# Twitter API
+# https://github.com/tweepy/tweepy
+tweepy >= 4.14.0
+
+# Type hinting support
+# https://github.com/python/typing_extensions
+typing-extensions >= 4.7.1
+
+# HTTP client
+# https://github.com/urllib3/urllib3
+urllib3 >= 1.25.3
+
+# Web3.py for Ethereum interaction
+# https://github.com/ethereum/web3.py
+web3 >= 7.6.0

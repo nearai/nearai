@@ -1,20 +1,78 @@
-# ex base framework
-base58 == 2.1.1
-pynacl >= 1.5.0
-pytz == 2024.2
-python_dateutil >= 2.5.3
-setuptools >= 21.0.0
-urllib3 >= 1.25.3, < 2.1.0
-pydantic >=2.8.2
-typing-extensions >= 4.7.1
-psutil >= 5.9.5
+# Minimal Base Framework
+# Default for NEAR AI Agents
+
+# AWS SDK for Python
+# https://github.com/boto/boto3
 boto3 >= 1.35.3
-litellm >= 1.60.5
-openai == 1.66.2
-py-near >= 1.1.50
-loguru == 0.7.2
-ed25519 == 1.5
-tweepy >= 4.14.0
-tenacity == 9.0.0
-mcp
+
+# Base58 encoding/decoding library
+# https://github.com/keis/base58
+base58 == 2.1.1
+
+# Datadog tracing library
+# https://github.com/DataDog/dd-trace-py
 ddtrace == 2.21.0
+
+# Ed25519 cryptographic signatures
+# https://github.com/warner/python-ed25519
+ed25519 == 1.5
+
+# LiteLLM for unified LLM API access
+# https://github.com/BerriAI/litellm
+litellm >= 1.60.5
+
+# Loguru for better logging
+# https://github.com/Delgan/loguru
+loguru == 0.7.2
+
+# Model Context Protocol integration for LLM apps and external data sources and tools
+# https://github.com/modelcontextprotocol
+mcp
+
+# OpenAI Python client
+# https://github.com/openai/openai-python
+openai == 1.66.2
+
+# Process and system utilities
+# https://github.com/giampaolo/psutil
+psutil >= 5.9.5
+
+# Data validation using Python type annotations
+# https://github.com/pydantic/pydantic
+pydantic >=2.8.2
+
+# Python binding to the Networking and Cryptography library
+# https://github.com/pyca/pynacl
+pynacl >= 1.5.0
+
+# NEAR Protocol Python SDK
+# https://github.com/near/near-sdk-py
+py-near >= 1.1.50
+
+# Python dateutil for handling dates and times
+# https://github.com/dateutil/dateutil
+python_dateutil >= 2.5.3
+
+# World timezone definitions
+# https://github.com/stub42/pytz
+pytz == 2024.2
+
+# Package development tools
+# https://github.com/pypa/setuptools
+setuptools >= 21.0.0
+
+# Retry logic with exponential backoff
+# https://github.com/jd/tenacity
+tenacity == 9.0.0
+
+# Twitter API wrapper
+# https://github.com/tweepy/tweepy
+tweepy >= 4.14.0
+
+# Type hinting support
+# https://github.com/python/typing_extensions
+typing-extensions >= 4.7.1
+
+# HTTP client
+# https://github.com/urllib3/urllib3
+urllib3 >= 1.25.3, < 2.1.0
