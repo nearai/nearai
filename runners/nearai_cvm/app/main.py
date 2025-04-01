@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import subprocess
+from datetime import datetime
 from typing import Dict, Optional
 
 import uvicorn
@@ -33,7 +34,12 @@ app.add_middleware(
 )
 
 
+class Worker(BaseModel):
+    port: int
+
+
 class AssignRequest(BaseModel):
+    run_id: str
     agent_id: str
     thread_id: str
     api_url: str

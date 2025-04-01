@@ -306,7 +306,7 @@ impl CvmClient {
             .map_err(|e| anyhow::anyhow!("Failed to get quote collateral: {:?}", e))?;
 
         // Log the verification result
-        tracing::info!("Quote verified successfully: {:?}", verified_report);
+        tracing::debug!("Quote verified successfully: {:?}", verified_report);
 
         Ok(verified_report)
     }

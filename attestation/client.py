@@ -10,7 +10,7 @@ import requests
 from dcap_qvl import verify_quote  # type: ignore
 from dstack_sdk import TdxQuoteResponse  # type: ignore
 from nearai.shared.auth_data import AuthData
-from runners.nearai_cvm.app.main import AssignRequest, IsAssignedResp, QuoteResponse, RunRequest
+from runners.nearai_cvm.app.main import AssignRequest, IsAssignedResp, QuoteResponse, RunRequest, Worker
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +48,7 @@ class CvmClient:
         if not self.is_attested and path != "quote":
             logger.info("Server not attested yet, performing attestation...")
             self._attest()
+        logger.info(f"Headers: {self.headers}")
 
         url = f"{self.url}/{path.lstrip('/')}"
         response = requests.request(method, url, headers=self.headers, verify=False, **kwargs)
@@ -59,8 +60,8 @@ class CvmClient:
         if self.is_attested:
             return
 
-        # Get quote from server
-        response = requests.get(f"{self.url}/quote", headers=self.headers, verify=False)
+        # Get quote from server, no auth!
+        response = requests.get(f"{self.url}/quote", verify=False)
         print(response.text)
         response.raise_for_status()
         quote = TdxQuoteResponse(**response.json())
@@ -89,11 +90,11 @@ class CvmClient:
             logger.error(f"Quote verification failed: {e}")
             raise e
 
-    def assign(self, request: AssignRequest):
+    def assign(self, request: AssignRequest) -> Worker:
         """Assigns an agent to a CVM."""
         logger.info(f"Assigning agent {request.agent_id} to CVM")
-        response = self._make_request("POST", "assign", json=request.model_dump())
-        return response.json()
+        response = self._make_request("POST", "assign_cvm", json=request.model_dump())
+        return Worker(**response.json())
 
     def run(self, request: RunRequest):
         """Runs an agent on a CVM."""

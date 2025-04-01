@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Union
 
 import boto3
 import requests
-from attestation.client import CvmClient
 from botocore.config import Config
 from fastapi import APIRouter, Depends, HTTPException
 from nearai.agents.local_runner import LocalRunner
@@ -15,7 +14,7 @@ from nearai.clients.lambda_client import LambdaWrapper
 from nearai.shared.auth_data import AuthData
 from nearai.shared.client_config import DEFAULT_TIMEOUT
 from pydantic import BaseModel, Field
-from runners.nearai_cvm.app.main import AssignRequest, RunRequest
+from runners.nearai_cvm.app.main import AssignRequest
 from runners.nearai_cvm.pool.main import Worker
 from sqlalchemy import and_, func, inspect, text
 
@@ -167,10 +166,12 @@ def invoke_agent_in_cvm(
     cvm_manager_url = f"http://{cvm_runner_host}:{cvm_runner_pool_port}"
 
     worker = None
+
     while not worker:
         logger.info(f"Getting CVM worker from {cvm_manager_url}")
         try:
             assign_request = AssignRequest(
+                run_id=run_id,
                 agent_id=agent_id,
                 thread_id=thread_id,
                 api_url=api_url,
@@ -181,26 +182,22 @@ def invoke_agent_in_cvm(
                 max_iterations=max_iterations,
                 env_vars={"agent_env_vars": "test"},
             )
-            worker = Worker(**requests.post(f"{cvm_manager_url}/assign_cvm", json=assign_request.model_dump()).json())
-            logger.info(f"Assigned agent {agent_id} to CVM at {worker.port}")
+            headers = {"Authorization": f"Bearer {auth.model_dump_json()}"}
+            worker = Worker(
+                **requests.post(
+                    f"{cvm_manager_url}/assign_cvm", json=assign_request.model_dump(), headers=headers
+                ).json()
+            )
+            # TODO: add attestation when SSL certificate is available from guest manager
+            # manager_client = CvmClient(cvm_manager_url, auth)
+
+            logger.info(f"Assigned and running agent {agent_id} in CVM at {worker.port}")
 
         except Exception as e:
             logger.info(f"Error getting CVM worker: {e}")
         time.sleep(1)
 
-    cvm_url = f"https://{cvm_runner_host}:{worker.port}"
-
-    client = CvmClient(cvm_url, auth)
-
-    try:
-        logger.info(f"Running agent {agent_id} in CVM at {cvm_url}")
-        client.run(
-            RunRequest(
-                run_id=run_id,
-            )
-        )
-    except Exception as e:
-        raise Exception("Error invoking agent in CVM") from e
+    return worker
 
 
 @run_agent_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility

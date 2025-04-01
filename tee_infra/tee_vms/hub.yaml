@@ -1,0 +1,10 @@
+services:
+    nearai_runner:
+      image: plgnai/nearai_cvm_hub
+      ports:
+        - "80:80"
+        - "443:443"
+        - "2222:22"
+      env_file: "hub.env"
+      volumes:
+        - /var/run/tappd.sock:/var/run/tappd.sock

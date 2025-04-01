@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from attestation.client import CvmClient
+from attestation.client import CvmClient, Worker
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI
 from pydantic import BaseModel
@@ -53,12 +53,6 @@ async def lifespan(app: FastAPI):
 
 # Initialize FastAPI app
 app = FastAPI(lifespan=lifespan)
-
-
-class Worker(BaseModel):
-    port: int
-    assigned_at: Optional[datetime]
-    runner_id: Optional[str]
 
 
 class State(BaseModel):

@@ -28,7 +28,7 @@ print(models)
 
 # create a chat completion
 chat_completion = client.chat.completions.create(
-    model="nearai::meta-llama/meta-llama-3.1-8b-instruct",
+    model="fireworks::accounts/fireworks/models/deepseek-v3",
     messages=[{"role": "user", "content": "Hello, world!"}],
 )
 print(chat_completion)
