@@ -1,0 +1,103 @@
+.optionImage {
+  display: block;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 5px;
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.variantOptionImage {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 5px;
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  flex-shrink: 0;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  margin: calc(var(--gap-s) * -1);
+  gap: var(--gap-m);
+
+  @media (max-width: 2100px) {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+
+  @media (max-width: 1600px) {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  @media (max-width: 1300px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: 1000px) {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  @media (max-width: 750px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (max-width: 500px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.productImage {
+  display: block;
+  height: 10rem;
+  flex-shrink: 0;
+  background-color: #fff;
+  background-position: center center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  border-radius: 5px;
+  cursor: zoom-in;
+}
+
+.productCard {
+  --box-shadow-border-color: var(--sand-6);
+  --box-shadow-color: rgba(255, 255, 255, 0.075);
+  :global(.light) & {
+    --box-shadow-color: rgba(0, 0, 0, 0.075);
+  }
+
+  padding: var(--gap-s);
+  gap: var(--gap-m);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: box-shadow var(--transition-speed);
+  box-shadow:
+    0 0 0 0px var(--box-shadow-border-color),
+    0 0 0rem var(--box-shadow-color);
+
+  &:hover,
+  &:focus-within {
+    z-index: 5;
+    box-shadow:
+      0 0 0 1px var(--box-shadow-border-color),
+      0 0 2rem var(--box-shadow-color);
+  }
+}
+
+.zoomedImage {
+  width: auto;
+  margin: auto;
+  max-width: 100%;
+}
+
+.formSections {
+  > div:not(:last-child) {
+    border-bottom: 1px solid var(--sand-6);
+    padding-bottom: var(--gap-l);
+  }
+}

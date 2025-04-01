@@ -1,9 +1,10 @@
 'use client';
 
-import { Flex, Text } from '@near-pagoda/ui';
+import { Flex, Text } from '@nearai/ui';
 import { useEffect, useState } from 'react';
 
-import { APP_TITLE } from '~/constants';
+import { APP_TITLE } from '@/constants';
+import { useEmbeddedWithinIframe } from '@/hooks/embed';
 
 import s from './Footer.module.scss';
 
@@ -13,6 +14,7 @@ type Props = {
 
 export const Footer = ({ conditional }: Props) => {
   const [mounted, setMounted] = useState(false);
+  const { embedded } = useEmbeddedWithinIframe();
 
   useEffect(() => {
     if (!conditional && typeof window !== 'undefined') {
@@ -30,6 +32,9 @@ export const Footer = ({ conditional }: Props) => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  if (embedded) return null;
+
   return (
     <footer
       className={s.footer}
@@ -47,6 +52,15 @@ export const Footer = ({ conditional }: Props) => {
             color="sand-11"
           >
             NEAR AI
+          </Text>
+
+          <Text
+            href="https://airtable.com/appc0ZVhbKj8hMLvH/pag4dQKP3KF3qrTFo/form"
+            target="_blank"
+            size="text-xs"
+            color="sand-11"
+          >
+            Contact Us
           </Text>
 
           <Text

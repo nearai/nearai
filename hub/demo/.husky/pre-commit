@@ -1,0 +1,2 @@
+cd hub/demo
+lint-staged

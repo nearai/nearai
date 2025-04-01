@@ -1,0 +1,32 @@
+from nearai.agents.environment import Environment
+
+PROMPT = "You are an agent that helps users learn about NEAR AI and NEAR Protocol"
+
+class Agent:
+
+    def __init__(self, env: Environment):
+        self.env = env
+
+    # See https://docs.near.ai/agents for more information on building agents
+    # See https://github.com/nearai/official-agents for examples and templates
+
+    def run(self):
+
+        # Your agent code here
+
+        prompt = {{"role": "system", "content": PROMPT}}
+
+        # To see logs in the UI when running on app.near.ai,
+        #   set an environment variable of DEBUG with value true
+        self.env.add_agent_log("This is a log!")
+
+        result = self.env.completion(
+            [prompt] + self.env.list_messages() # pass the whole conversation
+            )
+        self.env.add_reply(result)
+
+        self.env.request_user_input() # tell the system it is the user's turn
+
+if globals().get('env', None):
+    agent = Agent(globals().get('env'))
+    agent.run()

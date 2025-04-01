@@ -11,19 +11,19 @@ import {
   SvgIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { GitFork } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 import { type z } from 'zod';
 
-import { idForEntry, primaryUrlForEntry } from '~/lib/entries';
-import { type entryModel } from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { trpc } from '~/trpc/TRPCProvider';
-import { validateAlphanumericCharacters } from '~/utils/inputs';
-import { toTitleCase } from '~/utils/string';
+import { idForEntry, primaryUrlForEntry } from '@/lib/entries';
+import { type entryModel } from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import { trpc } from '@/trpc/TRPCProvider';
+import { validateAlphanumericCharacters } from '@/utils/inputs';
+import { toTitleCase } from '@/utils/string';
 
 import { SignInPrompt } from './SignInPrompt';
 
@@ -34,9 +34,9 @@ type Props = {
 };
 
 export const ForkButton = ({ entry, style, variant = 'simple' }: Props) => {
-  const accountId = useAuthStore((store) => store.auth?.account_id);
+  const auth = useAuthStore((store) => store.auth);
   const isPermittedToViewSource =
-    !entry?.details.private_source || accountId === entry.namespace;
+    !entry?.details.private_source || auth?.accountId === entry.namespace;
   const [forkModalIsOpen, setForkModalIsOpen] = useState(false);
   const count = entry?.num_forks ?? 0;
 
@@ -118,7 +118,7 @@ const ForkForm = ({ entry, onFinish }: ForkFormProps) => {
   const entriesQuery = trpc.hub.entries.useQuery(
     {
       category: entry.category,
-      namespace: auth?.account_id,
+      namespace: auth?.accountId,
     },
     {
       enabled: !!auth,
@@ -210,7 +210,7 @@ const ForkForm = ({ entry, onFinish }: ForkFormProps) => {
               <Input
                 label="Namespace"
                 name="namespace"
-                value={auth.account_id}
+                value={auth.accountId}
                 disabled
               />
 

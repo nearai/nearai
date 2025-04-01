@@ -50,7 +50,9 @@ async def create_hub_secret(
     """Create a hub secret."""
     logger.info(f"Creating hub secret for: {request.name}")
 
-    # TODO encryption
+    # Full security (secure even from Infrastructure admins) comes from running the Hub in a TEE
+    # Confirmation of this security level can be performed by developers and end users by verifying the
+    # TEE security quote.
 
     sql_client = SqlClient()
     sql_client.create_hub_secret(
@@ -105,7 +107,5 @@ async def get_user_secrets(
         limit=limit,
         offset=offset,
     )
-
-    # TODO decryption
 
     return result

@@ -1,10 +1,14 @@
 import { useCallback, useMemo } from 'react';
 import { type z } from 'zod';
 
-import { type threadModel } from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { type AppRouterOutputs } from '~/trpc/router';
-import { trpc } from '~/trpc/TRPCProvider';
+import { type threadMessageModel, type threadModel } from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import { type AppRouterOutputs } from '@/trpc/router';
+import { trpc } from '@/trpc/TRPCProvider';
+
+import { useEmbeddedWithinIframe } from './embed';
+import { useCurrentEntryParams } from './entries';
+import { useQueryParams } from './url';
 
 export type ThreadSummary = z.infer<typeof threadModel> & {
   agent: {
@@ -19,11 +23,13 @@ export type ThreadSummary = z.infer<typeof threadModel> & {
 };
 
 export function useThreads() {
-  const accountId = useAuthStore((store) => store.auth?.account_id);
+  const { embedded } = useEmbeddedWithinIframe();
+  const currentEntryParams = useCurrentEntryParams();
+  const auth = useAuthStore((store) => store.auth);
   const utils = trpc.useUtils();
 
   const threadsQuery = trpc.hub.threads.useQuery(undefined, {
-    enabled: !!accountId,
+    enabled: !!auth,
   });
 
   const setThreadData = useCallback(
@@ -45,7 +51,7 @@ export function useThreads() {
   );
 
   const threads = useMemo(() => {
-    if (!accountId) return [];
+    if (!auth) return [];
     if (!threadsQuery.data) return;
 
     const result: ThreadSummary[] = [];
@@ -57,6 +63,15 @@ export function useThreads() {
       const [namespace, name, version, ...otherSegments] =
         rootAgentId.split('/');
       if (!namespace || !name || !version || otherSegments.length > 0) continue;
+
+      if (
+        embedded &&
+        (currentEntryParams.namespace !== namespace ||
+          currentEntryParams.name !== name)
+      ) {
+        // When embedded within an iframe, only show threads for the embedded agent
+        continue;
+      }
 
       const agentUrl = `/agents/${namespace}/${name}/${version}`;
       const threadUrl = `${agentUrl}/run?threadId=${encodeURIComponent(data.id)}`;
@@ -80,11 +95,58 @@ export function useThreads() {
     }
 
     return result;
-  }, [accountId, threadsQuery.data]);
+  }, [
+    auth,
+    threadsQuery.data,
+    embedded,
+    currentEntryParams.name,
+    currentEntryParams.namespace,
+  ]);
 
   return {
     setThreadData,
     threads,
     threadsQuery,
+  };
+}
+
+export type MessageGroup = {
+  isRootThread: boolean;
+  threadId: string;
+  messages: z.infer<typeof threadMessageModel>[];
+};
+
+export function useGroupedThreadMessages(
+  messages: z.infer<typeof threadMessageModel>[],
+) {
+  const { queryParams } = useQueryParams(['threadId']);
+  const rootThreadId = queryParams.threadId!;
+
+  const groupedMessages = useMemo(() => {
+    const result: MessageGroup[] = [];
+
+    messages.forEach((message) => {
+      const latestGroup = result.length > 0 ? result.at(-1) : undefined;
+
+      if (latestGroup?.threadId === message.thread_id) {
+        latestGroup.messages.push(message);
+        return;
+      } else {
+        result.push({
+          isRootThread:
+            message.thread_id === rootThreadId ||
+            message.thread_id === '' ||
+            !rootThreadId,
+          threadId: message.thread_id,
+          messages: [message],
+        });
+      }
+    });
+
+    return result;
+  }, [messages, rootThreadId]);
+
+  return {
+    groupedMessages,
   };
 }

@@ -8,15 +8,15 @@ import {
   Input,
   PlaceholderStack,
   Text,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { Minus, Plus } from '@phosphor-icons/react';
 import { useEffect, useRef } from 'react';
 import { type z } from 'zod';
 
-import { useEntriesSearch } from '~/hooks/entries';
-import { idForEntry } from '~/lib/entries';
-import { type EntryCategory, type entryModel } from '~/lib/models';
-import { trpc } from '~/trpc/TRPCProvider';
+import { useEntriesSearch } from '@/hooks/entries';
+import { idForEntry } from '@/lib/entries';
+import { type EntryCategory, type entryModel } from '@/lib/models';
+import { trpc } from '@/trpc/TRPCProvider';
 
 import { EntryCard } from './EntryCard';
 
@@ -41,9 +41,7 @@ export const EntrySelector = ({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const entriesQuery = trpc.hub.entries.useQuery({ category });
 
-  const { searched, searchQuery, setSearchQuery } = useEntriesSearch(
-    entriesQuery.data,
-  );
+  const { searched, setSearchQuery } = useEntriesSearch(entriesQuery.data);
 
   searched?.sort((a, b) => {
     let sort = b.num_stars - a.num_stars;
@@ -65,7 +63,6 @@ export const EntrySelector = ({
         type="search"
         name="search"
         placeholder="Search"
-        value={searchQuery}
         onInput={(event) => setSearchQuery(event.currentTarget.value)}
         ref={searchInputRef}
       />

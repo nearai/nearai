@@ -50,9 +50,9 @@ class PartialNearClient:
                 path=path,
             )
         )
-        assert (
-            body is not None
-        ), f"Unable to create request body for file download. Entry location: {entry_location}, Path: {path}"
+        assert body is not None, (
+            f"Unable to create request body for file download. Entry location: {entry_location}, Path: {path}"
+        )
         result = api_instance.download_file_v1_registry_download_file_post(body)
         return result
 
@@ -109,4 +109,7 @@ class PartialNearClient:
         """Fetches an agent from NEAR AI registry."""
         entry_location = self.parse_location(identifier)
         # download all agent files
-        return self.get_files_from_registry(entry_location)
+        files = self.get_files_from_registry(entry_location)
+        # Add metadata as a file
+        files.append({"filename": "metadata.json", "content": self.get_agent_metadata(identifier)})
+        return files

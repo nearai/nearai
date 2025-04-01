@@ -11,24 +11,26 @@ import {
   Text,
   Tooltip,
   useTable,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { ChatCircleDots, CodeBlock, Play } from '@phosphor-icons/react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { type ReactNode } from 'react';
 
-import { env } from '~/env';
-import { useEntriesSearch } from '~/hooks/entries';
+import { env } from '@/env';
+import { useEntriesSearch } from '@/hooks/entries';
+import { useClientPagination } from '@/hooks/pagination';
+import { ENTRY_CATEGORY_LABELS } from '@/lib/categories';
 import {
   benchmarkEvaluationsUrlForEntry,
-  ENTRY_CATEGORY_LABELS,
   primaryUrlForEntry,
   sourceUrlForEntry,
-} from '~/lib/entries';
-import { type EntryCategory } from '~/lib/models';
-import { trpc } from '~/trpc/TRPCProvider';
+} from '@/lib/entries';
+import { type EntryCategory } from '@/lib/models';
+import { trpc } from '@/trpc/TRPCProvider';
 
 import { ForkButton } from './ForkButton';
 import { NewAgentButton } from './NewAgentButton';
+import { Pagination } from './Pagination';
 import { StarButton } from './StarButton';
 
 type Props = {
@@ -61,6 +63,12 @@ export const EntriesTable = ({
     sortOrder: 'DESCENDING',
   });
 
+  const { pageItems, totalPages, setPage, ...paginationProps } =
+    useClientPagination({
+      data: sorted,
+      itemsPerPage: 30,
+    });
+
   return (
     <Section bleed={bleed} padding={bleed ? 'none' : undefined}>
       <Grid
@@ -88,8 +96,10 @@ export const EntriesTable = ({
           type="search"
           name="search"
           placeholder={`Search ${title}`}
-          value={searchQuery}
-          onInput={(event) => setSearchQuery(event.currentTarget.value)}
+          onInput={(event) => {
+            setPage(undefined);
+            setSearchQuery(event.currentTarget.value);
+          }}
         />
       </Grid>
 
@@ -107,6 +117,7 @@ export const EntriesTable = ({
           {...tableProps}
           setSort={(value) => {
             void entriesQuery.refetch();
+            setPage(undefined);
             tableProps.setSort(value);
           }}
         >
@@ -144,8 +155,8 @@ export const EntriesTable = ({
           <Table.Body>
             {!sorted && <Table.PlaceholderRows />}
 
-            {sorted?.map((entry, index) => (
-              <Table.Row key={index}>
+            {pageItems?.map((entry) => (
+              <Table.Row key={entry.id}>
                 <Table.Cell
                   href={primaryUrlForEntry(entry)}
                   style={{ minWidth: '10rem', maxWidth: '20rem' }}
@@ -260,6 +271,16 @@ export const EntriesTable = ({
               </Table.Row>
             ))}
           </Table.Body>
+
+          {totalPages > 1 && (
+            <Table.Foot sticky={false}>
+              <Table.Row>
+                <Table.Cell colSpan={100}>
+                  <Pagination {...paginationProps} />
+                </Table.Cell>
+              </Table.Row>
+            </Table.Foot>
+          )}
         </Table.Root>
       )}
     </Section>

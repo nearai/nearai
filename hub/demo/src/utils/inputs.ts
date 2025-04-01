@@ -5,3 +5,11 @@ export function validateAlphanumericCharacters(value: string) {
 
   return true;
 }
+
+export function validateEmail(value: string) {
+  if (!/^[^@]+@[^@]+\.[^@]+$/.test(value)) {
+    return 'Please enter a valid email';
+  }
+
+  return true;
+}

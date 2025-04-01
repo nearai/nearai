@@ -123,6 +123,14 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
             self.model_namespace = namespaced_model.namespace
             self.model_name = namespaced_model.name
 
+        # If provider specified is a url, recreate a `client`.
+        if self.provider.startswith("https://"):
+            self.client_config.base_url = self.provider
+            self.client_config.auth = None
+            self.client_config.default_provider = self.provider
+            print(self.client_config)
+            self.client = InferenceClient(self.client_config)
+
         self.agent = agent
         self.agent_params = {
             "api_url": CONFIG.api_url,
@@ -180,7 +188,7 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
         if self.provider != "":
             return self.provider
         if self.agent != "":
-            agent_obj = Agent.load_agent(self.agent, self.client_config)
+            agent_obj = Agent.load_agent(self.agent, self.client_config, local=True)
             return agent_obj.model_provider
         return ""
 

@@ -13,20 +13,27 @@ from litellm import completion as litellm_completion
 from litellm.types.completion import ChatCompletionMessageParam
 from openai import NOT_GIVEN, NotGiven
 from openai.types.beta.thread import Thread
-from openai.types.beta.vector_store import VectorStore
-from openai.types.beta.vector_stores import VectorStoreFile
 from openai.types.file_object import FileObject
+from openai.types.vector_store import VectorStore
+from openai.types.vector_stores import VectorStoreFile
 
-from nearai.shared.client_config import DEFAULT_MODEL_MAX_TOKENS, DEFAULT_MODEL_TEMPERATURE, ClientConfig
+from nearai.shared.client_config import (
+    DEFAULT_MAX_RETRIES,
+    DEFAULT_MODEL_MAX_TOKENS,
+    DEFAULT_MODEL_TEMPERATURE,
+    DEFAULT_TIMEOUT,
+    ClientConfig,
+)
 from nearai.shared.models import (
     AutoFileChunkingStrategyParam,
     ChunkingStrategy,
     ExpiresAfter,
     GitHubSource,
     GitLabSource,
+    RunMode,
     SimilaritySearch,
     SimilaritySearchFile,
-    StaticFileChunkingStrategyParam,
+    StaticFileChunkingStrategyObjectParam,
 )
 from nearai.shared.provider_models import ProviderModels
 
@@ -40,6 +47,7 @@ class InferenceClient(object):
         self.generate_auth_for_current_agent(config, agent_identifier)
         http_client = httpx.Client(verify=False)
         self.client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth, http_client=http_client)
+        self._provider_models: Optional[ProviderModels] = None
 
     def generate_auth_for_current_agent(self, config, agent_identifier):
         """Regenerate auth for the current agent."""
@@ -58,7 +66,16 @@ class InferenceClient(object):
     # TODO(#233): add a choice of a provider model in aws_runner, and then this step can be skipped.
     @cached_property
     def provider_models(self) -> ProviderModels:  # noqa: D102
-        return ProviderModels(self._config)
+        if self._provider_models is None:
+            self._provider_models = ProviderModels(self._config)
+        return self._provider_models
+
+    def set_provider_models(self, provider_models: Optional[ProviderModels]):
+        """Set provider models. Used by external caching."""
+        if provider_models is None:
+            self._provider_models = ProviderModels(self._config)
+        else:
+            self._provider_models = provider_models
 
     def get_agent_public_key(self, agent_name: str) -> str:
         """Request agent public key."""
@@ -92,7 +109,10 @@ class InferenceClient(object):
         1. full path `provider::model_full_path`.
         2. `model_short_name`. Default provider will be used.
         """
-        provider, model = self.provider_models.match_provider_model(model)
+        if self._config.base_url != self._config.default_provider:
+            provider, model = self.provider_models.match_provider_model(model)
+        else:
+            provider = self._config.default_provider
 
         if temperature is None:
             temperature = DEFAULT_MODEL_TEMPERATURE
@@ -105,27 +125,41 @@ class InferenceClient(object):
 
         litellm.ssl_verify = False
         kwargs["ssl_verify"] = False
+        # lite_llm uses the openai.request_timeout to set the timeout for the request of "openai" custom provider
+        openai.timeout = DEFAULT_TIMEOUT
+        openai.max_retries = DEFAULT_MAX_RETRIES
 
         for i in range(0, self._config.num_inference_retries):
             try:
-                result: Union[ModelResponse, CustomStreamWrapper] = litellm_completion(
-                    model,
-                    messages,
-                    stream=stream,
-                    custom_llm_provider=self._config.custom_llm_provider,
-                    input_cost_per_token=0,
-                    output_cost_per_token=0,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    base_url="https://api.near.ai/v1",
-                    provider=provider,
-                    api_key=self._auth,
-                    **kwargs,
-                )
+                # Create a dictionary for the arguments
+                completion_args = {
+                    "model": model,
+                    "messages": messages,
+                    "stream": stream,
+                    "custom_llm_provider": self._config.custom_llm_provider,
+                    "input_cost_per_token": 0,
+                    "output_cost_per_token": 0,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                    "base_url": self._config.base_url,
+                    "api_key": self._auth,
+                    "timeout": DEFAULT_TIMEOUT,
+                    "request_timeout": DEFAULT_TIMEOUT,
+                    "num_retries": 1,
+                }
+                # Only add provider parameter if base_url is different from default_provider
+                if self._config.base_url != self._config.default_provider:
+                    completion_args["provider"] = provider
+                # Add any additional kwargs
+                completion_args.update(kwargs)
+                result: Union[ModelResponse, CustomStreamWrapper] = litellm_completion(**completion_args)
                 break
             except Exception as e:
+                print("Completions exception:", e)
                 if i == self._config.num_inference_retries - 1:
                     raise ValueError(f"Bad request: {e}") from None
+                else:
+                    print("Retrying...")
 
         return result
 
@@ -158,17 +192,26 @@ class InferenceClient(object):
         self,
         file_content: str,
         purpose: Literal["assistants", "batch", "fine-tune", "vision"],
-        encoding: str = "utf-8",
-        file_name="file.txt",
-        file_type="text/plain",
-    ) -> FileObject:
+        encoding: Optional[str] = "utf-8",
+        file_name: Optional[str] = "file.txt",
+        file_type: Optional[str] = "text/plain",
+    ) -> Optional[FileObject]:
         """Uploads a file."""
         file_data = io.BytesIO(file_content.encode(encoding))
         return self.client.files.create(file=(file_name, file_data, file_type), purpose=purpose)
 
+    def remove_file(self, file_id: str):
+        """Removes a file."""
+        client = openai.OpenAI(base_url=self._config.base_url, api_key=self._auth)
+        return client.files.delete(file_id=file_id)
+
     def add_file_to_vector_store(self, vector_store_id: str, file_id: str) -> VectorStoreFile:
         """Adds a file to vector store."""
-        return self.client.beta.vector_stores.files.create(vector_store_id=vector_store_id, file_id=file_id)
+        return self.client.vector_stores.files.create(vector_store_id=vector_store_id, file_id=file_id)
+
+    def get_vector_store_files(self, vector_store_id: str) -> Optional[List[VectorStoreFile]]:
+        """Adds a file to vector store."""
+        return self.client.vector_stores.files.list(vector_store_id=vector_store_id).data
 
     def create_vector_store_from_source(
         self,
@@ -223,7 +266,9 @@ class InferenceClient(object):
         name: str,
         file_ids: List[str],
         expires_after: Union[ExpiresAfter, NotGiven] = NOT_GIVEN,
-        chunking_strategy: Union[AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam, NotGiven] = NOT_GIVEN,
+        chunking_strategy: Union[
+            AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, NotGiven
+        ] = NOT_GIVEN,
         metadata: Optional[Dict[str, str]] = None,
     ) -> VectorStore:
         """Creates Vector Store.
@@ -235,7 +280,7 @@ class InferenceClient(object):
         :param metadata: Additional metadata.
         :return: Returns the created vector store or error.
         """
-        return self.client.beta.vector_stores.create(
+        return self.client.vector_stores.create(
             file_ids=file_ids,
             name=name,
             expires_after=expires_after,
@@ -246,13 +291,24 @@ class InferenceClient(object):
     def get_vector_store(self, vector_store_id: str) -> VectorStore:
         """Gets a vector store by id."""
         endpoint = f"{self._config.base_url}/vector_stores/{vector_store_id}"
-        response = requests.get(endpoint)
+        auth_bearer_token = self._auth
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {auth_bearer_token}",
+        }
+
+        response = requests.get(endpoint, headers=headers)
         response.raise_for_status()
         return VectorStore(**response.json())
 
     def create_thread(self, messages):
         """Create a thread."""
         return self.client.beta.threads.create(messages=messages)
+
+    def get_thread(self, thread_id: str):
+        """Get a thread."""
+        return self.client.beta.threads.retrieve(thread_id=thread_id)
 
     def threads_messages_create(self, thread_id: str, content: str, role: Literal["user", "assistant"]):
         """Create a message in a thread."""
@@ -272,16 +328,35 @@ class InferenceClient(object):
         forked_thread = self.client.post(path=f"{self._config.base_url}/threads/{thread_id}/fork", cast_to=Thread)
         return forked_thread
 
+    def create_subthread(
+        self,
+        thread_id: str,
+        messages_to_copy: Optional[List[str]] = None,
+        new_messages: Optional[List[ChatCompletionMessageParam]] = None,
+    ):
+        """Create a subthread."""
+        return self.client.post(
+            path=f"{self._config.base_url}/threads/{thread_id}/subthread",
+            body={messages_to_copy: messages_to_copy, new_messages: new_messages},
+            cast_to=Thread,
+        )
+
     def threads_runs_create(self, thread_id: str, assistant_id: str, model: str):
         """Create a run in a thread."""
         return self.client.beta.threads.runs.create(thread_id=thread_id, assistant_id=assistant_id, model=model)
 
-    def run_agent(self, current_run_id: str, child_thread_id: str, assistant_id: str):
+    def run_agent(
+        self, run_on_thread_id: str, assistant_id: str, parent_run_id: str = "", run_mode: RunMode = RunMode.SIMPLE
+    ):
         """Starts a child agent run from a parent agent run."""
+        extra_body = {}
+        if parent_run_id:
+            extra_body["parent_run_id"] = parent_run_id
+        extra_body["run_mode"] = run_mode.value  # type: ignore
         return self.client.beta.threads.runs.create(
-            thread_id=child_thread_id,
+            thread_id=run_on_thread_id,
             assistant_id=assistant_id,
-            extra_body={"parent_run_id": current_run_id},
+            extra_body=extra_body,
         )
 
     def schedule_run(
@@ -366,4 +441,25 @@ class InferenceClient(object):
         return self.client.get(
             path=f"{self._config.base_url}/agent_data/{key}",
             cast_to=Dict[str, str],
+        )
+
+    def find_agents(
+        self,
+        owner_id: Optional[str] = None,
+        with_capabilities: Optional[bool] = False,
+        latest_versions_only: Optional[bool] = True,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+    ):
+        """Filter agents."""
+        return self.client.post(
+            path=f"{self._config.base_url}/find_agents",
+            body={
+                "owner_id": owner_id,
+                "with_capabilities": with_capabilities,
+                "latest_versions_only": latest_versions_only,
+                "limit": limit,
+                "offset": offset,
+            },
+            cast_to=List[Any],
         )

@@ -1,11 +1,27 @@
-# Front-end demo
+# NEAR AI Hub/Chat UI
 
-This is a simple front-end demo that uses NEAR AI Hub.
+This project serves the [hub](https://app.near.ai) and [assistant](https://chat.near.ai) projects.
 
-### Nonce management
+It's built with Next JS and [NEAR AI UI](https://github.com/nearai/ui).
 
-Revoke nonce(s): http://localhost:3000/settings
+## Local Development
 
-----
+Install Node, NPM, and dependencies:
 
-See the [NEAR AI Hub](../README.md) for more information.
+```shell
+nvm install
+nvm use
+npm i
+```
+
+Create local `.env` file:
+
+```shell
+cp .env.example .env
+```
+
+Run development server:
+
+```shell
+npm run dev
+```

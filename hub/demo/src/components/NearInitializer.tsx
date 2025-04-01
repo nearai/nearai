@@ -1,7 +1,7 @@
 'use client';
 
-import { useNearInitializer } from '~/hooks/near';
-import { useWalletInitializer } from '~/hooks/wallet';
+import { useNearInitializer } from '@/hooks/near';
+import { useWalletInitializer } from '@/hooks/wallet';
 
 export const NearInitializer = () => {
   useNearInitializer();

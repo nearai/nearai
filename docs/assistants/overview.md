@@ -15,11 +15,14 @@ The Assistants API is in beta and we are actively working on adding more functio
 
 ## Key Concepts
 
-| Object   | What it represents                                                                 |
-|----------|------------------------------------------------------------------------------------|
-| Assistant| Purpose-built AI that uses various models and calls tools                         |
-| Thread   | A conversation session between an Assistant and a user. Threads store Messages and automatically handle truncation to fit content into a model’s context. |
-| Message  | A message created by an Assistant or a user. Messages can include text, images, and other files. Messages stored as a list on the Thread. |
-| Run      | An invocation of an Assistant on a Thread. The Assistant uses its configuration and the Thread’s Messages to perform tasks by calling models and tools. As part of a Run, the Assistant appends Messages to the Thread. |
-| Run Step | A detailed list of steps the Assistant took as part of a Run. An Assistant can call tools or create Messages during its run. Examining Run Steps allows you to introspect how the Assistant is getting to its final results. |
+| Object        | What it represents                                                                                                                                                                                                           |
+|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Assistant     | Purpose-built AI that uses various models and calls tools.                                                                                                                                                                   |
+| Thread        | A conversation session between an Assistant and a user. Threads store Messages and automatically handle truncation to fit content into a model’s context.                                                                    |
+| Message       | A message created by an Assistant or a user. Messages can include text, images, and other files. Messages stored as a list on the Thread.                                                                                    |
+| Run           | An invocation of an Assistant on a Thread. The Assistant uses its configuration and the Thread’s Messages to perform tasks by calling models and tools. As part of a Run, the Assistant appends Messages to the Thread.      |
+| Run Step      | A detailed list of steps the Assistant took as part of a Run. An Assistant can call tools or create Messages during its run. Examining Run Steps allows you to introspect how the Assistant is getting to its final results. |
+| Service Agent | A specialized Agent called by the Assistant to accomplish a task such as purchasing, undertaking a swap, or generating a smart contract.                                                                                     |
 
+## Next Steps
+[Integrate an Assistant into your application](./integrate.md)

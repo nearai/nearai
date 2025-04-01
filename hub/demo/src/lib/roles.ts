@@ -1,4 +1,4 @@
-import { type ComboboxOption } from '@near-pagoda/ui';
+import { type ComboboxOption } from '@nearai/ui';
 
 export const ROLE_OPTIONS: ComboboxOption[] = [
   { label: 'User', value: 'user' },

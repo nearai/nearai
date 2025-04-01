@@ -1,5 +1,6 @@
 import json
 import sys
+from os import getenv
 from typing import Any, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -56,8 +57,10 @@ def agent_from_trusted_runner_data(auth) -> EntryLocation:
     runner_data = json.loads(auth.runner_data or "{}")
     agent = runner_data.get("agent", None)
     runner_api_key = runner_data.get("runner_api_key", None)
-    if not runner_api_key or not is_trusted_runner_api_key(runner_api_key):
-        raise HTTPException(status_code=403, detail="Not authorized to store data for this agent")
+    runner_env = getenv("RUNNER_ENVIRONMENT", "local_runner")
+    if runner_env != "local_runner":
+        if not runner_api_key or not is_trusted_runner_api_key(runner_api_key):
+            raise HTTPException(status_code=403, detail="Not authorized to store data for this agent")
     if not agent:
         raise HTTPException(status_code=400, detail="Agent data missing")
     return EntryLocation.from_str(agent)

@@ -1,15 +1,15 @@
 'use client';
 
-import { Flex, Section, SvgIcon, Text } from '@near-pagoda/ui';
+import { Flex, Section, SvgIcon, Text } from '@nearai/ui';
 import { Gear } from '@phosphor-icons/react';
 
-import { SignInPromptSection } from '~/components/SignInPrompt';
-import { useAuthStore } from '~/stores/auth';
+import { SignInPromptSection } from '@/components/SignInPrompt';
+import { useAuthStore } from '@/stores/auth';
 
 import { NonceList } from './NonceList';
 
 export default function SettingsPage() {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
 
   return (
     <>
@@ -20,7 +20,7 @@ export default function SettingsPage() {
         </Flex>
       </Section>
 
-      {isAuthenticated ? (
+      {auth ? (
         <Section>
           <NonceList />
         </Section>

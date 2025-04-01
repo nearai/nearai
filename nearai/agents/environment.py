@@ -13,6 +13,7 @@ import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
 
 import psutil
@@ -28,8 +29,11 @@ from openai import NOT_GIVEN, NotGiven, OpenAI
 from openai.types.beta.threads.message import Message
 from openai.types.beta.threads.message_create_params import Attachment
 from openai.types.beta.threads.run import Run
-from openai.types.beta.vector_store import VectorStore
 from openai.types.file_object import FileObject
+from openai.types.vector_store import VectorStore
+from openai.types.vector_stores import VectorStoreFile
+from py_near.account import Account
+from py_near.constants import DEFAULT_ATTACHED_GAS
 
 import nearai.shared.near.sign as near
 from nearai.agents import tool_json_helper
@@ -43,12 +47,15 @@ from nearai.shared.models import (
     ExpiresAfter,
     GitHubSource,
     GitLabSource,
-    StaticFileChunkingStrategyParam,
+    RunMode,
+    StaticFileChunkingStrategyObjectParam,
+    ThreadMode,
 )
 from nearai.shared.near.sign import (
     CompletionSignaturePayload,
     validate_completion_signature,
 )
+from nearai.shared.secure_openai_clients import SecureAsyncOpenAI, SecureOpenAI
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
@@ -104,9 +111,26 @@ class Environment(object):
         tool_resources: Optional[Dict[str, Any]] = None,
         print_system_log: bool = False,
         agent_runner_user: Optional[str] = None,
-        approvals: Optional[Dict[str, Any]] = default_approvals,
+        fastnear_api_key: Optional[str] = None,
+        approvals=None,
     ) -> None:
         # Warning: never expose `client` or `_hub_client` to agent's environment
+
+        self.base_url = client._config.base_url
+
+        # user_auth is used to authenticate the user in the ts_runner. It will be removed after that in
+        # `nearai/agents/agent.py`
+        auth = client._auth
+        self.user_auth = auth
+
+        # Initialize secure openai clients
+        openai_client_params = {
+            "api_key": auth,
+            "base_url": client._config.base_url,
+            "default_headers": {"Authorization": f"Bearer {auth}"},
+        }
+        self.openai = SecureOpenAI(**openai_client_params)
+        self.async_openai = SecureAsyncOpenAI(**openai_client_params)
 
         # Placeholder for solver
         self.client: Optional[InferenceClient] = None
@@ -120,10 +144,174 @@ class Environment(object):
         self.tool_resources: Dict[str, Any] = tool_resources if tool_resources else {}
         self.print_system_log = print_system_log
         self.agent_runner_user = agent_runner_user
-        self._approvals = approvals
+        self._approvals = approvals if approvals else default_approvals
         self._thread_id = thread_id
         self._run_id = run_id
-        self._debug_mode = True if self.env_vars.get("DEBUG") else False
+        self._debug_mode: bool = any(
+            str(value).lower() in ("true", "1", "yes", "on")
+            for key, value in self.env_vars.items()
+            if key.lower() == "debug"
+        )
+        # Expose the NEAR account_id of a user that signs this request to run an agent.
+        self.signer_account_id: str = client._config.auth.account_id if client._config.auth else ""
+
+        if fastnear_api_key:
+            default_mainnet_rpc = f"https://{fastnear_api_key}@rpc.mainnet.fastnear.com"
+        else:
+            default_mainnet_rpc = "https://rpc.mainnet.near.org"
+
+        class NearAccount(Account):
+            async def view(
+                self,
+                contract_id: str,
+                method_name: str,
+                args: dict,
+                block_id: Optional[int] = None,
+                threshold: Optional[int] = None,
+                max_retries: int = 3,
+            ):
+                """Wrapper for the view method of the Account class, adding multiple retry attempts.
+
+                Parameters
+                ----------
+                contract_id : str
+                    The ID of the contract to call.
+                method_name : str
+                    The name of the method to invoke on the contract.
+                args : dict
+                    The arguments to pass to the contract method.
+                block_id : Optional[int]
+                    The block ID to query at.
+                threshold : Optional[int]
+                    The threshold for the view function.
+                max_retries : int
+                    The maximum number of retry attempts.
+
+                Returns
+                -------
+                The result of the contract method call.
+
+                Raises
+                ------
+                Exception
+                    If all retry attempts fail, the exception is propagated.
+
+                """
+                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                await acc.startup()
+                max_retries = min(max_retries, 10)
+
+                for attempt in range(1, max_retries + 1):
+                    try:
+                        # Attempt to read the contract view method
+                        return await acc.view_function(contract_id, method_name, args, block_id, threshold)
+                    except Exception as e:
+                        # Log the error message for the current attempt
+                        print(
+                            f"Attempt {attempt}/{max_retries} to view method '{method_name}' on contract "
+                            f"'{contract_id}' failed with error: {e}"
+                        )
+
+                        # If it's the last attempt, re-raise the exception
+                        if attempt == max_retries:
+                            raise
+
+            async def call(
+                self,
+                contract_id: str,
+                method_name: str,
+                args: dict,
+                gas: int = DEFAULT_ATTACHED_GAS,
+                amount: int = 0,
+                nowait: bool = False,
+                included: bool = False,
+                max_retries: int = 1,
+            ):
+                """Wrapper for the call method of the Account class, adding multiple retry attempts.
+
+                Parameters
+                ----------
+                contract_id : str
+                    The ID of the contract to call.
+                method_name : str
+                    The name of the method to invoke on the contract.
+                args : dict
+                    The arguments to pass to the contract method.
+                gas : int
+                    The amount of gas to attach to the call.
+                amount : int
+                    The amount of tokens to attach to the call.
+                nowait : bool
+                    If nowait is True, return transaction hash, else wait execution.
+                included : bool
+                    If included is True, return transaction hash, else wait execution
+                max_retries : int
+                    The maximum number of retry attempts.
+
+                Returns
+                -------
+                The result of the contract method call.
+
+                Raises
+                ------
+                Exception
+                    If all retry attempts fail, the exception is propagated.
+
+                """
+                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                await acc.startup()
+                max_retries = min(max_retries, 10)
+
+                for attempt in range(1, max_retries + 1):
+                    try:
+                        # Attempt to call the contract method
+                        return await acc.function_call(contract_id, method_name, args, gas, amount, nowait, included)
+                    except Exception as e:
+                        # Log the error message for the current attempt
+                        print(
+                            f"Attempt {attempt}/{max_retries} to call method '{method_name}' on contract "
+                            f"'{contract_id}' failed with error: {e}"
+                        )
+
+                        # If it's the last attempt, re-raise the exception
+                        if attempt == max_retries:
+                            raise
+
+            async def get_balance(self, account_id: Optional[str] = None) -> int:
+                """Retrieves the balance of the specified NEAR account.
+
+                Parameters
+                ----------
+                account_id : Optional[str]
+                    The ID of the account to retrieve the balance for. If not provided, the balance of the current
+                    account is retrieved.
+
+                Returns
+                -------
+                int
+                    The balance of the specified account in yoctoNEAR.
+
+                Raises
+                ------
+                Exception
+                    If there is an error retrieving the balance.
+
+                """
+                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                await acc.startup()
+                return await acc.get_balance(account_id)
+
+            def __init__(
+                self,
+                account_id: Optional[str] = None,
+                private_key: Optional[Union[List[Union[str, bytes]], str, bytes]] = None,
+                rpc_addr: Optional[str] = None,
+            ):
+                self.account_id = account_id
+                self.private_key = private_key
+                super().__init__(account_id, private_key, rpc_addr)
+
+        self.set_near = NearAccount
 
         self._tools = ToolRegistry()
 
@@ -132,16 +320,7 @@ class Environment(object):
             open(os.path.join(self._path, CHAT_FILENAME), "a").close()
         os.chdir(self._path)
 
-        def signer_account_id() -> Optional[str]:
-            """Expose the NEAR account_id of a user that signs this request to run an agent."""
-            try:
-                return client._config.auth.account_id if client._config.auth else None
-            except (AttributeError, TypeError):
-                return None
-
-        self.signer_account_id = signer_account_id()
-
-        # Client methods
+        # Protected client methods
         def query_vector_store(vector_store_id: str, query: str, full_files: bool = False):
             """Queries a vector store.
 
@@ -155,11 +334,22 @@ class Environment(object):
         def upload_file(
             file_content: str,
             purpose: Literal["assistants", "batch", "fine-tune", "vision"] = "assistants",
+            encoding: Optional[str] = "utf-8",
+            file_name: Optional[str] = "file.txt",
+            file_type: Optional[str] = "text/plain",
         ):
             """Uploads a file to the registry."""
-            return client.upload_file(file_content, purpose)
+            return client.upload_file(
+                file_content, purpose, encoding=encoding, file_name=file_name, file_type=file_type
+            )
 
         self.upload_file = upload_file
+
+        def remove_file(file_id: str):
+            """Removes a file from the registry."""
+            return client.remove_file(file_id)
+
+        self.remove_file = remove_file
 
         def create_vector_store_from_source(
             name: str,
@@ -202,12 +392,26 @@ class Environment(object):
 
         self.add_file_to_vector_store = add_file_to_vector_store
 
+        # positional arguments are not allowed because arguments list will be updated
+        def find_agents(
+            *,
+            owner_id: Optional[str] = None,
+            with_capabilities: Optional[bool] = False,
+            latest_versions_only: Optional[bool] = True,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+        ):
+            """Find agents based on various parameters."""
+            return client.find_agents(owner_id, with_capabilities, latest_versions_only, limit, offset)
+
+        self.find_agents = find_agents
+
         def create_vector_store(
             name: str,
             file_ids: list,
             expires_after: Union[ExpiresAfter, NotGiven] = NOT_GIVEN,
             chunking_strategy: Union[
-                AutoFileChunkingStrategyParam, StaticFileChunkingStrategyParam, NotGiven
+                AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, NotGiven
             ] = NOT_GIVEN,
             metadata: Optional[Dict[str, str]] = None,
         ) -> VectorStore:
@@ -236,11 +440,17 @@ class Environment(object):
 
         self.create_vector_store = create_vector_store
 
-        def get_vector_store(self, vector_store_id: str) -> VectorStore:
+        def get_vector_store(vector_store_id: str) -> VectorStore:
             """Gets a vector store by id."""
             return client.get_vector_store(vector_store_id)
 
         self.get_vector_store = get_vector_store
+
+        def get_vector_store_files(vector_store_id: str) -> Optional[List[VectorStoreFile]]:
+            """Gets a list of vector store files."""
+            return client.get_vector_store_files(vector_store_id)
+
+        self.get_vector_store_files = get_vector_store_files
 
         # Save cache of requested models for inference to avoid extra server calls
         self.cached_models_for_inference: Dict[str, str] = {}
@@ -248,9 +458,9 @@ class Environment(object):
         def get_model_for_inference(model: str = "") -> str:
             """Returns 'provider::model_full_path'."""
             if self.cached_models_for_inference.get(model, None) is None:
-                provider = self._agents[0].model_provider if self._agents else ""
+                provider = self.get_primary_agent().model_provider if self._agents else ""
                 if model == "":
-                    model = self._agents[0].model if self._agents else ""
+                    model = self.get_primary_agent().model if self._agents else ""
                 if model == "":
                     return DEFAULT_PROVIDER_MODEL
 
@@ -288,29 +498,32 @@ class Environment(object):
         self.get_agent_public_key = get_agent_public_key
 
         def run_agent(
-            owner: str,
-            agent_name: str,
-            version: str,
-            model: Optional[str] = None,
+            agent_id: str,
             query: Optional[str] = None,
-            fork_thread: bool = True,
+            thread_mode: ThreadMode = ThreadMode.FORK,
+            run_mode: RunMode = RunMode.SIMPLE,
         ):
             """Runs a child agent on the thread."""
             child_thread_id = self._thread_id
-            if fork_thread:
+
+            if thread_mode == ThreadMode.SAME:
+                pass
+            elif thread_mode == ThreadMode.FORK:
                 child_thread_id = client.threads_fork(self._thread_id).id
                 self.add_system_log(f"Forked thread {child_thread_id}", logging.INFO)
+            elif thread_mode == ThreadMode.CHILD:
+                child_thread_id = client.create_subthread(self._thread_id).id
+                self.add_system_log(f"Created subthread {child_thread_id}", logging.INFO)
 
             if query:
                 client.threads_messages_create(thread_id=child_thread_id, content=query, role="user")
 
-            assistant_id = f"{owner}/{agent_name}/{version}"
-            model = model or DEFAULT_PROVIDER_MODEL
-            self.add_system_log(f"Running agent {assistant_id}", logging.INFO)
+            self.add_system_log(f"Running agent {agent_id}", logging.INFO)
             client.run_agent(
-                current_run_id=self._run_id,
-                child_thread_id=child_thread_id,
-                assistant_id=assistant_id,
+                parent_run_id=self._run_id,
+                run_on_thread_id=child_thread_id,
+                assistant_id=agent_id,
+                run_mode=run_mode,
             )
             self._pending_ext_agent = True
 
@@ -351,7 +564,11 @@ class Environment(object):
 
         def save_agent_data(key, data: Dict[str, Any]):
             """Save agent data."""
-            return client.save_agent_data(key, data)
+            try:
+                return client.save_agent_data(key, data)
+            except Exception as ex:
+                self.add_system_log(f"Error saving agent data by key {key}: {ex}", logging.ERROR)
+                return None
 
         self.save_agent_data = save_agent_data
 
@@ -363,9 +580,13 @@ class Environment(object):
 
         def get_agent_data_by_key(key, default=None):
             """Get agent data by key."""
-            namespace = self._agents[0].namespace
-            name = self._agents[0].name
-            result = client.get_agent_data_by_key(key)
+            namespace = self.get_primary_agent().namespace
+            name = self.get_primary_agent().name
+            try:
+                result = client.get_agent_data_by_key(key)
+            except Exception as ex:
+                self.add_system_log(f"Error getting agent data by key {key}: {ex}", logging.ERROR)
+                result = None
             return (
                 result
                 if result
@@ -386,16 +607,17 @@ class Environment(object):
             message: str,
             attachments: Optional[Iterable[Attachment]] = None,
             message_type: Optional[str] = None,
+            thread_id: str = self._thread_id,
         ):
             """Assistant adds a message to the environment."""
             # NOTE: message from `user` are not stored in the memory
 
             return hub_client.beta.threads.messages.create(
-                thread_id=self._thread_id,
+                thread_id=thread_id,
                 role="assistant",
                 content=message,
                 extra_body={
-                    "assistant_id": self._agents[0].identifier,
+                    "assistant_id": self.get_primary_agent().identifier,
                     "run_id": self._run_id,
                 },
                 attachments=attachments,
@@ -403,6 +625,12 @@ class Environment(object):
             )
 
         self.add_reply = add_reply
+
+        def get_thread(thread_id=self._thread_id):
+            """Returns the current Thread object or the requested Thread."""
+            return client.get_thread(thread_id)
+
+        self.get_thread = get_thread
 
         def _add_message(
             role: str,
@@ -415,7 +643,7 @@ class Environment(object):
                 role=role,  # type: ignore
                 content=message,
                 extra_body={
-                    "assistant_id": self._agents[0].identifier,
+                    "assistant_id": self.get_primary_agent().identifier,
                     "run_id": self._run_id,
                 },
                 metadata=kwargs,
@@ -537,13 +765,25 @@ class Environment(object):
             return hub_client.beta.threads.runs.update(
                 thread_id=self._thread_id,
                 run_id=self._run_id,
-                extra_body={"status": "requires_action"},
+                extra_body={"status": "requires_action", "required_action": {"type": "user_input"}},
             )
 
         self.request_user_input = request_user_input
 
+        def request_agent_input() -> Run:
+            """Mark the run as ready for input from another agent."""
+            return hub_client.beta.threads.runs.update(
+                thread_id=self._thread_id,
+                run_id=self._run_id,
+                extra_body={"status": "requires_action", "required_action": {"type": "agent_input"}},
+            )
+
+        self.request_agent_input = request_agent_input
+
         # Must be placed after method definitions
         self.register_standard_tools()
+
+    # end of protected client methods
 
     def get_tool_registry(self, new: bool = False) -> ToolRegistry:
         """Returns the tool registry, a dictionary of tools that can be called by the agent."""
@@ -656,17 +896,25 @@ class Environment(object):
         with open(path, "r") as f:
             return [json.loads(message) for message in f.read().split(DELIMITER) if message]
 
-    def list_messages(self, thread_id: Optional[str] = None):
+    def list_messages(
+        self,
+        thread_id: Optional[str] = None,
+        limit: Union[int, NotGiven] = 200,  # api defaults to 20
+        order: Literal["asc", "desc"] = "asc",
+    ):
         """Backwards compatibility for chat_completions messages."""
-        messages = self._list_messages(thread_id=thread_id)
+        messages = self._list_messages(thread_id=thread_id, limit=limit, order=order)
 
         # Filter out system and agent log messages when running in debug mode. Agent behavior shouldn't change based on logs.  # noqa: E501
-        if self._debug_mode:
-            messages = [
-                m
-                for m in messages
-                if not (m.metadata and m.metadata["message_type"] in ["system:log", "agent:log"])  # type: ignore
-            ]
+        messages = [
+            m
+            for m in messages
+            if not (
+                m.metadata
+                and any(m.metadata.get("message_type", "").startswith(prefix) for prefix in ["system:", "agent:"])
+            )
+        ]
+
         legacy_messages = [
             {
                 "id": m.id,
@@ -693,7 +941,7 @@ class Environment(object):
             signature,
             message,
             nonce,
-            self._agents[0].name,
+            self.get_primary_agent().name,
             callback_url,
         )
 
@@ -709,28 +957,56 @@ class Environment(object):
         """Returns temp dir for primary agent where execution happens."""
         return self.get_primary_agent_temp_dir()
 
-    def read_file(self, filename: str):
+    def read_file(self, filename: str) -> Optional[Union[bytes, str]]:
         """Reads a file from the environment or thread."""
-        file_content = None
+        file_content: Optional[Union[bytes, str]] = None
         # First try to read from local filesystem
         local_path = os.path.join(self.get_primary_agent_temp_dir(), filename)
+        print(f"Read file {filename} from local path: {local_path}")
         if os.path.exists(local_path):
-            with open(local_path, "r") as local_file:
-                file_content = local_file.read()
+            try:
+                with open(local_path, "rb") as local_path_file:
+                    local_file_content = local_path_file.read()
+                    try:
+                        # Try to decode as text
+                        file_content = local_file_content.decode("utf-8")
+                    except UnicodeDecodeError:
+                        # If decoding fails, store as binary
+                        file_content = local_file_content
+            except Exception as e:
+                print(f"Error with read_file: {e}")
 
-        thread_files = self.list_files_from_thread(order="desc")
+        if not file_content:
+            # Next check files written out by the agent.
+            # Agent output files take precedence over files packaged with the agent
+            thread_files = self.list_files_from_thread(order="desc")
 
-        # Then try to read from thread, starting from the most recent
-        for f in thread_files:
-            if f.filename == filename:
-                file_content = self.read_file_by_id(f.id)
-                break
+            # Then try to read from thread, starting from the most recent
+            for f in thread_files:
+                if f.filename == filename:
+                    file_content = self.read_file_by_id(f.id)
+                    break
 
-        # Write the file content to the local filesystem
-        if file_content:
-            with open(local_path, "w") as local_file:
-                local_file.write(file_content)
-        else:
+            if not file_content:
+                # Next check agent file cache
+                # Agent output files & thread files take precedence over cached files
+                file_cache = self.get_primary_agent().file_cache
+                if file_cache:
+                    file_content = file_cache.get(filename, None)
+
+            # Write the file content from the thread or cache to the local filesystem
+            # This allows exec_command to operate on the file
+            if file_content:
+                if not os.path.exists(os.path.dirname(local_path)):
+                    os.makedirs(os.path.dirname(local_path))
+
+                with open(local_path, "wb") as local_file:
+                    if isinstance(file_content, bytes):
+                        local_file.write(file_content)
+                    else:
+                        local_file.write(file_content.encode("utf-8"))
+
+        if not file_content:
             self.add_system_log(f"Warn: File {filename} not found during read_file operation")
 
         return file_content
@@ -825,8 +1101,8 @@ class Environment(object):
             self._last_used_model = model
             self.add_system_log(f"Connecting to {model}")
 
-        temperature = kwargs.pop("temperature", self._agents[0].model_temperature if self._agents else None)
-        max_tokens = kwargs.pop("max_tokens", self._agents[0].model_max_tokens if self._agents else None)
+        temperature = kwargs.pop("temperature", self.get_primary_agent().model_temperature if self._agents else None)
+        max_tokens = kwargs.pop("max_tokens", self.get_primary_agent().model_max_tokens if self._agents else None)
 
         params = InferenceParameters(
             model=model,
@@ -930,14 +1206,19 @@ class Environment(object):
                     function_response = self._tools.call_tool(function_name, **function_args if function_args else {})
 
                     if function_response:
-                        function_response_json = json.dumps(function_response) if function_response else ""
-                        if add_responses_to_messages:
-                            self.add_message(
-                                tool_role_name,
-                                function_response_json,
-                                tool_call_id=tool_call.id,
-                                name=function_name,
-                            )
+                        try:
+                            function_response_json = json.dumps(function_response) if function_response else ""
+                            if add_responses_to_messages:
+                                self.add_message(
+                                    tool_role_name,
+                                    function_response_json,
+                                    tool_call_id=tool_call.id,
+                                    name=function_name,
+                                )
+                        except Exception as e:
+                            # some tool responses may not be serializable
+                            error_message = f"Unable to add tool output as a message {function_name}: {e}"
+                            self.add_system_log(error_message, level=logging.INFO)
                 except Exception as e:
                     error_message = f"Error calling tool {function_name}: {e}"
                     self.add_system_log(error_message, level=logging.ERROR)
@@ -958,6 +1239,7 @@ class Environment(object):
         content = response_message.content
         if content is None:
             return None, None
+        content = response_message.content
         llama_matches = LLAMA_TOOL_FORMAT_PATTERN.findall(content)
         if llama_matches:
             text = ""
@@ -1059,6 +1341,28 @@ class Environment(object):
             "public_key": signature_data.get("public_key", None),
         }
 
+    def completion_and_get_tools_calls(
+        self,
+        messages: List[ChatCompletionMessageParam],
+        model: str = "",
+        **kwargs: Any,
+    ) -> SimpleNamespace:
+        """Returns completion message and/or tool calls from OpenAI or Llama tool formats."""
+        raw_response = self._run_inference_completions(messages, model, stream=False, **kwargs)
+
+        assert isinstance(raw_response, ModelResponse), "Expected ModelResponse"
+        response: ModelResponse = raw_response
+        assert all(map(lambda choice: isinstance(choice, Choices), response.choices)), "Expected Choices"
+        choices: List[Choices] = response.choices  # type: ignore
+
+        (message_without_tool_call, tool_calls) = self._parse_tool_call(choices[0].message)
+
+        if message_without_tool_call is None:
+            response_message = choices[0].message.content
+            message_without_tool_call = response_message
+
+        return SimpleNamespace(message=message_without_tool_call, tool_calls=tool_calls)
+
     def completion_and_run_tools(
         self,
         messages: List[ChatCompletionMessageParam],
@@ -1092,7 +1396,7 @@ class Environment(object):
 
     def get_primary_agent_temp_dir(self) -> Path:
         """Returns temp dir for primary agent."""
-        return self._agents[0].temp_dir
+        return self.get_primary_agent().temp_dir
 
     def is_done(self) -> bool:  # noqa: D102
         return self._done
@@ -1109,9 +1413,9 @@ class Environment(object):
 
     def environment_run_info(self, base_id, run_type) -> dict:
         """Returns the environment run information."""
-        if not self._agents or not self._agents[0]:
+        if not self._agents or not self.get_primary_agent():
             raise ValueError("Agent not found")
-        primary_agent = self._agents[0]
+        primary_agent = self.get_primary_agent()
 
         full_agent_name = "/".join([primary_agent.namespace, primary_agent.name, primary_agent.version])
         safe_agent_name = full_agent_name.replace("/", "_")
@@ -1201,7 +1505,19 @@ class Environment(object):
                     logging.INFO,
                 )
             try:
-                self._agents[0].run(self, task=new_message)
+                error_message, traceback_message = self.get_primary_agent().run(self, task=new_message)
+                if self._debug_mode and (error_message or traceback_message):
+                    if self._debug_mode and (error_message or traceback_message):
+                        message_parts = []
+
+                        if error_message:
+                            message_parts.append(f"Error: \n ```\n{error_message}\n```")
+
+                        if traceback_message:
+                            message_parts.append(f"Error Traceback: \n ```\n{traceback_message}\n```")
+
+                        self.add_reply("\n\n".join(message_parts), message_type="system:debug")
+
             except Exception as e:
                 self.add_system_log(f"Environment run failed: {e}", logging.ERROR)
                 self.mark_failed()

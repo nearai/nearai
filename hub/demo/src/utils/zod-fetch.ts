@@ -1,42 +1,38 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/**
- * A type representing a fetcher function that can be
- * passed to createZodFetcher.
- */
-export type AnyFetcher = (...args: any[]) => any;
+import { TRPCError } from '@trpc/server';
+import { type z } from 'zod';
 
-/**
- * @internal
- */
-export type Schema<TData> = {
-  parse: (data: unknown) => TData;
-};
+import { statusCodeToTRPCErrorCode } from './error';
 
-/**
- * A type utility which represents the function returned
- * from createZodFetcher
- */
-export type ZodFetcher<TFetcher extends AnyFetcher> = <TData>(
+type AnyFetcher = (...args: any[]) => any;
+
+type Schema<TData> =
+  | {
+      passthrough: () => {
+        safeParse: (data: unknown) => z.SafeParseReturnType<unknown, TData>;
+      };
+    }
+  | { safeParse: (data: unknown) => z.SafeParseReturnType<unknown, TData> };
+
+type ZodFetcher<TFetcher extends AnyFetcher> = <TData>(
   schema: Schema<TData>,
   ...args: Parameters<TFetcher>
 ) => Promise<TData>;
 
-/**
- * The default fetcher used by createZodFetcher when no
- * fetcher is provided.
- */
-export const defaultFetcher = async (...args: Parameters<typeof fetch>) => {
+const defaultFetcher = async (...args: Parameters<typeof fetch>) => {
   const response = await fetch(...args);
 
   if (!response.ok) {
     try {
       const body = await response.json().catch(() => response.text());
       console.error(body);
-    } catch (error) {}
+    } catch (_error) {}
 
-    throw new Error(`Request failed with status ${response.status}`);
+    throw new TRPCError({
+      code: statusCodeToTRPCErrorCode(response.status),
+      message: `Request failed with status: ${response.status}`,
+    });
   }
 
   return response.json();
@@ -92,6 +88,26 @@ export function createZodFetcher(
 ): ZodFetcher<any> {
   return async (schema, ...args) => {
     const response = await fetcher(...args);
-    return schema.parse(response);
+
+    let parsed;
+    if ('passthrough' in schema) {
+      parsed = schema.passthrough().safeParse(response);
+    } else {
+      parsed = schema.safeParse(response);
+    }
+
+    if (parsed.error) {
+      console.error(
+        'API response failed to match expected Zod schema',
+        parsed.error,
+      );
+
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: parsed.error.message,
+      });
+    }
+
+    return parsed.data;
   };
 }

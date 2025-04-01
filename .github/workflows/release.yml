@@ -64,8 +64,8 @@ jobs:
       with:
         python-version: '3.11'
         
-    - name: Install poetry
-      run: pipx install poetry
+    - name: Install uv
+      run: pip install uv
 
     - name: Install Codespell
       run: pip install codespell
@@ -74,10 +74,10 @@ jobs:
       run: codespell --config .codespellrc
 
     - name: check lock file for inconsistencies
-      run: poetry check --lock
+      run: uv lock --check
 
     - name: Install dependencies
-      run: poetry install --extras explatform --extras hub
+      run: uv pip install ".[dev,docs]" --system
 
     - name: Lint Check
       run: ./scripts/lint_check.sh
@@ -91,9 +91,24 @@ jobs:
     - name: Bump version and generate changelog
       uses: commitizen-tools/commitizen-action@master
       with:
+        push: false
         github_token: ${{ steps.generate-token.outputs.token }}
         changelog_increment_filename: body.md
         increment: ${{ github.event.inputs.bump }}
+      if: ${{ github.event.inputs.make-release == 'true' }}
+
+    - name: Update lock file and amend commit
+      run: |
+        sudo chmod -R ugo+rw .git/
+        uv lock
+        echo "Lock file changes are staged and ready"
+        git add uv.lock
+        git commit --amend --no-edit
+        echo "Lock file changes are committed"
+        git push origin main
+        echo "Lock file changes are pushed"
+      env:
+        GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
       if: ${{ github.event.inputs.make-release == 'true' }}
 
     - name: Create release
@@ -119,9 +134,12 @@ jobs:
       if: ${{ github.event.inputs.publish-docs == 'true' }}
       
     - name: Build package
-      run: poetry build
+      run: uv build
       if: ${{ github.event.inputs.publish-pypi == 'true' }}
       
     - name: Publish to PyPI
-      run: poetry publish --build
+      env:
+          ## TODO: Change the secret name to only PIPI_TOKEN
+          UV_PUBLISH_TOKEN: ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
+      run: uv publish
       if: ${{ github.event.inputs.publish-pypi == 'true' }}

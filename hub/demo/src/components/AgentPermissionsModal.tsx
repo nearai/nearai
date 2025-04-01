@@ -9,7 +9,7 @@ import {
   SvgIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import {
   Check,
   Eye,
@@ -21,22 +21,22 @@ import {
 import { useEffect, useState } from 'react';
 import { type z } from 'zod';
 
-import { APP_TITLE } from '~/constants';
-import { useEntryEnvironmentVariables } from '~/hooks/entries';
+import { APP_TITLE } from '@/constants';
+import { useEntryEnvironmentVariables } from '@/hooks/entries';
+import { ENTRY_CATEGORY_LABELS } from '@/lib/categories';
 import {
-  ENTRY_CATEGORY_LABELS,
   idForEntry,
   idMatchesEntry,
   parseEntryIdWithOptionalVersion,
-} from '~/lib/entries';
+} from '@/lib/entries';
 import {
   type agentAddSecretsRequestModel,
   type agentNearSendTransactionsRequestModel,
   type chatWithAgentModel,
   type entryModel,
-} from '~/lib/models';
-import { useAgentSettingsStore } from '~/stores/agent-settings';
-import { useAuthStore } from '~/stores/auth';
+} from '@/lib/models';
+import { useAgentSettingsStore } from '@/stores/agent-settings';
+import { useAuthStore } from '@/stores/auth';
 
 import { type AgentChatMutationInput } from './AgentRunner';
 import { Code } from './lib/Code';
@@ -118,7 +118,6 @@ export const AgentPermissionsModal = ({
   onAllow,
 }: Props) => {
   const auth = useAuthStore((store) => store.auth);
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
   const agentId = idForEntry(agent);
   const setAgentSettings = useAgentSettingsStore(
     (store) => store.setAgentSettings,
@@ -186,7 +185,7 @@ export const AgentPermissionsModal = ({
       <Dialog.Content title="Agent Request" size="s">
         {check && requests && (
           <>
-            {isAuthenticated ? (
+            {auth ? (
               <Flex direction="column" gap="l">
                 {!check.permissions.allowAddSecrets && (
                   <SecretsToAdd agent={agent} requests={requests} />
@@ -224,7 +223,7 @@ export const AgentPermissionsModal = ({
                       </Text>{' '}
                       using your {`account's`} signature{' '}
                       <Text as="span" color="sand-12" weight={500}>
-                        {auth?.account_id}
+                        {auth.accountId}
                       </Text>
                     </Text>
 

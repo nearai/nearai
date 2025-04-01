@@ -1,0 +1,26 @@
+base58 == 2.1.1
+pynacl >= 1.5.0
+pytz == 2024.2
+python_dateutil >= 2.5.3
+setuptools >= 21.0.0
+urllib3 >= 1.25.3
+pydantic >=2.8.2
+typing-extensions >= 4.7.1
+psutil >= 5.9.5
+boto3 >= 1.35.3
+litellm >= 1.41.0
+py-near >= 1.1.50
+loguru == 0.7.2
+ed25519 == 1.5
+tweepy >= 4.14.0
+cdp-sdk >= 0.15.0
+web3 >= 7.6.0
+langchain >= 0.3.4
+langchain-openai >= 0.2.4
+langchain-community >= 0.3.16
+langgraph >= 0.2.39
+nearai-langchain >= 0.0.12
+duckduckgo-search >= 7.3.0
+coinbase-agentkit >= 0.1.2
+coinbase-agentkit-langchain >= 0.1.0
+ddtrace == 2.21.0

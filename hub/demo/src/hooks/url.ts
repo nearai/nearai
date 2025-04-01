@@ -7,7 +7,7 @@ export function useQueryParams<const T extends string[]>(names: T) {
   const searchParams = useSearchParams();
 
   const createQueryPath = useCallback(
-    (updatedParams: Partial<Record<T[number], string | undefined>>) => {
+    (updatedParams: Partial<Record<T[number], string | null>>) => {
       const params = new URLSearchParams(searchParams.toString());
 
       Object.entries(updatedParams).forEach(([name, value]) => {
@@ -25,7 +25,7 @@ export function useQueryParams<const T extends string[]>(names: T) {
 
   const updateQueryPath = useCallback(
     (
-      updatedParams: Partial<Record<T[number], string | undefined>>,
+      updatedParams: Partial<Record<T[number], string | null>>,
       mode: 'push' | 'replace' = 'push',
       scroll = true,
     ) => {

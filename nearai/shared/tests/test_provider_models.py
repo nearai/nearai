@@ -27,6 +27,26 @@ class TestGetProviderNamespacedModel(unittest.TestCase):
             ("fireworks", NamespacedName(name="yi-large", namespace="yi-01-ai")),
         )
 
+    def test_url_provider(self):  # noqa: D102
+        self.assertEqual(
+            get_provider_namespaced_model("https://api.openai.com/v1::gpt-4o"),
+            ("https://api.openai.com/v1", NamespacedName(name="gpt-4o")),
+        )
+        self.assertEqual(
+            get_provider_namespaced_model("gpt-4o", provider="https://api.openai.com/v1"),
+            ("https://api.openai.com/v1", NamespacedName(name="gpt-4o")),
+        )
+
+    def test_local_provider(self):  # noqa: D102
+        self.assertEqual(
+            get_provider_namespaced_model("local::llama3-70b"),
+            ("local", NamespacedName(name="llama3-70b")),
+        )
+        self.assertEqual(
+            get_provider_namespaced_model("mixtral-8x7b", provider="local"),
+            ("local", NamespacedName(name="mixtral-8x7b")),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

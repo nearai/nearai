@@ -1,3 +1,4 @@
+import { useDebouncedFunction } from '@nearai/ui';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { type z } from 'zod';
@@ -7,14 +8,12 @@ import {
   type EntryCategory,
   type entryModel,
   type entrySecretModel,
-} from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { trpc } from '~/trpc/TRPCProvider';
-import { wordsMatchFuzzySearch } from '~/utils/search';
+} from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import { trpc } from '@/trpc/TRPCProvider';
+import { wordsMatchFuzzySearch } from '@/utils/search';
 
-import { useDebouncedValue } from './debounce';
-
-export function useEntryParams(overrides?: {
+export function useCurrentEntryParams(overrides?: {
   namespace?: string;
   name?: string;
   version?: string;
@@ -41,35 +40,40 @@ export function useEntryParams(overrides?: {
 
 export function useCurrentEntry(
   category: EntryCategory,
-  overrides?: {
-    namespace?: string;
-    name?: string;
-    version?: string;
+  options?: {
+    enabled?: boolean;
+    refetchOnMount?: boolean;
+    overrides?: {
+      namespace?: string;
+      name?: string;
+      version?: string;
+    };
   },
 ) {
-  const { id, namespace, name, version } = useEntryParams(overrides);
-
-  const entriesQuery = trpc.hub.entries.useQuery({
-    category,
-    namespace,
-    showLatestVersion: false,
-  });
-
-  const currentVersions = entriesQuery.data?.filter(
-    (item) => item.name === name,
+  const { id, namespace, name, version } = useCurrentEntryParams(
+    options?.overrides,
   );
 
-  currentVersions?.sort((a, b) => b.id - a.id);
+  const entryQuery = trpc.hub.entry.useQuery(
+    {
+      category,
+      name,
+      namespace,
+      version,
+    },
+    {
+      refetchOnMount: options?.refetchOnMount,
+      enabled: typeof options?.enabled === 'boolean' ? options.enabled : true,
+    },
+  );
 
-  const currentEntry =
-    version === 'latest'
-      ? currentVersions?.[0]
-      : currentVersions?.find((item) => item.version === version);
+  const currentEntry = entryQuery.data?.entry;
+  const currentVersions = entryQuery.data?.versions;
 
   return {
     currentEntry,
     currentEntryId: id,
-    currentEntryIsHidden: !!entriesQuery.data && !currentEntry,
+    currentEntryIsHidden: !!entryQuery.data && !currentEntry,
     currentVersions,
   };
 }
@@ -77,19 +81,22 @@ export function useCurrentEntry(
 export function useEntriesSearch(
   data: z.infer<typeof entriesModel> | undefined,
 ) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const searchQueryDebounced = useDebouncedValue(searchQuery, 150);
+  const [searchQuery, _setSearchQuery] = useState('');
+
+  const setSearchQuery = useDebouncedFunction((value: string) => {
+    _setSearchQuery(value);
+  }, 150);
 
   const searched = useMemo(() => {
-    if (!data || !searchQueryDebounced) return data;
+    if (!data || !searchQuery) return data;
 
     return data.filter((item) =>
       wordsMatchFuzzySearch(
         [item.namespace, item.name, ...item.tags],
-        searchQueryDebounced,
+        searchQuery,
       ),
     );
-  }, [data, searchQueryDebounced]);
+  }, [data, searchQuery]);
 
   return {
     searched,
@@ -109,12 +116,12 @@ export function useEntryEnvironmentVariables(
   entry: z.infer<typeof entryModel> | undefined,
   excludeQueryParamKeys?: string[],
 ) {
-  const isAuthenticated = useAuthStore((store) => store.isAuthenticated);
+  const auth = useAuthStore((store) => store.auth);
   const searchParams = useSearchParams();
   const secretsQuery = trpc.hub.secrets.useQuery(
     {},
     {
-      enabled: isAuthenticated,
+      enabled: !!auth,
     },
   );
 

@@ -8,13 +8,13 @@ import {
   SvgIcon,
   Tabs,
   Text,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { Cube, Star, User } from '@phosphor-icons/react';
 import { usePathname } from 'next/navigation';
 import { type ReactNode } from 'react';
 
-import { useProfileParams } from '~/hooks/profile';
-import { useAuthStore } from '~/stores/auth';
+import { useProfileParams } from '@/hooks/profile';
+import { useAuthStore } from '@/stores/auth';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const pathSegments = usePathname().split('/');
@@ -43,7 +43,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {accountId}
           </Text>
 
-          {auth?.account_id === accountId && (
+          {auth?.accountId === accountId && (
             <Badge label="You" variant="neutral" />
           )}
         </Flex>

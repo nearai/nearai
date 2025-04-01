@@ -1,7 +1,7 @@
 import { type Metadata } from 'next';
 
-import { Competition } from '~/components/Competition';
-import { Markdown } from '~/components/lib/Markdown';
+import { Competition } from '@/components/Competition';
+import { Markdown } from '@/components/lib/Markdown';
 
 const content = `
 Welcome to the first NEAR AI competition.

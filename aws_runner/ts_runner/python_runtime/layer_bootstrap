@@ -1,0 +1,13 @@
+#!/opt/var/lang/bin/python3.9
+
+"""
+Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+"""
+
+import sys
+sys.path.append('/opt/var/runtime')
+
+from bootstrap import main
+
+if __name__ == '__main__':
+    main()

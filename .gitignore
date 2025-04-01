@@ -1,5 +1,6 @@
 dist/
 .vscode/
+.idea/
 __pycache__/
 .nearai/
 /nearai/tests/test-agents/
@@ -13,3 +14,11 @@ last_block_id.txt
 
 nearai-cvm-*/
 target/
+.DS_Store
+build-info.txt
+nearai/ts_runner/build
+**/.pnpm-store/*
+api.log
+api.pid
+scheduler.log
+scheduler.pid

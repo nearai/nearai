@@ -7,8 +7,8 @@ from pydantic import BaseModel
 
 from nearai.shared.auth_data import AuthData
 
-DEFAULT_TIMEOUT = 60 * 5
-DEFAULT_MAX_RETRIES = 3
+DEFAULT_TIMEOUT = 60 * 10
+DEFAULT_MAX_RETRIES = 1
 DEFAULT_MODEL_TEMPERATURE = 1.0
 DEFAULT_MODEL_MAX_TOKENS = 16384
 DEFAULT_PROVIDER = "fireworks"
@@ -28,7 +28,7 @@ class ClientConfig(BaseModel):
 
     def get_hub_client(self):
         """Get the hub client."""
-        signature = f"Bearer {self.auth.model_dump_json()}"
+        signature = f"Bearer {self.auth.model_dump_json()}" if self.auth else None
         base_url = self.base_url
         http_client = httpx.Client(verify=False)
 

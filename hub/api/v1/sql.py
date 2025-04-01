@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 from nearai.shared.models import SimilaritySearch, SimilaritySearchFile
 from pydantic import BaseModel, RootModel
 
+from hub.api.v1.models import Completion, get_session
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -92,27 +94,77 @@ class SqlClient:
         cursor.execute(query, args)
         return cursor.fetchall()
 
-    def __fetch_one(self, query: str):
+    def __fetch_one(self, query: str, args: object = None):
         """Fetches one row from the database.
 
         Returns a dictionary, the dict can be used by Pydantic models.
         """
         cursor = self.db.cursor(pymysql.cursors.DictCursor)
-        cursor.execute(query)
+        cursor.execute(query, args)
         return cursor.fetchone()
 
     def add_user_usage(self, account_id: str, query: str, response: str, model: str, provider: str, endpoint: str):  # noqa: D102
-        # Escape single quotes in query and response strings
-        query = query.replace("'", "''")
-        response = response.replace("'", "''")
+        """Store completion usage data with robust JSON handling.
 
-        query = f"INSERT INTO completions (account_id, query, response, model, provider, endpoint) VALUES ('{account_id}', '{query}', '{response}', '{model}', '{provider}', '{endpoint}')"  # noqa: E501
-        self.db.cursor().execute(query)
-        self.db.commit()
+        Args:
+        ----
+            account_id: User account identifier
+            query: Raw query string or JSON string
+            response: Raw response or JSON string
+            model: Model identifier
+            provider: Provider name
+            endpoint: API endpoint used
+
+        """
+        # Default usage data
+        token_data = {
+            "completion_tokens": 0,
+            "prompt_tokens": 0,
+            "total_tokens": 0,
+            "completion_tokens_details": None,
+            "prompt_tokens_details": None,
+        }
+
+        try:
+            response_dict = json.loads(response)
+        except Exception as e:
+            logger.error(f"Error parsing response JSON: {e}")
+            response_dict = {"value": str(response)}
+
+        try:
+            query_dict = json.loads(query)
+        except Exception as e:
+            logger.error(f"Error parsing response JSON: {e}")
+            query_dict = {"value": query}
+
+        if isinstance(response_dict, dict) and "usage" in response_dict:
+            token_data.update(response_dict["usage"])
+        else:
+            logger.warning("No usage data found in response")
+
+        completion = Completion(
+            account_id=account_id,
+            query=query_dict,
+            response=response_dict,
+            model=model,
+            provider=provider,
+            endpoint=endpoint,
+            completion_tokens=token_data.get("completion_tokens", 0),
+            prompt_tokens=token_data.get("prompt_tokens", 0),
+            total_tokens=token_data.get("total_tokens", 0),
+            completion_tokens_details=token_data.get("completion_tokens_details"),
+            prompt_tokens_details=token_data.get("prompt_tokens_details"),
+        )
+
+        with get_session() as session:
+            session.add(completion)
+            session.commit()
+            # Refresh to get the auto-generated ID
+            session.refresh(completion)
 
     def get_user_usage(self, account_id: str):  # noqa: D102
-        query = f"SELECT * FROM completions WHERE account_id = '{account_id}'"
-        return self.__fetch_all(query)
+        query = "SELECT * FROM completions WHERE account_id = %s"
+        return self.__fetch_all(query, (account_id,))
 
     def store_nonce(self, account_id: str, nonce: bytes, message: str, recipient: str, callback_url: Optional[str]):  # noqa: D102
         logging.info(f"Storing nonce {nonce.decode()} for account {account_id}")
@@ -124,28 +176,27 @@ class SqlClient:
         self.db.commit()
 
     def get_account_nonces(self, account_id: str):  # noqa: D102
-        query = f"SELECT * FROM nonces WHERE account_id = '{account_id}'"
-        nonces = [UserNonce(**x) for x in self.__fetch_all(query)]
+        query = "SELECT * FROM nonces WHERE account_id = %s"
+        nonces = [UserNonce(**x) for x in self.__fetch_all(query, (account_id,))]
         user_nonces = UserNonces(root=nonces) if nonces else None
         return user_nonces
 
     def get_account_nonce(self, account_id: str, nonce: bytes):  # noqa: D102
-        query = f"SELECT * FROM nonces WHERE account_id = '{account_id}' AND nonce = '{nonce.decode()}'"
-        res = self.__fetch_one(query)
+        query = "SELECT * FROM nonces WHERE account_id = %s AND nonce = %s"
+        res = self.__fetch_one(query, (account_id, nonce.decode()))
         user_nonce = UserNonce(**res) if res else None
         return user_nonce
 
     def revoke_nonce(self, account_id: str, nonce: bytes):  # noqa: D102
         logging.info(f"Revoking nonce {nonce.decode()} for account {account_id}")
-        query = f"""UPDATE nonces SET nonce_status = 'revoked'
-            WHERE account_id = '{account_id}' AND nonce = '{nonce.decode()}'"""
-        self.db.cursor().execute(query)
+        query = "UPDATE nonces SET nonce_status = 'revoked' WHERE account_id = %s AND nonce = %s"
+        self.db.cursor().execute(query, (account_id, nonce.decode()))
         self.db.commit()
 
     def revoke_all_nonces(self, account_id):  # noqa: D102
-        logging.info(f"Revoking all nonces  for account {account_id}")
-        query = f"UPDATE nonces SET nonce_status = 'revoked' WHERE account_id = '{account_id}'"
-        self.db.cursor().execute(query)
+        logging.info(f"Revoking all nonces for account {account_id}")
+        query = "UPDATE nonces SET nonce_status = 'revoked' WHERE account_id = %s"
+        self.db.cursor().execute(query, (account_id,))
         self.db.commit()
 
     def create_vector_store(
@@ -208,10 +259,10 @@ class SqlClient:
 
     def get_vector_store(self, vector_store_id: str) -> Optional[VectorStore]:  # noqa: D102
         """Get a vector store by id."""
-        query = f"SELECT * FROM vector_stores WHERE id = '{vector_store_id}'"
-        logger.info(f"Querying vector store: {query}")
+        query = "SELECT * FROM vector_stores WHERE id = %s"
+        logger.info(f"Querying vector store with id: {vector_store_id}")
 
-        result = self.__fetch_one(query)
+        result = self.__fetch_one(query, (vector_store_id,))
         if not result:
             return None
 
@@ -223,9 +274,9 @@ class SqlClient:
 
     def get_vector_store_by_account(self, vector_store_id: str, account_id: str) -> Optional[VectorStore]:
         """Get a vector store by account id."""
-        query = f"SELECT * FROM vector_stores WHERE id = '{vector_store_id}' AND account_id = '{account_id}'"
+        query = "SELECT * FROM vector_stores WHERE id = %s AND account_id = %s"
 
-        result = self.__fetch_one(query)
+        result = self.__fetch_one(query, (vector_store_id, account_id))
         if not result:
             return None
         result["file_ids"] = json.loads(result["file_ids"])
@@ -237,19 +288,29 @@ class SqlClient:
 
     def get_vector_stores(self, account_id: str) -> Optional[List[VectorStore]]:
         """Get all vector stores for a given account."""
-        query = f"SELECT * FROM vector_stores WHERE account_id = '{account_id}'"
-        return [VectorStore(**x) for x in self.__fetch_all(query)]
+        query = "SELECT * FROM vector_stores WHERE account_id = %s"
+        results = self.__fetch_all(query, (account_id,))
+
+        vector_stores = []
+        for result in results:
+            result["file_ids"] = json.loads(result["file_ids"])
+            result["expires_after"] = json.loads(result["expires_after"])
+            result["chunking_strategy"] = json.loads(result["chunking_strategy"])
+            result["metadata"] = json.loads(result["metadata"]) if result["metadata"] else None
+            vector_stores.append(VectorStore(**result))
+
+        return vector_stores
 
     def get_user_memory(self, account_id: str) -> Optional[str]:
         """Get the user memory vector store id for a given account."""
-        query = f"SELECT vector_store_id FROM user_memory WHERE account_id = '{account_id}'"
-        r = self.__fetch_one(query)
+        query = "SELECT vector_store_id FROM user_memory WHERE account_id = %s"
+        r = self.__fetch_one(query, (account_id,))
         return r["vector_store_id"] if r else None
 
     def set_user_memory(self, account_id: str, vector_store_id: str):
         """Set the user memory vector store id for a given account."""
-        query = f"INSERT INTO user_memory (account_id, vector_store_id) VALUES ('{account_id}', '{vector_store_id}')"
-        self.db.cursor().execute(query)
+        query = "INSERT INTO user_memory (account_id, vector_store_id) VALUES (%s, %s)"
+        self.db.cursor().execute(query, (account_id, vector_store_id))
         self.db.commit()
 
     def create_file(
@@ -330,10 +391,30 @@ class SqlClient:
 
         """
         query = """SELECT * FROM vector_store_files f
-                 INNER JOIN inference_router.vector_store_embeddings e ON f.id = e.file_id
+                 INNER JOIN vector_store_embeddings e ON f.id = e.file_id
                  WHERE filename = %s AND e.vector_store_id = %s"""
         cursor = self.db.cursor(pymysql.cursors.DictCursor)
         cursor.execute(query, (filename, vector_store_id))
+        result = cursor.fetchall()
+        return [VectorStoreFile(**res) for res in result] if result else None
+
+    def list_vector_store_files(self, vector_store_id: str) -> Optional[List[VectorStoreFile]]:
+        """List file details for a Vector Store by vector_store_id.
+
+        Args:
+        ----
+            vector_store_id (str): The ID of the vector store.
+
+        Returns:
+        -------
+            Optional[List[VectorStoreFile]]: A list of matching file details if found, None otherwise.
+
+        """
+        query = """SELECT * FROM vector_store_files f
+                 INNER JOIN vector_store_embeddings e ON f.id = e.file_id
+                 WHERE e.vector_store_id = %s"""
+        cursor = self.db.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(query, (vector_store_id,))
         result = cursor.fetchall()
         return [VectorStoreFile(**res) for res in result] if result else None
 
@@ -758,7 +839,7 @@ class SqlClient:
             # First verify the file belongs to the account
             file = self.get_file_details_by_account(file_id, account_id)
             if not file:
-                logger.warning(f"File {file_id} not found or doesn't belong to account {account_id}")
+                logger.warning(f"File {file_id} that belongs to account {account_id} not found")
                 return False
 
             # Get all vector stores that contain this file
@@ -767,7 +848,7 @@ class SqlClient:
             WHERE file_id = %s
             """
 
-            cursor.execute(query, (file_id))
+            cursor.execute(query, (file_id,))
             vector_stores = cursor.fetchall()
 
             # Remove file from each vector store that references it

@@ -12,7 +12,7 @@ import {
   SvgIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import {
   CodeBlock,
   Eye,
@@ -29,12 +29,12 @@ import { type z } from 'zod';
 
 import {
   type EntryEnvironmentVariable,
+  useCurrentEntryParams,
   useEntryEnvironmentVariables,
-  useEntryParams,
-} from '~/hooks/entries';
-import { type entryModel } from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import { trpc } from '~/trpc/TRPCProvider';
+} from '@/hooks/entries';
+import { type entryModel } from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import { trpc } from '@/trpc/TRPCProvider';
 
 import { Sidebar } from './lib/Sidebar';
 import { SignInPrompt } from './SignInPrompt';
@@ -140,29 +140,36 @@ export const EntryEnvironmentVariables = ({
                       marginLeft: 'auto',
                     }}
                   >
+                    {variable.secret && (
+                      <Tooltip
+                        asChild
+                        content={`${revealedSecretKeys.includes(variable.key) ? 'Hide' : 'Show'} secret`}
+                      >
+                        <Button
+                          label="Show/Hide Secret"
+                          icon={
+                            revealedSecretKeys.includes(variable.key) ? (
+                              <EyeSlash />
+                            ) : (
+                              <Eye />
+                            )
+                          }
+                          size="x-small"
+                          fill="ghost"
+                          variant="primary"
+                          onClick={() => {
+                            toggleRevealSecret(variable.key);
+                          }}
+                        />
+                      </Tooltip>
+                    )}
+
                     <Tooltip
                       asChild
-                      content={`${revealedSecretKeys.includes(variable.key) ? 'Hide' : 'Show'} Secret`}
+                      content={
+                        variable.secret ? 'Edit secret' : 'Configure as secret'
+                      }
                     >
-                      <Button
-                        label="Show/Hide Secret"
-                        icon={
-                          revealedSecretKeys.includes(variable.key) ? (
-                            <EyeSlash />
-                          ) : (
-                            <Eye />
-                          )
-                        }
-                        size="x-small"
-                        fill="ghost"
-                        variant="primary"
-                        onClick={() => {
-                          toggleRevealSecret(variable.key);
-                        }}
-                      />
-                    </Tooltip>
-
-                    <Tooltip asChild content="Configure Secret">
                       <Button
                         label="Configure Secret"
                         icon={<Pencil />}
@@ -323,7 +330,7 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
   const removeMutation = trpc.hub.removeSecret.useMutation();
   const utils = trpc.useUtils();
   const auth = useAuthStore((store) => store.auth);
-  const params = useEntryParams();
+  const params = useCurrentEntryParams();
 
   useEffect(() => {
     if (!form.formState.isDirty) {
@@ -397,7 +404,7 @@ const SecretForm = ({ entry, existingVariable, onFinish }: SecretFormProps) => {
               </Text>
             </Flex>
 
-            {auth.account_id === entry.namespace && (
+            {auth.accountId === entry.namespace && (
               <Card background="amber-2" border="amber-4">
                 <Text color="amber-11" size="text-s">
                   You are the owner of this {entry.category}. Any secrets you
