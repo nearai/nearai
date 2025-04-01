@@ -21,7 +21,7 @@ class Provider(Enum):
     LOCAL = "local"
 
 
-async def handle_stream(db, thread_id, run_id, message_id, resp_stream, add_usage_callback: Callable):
+async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_callback: Callable):
     response_chunks = []
 
     if run_id is not None:
@@ -43,7 +43,7 @@ async def handle_stream(db, thread_id, run_id, message_id, resp_stream, add_usag
                     )
                     session.add(delta)
                     session.commit()
-                    print("Writing Delta obect", run_id, thread_id, message_id)
+                    print("Writing Delta object", run_id, thread_id, message_id)
                 yield f"data: {c}\n\n"
                 await asyncio.sleep(0)  # lets the event loop yield, otherwise it batches yields
         delta = Delta(

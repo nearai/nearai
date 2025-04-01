@@ -275,23 +275,21 @@ class Log(SQLModel, table=True):
 
 class Delta(SQLModel, table=True):
     __tablename__ = "deltas"
-
-    id: str = Field(default_factory=lambda: "delta_" + uuid.uuid4().hex[:24], primary_key=True)
+    id: int = Field(default=None, primary_key=True)
     object: str = Field(default="thread.message.delta", nullable=False)
     created_at: datetime = Field(default_factory=datetime.now, nullable=False)
     content: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
     step_details: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
-    meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", UnicodeSafeJSON))
     filename: Optional[str] = Field(default=None)
+    message_id: Optional[str] = Field(default=None, index=True)
     run_id: Optional[str] = Field(default=None, index=True)
     thread_id: Optional[str] = Field(default=None, index=True)
-    message_id: Optional[str] = Field(default=None, index=True)
 
     def to_openai(self) -> OpenAITMessageDeltaEvent:
         """Convert to OpenAI MessageDeltaEvent."""
         return OpenAITMessageDeltaEvent(
-            id=self.id,
-            object=self.object,
+            id=str(self.id),
+            object="thread.message.delta",
             delta=OpenAITMessageDelta(role="assistant", content=self.content),
         )
 

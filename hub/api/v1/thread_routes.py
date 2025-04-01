@@ -3,7 +3,7 @@ import json
 import logging
 import threading
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from os import getenv
 from typing import Any, Dict, Iterable, List, Literal, Optional, Union
 
@@ -624,7 +624,7 @@ def create_run(
     run: RunCreateParamsBase = Body(...),
     auth: AuthToken = Depends(get_auth),
     scheduler=Depends(get_scheduler),
-) -> Union[OpenAIRun, StreamingResponse]:
+):
     logger.info(f"Creating run for thread: {thread_id}")
     with get_session() as session:
         thread_model = _check_thread_permissions(auth, session, thread_id)
@@ -686,12 +686,12 @@ def create_run(
             base_payload = {
                 "id": run_model.id,  # e.g., "run_123"
                 "object": "thread.run",
-                "created_at": int(datetime.now(datetime.UTC).timestamp()),
+                "created_at": int(datetime.now(timezone.utc).timestamp()),
                 "assistant_id": run.assistant_id,
                 "thread_id": thread_id,
                 "status": "queued",
                 "started_at": None,
-                "expires_at": int((datetime.now(datetime.UTC) + timedelta(minutes=10)).timestamp()),
+                "expires_at": int((datetime.now(timezone.utc) + timedelta(minutes=10)).timestamp()),
                 "cancelled_at": None,
                 "failed_at": None,
                 "completed_at": None,
@@ -731,7 +731,7 @@ def create_run(
             # Update the payload for in_progress status
             in_progress_payload = base_payload.copy()
             in_progress_payload["status"] = "in_progress"
-            in_progress_payload["started_at"] = int(datetime.now(datetime.UTC).timestamp())
+            in_progress_payload["started_at"] = int(datetime.now(timezone.utc).timestamp())
             event_in_progress = {
                 "event": "thread.run.in_progress",
                 "data": in_progress_payload,
@@ -742,7 +742,7 @@ def create_run(
             step_payload = {
                 "id": "step_001",  # placeholder step id
                 "object": "thread.run.step",
-                "created_at": int(datetime.now(datetime.UTC).timestamp()),
+                "created_at": int(datetime.now(timezone.utc).timestamp()),
                 "run_id": run_model.id,
                 "assistant_id": run.assistant_id,
                 "thread_id": thread_id,
@@ -933,7 +933,7 @@ def _run_agent(
 
 async def monitor_deltas(run_id: str, delete: bool):
     with get_session() as session:
-        start_time = datetime.now(datetime.UTC)
+        start_time = datetime.now(timezone.utc)
         seen_ids = set()
 
         async def handle_delete():
@@ -952,7 +952,7 @@ async def monitor_deltas(run_id: str, delete: bool):
                     .limit(1)
                 ).first()
                 # Timeout after 5 minutes from the start of monitoring
-                if datetime.now(datetime.UTC) - start_time >= timedelta(minutes=5):
+                if datetime.now(timezone.utc) - start_time >= timedelta(minutes=5):
                     logger.error(f"Timeout reached for monitor_deltas on run_id {run_id}")
                     await run_queues[run_id].put("done")
                     await handle_delete()

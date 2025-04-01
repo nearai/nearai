@@ -159,7 +159,7 @@ def completions(
 
         run_id = thread_id = message_id = None
         return StreamingResponse(
-            handle_stream(db, thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream"
+            handle_stream(thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream"
         )
     else:
         c = json.dumps(resp.model_dump())
@@ -246,7 +246,7 @@ def chat_completions(
             )
 
         return StreamingResponse(
-            handle_stream(db, thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream"
+            handle_stream(thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream"
         )
 
     else:
