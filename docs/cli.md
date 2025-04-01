@@ -1,12 +1,43 @@
 # NEAR AI CLI
 
-The NEAR AI CLI allows you to interact with NEAR AI's services to [create agents](./agents/quickstart.md) or [train and test models](./models/home.md). Let's quickly review how to install it and login with your NEAR account.
+NEAR AI CLI allows you to [create and deploy agents](./agents/quickstart.md), [train and test models](./models/home.md), and more!
 
-!!! tip
-    Do you want to build an agent? Install the CLI, login, and then check our [**Agent Quickstart Guide**](./agents/quickstart.md).
+---
 
-!!! info
-    Remember that you can use NEAR AI from the [Web Hub](https://hub.near.ai), the NEAR AI CLI is targeted at developers who want to build their own agents or train models on NEAR AI.
+### Requirements
+
+- Python 3.9 - 3.11 **(3.12 - 3.13 is NOT supported)**
+- [NEAR Account](#login-to-near-ai)
+
+Additionally, we recommend creating a virtual environment to avoid conflicts with other Python packages.
+
+=== "uv"
+
+    ```bash
+    # Create a virtual environment with python 3.11
+    uv venv --python 3.11
+    source .venv/bin/activate
+    ```
+
+=== "conda"
+
+    ```bash
+    # Create a virtual environment with python 3.11
+    conda create -n nearai python=3.11
+    conda activate nearai
+    ```
+
+=== "pyenv" 
+
+    ```bash
+    # Install python 3.11
+    pyenv install 3.11
+    pyenv local 3.11
+
+    # Create a virtual environment
+    python -m venv .venv
+    source .venv/bin/activate
+    ```
 
 ---
 
@@ -15,37 +46,26 @@ The NEAR AI CLI allows you to interact with NEAR AI's services to [create agents
 === "pip"
 
     ``` bash
-    python3 -m pip install nearai
+    pip install nearai  # OR: python3 -m pip install nearai
     ```
 
 === "local"
 
     ``` bash
+    # Clone the repository:
     git clone git@github.com:nearai/nearai.git
     cd nearai
-    pip install -e .
+
+    # Install dependencies:
+    pip install -e .  # OR: python3 -m pip install -e .
     ```
 
-??? abstract "Python Version"
 
-    If you do not have python, or your version is not compatible, we recommend that you use [miniconda](https://docs.anaconda.com/miniconda/install/) or [pyenv](https://github.com/pyenv/pyenv)
-    to manage your installations, as they both allow you to easily switch between python versions.
-
-    === "pyenv"
-
-        ``` bash
-        pyenv install 3.11
-        pyenv local 3.11 # or use global
-        ```
-
-    === "conda"
-
-        ``` bash
-        conda create -n myenv python=3.11
-        conda activate myenv
-        ```
+!!! warning "Python version"
+    NEAR AI requires python **`3.9 - 3.11`**. We recommend you to [create a virtual environment](#requirements) to avoid conflicts with other Python packages or globally installing dependencies if installing locally w/ repo. 
 
 ---
+
 
 ## Login to NEAR AI
 
@@ -76,7 +96,7 @@ After successfully logging in, you will see a confirmation screen. Close it and 
 
 ![alt text](./assets/agents/quickstart-login.png)
 
-??? tip Other Login Methods
+??? tip "Other Login Methods"
 
     If you have already logged in on `near-cli`, you know your account's private key, or you have the credentials on another device, you can use the following commands to login:
 
@@ -95,4 +115,4 @@ After successfully logging in, you will see a confirmation screen. Close it and 
 
 ## Next Steps
 
-That's it! You're now ready to create your first agent. Head over to the [Agents Guide](./agents/quickstart.md) to get started.
+That's it! Head over to the [Agent Quickstart](./agents/quickstart.md) to get started creating your first agent! 🚀

@@ -6,13 +6,13 @@ import {
   PlaceholderStack,
   Tooltip,
   useDebouncedValue,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { Copy, Eye, MarkdownLogo } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';
 
-import { type threadFileModel } from '~/lib/models';
-import { filePathIsImage, filePathToCodeLanguage } from '~/utils/file';
+import { type threadFileModel } from '@/lib/models';
+import { filePathIsImage, filePathToCodeLanguage } from '@/utils/file';
 
 import { Code } from '../lib/Code';
 import { Markdown } from '../lib/Markdown';

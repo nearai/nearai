@@ -13,7 +13,7 @@ import {
   Tabs,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import {
   CaretDown,
   ChatCircleDots,
@@ -26,14 +26,14 @@ import {
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactElement, type ReactNode, useEffect, useState } from 'react';
 
-import { ErrorSection } from '~/components/ErrorSection';
-import { StarButton } from '~/components/StarButton';
-import { env } from '~/env';
-import { useConsumerModeEnabled } from '~/hooks/consumer';
-import { useCurrentEntry, useCurrentEntryParams } from '~/hooks/entries';
-import { ENTRY_CATEGORY_LABELS } from '~/lib/categories';
-import { primaryUrlForEntry, rawFileUrlForEntry } from '~/lib/entries';
-import { type EntryCategory } from '~/lib/models';
+import { ErrorSection } from '@/components/ErrorSection';
+import { StarButton } from '@/components/StarButton';
+import { env } from '@/env';
+import { useConsumerModeEnabled } from '@/hooks/consumer';
+import { useCurrentEntry, useCurrentEntryParams } from '@/hooks/entries';
+import { ENTRY_CATEGORY_LABELS } from '@/lib/categories';
+import { primaryUrlForEntry, rawFileUrlForEntry } from '@/lib/entries';
+import { type EntryCategory } from '@/lib/models';
 
 import { DevelopButton } from './DevelopButton';
 import { EmbedAgentModal } from './EmbedAgentModal';

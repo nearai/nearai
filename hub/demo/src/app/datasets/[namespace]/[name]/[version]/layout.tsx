@@ -3,7 +3,7 @@
 import { BookOpenText, CodeBlock } from '@phosphor-icons/react';
 import { type ReactNode } from 'react';
 
-import { EntryDetailsLayout } from '~/components/EntryDetailsLayout';
+import { EntryDetailsLayout } from '@/components/EntryDetailsLayout';
 
 export default function EntryLayout({ children }: { children: ReactNode }) {
   return (

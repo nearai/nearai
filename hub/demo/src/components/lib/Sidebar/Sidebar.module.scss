@@ -1,5 +1,5 @@
-@import '~/styles/variables';
-@import '~/styles/mixins';
+@use '@/styles/variables';
+@use '@/styles/mixins';
 
 .root {
   display: flex;
@@ -60,7 +60,7 @@
     var(--shadow-card);
   overflow: hidden;
 
-  @media (max-width: $tabletBreakpointMaxWidth) {
+  @media (max-width: variables.$tabletBreakpointMaxWidth) {
     z-index: 750;
     position: fixed;
     max-height: none;
@@ -101,9 +101,9 @@
   background: var(--sand-2);
   transition: transform var(--open-transition-speed);
 
-  @include hideScrollbar();
+  @include mixins.hideScrollbar();
 
-  @media (max-width: $tabletBreakpointMaxWidth) {
+  @media (max-width: variables.$tabletBreakpointMaxWidth) {
     width: 100%;
     overscroll-behavior: contain;
     transform: translateY(100%);
@@ -124,7 +124,7 @@
     --sidebar-padding: var(--gap-m);
   }
 
-  @media (max-width: $tabletBreakpointMaxWidth) {
+  @media (max-width: variables.$tabletBreakpointMaxWidth) {
     min-height: calc(100% + 1px);
   }
 }
@@ -152,7 +152,7 @@
     color: var(--sand-12);
   }
 
-  @media (min-width: $tabletBreakpointMaxWidth) {
+  @media (min-width: variables.$tabletBreakpointMaxWidth) {
     display: none !important;
   }
 }

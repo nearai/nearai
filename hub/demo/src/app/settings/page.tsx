@@ -1,10 +1,10 @@
 'use client';
 
-import { Flex, Section, SvgIcon, Text } from '@near-pagoda/ui';
+import { Flex, Section, SvgIcon, Text } from '@nearai/ui';
 import { Gear } from '@phosphor-icons/react';
 
-import { SignInPromptSection } from '~/components/SignInPrompt';
-import { useAuthStore } from '~/stores/auth';
+import { SignInPromptSection } from '@/components/SignInPrompt';
+import { useAuthStore } from '@/stores/auth';
 
 import { NonceList } from './NonceList';
 

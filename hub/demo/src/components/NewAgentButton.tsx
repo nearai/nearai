@@ -15,7 +15,7 @@ import {
   SvgIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import {
   BookOpenText,
   FileTs,
@@ -29,11 +29,11 @@ import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 
-import { idForEntry, parseEntryId, primaryUrlForEntry } from '~/lib/entries';
-import { useAuthStore } from '~/stores/auth';
-import NearLogoIcon from '~/svgs/near-logo-icon-padding.svg';
-import { trpc } from '~/trpc/TRPCProvider';
-import { validateAlphanumericCharacters } from '~/utils/inputs';
+import { idForEntry, parseEntryId, primaryUrlForEntry } from '@/lib/entries';
+import { useAuthStore } from '@/stores/auth';
+import NearLogoIcon from '@/svgs/near-logo-icon-padding.svg';
+import { trpc } from '@/trpc/TRPCProvider';
+import { validateAlphanumericCharacters } from '@/utils/inputs';
 
 import { SignInPrompt } from './SignInPrompt';
 

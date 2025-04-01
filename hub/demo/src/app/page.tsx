@@ -12,7 +12,7 @@ import {
   SvgIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import {
   ArrowRight,
   ArrowSquareUpRight,
@@ -40,14 +40,14 @@ import {
 import { useMemo } from 'react';
 import { type z } from 'zod';
 
-import { EntryCard } from '~/components/EntryCard';
-import { env } from '~/env';
-import { signIn } from '~/lib/auth';
-import { idMatchesEntry } from '~/lib/entries';
-import { type entriesModel } from '~/lib/models';
-import { useAuthStore } from '~/stores/auth';
-import NearLogoIcon from '~/svgs/near-logo-icon-padding.svg';
-import { trpc } from '~/trpc/TRPCProvider';
+import { EntryCard } from '@/components/EntryCard';
+import { env } from '@/env';
+import { signIn } from '@/lib/auth';
+import { idMatchesEntry } from '@/lib/entries';
+import { type entriesModel } from '@/lib/models';
+import { useAuthStore } from '@/stores/auth';
+import NearLogoIcon from '@/svgs/near-logo-icon-padding.svg';
+import { trpc } from '@/trpc/TRPCProvider';
 
 import s from './page.module.scss';
 
@@ -72,11 +72,8 @@ export default function HomePage() {
 
   return (
     <>
-      <Section background="sand-0" padding="hero" className={s.heroSection}>
+      <Section background="sand-0" padding="hero">
         <Flex direction="column" gap="xl" align="center">
-          <div className={s.dragonLogo} />
-          <div className={s.dragonLogoOutline} />
-
           <Flex
             direction="column"
             gap="l"

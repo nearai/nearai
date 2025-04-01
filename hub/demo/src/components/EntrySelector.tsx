@@ -8,15 +8,15 @@ import {
   Input,
   PlaceholderStack,
   Text,
-} from '@near-pagoda/ui';
+} from '@nearai/ui';
 import { Minus, Plus } from '@phosphor-icons/react';
 import { useEffect, useRef } from 'react';
 import { type z } from 'zod';
 
-import { useEntriesSearch } from '~/hooks/entries';
-import { idForEntry } from '~/lib/entries';
-import { type EntryCategory, type entryModel } from '~/lib/models';
-import { trpc } from '~/trpc/TRPCProvider';
+import { useEntriesSearch } from '@/hooks/entries';
+import { idForEntry } from '@/lib/entries';
+import { type EntryCategory, type entryModel } from '@/lib/models';
+import { trpc } from '@/trpc/TRPCProvider';
 
 import { EntryCard } from './EntryCard';
 

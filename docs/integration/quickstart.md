@@ -1,8 +1,12 @@
-# Integrate NEAR AI assistant
+# Integrate NEAR AI Agents using the Assistant API
 
-NEAR AI offers a powerful Assistant that answers questions, queries other agents, and more. You can integrate the Assistant into your own applications by using the Assistant API.
+The NEAR AI Assistants API is compatible with the OpenAI Assistants API. You can run your own agent or any agent in the 
+[registry](https://app.near.ai/agents) using the NEAR AI Assistants API.
 
-NEAR AI Assistants API is compatible with OpenAI Assistants API.
+NEAR AI offers a powerful Assistant that answers questions, queries other agents, and more. 
+You can integrate this Assistant into your own applications by using the Assistant API as shown below. Other agents can be called
+in the same manner simply by passing a different `assistant_id` to the `runs.create_and_poll` call.
+
 
 ## Step 0: Login into NEAR account
 

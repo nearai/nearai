@@ -11,7 +11,7 @@ import { setupSender } from '@near-wallet-selector/sender';
 import { useRef } from 'react';
 import { useEffect } from 'react';
 
-import { useWalletStore } from '~/stores/wallet';
+import { useWalletStore } from '@/stores/wallet';
 
 export function useWalletInitializer() {
   const setupPromise = useRef<Promise<WalletSelector> | null>(null);

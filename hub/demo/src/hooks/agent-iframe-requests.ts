@@ -1,6 +1,6 @@
-import { handleClientError } from '@near-pagoda/ui';
-import { unreachable } from '@near-pagoda/ui/utils';
 import { type FinalExecutionOutcome } from '@near-wallet-selector/core';
+import { handleClientError } from '@nearai/ui';
+import { unreachable } from '@nearai/ui/utils';
 import { formatNearAmount } from 'near-api-js/lib/utils/format';
 import { useCallback, useEffect, useState } from 'react';
 import { type z } from 'zod';
@@ -8,9 +8,9 @@ import { type z } from 'zod';
 import {
   type AgentRequestWithPermissions,
   checkAgentPermissions,
-} from '~/components/AgentPermissionsModal';
-import { type IframePostMessageEventHandler } from '~/components/lib/IframeWithBlob';
-import { parseEntryId } from '~/lib/entries';
+} from '@/components/AgentPermissionsModal';
+import { type IframePostMessageEventHandler } from '@/components/lib/IframeWithBlob';
+import { parseEntryId } from '@/lib/entries';
 import {
   agentAddSecretsRequestModel,
   agentNearAccountRequestModel,
@@ -18,17 +18,17 @@ import {
   agentNearViewRequestModel,
   chatWithAgentModel,
   type entryModel,
-} from '~/lib/models';
-import { useNearStore } from '~/stores/near';
-import { useThreadsStore } from '~/stores/threads';
-import { useWalletStore } from '~/stores/wallet';
-import { trpc } from '~/trpc/TRPCProvider';
+} from '@/lib/models';
+import { useNearStore } from '@/stores/near';
+import { useThreadsStore } from '@/stores/threads';
+import { useWalletStore } from '@/stores/wallet';
+import { trpc } from '@/trpc/TRPCProvider';
 import {
   generateWalletTransactionCallbackUrl,
   UNSET_WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
   WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS,
   type WalletTransactionRequestOrigin,
-} from '~/utils/wallet';
+} from '@/utils/wallet';
 
 import { useQueryParams } from './url';
 

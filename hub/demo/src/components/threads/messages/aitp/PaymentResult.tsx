@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge, Flex, SvgIcon, Text, Timestamp } from '@near-pagoda/ui';
+import { Badge, Flex, SvgIcon, Text, Timestamp } from '@nearai/ui';
 import { Wallet } from '@phosphor-icons/react';
 import { type z } from 'zod';
 

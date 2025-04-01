@@ -1,17 +1,22 @@
-# Calling another agent
+# Agent to Agent Communication
 
-Agents can call other agents to interact with them using the [`run_agent`](../../api.md#nearai.agents.environment.Environment.run_agent) method.
+!!!tip
+    You may **not need** to call other agents. See [Orchestrating multiple agents](./orchestration.md) for more information.
+
+Agents can call other agents to interact with them using the [`run_agent`](../../api.md#nearai.shared.inference_client.InferenceClient.run_agent) method.
 To call an agent, provide the agent's id. Optionally, a query can be passed to the agent.
 
+**Example:**
+
 ```python
-```python
-result = env.run_agent("travel.primitives.near/trip-organizer/latest", query="Plan a two-day trip to Buenos Aires")
+result = env.run_agent("travel.near/travel-agent/latest", query="Plan a two-day trip to Buenos Aires")
 print(result)
 
-# thread_312f2ea5e42742c785218106
+# result
+$ thread_312f2ea5e42742c785218106
 ```
 
-The result of the `run_agent` method is a string containing the thread ID where the external agent executed.
+The result of `run_agent` is a string containing the `thread_id` where the external agent executed.
 
 !!! warning "Shared Environment"
     With the `SAME` and `FORK` thread modes below the agent being called will receive the thread, 
@@ -34,8 +39,6 @@ after the called agent finishes. By default, `run_mode` is set to `RunMode.SIMPL
 
 To use RunMode.WITH_CALLBACK, the calling agent MUST check whether it was called on the parent thread or the child thread.
 This can be done by fetching the current thread with `env.get_thread()` and checking whether it has a `parent_thread_id`.
-
-```python
 
 ![alt text](../../assets/agents/call-agent.png)
 

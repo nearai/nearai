@@ -1,9 +1,9 @@
 'use client';
 
-import { Button, Flex, Text } from '@near-pagoda/ui';
+import { Button, Flex, Text } from '@nearai/ui';
 import { type z } from 'zod';
 
-import { useThreadsStore } from '~/stores/threads';
+import { useThreadsStore } from '@/stores/threads';
 
 import { Message } from './Message';
 import {

@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  Badge,
-  Button,
-  Card,
-  Flex,
-  Section,
-  SvgIcon,
-  Text,
-} from '@near-pagoda/ui';
+import { Badge, Button, Card, Flex, Section, SvgIcon, Text } from '@nearai/ui';
 import { ArrowRight, CalendarDots } from '@phosphor-icons/react';
 import React from 'react';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Code } from '~/components/lib/Code';
+import { Code } from '@/components/lib/Code';
 
 import { useThreadMessageContent } from '../ThreadMessageContentProvider';
 import { Message } from './Message';

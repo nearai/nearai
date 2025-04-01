@@ -1,18 +1,13 @@
 'use client';
 
-import {
-  Button,
-  copyTextToClipboard,
-  Dropdown,
-  SvgIcon,
-} from '@near-pagoda/ui';
+import { Button, copyTextToClipboard, Dropdown, SvgIcon } from '@nearai/ui';
 import { Copy, DotsThree, Eye, MarkdownLogo } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';
 
-import { Code } from '~/components/lib/Code';
-import { Markdown } from '~/components/lib/Markdown';
-import { type threadMessageContentModel } from '~/lib/models';
+import { Code } from '@/components/lib/Code';
+import { Markdown } from '@/components/lib/Markdown';
+import { type threadMessageContentModel } from '@/lib/models';
 
 import { Message } from './Message';
 

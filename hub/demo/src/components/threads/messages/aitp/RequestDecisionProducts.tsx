@@ -8,14 +8,14 @@ import {
   SvgIcon,
   Text,
   Tooltip,
-} from '@near-pagoda/ui';
-import { formatDollar } from '@near-pagoda/ui/utils';
+} from '@nearai/ui';
+import { formatDollar } from '@nearai/ui/utils';
 import { ShoppingCart, Star, StarHalf } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { type z } from 'zod';
 
-import { useThreadsStore } from '~/stores/threads';
-import { getPrimaryDomainFromUrl } from '~/utils/url';
+import { useThreadsStore } from '@/stores/threads';
+import { getPrimaryDomainFromUrl } from '@/utils/url';
 
 import { Message } from './Message';
 import {
