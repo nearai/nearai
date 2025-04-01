@@ -62,6 +62,8 @@ from nearai.shared.near.sign import (
 from nearai.shared.secure_openai_clients import SecureAsyncOpenAI, SecureOpenAI
 from nearai.agents.models.mcp import MCPServerConfig, MCPTransportType
 
+import asyncio
+
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
 SYSTEM_LOG_FILENAME = "system_log.txt"
@@ -1506,10 +1508,18 @@ class Environment(object):
                 async with ClientSession(streams[0], streams[1]) as session:
                     await session.initialize()
                     self.add_system_log(f"Successfully connected to {server.get('server_name')}.")
-                    tool_result = await session.call_tool(
-                        tool_call.function.name,
-                        json.loads(tool_call.function.arguments)
-                    )
+                    try:
+                        tool_result = await asyncio.wait_for(
+                            session.call_tool(
+                                tool_call.function.name,
+                                json.loads(tool_call.function.arguments)
+                            ),
+                            timeout=60  # 1 minute timeout
+                        )
+                    except asyncio.TimeoutError:
+                        tool_result = {
+                            "error": "Tool execution timed out after 1 minutes"
+                        }
 
             if not tool_result or not hasattr(tool_result, 'content'):
                 if add_responses_to_messages:

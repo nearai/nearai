@@ -1,8 +1,16 @@
 FROM public.ecr.aws/lambda/python:3.11
 
-RUN yum install -y gcc libffi-devel openssl-devel-1:1.0.2k-24.amzn2.0.14 shadow-utils acl && \
+RUN yum install -y gcc libffi-devel openssl-devel-1:1.0.2k-24.amzn2.0.14 shadow-utils acl unzip && \
     yum clean all && \
     rm -rf /var/cache/yum
+
+# Install Bun
+ARG BUN_VERSION=v1.2.4
+RUN curl -fsSL https://bun.sh/install | bash -s "bun-${BUN_VERSION}"
+ENV PATH="/root/.bun/bin:$PATH"
+
+RUN ln -s /root/.bun/bin/bun /usr/bin/node
+RUN ln -s /root/.bun/bin/bunx /usr/bin/npx
 
 # pass with --build-arg FRAMEWORK=-langgraph
 ARG FRAMEWORK=""
