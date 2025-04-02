@@ -29,7 +29,7 @@ near_scheduler = AsyncIOScheduler()
 
 
 async def async_fetch_json(url: str) -> Any:
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         response = await client.get(url)
         if response.status_code == 200:
             return response.json()
