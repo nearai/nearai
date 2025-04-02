@@ -131,6 +131,6 @@ class VectorStoreFileCreate(BaseModel):
 
 class Delta(BaseModel):
     id: Optional[str] = None
-    object: str = "thread.message.delta"  # openai compatibility
+    object: str = "thread.message.delta"
     content: dict
     filename: Optional[str] = None

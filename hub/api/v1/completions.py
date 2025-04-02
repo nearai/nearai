@@ -1,6 +1,6 @@
 import asyncio
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from os import getenv
 from typing import Callable, List, Union
@@ -36,7 +36,7 @@ async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_ca
                     delta = Delta(
                         event="thread.message.delta",
                         content=content,
-                        created_at=datetime.now(),
+                        created_at=datetime.now(timezone.utc),
                         run_id=run_id,
                         thread_id=thread_id,
                         message_id=message_id,

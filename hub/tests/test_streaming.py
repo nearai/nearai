@@ -1,13 +1,14 @@
+from datetime import datetime, timezone
 from unittest import TestCase
 
 import json
 import openai
 import pytest
 from fastapi.testclient import TestClient
-from nearai.config import load_config_file
+from nearai.config import load_config_file, get_hub_client
 
 from openapi_client import Message
-from shared.models import Delta
+from hub.api.v1.models import Delta
 from openai.types.beta.threads import TextContentBlock
 from openai.types.beta.threads import Text
 
@@ -60,11 +61,22 @@ class Test(TestCase):
                 "assistant_id": "unittest",
             },
         )
+        hub_client = get_hub_client()
+
+        run = hub_client.beta.threads.runs.create(
+            thread_id=thread.id,
+            assistant_id="unittest.near/unittest/1.0.0",
+            stream=True,
+            extra_body={"delegate_execution": True},
+        )
 
         delta = Delta(content={
-            "index": 0,
-            "type": "text",
-            "text": { "value": "the answer is 42", "annotations": [] }
+            "event": "thread.message.delta",
+            "content": "data: ",
+            "created_at": datetime.now(timezone.utc),
+            "run_id": run.id,
+            "thread_id": thread.id,
+            "message_id": message.id,
         })
         headers = {"Authorization": f"Bearer {self.signature}"}
         response = self.client.post(f"/v1/threads/{thread.id}/messages/{message.id}/deltas", json=delta.model_dump(), headers=headers)

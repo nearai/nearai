@@ -42,6 +42,8 @@ from hub.api.v1.routes import DEFAULT_TIMEOUT, get_llm_ai
 from hub.api.v1.sql import SqlClient
 from hub.tasks.scheduler import get_scheduler
 
+STREAMING_RUN_TIMEOUT_MINUTES=10
+
 threads_router = APIRouter(
     tags=["Threads"],
 )
@@ -678,100 +680,30 @@ def create_run(
         session.add(run_model)
         session.commit()
 
-        # Add the run and messages in DB
         if run.stream:
             run_queues[run_model.id] = asyncio.Queue()
 
-            # Base payload for run events
-            base_payload = {
-                "id": run_model.id,  # e.g., "run_123"
-                "object": "thread.run",
-                "created_at": int(datetime.now(timezone.utc).timestamp()),
-                "assistant_id": run.assistant_id,
-                "thread_id": thread_id,
-                "status": "queued",
-                "started_at": None,
-                "expires_at": int((datetime.now(timezone.utc) + timedelta(minutes=10)).timestamp()),
-                "cancelled_at": None,
-                "failed_at": None,
-                "completed_at": None,
-                "required_action": None,
-                "last_error": None,
-                "model": run.model,
-                "instructions": (run.instructions or "") + (run.additional_instructions or ""),
-                "tools": run.tools,
-                "metadata": run.metadata,
-                "temperature": run.temperature,
-                "top_p": run.top_p,
-                "max_completion_tokens": run.max_completion_tokens,
-                "max_prompt_tokens": run.max_prompt_tokens,
-                "truncation_strategy": run.truncation_strategy,
-                "incomplete_details": None,
-                "usage": None,
-                "response_format": run.response_format,
-                "tool_choice": run.tool_choice,
-                "parallel_tool_calls": run.parallel_tool_calls,
-            }
-
             # 1. Event: thread.run.created
-            event_created = {
-                "event": "thread.run.created",
-                "data": base_payload,
-            }
+            event_created = _streaming_run_event("thread.run.created", run, run_model, thread_id)
             asyncio.run(run_queues[run_model.id].put(event_created))
 
             # 2. Event: thread.run.queued
-            event_queued = {
-                "event": "thread.run.queued",
-                "data": base_payload,
-            }
+            event_queued = _streaming_run_event("thread.run.queued", run, run_model, thread_id)
             asyncio.run(run_queues[run_model.id].put(event_queued))
 
             # 3. Event: thread.run.in_progress
+            event_in_progress = _streaming_run_event("thread.run.in_progress", run, run_model, thread_id)
             # Update the payload for in_progress status
-            in_progress_payload = base_payload.copy()
-            in_progress_payload["status"] = "in_progress"
-            in_progress_payload["started_at"] = int(datetime.now(timezone.utc).timestamp())
-            event_in_progress = {
-                "event": "thread.run.in_progress",
-                "data": in_progress_payload,
-            }
+            event_in_progress["data"]["status"] = "in_progress"
+            event_in_progress["data"]["started_at"] = int(datetime.now(timezone.utc).timestamp())
             asyncio.run(run_queues[run_model.id].put(event_in_progress))
 
             # 4. Event: thread.run.step.created
-            step_payload = {
-                "id": "step_001",  # placeholder step id
-                "object": "thread.run.step",
-                "created_at": int(datetime.now(timezone.utc).timestamp()),
-                "run_id": run_model.id,
-                "assistant_id": run.assistant_id,
-                "thread_id": thread_id,
-                "type": "message_creation",
-                "status": "in_progress",
-                "cancelled_at": None,
-                "completed_at": None,
-                "expires_at": base_payload["expires_at"],
-                "failed_at": None,
-                "last_error": None,
-                "step_details": {
-                    "type": "message_creation",
-                    "message_creation": {
-                        "message_id": "msg_001",  # placeholder message id
-                    },
-                },
-                "usage": None,
-            }
-            event_step_created = {
-                "event": "thread.run.step.created",
-                "data": step_payload,
-            }
+            event_step_created, step_payload = _streaming_step_event("thread.run.step.created", run, run_model, thread_id)
             asyncio.run(run_queues[run_model.id].put(event_step_created))
 
             # 5. Event: thread.run.step.in_progress
-            event_step_in_progress = {
-                "event": "thread.run.step.in_progress",
-                "data": step_payload,
-            }
+            event_step_in_progress = _streaming_step_event("thread.run.step.in_progress", run, run_model, thread_id)
             asyncio.run(run_queues[run_model.id].put(event_step_in_progress))
 
             thread = threading.Thread(target=_run_agent, args=(thread_id, run_model.id, None, auth))
@@ -945,14 +877,16 @@ async def monitor_deltas(run_id: str, delete: bool):
         while True:
             try:
                 # Fetch the oldest Delta for this run_id
-                event = session.exec(
+                query = (
                     select(Delta)
                     .where(Delta.run_id == run_id, Delta.id.notin_(list(seen_ids)))
                     .order_by(Delta.id)
                     .limit(1)
-                ).first()
-                # Timeout after 5 minutes from the start of monitoring
-                if datetime.now(timezone.utc) - start_time >= timedelta(minutes=5):
+                )
+                event = session.exec(query).first()
+
+                # Set a maximum run time
+                if datetime.now(timezone.utc) - start_time >= timedelta(minutes=STREAMING_RUN_TIMEOUT_MINUTES):
                     logger.error(f"Timeout reached for monitor_deltas on run_id {run_id}")
                     await run_queues[run_id].put("done")
                     await handle_delete()
@@ -1000,17 +934,16 @@ async def stream_run_events(run_id: str, delete: bool):
 
 
 @threads_router.get("/threads/{thread_id}/stream")
-async def thread_subscribe(thread_id: str):
-    """Subscribe to deltas for a thread (for testing or future use).
+async def thread_subscribe(thread_id: str, auth: AuthToken = Depends(get_auth)):
+    """Subscribe to deltas for a thread (for client channels outside of the run).
 
-    Currently a placeholder; primary streaming is handled via runs.
+    Primary streaming is handled via runs. Secondary client can subscribe here.
     """
     with get_session() as session:
-        # Basic thread existence check
-
         run = session.exec(
             select(RunModel).where(RunModel.thread_id == thread_id).order_by(RunModel.created_at.desc())
         ).first()
+        _check_thread_permissions(auth, session, thread_id)
         if not run:
             raise HTTPException(status_code=404, detail="Run for thread not found")
 
@@ -1077,3 +1010,70 @@ def _check_thread_permissions(auth, session, thread_id) -> ThreadModel:
     if thread.owner_id != auth.account_id:
         raise HTTPException(status_code=403, detail="You don't have permission to access messages from this thread")
     return thread
+
+
+def _streaming_run_event(event_name, run, run_model, thread_id):
+    base_payload = {
+        "id": run_model.id,  # e.g., "run_123"
+        "object": "thread.run",
+        "created_at": int(datetime.now(timezone.utc).timestamp()),
+        "assistant_id": run.assistant_id,
+        "thread_id": thread_id,
+        "status": "queued",
+        "started_at": None,
+        "expires_at": int((datetime.now(timezone.utc) + timedelta(minutes=STREAMING_RUN_TIMEOUT_MINUTES)).timestamp()),
+        "cancelled_at": None,
+        "failed_at": None,
+        "completed_at": None,
+        "required_action": None,
+        "last_error": None,
+        "model": run.model,
+        "instructions": (run.instructions or "") + (run.additional_instructions or ""),
+        "tools": run.tools,
+        "metadata": run.metadata,
+        "temperature": run.temperature,
+        "top_p": run.top_p,
+        "max_completion_tokens": run.max_completion_tokens,
+        "max_prompt_tokens": run.max_prompt_tokens,
+        "truncation_strategy": run.truncation_strategy,
+        "incomplete_details": None,
+        "usage": None,
+        "response_format": run.response_format,
+        "tool_choice": run.tool_choice,
+        "parallel_tool_calls": run.parallel_tool_calls,
+    }
+    event ={
+        "event": event_name,
+        "data": base_payload,
+    }
+    return event
+
+def _streaming_step_event(event_name, run, run_model, thread_id):
+    expires_at = int((datetime.now(timezone.utc) + timedelta(minutes=STREAMING_RUN_TIMEOUT_MINUTES)).timestamp())
+    step_payload = {
+        "id": "step_001",  # placeholder step id
+        "object": "thread.run.step",
+        "created_at": int(datetime.now(timezone.utc).timestamp()),
+        "run_id": run_model.id,
+        "assistant_id": run.assistant_id,
+        "thread_id": thread_id,
+        "type": "message_creation",
+        "status": "in_progress",
+        "cancelled_at": None,
+        "completed_at": None,
+        "expires_at": expires_at,
+        "failed_at": None,
+        "last_error": None,
+        "step_details": {
+            "type": "message_creation",
+            "message_creation": {
+                "message_id": "msg_001",  # placeholder message id
+            },
+        },
+        "usage": None,
+    }
+    event_step_created = {
+        "event": event_name,
+        "data": step_payload,
+    }
+    return event_step_created, step_payload
