@@ -109,14 +109,6 @@ test = [
     "pytest-xdist>=3.6.1,<4.0.0",
 ]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.setuptools]
-packages = ["nearai"]
-
-
 [project.scripts]
 nearai = "nearai.cli:main"
 
