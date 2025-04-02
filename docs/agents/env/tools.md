@@ -43,7 +43,7 @@ response = env.completions_and_run_tools(messages, tools=[tool_def])
 
 ```python
 # Define MCP server configurations
-mcp_server_configs = [
+mcp_servers_configs = [
     { # Using STDIO transport
         "name": "weather",
         "command": "npx",
@@ -59,7 +59,7 @@ mcp_server_configs = [
 ]
 
 # Add MCP servers to the environment
-await env.add_mcp_servers(mcp_server_configs)
+await env.add_mcp_servers(mcp_servers_configs)
 ```
 
 
