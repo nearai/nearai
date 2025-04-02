@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import io
 import json
@@ -10,15 +11,12 @@ import subprocess
 import tarfile
 import tempfile
 import threading
-import uuid
 import traceback
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
-from mcp import ClientSession
-from mcp.client.sse import sse_client
-from mcp.client.stdio import stdio_client, StdioServerParameters
-from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast, Callable
+from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
 
 import psutil
 from litellm.types.completion import ChatCompletionMessageParam
@@ -29,6 +27,9 @@ from litellm.types.utils import (
     ModelResponse,
 )
 from litellm.utils import CustomStreamWrapper
+from mcp import ClientSession
+from mcp.client.sse import sse_client
+from mcp.client.stdio import StdioServerParameters, stdio_client
 from openai import NOT_GIVEN, NotGiven, OpenAI
 from openai.types.beta.threads.message import Message
 from openai.types.beta.threads.message_create_params import Attachment
@@ -42,6 +43,7 @@ from py_near.constants import DEFAULT_ATTACHED_GAS
 import nearai.shared.near.sign as near
 from nearai.agents import tool_json_helper
 from nearai.agents.agent import Agent
+from nearai.agents.models.mcp import MCPServerConfig, MCPTransportType
 from nearai.agents.tool_registry import ToolRegistry
 from nearai.shared.client_config import DEFAULT_PROVIDER_MODEL
 from nearai.shared.inference_client import InferenceClient
@@ -60,9 +62,6 @@ from nearai.shared.near.sign import (
     validate_completion_signature,
 )
 from nearai.shared.secure_openai_clients import SecureAsyncOpenAI, SecureOpenAI
-from nearai.agents.models.mcp import MCPServerConfig, MCPTransportType
-
-import asyncio
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
@@ -1492,7 +1491,9 @@ class Environment(object):
             # By default the user starts the conversation.
             return "user"
 
-    async def _handle_mcp_tool_calls(self, completion: SimpleNamespace, tool_server_map: Dict[str, Any], add_responses_to_messages: bool = True) -> Optional[str]:
+    async def _handle_mcp_tool_calls(
+        self, completion: SimpleNamespace, tool_server_map: Dict[str, Any], add_responses_to_messages: bool = True
+    ) -> Optional[str]:
         for tool_call in completion.tool_calls:
             server = tool_server_map.get(tool_call.function.name)
             if not server:
@@ -1510,18 +1511,13 @@ class Environment(object):
                     self.add_system_log(f"Successfully connected to {server.get('server_name')}.")
                     try:
                         tool_result = await asyncio.wait_for(
-                            session.call_tool(
-                                tool_call.function.name,
-                                json.loads(tool_call.function.arguments)
-                            ),
-                            timeout=60  # 1 minute timeout
+                            session.call_tool(tool_call.function.name, json.loads(tool_call.function.arguments)),
+                            timeout=60,  # 1 minute timeout
                         )
                     except asyncio.TimeoutError:
-                        tool_result = {
-                            "error": "Tool execution timed out after 1 minutes"
-                        }
+                        tool_result = {"error": "Tool execution timed out after 1 minutes"}
 
-            if not tool_result or not hasattr(tool_result, 'content'):
+            if not tool_result or not hasattr(tool_result, "content"):
                 if add_responses_to_messages:
                     self.add_reply("No content received from tool")
                 return None
@@ -1538,25 +1534,31 @@ class Environment(object):
                         self.add_reply(content.text)
                     else:
                         return content.text
+        return None
 
     async def _get_transport_method(self, mcp_server_config: MCPServerConfig) -> Tuple[Callable, Any]:
         self.add_system_log(f"MCP SERVER CONFIG: {mcp_server_config}")
 
-        if not "url" in mcp_server_config and not "command" in mcp_server_config:
+        if not mcp_server_config.url and not mcp_server_config.command:
             raise ValueError("MCP server needs either a url or a command to be set")
 
-        transport_type = MCPTransportType.SSE if "url" in mcp_server_config else MCPTransportType.STDIO
-        self.add_system_log(f"Connecting to MCP Server {mcp_server_config.get('name')} using {transport_type}...")
+        transport_type = MCPTransportType.SSE if mcp_server_config.url else MCPTransportType.STDIO
+        self.add_system_log(f"Connecting to MCP Server {mcp_server_config.server_name} using {transport_type}...")
 
         transport_method = sse_client if transport_type == MCPTransportType.SSE else stdio_client
 
         transport_params = (
-            f"{mcp_server_config.get('url')}" if transport_type == MCPTransportType.SSE
-            else StdioServerParameters(command=mcp_server_config.get('command'), args=mcp_server_config.get('args'), env=mcp_server_config.get('env'))
+            f"{mcp_server_config.url}"
+            if transport_type == MCPTransportType.SSE
+            else StdioServerParameters(
+                command=mcp_server_config.command or "",
+                args=mcp_server_config.args or [],
+                env=mcp_server_config.env or {},
+            )
         )
         return transport_method, transport_params
 
-    async def add_mcp_servers(self, mcp_server_configs: List[MCPServerConfig], add_responses_to_messages: bool = True) -> None:
+    async def add_mcp_servers(self, mcp_server_configs: List[MCPServerConfig], add_responses_to_messages: bool = True):
         """Adds MCP servers to the environment and registers their available tools.
 
         This function connects to each MCP server specified in the configurations, retrieves their available tools,
@@ -1578,8 +1580,8 @@ class Environment(object):
 
         Raises:
             ValueError: If a server config doesn't contain either 'url' or 'command'
-        """
 
+        """
         tool_registry = self.get_tool_registry(new=True)
         tool_server_map = {}
         mcp_servers_added = []
@@ -1587,7 +1589,7 @@ class Environment(object):
         for mcp_server_config in mcp_server_configs:
             (transport_method, transport_params) = await self._get_transport_method(mcp_server_config)
             try:
-                mcp_server_name = mcp_server_config.get('name')
+                mcp_server_name = mcp_server_config.server_name
                 async with transport_method(transport_params) as streams:
                     async with ClientSession(streams[0], streams[1]) as session:
                         await session.initialize()
@@ -1601,21 +1603,29 @@ class Environment(object):
                             tool_registry.register_mcp_tool(mcp_tool, session.call_tool)
                             tool_server_map[mcp_tool.name] = {
                                 "server_name": mcp_server_name,
-                                "connect": transport_method(transport_params)
+                                "connect": transport_method(transport_params),
                             }
-            except Exception as e:
-                self.add_system_log(f"Error connecting to MCP Server ({mcp_server_name}): {traceback.format_exc()}", logging.ERROR)
+            except Exception:
+                self.add_system_log(
+                    f"Error connecting to MCP Server ({mcp_server_name}): {traceback.format_exc()}", logging.ERROR
+                )
 
         self.add_system_log(f"Added MCP servers: {', '.join(mcp_servers_added)}")
         self.add_system_log(f"{len(mcp_servers_added)}/{len(mcp_server_configs)} MCP servers added!")
         self.add_system_log(f"{len(tool_registry.get_all_tool_definitions())} tools registered!")
 
         completion = self.completion_and_get_tools_calls(
-            [{"role": "system", "content": "You are an assistant and you can use a list of tools to help answer user questions."}] + self.list_messages(),
+            [
+                {
+                    "role": "system",
+                    "content": "You are an assistant and you can use a list of tools to help answer user questions.",
+                }
+            ]
+            + self.list_messages(),
             tools=tool_registry.get_all_tool_definitions(),
         )
 
-        if hasattr(completion, 'tool_calls') and completion.tool_calls:
+        if hasattr(completion, "tool_calls") and completion.tool_calls:
             if len(completion.tool_calls) > 0:
                 self.add_system_log(f"TOOL CALLS FOUND: {completion.tool_calls}", logging.INFO)
                 await self._handle_mcp_tool_calls(completion, tool_server_map, add_responses_to_messages)
