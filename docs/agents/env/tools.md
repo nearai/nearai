@@ -39,7 +39,31 @@ tool_def = tool_registry.get_tool_definition('my_tool')
 response = env.completions_and_run_tools(messages, tools=[tool_def])
 ```
 
-2. Using `register_mcp_tool` for MCP tools:
+2. Using [`add_mcp_servers`](../../api.md#nearai.agents.environment.Environment.add_mcp_servers) for MCP servers:
+
+```python
+# Define MCP server configurations
+mcp_server_configs = [
+    { # Using STDIO transport
+        "name": "weather",
+        "command": "npx",
+        "args": [
+            "-y",
+            "@h1deya/mcp-server-weather"
+        ],
+    },
+    { # Using SSE transport
+        "name": "heurist-mesh-agent",
+        "url": "https://sequencer-v2.heurist.xyz/mcp/sse"
+    },
+]
+
+# Add MCP servers to the environment
+await env.add_mcp_servers(mcp_server_configs)
+```
+
+
+3. Using `register_mcp_tool` for MCP tools:
 ```python
 from mcp.types import Tool
 

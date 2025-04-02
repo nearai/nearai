@@ -1551,16 +1551,37 @@ class Environment(object):
         transport_method = sse_client if transport_type == MCPTransportType.SSE else stdio_client
 
         transport_params = (
-            f"{mcp_server_config.get('url')}/sse" if transport_type == MCPTransportType.SSE
+            f"{mcp_server_config.get('url')}" if transport_type == MCPTransportType.SSE
             else StdioServerParameters(command=mcp_server_config.get('command'), args=mcp_server_config.get('args'), env=mcp_server_config.get('env'))
         )
         return transport_method, transport_params
 
     async def add_mcp_servers(self, mcp_server_configs: List[MCPServerConfig], add_responses_to_messages: bool = True) -> None:
-        """Add MCP servers to the environment."""
+        """Adds MCP servers to the environment and registers their available tools.
+
+        This function connects to each MCP server specified in the configurations, retrieves their available tools,
+        and registers them in the environment's tool registry. After registering the tools, it automatically
+        processes any pending tool calls in the current conversation.
+
+        Args:
+            mcp_server_configs: A list of MCPServerConfig dictionaries. Each config must contain either:
+                - 'url' and 'name' for SSE (Server-Sent Events) transport
+                - 'command', 'name', and optionally 'args' and 'env' for STDIO transport
+            add_responses_to_messages: If True, adds tool responses to the conversation history.
+                Defaults to True.
+
+        Notes:
+            - The function automatically determines the transport type (SSE or STDIO) based on the config
+            - Each tool call has a 60-second timeout
+            - Failed server connections are logged but don't prevent other servers from being added
+            - After adding servers, it automatically processes any pending tool calls in the conversation
+
+        Raises:
+            ValueError: If a server config doesn't contain either 'url' or 'command'
+        """
 
         tool_registry = self.get_tool_registry(new=True)
-        tool_server_map = {} # { [tool_name]: [{ server_name: str}]}
+        tool_server_map = {}
         mcp_servers_added = []
 
         for mcp_server_config in mcp_server_configs:
@@ -1597,7 +1618,7 @@ class Environment(object):
         if hasattr(completion, 'tool_calls') and completion.tool_calls:
             if len(completion.tool_calls) > 0:
                 self.add_system_log(f"TOOL CALLS FOUND: {completion.tool_calls}", logging.INFO)
-                await self._handle_mcp_tool_calls(completion, tool_server_map, add_responses_to_messages=True)
+                await self._handle_mcp_tool_calls(completion, tool_server_map, add_responses_to_messages)
         elif completion.message:
             self.add_reply(completion.message)
 
