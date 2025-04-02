@@ -42,7 +42,7 @@ from hub.api.v1.routes import DEFAULT_TIMEOUT, get_llm_ai
 from hub.api.v1.sql import SqlClient
 from hub.tasks.scheduler import get_scheduler
 
-STREAMING_RUN_TIMEOUT_MINUTES=10
+STREAMING_RUN_TIMEOUT_MINUTES = 10
 
 threads_router = APIRouter(
     tags=["Threads"],
@@ -699,7 +699,9 @@ def create_run(
             asyncio.run(run_queues[run_model.id].put(event_in_progress))
 
             # 4. Event: thread.run.step.created
-            event_step_created, step_payload = _streaming_step_event("thread.run.step.created", run, run_model, thread_id)
+            event_step_created, step_payload = _streaming_step_event(
+                "thread.run.step.created", run, run_model, thread_id
+            )
             asyncio.run(run_queues[run_model.id].put(event_step_created))
 
             # 5. Event: thread.run.step.in_progress
@@ -1042,11 +1044,12 @@ def _streaming_run_event(event_name, run, run_model, thread_id):
         "tool_choice": run.tool_choice,
         "parallel_tool_calls": run.parallel_tool_calls,
     }
-    event ={
+    event = {
         "event": event_name,
         "data": base_payload,
     }
     return event
+
 
 def _streaming_step_event(event_name, run, run_model, thread_id):
     expires_at = int((datetime.now(timezone.utc) + timedelta(minutes=STREAMING_RUN_TIMEOUT_MINUTES)).timestamp())
