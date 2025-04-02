@@ -93,6 +93,10 @@ pytz == 2024.2
 # https://github.com/py-pdf/pypdf
 PyPDF2
 
+# PDF file creation and manipulation
+# https://docs.reportlab.com/
+reportlab
+
 # Package development tools
 # https://github.com/pypa/setuptools
 setuptools >= 21.0.0
