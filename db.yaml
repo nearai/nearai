@@ -1,0 +1,31 @@
+x-common-config: &common-config
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "100m"
+      max-file: "5"
+  restart: always
+
+services:
+
+  memsql:
+    <<: *common-config
+    image: plgnai/singlestoredb-dev:local
+    platform: linux/amd64
+    privileged: true
+    env_file:
+      - hub.env
+    ports:
+      - "3306:3306"
+      - "8080:8080"
+      - "9000:9000"
+      - "8000:8000"
+    volumes:
+      - database:/data
+      - /var/run/tappd.sock:/var/run/tappd.sock
+
+volumes:
+  database:
+    driver: local
+
+

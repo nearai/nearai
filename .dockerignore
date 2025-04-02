@@ -52,9 +52,15 @@ nosetests.xml
 coverage.xml
 
 # Virtual environment
+**/.venv/
+**/venv/
+
+
+# Ignore all .env files
+**/.env
+**/.env.*
 .env
-.venv/
-venv/
+.env.*
 
 # PyCharm
 .idea
@@ -69,3 +75,8 @@ venv/
 # VS Code
 .vscode/
 .devcontainer/
+
+nearai-cvm-*/
+
+# Rust
+**/target/

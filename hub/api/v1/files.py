@@ -38,6 +38,7 @@ S3_ENDPOINT = getenv("S3_ENDPOINT")
 s3_client = boto3.client(
     "s3",
     endpoint_url=S3_ENDPOINT,
+    region_name="us-east-2",
 )
 
 

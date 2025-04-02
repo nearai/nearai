@@ -1,0 +1,3 @@
+[workspace]
+members = ["cloud_infra", "tee_infra/cvm_client", "tee_infra/guest_manager", "tee_infra/host_api", "tee_infra/host_runner", "tee_infra/near_auth"]
+resolver = "2"
