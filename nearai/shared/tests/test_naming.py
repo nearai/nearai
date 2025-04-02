@@ -61,6 +61,13 @@ class TestGetCanonicalName(unittest.TestCase):
         )
         self.assertEqual(get_canonical_name("llama-3.1-405b-instruct"), get_canonical_name("llama-v3p1-405b-instruct"))
 
+    def test_extensions(self):  # noqa: D102
+        self.assertEqual(get_canonical_name("john_smith.near"), get_canonical_name("john_smith"))
+        self.assertNotEqual(get_canonical_name("john_smith.ai"), get_canonical_name("john_smith"))
+        self.assertNotEqual(get_canonical_name("john_smith.alpha"), get_canonical_name("john_smith"))
+        self.assertNotEqual(get_canonical_name("john_smith.a"), get_canonical_name("john_smith"))
+        self.assertNotEqual(get_canonical_name("john_smith.a"), get_canonical_name("john_smith.ai"))
+
 
 if __name__ == "__main__":
     unittest.main()
