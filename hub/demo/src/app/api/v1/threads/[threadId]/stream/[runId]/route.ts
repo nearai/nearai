@@ -4,9 +4,9 @@ import { parseAuthCookie } from '@/utils/cookies';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ threadId: string }> },
+  { params }: { params: Promise<{ threadId: string; runId: string }> },
 ) {
-  const { threadId } = await params;
+  const { threadId, runId } = await params;
 
   // Extract authorization (adapt parseAuthCookie if needed for the Request object)
   const { authorization } = parseAuthCookie(request);
@@ -20,7 +20,7 @@ export async function GET(
 
   // Fetch the router stream
   const routerResponse = await fetch(
-    `${env.ROUTER_URL}/threads/${threadId}/stream`,
+    `${env.ROUTER_URL}/threads/${threadId}/stream/${runId}`,
     {
       headers: {
         Authorization: authorization || '',

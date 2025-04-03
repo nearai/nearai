@@ -43,7 +43,6 @@ async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_ca
                     )
                     session.add(delta)
                     session.commit()
-                    print("Writing Delta object", run_id, thread_id, message_id)
                 yield f"data: {c}\n\n"
                 await asyncio.sleep(0)  # lets the event loop yield, otherwise it batches yields
         delta = Delta(

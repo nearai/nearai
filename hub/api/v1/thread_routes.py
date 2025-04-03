@@ -935,19 +935,19 @@ async def stream_run_events(run_id: str, delete: bool):
     del run_queues[run_id]
 
 
-@threads_router.get("/threads/{thread_id}/stream")
-async def thread_subscribe(thread_id: str, auth: AuthToken = Depends(get_auth)):
-    """Subscribe to deltas for a thread (for client channels outside of the run).
-
-    Primary streaming is handled via runs. Secondary client can subscribe here.
-    """
+@threads_router.get("/threads/{thread_id}/stream/{run_id}")
+async def thread_subscribe(thread_id: str, run_id: Optional[str] = None, auth: AuthToken = Depends(get_auth)):
+    """Subscribe to deltas for a thread and run (for client channels outside of the run)."""
     with get_session() as session:
-        run = session.exec(
-            select(RunModel).where(RunModel.thread_id == thread_id).order_by(RunModel.created_at.desc())
-        ).first()
-        _check_thread_permissions(auth, session, thread_id)
+        if run_id:
+            run = session.get(RunModel, run_id)
+        else:
+            run = session.exec(
+                select(RunModel).where(RunModel.thread_id == thread_id).order_by(RunModel.created_at.desc())
+            ).first()
         if not run:
             raise HTTPException(status_code=404, detail="Run for thread not found")
+        _check_thread_permissions(auth, session, thread_id)
 
         return StreamingResponse(stream_run_events(run.id, False), media_type="text/event-stream")
 

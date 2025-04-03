@@ -41,6 +41,7 @@ import { AgentWelcome } from '@/components/AgentWelcome';
 import { EntryEnvironmentVariables } from '@/components/EntryEnvironmentVariables';
 import { IframeWithBlob } from '@/components/lib/IframeWithBlob';
 import { Sidebar } from '@/components/lib/Sidebar';
+import { StreamingText } from '@/components/lib/StreamingText';
 import { SignInPrompt } from '@/components/SignInPrompt';
 import { ThreadMessages } from '@/components/threads/ThreadMessages';
 import { ThreadsSidebar } from '@/components/threads/ThreadsSidebar';
@@ -115,6 +116,8 @@ export const AgentRunner = ({
 
   const [htmlOutput, setHtmlOutput] = useState('');
   const [streamingText, setStreamingText] = useState<string>('');
+  const [streamingTextLatestChunk, setStreamingTextLatestChunk] =
+    useState<string>('');
   const [openedFileName, setOpenedFileName] = useState<string | null>(null);
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
@@ -138,6 +141,7 @@ export const AgentRunner = ({
   const threadsById = useThreadsStore((store) => store.threadsById);
   const setAddMessage = useThreadsStore((store) => store.setAddMessage);
   const thread = threadsById[chatMutationThreadId.current || threadId];
+  const [stream, setStream] = useState<EventSource | null>(null);
 
   const _chatMutation = trpc.hub.chatWithAgent.useMutation();
   const chatMutation = useMutation({
@@ -155,13 +159,13 @@ export const AgentRunner = ({
 
         addOptimisticMessages(threadId, [input]);
         const response = await _chatMutation.mutateAsync(input);
-
         setThread({
           ...response.thread,
           files: [],
           messages: [response.message],
           run: response.run,
         });
+        startStreaming(response.thread?.id, response.run?.id);
 
         chatMutationThreadId.current = response.thread.id;
         updateQueryPath({ threadId: response.thread.id }, 'replace', false);
@@ -281,27 +285,9 @@ export const AgentRunner = ({
     clearOptimisticMessages();
     form.setValue('new_message', '');
     form.setFocus('new_message');
+    setStreamingText('');
+    setStreamingTextLatestChunk('');
   };
-
-  useEffect(() => {
-    // This logic simply provides helpful logs for debugging in production
-
-    if (!threadQuery.isFetching && (threadQuery.data || threadQuery.error)) {
-      const now = new Date();
-      const elapsedSecondsSinceRunStart = chatMutationStartedAt.current
-        ? (now.getTime() - chatMutationStartedAt.current.getTime()) / 1000
-        : null;
-
-      console.log(
-        `Thread polling fetch responded at: ${now.toLocaleTimeString()}`,
-        {
-          data: threadQuery.data,
-          error: threadQuery.error,
-          elapsedSecondsSinceRunStart,
-        },
-      );
-    }
-  }, [threadQuery.data, threadQuery.error, threadQuery.isFetching]);
 
   useEffect(() => {
     if (
@@ -318,19 +304,19 @@ export const AgentRunner = ({
   }, [setThread, threadQuery.data, thread?.metadata.topic, utils]);
 
   // SSE for streaming updates
-  useEffect(() => {
+  const startStreaming = (threadId: string, runId: string) => {
     if (!threadId) return;
+    if (!runId) return;
 
-    const eventSource = new EventSource(`/api/v1/threads/${threadId}/stream`);
-
-    eventSource.addEventListener('initial', () => {
-      setStreamingText('');
-    });
+    const eventSource = new EventSource(
+      `/api/v1/threads/${threadId}/stream/${runId}`,
+    );
 
     eventSource.addEventListener('message', (event) => {
       const data = JSON.parse(event.data);
-      const appendText = data.data.delta.content[0].text.value;
-      setStreamingText((prevText) => prevText + appendText);
+      const latestChunk = data.data.delta.content[0].text.value;
+      setStreamingText((prevText) => prevText + latestChunk);
+      setStreamingTextLatestChunk(latestChunk);
     });
 
     eventSource.onerror = (error) => {
@@ -338,10 +324,23 @@ export const AgentRunner = ({
       eventSource.close();
     };
 
+    setStream(eventSource);
+
     return () => {
       eventSource.close();
     };
-  }, [threadId, setThread]);
+  };
+
+  useEffect(() => {
+    if (!isRunning) {
+      if (stream) {
+        stream.close();
+        setStream(null);
+        setStreamingText('');
+        setStreamingTextLatestChunk('');
+      }
+    }
+  }, [isRunning, stream]);
 
   useEffect(() => {
     if (threadQuery.error?.data?.code === 'FORBIDDEN') {
@@ -481,7 +480,6 @@ export const AgentRunner = ({
         />
 
         <Sidebar.Main>
-          <div>Streaming: {streamingText}</div>
           {isLoading ? (
             <PlaceholderStack style={{ marginBottom: 'auto' }} />
           ) : (
@@ -517,6 +515,13 @@ export const AgentRunner = ({
           )}
 
           <Sidebar.MainStickyFooter>
+            {isRunning && (
+              <StreamingText
+                text={streamingText}
+                latestChunk={streamingTextLatestChunk}
+              />
+            )}
+
             <Form onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
               <Flex direction="column" gap="m">
                 <InputTextarea
