@@ -903,7 +903,7 @@ class AgentCli:
                 stream=True,
                 extra_body={"delegate_execution": True},
             )
-            params = {
+            params: dict = {
                 "api_url": CONFIG.api_url,
                 "tool_resources": [],  # run.tools, TODO this is not returned from the streaming run
                 "data_source": "local_files",

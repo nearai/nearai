@@ -1125,7 +1125,7 @@ class Environment(object):
         attachments: Optional[Iterable[Attachment]] = None,
         message_type: Optional[str] = None,
         **kwargs: Any,
-    ) -> ModelResponse:
+    ) -> Union[ModelResponse,  CustomStreamWrapper]:
         """Returns all completions for given messages using the given model.
 
         Always returns a ModelResponse object. When stream=True, aggregates the streamed
@@ -1148,11 +1148,12 @@ class Environment(object):
             )
             full_content = ""
             for chunk in stream_results:
-                if chunk.choices and chunk.choices[0].delta.content:
-                    delta_content = chunk.choices[0].delta.content
-                    full_content += delta_content
-                    print(delta_content, end="", flush=True)
-            print()
+                if not isinstance(chunk, (tuple, str)) and hasattr(chunk, "choices"):
+                    if chunk.choices and hasattr(chunk.choices[0], "delta"):
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, "content") and delta.content:
+                            full_content += delta.content
+
             response = ModelResponse(
                 id="streamed_completion",
                 object="chat.completion",

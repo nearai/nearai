@@ -38,13 +38,13 @@ run = client.beta.threads.runs.create(
 
 # Process the event stream
 logger.info("Processing the event stream")
-run_id = 0
+run_id = ""
 for event in run:
     if event.event == "thread.run.queued":
         logger.info("Run queued")
     elif event.event == "thread.run.created":
         logger.info("Run started")
-        run_id=event.data.id
+        run_id = event.data.id
     elif event.event == "thread.run.in_progress":
         logger.info("Run in progress")
     elif event.event == "thread.run.requires_action":
@@ -58,8 +58,10 @@ for event in run:
     elif event.event == "thread.run.expired":
         logger.info("Run expired")
     elif event.event == "thread.message.delta":
-        delta = event.data.delta.content[0].text.value
-        logger.info(f"Streamed content: {delta}", extra={'no_newline': True})
+        content = event.data.delta.content
+        if content and len(content) > 0 and hasattr(content[0], 'text') and content[0].text is not None:
+            delta = content[0].text.value
+            logger.info(f"Streamed content: {delta}", extra={'no_newline': True})
     elif event.event == "done":
         logger.info("Streaming finished")
     else:

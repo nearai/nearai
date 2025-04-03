@@ -50,7 +50,7 @@ threads_router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
-run_queues = defaultdict(asyncio.Queue)
+run_queues: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
 
 
 class FilterThreadRequestsLogs(logging.Filter):
@@ -868,7 +868,7 @@ def _run_agent(
 async def monitor_deltas(run_id: str, delete: bool):
     with get_session() as session:
         start_time = datetime.now(timezone.utc)
-        seen_ids = set()
+        seen_ids: set[int] = set()
 
         async def handle_delete():
             if delete:
@@ -881,8 +881,8 @@ async def monitor_deltas(run_id: str, delete: bool):
                 # Fetch the oldest Delta for this run_id
                 query = (
                     select(Delta)
-                    .where(Delta.run_id == run_id, Delta.id.notin_(list(seen_ids)))
-                    .order_by(Delta.id)
+                    .where(Delta.run_id == run_id, Delta.id.notin_(list(seen_ids)))  # type: ignore
+                    .order_by(asc(Delta.id))
                     .limit(1)
                 )
                 event = session.exec(query).first()
@@ -943,7 +943,7 @@ async def thread_subscribe(thread_id: str, run_id: Optional[str] = None, auth: A
             run = session.get(RunModel, run_id)
         else:
             run = session.exec(
-                select(RunModel).where(RunModel.thread_id == thread_id).order_by(RunModel.created_at.desc())
+                select(RunModel).where(RunModel.thread_id == thread_id).order_by(desc(RunModel.created_at))
             ).first()
         if not run:
             raise HTTPException(status_code=404, detail="Run for thread not found")
