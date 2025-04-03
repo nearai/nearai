@@ -1125,7 +1125,7 @@ class Environment(object):
         attachments: Optional[Iterable[Attachment]] = None,
         message_type: Optional[str] = None,
         **kwargs: Any,
-    ) -> Union[ModelResponse,  CustomStreamWrapper]:
+    ) -> Union[ModelResponse, CustomStreamWrapper]:
         """Returns all completions for given messages using the given model.
 
         Always returns a ModelResponse object. When stream=True, aggregates the streamed
