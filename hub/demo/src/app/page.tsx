@@ -392,7 +392,7 @@ export default function HomePage() {
               {
                 icon: <ChatCircle weight="duotone" />,
                 title: 'Community',
-                description: 'Connect with other researchers',
+                description: 'Connect with other developers',
                 label: 'Join',
                 href: 'https://t.me/nearaialpha',
                 target: '_blank',
