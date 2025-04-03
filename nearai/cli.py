@@ -11,26 +11,22 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from textwrap import fill
 from typing import Any, Dict, List, Optional, Union
-from nearai.banners import NEAR_AI_BANNER
 
 import fire
 from openai.types.beta.threads.message import Attachment
-from rich.box import ROUNDED
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.rule import Rule
-from rich.table import Table
 from rich.text import Text
 from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
-from nearai.banners import NEAR_AI_BANNER
 from nearai.cli_helpers import (
     assert_user_auth,
     display_agents_in_columns,
     display_version_check,
-    format_help,
+    handle_help_request,
     has_pending_input,
     load_and_validate_metadata,
 )
@@ -509,7 +505,8 @@ class RegistryCli:
 
     def __call__(self):
         """Show help when 'nearai registry' is called without subcommands."""
-        format_help(self, "__class__")
+        custom_args = ["nearai", "registry", "--help"]
+        handle_help_request(custom_args)
 
 
 class ConfigCli:
@@ -567,7 +564,8 @@ class ConfigCli:
 
     def __call__(self) -> None:
         """Show help when 'nearai config' is called without subcommands."""
-        format_help(self, "__class__")
+        custom_args = ["nearai", "config", "--help"]
+        handle_help_request(custom_args)
 
 
 class BenchmarkCli:
@@ -1144,46 +1142,9 @@ class AgentCli:
     def upload(
         self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
     ) -> Optional[EntryLocation]:
-        """Upload agent to the registry.
-
-        The 'upload' command publishes your agent to the NEAR AI registry, making it available
-        for use by you and others (depending on permissions).
-
-        This is an alias for 'nearai registry upload'.
-
-        Usage:
-          nearai agent upload [PATH] [OPTIONS]
-
-        Options:
-          local_path: Path to the directory containing the agent to upload. Default is current directory (.)
-          bump: If True, automatically increment patch version if it already exists (0.0.1 → 0.0.2). Default is False.
-          minor_bump: If True, bump with minor version increment (0.1.0 → 0.2.0). Default is False.
-          major_bump: If True, bump with major version increment (0.1.0 → 1.0.0). Default is False.
-
-        Version Conflict Handling:
-          If the version in your metadata.json already exists in the registry:
-          1. With no flags: Upload will fail with a version conflict error
-          2. With --bump: Version will be incremented automatically (patch level)
-          3. With --minor-bump: Minor version will be incremented (0.1.0 → 0.2.0)
-          4. With --major-bump: Major version will be incremented (0.1.0 → 1.0.0)
-
-        Examples:
-          # Upload agent from current directory
-          nearai agent upload
-          
-          # Upload agent from specific path
-          nearai agent upload path/to/agent
-          
-          # Upload with automatic version bumping if version exists
-          nearai agent upload --bump
-          
-          # Upload with minor version bump if version exists
-          nearai agent upload --minor-bump
-
-        Returns:
-          EntryLocation if upload was successful, None otherwise
-
-        For detailed documentation on the registry, visit: https://docs.near.ai/agents/registry
+        """This is an alias for 'nearai registry upload'.
+        
+        See 'nearai registry upload --help' for full documentation.
         """
         assert_user_auth()
         # Create an instance of RegistryCli and call its upload method
@@ -1192,7 +1153,8 @@ class AgentCli:
 
     def __call__(self) -> None:
         """Show help when 'nearai agent' is called without subcommands."""
-        format_help(self, "__class__")
+        custom_args = ["nearai", "agent", "--help"]
+        handle_help_request(custom_args)
 
 
 class VllmCli:
@@ -1459,7 +1421,8 @@ class CLI:
 
     def help(self) -> None:
         """Display help information about the NEAR AI CLI."""
-        format_help(self, "__class__")
+        custom_args = ["nearai", "--help"]
+        handle_help_request(custom_args)
 
 
 def check_update():
@@ -1481,40 +1444,10 @@ def main() -> None:
     """Main entry point for the NEAR AI CLI."""
     check_update()
 
-    # If no arguments are provided, show help
-    if len(sys.argv) == 1:
-        cli = CLI()
-        format_help(cli, "__class__")
-        return
-
-    # Check if help is requested for specific commands
-    if len(sys.argv) >= 2:
-        # Check for the --help flag
-        if "--help" in sys.argv:
-            cli = CLI()
-            
-            # Handle specific command patterns that we know work with our CLI
-            if len(sys.argv) == 2 and sys.argv[1] == "--help":
-                # Handle "nearai --help"
-                format_help(cli, "__class__")
-                return
-            elif len(sys.argv) == 3 and sys.argv[2] == "--help":
-                # Handle "nearai command --help"
-                command = sys.argv[1]
-                if hasattr(cli, command):
-                    format_help(getattr(cli, command), "__class__")
-                    return
-            elif len(sys.argv) == 4 and sys.argv[3] == "--help":
-                # Handle "nearai command subcommand --help"
-                command, subcommand = sys.argv[1:3]
-                if hasattr(cli, command):
-                    cmd_obj = getattr(cli, command)
-                    if hasattr(cmd_obj, subcommand):
-                        format_help(cmd_obj, subcommand)
-                        return
-            
-            # If we can't handle the help request specifically, let Python Fire handle it
-            pass
+    # Check if help is requested
+    if "--help" in sys.argv or len(sys.argv) == 1:
+        if handle_help_request():
+            return
 
     # Otherwise, proceed with normal command processing
     fire.Fire(CLI)

@@ -427,3 +427,55 @@ def format_help(obj, method_name: str) -> None:
             content = " ".join(section_content).strip()
             console.print(f"\n[bold blue]{content}[/bold blue]\n")
             processed_sections.add(section_name)
+
+
+def handle_help_request(args=None):
+    """Common handler for CLI help requests.
+    
+    Args:
+        args: Command line arguments (uses sys.argv if None)
+    
+    Returns:
+        True if help was displayed, False otherwise
+    """
+    import sys
+    from nearai.cli import CLI
+    
+    if args is None:
+        args = sys.argv
+    
+    # Create CLI instance
+    cli = CLI()
+    
+    # Special case for agent upload, which is an alias for registry upload
+    if len(args) == 4 and args[1] == "agent" and args[2] == "upload" and args[3] == "--help":
+        format_help(cli.registry, "upload")
+        return True
+    
+    # No arguments - show main help
+    if len(args) == 1:
+        format_help(cli, "__class__")
+        return True
+    
+    # Help with no specific command
+    if len(args) == 2 and args[1] == "--help":
+        format_help(cli, "__class__")
+        return True
+    
+    # Help for a specific command
+    if len(args) == 3 and args[2] == "--help":
+        command = args[1]
+        if hasattr(cli, command):
+            format_help(getattr(cli, command), "__class__")
+            return True
+    
+    # Help for a specific subcommand
+    if len(args) == 4 and args[3] == "--help":
+        command, subcommand = args[1:3]
+        if hasattr(cli, command):
+            cmd_obj = getattr(cli, command)
+            if hasattr(cmd_obj, subcommand):
+                format_help(cmd_obj, subcommand)
+                return True
+    
+    return False
