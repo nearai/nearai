@@ -302,7 +302,7 @@ export default function HomePage() {
         </Grid>
       </Section>
 
-      <Section padding="hero">
+      <Section padding="hero" background="primary-gradient">
         <Flex direction="column" gap="l">
           <Flex direction="column" gap="m">
             <Text as="h2" size="text-2xl" weight="600">
