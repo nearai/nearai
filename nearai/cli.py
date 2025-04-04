@@ -73,8 +73,8 @@ from nearai.tensorboard_feed import TensorboardCli
 
 
 class RegistryCli:
-    """NEAR AI Registry Commands.
-
+    """
+    Description: 
     Registry commands help you manage items in the NEAR AI registry, including uploading, downloading, 
     and listing agents, models, and other resources.
 
@@ -84,9 +84,10 @@ class RegistryCli:
       info               Show information about a registry item (entry*)
       list               List available items in the registry (--namespace, --category, --tags, --total, --offset, --show-all, --show-latest-version, --star)
       metadata-template  Create a metadata template (--local-path, --category, --description)
-      update             Update metadata of a registry item (local-path*)
+      update             Update metadata of a registry item (<PATH>)
 
-    Flag Details:
+    Options:
+      <PATH>              Path to the directory containing the agent to upload
       --force             Force download even if the item exists locally
       --namespace         Filter items by namespace
       --category          Filter items by category (e.g., 'agent', 'model')
@@ -96,10 +97,6 @@ class RegistryCli:
       --show-all          Show all versions of items
       --show-latest-version  Show only the latest version of each item
       --star              Show items starred by a specific user
-
-    Entry Location Format:
-      Entry locations use the format: namespace/name/version
-      Example: example.near/summary/0.0.3
 
     Examples:
       # Upload an agent to the registry
@@ -120,7 +117,8 @@ class RegistryCli:
       # Create a metadata template
       nearai registry metadata-template --category agent --description "My agent description"
 
-    For detailed documentation on the registry, visit: https://docs.near.ai/agents/registry
+    Documentation: 
+        https://docs.near.ai/agents/registry
     """
     def info(self, entry: str) -> None:
         """Show information about an item."""
@@ -510,29 +508,22 @@ class RegistryCli:
 
 
 class ConfigCli:
-    """NEAR AI Configuration Commands.
-
-    Configuration commands help you manage your NEAR AI CLI settings.
-    You can view, set, and modify various configuration values that control how the CLI behaves.
+    """
+    Description: 
+      Configuration commands help you manage your NEAR AI CLI settings. You can view, set, and modify various configuration values that control how the CLI behaves.
 
     Commands:
       set    Add or update a configuration value (key*, value*, --local)
       get    Retrieve a configuration value (key*)
       show   Display all configuration values
 
-    Parameter Details:
+    Options:
       key       The configuration key to set or get
       value     The value to assign to the configuration key
       --local   Store the configuration value in the local config file (default: global)
 
-    Common Configuration Keys:
-      api_url             The URL of the NEAR AI API (default: https://api.near.ai)
-      auth.namespace      Your NEAR account namespace (default: account.near)
-      num_inference_retries  Number of retries for model inference calls (default: 10)
-      model               Default model to use (default: claude-3-sonnet-20240229)
-      model_provider      Default model provider (default: anthropic)
-
     Examples:
+
       # View all configuration values
       nearai config show
 
@@ -548,7 +539,8 @@ class ConfigCli:
       # Change the API URL
       nearai config set api_url https://custom-api.example.com
 
-    For detailed documentation on configuration, visit: https://docs.near.ai/reference/configuration
+    Documentation:
+      https://docs.near.ai/reference/configuration
     """
     def set(self, key: str, value: str, local: bool = False) -> None:
         """Add key-value pair to the config file."""
@@ -569,9 +561,9 @@ class ConfigCli:
 
 
 class BenchmarkCli:
-    """NEAR AI Benchmark Commands.
-
-    Commands for running and listing benchmarks on datasets with solver strategies.
+    """
+    Description: 
+      Commands for running and listing benchmarks on datasets with solver strategies.
 
     Commands:
       run    Run benchmark on a dataset with a solver strategy
@@ -711,9 +703,9 @@ class BenchmarkCli:
 
 
 class EvaluationCli:
-    """NEAR AI Evaluation Commands.
-
-    Commands for evaluating and analyzing model performance.
+    """
+    Description:
+      For evaluating and analyzing model performance.
 
     Commands:
       table           Print table of evaluations
@@ -785,10 +777,9 @@ class EvaluationCli:
 
 
 class AgentCli:
-    """NEAR AI Agent Commands.
-
-    Agent commands help you create, develop, and interact with AI agents.
-    You can create new agents, run them locally or via NEAR AI Cloud, and manage their lifecycle.
+    """
+    Description: 
+      For creating and interacting with agents, run them locally or via NEAR AI Cloud, and manage their lifecycle.
 
     Commands:
       create        Create a new agent or fork an existing one (--name, --description, --fork)
@@ -796,9 +787,10 @@ class AgentCli:
       task          Run a single task with an agent (--agent*, --task*, --thread-id, --tool-resources, --file-ids, --local, --verbose, --env-vars)
       upload        Upload an agent to the registry (--local-path, --bump, --minor-bump, --major-bump)
       dev           Run local UI for development of agents
-      inspect       Inspect environment from given path (path*)
+      inspect       Inspect environment from given path (<PATH>*)
 
-    Flag Details:
+    Options:
+      <PATH>          Path to the agent directory or agent ID
       --name          Name for the new agent
       --description   Description of the new agent
       --fork          Path to an existing agent to fork (format: namespace/name/version)
@@ -836,7 +828,8 @@ class AgentCli:
       # Upload an agent with automatic version bumping
       nearai agent upload path/to/agent --bump
 
-    For detailed documentation on agents, visit: https://docs.near.ai/agents/quickstart
+    Documentation: 
+      https://docs.near.ai/agents/quickstart
     """
     def dev(self) -> int:
         """Run local UI for development of agents that have their own UI."""
@@ -1121,6 +1114,8 @@ class AgentCli:
           nearai agent create --name my_agent --description "My new agent"
           nearai agent create --fork example.near/agent-name/0.0.3 --name new_agent_name
 
+        Documentation: https://docs.near.ai/agents/quickstart
+
         """
         # Check if the user is authenticated
         if CONFIG.auth is None or CONFIG.auth.namespace is None:
@@ -1158,9 +1153,9 @@ class AgentCli:
 
 
 class VllmCli:
-    """NEAR AI VLLM Commands.
-
-    Commands for running VLLM with OpenAI-compatible API.
+    """
+    Description: 
+      Commands for running VLLM with OpenAI-compatible API.
 
     Commands:
       run    Run VLLM server with OpenAI-compatible API
@@ -1181,9 +1176,9 @@ class VllmCli:
 
 
 class HubCLI:
-    """NEAR AI Hub Commands.
-
-    Commands for interacting with the NEAR AI hub.
+    """
+    Description: 
+      Commands for interacting with the NEAR AI hub.
 
     Commands:
       chat    Chat with model from NEAR AI hub
@@ -1208,9 +1203,9 @@ class HubCLI:
 
 
 class LogoutCLI:
-    """NEAR AI Logout Command.
-
-    Clear your NEAR account authentication data.
+    """
+    Description: 
+      Clear your NEAR account authentication data.
     """
     def __call__(self, **kwargs):
         """Clear NEAR account auth data."""
@@ -1226,9 +1221,9 @@ class LogoutCLI:
 
 
 class LoginCLI:
-    """NEAR AI Login Commands.
-
-    Commands for authenticating with your NEAR account.
+    """
+    Description: 
+      Commands for authenticating with your NEAR account.
 
     Commands:
       (default)    Login with NEAR Mainnet account
@@ -1295,9 +1290,9 @@ class LoginCLI:
 
 
 class PermissionCli:
-    """NEAR AI Permission Commands.
-
-    Commands for managing permissions.
+    """
+    Description: 
+      Commands for managing permissions.
 
     Commands:
       grant     Grant permission to an account
@@ -1316,12 +1311,13 @@ class PermissionCli:
 
 
 class CLI:
-    """NEAR AI CLI.
+    """
+    Description:
+      NEAR AI is a powerful tool for building and deploying user-owned AI agents. Use the commands below to get started or add --help to any command for more information.
 
-    NEAR AI is a powerful tool for building and deploying user-owned AI agents.
-    Use the commands below to get started or add --help to any command for more information.
+    Commands:
 
-    Getting Started:
+    Getting Started
       login        Authenticate with your NEAR account
       logout       Clear your NEAR account authentication data
       version      Display the current version of the CLI
