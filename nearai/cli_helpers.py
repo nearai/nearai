@@ -168,16 +168,13 @@ def format_main_menu_help(cli) -> None:
     console.print(NEAR_AI_BANNER)
     console.print(f"[bold cyan]NEAR AI CLI[/bold cyan] [dim]v{version}[/dim]")
     
-    # Get the docstring
+    # Get CLI docstring
     docstring = inspect.getdoc(cli)
     if not docstring:
         console.print("[bold red]No documentation available for the CLI[/bold red]")
         return
     
-    # Parse docstring into sections
-    lines = docstring.strip().split('\n')
-    
-    # Create a single large table for all commands
+    # Single table for all commands
     table = Table(
         box=ROUNDED,
         expand=True,
@@ -188,13 +185,14 @@ def format_main_menu_help(cli) -> None:
     table.add_column("Command", style="cyan")
     table.add_column("Description", style="white")
     
-    # Process the docstring sections
-    i = 0
-    first_section = True
+    # Parse docstring into sections
+    sections = {}
+    current_section = None
+    current_lines = []
     
-    while i < len(lines):
-        line = lines[i].strip()
-        i += 1
+    # Process the docstring line by line
+    for line in docstring.strip().split('\n'):
+        line = line.strip()
         
         # Skip empty lines
         if not line:
@@ -202,68 +200,55 @@ def format_main_menu_help(cli) -> None:
             
         # Check if this is a section header
         if line.endswith(':'):
-            section_name = line.rstrip(':')
-            
-            # Skip documentation section since we'll hardcode it at the end
-            if section_name.lower() == "documentation":
-                # Skip to next section or end
-                while i < len(lines):
-                    if lines[i].strip().endswith(':'):
-                        break
-                    i += 1
-                continue
-            
-            # Add separator between sections (except before the first one)
-            if not first_section:
-                table.add_row("", "")  # Add blank row between sections
-            else:
-                first_section = False
-            
-            # Add the category header row
-            table.add_row(f"[bold green]{section_name}[/bold green]", "")
-            
-            # Collect commands until next section
-            while i < len(lines):
-                cmd_line = lines[i].strip()
-                i += 1
+            # Save previous section if we had one
+            if current_section:
+                sections[current_section.lower()] = current_lines
                 
-                # If we hit a blank line, we might be done with this section
-                if not cmd_line:
-                    # Look ahead to see if the next non-blank line is a section header
-                    j = i
-                    while j < len(lines) and not lines[j].strip():
-                        j += 1
-                    
-                    # If we found a section header, break out
-                    if j < len(lines) and lines[j].strip().endswith(':'):
-                        break
-                    continue
-                
-                # If we hit a new section header, back up and break
-                if cmd_line.endswith(':'):
-                    i -= 1  # Back up so we process this header in the next iteration
-                    break
-                
-                # Otherwise, it's a command - process it
-                parts = re.split(r'\s{2,}', cmd_line, 1)
-                if len(parts) == 2:
-                    cmd, desc = parts
-                    # Add 'nearai ' prefix if not already present
-                    cmd = cmd.strip()
-                    if not cmd.startswith("nearai "):
-                        cmd = f"nearai {cmd}"
-                    table.add_row(cmd, desc.strip())
-                else:
-                    # For single-word commands, still add the prefix
-                    cmd = cmd_line.strip()
-                    if not cmd.startswith("nearai ") and not cmd.startswith("["):
-                        cmd = f"nearai {cmd}"
-                    table.add_row(cmd, "")
+            # Start a new section
+            current_section = line.rstrip(':')
+            current_lines = []
+        elif current_section:
+            # Add content to the current section
+            current_lines.append(line)
     
+    # Save the last section if we have one
+    if current_section:
+        sections[current_section.lower()] = current_lines
+    
+    # Process each section in order they appeared in the docstring
+    first_section = True
+    for section_name, section_lines in sections.items():
+        # Add separator between sections (except first one)
+        if not first_section:
+            table.add_row("", "")  # Blank row as separator
+        else:
+            first_section = False
+        
+        # Add section header
+        table.add_row(f"[bold green]{section_name.title()}[/bold green]", "")
+        
+        # Add commands for this section
+        for cmd_line in section_lines:
+            # Process command line - split by 2+ spaces
+            parts = re.split(r'\s{2,}', cmd_line, 1)
+            if len(parts) == 2:
+                cmd, desc = parts
+                # Add 'nearai ' prefix
+                cmd = cmd.strip()
+                if not cmd.startswith("nearai "):
+                    cmd = f"nearai {cmd}"
+                table.add_row(cmd, desc.strip())
+            else:
+                # For single-word commands, still add the prefix
+                cmd = cmd_line.strip()
+                if not cmd.startswith("nearai ") and not cmd.startswith("["):
+                    cmd = f"nearai {cmd}"
+                table.add_row(cmd, "")
+
     console.print("\n")
     console.print(table)
     
-    # Display docs section with proper formatting
+    # Add link to docs
     console.print("\n[bold green]Documentation:[/bold green]")
     console.print(
         "[bold blue]At any time you can run `nearai <command> --help` to get more information about a command.[/bold blue]"
@@ -272,100 +257,6 @@ def format_main_menu_help(cli) -> None:
         "[bold blue]Also, please refer to the NEAR AI documentation for more information: https://docs.near.ai/[/bold blue]\n"
     )
 
-
-def display_section(console, section_title, section_lines):
-    """Display a section of the help menu.
-    
-    Args:
-        console: Rich console for output
-        section_title: Title of the section
-        section_lines: Lines of content in the section
-    """
-    # Format the title
-    title = section_title.rstrip(':')
-    
-    # Special case for Description section
-    if title.lower() == "description":
-        description = " ".join([line.strip() for line in section_lines if line.strip()])
-        if description:
-            console.print(
-                Panel(
-                    description,
-                    title="About NEAR AI CLI",
-                    border_style="green",
-                    expand=False,
-                )
-            )
-        return
-    
-    # For Commands section, process it by groups
-    if title.lower() == "commands":
-        # Find and process command groups
-        current_group = None
-        group_commands = []
-        
-        for line in section_lines:
-            stripped = line.strip()
-            
-            # Skip empty lines
-            if not stripped:
-                # If we have a group with commands, display it before starting a new one
-                if current_group and group_commands:
-                    console.print(f"\n[bold green]{current_group}:[/bold green]\n")
-                    
-                    # Create table for this group
-                    table = Table(box=ROUNDED, expand=False)
-                    table.add_column("Command", style="cyan bold", no_wrap=True)
-                    table.add_column("Description", style="white")
-                    
-                    for cmd_line in group_commands:
-                        if not cmd_line.strip():
-                            continue
-                        
-                        # Split by 2+ spaces to separate command and description
-                        parts = re.split(r'\s{2,}', cmd_line, 1)
-                        if len(parts) == 2:
-                            cmd, desc = parts
-                            table.add_row(cmd.strip(), desc.strip())
-                        else:
-                            table.add_row(cmd_line, "")
-                    
-                    console.print(Panel(table, border_style="green", expand=False))
-                
-                # Reset for potential next group
-                current_group = None
-                group_commands = []
-                continue
-            
-            # Is this line a potential group header? (not indented)
-            if not line.startswith(" ") and current_group is None:
-                current_group = stripped.rstrip(":")
-            # Otherwise it's a command in the current group
-            elif current_group is not None:
-                group_commands.append(stripped)
-        
-        # Display the last group if we have one
-        if current_group and group_commands:
-            console.print(f"\n[bold green]{current_group}:[/bold green]\n")
-            
-            table = Table(box=ROUNDED, expand=False)
-            table.add_column("Command", style="cyan bold", no_wrap=True)
-            table.add_column("Description", style="white")
-            
-            for cmd_line in group_commands:
-                if not cmd_line.strip():
-                    continue
-                
-                parts = re.split(r'\s{2,}', cmd_line, 1)
-                if len(parts) == 2:
-                    cmd, desc = parts
-                    table.add_row(cmd.strip(), desc.strip())
-                else:
-                    table.add_row(cmd_line, "")
-            
-            console.print(Panel(table, border_style="green", expand=False))
-        
-        return
 
 def format_class_help(obj) -> None:
     """Format a class's docstring as a help message and display it with rich formatting.
