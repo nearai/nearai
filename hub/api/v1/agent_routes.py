@@ -7,9 +7,15 @@ from typing import Any, Dict, List, Optional, Union
 
 import boto3
 import requests
+from attestation.client import Worker
 from botocore.config import Config
 from fastapi import APIRouter, Depends, HTTPException
+from nearai.agents.local_runner import LocalRunner
+from nearai.clients.lambda_client import LambdaWrapper
+from nearai.shared.auth_data import AuthData
+from nearai.shared.client_config import DEFAULT_TIMEOUT
 from pydantic import BaseModel, Field
+from runners.nearai_cvm.app.main import AssignRequest
 from sqlalchemy import and_, func, inspect, text
 
 from hub.api.v1.auth import AuthToken, get_auth
@@ -20,12 +26,6 @@ from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
 from hub.api.v1.registry import get
 from hub.api.v1.sql import SqlClient
-from nearai.agents.local_runner import LocalRunner
-from nearai.clients.lambda_client import LambdaWrapper
-from nearai.shared.auth_data import AuthData
-from nearai.shared.client_config import DEFAULT_TIMEOUT
-from runners.nearai_cvm.app.main import AssignRequest
-from runners.nearai_cvm.pool.main import Worker
 
 logger = logging.getLogger(__name__)
 
@@ -80,18 +80,12 @@ class CreateThreadAndRunRequest(BaseModel):
 
 available_local_runners_ports = getenv("AVAILABLE_LOCAL_RUNNER_PORTS", "")
 available_local_runners = deque(
-    [
-        int(port)
-        for port in available_local_runners_ports.split(",")
-        if port.strip().isdigit()
-    ]
+    [int(port) for port in available_local_runners_ports.split(",") if port.strip().isdigit()]
 )  # Queue of available ports
 agent_runners_ports: dict[str, int] = {}  # Mapping of agents to their assigned ports
 
 
-def invoke_agent_via_url(
-    custom_runner_url, agents, thread_id, run_id, auth: AuthToken, params
-):
+def invoke_agent_via_url(custom_runner_url, agents, thread_id, run_id, auth: AuthToken, params):
     auth_data = auth.model_dump()
 
     if auth_data["nonce"]:
@@ -108,9 +102,7 @@ def invoke_agent_via_url(
         else:
             # If no ports are available, reassign the oldest used agent's port
             oldest_agent = next(iter(agent_runners_ports))
-            logging.warning(
-                f"No available local runners ports! Reassigning port from agent {oldest_agent}"
-            )
+            logging.warning(f"No available local runners ports! Reassigning port from agent {oldest_agent}")
             port = agent_runners_ports[oldest_agent]
             agent_runners_ports[agents] = port  # Update mapping
 
@@ -126,26 +118,18 @@ def invoke_agent_via_url(
 
     headers = {"Content-Type": "application/json"}
 
-    response = requests.post(
-        custom_runner_url, data=json.dumps(payload), headers=headers
-    )
+    response = requests.post(custom_runner_url, data=json.dumps(payload), headers=headers)
 
     if response.status_code == 200:
         return response.json()
     else:
-        raise Exception(
-            f"Request failed with status code {response.status_code}: {response.text}"
-        )
+        raise Exception(f"Request failed with status code {response.status_code}: {response.text}")
 
 
-def invoke_agent_via_lambda(
-    function_name, agents, thread_id, run_id, auth: AuthToken, params
-):
-    config = Config(
-        read_timeout=DEFAULT_TIMEOUT, connect_timeout=DEFAULT_TIMEOUT, retries=None
-    )
+def invoke_agent_via_lambda(function_name, agents, thread_id, run_id, auth: AuthToken, params):
+    config = Config(read_timeout=DEFAULT_TIMEOUT, connect_timeout=DEFAULT_TIMEOUT, retries=None)
     wrapper = LambdaWrapper(
-        boto3.client("lambda", region_name="us-east-2", config=config),
+        boto3.client("lambda", config=config),
         thread_id,
         run_id,
     )
@@ -213,9 +197,7 @@ def invoke_agent_in_cvm(
             # TODO: add attestation when SSL certificate is available from guest manager
             # manager_client = CvmClient(cvm_manager_url, auth)
 
-            logger.info(
-                f"Assigned and running agent {agent_id} in CVM at {worker.port}"
-            )
+            logger.info(f"Assigned and running agent {agent_id} in CVM at {worker.port}")
 
         except Exception as e:
             logger.info(f"Error getting CVM worker: {e}")
@@ -224,13 +206,9 @@ def invoke_agent_in_cvm(
     return worker
 
 
-@run_agent_router.post(
-    "/threads/runs", tags=["Agents", "Assistants"]
-)  # OpenAI compatibility
+@run_agent_router.post("/threads/runs", tags=["Agents", "Assistants"])  # OpenAI compatibility
 @run_agent_router.post("/agent/runs", tags=["Agents", "Assistants"])
-def run_agent(
-    body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_auth)
-) -> str:
+def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_auth)) -> str:
     """Run an agent against an existing or a new thread.
 
     Returns the ID of the new thread resulting from the run.
@@ -295,13 +273,9 @@ def run_agent(
     }
 
     if not agent_entry:
-        raise HTTPException(
-            status_code=404, detail=f"Agent '{agent_entry}' not found in the registry."
-        )
+        raise HTTPException(status_code=404, detail=f"Agent '{agent_entry}' not found in the registry.")
 
-    specific_agent_version_to_run = (
-        f"{agent_entry.namespace}/{agent_entry.name}/{agent_entry.version}"
-    )
+    specific_agent_version_to_run = f"{agent_entry.namespace}/{agent_entry.name}/{agent_entry.version}"
     framework = agent_entry.get_framework()
 
     with get_session() as session:
@@ -339,9 +313,7 @@ def run_agent(
     run_id = run_model.id
 
     if framework == "prompt":
-        raise HTTPException(
-            status_code=400, detail="Prompt only agents are not implemented yet."
-        )
+        raise HTTPException(status_code=400, detail="Prompt only agents are not implemented yet.")
 
     if runner == "custom_runner":
         custom_runner_url = getenv("CUSTOM_RUNNER_URL", None)
@@ -362,9 +334,7 @@ def run_agent(
             agents,
             thread_id,
             run_id,
-            AuthData(
-                **auth.model_dump()
-            ),  # TODO: https://github.com/nearai/nearai/issues/421
+            AuthData(**auth.model_dump()),  # TODO: https://github.com/nearai/nearai/issues/421
             params,
         )
     else:
@@ -413,9 +383,7 @@ def get_agent_entry(agent, data_source: str) -> Optional[RegistryEntry]:
             version=entry_location.version,
         )
     else:
-        raise HTTPException(
-            status_code=404, detail=f"Illegal data_source '{data_source}'."
-        )
+        raise HTTPException(status_code=404, detail=f"Illegal data_source '{data_source}'.")
 
 
 class FilterAgentsRequest(BaseModel):
@@ -427,9 +395,7 @@ class FilterAgentsRequest(BaseModel):
 
 
 @run_agent_router.post("/find_agents", response_model=List[RegistryEntry])
-def find_agents(
-    request_data: FilterAgentsRequest, auth: AuthToken = Depends(get_auth)
-) -> List[RegistryEntry]:
+def find_agents(request_data: FilterAgentsRequest, auth: AuthToken = Depends(get_auth)) -> List[RegistryEntry]:
     """Find agents based on various parameters."""
     with get_session() as session:
         # Start building the base query
@@ -476,9 +442,7 @@ def find_agents(
 
         # Filter by capabilities (if flag is set)
         if request_data.with_capabilities:
-            query = query.filter(
-                text("JSON_EXTRACT_JSON(details, 'capabilities') IS NOT NULL")
-            )
+            query = query.filter(text("JSON_EXTRACT_JSON(details, 'capabilities') IS NOT NULL"))
 
         # Limit and offset
         query = query.limit(request_data.limit).offset(request_data.offset)
