@@ -566,8 +566,31 @@ class BenchmarkCli:
       Commands for running and listing benchmarks on datasets with solver strategies.
 
     Commands:
-      run    Run benchmark on a dataset with a solver strategy
-      list   List all executed benchmarks
+      run    Run benchmark on a dataset with a solver strategy (dataset*, solver_strategy*, --max-concurrent, --force, --subset, --check-compatibility, --record, --num-inference-retries)
+      list   List all executed benchmarks (--namespace, --benchmark, --solver, --args, --total, --offset)
+    
+    Options:
+      dataset             Dataset to benchmark on
+      solver_strategy     Solver strategy to use
+      --max-concurrent    Number of concurrent tasks to run (default: 2)
+      --force             Force re-run even if cached results exist
+      --subset            Subset of the dataset to run on
+      --check-compatibility  Check if solver is compatible with dataset (default: True)
+      --record            Record the benchmark results
+      --num-inference-retries  Number of retries for inference (default: 10)
+      --namespace         Filter benchmarks by namespace
+      --benchmark         Filter benchmarks by benchmark name
+      --solver            Filter benchmarks by solver name
+      --args              Filter benchmarks by solver arguments
+      --total             Total number of results to show (default: 32)
+      --offset            Offset for pagination (default: 0)
+    
+    Examples:
+      # Run a benchmark on a dataset with a solver strategy
+      nearai benchmark run my-dataset my-solver-strategy --max-concurrent 4 --force
+      
+      # List benchmark results filtered by namespace
+      nearai benchmark list --namespace my-namespace --benchmark my-benchmark --total 50
     """
     def __init__(self):
         """Initialize Benchmark API."""
@@ -700,6 +723,11 @@ class BenchmarkCli:
             )
 
         print(tabulate(table, headers=header, tablefmt="simple_grid"))
+
+    def __call__(self) -> None:
+        """Show help when 'nearai benchmark' is called without subcommands."""
+        custom_args = ["nearai", "benchmark", "--help"]
+        handle_help_request(custom_args)
 
 
 class EvaluationCli:
