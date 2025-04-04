@@ -1312,12 +1312,7 @@ class PermissionCli:
 
 class CLI:
     """
-    Description:
-      NEAR AI is a powerful tool for building and deploying user-owned AI agents. Use the commands below to get started or add --help to any command for more information.
-
-    Commands:
-
-    Getting Started
+    Getting Started:
       login        Authenticate with your NEAR account
       logout       Clear your NEAR account authentication data
       version      Display the current version of the CLI
@@ -1332,12 +1327,12 @@ class CLI:
       agent inspect      Inspect environment from given path
 
     Registry Management:
-      registry upload            Upload an item to the registry
-      registry download          Download an item from the registry
-      registry info              Show information about a registry item
-      registry list              List available items in the registry
-      registry update            Update the remote version in an agent's metadata.json file
-      registry metadata-template Create a metadata template
+      registry upload             Upload an item to the registry
+      registry download           Download an item from the registry
+      registry info               Show information about a registry item
+      registry list               List available items in the registry
+      registry update             Update the remote version in an agent's metadata.json file
+      registry metadata-template  Create a metadata template
 
     Model Operations:
       benchmark run      Run benchmark on a dataset with a solver strategy
