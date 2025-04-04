@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  guest_manager:
+    image: plgnai/guest_manager
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/tappd.sock:/var/run/tappd.sock
+    environment:
+      - RUST_LOG=debug
+    restart: unless-stopped
