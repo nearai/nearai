@@ -98,7 +98,7 @@ async def generate_embeddings_for_file(file_id: str, vector_store_id: str, chunk
     embedding_tasks = [generate_embedding(chunk) for chunk in chunks]
     embeddings = await asyncio.gather(*embedding_tasks)
 
-    for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+    for i, (chunk, embedding) in enumerate(zip(chunks, embeddings, strict=False)):
         embedding_id = f"vfe_{uuid.uuid4().hex[:24]}"
         try:
             sql_client.store_embedding(

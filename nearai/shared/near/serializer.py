@@ -29,7 +29,7 @@ class BinarySerializer:
                 pass
             else:
                 assert len(value) == len(field_type)
-                for v, t in zip(value, field_type):
+                for v, t in zip(value, field_type, strict=False):
                     self.serialize_field(v, t)
         elif type(field_type) == str:  # noqa: E721
             if field_type == "bool":

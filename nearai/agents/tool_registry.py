@@ -1,7 +1,7 @@
 import inspect
 from typing import Any, Callable, Dict, Literal, Optional, _GenericAlias, get_type_hints  # type: ignore
 
-from nearai.agents.models.tool_definition import MCPTool
+from mcp.types import Tool
 
 
 class ToolRegistry:
@@ -37,7 +37,7 @@ class ToolRegistry:
         """Register a tool."""
         self.tools[tool.__name__] = tool
 
-    def register_mcp_tool(self, mcp_tool: MCPTool, call_tool: Callable) -> None:  # noqa: D102
+    def register_mcp_tool(self, mcp_tool: Tool, call_tool: Callable) -> None:  # noqa: D102
         """Register a tool callable from its definition."""
 
         async def tool(**kwargs):
