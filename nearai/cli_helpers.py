@@ -244,17 +244,14 @@ def format_main_menu_help(cli) -> None:
                 if not cmd.startswith("nearai ") and not cmd.startswith("["):
                     cmd = f"nearai {cmd}"
                 table.add_row(cmd, "")
-
-    console.print("\n")
-    console.print(table)
     
-    # Add link to docs
-    console.print("\n[bold green]Documentation:[/bold green]")
+    console.print(table)
     console.print(
-        "[bold blue]At any time you can run `nearai <command> --help` to get more information about a command.[/bold blue]"
+        "[bold white] At any time you can run [bold green]`nearai <command> --help`[/bold green] to get more information about a command.\n[/bold white]"
     )
     console.print(
-        "[bold blue]Also, please refer to the NEAR AI documentation for more information: https://docs.near.ai/[/bold blue]\n"
+        "[bold blue] - For more info see: [bold green]https://docs.near.ai/[/bold green][/bold blue]\n"
+        "[bold blue] - For community support, join our Telegram group: [bold green]https://t.me/nearaialpha[/bold green][/bold blue]\n"
     )
 
 
