@@ -7,7 +7,6 @@ import {
   Flex,
   Grid,
   IconCircle,
-  PlaceholderStack,
   Section,
   SvgIcon,
   Text,
