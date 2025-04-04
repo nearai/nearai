@@ -1537,13 +1537,14 @@ class Environment(object):
         return None
 
     async def _get_transport_method(self, mcp_server_config: MCPServerConfig) -> Tuple[Callable, Any]:
+        """Get the transport method and parameters for an MCP server config."""
         self.add_system_log(f"MCP SERVER CONFIG: {mcp_server_config}")
 
-        if not mcp_server_config.url and not mcp_server_config.command:
+        if mcp_server_config.url is None and mcp_server_config.command is None:
             raise ValueError("MCP server needs either a url or a command to be set")
 
         transport_type = MCPTransportType.SSE if mcp_server_config.url else MCPTransportType.STDIO
-        self.add_system_log(f"Connecting to MCP Server {mcp_server_config.server_name} using {transport_type}...")
+        self.add_system_log(f"Connecting to MCP Server {mcp_server_config.name} using {transport_type}...")
 
         transport_method = sse_client if transport_type == MCPTransportType.SSE else stdio_client
 
@@ -1587,9 +1588,12 @@ class Environment(object):
         mcp_servers_added = []
 
         for mcp_server_config in mcp_server_configs:
+            if isinstance(mcp_server_config, dict):
+                mcp_server_config = MCPServerConfig(**mcp_server_config)
+
             (transport_method, transport_params) = await self._get_transport_method(mcp_server_config)
             try:
-                mcp_server_name = mcp_server_config.server_name
+                mcp_server_name = mcp_server_config.name
                 async with transport_method(transport_params) as streams:
                     async with ClientSession(streams[0], streams[1]) as session:
                         await session.initialize()
@@ -1602,7 +1606,7 @@ class Environment(object):
                         for mcp_tool in mcp_tools:
                             tool_registry.register_mcp_tool(mcp_tool, session.call_tool)
                             tool_server_map[mcp_tool.name] = {
-                                "server_name": mcp_server_name,
+                                "name": mcp_server_name,
                                 "connect": transport_method(transport_params),
                             }
             except Exception:

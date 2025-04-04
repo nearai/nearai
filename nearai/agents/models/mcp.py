@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 
 class MCPServerConfig(BaseModel):
-    server_name: str
+    name: str
     url: Optional[str] = None
     command: Optional[str] = None
     args: Optional[List[str]] = None
