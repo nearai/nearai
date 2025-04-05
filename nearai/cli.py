@@ -887,7 +887,15 @@ class AgentCli:
       https://docs.near.ai/agents/quickstart
     """
     def dev(self) -> int:
-        """Run local UI for development of agents that have their own UI."""
+        """
+        Description:
+          Run a local development UI for agents that have their own UI. This launches a local server
+          for testing and developing agent functionality in a browser-based environment.
+
+        Examples:
+          # Start the local development server
+          nearai agent dev
+        """
         if not os.path.exists("hub/demo/.env"):
             shutil.copy("hub/demo/.env.example", "hub/demo/.env")
 
@@ -899,7 +907,21 @@ class AgentCli:
         return ret_val
 
     def inspect(self, path: str) -> None:
-        """Inspect environment from given path."""
+        """
+        Description:
+          Inspect the environment and contents of an agent at the specified path. This launches a Streamlit
+          interface showing the agent's structure, code, and metadata.
+
+        Arguments:
+          path*   Path to the agent directory to inspect (required)
+
+        Examples:
+          # Inspect a local agent
+          nearai agent inspect path/to/agent
+          
+          # Inspect a downloaded registry agent
+          nearai agent inspect .near-registry/your-namespace/agent-name/0.1.0
+        """
         import subprocess
 
         filename = Path(os.path.abspath(__file__)).parent / "streamlit_inspect.py"
@@ -914,17 +936,31 @@ class AgentCli:
         verbose: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Runs agent interactively.
+        """
+        Description:
+          Run an agent in interactive mode, allowing you to chat with it and provide tasks in a conversational interface.
+          If no agent is specified, you'll be presented with a list of available agents to choose from.
 
-        Args:
-        ----
-            agent: Optional path to the agent directory. If not provided, will show agent selection menu
-            thread_id: Optional thread ID to continue an existing conversation
-            tool_resources: Optional tool resources to pass to the agent
-            local: Whether to run the agent locally (default: False)
-            verbose: Whether to show detailed debug information during execution
-            env_vars: Optional environment variables to pass to the agent
+        Arguments:
+          --agent           Path to the agent directory or agent ID (optional)
+          --thread-id       Thread ID to continue an existing conversation
+          --tool-resources  Tool resources to pass to the agent (JSON format)
+          --local           Run the agent locally instead of in the cloud
+          --verbose         Show detailed debug information during execution
+          --env-vars        Environment variables to pass to the agent (JSON format)
 
+        Examples:
+          # Start interactive mode and select an agent from a list
+          nearai agent interactive
+          
+          # Run a specific agent interactively
+          nearai agent interactive --agent example.near/agent-name/0.0.3
+          
+          # Run an agent locally with verbose output
+          nearai agent interactive --agent path/to/local/agent --local --verbose
+          
+          # Continue an existing conversation
+          nearai agent interactive --agent example.near/agent-name/0.0.3 --thread-id abc123
         """
         assert_user_auth()
 
@@ -1062,7 +1098,31 @@ class AgentCli:
         verbose: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """CLI wrapper for the _task method."""
+        """
+        Description:
+          Run a single non-interactive task with an agent. The agent will process the task and return its response.
+          This is useful for automation or when you don't need an ongoing conversation.
+
+        Arguments:
+          --agent*          Path to the agent directory or agent ID (required)
+          --task*           The task or question to send to the agent (required)
+          --thread-id       Thread ID to continue an existing conversation
+          --tool-resources  Tool resources to pass to the agent (JSON format)
+          --file-ids        File IDs to attach to the message
+          --local           Run the agent locally instead of in the cloud
+          --verbose         Show detailed debug information during execution
+          --env-vars        Environment variables to pass to the agent (JSON format)
+
+        Examples:
+          # Send a simple task to an agent
+          nearai agent task --agent example.near/agent-name/0.0.3 --task "Summarize this article: https://example.com/article"
+          
+          # Run a local agent with environment variables
+          nearai agent task --agent path/to/agent --task "Generate a report" --local --env-vars '{"API_KEY": "secret"}'
+          
+          # Continue a conversation in an existing thread
+          nearai agent task --agent example.near/agent-name/0.0.3 --task "Continue the analysis" --thread-id abc123
+        """
         last_message_id = self._task(
             agent=agent,
             task=task,
@@ -1149,28 +1209,27 @@ class AgentCli:
         return last_message_id
 
     def create(self, name: Optional[str] = None, description: Optional[str] = None, fork: Optional[str] = None) -> None:
-        """Create a new agent or fork an existing one.
+        """
+        Description:
+          The 'create' command helps you build new AI agents from scratch or fork existing ones. You can create agents interactively or specify parameters directly.
 
-        The 'create' command helps you build new AI agents from scratch or fork existing ones.
-        You can create agents interactively or specify parameters directly.
-
-        Usage:
-          nearai agent create  # Enters interactive mode
-          nearai agent create --name <agent_name> --description <description>
-          nearai agent create --fork <namespace/agent_name/version> [--name <new_agent_name>]
-
-        Options:
+        Arguments:
           --name          Name for the new agent (optional).
           --description   Description of the new agent (optional).
           --fork          Path to an existing agent to fork (format: namespace/agent_name/version).
 
         Examples:
-          nearai agent create   # Enters interactive mode (recommended for beginners)
+          # Enter interactive mode (recommended for beginners)
+          nearai agent create
+          
+          # Create with specific name and description
           nearai agent create --name my_agent --description "My new agent"
+          
+          # Fork an existing agent and give it a new name
           nearai agent create --fork example.near/agent-name/0.0.3 --name new_agent_name
 
-        Documentation: https://docs.near.ai/agents/quickstart
-
+        Documentation: 
+          https://docs.near.ai/agents/quickstart
         """
         # Check if the user is authenticated
         if CONFIG.auth is None or CONFIG.auth.namespace is None:

@@ -255,27 +255,45 @@ def format_main_menu_help(cli) -> None:
     )
 
 
-def format_class_help(obj) -> None:
-    """Format a class's docstring as a help message and display it with rich formatting.
+def format_help(obj, method_name: str = "__class__") -> None:
+    """Format a class or method's docstring as a help message and display it with rich formatting.
     
     Args:
-        obj: The class object whose docstring should be formatted
+        obj: The object containing the docstring (class or method)
+        method_name: The name of the method to format, or "__class__" to format the class's docstring
     """
     console = Console()
     
-    docstring = inspect.getdoc(obj)
+    # Special case for CLI main menu
+    if method_name == "__class__" and obj.__class__.__name__ == "CLI":
+        format_main_menu_help(obj)
+        return
+        
+    # Get docstring from class or method
+    if method_name == "__class__":
+        docstring = inspect.getdoc(obj)
+        class_name = obj.__class__.__name__
+        display_name = class_name.replace("Cli", "").replace("CLI", "")
+        is_class = True
+        title = f"NEAR AI {display_name} Commands"
+    else:
+        method = getattr(obj, method_name, None)
+        if not method or not method.__doc__:
+            console.print(f"[bold red]No documentation available for {method_name}[/bold red]")
+            return
+        docstring = inspect.getdoc(method)
+        class_name = obj.__class__.__name__
+        display_name = class_name.replace("Cli", "").replace("CLI", "")
+        command_name = method_name.capitalize()
+        is_class = False
+        title = f"NEAR AI {display_name} {command_name}"
+    
     if not docstring:
         console.print(f"[bold red]No documentation available for {obj.__class__.__name__}[/bold red]")
         return
     
-    # Use the class name for the title
-    class_name = obj.__class__.__name__
-    # Remove "Cli" or "CLI" suffix if present for cleaner display
-    display_name = class_name.replace("Cli", "").replace("CLI", "")
-    
-    # Display title (except for main CLI which has a banner)
-    if class_name != "CLI":
-        console.print(f"\n[bold cyan]NEAR AI {display_name} Commands[/bold cyan]\n")
+    # Display title
+    console.print(f"\n[bold cyan]{title}[/bold cyan]\n")
     
     # Extract sections from docstring with simplified parsing
     sections = {}
@@ -317,17 +335,18 @@ def format_class_help(obj) -> None:
     if "description" in sections:
         description = " ".join(sections["description"])
         if description:
+            panel_title = f"{display_name} Info" if is_class else f"{display_name} {command_name} Command"
             console.print(
                 Panel(
                     description,
-                    title=f"{display_name} Info",
+                    title=panel_title,
                     border_style="green",
                     expand=False,
                 )
             )
     
-    # Process Commands section
-    if "commands" in sections:
+    # Process Commands section for classes
+    if is_class and "commands" in sections:
         console.print("\n[bold green]Available Commands:[/bold green]\n")
         commands_table = Table(box=ROUNDED, expand=False)
         commands_table.add_column("Command", style="cyan bold", no_wrap=True)
@@ -357,9 +376,41 @@ def format_class_help(obj) -> None:
         if has_required:
             console.print("\n* Required parameter\n")
     
+    # Process Arguments section for methods
+    if not is_class and "arguments" in sections:
+        console.print("\n[bold green]Arguments:[/bold green]\n")
+        
+        args_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
+        args_table.add_column(style="yellow")
+        args_table.add_column(style="white")
+        
+        current_arg = None
+        current_desc = []
+        
+        for line in sections["arguments"]:
+            if line.strip():
+                # Check if this line defines a new argument
+                arg_match = re.match(r'^\s*(\S+)\s+(.*?)$', line)
+                if arg_match:
+                    if current_arg:
+                        args_table.add_row(current_arg, " ".join(current_desc))
+                    current_arg = arg_match.group(1)
+                    current_desc = [arg_match.group(2).strip()]
+                else:
+                    # This is a continuation of the previous argument's description
+                    if current_arg:
+                        current_desc.append(line.strip())
+        
+        # Add the last argument
+        if current_arg:
+            args_table.add_row(current_arg, " ".join(current_desc))
+        
+        console.print(args_table)
+        console.print()
+    
     # Process Options section
     if "options" in sections:
-        console.print("[bold green]Options:[/bold green]\n")
+        console.print("\n[bold green]Options:[/bold green]\n")
         
         options_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
         options_table.add_column(style="yellow")
@@ -371,7 +422,7 @@ def format_class_help(obj) -> None:
         for line in sections["options"]:
             if line.strip():
                 # Check if this line defines a new option
-                option_match = re.match(r'^\s*(\S+)\s+(.*?)$', line)
+                option_match = re.match(r'^\s*(-{0,2}\S+)\s+(.*?)$', line)
                 if option_match:
                     if current_option:
                         options_table.add_row(current_option, " ".join(current_desc))
@@ -391,213 +442,52 @@ def format_class_help(obj) -> None:
     
     # Process Examples section
     if "examples" in sections:
-        console.print("[bold green]Examples:[/bold green]\n")
+        examples_text = []
+        
+        # Track comment/command pairs
+        current_example = []
+        in_example = False
+        
         for line in sections["examples"]:
             if line.strip():
                 if line.startswith("#"):
-                    console.print(f"[dim]{line}[/dim]")
+                    # Start a new example if we weren't already in one
+                    if current_example and not in_example:
+                        examples_text.append("\n".join(current_example))
+                        examples_text.append("")  # Empty line between examples
+                        current_example = []
+                    
+                    # Add the comment
+                    current_example.append(f"[dim]{line}[/dim]")
+                    in_example = True
                 else:
-                    console.print(f"[cyan]{line}[/cyan]\n")
+                    # Add the command
+                    current_example.append(f"[cyan]{line}[/cyan]")
+                    in_example = False
             else:
-                console.print("")
+                # Empty line in docstring - add to current example
+                if current_example:
+                    current_example.append("")
+        
+        # Add the last example if there is one
+        if current_example:
+            examples_text.append("\n".join(current_example))
+        
+        console.print(
+            Panel(
+                "\n".join(examples_text),
+                title="Examples",
+                border_style="cyan",
+                expand=False,
+                padding=(1, 2)
+            )
+        )
         console.print()
     
     # Process Documentation section 
     if "documentation" in sections:
         doc_content = " ".join(sections["documentation"])
-        console.print(f"For more information, see: [bold blue]{doc_content}[/bold blue]\n")
-
-
-def format_command_help(obj, method_name: str) -> None:
-    """Format a command's docstring as a help message and display it with rich formatting.
-    
-    Args:
-        obj: The object containing the method
-        method_name: The name of the method whose docstring should be formatted as help
-    """
-    console = Console()
-    
-    # Get the method object and its docstring
-    method = getattr(obj, method_name, None)
-    if not method or not method.__doc__:
-        console.print(f"[bold red]No documentation available for {method_name}[/bold red]")
-        return
-    
-    docstring = inspect.getdoc(method)
-    
-    # Extract the first line as the title
-    title_match = re.match(r'^(.*?)\.(?:\s|$)', docstring, re.DOTALL)
-    title = title_match.group(1) if title_match else method_name.capitalize()
-    
-    # Remove the title from the docstring for further processing
-    if title_match:
-        docstring = docstring[len(title_match.group(0)):].strip()
-    
-    console.print(f"\n[bold cyan]NEAR AI {title}[/bold cyan]\n")
-    
-    # Extract sections
-    sections = {}
-    current_section = "description"  # Default section
-    sections[current_section] = []
-    
-    lines = docstring.split("\n")
-    for line in lines:
-        # Check if this line could be a section header
-        if re.match(r'^[A-Za-z][A-Za-z\s]+:$', line):
-            current_section = line[:-1].lower()  # Remove the colon
-            sections[current_section] = []
-        else:
-            sections[current_section].append(line)
-    
-    # Process description
-    description = "\n".join(sections.get("description", [])).strip()
-    if description:
-        console.print(
-            Panel(
-                description,
-                title=f"description {title}",
-                border_style="blue",
-                expand=False,
-            )
-        )
-    
-    # Process Usage section if available
-    if "usage" in sections:
-        console.print("[bold green]Command Syntax:[/bold green]\n")
-        for line in sections["usage"]:
-            if line.strip():
-                console.print(line)
-        console.print("")
-    
-    # Process Parameter Details
-    if "parameter details" in sections or "args" in sections:
-        param_section = "parameter details" if "parameter details" in sections else "args"
-        console.print("\n[bold green]Parameter Details:[/bold green]\n")
-        
-        param_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
-        param_table.add_column(style="yellow")
-        param_table.add_column(style="white")
-        
-        current_param = None
-        current_desc = []
-        
-        for line in sections[param_section]:
-            if line.strip():
-                # Check if this line defines a new parameter
-                param_match = re.match(r'^\s*(\w+)\s+(.*?)$', line)
-                if param_match:
-                    if current_param:
-                        param_table.add_row(current_param, " ".join(current_desc))
-                    current_param = param_match.group(1)
-                    current_desc = [param_match.group(2).strip()]
-                else:
-                    # This is a continuation of the previous parameter's description
-                    if current_param:
-                        current_desc.append(line.strip())
-        
-        # Add the last parameter
-        if current_param:
-            param_table.add_row(current_param, " ".join(current_desc))
-        
-        console.print(param_table)
-    
-    # Process Options or Flag Details
-    flag_section = None
-    if "options" in sections:
-        flag_section = "options"
-    elif "flag details" in sections:
-        flag_section = "flag details"
-    
-    if flag_section:
-        console.print("\n[bold green]Flag Details:[/bold green]\n")
-        
-        flag_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
-        flag_table.add_column(style="yellow")
-        flag_table.add_column(style="white")
-        
-        current_flag = None
-        current_desc = []
-        
-        for line in sections[flag_section]:
-            if line.strip():
-                # Check if this line defines a new flag
-                flag_match = re.match(r'^\s*(-{1,2}\w+)\s+(.*?)$', line)
-                if flag_match:
-                    if current_flag:
-                        flag_table.add_row(current_flag, " ".join(current_desc))
-                    current_flag = flag_match.group(1)
-                    current_desc = [flag_match.group(2).strip()]
-                else:
-                    # This is a continuation of the previous flag's description
-                    if current_flag:
-                        current_desc.append(line.strip())
-        
-        # Add the last flag
-        if current_flag:
-            flag_table.add_row(current_flag, " ".join(current_desc))
-        
-        console.print(flag_table)
-    
-    # Process Examples
-    if "examples" in sections:
-        console.print("\n[bold green]Examples:[/bold green]\n")
-        for line in sections["examples"]:
-            if line.strip():
-                if line.startswith("#"):
-                    console.print(f"[dim]{line}[/dim]")
-                else:
-                    console.print(f"[cyan]{line}[/cyan]")
-            else:
-                console.print("")
-    
-    # Process Returns if available
-    if "returns" in sections:
-        console.print("\n[bold green]Returns:[/bold green]\n")
-        returns_text = "\n".join(sections["returns"]).strip()
-        console.print(returns_text)
-        console.print("")
-    
-    # Process Documentation or other footer sections
-    for section_name, section_content in sections.items():
-        if section_name not in ["description", "usage", "parameter details", "args", "options", 
-                               "flag details", "examples", "returns"] and section_content:
-            # Format the section header with proper capitalization
-            header = section_name.title()
-            content = "\n".join(section_content).strip()
-            if "documentation" in section_name.lower():
-                console.print(f"\n[bold blue]{content}[/bold blue]\n")
-            else:
-                console.print(f"\n[bold green]{header}:[/bold green]\n")
-                console.print(content)
-                console.print("")
-
-
-def format_subcommand_help(obj, method_name: str) -> None:
-    """Format a subcommand's docstring as a help message and display it with rich formatting.
-    
-    Args:
-        obj: The object containing the method
-        method_name: The name of the method whose docstring should be formatted as help
-    """
-    # For now, subcommand help uses the same processing as command help
-    format_command_help(obj, method_name)
-
-
-def format_help(obj, method_name: str) -> None:
-    """Format a method's docstring as a help message and display it with rich formatting.
-    
-    Args:
-        obj: The object containing the method
-        method_name: The name of the method whose docstring should be formatted as help,
-                     or "__class__" to format the class's docstring
-    """
-    # Special case for CLI main menu
-    if method_name == "__class__" and obj.__class__.__name__ == "CLI":
-        format_main_menu_help(obj)
-    elif method_name == "__class__":
-        format_class_help(obj)
-    else:
-        format_command_help(obj, method_name)
+        console.print(f"For more information see: [bold blue]{doc_content}[/bold blue]\n")
 
 
 def handle_class_help(cli):
@@ -624,7 +514,7 @@ def handle_command_help(cli, command):
         True if help was displayed, False otherwise
     """
     if hasattr(cli, command):
-        format_class_help(getattr(cli, command))
+        format_help(getattr(cli, command))
         return True
     return False
 
@@ -643,7 +533,7 @@ def handle_subcommand_help(cli, command, subcommand):
     if hasattr(cli, command):
         cmd_obj = getattr(cli, command)
         if hasattr(cmd_obj, subcommand):
-            format_subcommand_help(cmd_obj, subcommand)
+            format_help(cmd_obj, subcommand)
             return True
     return False
 
