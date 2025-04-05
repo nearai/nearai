@@ -26,6 +26,7 @@ from nearai.cli_helpers import (
     assert_user_auth,
     display_agents_in_columns,
     display_version_check,
+    handle_help_request,
     has_pending_input,
     load_and_validate_metadata,
 )
@@ -72,6 +73,53 @@ from nearai.tensorboard_feed import TensorboardCli
 
 
 class RegistryCli:
+    """
+    Description: 
+    Registry commands help you manage items in the NEAR AI registry, including uploading, downloading, 
+    and listing agents, models, and other resources.
+
+    Commands:
+      upload             Upload an item to the registry ([PATH]*)
+      download           Download an item from the registry (entry-location*, --force)
+      info               Show information about a registry item (entry*)
+      list               List available items in the registry (--namespace, --category, --tags, --total, --offset, --show-all, --show-latest-version, --star)
+      metadata-template  Create a metadata template (--local-path, --category, --description)
+      update             Update metadata of a registry item (<PATH>)
+
+    Options:
+      <PATH>              Path to the directory containing the agent to upload
+      --force             Force download even if the item exists locally
+      --namespace         Filter items by namespace
+      --category          Filter items by category (e.g., 'agent', 'model')
+      --tags              Filter items by tags (comma-separated)
+      --total             Maximum number of items to show
+      --offset            Offset for pagination
+      --show-all          Show all versions of items
+      --show-latest-version  Show only the latest version of each item
+      --star              Show items starred by a specific user
+
+    Examples:
+      # Upload an agent to the registry
+      nearai registry upload path/to/agent
+
+      # Download an item from the registry
+      nearai registry download example.near/agent-name/0.0.3
+
+      # Show information about a registry item
+      nearai registry info example.near/agent-name/0.0.3
+
+      # List all agents in the registry
+      nearai registry list --category agent
+
+      # List items with specific tags
+      nearai registry list --tags "summarization,text"
+
+      # Create a metadata template
+      nearai registry metadata-template --category agent --description "My agent description"
+
+    Documentation: 
+        https://docs.near.ai/agents/registry
+    """
     def info(self, entry: str) -> None:
         """Show information about an item."""
         entry_location = parse_location(entry)
@@ -394,7 +442,7 @@ class RegistryCli:
                     ("Or use the following flags:\n", "yellow"),
                     ("  --bump          # Patch update (0.0.1 → 0.0.2)\n", "green"),
                     ("  --minor-bump    # Minor update (0.0.1 → 0.1.0)\n", "green"),
-                    ("  --major-bump    # Major update (0.0.1 → 1.0.0)\n", "green"),
+                    ("  --major-bump    # Major update (0.1.0 → 1.0.0)\n", "green"),
                 ),
                 title="Version Conflict",
                 border_style="red",
@@ -453,8 +501,47 @@ class RegistryCli:
         """Download item."""
         registry.download(entry_location, force=force, show_progress=True)
 
+    def __call__(self):
+        """Show help when 'nearai registry' is called without subcommands."""
+        custom_args = ["nearai", "registry", "--help"]
+        handle_help_request(custom_args)
+
 
 class ConfigCli:
+    """
+    Description: 
+      Configuration commands help you manage your NEAR AI CLI settings. You can view, set, and modify various configuration values that control how the CLI behaves.
+
+    Commands:
+      set    Add or update a configuration value (key*, value*, --local)
+      get    Retrieve a configuration value (key*)
+      show   Display all configuration values
+
+    Options:
+      key       The configuration key to set or get
+      value     The value to assign to the configuration key
+      --local   Store the configuration value in the local config file (default: global)
+
+    Examples:
+
+      # View all configuration values
+      nearai config show
+
+      # Get a specific configuration value
+      nearai config get api_url
+
+      # Set a configuration value (globally)
+      nearai config set model claude-3-opus-20240229
+
+      # Set a configuration value (locally for current project)
+      nearai config set model claude-3-opus-20240229 --local
+
+      # Change the API URL
+      nearai config set api_url https://custom-api.example.com
+
+    Documentation:
+      https://docs.near.ai/reference/configuration
+    """
     def set(self, key: str, value: str, local: bool = False) -> None:
         """Add key-value pair to the config file."""
         update_config(key, value, local)
@@ -467,8 +554,44 @@ class ConfigCli:
         for key, value in asdict(CONFIG).items():
             print(f"{key}: {value}")
 
+    def __call__(self) -> None:
+        """Show help when 'nearai config' is called without subcommands."""
+        custom_args = ["nearai", "config", "--help"]
+        handle_help_request(custom_args)
+
 
 class BenchmarkCli:
+    """
+    Description: 
+      Commands for running and listing benchmarks on datasets with solver strategies.
+
+    Commands:
+      run    Run benchmark on a dataset with a solver strategy (dataset*, solver_strategy*, --max-concurrent, --force, --subset, --check-compatibility, --record, --num-inference-retries)
+      list   List all executed benchmarks (--namespace, --benchmark, --solver, --args, --total, --offset)
+    
+    Options:
+      dataset             Dataset to benchmark on
+      solver_strategy     Solver strategy to use
+      --max-concurrent    Number of concurrent tasks to run (default: 2)
+      --force             Force re-run even if cached results exist
+      --subset            Subset of the dataset to run on
+      --check-compatibility  Check if solver is compatible with dataset (default: True)
+      --record            Record the benchmark results
+      --num-inference-retries  Number of retries for inference (default: 10)
+      --namespace         Filter benchmarks by namespace
+      --benchmark         Filter benchmarks by benchmark name
+      --solver            Filter benchmarks by solver name
+      --args              Filter benchmarks by solver arguments
+      --total             Total number of results to show (default: 32)
+      --offset            Offset for pagination (default: 0)
+    
+    Examples:
+      # Run a benchmark on a dataset with a solver strategy
+      nearai benchmark run my-dataset my-solver-strategy --max-concurrent 4 --force
+      
+      # List benchmark results filtered by namespace
+      nearai benchmark list --namespace my-namespace --benchmark my-benchmark --total 50
+    """
     def __init__(self):
         """Initialize Benchmark API."""
         self.client = BenchmarkApi()
@@ -601,8 +724,43 @@ class BenchmarkCli:
 
         print(tabulate(table, headers=header, tablefmt="simple_grid"))
 
+    def __call__(self) -> None:
+        """Show help when 'nearai benchmark' is called without subcommands."""
+        custom_args = ["nearai", "benchmark", "--help"]
+        handle_help_request(custom_args)
+
 
 class EvaluationCli:
+    """
+    Description:
+      Commands for evaluating and analyzing model performance on benchmark datasets.
+
+    Commands:
+      table           Print table of evaluations (--all-key-columns, --all-metrics, --num-columns, --metric-name-max-length)
+      read_solutions  Read solutions.json from evaluation entry (entry*, --status, --verbose)
+    
+    Options:
+      entry                   Evaluation entry to read solutions from (format: namespace/name/version)
+      --all-key-columns       Show all key columns in the table
+      --all-metrics           Show all metrics in the table
+      --num-columns           Maximum number of columns to display (default: 6)
+      --metric-name-max-length Maximum length for metric names in display (default: 30)
+      --status                Filter solutions by status (true/false)
+      --verbose               Show verbose information including detailed logs
+    
+    Examples:
+      # Display evaluation table with default settings
+      nearai evaluation table
+      
+      # Display evaluation table with all metrics and columns
+      nearai evaluation table --all-key-columns --all-metrics --num-columns 10
+      
+      # Read solutions from an evaluation entry
+      nearai evaluation read_solutions example.near/benchmark-result/0.1.0
+      
+      # Read only successful solutions with verbose output
+      nearai evaluation read_solutions example.near/benchmark-result/0.1.0 --status true --verbose
+    """
     def table(
         self,
         all_key_columns: bool = False,
@@ -666,11 +824,78 @@ class EvaluationCli:
             new_message = input("> ")
             if new_message.lower() == "exit":
                 break
+                
+    def __call__(self) -> None:
+        """Show help when 'nearai evaluation' is called without subcommands."""
+        custom_args = ["nearai", "evaluation", "--help"]
+        handle_help_request(custom_args)
 
 
 class AgentCli:
+    """
+    Description: 
+      For creating and interacting with agents, run them locally or via NEAR AI Cloud, and manage their lifecycle.
+
+    Commands:
+      create        Create a new agent or fork an existing one (--name, --description, --fork)
+      interactive   Run an agent interactively (--agent, --thread-id, --tool-resources, --local, --verbose, --env-vars)
+      task          Run a single task with an agent (--agent*, --task*, --thread-id, --tool-resources, --file-ids, --local, --verbose, --env-vars)
+      upload        Upload an agent to the registry (--local-path, --bump, --minor-bump, --major-bump)
+      dev           Run local UI for development of agents
+      inspect       Inspect environment from given path (<PATH>*)
+
+    Options:
+      <PATH>          Path to the agent directory or agent ID
+      --name          Name for the new agent
+      --description   Description of the new agent
+      --fork          Path to an existing agent to fork (format: namespace/name/version)
+      --agent         Path to the agent directory or agent ID
+      --thread-id     Thread ID to continue an existing conversation
+      --tool-resources Tool resources to pass to the agent
+      --file-ids      File IDs to attach to the message
+      --local         Run the agent locally instead of in the cloud
+      --verbose       Show detailed debug information during execution
+      --env-vars      Environment variables to pass to the agent
+      --task          Task to run with the agent
+      --bump          Automatically increment patch version if it already exists
+      --minor-bump    Bump with minor version increment (0.1.0 → 0.2.0)
+      --major-bump    Bump with major version increment (0.1.0 → 1.0.0)
+
+    Examples:
+      # Create a new agent interactively
+      nearai agent create
+
+      # Create a new agent with specific name and description
+      nearai agent create --name my-agent --description "My helpful assistant"
+
+      # Run an agent interactively
+      nearai agent interactive
+
+      # Run a specific agent interactively in local mode
+      nearai agent interactive --agent path/to/agent --local
+
+      # Run a single task with an agent
+      nearai agent task --agent example.near/agent-name/0.0.3 --task "Summarize this article: https://example.com/article"
+
+      # Upload an agent to the registry
+      nearai agent upload path/to/agent
+
+      # Upload an agent with automatic version bumping
+      nearai agent upload path/to/agent --bump
+
+    Documentation: 
+      https://docs.near.ai/agents/quickstart
+    """
     def dev(self) -> int:
-        """Run local UI for development of agents that have their own UI."""
+        """
+        Description:
+          Run a local development UI for agents that have their own UI. This launches a local server
+          for testing and developing agent functionality in a browser-based environment.
+
+        Examples:
+          # Start the local development server
+          nearai agent dev
+        """
         if not os.path.exists("hub/demo/.env"):
             shutil.copy("hub/demo/.env.example", "hub/demo/.env")
 
@@ -682,7 +907,21 @@ class AgentCli:
         return ret_val
 
     def inspect(self, path: str) -> None:
-        """Inspect environment from given path."""
+        """
+        Description:
+          Inspect the environment and contents of an agent at the specified path. This launches a Streamlit
+          interface showing the agent's structure, code, and metadata.
+
+        Arguments:
+          path*   Path to the agent directory to inspect (required)
+
+        Examples:
+          # Inspect a local agent
+          nearai agent inspect path/to/agent
+          
+          # Inspect a downloaded registry agent
+          nearai agent inspect .near-registry/your-namespace/agent-name/0.1.0
+        """
         import subprocess
 
         filename = Path(os.path.abspath(__file__)).parent / "streamlit_inspect.py"
@@ -697,17 +936,31 @@ class AgentCli:
         verbose: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Runs agent interactively.
+        """
+        Description:
+          Run an agent in interactive mode, allowing you to chat with it and provide tasks in a conversational interface.
+          If no agent is specified, you'll be presented with a list of available agents to choose from.
 
-        Args:
-        ----
-            agent: Optional path to the agent directory. If not provided, will show agent selection menu
-            thread_id: Optional thread ID to continue an existing conversation
-            tool_resources: Optional tool resources to pass to the agent
-            local: Whether to run the agent locally (default: False)
-            verbose: Whether to show detailed debug information during execution
-            env_vars: Optional environment variables to pass to the agent
+        Arguments:
+          --agent           Path to the agent directory or agent ID (optional)
+          --thread-id       Thread ID to continue an existing conversation
+          --tool-resources  Tool resources to pass to the agent (JSON format)
+          --local           Run the agent locally instead of in the cloud
+          --verbose         Show detailed debug information during execution
+          --env-vars        Environment variables to pass to the agent (JSON format)
 
+        Examples:
+          # Start interactive mode and select an agent from a list
+          nearai agent interactive
+          
+          # Run a specific agent interactively
+          nearai agent interactive --agent example.near/agent-name/0.0.3
+          
+          # Run an agent locally with verbose output
+          nearai agent interactive --agent path/to/local/agent --local --verbose
+          
+          # Continue an existing conversation
+          nearai agent interactive --agent example.near/agent-name/0.0.3 --thread-id abc123
         """
         assert_user_auth()
 
@@ -845,7 +1098,31 @@ class AgentCli:
         verbose: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """CLI wrapper for the _task method."""
+        """
+        Description:
+          Run a single non-interactive task with an agent. The agent will process the task and return its response.
+          This is useful for automation or when you don't need an ongoing conversation.
+
+        Arguments:
+          --agent*          Path to the agent directory or agent ID (required)
+          --task*           The task or question to send to the agent (required)
+          --thread-id       Thread ID to continue an existing conversation
+          --tool-resources  Tool resources to pass to the agent (JSON format)
+          --file-ids        File IDs to attach to the message
+          --local           Run the agent locally instead of in the cloud
+          --verbose         Show detailed debug information during execution
+          --env-vars        Environment variables to pass to the agent (JSON format)
+
+        Examples:
+          # Send a simple task to an agent
+          nearai agent task --agent example.near/agent-name/0.0.3 --task "Summarize this article: https://example.com/article"
+          
+          # Run a local agent with environment variables
+          nearai agent task --agent path/to/agent --task "Generate a report" --local --env-vars '{"API_KEY": "secret"}'
+          
+          # Continue a conversation in an existing thread
+          nearai agent task --agent example.near/agent-name/0.0.3 --task "Continue the analysis" --thread-id abc123
+        """
         last_message_id = self._task(
             agent=agent,
             task=task,
@@ -932,24 +1209,27 @@ class AgentCli:
         return last_message_id
 
     def create(self, name: Optional[str] = None, description: Optional[str] = None, fork: Optional[str] = None) -> None:
-        """Create a new agent or fork an existing one.
+        """
+        Description:
+          The 'create' command helps you build new AI agents from scratch or fork existing ones. You can create agents interactively or specify parameters directly.
 
-        Usage:
-          nearai agent create  # Enters interactive mode
-          nearai agent create --name <agent_name> --description <description>
-          nearai agent create --fork <namespace/agent_name/version> [--name <new_agent_name>]
-
-        Options:
-          --name          Name of the new agent (optional).
+        Arguments:
+          --name          Name for the new agent (optional).
           --description   Description of the new agent (optional).
-          --fork          Fork an existing agent specified by namespace/agent_name/version.
+          --fork          Path to an existing agent to fork (format: namespace/agent_name/version).
 
-        Examples
-        --------
-          nearai agent create   # Enters interactive mode
+        Examples:
+          # Enter interactive mode (recommended for beginners)
+          nearai agent create
+          
+          # Create with specific name and description
           nearai agent create --name my_agent --description "My new agent"
-          nearai agent create --fork agentic.near/summary/0.0.3 --name new_summary_agent
+          
+          # Fork an existing agent and give it a new name
+          nearai agent create --fork example.near/agent-name/0.0.3 --name new_agent_name
 
+        Documentation: 
+          https://docs.near.ai/agents/quickstart
         """
         # Check if the user is authenticated
         if CONFIG.auth is None or CONFIG.auth.namespace is None:
@@ -971,29 +1251,46 @@ class AgentCli:
     def upload(
         self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
     ) -> Optional[EntryLocation]:
-        """Upload agent to the registry.
-
-        This is an alias for 'nearai registry upload'.
-
-        Args:
-        ----
-            local_path: Path to the directory containing the agent to upload
-            bump: If True, automatically increment patch version if it already exists
-            minor_bump: If True, bump with minor version increment (0.1.0 → 0.2.0)
-            major_bump: If True, bump with major version increment (0.1.0 → 1.0.0)
-
-        Returns:
-        -------
-            EntryLocation if upload was successful, None otherwise
-
+        """This is an alias for 'nearai registry upload'.
+        
+        See 'nearai registry upload --help' for full documentation.
         """
         assert_user_auth()
         # Create an instance of RegistryCli and call its upload method
         registry_cli = RegistryCli()
         return registry_cli.upload(local_path, bump, minor_bump, major_bump)
 
+    def __call__(self) -> None:
+        """Show help when 'nearai agent' is called without subcommands."""
+        custom_args = ["nearai", "agent", "--help"]
+        handle_help_request(custom_args)
+
 
 class VllmCli:
+    """
+    Description: 
+      Commands for running VLLM server with OpenAI-compatible API for local inference.
+
+    Commands:
+      run    Run VLLM server with OpenAI-compatible API (--model, --host, --port, --tensor-parallel-size, --gpu-memory-utilization)
+    
+    Options:
+      --model                  Path to the model or model name from Hugging Face
+      --host                   Host to bind the server to (default: localhost)
+      --port                   Port to bind the server to (default: 8000)
+      --tensor-parallel-size   Number of GPUs to use for tensor parallelism (default: 1)
+      --gpu-memory-utilization Fraction of GPU memory to use (default: 0.9)
+    
+    Examples:
+      # Run VLLM server with default settings
+      nearai vllm run --model mistralai/Mistral-7B-Instruct-v0.1
+      
+      # Run VLLM server with custom host and port
+      nearai vllm run --model meta-llama/Llama-2-7b-chat-hf --host 0.0.0.0 --port 8080
+      
+      # Run with multiple GPUs and specific memory utilization
+      nearai vllm run --model meta-llama/Llama-2-13b-chat-hf --tensor-parallel-size 2 --gpu-memory-utilization 0.8
+    """
     def run(self, *args: Any, **kwargs: Any) -> None:  # noqa: D102
         original_argv = sys.argv.copy()
         sys.argv = [
@@ -1007,9 +1304,38 @@ class VllmCli:
             runpy.run_module("vllm.entrypoints.openai.api_server", run_name="__main__", alter_sys=True)
         finally:
             sys.argv = original_argv
+            
+    def __call__(self) -> None:
+        """Show help when 'nearai vllm' is called without subcommands."""
+        custom_args = ["nearai", "vllm", "--help"]
+        handle_help_request(custom_args)
 
 
 class HubCLI:
+    """
+    Description: 
+      Commands for interacting with the NEAR AI hub and accessing hosted models.
+
+    Commands:
+      chat    Chat with model from NEAR AI hub (--query, --model, --provider, --endpoint, --info)
+    
+    Options:
+      --query      User's query to send to the model
+      --model      Name of the model to use (default depends on configuration)
+      --provider   Name of the provider (e.g., "anthropic", "openai")
+      --endpoint   NEAR AI Hub's URL to connect to
+      --info       Display system information about the request
+    
+    Examples:
+      # Chat with the default model
+      nearai hub chat --query "Explain quantum computing in simple terms"
+      
+      # Chat with a specific model from a provider
+      nearai hub chat --query "Write a limerick about AI" --model claude-3-opus-20240229 --provider anthropic
+      
+      # Display system information about the request
+      nearai hub chat --query "Tell me a joke" --info
+    """
     def chat(self, **kwargs):
         """Chat with model from NEAR AI hub.
 
@@ -1027,9 +1353,25 @@ class HubCLI:
 
         hub = Hub(CONFIG)
         hub.chat(kwargs)
+        
+    def __call__(self) -> None:
+        """Show help when 'nearai hub' is called without subcommands."""
+        custom_args = ["nearai", "hub", "--help"]
+        handle_help_request(custom_args)
 
 
 class LogoutCLI:
+    """
+    Description: 
+      Clear your NEAR account authentication data from the local configuration.
+    
+    Commands:
+      (default)    Logout and remove authentication data
+    
+    Examples:
+      # Remove authentication data
+      nearai logout
+    """
     def __call__(self, **kwargs):
         """Clear NEAR account auth data."""
         from nearai.config import load_config_file, save_config_file
@@ -1044,6 +1386,38 @@ class LogoutCLI:
 
 
 class LoginCLI:
+    """
+    Description: 
+      Commands for authenticating with your NEAR account for accessing NEAR AI services.
+
+    Commands:
+      (default)    Login with NEAR Mainnet account (--remote, --auth_url, --accountId, --privateKey)
+      status       Display login status and authentication details
+      save         Save NEAR account authorization data (--accountId, --signature, --publicKey, --callbackUrl, --nonce)
+    
+    Options:
+      --remote      Enable remote login to sign message with NEAR account on another machine
+      --auth_url    URL to the authentication portal (default: https://auth.near.ai)
+      --accountId   NEAR account ID in .near-credentials folder to sign message
+      --privateKey  Private key to sign a message directly
+      --signature   Signature for manual authentication
+      --publicKey   Public key used to sign the message
+      --callbackUrl Callback URL for the authentication flow
+      --nonce       Nonce value for authentication security
+    
+    Examples:
+      # Login using web-based flow
+      nearai login
+      
+      # Login using credentials from .near-credentials
+      nearai login --accountId your-account.near
+      
+      # Login with direct key (less secure, use with caution)
+      nearai login --accountId your-account.near --privateKey ed25519:YOUR_PRIVATE_KEY
+      
+      # Check current login status
+      nearai login status
+    """
     def __call__(self, **kwargs):
         """Login with NEAR Mainnet account.
 
@@ -1104,6 +1478,32 @@ class LoginCLI:
 
 
 class PermissionCli:
+    """
+    Description: 
+      Commands for managing permissions and access control for NEAR AI resources.
+
+    Commands:
+      grant     Grant permission to an account (account_id*, permission*)
+      revoke    Revoke permission from an account (account_id*, --permission)
+    
+    Options:
+      account_id    The NEAR account ID to grant or revoke permissions for
+      permission    The permission to grant or revoke (leave empty on revoke to remove all permissions)
+    
+    Examples:
+      # Grant model access permission to an account
+      nearai permission grant alice.near model_access
+      
+      # Grant multiple permissions (run multiple commands)
+      nearai permission grant bob.near agent_creation
+      nearai permission grant bob.near model_access
+      
+      # Revoke a specific permission
+      nearai permission revoke charlie.near model_access
+      
+      # Revoke all permissions from an account
+      nearai permission revoke dave.near
+    """
     def __init__(self) -> None:  # noqa: D107
         self.client = PermissionsApi()
 
@@ -1114,9 +1514,52 @@ class PermissionCli:
     def revoke(self, account_id: str, permission: str = ""):
         """Revoke permission from an account. If permission is empty all permissions are revoked."""
         self.client.revoke_permission_v1_permissions_revoke_permission_post(account_id, permission)
+        
+    def __call__(self) -> None:
+        """Show help when 'nearai permission' is called without subcommands."""
+        custom_args = ["nearai", "permission", "--help"]
+        handle_help_request(custom_args)
 
 
 class CLI:
+    """
+    Getting Started:
+      login        Authenticate with your NEAR account
+      logout       Clear your NEAR account authentication data
+      version      Display the current version of the CLI
+      location     Show the installation location of the CLI
+
+    Agent Development:
+      agent create       Create a new agent or fork an existing one
+      agent upload       Upload an agent to the NEAR AI agent registry
+      agent interactive  Run an agent interactively
+      agent task         Run a single task with an agent
+      agent dev          Run local UI for development of agents
+      agent inspect      Inspect environment from given path
+
+    Registry Management:
+      registry upload             Upload an item to the registry
+      registry download           Download an item from the registry
+      registry info               Show information about a registry item
+      registry list               List available items in the registry
+      registry update             Update the remote version in an agent's metadata.json file
+      registry metadata-template  Create a metadata template
+
+    Model Operations:
+      benchmark run      Run benchmark on a dataset with a solver strategy
+      benchmark list     List all executed benchmarks
+      evaluation table   Print table of evaluations
+      finetune           Commands for fine-tuning models
+      tensorboard        Commands for TensorBoard integration
+      vllm run           Run VLLM server with OpenAI-compatible API
+      permission grant   Grant permission to an account
+      hub chat           Chat with model from NEAR AI hub
+
+    Configuration:
+      config set         Set a configuration value
+      config get         Get a configuration value
+      config show        Show all configuration values
+    """
     def __init__(self) -> None:  # noqa: D107
         self.registry = RegistryCli()
         self.login = LoginCLI()
@@ -1178,6 +1621,11 @@ class CLI:
         """CLI command for running a single task."""
         self.agent.task_cli(*args, **kwargs)
 
+    def help(self) -> None:
+        """Display help information about the NEAR AI CLI."""
+        custom_args = ["nearai", "--help"]
+        handle_help_request(custom_args)
+
 
 def check_update():
     """Check if there is a new version of nearai CLI available."""
@@ -1195,5 +1643,13 @@ def check_update():
 
 
 def main() -> None:
+    """Main entry point for the NEAR AI CLI."""
     check_update()
+
+    # Check if help is requested
+    if "--help" in sys.argv or len(sys.argv) == 1:
+        if handle_help_request():
+            return
+
+    # Otherwise, proceed with normal command processing
     fire.Fire(CLI)
