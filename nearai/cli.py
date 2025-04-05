@@ -733,11 +733,33 @@ class BenchmarkCli:
 class EvaluationCli:
     """
     Description:
-      For evaluating and analyzing model performance.
+      Commands for evaluating and analyzing model performance on benchmark datasets.
 
     Commands:
-      table           Print table of evaluations
-      read_solutions  Read solutions.json from evaluation entry
+      table           Print table of evaluations (--all-key-columns, --all-metrics, --num-columns, --metric-name-max-length)
+      read_solutions  Read solutions.json from evaluation entry (entry*, --status, --verbose)
+    
+    Options:
+      entry                   Evaluation entry to read solutions from (format: namespace/name/version)
+      --all-key-columns       Show all key columns in the table
+      --all-metrics           Show all metrics in the table
+      --num-columns           Maximum number of columns to display (default: 6)
+      --metric-name-max-length Maximum length for metric names in display (default: 30)
+      --status                Filter solutions by status (true/false)
+      --verbose               Show verbose information including detailed logs
+    
+    Examples:
+      # Display evaluation table with default settings
+      nearai evaluation table
+      
+      # Display evaluation table with all metrics and columns
+      nearai evaluation table --all-key-columns --all-metrics --num-columns 10
+      
+      # Read solutions from an evaluation entry
+      nearai evaluation read_solutions example.near/benchmark-result/0.1.0
+      
+      # Read only successful solutions with verbose output
+      nearai evaluation read_solutions example.near/benchmark-result/0.1.0 --status true --verbose
     """
     def table(
         self,
@@ -802,6 +824,11 @@ class EvaluationCli:
             new_message = input("> ")
             if new_message.lower() == "exit":
                 break
+                
+    def __call__(self) -> None:
+        """Show help when 'nearai evaluation' is called without subcommands."""
+        custom_args = ["nearai", "evaluation", "--help"]
+        handle_help_request(custom_args)
 
 
 class AgentCli:
@@ -1183,10 +1210,27 @@ class AgentCli:
 class VllmCli:
     """
     Description: 
-      Commands for running VLLM with OpenAI-compatible API.
+      Commands for running VLLM server with OpenAI-compatible API for local inference.
 
     Commands:
-      run    Run VLLM server with OpenAI-compatible API
+      run    Run VLLM server with OpenAI-compatible API (--model, --host, --port, --tensor-parallel-size, --gpu-memory-utilization)
+    
+    Options:
+      --model                  Path to the model or model name from Hugging Face
+      --host                   Host to bind the server to (default: localhost)
+      --port                   Port to bind the server to (default: 8000)
+      --tensor-parallel-size   Number of GPUs to use for tensor parallelism (default: 1)
+      --gpu-memory-utilization Fraction of GPU memory to use (default: 0.9)
+    
+    Examples:
+      # Run VLLM server with default settings
+      nearai vllm run --model mistralai/Mistral-7B-Instruct-v0.1
+      
+      # Run VLLM server with custom host and port
+      nearai vllm run --model meta-llama/Llama-2-7b-chat-hf --host 0.0.0.0 --port 8080
+      
+      # Run with multiple GPUs and specific memory utilization
+      nearai vllm run --model meta-llama/Llama-2-13b-chat-hf --tensor-parallel-size 2 --gpu-memory-utilization 0.8
     """
     def run(self, *args: Any, **kwargs: Any) -> None:  # noqa: D102
         original_argv = sys.argv.copy()
@@ -1201,15 +1245,37 @@ class VllmCli:
             runpy.run_module("vllm.entrypoints.openai.api_server", run_name="__main__", alter_sys=True)
         finally:
             sys.argv = original_argv
+            
+    def __call__(self) -> None:
+        """Show help when 'nearai vllm' is called without subcommands."""
+        custom_args = ["nearai", "vllm", "--help"]
+        handle_help_request(custom_args)
 
 
 class HubCLI:
     """
     Description: 
-      Commands for interacting with the NEAR AI hub.
+      Commands for interacting with the NEAR AI hub and accessing hosted models.
 
     Commands:
-      chat    Chat with model from NEAR AI hub
+      chat    Chat with model from NEAR AI hub (--query, --model, --provider, --endpoint, --info)
+    
+    Options:
+      --query      User's query to send to the model
+      --model      Name of the model to use (default depends on configuration)
+      --provider   Name of the provider (e.g., "anthropic", "openai")
+      --endpoint   NEAR AI Hub's URL to connect to
+      --info       Display system information about the request
+    
+    Examples:
+      # Chat with the default model
+      nearai hub chat --query "Explain quantum computing in simple terms"
+      
+      # Chat with a specific model from a provider
+      nearai hub chat --query "Write a limerick about AI" --model claude-3-opus-20240229 --provider anthropic
+      
+      # Display system information about the request
+      nearai hub chat --query "Tell me a joke" --info
     """
     def chat(self, **kwargs):
         """Chat with model from NEAR AI hub.
@@ -1228,12 +1294,24 @@ class HubCLI:
 
         hub = Hub(CONFIG)
         hub.chat(kwargs)
+        
+    def __call__(self) -> None:
+        """Show help when 'nearai hub' is called without subcommands."""
+        custom_args = ["nearai", "hub", "--help"]
+        handle_help_request(custom_args)
 
 
 class LogoutCLI:
     """
     Description: 
-      Clear your NEAR account authentication data.
+      Clear your NEAR account authentication data from the local configuration.
+    
+    Commands:
+      (default)    Logout and remove authentication data
+    
+    Examples:
+      # Remove authentication data
+      nearai logout
     """
     def __call__(self, **kwargs):
         """Clear NEAR account auth data."""
@@ -1251,12 +1329,35 @@ class LogoutCLI:
 class LoginCLI:
     """
     Description: 
-      Commands for authenticating with your NEAR account.
+      Commands for authenticating with your NEAR account for accessing NEAR AI services.
 
     Commands:
-      (default)    Login with NEAR Mainnet account
-      status       Display login status
-      save         Save NEAR account authorization data
+      (default)    Login with NEAR Mainnet account (--remote, --auth_url, --accountId, --privateKey)
+      status       Display login status and authentication details
+      save         Save NEAR account authorization data (--accountId, --signature, --publicKey, --callbackUrl, --nonce)
+    
+    Options:
+      --remote      Enable remote login to sign message with NEAR account on another machine
+      --auth_url    URL to the authentication portal (default: https://auth.near.ai)
+      --accountId   NEAR account ID in .near-credentials folder to sign message
+      --privateKey  Private key to sign a message directly
+      --signature   Signature for manual authentication
+      --publicKey   Public key used to sign the message
+      --callbackUrl Callback URL for the authentication flow
+      --nonce       Nonce value for authentication security
+    
+    Examples:
+      # Login using web-based flow
+      nearai login
+      
+      # Login using credentials from .near-credentials
+      nearai login --accountId your-account.near
+      
+      # Login with direct key (less secure, use with caution)
+      nearai login --accountId your-account.near --privateKey ed25519:YOUR_PRIVATE_KEY
+      
+      # Check current login status
+      nearai login status
     """
     def __call__(self, **kwargs):
         """Login with NEAR Mainnet account.
@@ -1320,11 +1421,29 @@ class LoginCLI:
 class PermissionCli:
     """
     Description: 
-      Commands for managing permissions.
+      Commands for managing permissions and access control for NEAR AI resources.
 
     Commands:
-      grant     Grant permission to an account
-      revoke    Revoke permission from an account
+      grant     Grant permission to an account (account_id*, permission*)
+      revoke    Revoke permission from an account (account_id*, --permission)
+    
+    Options:
+      account_id    The NEAR account ID to grant or revoke permissions for
+      permission    The permission to grant or revoke (leave empty on revoke to remove all permissions)
+    
+    Examples:
+      # Grant model access permission to an account
+      nearai permission grant alice.near model_access
+      
+      # Grant multiple permissions (run multiple commands)
+      nearai permission grant bob.near agent_creation
+      nearai permission grant bob.near model_access
+      
+      # Revoke a specific permission
+      nearai permission revoke charlie.near model_access
+      
+      # Revoke all permissions from an account
+      nearai permission revoke dave.near
     """
     def __init__(self) -> None:  # noqa: D107
         self.client = PermissionsApi()
@@ -1336,6 +1455,11 @@ class PermissionCli:
     def revoke(self, account_id: str, permission: str = ""):
         """Revoke permission from an account. If permission is empty all permissions are revoked."""
         self.client.revoke_permission_v1_permissions_revoke_permission_post(account_id, permission)
+        
+    def __call__(self) -> None:
+        """Show help when 'nearai permission' is called without subcommands."""
+        custom_args = ["nearai", "permission", "--help"]
+        handle_help_request(custom_args)
 
 
 class CLI:

@@ -270,8 +270,8 @@ def format_class_help(obj) -> None:
     
     # Use the class name for the title
     class_name = obj.__class__.__name__
-    # Remove "Cli" suffix if present for cleaner display
-    display_name = class_name.replace("Cli", "")
+    # Remove "Cli" or "CLI" suffix if present for cleaner display
+    display_name = class_name.replace("Cli", "").replace("CLI", "")
     
     # Display title (except for main CLI which has a banner)
     if class_name != "CLI":
@@ -397,7 +397,7 @@ def format_class_help(obj) -> None:
                 if line.startswith("#"):
                     console.print(f"[dim]{line}[/dim]")
                 else:
-                    console.print(f"[cyan]{line}[/cyan]")
+                    console.print(f"[cyan]{line}[/cyan]\n")
             else:
                 console.print("")
         console.print()
