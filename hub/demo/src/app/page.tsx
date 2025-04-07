@@ -7,7 +7,6 @@ import {
   Flex,
   Grid,
   IconCircle,
-  PlaceholderStack,
   Section,
   SvgIcon,
   Text,
@@ -31,44 +30,22 @@ import {
   Lightning,
   LockKey,
   MagnifyingGlass,
-  PaperPlaneTilt,
+  Question,
   ShieldCheck,
   TwitterLogo,
   UserCircle,
   XLogo,
 } from '@phosphor-icons/react';
-import { useMemo } from 'react';
-import { type z } from 'zod';
 
-import { EntryCard } from '@/components/EntryCard';
 import { env } from '@/env';
 import { signIn } from '@/lib/auth';
-import { idMatchesEntry } from '@/lib/entries';
-import { type entriesModel } from '@/lib/models';
 import { useAuthStore } from '@/stores/auth';
 import NearLogoIcon from '@/svgs/near-logo-icon-padding.svg';
-import { trpc } from '@/trpc/TRPCProvider';
 
 import s from './page.module.scss';
 
 export default function HomePage() {
   const auth = useAuthStore((store) => store.auth);
-  const agentsQuery = trpc.hub.entries.useQuery({
-    category: 'agent',
-  });
-
-  const featuredAgents = useMemo(() => {
-    const result: z.infer<typeof entriesModel> = [];
-
-    env.NEXT_PUBLIC_FEATURED_AGENT_IDS.forEach((agentId) => {
-      const agent = agentsQuery.data?.find((entry) =>
-        idMatchesEntry(agentId, entry),
-      );
-      if (agent) result.push(agent);
-    });
-
-    return result;
-  }, [agentsQuery.data]);
 
   return (
     <>
@@ -325,31 +302,7 @@ export default function HomePage() {
         </Grid>
       </Section>
 
-      <Section padding="hero" background="primary-gradient">
-        <Flex direction="column" gap="m">
-          <Text as="h2" size="text-2xl" weight="600">
-            Featured Agents
-          </Text>
-          <Text color="sand-11" size="text-l" weight={400}>
-            Fork any of these agents for a great starting point
-          </Text>
-        </Flex>
-
-        {featuredAgents.length === 0 && <PlaceholderStack />}
-
-        <Grid
-          gap="m"
-          columns="1fr 1fr 1fr"
-          tablet={{ columns: '1fr 1fr' }}
-          phone={{ columns: '1fr' }}
-        >
-          {featuredAgents.map((agent) => (
-            <EntryCard entry={agent} key={agent.id} />
-          ))}
-        </Grid>
-      </Section>
-
-      <Section padding="hero">
+      <Section padding="hero" background="sand-2">
         <Flex direction="column" gap="l">
           <Flex direction="column" gap="m">
             <Text as="h2" size="text-2xl" weight="600">
@@ -382,17 +335,17 @@ export default function HomePage() {
                 href: '/evaluations',
               },
               {
-                icon: <PaperPlaneTilt weight="duotone" />,
-                title: 'Contact Us',
-                description: 'Let us know how we can support your project',
-                label: 'Get In Touch',
-                href: 'https://airtable.com/appc0ZVhbKj8hMLvH/pag4dQKP3KF3qrTFo/form',
+                icon: <Question weight="duotone" />,
+                title: 'FAQ',
+                description: 'Find answers to common developer questions',
+                label: 'View FAQ',
+                href: 'https://github.com/nearai/nearai/issues/1080',
                 target: '_blank',
               },
               {
                 icon: <ChatCircle weight="duotone" />,
                 title: 'Community',
-                description: 'Connect with other researchers',
+                description: 'Connect with other developers',
                 label: 'Join',
                 href: 'https://t.me/nearaialpha',
                 target: '_blank',
