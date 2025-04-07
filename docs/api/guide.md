@@ -89,7 +89,7 @@ In this section you can find a few code samples using Python, Rust, and JavaScri
 
 === "JavaScript"
 
-	This JS code example uses the Wallet selector complete the authentication process, and then generates the `auth` token.
+	This JS code example uses the Wallet selector to complete the authentication process, and then generates the `auth` token.
 	For additional information, you can check the [complete Next.js implementation](https://github.com/prakhar728/near-ai-web-starter).
 
 	```js
@@ -160,7 +160,8 @@ In this section you can find a few code samples using Python, Rust, and JavaScri
 
 === "Rust"
 
-	See [full implementation](https://github.com/INTEARnear/Tear/blob/main/agents/src/near_ai.rs).
+	This code example builds the auth payload, signs it using the [`sign_message_nep413()`](https://docs.rs/near-api/latest/near_api/signer/trait.SignerTrait.html#method.sign_message_nep413) method, and stringifies the JSON result to generate the `auth` token.
+	For additional information, see [full implementation](https://github.com/INTEARnear/Tear/blob/main/agents/src/near_ai.rs#L169).
 
 	```rs
 	async fn get_api_key(account: SelectedAccount) -> Result<String, anyhow::Error> {
