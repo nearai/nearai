@@ -19,6 +19,7 @@ from openai.types.beta.threads.text import Text
 from openai.types.beta.threads.text_content_block import TextContentBlock
 from sqlalchemy import BigInteger
 from sqlalchemy.dialects.mysql import LONGTEXT
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import TypeDecorator
 from sqlmodel import Column, Field, Session, SQLModel, create_engine
 
@@ -33,6 +34,8 @@ DB_HOST = getenv("DATABASE_HOST")
 DB_USER = getenv("DATABASE_USER")
 DB_PASSWORD = getenv("DATABASE_PASSWORD")
 DB_NAME = getenv("DATABASE_NAME")
+DB_PORT = getenv("DATABASE_POST", 5432)
+DB_SCHEMA = getenv("DATABASE_SCHEMA", "public")
 STORAGE_TYPE = getenv("STORAGE_TYPE", "file")
 DB_POOL_SIZE = int(getenv("DATABASE_POOL_SIZE", 10))
 
@@ -54,52 +57,67 @@ def sanitize(value):
         # Replace invalid UTF-8 characters instead of removing them
         return normalized.encode("utf-8", "replace").decode("utf-8").strip()
 
-    if isinstance(value, list):
-        # Recursively process list elements while preserving order
-        return [sanitize(item) for item in value]
-
-    if isinstance(value, dict):
-        # Clean both keys and values while maintaining dictionary structure
-        return {k: sanitize(v) for k, v in value.items()}
-
-    # Return non-string/non-collection values unchanged
+    # Return non-string values unchanged
     return value
 
 
 class UnicodeSafeJSON(TypeDecorator):
-    """Custom JSON handler that safely stores/retrieves Unicode-rich JSON data.
+    """Custom JSON handler that safely stores/retrieves Unicode-rich JSON data with PostgreSQL support.
 
-    Uses LONGTEXT to avoid SingleStore/MySQL encoding bugs.
+    Uses PostgreSQL's JSONB type for efficient JSON storage and querying.
 
-    Why LONGTEXT instead of JSON:
-    1. Bypasses binary storage issues with MySQL JSON type
-    2. Guarantees UTF8MB4 compliance through text column handling
-    3. Avoids implicit encoding conversions in database drivers
+    Benefits of JSONB in PostgreSQL:
+    1. Native binary representation for better performance
+    2. Built-in indexing capabilities
+    3. Rich query operators and functions
+    4. Automatic UTF-8 handling
 
     Inherits from TypeDecorator to customize these behaviors:
-    - Safe Unicode serialization (preserves emojis/special chars)
-    - Binary-to-text conversion for reliable deserialization
+    - Proper handling of None/null values
+    - Automatic conversion between Python objects and JSONB
+    - Error handling for malformed JSON strings
     """
 
-    impl = LONGTEXT  # Critical: Uses text storage instead of binary JSON
-    cache_ok = True  # Essential for query caching and performance
+    impl = JSONB  # Uses PostgreSQL's binary JSON type
+    cache_ok = True  # Enables SQLAlchemy query caching for better performance
 
     def process_bind_param(self, value, dialect):
-        """Serialize Python objects to UTF8MB4-compliant JSON string."""
-        if value is not None:
-            # Prevent ASCII escaping (\uXXXX sequences) for Unicode chars
-            # enable_ascii=False is crucial for emojis/non-Latin chars
-            return json.dumps(value, ensure_ascii=False)
+        """Convert Python objects to PostgreSQL JSONB format.
+
+        Handles special cases:
+        - None values
+        - String values that might contain JSON
+        - Preserves native Python dict/list structures
+        """
+        if value is None or value == "null":
+            return None
+        if isinstance(value, str):
+            try:
+                # If a string contains valid JSON, parse it to object
+                parsed = json.loads(value)
+                return parsed
+            except json.JSONDecodeError:
+                # If not valid JSON, store as {"value": string}
+                return {"value": value}
+
+        # PostgreSQL can directly store Python dicts/lists
+        # No need for special null handling as in MySQL
         return value
 
     def process_result_value(self, value, dialect):
-        """Convert database result to Python objects with encoding safety."""
-        if value is not None:
-            # Force string conversion to handle:
-            # - Legacy database drivers returning bytes
-            # - Mixed encoding edge cases
-            # - SingleStore's binary storage peculiarities
-            return json.loads(str(value))
+        """Process values coming from the database.
+
+        With PostgreSQL JSONB, values are automatically converted to
+        appropriate Python types, so minimal processing is needed.
+        """
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                return parsed
+            except json.JSONDecodeError:
+                return {"value": value}
+
+        # PostgreSQL driver already converts JSONB to Python objects
         return value
 
 
@@ -390,8 +408,8 @@ class Run(SQLModel, table=True):
     last_error: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
     model: str = Field(nullable=False)
     instructions: Optional[str] = Field(default=None)
-    tools: List[Dict] = Field(default=[], sa_column=Column(UnicodeSafeJSON))
-    file_ids: List[str] = Field(default=[], sa_column=Column(UnicodeSafeJSON))
+    tools: List[Dict] = Field(default_factory=list, sa_column=Column(UnicodeSafeJSON))
+    file_ids: List[str] = Field(default_factory=list, sa_column=Column(UnicodeSafeJSON))
     meta_data: Optional[Dict] = Field(default=None, sa_column=Column("metadata", UnicodeSafeJSON))
     usage: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
     temperature: Optional[float] = Field(default=None)
@@ -403,7 +421,7 @@ class Run(SQLModel, table=True):
     tool_choice: Optional[str] = Field(default=None)
     parallel_tool_calls: bool = Field(default=False)
     parent_run_id: Optional[str] = Field(default=None)
-    child_run_ids: List[str] = Field(default=[], sa_column=Column(UnicodeSafeJSON))
+    child_run_ids: List[str] = Field(default_factory=list, sa_column=Column(UnicodeSafeJSON))
     run_mode: Optional[RunMode] = Field(default=None)
 
     def __init__(self, **data):  # noqa: D107
@@ -482,8 +500,13 @@ class Completion(SQLModel, table=True):
     prompt_tokens_details: Optional[dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
 
 
-db_url = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}?charset=utf8mb4&use_unicode=1&binary_prefix=true"
-engine = create_engine(db_url, pool_size=DB_POOL_SIZE)
+engine = create_engine(
+    f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
+    connect_args={"options": f"-c search_path={DB_SCHEMA}"},
+    pool_size=DB_POOL_SIZE,
+    pool_pre_ping=True,
+    pool_recycle=3600,
+)
 
 
 @contextmanager

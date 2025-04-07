@@ -30,7 +30,7 @@ class TestAgentsRoutes(unittest.TestCase):
     def test_run_agent(self):
         client = self.create_openai_client()
 
-        assistant_id = "pierre-dev.near/agents/vector-store-agent"
+        assistant_id = "pierre-dev.near/vector-store-example/0.0.2"
         thread = client.beta.threads.create(messages=[Message(role="user", content="Create vector store for near core-contracts.")])
         run = client.beta.threads.runs.create_and_poll(
             thread_id=thread.id,

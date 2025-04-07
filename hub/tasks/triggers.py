@@ -15,13 +15,13 @@ def _query_agent_triggers(trigger_clause) -> List[EntryInformation]:
 
 def agents_with_event_triggers() -> List[EntryInformation]:
     """Returns latest version of agents that track events."""
-    trigger_clause = "details::triggers::events IS NOT NULL"
+    trigger_clause = "details->'triggers'->'events' IS NOT NULL"
     return _query_agent_triggers(trigger_clause)
 
 
 def agents_with_webhook_triggers() -> List[EntryInformation]:
     """Returns latest version of agents that are triggered by webhooks."""
-    trigger_clause = "details::triggers::webhook IS NOT NULL"
+    trigger_clause = "details->'triggers'->'webhook' IS NOT NULL"
     return _query_agent_triggers(trigger_clause)
 
 
@@ -29,7 +29,8 @@ def agents_with_x_accounts_to_track() -> List[EntryInformation]:
     """Returns latest version of agents that track x_accounts."""
     res = list_entries_inner(
         category="agent",
-        custom_where="details::triggers::events::x_mentions IS NOT NULL",
+        custom_where="""(details->'triggers'->'events'->'x_mentions' IS NOT NULL AND
+        jsonb_array_length(details->'triggers'->'events'->'x_mentions') > 0) """,
         show_hidden=False,
         show_latest_version=True,
     )
