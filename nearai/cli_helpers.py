@@ -233,25 +233,22 @@ def format_main_menu_help(cli) -> None:
             parts = re.split(r'\s{2,}', cmd_line, 1)
             if len(parts) == 2:
                 cmd, desc = parts
-                # Add 'nearai ' prefix
+                # Use the command as is without adding prefix
                 cmd = cmd.strip()
-                if not cmd.startswith("nearai "):
-                    cmd = f"nearai {cmd}"
                 table.add_row(cmd, desc.strip())
             else:
-                # For single-word commands, still add the prefix
+                # For single-word commands, use as is
                 cmd = cmd_line.strip()
-                if not cmd.startswith("nearai ") and not cmd.startswith("["):
-                    cmd = f"nearai {cmd}"
-                table.add_row(cmd, "")
+                if not cmd.startswith("["):
+                    table.add_row(cmd, "")
     
     console.print(table)
     console.print(
-        "[bold white] At any time you can run [bold green]`nearai <command> --help`[/bold green] to get more information about a command.\n[/bold white]"
+        "[bold white] Run [bold green]`nearai <command> --help`[/bold green] for more info about a command.\n[/bold white]"
     )
     console.print(
-        "[bold blue] - For more info see: [bold green]https://docs.near.ai/[/bold green][/bold blue]\n"
-        "[bold blue] - For community support, join our Telegram group: [bold green]https://t.me/nearaialpha[/bold green][/bold blue]\n"
+        "[bold blue] - Docs: [bold green]https://docs.near.ai/[/bold green][/bold blue]\n"
+        "[bold blue] - Dev Support: [bold green]https://t.me/nearaialpha[/bold green][/bold blue]\n"
     )
 
 

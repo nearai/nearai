@@ -1524,41 +1524,45 @@ class PermissionCli:
 class CLI:
     """
     Getting Started:
-      login        Authenticate with your NEAR account
-      logout       Clear your NEAR account authentication data
-      version      Display the current version of the CLI
-      location     Show the installation location of the CLI
+      nearai              MAIN MENU HELP (This menu)
+      nearai login        Authenticate with your NEAR account
+      nearai logout       Clear your NEAR account authentication data
+      nearai version      Display the current version of the CLI
+      nearai location     Show the installation location of the CLI
 
     Agent Development:
-      agent create       Create a new agent or fork an existing one
-      agent upload       Upload an agent to the NEAR AI agent registry
-      agent interactive  Run an agent interactively
-      agent task         Run a single task with an agent
-      agent dev          Run local UI for development of agents
-      agent inspect      Inspect environment from given path
+      nearai agent              AGENT HELP (Lists all agent commands & examples)
+      nearai agent create       Create a new agent or fork an existing one
+      nearai agent upload       Upload an agent to the NEAR AI agent registry
+      nearai agent interactive  Run an agent interactively
+      nearai agent task         Run a single task with an agent
+      nearai agent dev          Run local UI for development of agents
+      nearai agent inspect      Inspect environment from given path
 
     Registry Management:
-      registry upload             Upload an item to the registry
-      registry download           Download an item from the registry
-      registry info               Show information about a registry item
-      registry list               List available items in the registry
-      registry update             Update the remote version in an agent's metadata.json file
-      registry metadata-template  Create a metadata template
+      nearai registry                    REGISTRY HELP (Lists all registry commands & examples)
+      nearai registry upload             Upload an item to the registry
+      nearai registry download           Download an item from the registry
+      nearai registry info               Show information about a registry item
+      nearai registry list               List available items in the registry
+      nearai registry update             Update the remote version in an agent's metadata.json file
+      nearai registry metadata-template  Create a metadata template
 
     Model Operations:
-      benchmark run      Run benchmark on a dataset with a solver strategy
-      benchmark list     List all executed benchmarks
-      evaluation table   Print table of evaluations
-      finetune           Commands for fine-tuning models
-      tensorboard        Commands for TensorBoard integration
-      vllm run           Run VLLM server with OpenAI-compatible API
-      permission grant   Grant permission to an account
-      hub chat           Chat with model from NEAR AI hub
+      nearai benchmark run      Run benchmark on a dataset with a solver strategy
+      nearai benchmark list     List all executed benchmarks
+      nearai evaluation table   Print table of evaluations
+      nearai finetune           Commands for fine-tuning models
+      nearai tensorboard        Commands for TensorBoard integration
+      nearai vllm run           Run VLLM server with OpenAI-compatible API
+      nearai permission grant   Grant permission to an account
+      nearai hub chat           Chat with model from NEAR AI hub
 
     Configuration:
-      config set         Set a configuration value
-      config get         Get a configuration value
-      config show        Show all configuration values
+      nearai config             CONFIG HELP (Lists all config commands & examples)
+      nearai config set         Set a configuration value
+      nearai config get         Get a configuration value
+      nearai config show        Show all configuration values
     """
     def __init__(self) -> None:  # noqa: D107
         self.registry = RegistryCli()
