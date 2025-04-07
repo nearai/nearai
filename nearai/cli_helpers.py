@@ -155,7 +155,7 @@ def display_version_check(namespace: str, name: str, version: str, exists: bool)
         console.print(f"\n✅ [green]Version [cyan]{version}[/cyan] is available.[/green]")
 
 
-def format_main_menu_help(cli) -> None:
+def generate_main_cli_help(cli) -> None:
     """Format the main CLI menu help display.
     
     Args:
@@ -263,7 +263,7 @@ def format_help(obj, method_name: str = "__class__") -> None:
     
     # Special case for CLI main menu
     if method_name == "__class__" and obj.__class__.__name__ == "CLI":
-        format_main_menu_help(obj)
+        generate_main_cli_help(obj)
         return
         
     # Get docstring from class or method
@@ -487,54 +487,6 @@ def format_help(obj, method_name: str = "__class__") -> None:
         console.print(f"For more information see: [bold blue]{doc_content}[/bold blue]\n")
 
 
-def handle_class_help(cli):
-    """Display help for the CLI class itself.
-    
-    Args:
-        cli: CLI instance
-        
-    Returns:
-        True indicating help was displayed
-    """
-    format_help(cli, "__class__")
-    return True
-
-
-def handle_command_help(cli, command):
-    """Display help for a specific command.
-    
-    Args:
-        cli: CLI instance
-        command: Command name
-        
-    Returns:
-        True if help was displayed, False otherwise
-    """
-    if hasattr(cli, command):
-        format_help(getattr(cli, command))
-        return True
-    return False
-
-
-def handle_subcommand_help(cli, command, subcommand):
-    """Display help for a specific subcommand.
-    
-    Args:
-        cli: CLI instance
-        command: Command name
-        subcommand: Subcommand name
-        
-    Returns:
-        True if help was displayed, False otherwise
-    """
-    if hasattr(cli, command):
-        cmd_obj = getattr(cli, command)
-        if hasattr(cmd_obj, subcommand):
-            format_help(cmd_obj, subcommand)
-            return True
-    return False
-
-
 def handle_help_request(args=None):
     """Common handler for CLI help requests.
     
@@ -555,22 +507,41 @@ def handle_help_request(args=None):
     
     # Special case for agent upload, which is an alias for registry upload
     if len(args) == 4 and args[1] == "agent" and args[2] == "upload" and args[3] == "--help":
-        return handle_subcommand_help(cli, "registry", "upload")
+        # Display help for registry upload subcommand
+        if hasattr(cli, "registry"):
+            registry_obj = getattr(cli, "registry")
+            if hasattr(registry_obj, "upload"):
+                format_help(registry_obj, "upload")
+                return True
+        return False
     
     # No arguments - show main help
     if len(args) == 1:
-        return handle_class_help(cli)
+        format_help(cli, "__class__")
+        return True
     
     # Help with no specific command
     if len(args) == 2 and args[1] == "--help":
-        return handle_class_help(cli)
+        format_help(cli, "__class__")
+        return True
     
     # Help for a specific command
     if len(args) == 3 and args[2] == "--help":
-        return handle_command_help(cli, args[1])
+        command = args[1]
+        if hasattr(cli, command):
+            format_help(getattr(cli, command))
+            return True
+        return False
     
     # Help for a specific subcommand
     if len(args) == 4 and args[3] == "--help":
-        return handle_subcommand_help(cli, args[1], args[2])
+        command = args[1]
+        subcommand = args[2]
+        if hasattr(cli, command):
+            cmd_obj = getattr(cli, command)
+            if hasattr(cmd_obj, subcommand):
+                format_help(cmd_obj, subcommand)
+                return True
+        return False
     
     return False
