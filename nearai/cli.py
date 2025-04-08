@@ -75,8 +75,7 @@ from nearai.tensorboard_feed import TensorboardCli
 class RegistryCli:
     """
     Description: 
-    Registry commands help you manage items in the NEAR AI registry, including uploading, downloading, 
-    and listing agents, models, and other resources.
+    Registry commands help you manage items in the NEAR AI Registry which include agents, models, datasets, evaluations, and more. These commands allow you to upload, download, update, and list available items.
 
     Commands:
       nearai registry upload             Upload an item to the registry (<path>*)
@@ -109,20 +108,31 @@ class RegistryCli:
       # Show information about a registry item
       nearai registry info example.near/agent-name/0.0.3
 
-      # List all agents in the registry
-      nearai registry list --category agent
+      # List items by category
+      nearai registry list --category evaluation
 
       # List items with specific tags
-      nearai registry list --tags "summarization,text"
-
-      # Create a metadata template
-      nearai registry metadata-template --category agent --description "My agent description"
+      nearai registry list --tags "vector-store"
 
     Documentation: 
         https://docs.near.ai/agents/registry
     """
     def info(self, entry: str) -> None:
-        """Show information about an item."""
+        """
+        Description:
+          Display detailed information about a registry item, including its metadata and available provider matches for models.
+
+        Arguments:
+          <entry-location>*   Entry location of the item to display information for (format: namespace/name/version)
+
+        Examples:
+          # Show information about a specific registry item
+          nearai registry info example.near/agent-name/0.0.3
+          
+          # Show information about a model
+          nearai registry info example.near/model-name/1.0.0
+
+        """
         entry_location = parse_location(entry)
         metadata = registry.info(entry_location)
 
@@ -149,7 +159,27 @@ class RegistryCli:
                 print(tabulate(table, headers=header, tablefmt="simple_grid"))
 
     def metadata_template(self, local_path: str = ".", category: str = "", description: str = ""):
-        """Create a metadata template."""
+        """
+        Description:
+          Create a metadata template file for a registry item. This generates a properly formatted metadata.json file
+          with default values that can be customized for your agent or model.
+
+        Arguments:
+          --local-path      Path to the directory where the metadata template will be created (default: current directory)
+          --category        Category of the item (e.g., 'agent', 'model', 'dataset', 'evaluation')
+          --description     Description of the item
+
+        Examples:
+          # Create a metadata template in the current directory
+          nearai registry metadata-template
+          
+          # Create a metadata template for an agent with description
+          nearai registry metadata-template --category agent --description "My helpful assistant"
+          
+          # Create a metadata template in a specific directory
+          nearai registry metadata-template path/to/directory --category model
+
+        """
         path = resolve_local_path(Path(local_path))
 
         metadata_path = path / "metadata.json"
@@ -204,7 +234,38 @@ class RegistryCli:
         show_latest_version: bool = True,
         star: str = "",
     ) -> None:
-        """List available items."""
+        """
+        Description:
+          List available items in the NEAR AI registry. You can filter the results by namespace, category, tags,
+          and other criteria to find specific items.
+
+        Arguments:
+          --namespace            Filter items by namespace/user account (e.g., example.near)
+          --category             Filter items by category (e.g., 'agent', 'model', evaluation, etc.)
+          --tags                 Filter items by tags (comma-separated)
+          --total                Maximum number of items to show (default: 32)
+          --offset               Offset for pagination (default: 0)
+          --show-all             Show all versions of items (default: False)
+          --show-latest-version  Show only the latest version of each item (default: True)
+          --star                 Show items starred by a specific user
+
+        Examples:
+          # List all items in the registry
+          nearai registry list
+          
+          # List agents in the registry (default: 32 items)
+          nearai registry list --category agent
+          
+          # List items with specific tags
+          nearai registry list --tags "summarization,text"
+          
+          # List items from a specific namespace
+          nearai registry list --namespace example.near
+          
+          # Show all versions of items
+          nearai registry list --show-all
+
+        """
         # Make sure tags is a comma-separated list of tags
         tags_l = parse_tags(tags)
         tags = ",".join(tags_l)
@@ -251,7 +312,21 @@ class RegistryCli:
                 )
 
     def update(self, local_path: str = ".") -> None:
-        """Update metadata of a registry item."""
+        """
+        Description:
+          Update the metadata of a registry item in the NEAR AI Registry.
+
+        Arguments:
+          --local-path      Path to the directory containing the item to update (default: current directory)
+
+        Examples:
+          # Update metadata for the item in the current directory
+          nearai registry update
+          
+          # Update metadata for a specific item
+          nearai registry update path/to/item
+
+        """
         path = resolve_local_path(Path(local_path))
 
         if CONFIG.auth is None:
@@ -280,7 +355,24 @@ class RegistryCli:
         print(json.dumps(result, indent=2))
 
     def upload_unregistered_common_provider_models(self, dry_run: bool = True) -> None:
-        """Creates new registry items for unregistered common provider models."""
+        """
+        Description:
+          Create new registry items for unregistered common provider models. This command helps keep the registry
+          up-to-date with the latest models from various providers.
+
+        Arguments:
+          --dry-run         Perform a dry run without actually uploading (default: True)
+
+        Examples:
+          # Perform a dry run to see what would be uploaded
+          nearai registry upload-unregistered-common-provider-models
+          
+          # Actually upload the unregistered models
+          nearai registry upload-unregistered-common-provider-models --dry-run=False
+
+        Documentation: 
+          https://docs.near.ai/agents/registry
+        """
         provider_matches_list = ProviderModels(CONFIG.get_client_config()).get_unregistered_common_provider_models(
             registry.dict_models()
         )
@@ -333,18 +425,28 @@ class RegistryCli:
     def upload(
         self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
     ) -> Optional[EntryLocation]:
-        """Upload item to the registry.
+        """
+        Description:
+          Upload an item to the NEAR AI registry for public use.
 
-        Args:
-        ----
-            local_path: Path to the directory containing the agent to upload
-            bump: If True, automatically increment patch version if it already exists
-            minor_bump: If True, bump with minor version increment (0.1.0 → 0.2.0)
-            major_bump: If True, bump with major version increment (0.1.0 → 1.0.0)
+        Arguments:
+          --local-path      Path to the agent directory (default: current directory)
+          --bump            Automatically increment patch version if it already exists
+          --minor-bump      Bump with minor version increment (0.1.0 → 0.2.0)
+          --major-bump      Bump with major version increment (1.5.2 → 2.0.0)
 
-        Returns:
-        -------
-            EntryLocation if upload was successful, None otherwise
+        Examples:
+          # Upload an item in the current directory
+          nearai registry upload
+          
+          # Upload a specific agent directory
+          nearai registry upload --local-path ./path/to/item
+          
+          # Upload with automatic version bumping
+          nearai registry upload --bump
+          
+          # Upload with minor version bump
+          nearai registry upload ./path/to/item --minor-bump
 
         """
         console = Console()
@@ -499,7 +601,23 @@ class RegistryCli:
             return None
 
     def download(self, entry_location: str, force: bool = False) -> None:
-        """Download item."""
+        """
+        Description:
+          Download an item from the NEAR AI registry to your local machine. This allows you to use or inspect
+          agents, models, datasets, etc. that have been published by others.
+
+        Arguments:
+          entry_location*   Entry location of the item to download (format: namespace/name/version)
+          --force           Force download even if the item already exists locally (default: False)
+
+        Examples:
+          # Download a specific registry item
+          nearai registry download example.near/agent-name/0.0.3
+          
+          # Force download an item that already exists locally
+          nearai registry download example.near/model-name/1.0.0 --force
+
+        """
         registry.download(entry_location, force=force, show_progress=True)
 
     def __call__(self):
