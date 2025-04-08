@@ -177,10 +177,10 @@ def generate_main_cli_help(cli) -> None:
     # Single table for all commands
     table = Table(
         box=ROUNDED,
-        expand=True,
+        expand=False,
         show_header=True,
         header_style="bold cyan",
-        border_style="green"
+        border_style="green",
     )
     table.add_column("Command", style="cyan")
     table.add_column("Description", style="white")
@@ -290,7 +290,7 @@ def format_help(obj, method_name: str = "__class__") -> None:
         return
     
     # Display title
-    console.print(f"\n[bold cyan]{title}[/bold cyan]\n")
+    console.print(f"\n[bold green]{title}[/bold green]\n")
     
     # Extract sections from docstring with simplified parsing
     sections = {}
@@ -332,19 +332,10 @@ def format_help(obj, method_name: str = "__class__") -> None:
     if "description" in sections:
         description = " ".join(sections["description"])
         if description:
-            panel_title = f"{display_name} Info" if is_class else f"{display_name} {command_name} Command"
-            console.print(
-                Panel(
-                    description,
-                    title=panel_title,
-                    border_style="green",
-                    expand=False,
-                )
-            )
+            console.print(Panel(description, title="Info", title_align="left", expand=False, border_style="blue"))
     
     # Process Commands section for classes
     if is_class and "commands" in sections:
-        console.print("\n[bold green]Available Commands:[/bold green]\n")
         commands_table = Table(box=ROUNDED, expand=False)
         commands_table.add_column("Command", style="cyan bold", no_wrap=True)
         commands_table.add_column("Description", style="white")
@@ -352,14 +343,23 @@ def format_help(obj, method_name: str = "__class__") -> None:
         
         for line in sections["commands"]:
             if line.strip():
-                # Try to parse command, description, and flags
-                match = re.match(r'^\s*(\S+)\s+(.*?)(?:\s*\(([^)]*)\)|$)', line)
-                if match:
-                    cmd = match.group(1)
-                    desc = match.group(2).strip()
-                    flags = match.group(3) or ""
-                    prefix = f"nearai {display_name.lower()} " if not cmd.startswith("nearai ") else ""
-                    commands_table.add_row(f"{prefix}{cmd}", desc, flags)
+                # First try to split by two spaces to separate command from description
+                parts = line.split('  ', 1)
+                if len(parts) == 2:
+                    cmd = parts[0].strip()
+                    # Check for flags in parentheses
+                    desc_parts = parts[1].strip().split('(', 1)
+                    desc = desc_parts[0].strip()
+                    flags = desc_parts[1].rstrip(')') if len(desc_parts) > 1 else ""
+                    commands_table.add_row(f"{cmd}", desc, flags)
+                else:
+                    # Fall back to regex if no two spaces found
+                    match = re.match(r'^\s*(\S+)\s+(.*?)(?:\s*\(([^)]*)\)|$)', line)
+                    if match:
+                        cmd = match.group(1)
+                        desc = match.group(2).strip()
+                        flags = match.group(3) or ""
+                        commands_table.add_row(f"{cmd}", desc, flags)
         
         console.print(commands_table)
         

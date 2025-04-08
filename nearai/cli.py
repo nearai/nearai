@@ -79,24 +79,25 @@ class RegistryCli:
     and listing agents, models, and other resources.
 
     Commands:
-      upload             Upload an item to the registry ([PATH]*)
-      download           Download an item from the registry (entry-location*, --force)
-      info               Show information about a registry item (entry*)
-      list               List available items in the registry (--namespace, --category, --tags, --total, --offset, --show-all, --show-latest-version, --star)
-      metadata-template  Create a metadata template (--local-path, --category, --description)
-      update             Update metadata of a registry item (<PATH>)
+      nearai registry upload             Upload an item to the registry (<path>*)
+      nearai registry download           Download an item from the registry (<entry-location>*, --force)
+      nearai registry info               Show information about a registry item (<entry-location>*)
+      nearai registry list               List available items in the registry (--namespace, --category, --tags, --total, --offset, --show-all, --show-latest-version, --star)
+      nearai registry metadata-template  Create a metadata template (--local-path, --category, --description)
+      nearai registry update             Update metadata of a registry item (<path>*)
 
     Options:
-      <PATH>              Path to the directory containing the agent to upload
-      --force             Force download even if the item exists locally
-      --namespace         Filter items by namespace
-      --category          Filter items by category (e.g., 'agent', 'model')
-      --tags              Filter items by tags (comma-separated)
-      --total             Maximum number of items to show
-      --offset            Offset for pagination
-      --show-all          Show all versions of items
+      <path>                 Path to the directory containing the agent to upload
+      <entry-location>       Entry location of the item to download (format: namespace/name/version)
+      --force                Force download even if the item exists locally
+      --namespace            Filter items by namespace
+      --category             Filter items by category (e.g., 'agent', 'model')
+      --tags                 Filter items by tags (comma-separated)
+      --total                Maximum number of items to show
+      --offset               Offset for pagination
+      --show-all             Show all versions of items
       --show-latest-version  Show only the latest version of each item
-      --star              Show items starred by a specific user
+      --star                 Show items starred by a specific user
 
     Examples:
       # Upload an agent to the registry
@@ -513,9 +514,9 @@ class ConfigCli:
       Configuration commands help you manage your NEAR AI CLI settings. You can view, set, and modify various configuration values that control how the CLI behaves.
 
     Commands:
-      set    Add or update a configuration value (key*, value*, --local)
-      get    Retrieve a configuration value (key*)
-      show   Display all configuration values
+      nearai config set    Add or update a configuration value (key*, value*, --local)
+      nearai config get    Retrieve a configuration value (key*)
+      nearai config show   Display all configuration values
 
     Options:
       key       The configuration key to set or get
@@ -566,8 +567,8 @@ class BenchmarkCli:
       Commands for running and listing benchmarks on datasets with solver strategies.
 
     Commands:
-      run    Run benchmark on a dataset with a solver strategy (dataset*, solver_strategy*, --max-concurrent, --force, --subset, --check-compatibility, --record, --num-inference-retries)
-      list   List all executed benchmarks (--namespace, --benchmark, --solver, --args, --total, --offset)
+      nearai benchmark run    Run benchmark on a dataset with a solver strategy (dataset*, solver_strategy*, --max-concurrent, --force, --subset, --check-compatibility, --record, --num-inference-retries)
+      nearai benchmark list   List all executed benchmarks (--namespace, --benchmark, --solver, --args, --total, --offset)
     
     Options:
       dataset             Dataset to benchmark on
@@ -736,8 +737,8 @@ class EvaluationCli:
       Commands for evaluating and analyzing model performance on benchmark datasets.
 
     Commands:
-      table           Print table of evaluations (--all-key-columns, --all-metrics, --num-columns, --metric-name-max-length)
-      read_solutions  Read solutions.json from evaluation entry (entry*, --status, --verbose)
+      nearai evaluation table           Print table of evaluations (--all-key-columns, --all-metrics, --num-columns, --metric-name-max-length)
+      nearai evaluation read_solutions  Read solutions.json from evaluation entry (entry*, --status, --verbose)
     
     Options:
       entry                   Evaluation entry to read solutions from (format: namespace/name/version)
@@ -837,12 +838,12 @@ class AgentCli:
       For creating and interacting with agents, run them locally or via NEAR AI Cloud, and manage their lifecycle.
 
     Commands:
-      create        Create a new agent or fork an existing one (--name, --description, --fork)
-      interactive   Run an agent interactively (--agent, --thread-id, --tool-resources, --local, --verbose, --env-vars)
-      task          Run a single task with an agent (--agent*, --task*, --thread-id, --tool-resources, --file-ids, --local, --verbose, --env-vars)
-      upload        Upload an agent to the registry (--local-path, --bump, --minor-bump, --major-bump)
-      dev           Run local UI for development of agents
-      inspect       Inspect environment from given path (<PATH>*)
+      nearai agent create        Create a new agent or fork an existing one (--name, --description, --fork)
+      nearai agent interactive   Run an agent interactively (--agent, --thread-id, --tool-resources, --local, --verbose, --env-vars)
+      nearai agent task          Run a single task with an agent (--agent*, --task*, --thread-id, --tool-resources, --file-ids, --local, --verbose, --env-vars)
+      nearai agent upload        Upload an agent to the registry (--local-path, --bump, --minor-bump, --major-bump)
+      nearai agent dev           Run local UI for development of agents
+      nearai agent inspect       Inspect environment from given path (<PATH>*)
 
     Options:
       <PATH>          Path to the agent directory or agent ID
@@ -1272,7 +1273,7 @@ class VllmCli:
       Commands for running VLLM server with OpenAI-compatible API for local inference.
 
     Commands:
-      run    Run VLLM server with OpenAI-compatible API (--model, --host, --port, --tensor-parallel-size, --gpu-memory-utilization)
+      nearai vllm run    Run VLLM server with OpenAI-compatible API (--model, --host, --port, --tensor-parallel-size, --gpu-memory-utilization)
     
     Options:
       --model                  Path to the model or model name from Hugging Face
@@ -1317,7 +1318,7 @@ class HubCLI:
       Commands for interacting with the NEAR AI hub and accessing hosted models.
 
     Commands:
-      chat    Chat with model from NEAR AI hub (--query, --model, --provider, --endpoint, --info)
+      nearai hub chat    Chat with model from NEAR AI hub (--query, --model, --provider, --endpoint, --info)
     
     Options:
       --query      User's query to send to the model
@@ -1366,7 +1367,7 @@ class LogoutCLI:
       Clear your NEAR account authentication data from the local configuration.
     
     Commands:
-      (default)    Logout and remove authentication data
+      nearai logout   Logout and remove authentication data
     
     Examples:
       # Remove authentication data
@@ -1391,9 +1392,9 @@ class LoginCLI:
       Commands for authenticating with your NEAR account for accessing NEAR AI services.
 
     Commands:
-      (default)    Login with NEAR Mainnet account (--remote, --auth_url, --accountId, --privateKey)
-      status       Display login status and authentication details
-      save         Save NEAR account authorization data (--accountId, --signature, --publicKey, --callbackUrl, --nonce)
+      nearai login              Login with NEAR Mainnet account (--remote, --auth_url, --accountId, --privateKey)
+      nearai login status       Display login status and authentication details
+      nearai login save         Save NEAR account authorization data (--accountId, --signature, --publicKey, --callbackUrl, --nonce)
     
     Options:
       --remote      Enable remote login to sign message with NEAR account on another machine
@@ -1483,8 +1484,8 @@ class PermissionCli:
       Commands for managing permissions and access control for NEAR AI resources.
 
     Commands:
-      grant     Grant permission to an account (account_id*, permission*)
-      revoke    Revoke permission from an account (account_id*, --permission)
+      nearai permission grant     Grant permission to an account (account_id*, permission*)
+      nearai permission revoke    Revoke permission from an account (account_id*, --permission)
     
     Options:
       account_id    The NEAR account ID to grant or revoke permissions for
@@ -1522,16 +1523,17 @@ class PermissionCli:
 
 
 class CLI:
+    # TODO: Dynamically generate help menu based on available commands
     """
     Getting Started:
-      nearai              MAIN MENU HELP (This menu)
+      nearai              CLI MAIN MENU HELP
       nearai login        Authenticate with your NEAR account
       nearai logout       Clear your NEAR account authentication data
       nearai version      Display the current version of the CLI
       nearai location     Show the installation location of the CLI
 
     Agent Development:
-      nearai agent              AGENT HELP (Lists all agent commands & examples)
+      nearai agent              AGENT HELP MENU
       nearai agent create       Create a new agent or fork an existing one
       nearai agent upload       Upload an agent to the NEAR AI agent registry
       nearai agent interactive  Run an agent interactively
@@ -1540,7 +1542,7 @@ class CLI:
       nearai agent inspect      Inspect environment from given path
 
     Registry Management:
-      nearai registry                    REGISTRY HELP (Lists all registry commands & examples)
+      nearai registry                    REGISTRY HELP MENU
       nearai registry upload             Upload an item to the registry
       nearai registry download           Download an item from the registry
       nearai registry info               Show information about a registry item
@@ -1559,7 +1561,7 @@ class CLI:
       nearai hub chat           Chat with model from NEAR AI hub
 
     Configuration:
-      nearai config             CONFIG HELP (Lists all config commands & examples)
+      nearai config             CONFIG HELP MENU
       nearai config set         Set a configuration value
       nearai config get         Get a configuration value
       nearai config show        Show all configuration values
