@@ -6,7 +6,7 @@ import inspect
 import re
 import importlib.metadata
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List
 
 from rich.console import Console
 from rich.table import Table
@@ -247,50 +247,43 @@ def generate_main_cli_help(cli) -> None:
         "[bold white] Run [bold green]`nearai <command> --help`[/bold green] for more info about a command.\n[/bold white]"
     )
     console.print(
-        "[bold blue] - Docs: [bold green]https://docs.near.ai/[/bold green][/bold blue]\n"
-        "[bold blue] - Dev Support: [bold green]https://t.me/nearaialpha[/bold green][/bold blue]\n"
+        "[white] - Docs: [bold blue]https://docs.near.ai/[/bold blue][/white]\n"
+        "[white] - Dev Support: [bold blue]https://t.me/nearaialpha[/bold blue][/white]\n"
     )
 
 
-def format_help(obj, method_name: str = "__class__") -> None:
-    """Format a class or method's docstring as a help message and display it with rich formatting.
+def get_docstring_info(obj, method_name: str = "__class__") -> Tuple[Optional[str], Optional[str], bool, Optional[Dict[str, List[str]]]]:
+    """Get the docstring, command title, and parsed sections for a class or method.
     
     Args:
         obj: The object containing the docstring (class or method)
         method_name: The name of the method to format, or "__class__" to format the class's docstring
+        
+    Returns:
+        Tuple of (docstring, command_title, is_class, sections)
     """
     console = Console()
     
-    # Special case for CLI main menu
-    if method_name == "__class__" and obj.__class__.__name__ == "CLI":
-        generate_main_cli_help(obj)
-        return
-        
-    # Get docstring from class or method
     if method_name == "__class__":
         docstring = inspect.getdoc(obj)
         class_name = obj.__class__.__name__
         display_name = class_name.replace("Cli", "").replace("CLI", "")
         is_class = True
-        title = f"NEAR AI {display_name} Commands"
+        cmd_title = f"NEAR AI {display_name} Commands"
     else:
         method = getattr(obj, method_name, None)
         if not method or not method.__doc__:
             console.print(f"[bold red]No documentation available for {method_name}[/bold red]")
-            return
+            return None, None, False, None
         docstring = inspect.getdoc(method)
         class_name = obj.__class__.__name__
         display_name = class_name.replace("Cli", "").replace("CLI", "")
         is_class = False
-        title = f"Command: [bold white] nearai {display_name.lower()} {method_name} [/bold white]"
+        cmd_title = f"Command: [bold white]nearai {display_name.lower()} {method_name} [/bold white]"
     
     if not docstring:
         console.print(f"[bold red]No documentation available for {obj.__class__.__name__}[/bold red]")
-        return
-    
-    # Display title
-    console.rule("", style="dim")
-    console.print(f"\n[bold green]{title}[/bold green]")
+        return None, None, False, None
     
     # Extract sections from docstring with simplified parsing
     sections = {}
@@ -327,16 +320,41 @@ def format_help(obj, method_name: str = "__class__") -> None:
     # Save the last section
     if current_section:
         sections[current_section.lower()] = current_content
+        
+    return docstring, cmd_title, is_class, sections
+
+
+def format_help(obj, method_name: str = "__class__") -> None:
+    """Format a class or method's docstring as a help message and display it with rich formatting.
+    
+    Args:
+        obj: The object containing the docstring (class or method)
+        method_name: The name of the method to format, or "__class__" to format the class's docstring
+    """
+    console = Console()
+    
+    # Special case for CLI main menu
+    if method_name == "__class__" and obj.__class__.__name__ == "CLI":
+        generate_main_cli_help(obj)
+        return
+        
+    # Get docstring info from class or method
+    docstring, cmd_title, is_class, sections = get_docstring_info(obj, method_name)
+    if docstring is None:
+        return
     
     # Process Description section
     if "description" in sections:
         description = " ".join(sections["description"])
         if description:
-            console.print(Panel(description, title="Info", expand=False, border_style="blue"))
+            console.print(Panel(description, title="Info", expand=False, border_style="blue", width=120))
     
+    # Display command group / name
+    console.print(f"[bold green]{cmd_title}[/bold green\n]")  
+
     # Process Commands section for classes
     if is_class and "commands" in sections:
-        commands_table = Table(box=ROUNDED, expand=False)
+        commands_table = Table(box=ROUNDED, expand=False, width=120)
         commands_table.add_column("Command", style="cyan bold", no_wrap=True)
         commands_table.add_column("Description", style="white")
         commands_table.add_column("Flags", style="dim")
@@ -360,7 +378,7 @@ def format_help(obj, method_name: str = "__class__") -> None:
                         desc = match.group(2).strip()
                         flags = match.group(3) or ""
                         commands_table.add_row(f"{cmd}", desc, flags)
-        
+
         console.print(commands_table)
         
         # Check if there are any required parameters (marked with *)
@@ -371,11 +389,11 @@ def format_help(obj, method_name: str = "__class__") -> None:
                 break
         
         if has_required:
-            console.print("\n* Required parameter\n")
+            console.print("* Required parameter")
     
     # Process Arguments section for methods
     if not is_class and "arguments" in sections:
-        console.print("\n[bold green]Arguments:[/bold green]\n")
+        console.print("[bold green]Arguments:[/bold green]")
         
         args_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
         args_table.add_column(style="yellow")
