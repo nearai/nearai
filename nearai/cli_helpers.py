@@ -281,16 +281,16 @@ def format_help(obj, method_name: str = "__class__") -> None:
         docstring = inspect.getdoc(method)
         class_name = obj.__class__.__name__
         display_name = class_name.replace("Cli", "").replace("CLI", "")
-        command_name = method_name.capitalize()
         is_class = False
-        title = f"NEAR AI {display_name} {command_name}"
+        title = f"Command: [bold white] nearai {display_name.lower()} {method_name} [/bold white]"
     
     if not docstring:
         console.print(f"[bold red]No documentation available for {obj.__class__.__name__}[/bold red]")
         return
     
     # Display title
-    console.print(f"\n[bold green]{title}[/bold green]\n")
+    console.rule("", style="dim")
+    console.print(f"\n[bold green]{title}[/bold green]")
     
     # Extract sections from docstring with simplified parsing
     sections = {}
@@ -332,7 +332,7 @@ def format_help(obj, method_name: str = "__class__") -> None:
     if "description" in sections:
         description = " ".join(sections["description"])
         if description:
-            console.print(Panel(description, title="Info", title_align="left", expand=False, border_style="blue"))
+            console.print(Panel(description, title="Info", expand=False, border_style="blue"))
     
     # Process Commands section for classes
     if is_class and "commands" in sections:
