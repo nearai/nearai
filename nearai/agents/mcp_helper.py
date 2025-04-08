@@ -131,6 +131,10 @@ class MCPServerManager:
         """
         self.logger(f"MCP SERVER CONFIG: {mcp_server_config}")
 
+        # Convert dict to MCPServerConfig if needed
+        if isinstance(mcp_server_config, dict):
+            mcp_server_config = MCPServerConfig(**mcp_server_config)
+
         if mcp_server_config.url is None and mcp_server_config.command is None:
             raise MCPConnectionError("MCP server needs either a url or a command to be set")
 
@@ -145,7 +149,7 @@ class MCPServerManager:
             else StdioServerParameters(
                 command=mcp_server_config.command or "",
                 args=mcp_server_config.args or [],
-                env=mcp_server_config.env or {},
+                env=mcp_server_config.env or None,
             )
         )
         return transport_method, transport_params
@@ -170,22 +174,26 @@ class MCPServerManager:
             MCPConnectionError: If server initialization fails
         """
         try:
-            async with transport_method(transport_params) as session:
-                tools = (await asyncio.wait_for(
-                    session.list_tools(),
-                    timeout=INITIALIZATION_TIMEOUT
-                )).tools
-                self.logger(f"Found {len(tools)} tools")
-                return session, tools
+            async with transport_method(transport_params) as streams:
+                async with ClientSession(streams[0], streams[1]) as session:
+                  self.logger(f"Successfully connected to {server_name}.")
+                  await session.initialize()
+
+                  self.logger(f"Successfully initialized {server_name}.")
+                  tools = (await asyncio.wait_for(
+                      session.list_tools(),
+                      timeout=INITIALIZATION_TIMEOUT
+                  )).tools
+                  self.logger(f"Found {len(tools)} tools")
+                  return session, tools
         except Exception as e:
-            raise MCPConnectionError(f"Failed to initialize server {server_name}: {e}") from e
+            raise MCPConnectionError(f"Failed to initialize server {server_name}: {traceback.format_exc()}") from e
 
     async def register_tool(
         self,
         mcp_tool: Any,
         server_name: str,
-        transport_method: Callable,
-        transport_params: Any,
+        server_config: MCPServerConfig,
         tool_registry: ToolRegistry,
     ) -> MCPToolData:
         """Register a single MCP tool and prepare its server map entry.
@@ -204,12 +212,11 @@ class MCPServerManager:
             MCPToolError: If tool registration fails
         """
         try:
-            tool_registry.register_mcp_tool(mcp_tool, None)  # Call_tool will be set during execution
+            tool_registry.register_mcp_tool(mcp_tool.model_dump(), None)  # Call_tool will be set during execution
 
             server_map_entry = {
                 "name": server_name,
-                "transport_method": transport_method,
-                "transport_params": transport_params,
+                "config": server_config
             }
 
             tool_data = MCPToolData(
@@ -220,7 +227,7 @@ class MCPServerManager:
             self.logger(f"Registered tool {mcp_tool.name} from server {server_name}")
             return tool_data, {mcp_tool.name: server_map_entry}
         except Exception as e:
-            raise MCPToolError(f"Failed to register tool {mcp_tool.name}: {e}") from e
+            raise MCPToolError(f"Failed to register tool {mcp_tool.name}: {traceback.format_exc()}") from e
 
     async def add_server(
         self,
@@ -257,8 +264,7 @@ class MCPServerManager:
                 tool_data, map_entry = await self.register_tool(
                     mcp_tool,
                     server_name,
-                    transport_method,
-                    transport_params,
+                    mcp_server_config,
                     tool_registry,
                 )
                 tools_data.append(tool_data)
@@ -297,9 +303,7 @@ class MCPServerManager:
         try:
             self.logger(f"Connecting to {server['name']} to execute {tool_call.function.name}...")
             server_config = server["config"]
-            transport_method, transport_params = await self.get_transport_method(
-                MCPServerConfig(**server_config)
-            )
+            transport_method, transport_params = await self.get_transport_method(server_config)
 
             async with transport_method(transport_params) as streams:
                 async with ClientSession(streams[0], streams[1]) as session:
@@ -513,7 +517,7 @@ class MCPServerManager:
                 [
                     {
                         "role": "system",
-                        "content": "You are an assistant and you can use a list of tools to help answer user questions.",
+                        "content": "You are an assistant and you can use a list of tools to help answer user questions. I want all your response to be human friendly formatted. So if you receive a JSON object, you should format it as a human readable string.",
                     }
                 ] + self.get_messages(),
                 tools=tool_registry.get_all_tool_definitions(),
@@ -552,6 +556,7 @@ class MCPServerManager:
             MCPError: If setup or execution fails
         """
         try:
+            self.logger("Setting up MCP servers...")
             tool_server_map: Dict[str, Any] = {}
 
             # Check if we can restore from a valid saved state
