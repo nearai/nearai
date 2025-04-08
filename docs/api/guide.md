@@ -1,8 +1,20 @@
 # API Basics
 
-To use the Near AI [Web API methods](https://api.near.ai/api/hub/standard), you'll need an [authorization token](#auth-token) from your user account.
+NEAR AI provides a standard Web API based on OpenAPI to interact with the Developer Hub, allowing powerful backend integrations.
 
-## Auth token
+In this article you'll find information on how to generate a valid `auth` token to use the API, and links to the API reference documentation:
+
+- [Using the API](#using-the-api)
+- [API documentation](#api-documentation)
+- [Interactive API](#interactive-api)
+
+## Using the API
+
+To use the Near AI [Web API methods](https://api.near.ai/api/hub/standard), you'll need an [authorization token](#auth-token) generated from your NEAR account.
+
+In the next section, you can find detailed information about the `auth` bearer token, and how it [can be generated](#generate-the-token) in a programmatic way.
+
+### Auth token
 
 The `auth` bearer token is a stringyfied JSON that must contain `account_id`, `public_key`, `signature`, `nonce`, and `message` (it can also include some optional fields).
 
@@ -33,7 +45,7 @@ auth:'{"account_id":"demoaccount.near","public_key":"ed25519:G59i7touKk.....QGUr
 	auth:"%7B%22account_id%22%3A%22demoaccount.near%22%2C%22public_key%22%3A%22ed25519%3AG59i7tou.....QGUrfSkeJ%22%2C%22signature%22%3A%22P6fZ5bp9j.....Z7BvtqDQ%3D%3D%22%2C%22callback_url%22%3A%22https%3A%2F%2Fapp.near.ai%2Fsign-in%2Fcallback%22%2C%22message%22%3A%22Welcome%20to%20NEAR%20AI%20Hub!%22%2C%22recipient%22%3A%22ai.near%22%2C%22nonce%22%3A%2200000000000000000001741287395592%22%7D"
 	```
 
-## Generate the token
+### Generate the token
 
 You can also generate the `auth` bearer token using your preferred programming language.
 In this section you can find a few code samples using Python, Rust, and JavaScript.
@@ -204,3 +216,67 @@ In this section you can find a few code samples using Python, Rust, and JavaScri
 	    }))?)
 	}
 	```
+
+## API documentation
+
+You can find complete and detailed technical reference documentation regarding available NEAR AI API methods in [this page](https://api.near.ai/redoc).
+
+![API docs](../assets/images/redoc.png)
+
+Reference documentation includes:
+
+- Request schemas
+- Query parameters
+- Responses
+- Response schemas
+
+**API Endpoints reference documentation**
+
+| Link 			| Description |
+|---------------|-------------|
+| [Default](https://api.near.ai/redoc)		| Main Hub methods. |
+| [Registry](https://api.near.ai/redoc#tag/registry)		| Registry management methods. |
+| [Agents & Assistants](https://api.near.ai/redoc#tag/agents-assistants)	| Agent management methods. |
+| [Benchmark](https://api.near.ai/redoc#tag/benchmark)		| Benchmarking methods. |
+| [Stars](https://api.near.ai/redoc#tag/stars)				| Star management methods. |
+| [Jobs](https://api.near.ai/redoc#tag/jobs)				| Jobs management methods. |
+| [Permissions](https://api.near.ai/redoc#tag/permissions)	| Permission methods. |
+| [Evaluation](https://api.near.ai/redoc#tag/evaluation)	| Evaluation methods. |
+| [Delegation](https://api.near.ai/redoc#tag/delegation)	| Delegation management methods. |
+| [Logs](https://api.near.ai/redoc#tag/logs)				| Logging methods. |
+| [Vector Stores](https://api.near.ai/redoc#tag/Vector-Stores)		| Vector Store management methods. |
+| [Files](https://api.near.ai/redoc#tag/Files)				| File management methods. |
+| [Threads](https://api.near.ai/redoc#tag/Threads)			| Thread management methods. |
+| [Hub Secrets](https://api.near.ai/redoc#tag/Hub-Secrets)	| Manage Hub secrets. |
+| [Run Schedule](https://api.near.ai/redoc#tag/Run-Schedule)		| Scheduling methods. |
+
+
+## Interactive API
+
+NEAR AI also provides an [interactive Web API](https://api.near.ai/docs) based on [Swagger UI](https://swagger.io/) that allows you to visualize and interact with NEAR AI API’s resources without having any of the implementation logic in place.
+
+The interactive API is automatically generated from the OpenAPI specification, providing a simple API tool for back end implementation and client side consumption.
+
+!!! info
+	Please note that to execute API calls using this interactive tool, you need to provide a valid authentication token. Check [this section](#auth-token) to learn more about generating your `auth` token.
+
+![API docs](../assets/images/swagger.png)
+
+
+**Interactive API Endpoints**
+
+- [Default](https://api.near.ai/docs)
+- [Registry](https://api.near.ai/docs#/registry)
+- [Agents & Assistants](https://api.near.ai/docs#/agents%2C%20assistants)
+- [Benchmark](https://api.near.ai/docs#/benchmark)
+- [Stars](https://api.near.ai/docs#/stars)
+- [Jobs](https://api.near.ai/docs#/jobs)
+- [Permissions](https://api.near.ai/docs#/permissions)
+- [Evaluation](https://api.near.ai/docs#/evaluation)
+- [Delegation](https://api.near.ai/docs#/delegation)
+- [Logs](https://api.near.ai/docs#/logs)
+- [Vector Stores](https://api.near.ai/docs#/Vector%20Stores)
+- [Files](https://api.near.ai/docs#/Files)
+- [Threads](https://api.near.ai/docs#/Threads)
+- [Hub Secrets](https://api.near.ai/docs#/Hub%20Secrets)
+- [Run Schedule](https://api.near.ai/docs#/Run%20Schedule)
