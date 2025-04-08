@@ -1,0 +1,15 @@
+{
+  "name": "ts-runner-exp",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "start": "node ./agent-runner.js"
+  },
+  "dependencies": {
+    "@jutsuai/nearai-ts-core": "^0.2.1"
+  }
+}
