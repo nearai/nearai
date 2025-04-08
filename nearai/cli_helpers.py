@@ -279,7 +279,7 @@ def get_docstring_info(obj, method_name: str = "__class__") -> Tuple[Optional[st
         class_name = obj.__class__.__name__
         display_name = class_name.replace("Cli", "").replace("CLI", "")
         is_class = False
-        cmd_title = f"Command: [bold white]nearai {display_name.lower()} {method_name} [/bold white]"
+        cmd_title = f"[bold white]nearai {display_name.lower()} {method_name} [/bold white]"
     
     if not docstring:
         console.print(f"[bold red]No documentation available for {obj.__class__.__name__}[/bold red]")
@@ -392,8 +392,8 @@ def format_help(obj, method_name: str = "__class__") -> None:
             console.print("* Required parameter")
     
     # Process Arguments section for methods
-    if not is_class and "arguments" in sections:
-        console.print("[bold green]Arguments:[/bold green]")
+    if not is_class and "args" in sections:
+        console.print("\n[bold green]Options:[/bold green]")
         
         args_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
         args_table.add_column(style="yellow")
@@ -402,7 +402,7 @@ def format_help(obj, method_name: str = "__class__") -> None:
         current_arg = None
         current_desc = []
         
-        for line in sections["arguments"]:
+        for line in sections["args"]:
             if line.strip():
                 # Check if this line defines a new argument
                 arg_match = re.match(r'^\s*(\S+)\s+(.*?)$', line)
