@@ -1,21 +1,21 @@
+import importlib.metadata
+import inspect
 import json
 import os
+import re
 import select
 import sys
-import inspect
-import re
-import importlib.metadata
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, List
+from typing import Any, Dict, List, Optional, Tuple
 
+from rich.box import ROUNDED
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
-from rich.panel import Panel
-from rich.box import ROUNDED
 
-from nearai.registry import validate_version
 from nearai.banners import NEAR_AI_BANNER
+from nearai.registry import validate_version
 
 
 def display_agents_in_columns(agents: list[Path]) -> None:
@@ -157,23 +157,24 @@ def display_version_check(namespace: str, name: str, version: str, exists: bool)
 
 def generate_main_cli_help(cli) -> None:
     """Format the main CLI menu help display.
-    
+
     Args:
         cli: The CLI class instance
+
     """
     console = Console()
-    
+
     # Display banner and version
     version = importlib.metadata.version("nearai")
     console.print(NEAR_AI_BANNER)
     console.print(f"[bold cyan]NEAR AI CLI[/bold cyan] [dim]v{version}[/dim]")
-    
+
     # Get CLI docstring
     docstring = inspect.getdoc(cli)
     if not docstring:
         console.print("[bold red]No documentation available for the CLI[/bold red]")
         return
-    
+
     # Single table for all commands
     table = Table(
         box=ROUNDED,
@@ -184,37 +185,30 @@ def generate_main_cli_help(cli) -> None:
     )
     table.add_column("Command", style="cyan")
     table.add_column("Description", style="white")
-    
     # Parse docstring into sections
     sections = {}
     current_section = None
     current_lines = []
-    
     # Process the docstring line by line
-    for line in docstring.strip().split('\n'):
+    for line in docstring.strip().split("\n"):
         line = line.strip()
-        
         # Skip empty lines
         if not line:
             continue
-            
         # Check if this is a section header
-        if line.endswith(':'):
+        if line.endswith(":"):
             # Save previous section if we had one
             if current_section:
                 sections[current_section.lower()] = current_lines
-                
             # Start a new section
-            current_section = line.rstrip(':')
+            current_section = line.rstrip(":")
             current_lines = []
         elif current_section:
             # Add content to the current section
             current_lines.append(line)
-    
     # Save the last section if we have one
     if current_section:
         sections[current_section.lower()] = current_lines
-    
     # Process each section in order they appeared in the docstring
     first_section = True
     for section_name, section_lines in sections.items():
@@ -223,14 +217,12 @@ def generate_main_cli_help(cli) -> None:
             table.add_row("", "")  # Blank row as separator
         else:
             first_section = False
-        
         # Add section header
         table.add_row(f"[bold green]{section_name.title()}[/bold green]", "")
-        
         # Add commands for this section
         for cmd_line in section_lines:
             # Process command line - split by 2+ spaces
-            parts = re.split(r'\s{2,}', cmd_line, 1)
+            parts = re.split(r"\s{2,}", cmd_line, maxsplit=1)
             if len(parts) == 2:
                 cmd, desc = parts
                 # Use the command as is without adding prefix
@@ -241,10 +233,9 @@ def generate_main_cli_help(cli) -> None:
                 cmd = cmd_line.strip()
                 if not cmd.startswith("["):
                     table.add_row(cmd, "")
-    
     console.print(table)
     console.print(
-        "[bold white] Run [bold green]`nearai <command> --help`[/bold green] for more info about a command.\n[/bold white]"
+        "[bold white] Run [bold green]`nearai <command> --help`[/bold green] for more info about a command.\n[/bold white]"  # noqa: E501
     )
     console.print(
         "[white] - Docs: [bold blue]https://docs.near.ai/[/bold blue][/white]\n"
@@ -252,18 +243,23 @@ def generate_main_cli_help(cli) -> None:
     )
 
 
-def get_docstring_info(obj, method_name: str = "__class__") -> Tuple[Optional[str], Optional[str], bool, Optional[Dict[str, List[str]]]]:
+def get_docstring_info(
+    obj, method_name: str = "__class__"
+) -> Tuple[Optional[str], Optional[str], bool, Optional[Dict[str, List[str]]]]:
     """Get the docstring, command title, and parsed sections for a class or method.
-    
+
     Args:
-        obj: The object containing the docstring (class or method)
-        method_name: The name of the method to format, or "__class__" to format the class's docstring
-        
+        obj : Any
+            The object containing the docstring (class or method)
+        method_name : str
+            The name of the method to format, or "__class__" to format the class's docstring
+
     Returns:
         Tuple of (docstring, command_title, is_class, sections)
+
     """
     console = Console()
-    
+
     if method_name == "__class__":
         docstring = inspect.getdoc(obj)
         class_name = obj.__class__.__name__
@@ -280,19 +276,19 @@ def get_docstring_info(obj, method_name: str = "__class__") -> Tuple[Optional[st
         display_name = class_name.replace("Cli", "").replace("CLI", "")
         is_class = False
         cmd_title = f"[bold white]nearai {display_name.lower()} {method_name} [/bold white]"
-    
     if not docstring:
         console.print(f"[bold red]No documentation available for {obj.__class__.__name__}[/bold red]")
         return None, None, False, None
-    
+
     # Extract sections from docstring with simplified parsing
     sections = {}
     current_section = None
     current_content = []
-    
+    description_lines = []
+
     # Normalize line endings and handle indentation
     lines = docstring.split("\n")
-    
+
     # Strip common indentation
     if len(lines) > 1:
         # Find the minimum indentation (excluding blank lines)
@@ -300,79 +296,109 @@ def get_docstring_info(obj, method_name: str = "__class__") -> Tuple[Optional[st
         if indents:
             min_indent = min(indents)
             lines = [line[min_indent:] if line and len(line) >= min_indent else line for line in lines]
-    
-    # Parse sections - looking for "Section:" format headers
-    for line in lines:
+
+    # First line is always description
+    if lines:
+        description_lines.append(lines[0].strip())
+
+    # Start processing from line after the first blank line (if it exists)
+    in_description = True
+    i = 1
+    while i < len(lines):
+        line = lines[i].strip()
+
+        # Skip the expected blank line after first description line
+        if i == 1 and not line:
+            i += 1
+            continue
+
         # Check if this is a section header
-        section_match = re.match(r'^([A-Za-z][A-Za-z\s]+):$', line.strip())
+        section_match = re.match(r"^([A-Za-z][A-Za-z\s]+):$", line)
         if section_match:
+            in_description = False
             # Save the previous section if it exists
             if current_section:
                 sections[current_section.lower()] = current_content
-            
             # Start a new section
             current_section = section_match.group(1)
             current_content = []
-        elif current_section and line.strip():
+
+            # Skip the "----" decoration line that might follow section headers
+            if i + 1 < len(lines) and re.match(r"^-+$", lines[i + 1].strip()):
+                i += 1
+        elif in_description and line:
+            # If still in description and not a blank line, add to description
+            description_lines.append(line)
+        elif current_section and line:
             # Add non-empty lines to the current section
-            current_content.append(line.strip())
-    
+            current_content.append(line)
+
+        i += 1
+
     # Save the last section
     if current_section:
         sections[current_section.lower()] = current_content
-        
+
+    # Add the complete description as a "description" section
+    if description_lines:
+        sections["description"] = description_lines
+
     return docstring, cmd_title, is_class, sections
 
 
 def format_help(obj, method_name: str = "__class__") -> None:
     """Format a class or method's docstring as a help message and display it with rich formatting.
-    
+
     Args:
-        obj: The object containing the docstring (class or method)
-        method_name: The name of the method to format, or "__class__" to format the class's docstring
+        obj : Any
+            The object containing the docstring (class or method)
+        method_name : str
+            The name of the method to format, or "__class__" to format the class's docstring
+
     """
     console = Console()
-    
     # Special case for CLI main menu
     if method_name == "__class__" and obj.__class__.__name__ == "CLI":
         generate_main_cli_help(obj)
         return
-        
     # Get docstring info from class or method
     docstring, cmd_title, is_class, sections = get_docstring_info(obj, method_name)
     if docstring is None:
         return
-    
-    # Process Description section
+
+    # Process Description section - prefer "description" section, fall back to "details" if exists
     if "description" in sections:
         description = " ".join(sections["description"])
         if description:
             console.print(Panel(description, title="Info", expand=False, border_style="blue", width=120))
-    
+    elif "details" in sections:
+        details = " ".join(sections["details"])
+        if details:
+            console.print(Panel(details, title="Info", expand=False, border_style="blue", width=120))
+
     # Display command group / name
-    console.print(f"[bold green]{cmd_title}[/bold green\n]")  
+    console.print(f"[bold green]{cmd_title}[/bold green\n]")
 
     # Process Commands section for classes
     if is_class and "commands" in sections:
-        commands_table = Table(box=ROUNDED, expand=False, width=120)
+        commands_table = Table(box=ROUNDED, expand=False, width=120, style="dim")
         commands_table.add_column("Command", style="cyan bold", no_wrap=True)
         commands_table.add_column("Description", style="white")
         commands_table.add_column("Flags", style="dim")
-        
         for line in sections["commands"]:
             if line.strip():
                 # First try to split by two spaces to separate command from description
-                parts = line.split('  ', 1)
+                parts = line.split("  ", 1)
                 if len(parts) == 2:
                     cmd = parts[0].strip()
                     # Check for flags in parentheses
-                    desc_parts = parts[1].strip().split('(', 1)
+                    desc_parts = parts[1].strip().split("(", 1)
                     desc = desc_parts[0].strip()
-                    flags = desc_parts[1].rstrip(')') if len(desc_parts) > 1 else ""
+                    flags = desc_parts[1].rstrip(")") if len(desc_parts) > 1 else ""
                     commands_table.add_row(f"{cmd}", desc, flags)
                 else:
                     # Fall back to regex if no two spaces found
-                    match = re.match(r'^\s*(\S+)\s+(.*?)(?:\s*\(([^)]*)\)|$)', line)
+                    match = re.match(r"^\s*(\S+)\s+(.*?)(?:\s*\(([^)]*)\)|$)", line)
                     if match:
                         cmd = match.group(1)
                         desc = match.group(2).strip()
@@ -380,89 +406,64 @@ def format_help(obj, method_name: str = "__class__") -> None:
                         commands_table.add_row(f"{cmd}", desc, flags)
 
         console.print(commands_table)
-        
         # Check if there are any required parameters (marked with *)
         has_required = False
         for line in sections["commands"]:
-            if '*' in line:
+            if "*" in line:
                 has_required = True
                 break
-        
         if has_required:
             console.print("* Required parameter")
-    
+
     # Process Arguments section for methods
+    def _process_items_section(sections, section_name, section_title):
+        """Helper function to process and display a section with items and descriptions."""
+        if section_name in sections:
+            console.print(f"\n[bold green]{section_title}:[/bold green]\n")
+
+            current_item = None
+            current_desc = []
+
+            for line in sections[section_name]:
+                if line.strip():
+                    # Check for item name only (matching option flags or argument names)
+                    pattern = r"^\s*(-{0,2}\S+)\s*$" if section_name == "options" else r"^\s*(\S+)\s*$"
+                    item_match = re.match(pattern, line)
+
+                    if item_match:
+                        # If we already have an item being processed, print it
+                        if current_item:
+                            desc_text = " ".join(current_desc)
+                            console.print(f"  [yellow bold]{current_item:<25}[/yellow bold][dim]{desc_text}[/dim]")
+
+                        # Set up the new item
+                        current_item = item_match.group(1)
+                        current_desc = []
+                    else:
+                        # This is a description line for the current item
+                        if current_item:
+                            current_desc.append(line.strip())
+
+            # Print the last item
+            if current_item:
+                desc_text = " ".join(current_desc)
+                console.print(f"  [yellow bold]{current_item:<25}[/yellow bold][dim]{desc_text}[/dim]")
+
+            console.print()
+
     if not is_class and "args" in sections:
-        console.print("\n[bold green]Options:[/bold green]")
-        
-        args_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
-        args_table.add_column(style="yellow")
-        args_table.add_column(style="white")
-        
-        current_arg = None
-        current_desc = []
-        
-        for line in sections["args"]:
-            if line.strip():
-                # Check if this line defines a new argument
-                arg_match = re.match(r'^\s*(\S+)\s+(.*?)$', line)
-                if arg_match:
-                    if current_arg:
-                        args_table.add_row(current_arg, " ".join(current_desc))
-                    current_arg = arg_match.group(1)
-                    current_desc = [arg_match.group(2).strip()]
-                else:
-                    # This is a continuation of the previous argument's description
-                    if current_arg:
-                        current_desc.append(line.strip())
-        
-        # Add the last argument
-        if current_arg:
-            args_table.add_row(current_arg, " ".join(current_desc))
-        
-        console.print(args_table)
-        console.print()
-    
+        _process_items_section(sections, "args", "OPTIONS")
+
     # Process Options section
     if "options" in sections:
-        console.print("\n[bold green]Options:[/bold green]\n")
-        
-        options_table = Table(box=None, show_header=False, padding=(0, 2), expand=False)
-        options_table.add_column(style="yellow")
-        options_table.add_column(style="white")
-        
-        current_option = None
-        current_desc = []
-        
-        for line in sections["options"]:
-            if line.strip():
-                # Check if this line defines a new option
-                option_match = re.match(r'^\s*(-{0,2}\S+)\s+(.*?)$', line)
-                if option_match:
-                    if current_option:
-                        options_table.add_row(current_option, " ".join(current_desc))
-                    current_option = option_match.group(1)
-                    current_desc = [option_match.group(2).strip()]
-                else:
-                    # This is a continuation of the previous option's description
-                    if current_option:
-                        current_desc.append(line.strip())
-        
-        # Add the last option
-        if current_option:
-            options_table.add_row(current_option, " ".join(current_desc))
-        
-        console.print(options_table)
-        console.print()
-    
+        _process_items_section(sections, "options", "Options")
+
     # Process Examples section
     if "examples" in sections:
         examples_text = []
-        
         # Track comment/command pairs
         current_example = []
         in_example = False
-        
         for line in sections["examples"]:
             if line.strip():
                 if line.startswith("#"):
@@ -471,7 +472,6 @@ def format_help(obj, method_name: str = "__class__") -> None:
                         examples_text.append("\n".join(current_example))
                         examples_text.append("")  # Empty line between examples
                         current_example = []
-                    
                     # Add the comment
                     current_example.append(f"[dim]{line}[/dim]")
                     in_example = True
@@ -483,23 +483,15 @@ def format_help(obj, method_name: str = "__class__") -> None:
                 # Empty line in docstring - add to current example
                 if current_example:
                     current_example.append("")
-        
         # Add the last example if there is one
         if current_example:
             examples_text.append("\n".join(current_example))
-        
         console.print(
-            Panel(
-                "\n".join(examples_text),
-                title="Examples",
-                border_style="cyan",
-                expand=False,
-                padding=(1, 2)
-            )
+            Panel("\n".join(examples_text), title="Examples", border_style="cyan", expand=False, padding=(1, 2))
         )
         console.print()
-    
-    # Process Documentation section 
+
+    # Process Documentation section
     if "documentation" in sections:
         doc_content = " ".join(sections["documentation"])
         console.print(f"For more information see: [bold blue]{doc_content}[/bold blue]\n")
@@ -507,42 +499,36 @@ def format_help(obj, method_name: str = "__class__") -> None:
 
 def handle_help_request(args=None):
     """Common handler for CLI help requests.
-    
+
     Args:
         args: Command line arguments (uses sys.argv if None)
-    
+
     Returns:
         True if help was displayed, False otherwise
+
     """
-    import sys
-    from nearai.cli import CLI
-    
     if args is None:
         args = sys.argv
-    
     # Create CLI instance
+    from nearai.cli import CLI
     cli = CLI()
-    
     # Special case for agent upload, which is an alias for registry upload
     if len(args) == 4 and args[1] == "agent" and args[2] == "upload" and args[3] == "--help":
         # Display help for registry upload subcommand
         if hasattr(cli, "registry"):
-            registry_obj = getattr(cli, "registry")
+            registry_obj = cli.registry
             if hasattr(registry_obj, "upload"):
                 format_help(registry_obj, "upload")
                 return True
         return False
-    
     # No arguments - show main help
     if len(args) == 1:
         format_help(cli, "__class__")
         return True
-    
     # Help with no specific command
     if len(args) == 2 and args[1] == "--help":
         format_help(cli, "__class__")
         return True
-    
     # Help for a specific command
     if len(args) == 3 and args[2] == "--help":
         command = args[1]
@@ -550,7 +536,6 @@ def handle_help_request(args=None):
             format_help(getattr(cli, command))
             return True
         return False
-    
     # Help for a specific subcommand
     if len(args) == 4 and args[3] == "--help":
         command = args[1]
@@ -561,5 +546,4 @@ def handle_help_request(args=None):
                 format_help(cmd_obj, subcommand)
                 return True
         return False
-    
     return False
