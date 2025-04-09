@@ -92,28 +92,28 @@ class RegistryCli:
       nearai registry update : Update metadata of a registry item
         (<path>*)
 
-    Options:
-      <path>* : str
+    Args:
+      <path>* (str) :
         Path to the directory containing the agent to upload
-      <entry-location>* : str
+      <entry-location>* (str) :
         Entry location of the item to download (format: namespace/name/version)
-      --force : bool
+      --force (bool) :
         Force download even if the item exists locally
-      --namespace : str
+      --namespace (str) :
         Filter items by namespace
-      --category : str
+      --category (str) :
         Filter items by category (e.g., 'agent', 'model')
-      --tags : str
+      --tags (str) :
         Filter items by tags (comma-separated)
-      --total : int
+      --total (int) :
         Maximum number of items to show
-      --offset : int
+      --offset (int) :
         Offset for pagination
-      --show-all : bool
+      --show-all (bool) :
         Show all versions of items
-      --show-latest-version : bool
+      --show-latest-version (bool) :
         Show only the latest version of each item
-      --star : str
+      --star (str) :
         Show items starred by a specific user
 
     Examples:
@@ -143,7 +143,7 @@ class RegistryCli:
         Includes metadata and available provider matches for models.
 
         Args:
-          entry : str
+          entry (str) :
             Entry location of the item to display information for (format: namespace/name/version)
 
         Examples:
@@ -263,22 +263,22 @@ class RegistryCli:
         You can filter the results by namespace, category, tags, and other criteria to find specific items.
 
         Args:
-          namespace : str
+          namespace (str) :
             Filter items by namespace/user account (example.near)
-          category : str
+          category (str) :
             Filter items by category ('agent', 'model', 'evaluation')
-          tags : str
+          tags (str) :
             Filter items by tags (comma-separated)
-          total : int
+          total (int) :
             Maximum number of items to show
             (default: 32)
-          offset : int
+          offset (int) :
             Offset for pagination (default: 0)
-          show_all : bool
+          show_all (bool) :
             Show all versions of items (default: False)
-          show_latest_version : bool
+          show_latest_version (bool) :
             Show only the latest version of each item (default: True)
-          star : str
+          star (str) :
             Show items starred by a specific user
 
         Examples:
@@ -349,7 +349,7 @@ class RegistryCli:
         Looks for a metadata.json file in the given directory and updates the remote metadata with the new values.
 
         Args:
-          local_path : str
+          local_path (str) :
             Path to the directory containing the item to update (default: current directory)
 
         Examples:
@@ -393,7 +393,7 @@ class RegistryCli:
         This command helps keep the registry up-to-date with the latest models from various providers.
 
         Args:
-          dry_run : bool
+          dry_run (bool) :
             Perform a dry run without actually uploading (default: True)
 
         Examples:
@@ -459,13 +459,13 @@ class RegistryCli:
         """Upload an item to the NEAR AI registry for public use.
 
         Args:
-          local_path : str
+          local_path (str) :
             Path to the agent directory (default: current directory)
-          bump : bool
+          bump (bool) :
             Automatically increment patch version if it already exists
-          minor_bump : bool
+          minor_bump (bool) :
             Bump with minor version increment (0.1.0 → 0.2.0)
-          major_bump : bool
+          major_bump (bool) :
             Bump with major version increment (1.5.2 → 2.0.0)
 
         Examples:
@@ -639,9 +639,9 @@ class RegistryCli:
         This allows you to use or inspect agents, models, datasets, etc. that have been published by others.
 
         Args:
-          entry_location : str
+          entry_location (str) :
             Entry location of the item to download (format: namespace/name/version)
-          force : bool
+          force (bool) :
             Force download even if the item already exists locally (default: False)
 
         Examples:
@@ -672,10 +672,13 @@ class ConfigCli:
         (key*)
       nearai config show : Display all configuration values
 
-    Options:
-      key       The configuration key to set or get
-      value     The value to assign to the configuration key
-      --local   Store the configuration value in the local config file (default: global)
+    Args:
+      key* (str) :
+        The configuration key to set or get
+      value* (str) :
+        The value to assign to the configuration key
+      --local (bool) :
+        Store the configuration value in the local config file (default: global)
 
     Examples:
       # View all configuration values
@@ -723,34 +726,34 @@ class BenchmarkCli:
       nearai benchmark list : List all executed benchmarks
         (--namespace, --benchmark, --solver, --args, --total, --offset)
 
-    Options:
-      dataset*
+    Args:
+      dataset* (str) :
         Dataset to benchmark on
-      solver_strategy*
+      solver_strategy* (str) :
         Solver strategy to use
-      --max-concurrent
+      --max-concurrent (int) :
         Number of concurrent tasks to run (default: 2)
-      --force
+      --force (bool) :
         Force re-run even if cached results exist
-      --subset
+      --subset (str) :
         Subset of the dataset to run on
-      --check-compatibility
+      --check-compatibility (bool) :
         Check if solver is compatible with dataset (default: True)
-      --record
+      --record (bool) :
         Record the benchmark results
-      --num-inference-retries
+      --num-inference-retries (int) :
         Number of retries for inference (default: 10)
-      --namespace
+      --namespace (str) :
         Filter benchmarks by namespace
-      --benchmark
+      --benchmark (str) :
         Filter benchmarks by benchmark name
-      --solver
+      --solver (str) :
         Filter benchmarks by solver name
-      --args
+      --args (str) :
         Filter benchmarks by solver arguments
-      --total
+      --total (int) :
         Total number of results to show (default: 32)
-      --offset
+      --offset (int) :
         Offset for pagination (default: 0)
 
     Examples:
@@ -810,24 +813,24 @@ class BenchmarkCli:
         Results are cached in the database for subsequent runs unless --force is used.
 
         Args:
-            dataset : (str)
-                Name of the dataset to benchmark against
-            solver_strategy : (str)
-                Name of the solver strategy to use
-            max_concurrent : (int)
-                Maximum number of concurrent runs (-1 for CPU count)
-            force : (bool)
-                Force re-running the benchmark and update cache
-            subset : (str)
-                Optional subset of the dataset to use
-            check_compatibility : (bool)
-                Whether to check solver-dataset compatibility
-            record : (bool)
-                Whether to record detailed benchmark results
-            num_inference_retries : (int)
-                Number of retries for inference operations
-            **solver_args : (dict)
-                Additional arguments passed to the solver strategy
+          dataset (str) :
+            Name of the dataset to benchmark against
+          solver_strategy (str) :
+            Name of the solver strategy to use
+          max_concurrent (int) :
+            Maximum number of concurrent runs (-1 for CPU count)
+          force (bool) :
+            Force re-running the benchmark and update cache
+          subset (str) :
+            Optional subset of the dataset to use
+          check_compatibility (bool) :
+            Whether to check solver-dataset compatibility
+          record (bool) :
+            Whether to record detailed benchmark results
+          num_inference_retries (int) :
+            Number of retries for inference operations
+          **solver_args : (dict)
+            Additional arguments passed to the solver strategy
 
         Examples:
             # Run a benchmark with default settings
@@ -906,18 +909,18 @@ class BenchmarkCli:
         paginated using limit and offset parameters.
 
         Args:
-            namespace : (str)
-                Filter results by namespace
-            benchmark : (str)
-                Filter results by benchmark name
-            solver : (str)
-                Filter results by solver name
-            args : (str)
-                Filter results by solver arguments (JSON string)
-            total : (int)
-                Maximum number of results to display
-            offset : (int)
-                Number of results to skip
+          namespace (str) :
+            Filter results by namespace
+          benchmark (str) :
+            Filter results by benchmark name
+          solver (str) :
+            Filter results by solver name
+          args (str) :
+            Filter results by solver arguments (JSON string)
+          total (int) :
+            Maximum number of results to display
+          offset (int) :
+            Number of results to skip
 
         Examples:
             # List all benchmarks with default pagination
@@ -979,14 +982,21 @@ class EvaluationCli:
       nearai evaluation read_solutions : Read solutions.json from evaluation entry
         (entry*, --status, --verbose)
 
-    Options:
-      entry*                    Evaluation entry to read solutions from (format: namespace/name/version)
-      --all-key-columns         Show all key columns in the table
-      --all-metrics             Show all metrics in the table
-      --num-columns             Maximum number of columns to display (default: 6)
-      --metric-name-max-length  Maximum length for metric names in display (default: 30)
-      --status                  Filter solutions by status (true/false)
-      --verbose                 Show verbose information including detailed logs
+    Args:
+      entry* (str) :
+        Evaluation entry to read solutions from (format: namespace/name/version)
+      --all-key-columns (bool) :
+        Show all key columns in the table
+      --all-metrics (bool) :
+        Show all metrics in the table
+      --num-columns (int) :
+        Maximum number of columns to display (default: 6)
+      --metric-name-max-length (int) :
+        Maximum length for metric names in display (default: 30)
+      --status (bool) :
+        Filter solutions by status (true/false)
+      --verbose (bool) :
+        Show verbose information including detailed logs
 
     Examples:
       # Display evaluation table with default settings
@@ -1018,14 +1028,14 @@ class EvaluationCli:
         The table can be configured to show all key columns and metrics, or a limited subset for better readability.
 
         Args:
-            all_key_columns : (bool)
-                Show all key columns in the table instead of just the important ones. Default is False.
-            all_metrics : (bool)
-                Show all available metrics instead of just the default subset. Default is False.
-            num_columns : (int)
-                Maximum number of columns to display in the table. Default is 6.
-            metric_name_max_length : (int)
-                Maximum length for metric names in the display. Default is 30.
+          all_key_columns (bool) :
+            Show all key columns in the table instead of just the important ones. Default is False.
+          all_metrics (bool) :
+            Show all available metrics instead of just the default subset. Default is False.
+          num_columns (int) :
+            Maximum number of columns to display in the table. (Default is 6.)
+          metric_name_max_length (int) :
+            Maximum length for metric names in the display. (Default is 30.)
 
         Examples:
             # Display evaluation table with default settings
@@ -1062,12 +1072,12 @@ class EvaluationCli:
           It can filter solutions by status and show either concise or verbose output for each solution.
 
         Args:
-            entry : str
-                Evaluation entry to read solutions from (format: namespace/name/version)
-            status : Optional[bool]
-                Filter solutions by status (true/false)
-            verbose : bool
-                Show verbose information including detailed logs
+          entry (str) :
+            Evaluation entry to read solutions from (format: namespace/name/version)
+          status (Optional[bool]) :
+            Filter solutions by status (true/false)
+          verbose (bool) :
+            Show verbose information including detailed logs
 
         Examples:
             # Read all solutions from an evaluation entry
@@ -1146,37 +1156,37 @@ class AgentCli:
       nearai agent inspect : Inspect environment from given path
         (<path>*)
 
-    Options:
-      <path>*
+    Args:
+      <path>* (str) :
         Path to the agent directory or agent ID
-      --name
-          Name for the new agent
-      --description
-          Description of the new agent
-      --fork
-          Path to an existing agent to fork (format: namespace/name/version)
-      --agent
-            Path to the agent directory or agent ID
-      --thread-id
-            Thread ID to continue an existing conversation
-      --tool-resources
-            Tool resources to pass to the agent
-      --file-ids
-            File IDs to attach to the message
-      --local
-            Run the agent locally instead of in the cloud
-      --verbose
-            Show detailed debug information during execution
-      --env-vars
-            Environment variables to pass to the agent
-      --task
-            Task to run with the agent
-      --bump
-            Automatically increment patch version if it already exists
-      --minor-bump
-            Bump with minor version increment (0.1.0 → 0.2.0)
-      --major-bump
-            Bump with major version increment (1.5.0 → 2.0.0)
+      --name (str) :
+        Name for the new agent
+      --description (str) :
+        Description of the new agent
+      --fork (str) :
+        Path to an existing agent to fork (format: namespace/name/version)
+      --agent (str) :
+        Path to the agent directory or agent ID
+      --thread-id (str) :
+        Thread ID to continue an existing conversation
+      --tool-resources (dict) :
+        Tool resources to pass to the agent
+      --file-ids (list) :
+        File IDs to attach to the message
+      --local (bool) :
+        Run the agent locally instead of in the cloud
+      --verbose (bool) :
+        Show detailed debug information during execution
+      --env-vars (dict) :
+        Environment variables to pass to the agent
+      --task (str) :
+        Task to run with the agent
+      --bump (bool) :
+        Automatically increment patch version if it already exists
+      --minor-bump (bool) :
+        Bump with minor version increment (0.1.0 → 0.2.0)
+      --major-bump (bool) :
+        Bump with major version increment (1.5.0 → 2.0.0)
 
     Examples:
       # Create a new agent interactively (Step-by-step prompts)
@@ -1261,17 +1271,17 @@ class AgentCli:
         If no agent is specified, you'll be presented with a list of available agents to choose from.
 
         Args:
-          agent : (str)
+          agent (str) :
             Path to the agent directory or agent ID (optional)
-          thread_id : (str)
+          thread_id (str) :
             Thread ID to continue an existing conversation
-          tool_resources : (dict)
+          tool_resources (dict) :
             Tool resources to pass to the agent (JSON format)
-          local : (bool)
+          local (bool) :
             Run the agent locally instead of in the cloud
-          verbose : (bool)
+          verbose (bool) :
             Show detailed debug information during execution
-          env_vars : (dict)
+          env_vars (dict) :
             Environment variables to pass to the agent (JSON format)
 
         Examples:
@@ -1430,21 +1440,21 @@ class AgentCli:
         This is useful for automation or when you don't need an ongoing conversation.
 
         Args:
-          agent : (str)
+          agent (str) :
             Path to the agent directory or agent ID (required)
-          task : (str)
+          task (str) :
             The task or question to send to the agent (required)
-          thread_id : (str)
+          thread_id (str) :
             Thread ID to continue an existing conversation
-          tool_resources : (dict)
+          tool_resources (dict) :
             Tool resources to pass to the agent (JSON format)
-          file_ids : (list)
+          file_ids (list) :
             File IDs to attach to the message
-          local : (bool)
+          local (bool) :
             Run the agent locally instead of in the cloud
-          verbose : (bool)
+          verbose (bool) :
             Show detailed debug information during execution
-          env_vars : (dict)
+          env_vars (dict) :
             Environment variables to pass to the agent (JSON format)
 
         Examples:
@@ -1547,11 +1557,11 @@ class AgentCli:
         """Create a new AI agent from scratch or fork existing ones.
 
         Args:
-          name : (str)
+          name (str) :
             Name for the new agent (optional).
-          description : (str)
+          description (str) :
             Description of the new agent (optional).
-          fork : (str)
+          fork (str) :
             Path to an existing agent to fork (format: namespace/agent_name/version).
 
         Examples:
@@ -1607,19 +1617,17 @@ class VllmCli:
       nearai vllm run : Run VLLM server with OpenAI-compatible API
         (--model, --host, --port, --tensor-parallel-size, --gpu-memory-utilization)
 
-    Options:
-      --model
-            Path to the model or model name from Hugging Face
-      --host
-            Host to bind the server to (default: localhost)
-      --port
-            Port to bind the server to (default: 8000)
-      --tensor-parallel-size
-            Number of GPUs to use for tensor parallelism (default: 1)
-      --gpu-memory-utilization
-            Fraction of GPU memory to use (default: 0.9)
-      **kwargs
-            Additional VLLM configuration parameters
+    Args:
+      --model (str) :
+        Path to the model or model name from Hugging Face
+      --host (str) :
+        Host to bind the server to (default: localhost)
+      --port (int) :
+        Port to bind the server to (default: 8000)
+      --tensor-parallel-size (int) :
+        Number of GPUs to use for tensor parallelism (default: 1)
+      --gpu-memory-utilization (float) :
+        Fraction of GPU memory to use (default: 0.9)
 
     Examples:
       # Run VLLM server with default settings
@@ -1641,19 +1649,18 @@ class VllmCli:
         optimizing performance and resource utilization.
 
         Args:
-        ----
-            model : (str)
-                Path to the model or model name from Hugging Face
-            host : (str)
-                Host to bind the server to (default: localhost)
-            port : (int)
-                Port to bind the server to (default: 8000)
-            tensor_parallel_size : (int)
-                Number of GPUs to use for tensor parallelism (default: 1)
-            gpu_memory_utilization : (float)
-                Fraction of GPU memory to use (default: 0.9)
-            **kwargs : (dict)
-                Additional VLLM configuration parameters
+          **kwargs : (dict)
+            Keyword arguments that can include:
+            model (str):
+              Path to the model or model name from Hugging Face
+            host (str):
+              Host to bind the server to (default: localhost)
+            port (int):
+              Port to bind the server to (default: 8000)
+            tensor_parallel_size (int):
+              Number of GPUs to use for tensor parallelism (default: 1)
+            gpu_memory_utilization (float):
+              Fraction of GPU memory to use (default: 0.9)
 
         Examples:
             # Run VLLM server with default settings
@@ -1695,17 +1702,17 @@ class HubCLI:
       nearai hub chat : Chat with model from NEAR AI hub
         (--query, --model, --provider, --endpoint, --info)
 
-    Options:
-      --query
-            User's query to send to the model
-      --model
-            Name of the model to use (default depends on configuration)
-      --provider
-            Name of the provider (e.g., "fireworks", "hyperbolic")
-      --endpoint
-            NEAR AI Hub's URL to connect to
-      --info
-            Display system information about the request
+    Args:
+      --query (str) :
+        User's query to send to the model
+      --model (str) :
+        Name of the model to use (default depends on configuration)
+      --provider (str) :
+        Name of the provider (e.g., "fireworks", "hyperbolic")
+      --endpoint (str) :
+        NEAR AI Hub's URL to connect to
+      --info (bool) :
+        Display system information about the request
 
     Examples:
       # Chat with the default model
@@ -1727,17 +1734,18 @@ class HubCLI:
         experience with various parameters.
 
         Args:
-            query : (str)
-                User's query to send to the model
-            model : (str)
-                Name of the model to use (default depends on configuration)
-            provider : (str)
-                Name of the provider (e.g., "fireworks", "hyperbolic")
-            endpoint : (str)
-                NEAR AI Hub's URL to connect to
-            info
-                Display system information about the request
             **kwargs : (dict)
+                Keyword arguments that can include:
+                query (str):
+                  User's query to send to the model
+                model (str):
+                  Name of the model to use (default depends on configuration)
+                provider (str):
+                  Name of the provider (e.g., "fireworks", "hyperbolic")
+                endpoint (str):
+                  NEAR AI Hub's URL to connect to
+                info (bool):
+                  Display system information about the request
                 Additional parameters passed to the model
 
         Examples:
@@ -1800,23 +1808,23 @@ class LoginCLI:
       nearai login save : Save NEAR account auth data
         (--accountId, --signature, --publicKey, --callbackUrl, --nonce)
 
-    Options:
-      --remote
-            Enable remote login to sign message with NEAR account on another machine
-      --auth_url
-            URL to the authentication portal (default: https://auth.near.ai)
-      --accountId
-            NEAR account ID in .near-credentials folder to sign message
-      --privateKey
-            Private key to sign a message directly
-      --signature
-            Signature for manual authentication
-      --publicKey
-            Public key used to sign the message
-      --callbackUrl
-            Callback URL for the authentication flow
-      --nonce
-            Nonce value for authentication security
+    Args:
+      --remote (bool) :
+        Enable remote login to sign message with NEAR account on another machine
+      --auth_url (str) :
+        URL to the authentication portal (default: https://auth.near.ai)
+      --accountId (str) :
+        NEAR account ID in .near-credentials folder to sign message
+      --privateKey (str) :
+        Private key to sign a message directly
+      --signature (str) :
+        Signature for manual authentication
+      --publicKey (str) :
+        Public key used to sign the message
+      --callbackUrl (str) :
+        Callback URL for the authentication flow
+      --nonce (str) :
+        Nonce value for authentication security
 
     Examples:
       # Login using web-based flow
@@ -1834,21 +1842,7 @@ class LoginCLI:
     """
 
     def __call__(self, **kwargs):
-        """Login with NEAR Mainnet account.
-
-        Args:
-            remote : (bool)
-                Remote login allows signing message with NEAR Account on a remote machine
-            auth_url : (str)
-                Url to the auth portal
-            accountId
-                AccountId in .near-credentials folder to signMessage
-            privateKey : (str)
-                Private Key to sign a message
-            kwargs : (dict)
-                All cli keyword arguments
-
-        """
+        """Login with NEAR Mainnet account."""
         from nearai.login import generate_and_save_signature, login_with_file_credentials, login_with_near_auth
 
         remote = kwargs.get("remote", False)
@@ -1873,18 +1867,18 @@ class LoginCLI:
         """Save NEAR account authorization data.
 
         Args:
-            accountId : (str)
-                Near Account
-            signature : (str)
-                Signature
-            publicKey : (str)
-                Public Key used to sign
-            callbackUrl
-                Callback Url
-            nonce : (str)
-                nonce
-            kwargs : (dict)
-                All cli keyword arguments
+            kwargs (dict) :
+                Keyword arguments that can include:
+                accountId (str) :
+                    Near Account ID
+                signature (str) :
+                    Signature
+                publicKey (str) :
+                    Public Key used to sign the message
+                callbackUrl (str) :
+                    Callback Url
+                nonce (str) :
+                    Nonce
 
         """
         from nearai.login import update_auth_config
@@ -1910,10 +1904,10 @@ class PermissionCli:
       nearai permission revoke : Revoke permission from an account
         (account_id*, --permission)
 
-    Options:
-      account_id
+    Args::
+      account_id (str) :
         The NEAR account ID to grant or revoke permissions for
-      permission
+      permission (str) :
         The permission to grant or revoke (leave empty on revoke to remove all permissions)
 
     Examples:

@@ -563,14 +563,15 @@ def format_help(obj, method_name: str = "__class__") -> None:
         console.print(f"For more information see: [bold blue]{doc_content}[/bold blue]\n")
 
 
-def handle_help_request(args=None):
+def handle_help_request(args: Optional[List[str]] = None) -> bool:
     """Common handler for CLI help requests.
 
     Args:
-        args: Command line arguments (uses sys.argv if None)
+        args (Optional[List[str]]) :
+            Command line arguments (uses sys.argv if None)
 
     Returns:
-        True if help was displayed, False otherwise
+        bool : True if help was displayed, False otherwise
 
     """
     if args is None:
