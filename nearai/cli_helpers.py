@@ -321,7 +321,7 @@ def get_docstring_info(
 
     # Process the rest of the docstring to find sections
     current_section = None
-    section_content = []
+    section_content: List[str] = []
 
     i = 0  # Reset counter to process all lines
     while i < len(lines):
@@ -521,7 +521,7 @@ def format_help(obj, method_name: str = "__class__") -> None:
     # Process Examples section
     if "examples" in sections:
         examples_text = []
-        current_example = []
+        current_example: List[str] = []
 
         for line in sections["examples"]:
             line_stripped = line.strip()
