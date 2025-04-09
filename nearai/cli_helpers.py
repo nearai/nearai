@@ -6,7 +6,7 @@ import re
 import select
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rich.box import ROUNDED
 from rich.console import Console
@@ -16,6 +16,9 @@ from rich.text import Text
 
 from nearai.banners import NEAR_AI_BANNER
 from nearai.registry import validate_version
+
+if TYPE_CHECKING:
+    from nearai.cli import CLI
 
 
 def display_agents_in_columns(agents: list[Path]) -> None:
@@ -155,7 +158,7 @@ def display_version_check(namespace: str, name: str, version: str, exists: bool)
         console.print(f"\n✅ [green]Version [cyan]{version}[/cyan] is available.[/green]")
 
 
-def generate_main_cli_help(cli) -> None:
+def generate_main_cli_help(cli: "CLI") -> None:
     """Format the main CLI menu help display.
 
     Args:
