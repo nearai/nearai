@@ -288,25 +288,59 @@ def get_docstring_info(
     sections = {}
     lines = docstring.split("\n")
 
-    # First line is always the main description
-    description = [lines[0].strip()] if lines else []
+    # Extract description - first line is always part of the description
+    description = []
+    if lines:
+        description.append(lines[0].strip())
+
+        # Look for continuation of description after the first line
+        i = 1
+        while i < len(lines):
+            line = lines[i].strip()
+
+            # If we find an empty line after the first line
+            if not line:
+                # Skip the blank line
+                i += 1
+                # Continue adding description lines until we hit a second blank line
+                # or a section header
+                while i < len(lines):
+                    line = lines[i].strip()
+                    if not line:  # Found second blank line
+                        break
+                    if re.match(r"^([A-Za-z][A-Za-z\s]+):$", line):  # Found section header
+                        break
+                    description.append(line)
+                    i += 1
+                break
+            i += 1
+
+    # Store the description section
+    if description:
+        sections["description"] = description
 
     # Process the rest of the docstring to find sections
     current_section = None
-    section_content: List[str] = []
+    section_content = []
 
-    for i in range(1, len(lines)):
-        line = lines[i]
-        line_stripped = line.strip()
+    i = 0  # Reset counter to process all lines
+    while i < len(lines):
+        line = lines[i].strip()
+
+        # Skip empty lines
+        if not line:
+            i += 1
+            continue
 
         # Check if this is a section header (ends with colon)
-        if line_stripped and re.match(r"^([A-Za-z][A-Za-z\s]+):$", line_stripped):
+        section_match = re.match(r"^([A-Za-z][A-Za-z\s]+):$", line)
+        if section_match:
             # Save previous section if it exists
-            if current_section:
+            if current_section and section_content:
                 sections[current_section.lower()] = section_content
 
             # Start new section
-            current_section = line_stripped.rstrip(":")
+            current_section = section_match.group(1)
             section_content = []
 
             # Skip decoration lines (like "-----")
@@ -317,23 +351,17 @@ def get_docstring_info(
         elif current_section:
             # For Commands section, preserve original line with indentation
             if current_section.lower() == "commands":
-                section_content.append(line)  # Keep original indentation
+                section_content.append(lines[i])  # Keep original indentation
             else:
-                # For other sections, just add the content
-                if line_stripped:  # Skip empty lines except in Commands section
-                    section_content.append(line_stripped)
+                # For other sections, just add the content if not empty
+                if line:
+                    section_content.append(line)
 
-        # If not a section header and not in a section yet, add to description
-        elif line_stripped:
-            description.append(line_stripped)
+        i += 1
 
     # Save the last section
-    if current_section:
+    if current_section and section_content:
         sections[current_section.lower()] = section_content
-
-    # Store the description section
-    if description:
-        sections["description"] = description
 
     return docstring, cmd_title, is_class, sections
 
@@ -353,19 +381,78 @@ def format_help(obj, method_name: str = "__class__") -> None:
     if method_name == "__class__" and obj.__class__.__name__ == "CLI":
         generate_main_cli_help(obj)
         return
+
     # Get docstring info from class or method
     docstring, cmd_title, is_class, sections = get_docstring_info(obj, method_name)
     if docstring is None or sections is None:
         return
 
     # Display command group / name
-    console.print(f"\n[bold green]{cmd_title}[/bold green\n\n]")
+    console.print(f"\n[bold green]{cmd_title}[/bold green]\n")
 
     # Process Description section
     if "description" in sections:
         description = " ".join(sections["description"])
         if description:
             console.print(Panel(description, title="Info", expand=False, border_style="blue", width=120))
+
+    # Helper function to process parameter sections (Args and Options)
+    def process_param_section(section_name, section_title, param_pattern):
+        """Process a parameter section (Args or Options) and display it in a table."""
+        section_lines = sections.get(section_name, [])
+        if not section_lines:
+            return
+
+        # Create table for parameters
+        table = Table(title=section_title, show_header=True, header_style="bold magenta")
+        table.add_column("Parameter", style="yellow")
+        table.add_column("Type", style="cyan")
+        table.add_column("Description", style="white")
+
+        i = 0
+        while i < len(section_lines):
+            line = section_lines[i].rstrip()
+
+            # Skip empty lines
+            if not line:
+                i += 1
+                continue
+
+            # Check if this is a parameter line
+            match = re.match(param_pattern, line)
+            if match:
+                param_name = match.group(1)
+                param_type = match.group(2)
+
+                # Collect the description from subsequent lines
+                description_lines = []
+                i += 1
+
+                # Continue collecting description lines until we hit the next parameter or the end of the section
+                while i < len(section_lines):
+                    next_line = section_lines[i].rstrip()
+
+                    # Skip empty lines in description
+                    if not next_line:
+                        i += 1
+                        continue
+
+                    # If we encounter another parameter definition, stop collecting description
+                    if re.match(param_pattern, next_line):
+                        break
+
+                    # Add the line to the description, removing excess indentation
+                    description_lines.append(next_line.lstrip())
+                    i += 1
+
+                description = " ".join(description_lines) if description_lines else ""
+                table.add_row(param_name, param_type, description)
+            else:
+                i += 1
+
+        if table.row_count > 0:
+            console.print(table)
+            console.print()
 
     # Process Commands section for classes
     if is_class and "commands" in sections:
@@ -423,113 +510,18 @@ def format_help(obj, method_name: str = "__class__") -> None:
         if any("*" in line for line in sections["commands"]):
             console.print("* Required parameter")
 
-    # Helper function to process parameter sections (Args and Options)
-    def process_param_section(section_name, section_title, param_regex, name_idx=1, type_idx=2):
-        if section_name not in sections:
-            return
-
-        # Create table for parameters
-        table = Table(box=ROUNDED, expand=False, style="dim", width=120)
-        table.add_column("Parameter", style="yellow bold")
-        table.add_column("Type", style="cyan")
-        table.add_column("Description", style="white")
-
-        # Direct regex to extract parameters from docstring
-        method = getattr(obj, method_name, None)
-        if method and method.__doc__:
-            doc_lines = inspect.getdoc(method).split("\n")
-
-            # Find the section
-            section_start = -1
-            for i, line in enumerate(doc_lines):
-                # Make section matching case-insensitive
-                line_lower = line.strip().lower()
-                if line_lower == f"{section_title.lower()}:" or line_lower == f"{section_name.lower()}:":
-                    section_start = i + 1
-                    break
-
-            if section_start >= 0:
-                i = section_start
-                while i < len(doc_lines):
-                    line = doc_lines[i].strip()
-
-                    # End of section (another section starts)
-                    if line.endswith(":") and not line.startswith(" "):
-                        break
-
-                    # Parameter line (indented, contains parameter name)
-                    param_match = re.match(param_regex, line)
-                    if param_match:
-                        param_name = param_match.group(name_idx)
-                        # Get type if available and valid
-                        has_valid_type_index = type_idx < len(param_match.groups()) + 1
-                        type_value = param_match.group(type_idx) if has_valid_type_index else None
-                        param_type = type_value if type_value else ""
-                        param_desc = []
-
-                        # Look for description (should be on the next line and indented)
-                        j = i + 1
-                        while j < len(doc_lines):
-                            next_line = doc_lines[j].strip()
-
-                            # If empty line or end of section, break
-                            if not next_line or (next_line.endswith(":") and not next_line.startswith(" ")):
-                                break
-
-                            # If this is another parameter, break
-                            if re.match(param_regex, next_line):
-                                break
-
-                            # Add description line
-                            param_desc.append(next_line)
-                            j += 1
-
-                        # Add parameter to table
-                        desc_text = " ".join(param_desc).strip()
-                        table.add_row(param_name, param_type, desc_text)
-
-                        # Move to next parameter
-                        i = j
-                    else:
-                        i += 1
-            else:
-                # Use the pre-parsed sections if we can't find the section in the docstring
-                for param_line in sections[section_name]:
-                    param_match = re.match(param_regex, param_line)
-                    if param_match:
-                        param_name = param_match.group(name_idx)
-                        # Get type if available and valid
-                        has_valid_type_index = type_idx < len(param_match.groups()) + 1
-                        type_value = param_match.group(type_idx) if has_valid_type_index else None
-                        param_type = type_value if type_value else ""
-                        desc_text = ""
-
-                        # Search for description in the next lines
-                        param_index = sections[section_name].index(param_line)
-                        if param_index + 1 < len(sections[section_name]):
-                            next_line = sections[section_name][param_index + 1]
-                            if not re.match(param_regex, next_line):
-                                desc_text = next_line
-
-                        table.add_row(param_name, param_type, desc_text)
-
-        # Display table if parameters were found
-        if table.row_count > 0:
-            console.print(table)
-        console.print()
-
     # Process Args section for method parameters
-    if not is_class and "args" in sections:
-        process_param_section("args", "OPTIONS", r"^\s*(\S+)\s*:\s*(\S+)\s*$")
+    if "args" in sections:
+        process_param_section("args", "Args", r"^\s*(\S+)\s*\((\S+)\)\s*:\s*$")
 
     # Process Options section
     if "options" in sections:
-        process_param_section("options", "Options", r"^\s*(-{0,2}\S+)\s*(?::\s*(\S+))?\s*$")
+        process_param_section("options", "Options", r"^\s*(\S+)\s*\((\S+)\)\s*:\s*$")
 
     # Process Examples section
     if "examples" in sections:
         examples_text = []
-        current_example: List[str] = []
+        current_example = []
 
         for line in sections["examples"]:
             line_stripped = line.strip()
