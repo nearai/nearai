@@ -159,7 +159,7 @@ def _extract_description_section(lines: List[str]) -> List[str]:
         List of description lines
 
     """
-    description = []
+    description: List[str] = []
     if not lines:
         return description
 
