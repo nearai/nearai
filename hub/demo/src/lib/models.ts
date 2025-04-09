@@ -95,6 +95,7 @@ export const entryDetailsModel = z.intersection(
           html_height: z.enum(['auto']).or(z.string()).default('auto'),
           html_show_latest_messages_below: z.boolean().default(false),
           initial_user_message: z.string(),
+          show_streaming_message: z.boolean().default(false),
           welcome: z
             .object({
               title: z.string(),
@@ -103,7 +104,8 @@ export const entryDetailsModel = z.intersection(
             })
             .partial(),
         })
-        .partial(),
+        .partial()
+        .default({}),
       env_vars: z.record(z.string(), z.string()),
       primary_agent_name: z.string(),
       primary_agent_namespace: z.string(),

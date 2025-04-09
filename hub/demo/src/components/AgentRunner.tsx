@@ -41,7 +41,6 @@ import { AgentWelcome } from '@/components/AgentWelcome';
 import { EntryEnvironmentVariables } from '@/components/EntryEnvironmentVariables';
 import { IframeWithBlob } from '@/components/lib/IframeWithBlob';
 import { Sidebar } from '@/components/lib/Sidebar';
-import { StreamingText } from '@/components/lib/StreamingText';
 import { SignInPrompt } from '@/components/SignInPrompt';
 import { ThreadMessages } from '@/components/threads/ThreadMessages';
 import { ThreadsSidebar } from '@/components/threads/ThreadsSidebar';
@@ -57,6 +56,7 @@ import { trpc } from '@/trpc/TRPCProvider';
 import { WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS } from '@/utils/wallet';
 
 import { ThreadFileModal } from './threads/ThreadFileModal';
+import { ThreadThinking } from './threads/ThreadThinking';
 
 type Props = {
   namespace: string;
@@ -507,6 +507,8 @@ export const AgentRunner = ({
               ) : (
                 <ThreadMessages
                   messages={messages}
+                  streamingText={streamingText}
+                  streamingTextLatestChunk={streamingTextLatestChunk}
                   threadId={threadId}
                   welcomeMessage={<AgentWelcome currentEntry={currentEntry} />}
                 />
@@ -515,15 +517,10 @@ export const AgentRunner = ({
           )}
 
           <Sidebar.MainStickyFooter>
-            {isRunning && (
-              <StreamingText
-                text={streamingText}
-                latestChunk={streamingTextLatestChunk}
-              />
-            )}
-
             <Form onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
               <Flex direction="column" gap="m">
+                {isRunning && <ThreadThinking />}
+
                 <InputTextarea
                   placeholder="Write your message and press enter..."
                   onKeyDown={onKeyDownContent}
@@ -652,7 +649,6 @@ export const AgentRunner = ({
                       type="submit"
                       icon={<ArrowRight weight="bold" />}
                       size="small"
-                      loading={isRunning}
                     />
                   </Flex>
                 ) : (
