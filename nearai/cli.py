@@ -92,7 +92,7 @@ class RegistryCli:
       nearai registry update : Update metadata of a registry item
         (<path>*)
 
-    Args:
+    Options:
       <path>* (str) :
         Path to the directory containing the agent to upload
       <entry-location>* (str) :
@@ -672,7 +672,7 @@ class ConfigCli:
         (key*)
       nearai config show : Display all configuration values
 
-    Args:
+    Options:
       key* (str) :
         The configuration key to set or get
       value* (str) :
@@ -726,7 +726,7 @@ class BenchmarkCli:
       nearai benchmark list : List all executed benchmarks
         (--namespace, --benchmark, --solver, --args, --total, --offset)
 
-    Args:
+    Options:
       dataset* (str) :
         Dataset to benchmark on
       solver_strategy* (str) :
@@ -982,7 +982,7 @@ class EvaluationCli:
       nearai evaluation read_solutions : Read solutions.json from evaluation entry
         (entry*, --status, --verbose)
 
-    Args:
+    Options:
       entry* (str) :
         Evaluation entry to read solutions from (format: namespace/name/version)
       --all-key-columns (bool) :
@@ -1156,7 +1156,7 @@ class AgentCli:
       nearai agent inspect : Inspect environment from given path
         (<path>*)
 
-    Args:
+    Options:
       <path>* (str) :
         Path to the agent directory or agent ID
       --name (str) :
@@ -1617,7 +1617,7 @@ class VllmCli:
       nearai vllm run : Run VLLM server with OpenAI-compatible API
         (--model, --host, --port, --tensor-parallel-size, --gpu-memory-utilization)
 
-    Args:
+    Options:
       --model (str) :
         Path to the model or model name from Hugging Face
       --host (str) :
@@ -1702,7 +1702,7 @@ class HubCLI:
       nearai hub chat : Chat with model from NEAR AI hub
         (--query, --model, --provider, --endpoint, --info)
 
-    Args:
+    Options:
       --query (str) :
         User's query to send to the model
       --model (str) :
@@ -1808,7 +1808,7 @@ class LoginCLI:
       nearai login save : Save NEAR account auth data
         (--accountId, --signature, --publicKey, --callbackUrl, --nonce)
 
-    Args:
+    Options:
       --remote (bool) :
         Enable remote login to sign message with NEAR account on another machine
       --auth_url (str) :
@@ -1904,7 +1904,7 @@ class PermissionCli:
       nearai permission revoke : Revoke permission from an account
         (account_id*, --permission)
 
-    Args::
+    Options:
       account_id (str) :
         The NEAR account ID to grant or revoke permissions for
       permission (str) :
