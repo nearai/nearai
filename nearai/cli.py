@@ -22,11 +22,11 @@ from rich.text import Text
 from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
+from nearai.cli_help import handle_help_request
 from nearai.cli_helpers import (
     assert_user_auth,
     display_agents_in_columns,
     display_version_check,
-    handle_help_request,
     has_pending_input,
     load_and_validate_metadata,
 )
