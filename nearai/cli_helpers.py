@@ -511,6 +511,7 @@ def handle_help_request(args=None):
         args = sys.argv
     # Create CLI instance
     from nearai.cli import CLI
+
     cli = CLI()
     # Special case for agent upload, which is an alias for registry upload
     if len(args) == 4 and args[1] == "agent" and args[2] == "upload" and args[3] == "--help":

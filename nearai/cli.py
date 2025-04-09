@@ -75,67 +75,75 @@ from nearai.tensorboard_feed import TensorboardCli
 class RegistryCli:
     """Manage items in the NEAR AI Registry including agents, models, datasets, and evaluations.
 
-    These commands allow you to upload, download, update, and list available items in the NEAR AI Registry.
-    list available items.
+        These commands allow you to upload, download, update, and list available items in the NEAR AI Registry.
+        list available items.
 
-    Commands:
-      nearai registry upload             Upload an item to the registry (<path>*)
-      nearai registry download           Download an item from the registry (<entry-location>*, --force)
-      nearai registry info               Show information about a registry item (<entry-location>*)
-      nearai registry list               List available items in the registry (--namespace, --category, --tags, --total, --offset, --show-all, --show-latest-version, --star)
-      nearai registry metadata-template  Create a metadata template (--local-path, --category, --description)
-      nearai registry update             Update metadata of a registry item (<path>*)
+        Commands:
+          nearai registry upload : Upload an item to the registry
+          (<path>*)
+          nearai registry download : Download an item from the registry
+          (<entry-location>*, --force)
+          nearai registry info : Show information about a registry item
+          (<entry-location>*)
+          nearai registry list : List available items in the registry
+          (--namespace, --category, --tags, --total, --offset, --show-all, --show-latest-version, --star)
+          nearai registry metadata-template : Create a metadata template
+          (--local-path, --category, --description)
+          nearai registry update : Update metadata of a registry item
+          (<path>*)
 
-    Options:
-      <path>*
-        Path to the directory containing the agent to upload
-      <entry-location>*
-        Entry location of the item to download (format: namespace/name/version)
-      --force
-        Force download even if the item exists locally
-      --namespace
-        Filter items by namespace
-      --category
-        Filter items by category (e.g., 'agent', 'model')
-      --tags
-        Filter items by tags (comma-separated)
-      --total
-        Maximum number of items to show
-      --offset
-        Offset for pagination
-      --show-all
-        Show all versions of items
-      --show-latest-version
-        Show only the latest version of each item
-      --star
-        Show items starred by a specific user
+        Options:
+          <path>*
+            Path to the directory containing the agent to upload
+          <entry-location>*
+            Entry location of the item to download (format: namespace/name/version)
+          --force
+            Force download even if the item exists locally
+          --namespace
+            Filter items by namespace
+          --category
+            Filter items by category (e.g., 'agent', 'model')
+          --tags
+            Filter items by tags (comma-separated)
+          --total
+            Maximum number of items to show
+          --offset
+            Offset for pagination
+          --show-all
+            Show all versions of items
+          --show-latest-version
+            Show only the latest version of each item
+          --star
+            Show items starred by a specific user
+    .
+        Examples:
+          # Upload an agent to the registry
+          nearai registry upload ./path/to/agent
 
-    Examples:
-      # Upload an agent to the registry
-      nearai registry upload ./path/to/agent
+          # Download an agent from the registry
+          nearai registry download example.near/agent-name/0.0.3
 
-      # Download an agent from the registry
-      nearai registry download example.near/agent-name/0.0.3
+          # Show information about a registry item
+          nearai registry info example.near/agent-name/0.0.3
 
-      # Show information about a registry item
-      nearai registry info example.near/agent-name/0.0.3
+          # List items by category
+          nearai registry list --category evaluation
 
-      # List items by category
-      nearai registry list --category evaluation
+          # List items with specific tags
+          nearai registry list --tags "vector-store"
 
-      # List items with specific tags
-      nearai registry list --tags "vector-store"
-
-    Documentation:
-        https://docs.near.ai/agents/registry
+        Documentation:
+            https://docs.near.ai/agents/registry
 
     """
 
     def info(self, entry: str) -> None:
-        """Display detailed information about a registry item, including its metadata and available provider matches for models.
+        """Display detailed information about a registry item.
+
+        Includes metadata and available provider matches for models.
 
         Args:
-          <entry-location>*
+          entry : str
             Entry location of the item to display information for (format: namespace/name/version)
 
         Examples:
@@ -174,14 +182,15 @@ class RegistryCli:
     def metadata_template(self, local_path: str = ".", category: str = "", description: str = ""):
         """Create a metadata template file for a registry item.
 
-        This generates a properly formatted metadata.json file with default values that can be customized for your agent or model.
+        This generates a properly formatted metadata.json file with default values
+        that can be customized for your agent or model.
 
         Args:
-          local-path
+          local_path : str
             Path to the directory where the metadata template will be created (default: current directory)
-          category
+          category : str
             Category of the item (e.g., 'agent', 'model', 'dataset', 'evaluation')
-          description
+          description : str
             Description of the item
 
         Examples:
@@ -254,22 +263,22 @@ class RegistryCli:
         You can filter the results by namespace, category, tags, and other criteria to find specific items.
 
         Args:
-          namespace
+          namespace : str
             Filter items by namespace/user account (example.near)
-          category
+          category : str
             Filter items by category ('agent', 'model', 'evaluation')
-          tags
+          tags : str
             Filter items by tags (comma-separated)
-          total
+          total : int
             Maximum number of items to show
             (default: 32)
-          offset
+          offset : int
             Offset for pagination (default: 0)
-          show_all
+          show_all : bool
             Show all versions of items (default: False)
-          show_latest_version
+          show_latest_version : bool
             Show only the latest version of each item (default: True)
-          star
+          star : str
             Show items starred by a specific user
 
         Examples:
@@ -340,7 +349,7 @@ class RegistryCli:
         Looks for a metadata.json file in the given directory and updates the remote metadata with the new values.
 
         Args:
-          local-path : str
+          local_path : str
             Path to the directory containing the item to update (default: current directory)
 
         Examples:
@@ -384,7 +393,7 @@ class RegistryCli:
         This command helps keep the registry up-to-date with the latest models from various providers.
 
         Args:
-          dry-run : bool
+          dry_run : bool
             Perform a dry run without actually uploading (default: True)
 
         Examples:
@@ -450,13 +459,13 @@ class RegistryCli:
         """Upload an item to the NEAR AI registry for public use.
 
         Args:
-          local-path
+          local_path : str
             Path to the agent directory (default: current directory)
-          bump
+          bump : bool
             Automatically increment patch version if it already exists
-          minor-bump
+          minor_bump : bool
             Bump with minor version increment (0.1.0 → 0.2.0)
-          major-bump
+          major_bump : bool
             Bump with major version increment (1.5.2 → 2.0.0)
 
         Examples:
@@ -630,7 +639,7 @@ class RegistryCli:
         This allows you to use or inspect agents, models, datasets, etc. that have been published by others.
 
         Args:
-          entry-location : str
+          entry_location : str
             Entry location of the item to download (format: namespace/name/version)
           force : bool
             Force download even if the item already exists locally (default: False)
@@ -652,12 +661,16 @@ class RegistryCli:
 
 
 class ConfigCli:
-    """Configuration commands help you manage your NEAR AI CLI settings. You can view, set, and modify various configuration values that control how the CLI behaves.
+    """Configuration commands help you manage your NEAR AI CLI settings.
+
+    You can view, set, and modify various configuration values that control how the CLI behaves.
 
     Commands:
-      nearai config set    Add or update a configuration value (key*, value*, --local)
-      nearai config get    Retrieve a configuration value (key*)
-      nearai config show   Display all configuration values
+      nearai config set : Add or update a configuration value
+        (key*, value*, --local)
+      nearai config get : Retrieve a configuration value
+        (key*)
+      nearai config show : Display all configuration values
 
     Options:
       key       The configuration key to set or get
@@ -704,8 +717,11 @@ class BenchmarkCli:
     """Commands for running and listing benchmarks on datasets with solver strategies.
 
     Commands:
-      nearai benchmark run    Run benchmark on a dataset with a solver strategy (dataset*, solver_strategy*, --max-concurrent, --force, --subset, --check-compatibility, --record, --num-inference-retries)
-      nearai benchmark list   List all executed benchmarks (--namespace, --benchmark, --solver, --args, --total, --offset)
+      nearai benchmark run : Run benchmark on a dataset with a solver strategy
+        (dataset*, solver_strategy*, --max-concurrent, --force, --subset,
+        --check-compatibility, --record, --num-inference-retries)
+      nearai benchmark list : List all executed benchmarks
+        (--namespace, --benchmark, --solver, --args, --total, --offset)
 
     Options:
       dataset*                  Dataset to benchmark on
@@ -780,23 +796,23 @@ class BenchmarkCli:
         Results are cached in the database for subsequent runs unless --force is used.
 
         Args:
-            dataset
+            dataset : (str)
                 Name of the dataset to benchmark against
-            solver_strategy
+            solver_strategy : (str)
                 Name of the solver strategy to use
-            max_concurrent
+            max_concurrent : (int)
                 Maximum number of concurrent runs (-1 for CPU count)
-            force
+            force : (bool)
                 Force re-running the benchmark and update cache
-            subset
+            subset : (str)
                 Optional subset of the dataset to use
-            check_compatibility
+            check_compatibility : (bool)
                 Whether to check solver-dataset compatibility
-            record
+            record : (bool)
                 Whether to record detailed benchmark results
-            num_inference_retries
+            num_inference_retries : (int)
                 Number of retries for inference operations
-            **solver_args
+            **solver_args : (dict)
                 Additional arguments passed to the solver strategy
 
         Examples:
@@ -876,17 +892,17 @@ class BenchmarkCli:
         paginated using limit and offset parameters.
 
         Args:
-            namespace
+            namespace : (str)
                 Filter results by namespace
-            benchmark
+            benchmark : (str)
                 Filter results by benchmark name
-            solver
+            solver : (str)
                 Filter results by solver name
-            args
+            args : (str)
                 Filter results by solver arguments (JSON string)
-            total
+            total : (int)
                 Maximum number of results to display
-            offset
+            offset : (int)
                 Number of results to skip
 
         Examples:
@@ -944,8 +960,10 @@ class EvaluationCli:
     """Commands for evaluating and analyzing model performance on benchmark datasets.
 
     Commands:
-      nearai evaluation table           Print table of evaluations (--all-key-columns, --all-metrics, --num-columns, --metric-name-max-length)
-      nearai evaluation read_solutions  Read solutions.json from evaluation entry (entry*, --status, --verbose)
+      nearai evaluation table : Print table of evaluations
+        (--all-key-columns, --all-metrics, --num-columns, --metric-name-max-length)
+      nearai evaluation read_solutions : Read solutions.json from evaluation entry
+        (entry*, --status, --verbose)
 
     Options:
       entry*                    Evaluation entry to read solutions from (format: namespace/name/version)
@@ -1102,12 +1120,17 @@ class AgentCli:
     Agent commands allow you to create and interact with agents by running them locally or via NEAR AI Cloud.
 
     Commands:
-      nearai agent create        Create a new agent or fork an existing one (--name, --description, --fork)
-      nearai agent interactive   Run an agent interactively (--agent, --thread-id, --tool-resources, --local, --verbose, --env-vars)
-      nearai agent task          Run a single task with an agent (--agent*, --task*, --thread-id, --tool-resources, --file-ids, --local, --verbose, --env-vars)
-      nearai agent upload        Upload an agent to the registry (--local-path, --bump, --minor-bump, --major-bump)
-      nearai agent dev           Run local UI for development of agents
-      nearai agent inspect       Inspect environment from given path (<path>*)
+      nearai agent create : Create a new agent or fork an existing one
+        (--name, --description, --fork)
+      nearai agent interactive : Run an agent interactively
+        (--agent, --thread-id, --tool-resources, --local, --verbose, --env-vars)
+      nearai agent task : Run a single task with an agent
+        (--agent*, --task*, --thread-id, --tool-resources, --file-ids, --local, --verbose, --env-vars)
+      nearai agent upload : Upload an agent to the registry
+        (--local-path, --bump, --minor-bump, --major-bump)
+      nearai agent dev : Run local UI for development of agents
+      nearai agent inspect : Inspect environment from given path
+        (<path>*)
 
     Options:
       <path>*
@@ -1567,7 +1590,9 @@ class VllmCli:
     """Commands for running VLLM server with OpenAI-compatible API for local inference.
 
     Commands:
-      nearai vllm run    Run VLLM server with OpenAI-compatible API (--model, --host, --port, --tensor-parallel-size, --gpu-memory-utilization)  # noqa: E501
+      nearai vllm run
+        Run VLLM server with OpenAI-compatible API
+        (--model, --host, --port, --tensor-parallel-size, --gpu-memory-utilization)
 
     Options:
       --model
@@ -1595,7 +1620,7 @@ class VllmCli:
 
     """
 
-    def run(self, *args: Any, **kwargs: Any) -> None:  # noqa: D102
+    def run(self, *args: Any, **kwargs: Any) -> None:  # noqa: D102 D417
         """Run a VLLM server with an OpenAI-compatible API for local inference.
 
         This command starts a VLLM server that provides an OpenAI-compatible API for running
@@ -1688,7 +1713,6 @@ class HubCLI:
         experience with various parameters.
 
         Args:
-        ----
             query : (str)
                 User's query to send to the model
             model : (str)
@@ -1756,9 +1780,9 @@ class LoginCLI:
     """Commands for authenticating with your NEAR account for accessing NEAR AI services.
 
     Commands:
-      nearai login              Login with NEAR Mainnet account (--remote, --auth_url, --accountId, --privateKey)
-      nearai login status       Display login status and authentication details
-      nearai login save         Save NEAR account authorization data (--accountId, --signature, --publicKey, --callbackUrl, --nonce)  # noqa: E501
+      nearai login         Login with NEAR Mainnet account (--remote, --auth_url, --accountId, --privateKey)
+      nearai login status  Display login status and auth details
+      nearai login save    Save NEAR account auth data (--accountId, --signature, --publicKey, --callbackUrl, --nonce)
 
     Options:
       --remote
@@ -1797,7 +1821,6 @@ class LoginCLI:
         """Login with NEAR Mainnet account.
 
         Args:
-        ----
             remote : (bool)
                 Remote login allows signing message with NEAR Account on a remote machine
             auth_url : (str)
@@ -1834,7 +1857,6 @@ class LoginCLI:
         """Save NEAR account authorization data.
 
         Args:
-        ----
             accountId : (str)
                 Near Account
             signature : (str)
@@ -1902,14 +1924,12 @@ class PermissionCli:
         them to access certain NEAR AI resources or perform specific actions.
 
         Args:
-        ----
            account_id : (str)
                The NEAR account ID to grant the permission to
            permission : (str)
                The permission to grant (e.g., 'model_access', 'agent_creation')
 
         Examples:
-        --------
             # Grant model access permission to an account
             nearai permission grant alice.near model_access
 
@@ -1928,14 +1948,12 @@ class PermissionCli:
         If no permission is specified, all permissions will be revoked from the account.
 
         Args:
-        ----
             account_id : (str)
                 The NEAR account ID to revoke the permission from
             permission : (str)
                 The permission to revoke (optional, if empty all permissions are revoked)
 
         Examples:
-        --------
             # Revoke a specific permission
             nearai permission revoke alice.near model_access
 
@@ -1956,7 +1974,7 @@ class PermissionCli:
 
 class CLI:
     # TODO: Dynamically generate help menu based on available commands
-    """ List of commands for NEAR AI CLI to be used in the help menu.
+    """List of commands for NEAR AI CLI to be used in the help menu.
 
     Getting Started:
       nearai              CLI MAIN MENU HELP
@@ -1999,7 +2017,7 @@ class CLI:
       nearai config get         Get a configuration value
       nearai config show        Show all configuration values
 
-    """#noqa: D400 D415 D210
+    """  # noqa: D400 D415 D210
 
     def __init__(self) -> None:  # noqa: D107
         self.registry = RegistryCli()
