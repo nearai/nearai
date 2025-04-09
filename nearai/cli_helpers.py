@@ -188,7 +188,7 @@ def generate_main_cli_help(cli) -> None:
     # Parse docstring into sections
     sections = {}
     current_section = None
-    current_lines = []
+    current_lines: List[str] = []
     # Process the docstring line by line
     for line in docstring.strip().split("\n"):
         line = line.strip()
@@ -290,7 +290,7 @@ def get_docstring_info(
 
     # Process the rest of the docstring to find sections
     current_section = None
-    section_content = []
+    section_content: List[str] = []
 
     for i in range(1, len(lines)):
         line = lines[i]
@@ -352,7 +352,7 @@ def format_help(obj, method_name: str = "__class__") -> None:
         return
     # Get docstring info from class or method
     docstring, cmd_title, is_class, sections = get_docstring_info(obj, method_name)
-    if docstring is None:
+    if docstring is None or sections is None:
         return
 
     # Display command group / name
@@ -526,7 +526,7 @@ def format_help(obj, method_name: str = "__class__") -> None:
     # Process Examples section
     if "examples" in sections:
         examples_text = []
-        current_example = []
+        current_example: List[str] = []
 
         for line in sections["examples"]:
             line_stripped = line.strip()
