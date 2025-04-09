@@ -10,6 +10,6 @@
     "start": "node ./agent-runner.js"
   },
   "dependencies": {
-    "@jutsuai/nearai-ts-core": "^0.2.3"
+    "@jutsuai/nearai-ts-core": "latest"
   }
 }
