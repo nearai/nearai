@@ -555,7 +555,7 @@ def generate_main_cli_help(cli: "CLI") -> None:
 
     console.print(table)
     console.print(
-        "[bold white] Run [bold green]`nearai <command> --help`[/bold green] for more info about a command.\n[/bold white]" # noqa: E501
+        "[bold white] Run [bold green]`nearai <command> --help`[/bold green] for more info about a command.\n[/bold white]"  # noqa: E501
     )
     console.print(
         "[white] - Docs: [bold blue]https://docs.near.ai/[/bold blue][/white]\n"
