@@ -276,72 +276,61 @@ def get_docstring_info(
         display_name = class_name.replace("Cli", "").replace("CLI", "")
         is_class = False
         cmd_title = f"[bold white]nearai {display_name.lower()} {method_name} [/bold white]"
+
     if not docstring:
         console.print(f"[bold red]No documentation available for {obj.__class__.__name__}[/bold red]")
         return None, None, False, None
 
-    # Extract sections from docstring with simplified parsing
+    # Parse docstring into sections
     sections = {}
-    current_section = None
-    current_content = []
-    description_lines = []
-
-    # Normalize line endings and handle indentation
     lines = docstring.split("\n")
 
-    # Strip common indentation
-    if len(lines) > 1:
-        # Find the minimum indentation (excluding blank lines)
-        indents = [len(line) - len(line.lstrip()) for line in lines if line.strip()]
-        if indents:
-            min_indent = min(indents)
-            lines = [line[min_indent:] if line and len(line) >= min_indent else line for line in lines]
+    # First line is always the main description
+    description = [lines[0].strip()] if lines else []
 
-    # First line is always description
-    if lines:
-        description_lines.append(lines[0].strip())
+    # Process the rest of the docstring to find sections
+    current_section = None
+    section_content = []
 
-    # Start processing from line after the first blank line (if it exists)
-    in_description = True
-    i = 1
-    while i < len(lines):
-        line = lines[i].strip()
+    for i in range(1, len(lines)):
+        line = lines[i]
+        line_stripped = line.strip()
 
-        # Skip the expected blank line after first description line
-        if i == 1 and not line:
-            i += 1
-            continue
-
-        # Check if this is a section header
-        section_match = re.match(r"^([A-Za-z][A-Za-z\s]+):$", line)
-        if section_match:
-            in_description = False
-            # Save the previous section if it exists
+        # Check if this is a section header (ends with colon)
+        if line_stripped and re.match(r"^([A-Za-z][A-Za-z\s]+):$", line_stripped):
+            # Save previous section if it exists
             if current_section:
-                sections[current_section.lower()] = current_content
-            # Start a new section
-            current_section = section_match.group(1)
-            current_content = []
+                sections[current_section.lower()] = section_content
 
-            # Skip the "----" decoration line that might follow section headers
+            # Start new section
+            current_section = line_stripped.rstrip(":")
+            section_content = []
+
+            # Skip decoration lines (like "-----")
             if i + 1 < len(lines) and re.match(r"^-+$", lines[i + 1].strip()):
                 i += 1
-        elif in_description and line:
-            # If still in description and not a blank line, add to description
-            description_lines.append(line)
-        elif current_section and line:
-            # Add non-empty lines to the current section
-            current_content.append(line)
 
-        i += 1
+        # If not a section header and we're in a section, add the line
+        elif current_section:
+            # For Commands section, preserve original line with indentation
+            if current_section.lower() == "commands":
+                section_content.append(line)  # Keep original indentation
+            else:
+                # For other sections, just add the content
+                if line_stripped:  # Skip empty lines except in Commands section
+                    section_content.append(line_stripped)
+
+        # If not a section header and not in a section yet, add to description
+        elif line_stripped:
+            description.append(line_stripped)
 
     # Save the last section
     if current_section:
-        sections[current_section.lower()] = current_content
+        sections[current_section.lower()] = section_content
 
-    # Add the complete description as a "description" section
-    if description_lines:
-        sections["description"] = description_lines
+    # Store the description section
+    if description:
+        sections["description"] = description
 
     return docstring, cmd_title, is_class, sections
 
@@ -366,130 +355,207 @@ def format_help(obj, method_name: str = "__class__") -> None:
     if docstring is None:
         return
 
-    # Process Description section - prefer "description" section, fall back to "details" if exists
+    # Display command group / name
+    console.print(f"\n[bold green]{cmd_title}[/bold green\n\n]")
+
+    # Process Description section
     if "description" in sections:
         description = " ".join(sections["description"])
         if description:
             console.print(Panel(description, title="Info", expand=False, border_style="blue", width=120))
-    elif "details" in sections:
-        details = " ".join(sections["details"])
-        if details:
-            console.print(Panel(details, title="Info", expand=False, border_style="blue", width=120))
-
-    # Display command group / name
-    console.print(f"[bold green]{cmd_title}[/bold green\n]")
 
     # Process Commands section for classes
     if is_class and "commands" in sections:
         commands_table = Table(box=ROUNDED, expand=False, width=120, style="dim")
         commands_table.add_column("Command", style="cyan bold", no_wrap=True)
         commands_table.add_column("Description", style="white")
-        commands_table.add_column("Flags", style="dim")
-        for line in sections["commands"]:
-            if line.strip():
-                # First try to split by two spaces to separate command from description
-                parts = line.split("  ", 1)
-                if len(parts) == 2:
-                    cmd = parts[0].strip()
-                    # Check for flags in parentheses
-                    desc_parts = parts[1].strip().split("(", 1)
-                    desc = desc_parts[0].strip()
-                    flags = desc_parts[1].rstrip(")") if len(desc_parts) > 1 else ""
-                    commands_table.add_row(f"{cmd}", desc, flags)
-                else:
-                    # Fall back to regex if no two spaces found
-                    match = re.match(r"^\s*(\S+)\s+(.*?)(?:\s*\(([^)]*)\)|$)", line)
-                    if match:
-                        cmd = match.group(1)
-                        desc = match.group(2).strip()
-                        flags = match.group(3) or ""
-                        commands_table.add_row(f"{cmd}", desc, flags)
+        commands_table.add_column("Options", style="dim")
+
+        i = 0
+        lines = sections["commands"]
+
+        while i < len(lines):
+            line = lines[i].strip()
+            if not line:
+                i += 1
+                continue
+
+            # Command format is "command : description"
+            cmd_parts = line.split(" : ", 1)
+            if len(cmd_parts) == 2:
+                cmd = cmd_parts[0].strip()
+                desc = cmd_parts[1].strip()
+
+                # Look for options on the next line(s)
+                options = []
+                j = i + 1
+                in_options = False
+
+                # Check if next line starts with options
+                if j < len(lines) and lines[j].strip().startswith("("):
+                    in_options = True
+                    # Process option lines until we find the closing parenthesis
+                    while j < len(lines) and in_options:
+                        opt_line = lines[j].strip()
+                        options.append(opt_line)
+
+                        if opt_line.endswith(")"):
+                            in_options = False
+                        j += 1
+
+                # Join and format options
+                options_str = ""
+                if options:
+                    # Remove parentheses and join with spaces
+                    options_str = " ".join(options)
+                    options_str = options_str.strip("() ")
+                    i = j - 1  # Skip the processed option lines
+
+                commands_table.add_row(cmd, desc, options_str)
+
+            i += 1
 
         console.print(commands_table)
-        # Check if there are any required parameters (marked with *)
-        has_required = False
-        for line in sections["commands"]:
-            if "*" in line:
-                has_required = True
-                break
-        if has_required:
+        # Check if any commands have required parameters (marked with *)
+        if any("*" in line for line in sections["commands"]):
             console.print("* Required parameter")
 
-    # Process Arguments section for methods
-    def _process_items_section(sections, section_name, section_title):
-        """Helper function to process and display a section with items and descriptions."""
-        if section_name in sections:
-            console.print(f"\n[bold green]{section_title}:[/bold green]\n")
+    # Helper function to process parameter sections (Args and Options)
+    def process_param_section(section_name, section_title, param_regex, name_idx=1, type_idx=2):
+        if section_name not in sections:
+            return
 
-            current_item = None
-            current_desc = []
+        # Create table for parameters
+        table = Table(box=ROUNDED, expand=False, style="dim", width=120)
+        table.add_column("Parameter", style="yellow bold")
+        table.add_column("Type", style="cyan")
+        table.add_column("Description", style="white")
 
-            for line in sections[section_name]:
-                if line.strip():
-                    # Check for item name only (matching option flags or argument names)
-                    pattern = r"^\s*(-{0,2}\S+)\s*$" if section_name == "options" else r"^\s*(\S+)\s*$"
-                    item_match = re.match(pattern, line)
+        # Direct regex to extract parameters from docstring
+        method = getattr(obj, method_name, None)
+        if method and method.__doc__:
+            doc_lines = inspect.getdoc(method).split("\n")
 
-                    if item_match:
-                        # If we already have an item being processed, print it
-                        if current_item:
-                            desc_text = " ".join(current_desc)
-                            console.print(f"  [yellow bold]{current_item:<25}[/yellow bold][dim]{desc_text}[/dim]")
+            # Find the section
+            section_start = -1
+            for i, line in enumerate(doc_lines):
+                # Make section matching case-insensitive
+                line_lower = line.strip().lower()
+                if line_lower == f"{section_title.lower()}:" or line_lower == f"{section_name.lower()}:":
+                    section_start = i + 1
+                    break
 
-                        # Set up the new item
-                        current_item = item_match.group(1)
-                        current_desc = []
+            if section_start >= 0:
+                i = section_start
+                while i < len(doc_lines):
+                    line = doc_lines[i].strip()
+
+                    # End of section (another section starts)
+                    if line.endswith(":") and not line.startswith(" "):
+                        break
+
+                    # Parameter line (indented, contains parameter name)
+                    param_match = re.match(param_regex, line)
+                    if param_match:
+                        param_name = param_match.group(name_idx)
+                        # Get type if available and valid
+                        has_valid_type_index = type_idx < len(param_match.groups()) + 1
+                        type_value = param_match.group(type_idx) if has_valid_type_index else None
+                        param_type = type_value if type_value else ""
+                        param_desc = []
+
+                        # Look for description (should be on the next line and indented)
+                        j = i + 1
+                        while j < len(doc_lines):
+                            next_line = doc_lines[j].strip()
+
+                            # If empty line or end of section, break
+                            if not next_line or (next_line.endswith(":") and not next_line.startswith(" ")):
+                                break
+
+                            # If this is another parameter, break
+                            if re.match(param_regex, next_line):
+                                break
+
+                            # Add description line
+                            param_desc.append(next_line)
+                            j += 1
+
+                        # Add parameter to table
+                        desc_text = " ".join(param_desc).strip()
+                        table.add_row(param_name, param_type, desc_text)
+
+                        # Move to next parameter
+                        i = j
                     else:
-                        # This is a description line for the current item
-                        if current_item:
-                            current_desc.append(line.strip())
+                        i += 1
+            else:
+                # Use the pre-parsed sections if we can't find the section in the docstring
+                for param_line in sections[section_name]:
+                    param_match = re.match(param_regex, param_line)
+                    if param_match:
+                        param_name = param_match.group(name_idx)
+                        # Get type if available and valid
+                        has_valid_type_index = type_idx < len(param_match.groups()) + 1
+                        type_value = param_match.group(type_idx) if has_valid_type_index else None
+                        param_type = type_value if type_value else ""
+                        desc_text = ""
 
-            # Print the last item
-            if current_item:
-                desc_text = " ".join(current_desc)
-                console.print(f"  [yellow bold]{current_item:<25}[/yellow bold][dim]{desc_text}[/dim]")
+                        # Search for description in the next lines
+                        param_index = sections[section_name].index(param_line)
+                        if param_index + 1 < len(sections[section_name]):
+                            next_line = sections[section_name][param_index + 1]
+                            if not re.match(param_regex, next_line):
+                                desc_text = next_line
 
-            console.print()
+                        table.add_row(param_name, param_type, desc_text)
 
+        # Display table if parameters were found
+        if table.row_count > 0:
+            console.print(table)
+        console.print()
+
+    # Process Args section for method parameters
     if not is_class and "args" in sections:
-        _process_items_section(sections, "args", "OPTIONS")
+        process_param_section("args", "OPTIONS", r"^\s*(\S+)\s*:\s*(\S+)\s*$")
 
     # Process Options section
     if "options" in sections:
-        _process_items_section(sections, "options", "Options")
+        process_param_section("options", "Options", r"^\s*(-{0,2}\S+)\s*(?::\s*(\S+))?\s*$")
 
     # Process Examples section
     if "examples" in sections:
         examples_text = []
-        # Track comment/command pairs
         current_example = []
-        in_example = False
+
         for line in sections["examples"]:
-            if line.strip():
-                if line.startswith("#"):
-                    # Start a new example if we weren't already in one
-                    if current_example and not in_example:
-                        examples_text.append("\n".join(current_example))
-                        examples_text.append("")  # Empty line between examples
-                        current_example = []
-                    # Add the comment
-                    current_example.append(f"[dim]{line}[/dim]")
-                    in_example = True
-                else:
-                    # Add the command
-                    current_example.append(f"[cyan]{line}[/cyan]")
-                    in_example = False
-            else:
-                # Empty line in docstring - add to current example
+            line_stripped = line.strip()
+
+            if not line_stripped:
+                # Empty line separates examples
                 if current_example:
-                    current_example.append("")
-        # Add the last example if there is one
+                    examples_text.append("\n".join(current_example))
+                    examples_text.append("")  # Add spacing
+                    current_example = []
+                continue
+
+            if line_stripped.startswith("#"):
+                # This is a comment/description for an example
+                current_example.append(f"[dim]{line_stripped}[/dim]")
+            else:
+                # This is a command
+                current_example.append(f"[cyan]{line_stripped}[/cyan]")
+
+        # Add the last example
         if current_example:
             examples_text.append("\n".join(current_example))
-        console.print(
-            Panel("\n".join(examples_text), title="Examples", border_style="cyan", expand=False, padding=(1, 2))
-        )
-        console.print()
+
+        # Display examples in a panel
+        if examples_text:
+            console.print(
+                Panel("\n".join(examples_text), title="Examples", border_style="cyan", expand=False, padding=(1, 2))
+            )
+            console.print()
 
     # Process Documentation section
     if "documentation" in sections:
