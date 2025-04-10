@@ -1,14 +1,12 @@
 import { createContext, useContext } from 'react';
 import { type z } from 'zod';
 
-import {
-  type threadMessageContentModel,
-  type threadMessageModel,
-} from '@/lib/models';
+import type { ExtendedMessage } from '@/hooks/threads';
+import { type threadMessageContentModel } from '@/lib/models';
 
 type ThreadMessageContent = {
   content: z.infer<typeof threadMessageContentModel>;
-  message: z.infer<typeof threadMessageModel>;
+  message: ExtendedMessage;
   messageContentId: string;
 };
 
