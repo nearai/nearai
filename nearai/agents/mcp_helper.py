@@ -261,6 +261,7 @@ class MCPServerManager:
             server_tool_map = {}
 
             for mcp_tool in mcp_tools:
+                self.logger(f"Registering tool {mcp_tool.name} from server {server_name}")
                 tool_data, map_entry = await self.register_tool(
                     mcp_tool,
                     server_name,
@@ -269,6 +270,8 @@ class MCPServerManager:
                 )
                 tools_data.append(tool_data)
                 server_tool_map.update(map_entry)
+
+            self.logger(f"Registered {len(tools_data)} tools from server {server_name}")
 
             return MCPServerData(
                 name=server_name,
@@ -318,7 +321,6 @@ class MCPServerManager:
                         ),
                         timeout=TOOL_EXECUTION_TIMEOUT
                     )
-                    self.logger(f"Tool result inside: {tool_result}")
                     return tool_result
                   except asyncio.TimeoutError:
                     self.logger(f"Tool execution timed out after 1 minute")
@@ -388,7 +390,6 @@ class MCPServerManager:
 
             try:
                 tool_result = await self.execute_tool(tool_call, server)
-                self.logger(f"Tool result: {tool_result}")
                 if tool_result:
                     result = await self.process_tool_result(
                         tool_result,
@@ -517,7 +518,15 @@ class MCPServerManager:
                 [
                     {
                         "role": "system",
-                        "content": "You are an assistant and you can use a list of tools to help answer user questions. I want all your response to be human friendly formatted. So if you receive a JSON object, you should format it as a human readable string.",
+                        "content": """
+                        You are an assistant and you can use a list of tools to help answer user questions.
+
+                        Important rules:
+                        1. You should always return a friendly response to the user.
+                        2. If you use a tool, it may return a JSON object. You should then format it as if a human wrote it.
+                        3. Be polite and friendly.
+                        4. If the user asks you what you can do, list the tools and its description in the answer.
+                        """,
                     }
                 ] + self.get_messages(),
                 tools=tool_registry.get_all_tool_definitions(),

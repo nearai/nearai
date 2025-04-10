@@ -1,8 +1,15 @@
 FROM public.ecr.aws/lambda/python:3.11
 
-RUN yum install -y gcc libffi-devel openssl-devel-1:1.0.2k-24.amzn2.0.14 shadow-utils acl unzip which && \
+RUN yum install -y gcc libffi-devel openssl-devel-1:1.0.2k-24.amzn2.0.14 shadow-utils acl unzip which tar gzip && \
     yum clean all && \
     rm -rf /var/cache/yum
+
+# Install UV
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    ln -s /root/.local/bin/uv /usr/local/bin/uv && \
+    ln -s /root/.local/bin/uvx /usr/local/bin/uvx && \
+    echo "Verifying UV installation:" && \
+    uv --version
 
 # Install Bun
 # (we need to use Bun because the base image only supports node.js versions lower than 16.x)
