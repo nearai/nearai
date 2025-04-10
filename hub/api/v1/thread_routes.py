@@ -683,6 +683,9 @@ def create_run(
             run_date=run.schedule_at or datetime.now(),
             args=[thread_id, run_model.id, None, auth],
             jobstore="default",
+            replace_existing=True,
+            misfire_grace_time=60,
+            id=run_model.id,
         )
 
         return run_model.to_openai()
