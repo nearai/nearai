@@ -161,6 +161,8 @@ class Environment(object):
             default_mainnet_rpc = "https://rpc.mainnet.near.org"
 
         class NearAccount(Account):
+            user_rpc_addr: Union[str, None]
+
             async def view(
                 self,
                 contract_id: str,
@@ -197,7 +199,7 @@ class Environment(object):
                     If all retry attempts fail, the exception is propagated.
 
                 """
-                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                acc = Account(self.account_id, self.private_key, self.user_rpc_addr or default_mainnet_rpc)
                 await acc.startup()
                 max_retries = min(max_retries, 10)
 
@@ -258,7 +260,7 @@ class Environment(object):
                     If all retry attempts fail, the exception is propagated.
 
                 """
-                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                acc = Account(self.account_id, self.private_key, self.user_rpc_addr or default_mainnet_rpc)
                 await acc.startup()
                 max_retries = min(max_retries, 10)
 
@@ -297,7 +299,7 @@ class Environment(object):
                     If there is an error retrieving the balance.
 
                 """
-                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                acc = Account(self.account_id, self.private_key, self.user_rpc_addr or default_mainnet_rpc)
                 await acc.startup()
                 return await acc.get_balance(account_id)
 
@@ -307,6 +309,7 @@ class Environment(object):
                 private_key: Optional[Union[List[Union[str, bytes]], str, bytes]] = None,
                 rpc_addr: Optional[str] = None,
             ):
+                self.user_rpc_addr = rpc_addr
                 self.account_id = account_id
                 self.private_key = private_key
                 super().__init__(account_id, private_key, rpc_addr)
