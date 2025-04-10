@@ -24,6 +24,7 @@ from sqlmodel import asc, desc, select
 from hub.api.v1.agent_routes import (
     _runner_for_env,
     get_agent_entry,
+    invoke_agent_in_cvm,
     invoke_agent_via_lambda,
     invoke_agent_via_url,
 )
@@ -512,7 +513,7 @@ def list_messages(
         statement = statement.limit(limit)
 
         # Print the SQL query
-        logger.debug("SQL Query:", statement.compile(compile_kwargs={"literal_binds": True}))
+        # logger.debug("SQL Query:", statement.compile(compile_kwargs={"literal_binds": True}))
 
         messages = session.exec(statement).all()
         logger.debug(
@@ -616,6 +617,7 @@ def create_run(
     thread_id: str,
     run: RunCreateParamsBase = Body(...),
     auth: AuthToken = Depends(get_auth),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     scheduler=Depends(get_scheduler),
 ) -> OpenAIRun:
     logger.info(f"Creating run for thread: {thread_id}")
@@ -677,12 +679,13 @@ def create_run(
             return run_model.to_openai()
 
         # Queue the run
-        scheduler.add_job(
+        logger.info(f"Queuing run: {run_model.id} for thread: {thread_id}")
+        background_tasks.add_task(
             _run_agent,
-            "date",
-            run_date=run.schedule_at or datetime.now(),
-            args=[thread_id, run_model.id, None, auth],
-            jobstore="default",
+            thread_id,
+            run_model.id,
+            background_tasks,
+            auth,
         )
 
         return run_model.to_openai()
@@ -789,6 +792,20 @@ def _run_agent(
                 run_id,
                 AuthData(**auth.model_dump()),  # TODO: https://github.com/nearai/nearai/issues/421
                 params,
+            )
+        elif runner == "cvm":
+            invoke_agent_in_cvm(
+                run_id=run_id,
+                agent_id=specific_agent_version_to_run,
+                api_url=agent_api_url,
+                model=run_model.model,
+                temperature=run_model.temperature or 0.0,
+                max_tokens=run_model.max_completion_tokens or 1024,
+                max_iterations=1,
+                # env_vars=agent_env_vars,
+                thread_id=thread_id,
+                auth=AuthData(**auth.model_dump()),
+                provider="fireworks",
             )
         else:
             function_name = f"{runner}-{framework.lower()}"

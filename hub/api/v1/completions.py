@@ -3,6 +3,7 @@ from enum import Enum
 from os import getenv
 from typing import Callable, List, Union
 
+import httpx
 from dotenv import load_dotenv
 from nearai.shared.client_config import DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT
 from openai import OpenAI
@@ -15,6 +16,7 @@ class Provider(Enum):
     HYPERBOLIC = "hyperbolic"
     FIREWORKS = "fireworks"
     LOCAL = "local"
+    NEARAI = "nearai"
 
 
 async def handle_stream(resp_stream, add_usage_callback: Callable):
@@ -46,6 +48,15 @@ def get_llm_ai(provider: str) -> OpenAI:
             api_key=getenv("FIREWORKS_API_KEY"),
             timeout=DEFAULT_TIMEOUT,
             max_retries=DEFAULT_MAX_RETRIES,
+        )
+    elif provider == "nearai":
+        http_client = httpx.Client(verify=False)
+        return OpenAI(
+            base_url="http://10.0.2.2:8000/v1",
+            api_key="PHALA@2025",
+            timeout=DEFAULT_TIMEOUT,
+            max_retries=DEFAULT_MAX_RETRIES,
+            http_client=http_client,
         )
     elif provider == "local":
         return OpenAI(

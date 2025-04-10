@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import os
 import re
 from collections import defaultdict
 from os import getenv
@@ -12,13 +13,13 @@ import botocore.exceptions
 from dotenv import load_dotenv
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
-from nearai.shared.client_config import DEFAULT_NAMESPACE
 from pydantic import BaseModel, field_validator, model_validator
-from sqlmodel import col, delete, select, text
+from sqlmodel import col, delete, func, select, text
 
 from hub.api.v1.auth import AuthToken, get_auth, get_optional_auth
 from hub.api.v1.entry_location import EntryLocation, valid_identifier
 from hub.api.v1.models import Fork, RegistryEntry, Tags, get_session, sanitize
+from nearai.shared.client_config import DEFAULT_NAMESPACE
 
 DEFAULT_NAMESPACE_WRITE_ACCESS_LIST = [
     "spensa2.near",
@@ -32,14 +33,13 @@ DEFAULT_NAMESPACE_WRITE_ACCESS_LIST = [
     "calebjacob.near",
 ]
 
-load_dotenv()
-S3_BUCKET = getenv("S3_BUCKET")
+print(os.environ)
 
+S3_BUCKET = getenv("S3_BUCKET")
 S3_ENDPOINT = getenv("S3_ENDPOINT")
-s3 = boto3.client(
-    "s3",
-    endpoint_url=S3_ENDPOINT,
-)
+
+
+s3 = boto3.client("s3", endpoint_url=S3_ENDPOINT)
 
 v1_router = APIRouter(
     prefix="/registry",
@@ -56,7 +56,10 @@ tag_pattern = re.compile(r"^[a-zA-Z0-9_\-]+$")
 def valid_tag(tag: str) -> str:
     result = tag_pattern.match(tag)
     if result is None:
-        raise HTTPException(status_code=400, detail=f"Invalid tag: {repr(tag)}. Should match {tag_pattern.pattern}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid tag: {repr(tag)}. Should match {tag_pattern.pattern}",
+        )
     return result[0]
 
 
@@ -81,6 +84,13 @@ def with_write_access(use_forms=False):
     return fn_with_write_access
 
 
+def get_next_id():
+    """Get the next available ID in the registry_entry table"""
+    with get_session() as session:
+        max_id = session.exec(select(func.max(RegistryEntry.id))).first()
+        return (max_id or 0) + 1
+
+
 def get_or_create(entry_location: EntryLocation = Depends(with_write_access())) -> int:
     with get_session() as session:
         entry = session.exec(
@@ -92,7 +102,9 @@ def get_or_create(entry_location: EntryLocation = Depends(with_write_access())) 
         ).first()
 
         if entry is None:
+            next_id = get_next_id()
             entry = RegistryEntry(
+                id=next_id,  # Explicitly set ID
                 namespace=entry_location.namespace,
                 name=entry_location.name,
                 version=entry_location.version,
@@ -120,7 +132,9 @@ def get(entry_location: EntryLocation = Body()) -> RegistryEntry:
 
         if entry is None:
             logger.debug(f"Entry not found: {entry_location}")
-            raise HTTPException(status_code=404, detail=f"Entry '{entry_location}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Entry '{entry_location}' not found"
+            )
 
         return entry
 
@@ -148,7 +162,9 @@ def latest_version(entry_location: EntryLocation = Body()) -> RegistryEntry:
         ).first()
 
         if entry is None:
-            raise HTTPException(status_code=404, detail=f"Entry '{entry_location}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Entry '{entry_location}' not found"
+            )
 
         return entry
 
@@ -244,12 +260,17 @@ def download_file_inner(
 
 
 @v1_router.post("/upload_metadata")
-async def upload_metadata(registry_entry_id: int = Depends(get_or_create), metadata: EntryMetadataInput = Body()):
+async def upload_metadata(
+    registry_entry_id: int = Depends(get_or_create),
+    metadata: EntryMetadataInput = Body(),
+):
     with get_session() as session:
         entry = session.get(RegistryEntry, registry_entry_id)
         assert entry is not None
 
-        full_metadata = EntryMetadata(name=entry.name, version=entry.version, **metadata.model_dump())
+        full_metadata = EntryMetadata(
+            name=entry.name, version=entry.version, **metadata.model_dump()
+        )
 
         entry.category = full_metadata.category
         entry.description = full_metadata.description
@@ -270,7 +291,11 @@ async def upload_metadata(registry_entry_id: int = Depends(get_or_create), metad
 
         session.commit()
 
-        return {"status": "Updated metadata", "namespace": entry.namespace, "metadata": full_metadata.model_dump()}
+        return {
+            "status": "Updated metadata",
+            "namespace": entry.namespace,
+            "metadata": full_metadata.model_dump(),
+        }
 
 
 @v1_router.post("/download_metadata")
@@ -323,7 +348,9 @@ def list_files_inner(entry: RegistryEntry) -> List[Filename]:
     key = key.strip("/") + "/"
     logger.info(f"Listing files for bucket: {bucket}, key: {key}")
     objects = s3.list_objects(Bucket=bucket, Prefix=key)
-    files = [Filename(filename=obj["Key"][len(key) :]) for obj in objects.get("Contents", [])]
+    files = [
+        Filename(filename=obj["Key"][len(key) :]) for obj in objects.get("Contents", [])
+    ]
     return files
 
 
@@ -653,7 +680,9 @@ def fork_entry(
 ) -> ForkResult:
     """Fork an existing registry entry to the current user's namespace."""
     with get_session() as session:
+        next_id = get_next_id()
         new_entry = RegistryEntry(
+            id=next_id,  # Use dynamic ID instead of hardcoded 1006747
             namespace=auth.account_id,
             name=modifications.name,
             version=modifications.version,
@@ -686,9 +715,12 @@ def fork_entry(
         ).first()
 
         if new_entry_collision_check is not None:
-            logger.debug(f"Fork request collides with existing entry: {new_entry_collision_check}")
+            logger.debug(
+                f"Fork request collides with existing entry: {new_entry_collision_check}"
+            )
             raise HTTPException(
-                status_code=409, detail="Fork request collides with existing entry. Choose a different name."
+                status_code=409,
+                detail="Fork request collides with existing entry. Choose a different name.",
             )
 
         session.add(new_entry)
@@ -712,11 +744,17 @@ def fork_entry(
         for file in files:
             key = entry.get_key(file.filename)
             new_key = new_entry.get_key(file.filename)
-            s3.copy_object(Bucket=bucket, Key=new_key, CopySource={"Bucket": bucket, "Key": key})
+            s3.copy_object(
+                Bucket=bucket, Key=new_key, CopySource={"Bucket": bucket, "Key": key}
+            )
 
         result = ForkResult(
             status="Entry forked and uploaded",
-            entry=EntryLocation(name=new_entry.name, namespace=new_entry.namespace, version=new_entry.version),
+            entry=EntryLocation(
+                name=new_entry.name,
+                namespace=new_entry.namespace,
+                version=new_entry.version,
+            ),
         )
 
         return result
