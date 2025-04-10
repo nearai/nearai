@@ -222,6 +222,7 @@ def _print_metrics_tables(
                 for i in range(0, len(short_metric_names), n_metrics_per_table)
             ],
             [metric_names[i : i + n_metrics_per_table] for i in range(0, len(metric_names), n_metrics_per_table)],
+            strict=False,
         )
     )
 

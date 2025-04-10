@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import io
 import json
@@ -10,11 +11,12 @@ import subprocess
 import tarfile
 import tempfile
 import threading
+import traceback
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
 
 import psutil
 from litellm.types.completion import ChatCompletionMessageParam
@@ -38,6 +40,7 @@ from py_near.constants import DEFAULT_ATTACHED_GAS
 import nearai.shared.near.sign as near
 from nearai.agents import tool_json_helper
 from nearai.agents.agent import Agent
+from nearai.agents.models.mcp import MCPServerConfig
 from nearai.agents.tool_registry import ToolRegistry
 from nearai.shared.client_config import DEFAULT_PROVIDER_MODEL
 from nearai.shared.inference_client import InferenceClient
@@ -56,6 +59,7 @@ from nearai.shared.near.sign import (
     validate_completion_signature,
 )
 from nearai.shared.secure_openai_clients import SecureAsyncOpenAI, SecureOpenAI
+from nearai.agents.mcp_helper import MCPServerManager, MCPError
 
 DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
@@ -1484,6 +1488,37 @@ class Environment(object):
         else:
             # By default the user starts the conversation.
             return "user"
+
+    async def add_mcp_servers(self, mcp_server_configs: List[MCPServerConfig], add_responses_to_messages: bool = True):
+        """Adds MCP servers to the environment and registers their available tools.
+
+        This function ensures the saved state exactly matches the provided server configs.
+        If there's any mismatch between saved servers and provided configs, it recreates
+        all servers and saves the new state.
+
+        Args:
+            mcp_server_configs: A list of MCPServerConfig dictionaries. Each config must contain either:
+                - 'url' and 'name' for SSE (Server-Sent Events) transport
+                - 'command', 'name', and optionally 'args' and 'env' for STDIO transport
+            add_responses_to_messages: If True, adds tool responses to the conversation history.
+                Defaults to True.
+
+        Raises:
+            MCPError: If there's an error managing MCP servers
+        """
+        from nearai.agents.mcp_helper import MCPServerManager
+
+        tool_registry = self.get_tool_registry(new=True)
+        mcp_manager = MCPServerManager(
+            logger=self.add_system_log,
+            add_reply=self.add_reply,
+            save_agent_data=self.save_agent_data,
+            get_agent_data=self.get_agent_data_by_key,
+            get_messages=self.list_messages,
+            get_tool_completion=self.completion_and_get_tools_calls,
+        )
+
+        await mcp_manager.setup_and_run(mcp_server_configs, tool_registry, add_responses_to_messages)
 
     def run(
         self,

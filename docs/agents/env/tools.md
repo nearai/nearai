@@ -39,11 +39,35 @@ tool_def = tool_registry.get_tool_definition('my_tool')
 response = env.completions_and_run_tools(messages, tools=[tool_def])
 ```
 
-2. Using `register_mcp_tool` for MCP tools:
-```python
-from nearai.agents.models.tool_definition import MCPTool
+2. Using [`add_mcp_servers`](../../api.md#nearai.agents.environment.Environment.add_mcp_servers) for MCP servers:
 
-mcp_tool = MCPTool(
+```python
+# Define MCP server configurations
+mcp_servers_configs = [
+    { # Using STDIO transport
+        "name": "weather",
+        "command": "npx",
+        "args": [
+            "-y",
+            "@h1deya/mcp-server-weather"
+        ],
+    },
+    { # Using SSE transport
+        "name": "heurist-mesh-agent",
+        "url": "https://sequencer-v2.heurist.xyz/mcp/sse"
+    },
+]
+
+# Add MCP servers to the environment
+await env.add_mcp_servers(mcp_servers_configs)
+```
+
+
+3. Using `register_mcp_tool` for MCP tools:
+```python
+from mcp.types import Tool
+
+mcp_tool = Tool(
     name="weather",
     description="Get the current weather in a location",
     inputSchema={
@@ -70,6 +94,7 @@ To pass all the built in tools plus any you have registered use the `get_all_too
 all_tools = env.get_tool_registry().get_all_tool_definitions()
 response = env.completions_and_run_tools(messages, tools=all_tools)
 ```
+
 If you do not want to use the built-in tools, use `get_tool_registry(new=True)`
 ```python
     tool_registry = env.get_tool_registry(new=True)
