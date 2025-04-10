@@ -1,7 +1,7 @@
 import importlib.metadata
 import inspect
 import re
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Any
 
 from rich.box import ROUNDED
 from rich.console import Console
@@ -48,7 +48,7 @@ def get_docstring_info(
     return docstring, cmd_title, is_class, sections
 
 
-def _extract_basic_metadata(obj, method_name: str, console: Console) -> Tuple[bool, Optional[str], str]:
+def _extract_basic_metadata(obj: Any, method_name: str, console: Console) -> Tuple[bool, Optional[str], str]:
     """Extract basic metadata from the object or method.
 
     Args:
