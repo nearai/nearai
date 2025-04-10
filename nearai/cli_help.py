@@ -1,7 +1,7 @@
 import importlib.metadata
 import inspect
 import re
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Any
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rich.box import ROUNDED
 from rich.console import Console
