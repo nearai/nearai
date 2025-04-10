@@ -152,6 +152,9 @@ class RegistryCli:
 
           # Show information about a model
           nearai registry info example.near/model-name/1.0.0
+        
+        Documentation:
+          https://docs.near.ai/agents/registry
 
         """
         entry_location = parse_location(entry)
