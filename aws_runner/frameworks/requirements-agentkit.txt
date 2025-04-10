@@ -15,11 +15,11 @@ cdp-sdk >= 0.15.0
 
 # Coinbase AgentKit Integration
 # https://github.com/coinbase/agentkit
-coinbase-agentkit >= 0.1.2
+coinbase-agentkit >= 0.4.0
 
 # LangChain integration for Coinbase AgentKit
 # https://github.com/coinbase/agentkit
-coinbase-agentkit-langchain >= 0.1.0
+coinbase-agentkit-langchain >= 0.3.0
 
 # Datadog tracing library
 # https://github.com/DataDog/dd-trace-py
