@@ -1272,6 +1272,8 @@ class AgentCli:
         """Run an agent interactively in a conversational interface.
 
         If no agent is specified, you'll be presented with a list of available agents to choose from.
+        Specifying an agent will run the agent from NEAR AI Cloud. If you want to run a specific local agent,
+        pass the path to the agent followed by the --local flag. (See examples below.)
 
         Args:
           agent (str) :
@@ -1288,17 +1290,20 @@ class AgentCli:
             Environment variables to pass to the agent (JSON format)
 
         Examples:
-          # Select from a list of agents to interact with on your local machine
-          nearai agent interactive --local
+          # Select from a list of agents to run that you created or downloaded
+          nearai agent interactive
+
+          # Run an agent hosted on NEAR AI Cloud
+          nearai agent interactive example.near/agent-name/latest
 
           # Run a specific agent locally
-          nearai agent interactive --agent example.near/agent-name/0.0.3 --local
+          nearai agent interactive ./path/to/local/agent --local
 
           # Run an agent locally with verbose output
-          nearai agent interactive --agent path/to/local/agent --local --verbose
+          nearai agent interactive ./path/to/local/agent --local --verbose
 
           # Continue an existing conversation
-          nearai agent interactive --agent example.near/agent-name/0.0.3 --thread-id abc123
+          nearai agent interactive example.near/agent-name/0.0.3 --thread-id abc123
 
         """
         assert_user_auth()
