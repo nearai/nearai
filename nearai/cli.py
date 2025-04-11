@@ -712,6 +712,7 @@ class AgentCli:
         assert_user_auth()
 
         if agent is None:
+            local = True
             # List available agents in the registry folder
             registry_path = Path(get_registry_folder())
             if not registry_path.exists():
