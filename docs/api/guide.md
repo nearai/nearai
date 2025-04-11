@@ -219,7 +219,7 @@ In this section you can find a few code samples using Python, Rust, and JavaScri
 
 ## API documentation
 
-You can find complete and detailed technical reference documentation regarding available NEAR AI API methods in [this page](https://api.near.ai/docs/hub/reference).
+You can find complete and detailed technical reference documentation regarding available NEAR AI API methods in [this page](https://api.near.ai/redoc).
 
 ![API docs](../assets/images/redoc.png)
 
@@ -234,26 +234,26 @@ Reference documentation includes:
 
 | Link 			| Description |
 |---------------|-------------|
-| [Default](https://api.near.ai/docs/hub/reference)		| Main Hub methods. |
-| [Registry](https://api.near.ai/docs/hub/reference#tag/registry)		| Registry management methods. |
-| [Agents & Assistants](https://api.near.ai/docs/hub/reference#tag/agents-assistants)	| Agent management methods. |
-| [Benchmark](https://api.near.ai/docs/hub/reference#tag/benchmark)		| Benchmarking methods. |
-| [Stars](https://api.near.ai/docs/hub/reference#tag/stars)				| Star management methods. |
-| [Jobs](https://api.near.ai/docs/hub/reference#tag/jobs)				| Jobs management methods. |
-| [Permissions](https://api.near.ai/docs/hub/reference#tag/permissions)	| Permission methods. |
-| [Evaluation](https://api.near.ai/docs/hub/reference#tag/evaluation)	| Evaluation methods. |
-| [Delegation](https://api.near.ai/docs/hub/reference#tag/delegation)	| Delegation management methods. |
-| [Logs](https://api.near.ai/docs/hub/reference#tag/logs)				| Logging methods. |
-| [Vector Stores](https://api.near.ai/docs/hub/reference#tag/Vector-Stores)		| Vector Store management methods. |
-| [Files](https://api.near.ai/docs/hub/reference#tag/Files)				| File management methods. |
-| [Threads](https://api.near.ai/docs/hub/reference#tag/Threads)			| Thread management methods. |
-| [Hub Secrets](https://api.near.ai/docs/hub/reference#tag/Hub-Secrets)	| Manage Hub secrets. |
-| [Run Schedule](https://api.near.ai/docs/hub/reference#tag/Run-Schedule)		| Scheduling methods. |
+| [Default](https://api.near.ai/redoc)		| Main Hub methods. |
+| [Registry](https://api.near.ai/redoc#tag/registry)		| Registry management methods. |
+| [Agents & Assistants](https://api.near.ai/redoc#tag/agents-assistants)	| Agent management methods. |
+| [Benchmark](https://api.near.ai/redoc#tag/benchmark)		| Benchmarking methods. |
+| [Stars](https://api.near.ai/redoc#tag/stars)				| Star management methods. |
+| [Jobs](https://api.near.ai/redoc#tag/jobs)				| Jobs management methods. |
+| [Permissions](https://api.near.ai/redoc#tag/permissions)	| Permission methods. |
+| [Evaluation](https://api.near.ai/redoc#tag/evaluation)	| Evaluation methods. |
+| [Delegation](https://api.near.ai/redoc#tag/delegation)	| Delegation management methods. |
+| [Logs](https://api.near.ai/redoc#tag/logs)				| Logging methods. |
+| [Vector Stores](https://api.near.ai/redoc#tag/Vector-Stores)		| Vector Store management methods. |
+| [Files](https://api.near.ai/redoc#tag/Files)				| File management methods. |
+| [Threads](https://api.near.ai/redoc#tag/Threads)			| Thread management methods. |
+| [Hub Secrets](https://api.near.ai/redoc#tag/Hub-Secrets)	| Manage Hub secrets. |
+| [Run Schedule](https://api.near.ai/redoc#tag/Run-Schedule)		| Scheduling methods. |
 
 
 ## Interactive API
 
-NEAR AI also provides an [interactive Web API](https://api.near.ai/docs/hub/interactive) based on [Swagger UI](https://swagger.io/) that allows you to visualize and interact with NEAR AI API’s resources without having any of the implementation logic in place.
+NEAR AI also provides an [interactive Web API](https://api.near.ai/docs) based on [Swagger UI](https://swagger.io/) that allows you to visualize and interact with NEAR AI API’s resources without having any of the implementation logic in place.
 
 The interactive API is automatically generated from the OpenAPI specification, providing a simple API tool for back end implementation and client side consumption.
 
@@ -265,18 +265,18 @@ The interactive API is automatically generated from the OpenAPI specification, p
 
 **Interactive API Endpoints**
 
-- [Default](https://api.near.ai/docs/hub/interactive)
-- [Registry](https://api.near.ai/docs/hub/interactive#/registry)
-- [Agents & Assistants](https://api.near.ai/docs/hub/interactive#/agents%2C%20assistants)
-- [Benchmark](https://api.near.ai/docs/hub/interactive#/benchmark)
-- [Stars](https://api.near.ai/docs/hub/interactive#/stars)
-- [Jobs](https://api.near.ai/docs/hub/interactive#/jobs)
-- [Permissions](https://api.near.ai/docs/hub/interactive#/permissions)
-- [Evaluation](https://api.near.ai/docs/hub/interactive#/evaluation)
-- [Delegation](https://api.near.ai/docs/hub/interactive#/delegation)
-- [Logs](https://api.near.ai/docs/hub/interactive#/logs)
-- [Vector Stores](https://api.near.ai/docs/hub/interactive#/Vector%20Stores)
-- [Files](https://api.near.ai/docs/hub/interactive#/Files)
-- [Threads](https://api.near.ai/docs/hub/interactive#/Threads)
-- [Hub Secrets](https://api.near.ai/docs/hub/interactive#/Hub%20Secrets)
-- [Run Schedule](https://api.near.ai/docs/hub/interactive#/Run%20Schedule)
+- [Default](https://api.near.ai/docs)
+- [Registry](https://api.near.ai/docs#/registry)
+- [Agents & Assistants](https://api.near.ai/docs#/agents%2C%20assistants)
+- [Benchmark](https://api.near.ai/docs#/benchmark)
+- [Stars](https://api.near.ai/docs#/stars)
+- [Jobs](https://api.near.ai/docs#/jobs)
+- [Permissions](https://api.near.ai/docs#/permissions)
+- [Evaluation](https://api.near.ai/docs#/evaluation)
+- [Delegation](https://api.near.ai/docs#/delegation)
+- [Logs](https://api.near.ai/docs#/logs)
+- [Vector Stores](https://api.near.ai/docs#/Vector%20Stores)
+- [Files](https://api.near.ai/docs#/Files)
+- [Threads](https://api.near.ai/docs#/Threads)
+- [Hub Secrets](https://api.near.ai/docs#/Hub%20Secrets)
+- [Run Schedule](https://api.near.ai/docs#/Run%20Schedule)
