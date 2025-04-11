@@ -200,21 +200,19 @@ export const AgentRunner = ({
   );
 
   const logMessages = useMemo(() => {
-    const result = (thread ? Object.values(thread.messagesById) : []).filter(
+    return (thread ? Object.values(thread.messagesById) : []).filter(
       (message) => message.metadata?.message_type?.startsWith('system:'),
     );
-    return result;
   }, [thread]);
 
   const messages = useMemo(() => {
-    const result = [
+    return [
       ...(thread ? Object.values(thread.messagesById) : []),
       ...optimisticMessages.map((message) => message.data),
     ].filter(
       (message) =>
         showLogs || !message.metadata?.message_type?.startsWith('system:'),
     );
-    return result;
   }, [thread, optimisticMessages, showLogs]);
 
   const files = useMemo(() => {
@@ -519,7 +517,7 @@ export const AgentRunner = ({
           <Sidebar.MainStickyFooter>
             <Form onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
               <Flex direction="column" gap="m">
-                {isRunning && <ThreadThinking />}
+                {isRunning && <ThreadThinking length={streamingText.length} />}
 
                 <InputTextarea
                   placeholder="Write your message and press enter..."
