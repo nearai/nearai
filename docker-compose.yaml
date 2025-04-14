@@ -14,9 +14,11 @@ services:
       - "9009:8080"
     volumes:
       - ~/.nearai/registry:/root/.nearai/registry
+    command: ["nearai/aws_runner/service.handler"]
     env_file:
       - .env
     environment:
+      - RUNNER_API_KEY=${RUNNER_API_KEY}
       - DD_API_KEY=${DD_API_KEY}
       - DD_APM_ENABLED=false
       - DD_APM_NON_LOCAL_TRAFFIC=false

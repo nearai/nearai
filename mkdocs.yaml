@@ -3,7 +3,7 @@ site_author: NEAR AI
 site_description: NEAR AI Docs - Quickly build and deploy robust AI agents, models, benchmarks, and more.
 repo_name: nearai
 repo_url: https://github.com/nearai/nearai/
-site_url: https://docs.near.ai/ 
+site_url: https://docs.near.ai/
 edit_uri: edit/main/docs/
 validation:
   omitted_files: warn
@@ -17,7 +17,7 @@ theme:
   favicon: assets/images/favicon.ico
   icon:
     repo: fontawesome/brands/github
-    edit: material/pencil 
+    edit: material/pencil
     view: material/eye
     theme:
     admonition:
@@ -63,7 +63,7 @@ theme:
     # - toc.integrate
   palette:
       - scheme: default
-        primary: black 
+        primary: black
         accent: indigo
         toggle:
           icon: material/brightness-7
@@ -130,7 +130,7 @@ extra_css:
   - https://unpkg.com/katex@0/dist/katex.min.css
   - docs.css
 nav:
-  - Home: 
+  - Home:
     - Welcome To NEAR AI Docs: 'index.md'
     - 'cli.md'
     - CLI Reference: 'cli_command_reference.md'
@@ -140,24 +140,28 @@ nav:
   - Agents:
     - Building Agents:
       - Quickstart: 'agents/quickstart.md'
-      - "Agent Environment":
+      - "Environment":
         - 'agents/env/overview.md'
         - 'agents/env/messages_files.md'
         - 'agents/env/inference.md'
-        - 'agents/env/calling_other_agents.md'
         - 'agents/env/tools.md'
-        - Secrets & Variables: 'agents/env/variables.md'
         - NEAR Blockchain: 'agents/env/near.md'
-      - Agent Registry: 'agents/registry.md'
+        - Secrets & Variables: 'agents/env/variables.md'
+        - Supported Packages: 'agents/env/frameworks.md'
+        - Local & Remote Runs: 'agents/running.md'
+      - Registry: 'agents/registry.md'
       - Core Features:
         - Threads: 'agents/threads.md'
         - Vector Stores: 'agents/vector-stores.md'
         - Inference (OpenAI): 'inference.md'
         - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
-        - Local & Remote Runs: 'agents/running.md'
+    - Agent Patterns:
       - Event-Driven Agents:
-        - NEAR Event-Triggered Agents: 'near_events.md'
-        - Twitter (X) Triggered Agents: 'agent_triggers.md'
+        - NEAR Event-Triggered Agents: 'agents/patterns/near_events.md'
+        - Twitter (X) Triggered Agents: 'agents/patterns/agent_triggers.md'
+      - Using Multiple Agents:
+        - Orchestrating Multiple Agents: 'agents/patterns/orchestration.md'
+        - Agent to Agent Communication: 'agents/patterns/agent_to_agent.md'
     - Tutorials:
       - Documentation Agent (RAG):
         - Introduction: 'tutorials/rag/introduction.md'
@@ -170,10 +174,15 @@ nav:
     - 'models/home.md'
     - Fine-tuning: 'models/fine_tuning.md'
     - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
-  - Assistants:
-    - Overview: 'assistants/overview.md'
-    - Integrate: 'assistants/integrate.md'
-  - API: 'api.md'
+  - Integration:
+    - Overview: 'integration/overview.md'
+    - Quickstart: 'integration/quickstart.md'
+  - APIs:
+    - Agent SDK API: 'api.md'
+    - Web API Guide: 'api/guide.md'
+    - Web API Docs: 'https://api.near.ai/docs/hub/reference'
+    - Interactive API: 'https://api.near.ai/docs/hub/interactive'
+    - OpenAPI Specs: 'https://api.near.ai/openapi.json'
 
 plugins:
   - social
@@ -193,3 +202,8 @@ plugins:
   - redirects:
       redirect_maps:
         'agents/secrets.md': 'agents/env/variables.md'
+        'assistants/overview.md': 'integration/overview.md'
+        'assistants/integrate.md': 'integration/quickstart.md'
+        'agents/env/calling_other_agents.md': 'agents/patterns/agent_to_agent.md'
+        'near_events.md': 'agents/patterns/near_events.md'
+        'agent_triggers.md': 'agents/patterns/agent_triggers.md'
