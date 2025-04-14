@@ -1,11 +1,76 @@
 # Twitter(X) Agent
-In this tutorial you will learn how to build & interact with an Twitter AI agent in less than five minute. 🏃‍♂️
 
-Twitter AI Agent is a specialized AI agent designed to interact with the Twitter API. It automatically responds to tweets in which it is mentioned.
+NEAR AI allows anyone to easily create an agent that uses an [`X account`](https://x.com) (previously `Twitter`) and answers to mentions.
+
+<!--- INSERT SCREENSHOT OF THE TWITTER AGENT INTERACTING WITH SOMEBODY HERE --->
+
+In this tutorial we will learn how an [existing agent](#) works, and how you can change it to create your own X AI agent in less than five minute.
 
 ---
 
-## ⚠️ Prerequisites
+## The X Agent
+
+Let's explore the code of the agent. The agent is a simple bot that replies to mentions with a random joke. The agent uses the `x` library to interact with the X API and the `jokeapi` library to get random jokes.
+
+Try it out by tweeting a mention to the agent, and see how it replies with a random joke.
+
+```
+Hey @maguila_bot, tell me a joke!
+```
+
+### Invoking the Agent: Mentions
+
+The agent works by listening to mentions of the account `@...` and replying to them. This is configured in the `metadata.json` file, specifically in the section <>.
+
+```json title="metadata.json"
+
+
+```
+
+> info
+> Notice that the agent is replying to an event, events are automatically handled by the NEAR AI platform, so you don't need to worry about them. You can see the list of supported events [here](#). 
+
+
+### Processing the Tweet
+
+The agent receives as an input the `tweet` object, which contains the following data:
+
+- something
+- something
+- something
+- something
+
+Since the `tweet` object contains all the information needed, we can process it through a model in order to generate a response.
+
+### Answering
+
+Bla
+
+----
+
+## Modifying the Agent
+
+If you want to create your own agent, you will need to start by forking [<maguila>](#), and setting up the right Twitter API keys, so the agent can control the account you want.
+
+<details>
+
+<summary>Getting the Twitter API Keys</summary>
+
+here is very briefly how you get your API keys
+
+</details>
+
+### Setting up the Keys
+
+
+
+### Modifying the Agent
+
+Let's change the agent so people can ask it history related questions, and the agent uses the Llama 3 model to reply. 
+
+
+
+
 
 Before creating a NEAR AI agent, please make sure you have the [NEAR AI CLI](../../cli.md) installed and have logged in with your Near wallet.
 
