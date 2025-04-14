@@ -72,7 +72,7 @@ Additionally, we recommend creating a virtual environment to avoid conflicts wit
 To create a new agent, first login with a NEAR Account. If you don't have one, we recommend creating a free account with [Meteor Wallet](https://wallet.meteorwallet.app):
 
 ``` bash
-nearai login
+nearai login # OR nearai login --remote
 ```
 
 Example:
