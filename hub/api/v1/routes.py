@@ -4,7 +4,7 @@ import logging
 import time
 from typing import Annotated, Iterable, List, Optional, Union
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from nearai.shared.cache import mem_cache_with_timeout
@@ -145,6 +145,7 @@ def completions(
     ## remove tools from the model as it is not supported by the completions API
     model = request.model_dump(exclude={"provider", "response_format"})
     model.pop("tools", None)
+    print("Calling completions", model)
 
     resp = llm.completions.create(**model)
 
@@ -156,7 +157,10 @@ def completions(
                 auth.account_id, request.prompt, response_text, request.model, request.provider, "/completions"
             )
 
-        return StreamingResponse(handle_stream(resp, add_usage_callback), media_type="text/event-stream")
+        run_id = thread_id = message_id = None
+        return StreamingResponse(
+            handle_stream(thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream"
+        )
     else:
         c = json.dumps(resp.model_dump())
 
@@ -173,9 +177,15 @@ def get_agent_public_key(agent_name: str = Query(...)):
 @v1_router.post("/chat/completions")
 def chat_completions(
     db: DatabaseSession,
+    req: Request,
     request: ChatCompletionsRequest = Depends(convert_request),
     auth: AuthToken = Depends(get_auth),
 ):
+    headers = dict(req.headers)
+    run_id = headers.get("run_id")
+    thread_id = headers.get("thread_id")
+    message_id = headers.get("message_id")
+
     logger.info(f"Received chat completions request: {request.model_dump()}")
 
     try:
@@ -184,6 +194,7 @@ def chat_completions(
     except NotImplementedError:
         raise HTTPException(status_code=400, detail="Provider not supported") from None
 
+    print("/chat/completions", request.model_dump())
     try:
         resp = llm.chat.completions.create(**request.model_dump(exclude={"provider"}), timeout=DEFAULT_TIMEOUT)
     except Exception as e:
@@ -205,7 +216,7 @@ def chat_completions(
 
             response_message_text = resp.choices[0].message.content
 
-            messages_dict: List[dict[str, str]] = [message.dict() for message in request.messages]
+            messages_dict: List[dict[str, str]] = [message.model_dump() for message in request.messages]
 
             signed_completion = get_signed_completion(
                 agent_name=agent,
@@ -234,7 +245,9 @@ def chat_completions(
                 "/chat/completions",
             )
 
-        return StreamingResponse(handle_stream(resp, add_usage_callback), media_type="text/event-stream")
+        return StreamingResponse(
+            handle_stream(thread_id, run_id, message_id, resp, add_usage_callback), media_type="text/event-stream"
+        )
 
     else:
         c = json.dumps(resp.model_dump())

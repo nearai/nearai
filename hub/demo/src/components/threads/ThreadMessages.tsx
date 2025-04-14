@@ -13,6 +13,7 @@ import {
 import { type z } from 'zod';
 
 import { useConsumerModeEnabled } from '@/hooks/consumer';
+import type { ExtendedMessage } from '@/hooks/threads';
 import { type MessageGroup, useGroupedThreadMessages } from '@/hooks/threads';
 import { type threadMessageModel } from '@/lib/models';
 import { useAuthStore } from '@/stores/auth';
@@ -29,6 +30,8 @@ type Props = {
   grow?: boolean;
   messages: z.infer<typeof threadMessageModel>[];
   scroll?: boolean;
+  streamingText?: string;
+  streamingTextLatestChunk?: string;
   threadId: string;
   welcomeMessage?: ReactNode;
 };
@@ -37,6 +40,7 @@ export const ThreadMessages = ({
   grow = true,
   messages,
   scroll = true,
+  streamingText,
   threadId,
   welcomeMessage,
 }: Props) => {
@@ -45,7 +49,7 @@ export const ThreadMessages = ({
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const countRef = useRef(0);
   const previousCountRef = useRef(0);
-  const { groupedMessages } = useGroupedThreadMessages(messages);
+  const { groupedMessages } = useGroupedThreadMessages(messages, streamingText);
 
   useEffect(() => {
     if (!messagesRef.current) return;
@@ -175,7 +179,7 @@ const Subthread = ({ group }: SubthreadProps) => {
 };
 
 type ThreadMessageProps = {
-  message: z.infer<typeof threadMessageModel>;
+  message: ExtendedMessage;
 };
 
 const ThreadMessage = ({ message }: ThreadMessageProps) => {
@@ -200,7 +204,7 @@ const ThreadMessage = ({ message }: ThreadMessageProps) => {
 
 type ThreadMessageContentProps = {
   content: z.infer<typeof threadMessageModel>['content'][number];
-  message: z.infer<typeof threadMessageModel>;
+  message: ExtendedMessage;
   messageContentId: string;
 };
 

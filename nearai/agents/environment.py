@@ -10,6 +10,7 @@ import subprocess
 import tarfile
 import tempfile
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -1120,10 +1121,52 @@ class Environment(object):
         messages: Union[Iterable[ChatCompletionMessageParam], str],
         model: Union[Iterable[ChatCompletionMessageParam], str] = "",
         stream: bool = False,
+        thread_id: Optional[str] = None,
+        attachments: Optional[Iterable[Attachment]] = None,
+        message_type: Optional[str] = None,
         **kwargs: Any,
     ) -> Union[ModelResponse, CustomStreamWrapper]:
-        """Returns all completions for given messages using the given model."""
-        return self._run_inference_completions(messages, model, stream, **kwargs)
+        """Returns all completions for given messages using the given model.
+
+        Always returns a ModelResponse object. When stream=True, aggregates the streamed
+        content into a ModelResponse. When stream=False, returns the ModelResponse directly.
+        """
+        params, kwargs = self.get_inference_parameters(messages, model, stream, **kwargs)
+        if stream:
+            message_id = None
+            kwargs.setdefault("extra_headers", {}).update(
+                {
+                    k: v
+                    for k, v in {"run_id": self._run_id, "thread_id": thread_id, "message_id": message_id}.items()
+                    if v is not None
+                }
+            )
+
+            # Pass thread_id, attachments, and message_type to the server
+            stream_results = self._run_inference_completions(
+                messages, model, True, thread_id=thread_id, attachments=attachments, message_type=message_type, **kwargs
+            )
+            full_content = ""
+            for chunk in stream_results:
+                if not isinstance(chunk, (tuple, str)) and hasattr(chunk, "choices"):
+                    if chunk.choices and hasattr(chunk.choices[0], "delta"):
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, "content") and delta.content:
+                            full_content += delta.content
+
+            response = ModelResponse(
+                id="streamed_completion",
+                object="chat.completion",
+                created=int(time.time()),
+                model=params.model,
+                choices=[
+                    Choices(index=0, message={"role": "assistant", "content": full_content}, finish_reason="stop")
+                ],
+                usage={"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+            )
+            return response
+        else:
+            return self._run_inference_completions(messages, model, False, **kwargs)
 
     def verify_signed_message(
         self,

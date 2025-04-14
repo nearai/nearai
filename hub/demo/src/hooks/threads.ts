@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { type z } from 'zod';
 
 import { type threadMessageModel, type threadModel } from '@/lib/models';
@@ -7,7 +7,7 @@ import { type AppRouterOutputs } from '@/trpc/router';
 import { trpc } from '@/trpc/TRPCProvider';
 
 import { useEmbeddedWithinIframe } from './embed';
-import { useCurrentEntryParams } from './entries';
+import { useCurrentEntry, useCurrentEntryParams } from './entries';
 import { useQueryParams } from './url';
 
 export type ThreadSummary = z.infer<typeof threadModel> & {
@@ -110,17 +110,28 @@ export function useThreads() {
   };
 }
 
+export type ExtendedMessage = z.infer<typeof threadMessageModel> & {
+  streamed?: boolean;
+};
+
 export type MessageGroup = {
   isRootThread: boolean;
   threadId: string;
-  messages: z.infer<typeof threadMessageModel>[];
+  messages: ExtendedMessage[];
 };
 
 export function useGroupedThreadMessages(
   messages: z.infer<typeof threadMessageModel>[],
+  streamingText?: string,
 ) {
   const { queryParams } = useQueryParams(['threadId']);
   const rootThreadId = queryParams.threadId!;
+  const streamingTextRef = useRef('');
+  const { currentEntry } = useCurrentEntry('agent', {
+    refetchOnMount: false,
+  });
+  const showStreamingMessage =
+    currentEntry?.details.agent?.show_streaming_message;
 
   const groupedMessages = useMemo(() => {
     const result: MessageGroup[] = [];
@@ -143,8 +154,53 @@ export function useGroupedThreadMessages(
       }
     });
 
+    const lastMessage = result.at(-1)?.messages.at(-1);
+    if (
+      lastMessage &&
+      streamingText &&
+      lastMessage.content
+        .at(-1)
+        ?.text?.value.startsWith(streamingTextRef.current)
+    ) {
+      lastMessage.streamed = true;
+    }
+
+    if (streamingText && showStreamingMessage) {
+      streamingTextRef.current = streamingText;
+
+      result.push({
+        isRootThread: true,
+        threadId: rootThreadId,
+        messages: [
+          {
+            attachments: [],
+            content: [
+              {
+                type: 'text',
+                text: {
+                  value: streamingText,
+                  annotations: [],
+                },
+              },
+            ],
+            completed_at: Date.now(),
+            created_at: Date.now(),
+            id: crypto.randomUUID(),
+            incomplete_at: null,
+            object: '',
+            role: 'assistant',
+            run_id: null,
+            status: 'completed',
+            thread_id: rootThreadId,
+          },
+        ],
+      });
+    } else {
+      streamingTextRef.current = '';
+    }
+
     return result;
-  }, [messages, rootThreadId]);
+  }, [messages, rootThreadId, streamingText, showStreamingMessage]);
 
   return {
     groupedMessages,

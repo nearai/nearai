@@ -14,6 +14,8 @@ from openai.types.beta.thread import Thread as OpenAITThread
 from openai.types.beta.threads.message import Attachment
 from openai.types.beta.threads.message import Message as OpenAITThreadMessage
 from openai.types.beta.threads.message_content import MessageContent
+from openai.types.beta.threads.message_delta import MessageDelta as OpenAITMessageDelta
+from openai.types.beta.threads.message_delta_event import MessageDeltaEvent as OpenAITMessageDeltaEvent
 from openai.types.beta.threads.run import Run as OpenAIRun
 from openai.types.beta.threads.text import Text
 from openai.types.beta.threads.text_content_block import TextContentBlock
@@ -269,6 +271,27 @@ class Log(SQLModel, table=True):
     account_id: str = Field(nullable=False)
     target: str = Field(nullable=False)
     info: Dict = Field(default_factory=dict, sa_column=Column(UnicodeSafeJSON))
+
+
+class Delta(SQLModel, table=True):
+    __tablename__ = "deltas"
+    id: int = Field(default=None, primary_key=True)
+    object: str = Field(default="thread.message.delta", nullable=False)
+    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
+    content: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
+    step_details: Optional[Dict] = Field(default=None, sa_column=Column(UnicodeSafeJSON))
+    filename: Optional[str] = Field(default=None)
+    message_id: Optional[str] = Field(default=None, index=True)
+    run_id: Optional[str] = Field(default=None, index=True)
+    thread_id: Optional[str] = Field(default=None, index=True)
+
+    def to_openai(self) -> OpenAITMessageDeltaEvent:
+        """Convert to OpenAI MessageDeltaEvent."""
+        return OpenAITMessageDeltaEvent(
+            id=str(self.id),
+            object="thread.message.delta",
+            delta=OpenAITMessageDelta(role="assistant", content=self.content),
+        )
 
 
 class Message(SQLModel, table=True):
