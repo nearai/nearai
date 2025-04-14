@@ -7,16 +7,32 @@ The NEAR AI toolkit provides environment methods for interacting with the NEAR b
 - Retry Mechanism: Both view and call methods include a robust retry mechanism to handle transient network or RPC errors.
 
 
-### Importing asyncio and setting Up the Near Account
+###  Asyncio and setting Up the Near Account
+
+In order to interact with the blockchain we need to run our agent (or execute our blockchain interactions) in a `asyncio` event loop and set up an Account object from the `py-near` Python library. 
+More details: [py-near Account](https://py-near.readthedocs.io/en/latest/account.html#quick-start)
+
 
 ```python
+from nearai.agents.environment import Environment
 import asyncio
 
-near = env.set_near(account_id, private_key)
+async def run(env: Environment):
+    near = env.set_near(account_id, private_key)
+
+    prompt = {"role": "system", "content": ""}
+    result = env.completion([prompt] + env.list_messages())
+
+    balance = await near.get_balance("example.near")
+
+    env.add_reply(f"The NEAR balance of example.near is: {balance}")
+    env.add_reply(result)
+
+    env.request_user_input()
+
+asyncio.run(run(env))
 ```
 
-In order to interact with the blockchain we need to add `asyncio` and set up an Account object from the `py-near` Python library. 
-More details: [py-near Account](https://py-near.readthedocs.io/en/latest/account.html#quick-start)
 
 !!! warning "Important"
     Ensure that the `account_id `and `private_key` are never exposed in plain text within the agent's code. We recommend using [secrets](../env/variables.md#managing-secrets) to handle these credentials securely.
@@ -47,7 +63,7 @@ The result object contains the transaction details, including the logs and block
 ```python
 near = env.set_near()
 
-asyncio.run(near.view(
+await near.view(
     contract_id: str,
     method_name: str,
     args: dict,
@@ -70,12 +86,11 @@ asyncio.run(near.view(
 
 - The result of the view method call, typically containing the queried data.
 
-
 **Example**:
 ```python
 near = env.set_near()
 
-result = asyncio.run(near.view(
+result = await near.view(
     contract_id="wrap.near",
     method_name="ft_balance_of",
     args={
@@ -100,7 +115,7 @@ The result object contains the transaction details, including the status, transa
 ```python
 near = env.set_near("user.near", "ed25519:3ABCD...XYZ")
 
-asyncio.run(near.call(
+await near.call(
     contract_id: str,
     method_name: str,
     args: dict,
@@ -129,7 +144,7 @@ asyncio.run(near.call(
 
 **Example**:
 ```python
-result = asyncio.run(env.near.call(
+result = await env.near.call(
     contract_id="wrap.near",
     method_name="ft_transfer",
     args={
@@ -157,9 +172,6 @@ if "SuccessValue" in result.status:
 ```python
 near = env.set_near("alice.near")
 
-alices_balance = asyncio.run(near.get_balance())
-bobs_balance = asyncio.run(near.get_balance("bob.near"))
-
-print(alices_balance)
-print(bobs_balance)
+print(await near.get_balance())
+print(await near.get_balance("bob.near"))
 ```
