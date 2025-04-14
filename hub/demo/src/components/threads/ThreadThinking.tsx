@@ -1,4 +1,4 @@
-import { Flex, SvgIcon, Text } from '@nearai/ui';
+import { Badge, Flex, SvgIcon, Text, Tooltip } from '@nearai/ui';
 import { CircleNotch } from '@phosphor-icons/react/dist/ssr';
 import { useEffect, useState } from 'react';
 
@@ -8,45 +8,49 @@ export const ThreadThinking = ({ length }: { length?: number }) => {
   const [dotsInterval, setDotsInterval] = useState(0);
 
   useEffect(() => {
-    if (!length) {
-      const interval = setInterval(() => {
-        setDotsInterval((prev) => {
-          if (prev === 6) {
-            return 0;
-          }
+    const interval = setInterval(() => {
+      setDotsInterval((prev) => {
+        if (prev === 6) {
+          return 0;
+        }
 
-          return prev + 1;
-        });
-      }, 150);
+        return prev + 1;
+      });
+    }, 150);
 
-      return () => clearInterval(interval);
-    }
-  }, [length]);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <Flex gap="s">
+    <Flex gap="s" align="center">
       <SvgIcon
         icon={<CircleNotch weight="bold" />}
         size="xs"
         className={s.spinner}
         color="sand-10"
       />
+
       <Text color="sand-10" size="text-xs" weight={500} noWrap>
         Thinking
       </Text>
 
+      {!!length && (
+        <Tooltip content="Number of streamed tokens">
+          <Badge
+            label={length.toLocaleString()}
+            count
+            size="small"
+            variant="neutral-alpha"
+          />
+        </Tooltip>
+      )}
+
       <Text color="sand-10" size="text-xs" weight={500}>
-        {length ? (
-          '.'.repeat(length)
-        ) : (
-          <>
-            {dotsInterval === 1 && '.'}
-            {dotsInterval === 2 && '. .'}
-            {dotsInterval === 3 && '. . .'}
-            {dotsInterval === 4 && '. .'}
-            {dotsInterval === 5 && '.'}
-          </>
-        )}
+        {dotsInterval === 1 && '.'}
+        {dotsInterval === 2 && '. .'}
+        {dotsInterval === 3 && '. . .'}
+        {dotsInterval === 4 && '. .'}
+        {dotsInterval === 5 && '.'}
       </Text>
     </Flex>
   );
