@@ -15,19 +15,19 @@ This document provides a detailed reference of all available CLI commands in NEA
 
 **Login Commands**
 
-- [login](#login)
-- [login status](#login-status)
-- [login save](#login-save)
-- [logout](#logout)
+- [`login`](#login)
+- [`login status`](#login-status)
+- [`login save`](#login-save)
+- [`logout`](#logout)
 
 **Miscellaneous Commands**
 
-- [location](#location)
-- [version](#version)
+- [`location`](#location)
+- [`version`](#version)
 
 ### `login`
 
-Login with NEAR Mainnet account.
+Authenticate with your NEAR account.
 
 Syntax:
 ```
@@ -41,7 +41,7 @@ nearai login --accountId my_near_account.near
 
 ### `login status`
 
-Load NEAR account authorization data.
+Display login status and auth details.
 
 Syntax:
 ```
@@ -59,7 +59,7 @@ nearai login save --accountId=<accountId> --signature=<signature> --publicKey=<p
 
 ### `logout`
 
-Clear NEAR account auth data.
+Clear your NEAR account authentication data.
 
 Syntax:
 ```
@@ -68,7 +68,7 @@ nearai logout
 
 ### `location`
 
-Show location where nearai is installed.
+Show the installation location of the `nearai` CLI.
 
 Syntax:
 ```
@@ -77,17 +77,14 @@ nearai location
 
 ### `version`
 
-Show nearai version.
+ Display the current version of the `nearai` CLI.
 
 Syntax:
 ```
 nearai version
 ```
 
-
 ---
-
-
 
 
 ## Miscellaneous Commands
@@ -111,9 +108,17 @@ nearai submit --path=./my_task --worker_kind=GPU_8_A100
 
 ## Agent Development
 
+- [`agent dev`](#agent-dev)
+- [`agent inspect`](#agent-inspect)
+- [`agent interactive`](#agent-interactive)
+- [`agent task`](#agent-task)
+- [`agent create`](#agent-create)
+- [`agent upload`](#agent-upload)
+
 ### `agent dev`
 
-Run local UI for development of agents that have their own UI.
+Run a local development UI for agents that have their own UI.
+This launches a local server for testing and developing agent functionality in a browser-based environment.
 
 Syntax:
 ```
@@ -122,7 +127,8 @@ nearai agent dev
 
 ### `agent inspect`
 
-Inspect environment from a given path.
+Inspect the environment and contents of an agent at the specified path.
+This launches a Streamlit interface showing the agent's structure, code, and metadata.
 
 Syntax:
 ```
@@ -136,7 +142,8 @@ nearai agent inspect ./my_agent
 
 ### `agent interactive`
 
-Runs an agent interactively.
+Run an agent interactively in a conversational interface. If no agent is specified, you'll be presented with a list of available agents to choose from.
+Specifying an agent will run the agent from NEAR AI Cloud. If you want to run a specific local agent, pass the path to the agent followed by the `--local` flag.
 
 Syntax:
 ```
@@ -150,7 +157,7 @@ nearai agent interactive --agent=namespace/agent_name/1.0.0 --local --verbose
 
 ### `agent task`
 
-Runs an agent non-interactively with a single task.
+Run a single non-interactive task with an agent. The agent will process the task and return its response. This is useful for automation or when you don't need an ongoing conversation.
 
 Syntax:
 ```
@@ -164,7 +171,7 @@ nearai agent task namespace/agent_name/1.0.0 "Summarize this text" --local --ver
 
 ### `agent create`
 
-Create a new agent or fork an existing one.
+Create a new AI agent from scratch or fork existing ones.
 
 Syntax:
 ```
@@ -178,7 +185,7 @@ nearai agent create --name my_new_agent --description "A new AI agent"
 
 ### `agent upload`
 
-Upload an agent to the registry (alias for 'nearai registry upload').
+Upload an item to the NEAR AI registry for public use.
 
 Syntax:
 ```
@@ -194,9 +201,24 @@ nearai agent upload --local_path=./my_agent --bump
 
 ## Registry Management
 
+**Registry Commands**
+
+- [`registry info`](#registry-info)
+- [`registry metadata-template`](#registry-metadata-template)
+- [`registry list`](#registry-list)
+- [`registry update`](#registry-update)
+- [`registry upload`](#registry-upload)
+- [`registry download`](#registry-download)
+- [`registry upload-unregistered-common-provider-models`](#registry-upload-unregistered-common-provider-models)
+
+**Permission Commands**
+
+- [`permission grant`](#permission-grant)
+- [`permission revoke`](#permission-revoke)
+
 ### `registry info`
 
-Show information about an item in the registry.
+Display detailed information about a registry item. Includes metadata and available provider matches for models.
 
 Syntax:
 ```
@@ -210,7 +232,7 @@ nearai registry info namespace/agent_name/1.0.0
 
 ### `registry metadata-template`
 
-Create a metadata template for a registry item.
+This generates a properly formatted `metadata.json` file with default values that can be customized for your agent or model.
 
 Syntax:
 ```
@@ -224,7 +246,7 @@ nearai registry metadata-template --local_path=./my_agent --category=agent --des
 
 ### `registry list`
 
-List available items in the registry.
+List available items in the NEAR AI registry. You can filter the results by namespace, category, tags, and other criteria to find specific items.
 
 Syntax:
 ```
@@ -238,7 +260,8 @@ nearai registry list --category=agent --tags=nlp,chatbot --total=10
 
 ### `registry update`
 
-Update metadata of a registry item.
+Update the remote metadata of an item in the NEAR AI Registry.
+Looks for a `metadata.json` file in the given directory and updates the remote metadata with the new values.
 
 Syntax:
 ```
@@ -253,6 +276,7 @@ nearai registry update --local_path=./my_agent
 ### `registry upload-unregistered-common-provider-models`
 
 Creates new registry items for unregistered common provider models.
+This command helps keep the registry up-to-date with the latest models from various providers.
 
 Syntax:
 ```
@@ -266,7 +290,7 @@ nearai registry upload-unregistered-common-provider-models --dry_run=False
 
 ### `registry upload`
 
-Upload an item to the registry.
+Upload an item to the NEAR AI registry for public use.
 
 Syntax:
 ```
@@ -280,7 +304,7 @@ nearai registry upload --local_path=./my_agent --bump
 
 ### `registry download`
 
-Download an item from the registry.
+Download an item from the NEAR AI registry to your local machine. This allows you to use or inspect agents, models, datasets, etc. that have been published by others.
 
 Syntax:
 ```
@@ -292,11 +316,37 @@ Example:
 nearai registry download namespace/agent_name/1.0.0 --force
 ```
 
+### `permission grant`
+
+Grant a specific permission to a NEAR account. This command allows you to grant a specific permission to a NEAR account, enabling them to access certain NEAR AI resources or perform specific actions.
+
+Syntax:
+```
+nearai permission grant <account_id> <permission>
+```
+
+Example:
+```
+nearai permission grant alice.near read_access
+```
+
+### `permission revoke`
+
+Revoke permissions from a NEAR account. If no permission is specified, all permissions will be revoked from the account.
+
+Syntax:
+```
+nearai permission revoke <account_id> [--permission=<permission>]
+```
+
+Example:
+```
+nearai permission revoke bob.near --permission=write_access
+```
+
 ---
 
 ## Model Operations
-
-
 
 **Benchmark Commands**
 
@@ -311,11 +361,6 @@ nearai registry download namespace/agent_name/1.0.0 --force
 **Hub Commands**
 
 - [hub chat](#)
-
-**Permission Commands**
-
-- [permission grant](#)
-- [permission revoke](#)
 
 **Tensorboard Commands**
 
@@ -390,35 +435,6 @@ nearai hub chat [--query=<query>] [--endpoint=<endpoint>] [--model=<model>] [--p
 Example:
 ```
 nearai hub chat --query="What is AI?" --model=gpt-3.5-turbo
-```
-
-
-### `permission grant`
-
-Grant permission to an account.
-
-Syntax:
-```
-nearai permission grant <account_id> <permission>
-```
-
-Example:
-```
-nearai permission grant alice.near read_access
-```
-
-### `permission revoke`
-
-Revoke permission from an account.
-
-Syntax:
-```
-nearai permission revoke <account_id> [--permission=<permission>]
-```
-
-Example:
-```
-nearai permission revoke bob.near --permission=write_access
 ```
 
 ### `tensorboard start`
