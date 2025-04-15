@@ -73,6 +73,10 @@ if wallet_data is not None:
 wallet_provider = CdpWalletProvider(cdp_config)
 ```
 
+### AgentKit Setup
+
+// explain what are action_providers, and where to find them? or what the default ones are
+
 ### LLM Setup
 
 LLM is initiatized by NearAILangchainOrchestrator (`nearai_langchain` module). This example leverages a ChatOpenAI model.
