@@ -86,27 +86,9 @@ nearai version
 
 ---
 
-
-## Miscellaneous Commands
-
-### `submit`
-
-Submit a task to be executed by a worker.
-
-Syntax:
-```
-nearai submit [--path=<path>] [--worker_kind=<worker_kind>]
-```
-
-Example:
-```
-nearai submit --path=./my_task --worker_kind=GPU_8_A100
-```
-
-
----
-
 ## Agent Development
+
+Agent commands allow you to create and interact with agents by running them locally or via NEAR AI Cloud.
 
 - [`agent dev`](#agent-dev)
 - [`agent inspect`](#agent-inspect)
@@ -203,6 +185,9 @@ nearai agent upload --local_path=./my_agent --bump
 
 **Registry Commands**
 
+Manage items in the NEAR AI Registry including agents, models, datasets, and evaluations.
+These commands allow you to upload, download, update, and list available items in the NEAR AI Registry.
+
 - [`registry info`](#registry-info)
 - [`registry metadata-template`](#registry-metadata-template)
 - [`registry list`](#registry-list)
@@ -212,6 +197,8 @@ nearai agent upload --local_path=./my_agent --bump
 - [`registry upload-unregistered-common-provider-models`](#registry-upload-unregistered-common-provider-models)
 
 **Permission Commands**
+
+Commands for managing permissions and access control for NEAR AI resources.
 
 - [`permission grant`](#permission-grant)
 - [`permission revoke`](#permission-revoke)
@@ -350,15 +337,21 @@ nearai permission revoke bob.near --permission=write_access
 
 **Benchmark Commands**
 
+Commands for running and listing benchmarks on datasets with solver strategies.
+
 - [`benchmark run`](#benchmark-run)
 - [`benchmark list`](#benchmark-list)
 
 **Evaluation Commands**
 
+Commands for evaluating and analyzing model performance on benchmark datasets.
+
 - [`evaluation table`](#evaluation-table)
 - [`evaluation read-solutions`](#evaluation-read-solutions)
 
 **Hub Commands**
+
+Interact with models hosted on the NEAR AI hub.
 
 - [`hub chat`](#hub-chat)
 
@@ -554,4 +547,22 @@ Show all configuration values.
 Syntax:
 ```
 nearai config show
+```
+
+---
+
+## Miscellaneous Commands
+
+### `submit`
+
+Submit a task to be executed by a worker.
+
+Syntax:
+```
+nearai submit [--path=<path>] [--worker_kind=<worker_kind>]
+```
+
+Example:
+```
+nearai submit --path=./my_task --worker_kind=GPU_8_A100
 ```
