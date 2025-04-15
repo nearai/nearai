@@ -1,62 +1,60 @@
-# CDP Agentkit LangChain Extension Examples - Chatbot Python
+# Coinbase Agentkit Example
 
-This example demonstrates an agent setup as a terminal style chatbot with access to the full set of CDP Agentkit actions. It integrates [AgentKit](https://github.com/coinbase/agentkit) to provide AI-driven interactions with on-chain capabilities.
+The [Coinbase Developer Platform (CDP) Agentkit](https://github.com/coinbase/agentkit) is a powerful tool that allows developers to create AI agents that can interact with multiple blockchains. This allows agents to perform actions on the blockchain, such as transferring tokens or interacting with smart contracts.
 
-## Ask the chatbot to engage in the Web3 ecosystem!
+In this page, we will showcase a [NEAR AI agent](https://app.near.ai/agents/another_one_test_account.near/first-try-agent/latest/source?file=agent.py) that uses the CDP Agentkit to perform actions such as:   
 - "Transfer a portion of your ETH to a random address"
 - "What is the price of BTC?"
 - "Deploy an NFT that will go super viral!"
 - "Deploy an ERC-20 token with total supply 1 billion"
 
-## Requirements
-- Python 3.10+
-- [CDP API Key](https://portal.cdp.coinbase.com/access/api)
+---
 
-### Checking Python Version
-Before using the example, ensure that you have the correct version of Python installed. The example requires Python 3.10 or higher.
+## Prerequisites
 
-## Installation
-Once you created and deployed your agent using NEAR AI Hub, you can download the code to develop it locally.
+Before creating a NEAR AI agent, please make sure you have the met the following requisites:
+- You have the [NEAR AI CLI](../cli.md) installed and have logged in with your Near wallet.
+- Obtain a [CDP API Key](https://portal.cdp.coinbase.com/access/api)
+- Install extra dependencies: `pip install coinbase_agentkit coinbase_agentkit_langchain dotenv langgraph nearai_langchain`
 
-### Install dependencies
-- [NEAR AI CLI](https://docs.near.ai/cli/): `pip install nearai`
-- `pip install coinbase_agentkit coinbase_agentkit_langchain dotenv langgraph nearai_langchain`
+---
 
-### Set ENV Vars
-Create .env file with the following variables:
+## Using the Agent
+
+Lets start by downloading the agent from the NEAR AI registry and running it locally.
+
+```bash
+nearai registry download another_one_test_account.near/first-try-agent/latest/
+```
+
+For the agent to work, you need to set up a few environment variables. Navigate to the `registry folder` (by default, `~/.nearai/registry/another_one_test_account.near/first-try-agent/latest/`) and create a `.env` file with the following variables:
+
 - "CDP_API_KEY_NAME"
 - "CDP_API_KEY_PRIVATE_KEY"
 - "NETWORK_ID" (Defaults to `base-sepolia`)
 
-### Make changes
-1. Download this agent locally: `nearai registry download YOUR_ACCOUNT_ID/YOUR_AGENT_NAME/0.0.1`
-2. Navigate to the downloaded source code and make changes: `cd ~/.nearai/registry/YOUR_ACCOUNT_ID/YOUR_AGENT_NAME/0.0.1`
-3. Interact with your agent locally to test changes: `nearai agent interactive ~/.nearai/registry/YOUR_ACCOUNT_ID/YOUR_AGENT_NAME/0.0.1 --local`
-4. Publish your changes: `nearai registry upload .`
+Now you can run the agent locally
+
+`nearai agent interactive ~/.nearai/registry/YOUR_ACCOUNT_ID/YOUR_AGENT_NAME/0.0.1 --local`
+
+---
 
 ## How it works
 
-### Modules
+Lets take a look at the imports at the beginning of the agent code:
 
-#### Coinbase AgentKit & Langchain Integration
-Tools and configs for creating an agent that can interact with blockchain systems like wallets, tokens, and APIs.
+```python
 
-- `coinbase_agentkit` - framework for easily enabling AI agents to take actions onchain. It is designed to be framework-agnostic, so you can use it with any AI framework, and wallet-agnostic, so you can use it with any wallet.
-- `coinbase_agentkit_langchain` - LangChain extension of AgentKit. Enables agentic workflows to interact with onchain actions.
+```
 
-#### NearAI Integration
-
-- `nearai_langchain` - the module provides seamless integration between [NearAI](https://github.com/nearai/nearai) and [LangChain](https://github.com/langchain-ai/langchain), allowing developers to use NearAI's capabilities within their LangChain applications.
-
-
-#### Other
-
+- The `coinbase_agentkit` is a framework for easily enabling AI agents to take actions onchain. It is designed to be framework-agnostic, so you can use it with any AI framework, and wallet-agnostic, so you can use it with any wallet.
+- `coinbase_agentkit_langchain` is the LangChain extension of AgentKit. Enables agentic workflows to interact with onchain actions.
+- `nearai_langchain`, this module provides seamless integration between [NearAI](https://github.com/nearai/nearai) and [LangChain](https://github.com/langchain-ai/langchain), allowing developers to use NearAI's capabilities within their LangChain applications.
 - `langgraph` - is a low-level orchestration framework for building controllable agents. While langchain provides integrations and composable components to streamline LLM application development, the LangGraph library enables agent orchestration — offering customizable architectures, long-term memory, and human-in-the-loop to reliably handle complex tasks.
 - `dotenv` - the module allows using environment variables in the project.
 
 ### Wallet Setup
-
-A local file wallet_data.txt is used to persist the MPC wallet data for reuse between sessions.
+The agent will control a wallet to perform onchain actions. A local file `wallet_data.txt` is used to persist the MPC wallet data for reuse between sessions.
 
 - If the file exists, it loads the wallet data for reinitialization
 - If the file doesn't exists it's initiated using `CdpWalletProvider` from `coinbase_agentkit` module.
