@@ -350,25 +350,32 @@ nearai permission revoke bob.near --permission=write_access
 
 **Benchmark Commands**
 
-- [benchmark run](#benchmark-run)
-- [benchmark list](#benchmark-list)
+- [`benchmark run`](#benchmark-run)
+- [`benchmark list`](#benchmark-list)
 
 **Evaluation Commands**
 
-- [evaluation table](#evaluation-table)
-- [evaluation read-solutions](#evaluation-read-solutions)
+- [`evaluation table`](#evaluation-table)
+- [`evaluation read-solutions`](#evaluation-read-solutions)
 
 **Hub Commands**
 
-- [hub chat](#)
+- [`hub chat`](#hub-chat)
 
 **Tensorboard Commands**
 
-- tensorboard start
+- [`tensorboard start`](#tensorboard-start)
+
+**Finetune Commands**
+
+- [`finetune inspect`](#finetune-inspect)
+- [`finetune start`](#finetune-start)
 
 ### `benchmark run`
 
-Run a benchmark on a dataset with a solver strategy.
+Run benchmark on a dataset with a solver strategy.
+This command executes a benchmark on a specified dataset using a given solver strategy.
+Results are cached in the database for subsequent runs unless `--force` is used.
 
 Syntax:
 ```
@@ -382,7 +389,8 @@ nearai benchmark run my_dataset my_solver --max_concurrent=4 --force --record
 
 ### `benchmark list`
 
-List all executed benchmarks.
+List all executed benchmarks. This command displays a table of all executed benchmarks, with options to filter by namespace, benchmark name, solver name, and solver arguments.
+Results are paginated using limit and offset parameters.
 
 Syntax:
 ```
@@ -396,7 +404,8 @@ nearai benchmark list --namespace=my_namespace --total=20
 
 ### `evaluation table`
 
-Prints table of evaluations.
+Displays a table of all evaluation results, with options to customize the display of columns and metrics.
+The table can be configured to show all key columns and metrics, or a limited subset for better readability.
 
 Syntax:
 ```
@@ -410,7 +419,8 @@ nearai evaluation table --all_metrics --num_columns=8
 
 ### `evaluation read-solutions`
 
-Reads solutions.json from an evaluation entry.
+Reads `solutions.json` from an evaluation entry.
+It can filter solutions by status and show either concise or verbose output for each solution.
 
 Syntax:
 ```
@@ -425,7 +435,8 @@ nearai evaluation read-solutions namespace/evaluation_name/1.0.0 --status=True
 
 ### `hub chat`
 
-Chat with a model from NEAR AI hub.
+Chat with a model from the NEAR AI hub. This command allows you to interact with language models hosted on the NEAR AI hub.
+You can specify which model to use, which provider to use, and customize the chat experience with various parameters.
 
 Syntax:
 ```
@@ -453,7 +464,9 @@ nearai tensorboard start /tmp/log --limit=200
 
 ### `vllm run`
 
-Run VLLM server with OpenAI-compatible API.
+Run a VLLM server with an OpenAI-compatible API for local inference.
+This command starts a VLLM server that provides an OpenAI-compatible API for running language models locally.
+The server supports various configuration options for optimizing performance and resource utilization.
 
 Syntax:
 ```
@@ -497,6 +510,15 @@ nearai finetune start
 
 ## Configuration
 
+Configuration commands help you manage your NEAR AI CLI settings.
+You can view, set, and modify various configuration values that control how the CLI behaves.
+
+**Configuration Commands**
+
+- [`config set`](#config-set)
+- [`config get`](#config-get)
+- [`config show`](#config-show)
+
 ### `config set`
 
 Add a key-value pair to the config file.
@@ -527,7 +549,7 @@ nearai config get api_url
 
 ### `config show`
 
-Show all configuration settings.
+Show all configuration values.
 
 Syntax:
 ```
