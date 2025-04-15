@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+export const apiErrorModel = z.object({
+  detail: z.string(),
+});
+
 export const authorizationModel = z.object({
   account_id: z.string(),
   public_key: z.string(),
@@ -12,6 +16,13 @@ export const authorizationModel = z.object({
 
 export const chatWithAgentModel = z.object({
   agent_id: z.string(),
+  attachments: z
+    .object({
+      file_id: z.string(),
+      filename: z.string(),
+    })
+    .array()
+    .optional(),
   new_message: z.string(),
   thread_id: z.string().nullable().optional(),
   max_iterations: z.number().optional(),
@@ -95,6 +106,11 @@ export const entryDetailsModel = z.intersection(
           html_height: z.enum(['auto']).or(z.string()).default('auto'),
           html_show_latest_messages_below: z.boolean().default(false),
           initial_user_message: z.string(),
+          allow_message_attachments: z.boolean().default(false),
+          allow_message_attachments_accept_mime_types: z
+            .string()
+            .array()
+            .optional(), // https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/accept
           welcome: z
             .object({
               title: z.string(),
@@ -103,7 +119,8 @@ export const entryDetailsModel = z.intersection(
             })
             .partial(),
         })
-        .partial(),
+        .partial()
+        .default({}),
       env_vars: z.record(z.string(), z.string()),
       primary_agent_name: z.string(),
       primary_agent_namespace: z.string(),
@@ -112,10 +129,10 @@ export const entryDetailsModel = z.intersection(
       base_id: z.string().or(z.null()),
       icon: z.string(),
       run_id: z.coerce.string(),
-
       timestamp: z.string(),
     })
-    .partial(),
+    .partial()
+    .default({}),
   z.record(z.string(), z.unknown()),
 );
 
@@ -146,7 +163,21 @@ export const entryModel = z
 export const entriesModel = z.array(entryModel);
 
 export const fileModel = z.object({
+  bytes: z.number(),
+  created_at: z.number(),
+  expires_at: z.number().nullable(),
   filename: z.string(),
+  id: z.string(),
+  object: z.string(),
+  purpose: z.enum([
+    'assistants',
+    'attachments',
+    'batch',
+    'fine-tune',
+    'vision',
+  ]),
+  status: z.enum(['uploaded', 'processed', 'error']),
+  status_details: z.string(),
 });
 
 export const filesModel = fileModel.array();

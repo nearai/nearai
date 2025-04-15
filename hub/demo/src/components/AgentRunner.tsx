@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Badge,
   BreakpointDisplay,
   Button,
   Card,
@@ -24,6 +25,7 @@ import {
   Info,
   List,
 } from '@phosphor-icons/react';
+import { Paperclip, X } from '@phosphor-icons/react/dist/ssr';
 import { useMutation } from '@tanstack/react-query';
 import {
   type KeyboardEventHandler,
@@ -33,6 +35,8 @@ import {
   useRef,
   useState,
 } from 'react';
+import type { FileRejection } from 'react-dropzone';
+import { useDropzone } from 'react-dropzone';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 import { type z } from 'zod';
 
@@ -49,12 +53,18 @@ import { useConsumerModeEnabled } from '@/hooks/consumer';
 import { useCurrentEntry, useEntryEnvironmentVariables } from '@/hooks/entries';
 import { useQueryParams } from '@/hooks/url';
 import { rawFileUrlForEntry, sourceUrlForEntry } from '@/lib/entries';
-import { type chatWithAgentModel, type threadMessageModel } from '@/lib/models';
+import {
+  apiErrorModel,
+  type chatWithAgentModel,
+  fileModel,
+  type threadMessageModel,
+} from '@/lib/models';
 import { useAuthStore } from '@/stores/auth';
 import { useThreadsStore } from '@/stores/threads';
 import { trpc } from '@/trpc/TRPCProvider';
 import { WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS } from '@/utils/wallet';
 
+import s from './AgentRunner.module.scss';
 import { ThreadFileModal } from './threads/ThreadFileModal';
 
 type Props = {
@@ -114,12 +124,15 @@ export const AgentRunner = ({
   });
 
   const [htmlOutput, setHtmlOutput] = useState('');
-  const [openedFileName, setOpenedFileName] = useState<string | null>(null);
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
   const [threadsOpenForSmallScreens, setThreadsOpenForSmallScreens] =
     useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
+  const [attachments, setAttachments] = useState<z.infer<typeof fileModel>[]>(
+    [],
+  );
+  const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
 
   const clearOptimisticMessages = useThreadsStore(
     (store) => store.clearOptimisticMessages,
@@ -136,6 +149,7 @@ export const AgentRunner = ({
   const setThread = useThreadsStore((store) => store.setThread);
   const threadsById = useThreadsStore((store) => store.threadsById);
   const setAddMessage = useThreadsStore((store) => store.setAddMessage);
+  const setOpenedFileId = useThreadsStore((store) => store.setOpenedFileId);
   const thread = threadsById[chatMutationThreadId.current || threadId];
 
   const _chatMutation = trpc.hub.chatWithAgent.useMutation();
@@ -149,9 +163,14 @@ export const AgentRunner = ({
           agent_id: agentId,
           agent_env_vars: entryEnvironmentVariables.metadataVariablesByKey,
           user_env_vars: entryEnvironmentVariables.urlVariablesByKey,
+          attachments: attachments.map((attachment) => ({
+            file_id: attachment.id,
+            filename: attachment.filename,
+          })),
           ...data,
         };
 
+        form.setValue('new_message', '');
         addOptimisticMessages(threadId, [input]);
         const response = await _chatMutation.mutateAsync(input);
 
@@ -213,7 +232,7 @@ export const AgentRunner = ({
   }, [thread, optimisticMessages, showLogs]);
 
   const files = useMemo(() => {
-    return thread ? Object.values(thread.filesByName) : [];
+    return thread ? Object.values(thread.filesById) : [];
   }, [thread]);
 
   const latestAssistantMessages = useMemo(() => {
@@ -256,8 +275,136 @@ export const AgentRunner = ({
     [updateQueryPath],
   );
 
+  const attachmentMaxSizeMegabytes = 1;
+  const attachmentAcceptMimeTypes =
+    currentEntry?.details.agent?.allow_message_attachments_accept_mime_types?.reduce(
+      (result, type) => {
+        result[type] = [];
+        return result;
+      },
+      {} as Record<string, string[]>,
+    );
+
+  const deleteAttachment = useCallback(
+    async (fileId: string) => {
+      try {
+        setAttachments((prev) => prev.filter((f) => f.id !== fileId));
+
+        const { authorization, routerUrl } =
+          await utils.hub.detailsForFileUpload.fetch();
+
+        await fetch(`${routerUrl}/files/${fileId}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: authorization,
+          },
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [utils.hub.detailsForFileUpload],
+  );
+
+  const dropzoneOnDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      try {
+        setIsUploadingAttachments(true);
+
+        const { authorization, routerUrl } =
+          await utils.hub.detailsForFileUpload.fetch();
+
+        for (const file of acceptedFiles) {
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('purpose', 'attachments');
+
+            const response = await fetch(`${routerUrl}/files`, {
+              method: 'POST',
+              headers: {
+                Authorization: authorization,
+              },
+              body: formData,
+            });
+
+            const data = await response.json();
+            const parsed = fileModel.safeParse(data);
+
+            if (response.ok && parsed.data) {
+              setAttachments((prev) => [...prev, parsed.data]);
+              return;
+            }
+
+            const error = apiErrorModel.safeParse(data);
+            if (error.data) {
+              throw new Error(error.data.detail);
+            }
+
+            throw new Error('Unknown error. Please try again later.');
+          } catch (error) {
+            handleClientError({
+              error,
+              title: 'Failed to upload file',
+              description: (error as Error)?.message,
+            });
+          }
+        }
+      } catch (error) {
+        handleClientError({ error });
+      } finally {
+        setIsUploadingAttachments(false);
+      }
+    },
+    [utils.hub.detailsForFileUpload],
+  );
+
+  const dropzoneValidator = useCallback(() => {
+    if (!currentEntry?.details.agent?.allow_message_attachments) {
+      return {
+        code: 'attachments-not-supported',
+        message: `This agent does not support messages with file attachments`,
+      };
+    }
+    return null;
+  }, [currentEntry?.details.agent?.allow_message_attachments]);
+
+  const dropzoneOnDropRejected = useCallback(
+    (fileRejections: FileRejection[]) => {
+      fileRejections.forEach((rejection) => {
+        openToast({
+          type: 'error',
+          title: rejection.file.name,
+          description: rejection.errors
+            .map((error) => {
+              if (error.code === 'file-too-large') {
+                return `File size exceeds ${attachmentMaxSizeMegabytes} MB limit (${formatBytes(rejection.file.size)})`;
+              }
+              return error.message;
+            })
+            .join('. '),
+        });
+      });
+    },
+    [attachmentMaxSizeMegabytes],
+  );
+
+  const dropzone = useDropzone({
+    multiple: true,
+    noClick: true,
+    accept: attachmentAcceptMimeTypes,
+    maxSize: attachmentMaxSizeMegabytes * 1024 * 1024,
+    validator: dropzoneValidator,
+    onDrop: dropzoneOnDrop,
+    onDropRejected: dropzoneOnDropRejected,
+    onDragEnter: undefined,
+    onDragOver: undefined,
+    onDragLeave: undefined,
+  });
+
   const onSubmit: SubmitHandler<FormSchema> = async (data) => {
-    form.setValue('new_message', '');
+    if (!data.new_message && !attachments.length) return;
+    // TODO: Add attachments to the message
     await chatMutation.mutateAsync(data);
   };
 
@@ -453,182 +600,238 @@ export const AgentRunner = ({
           setOpenForSmallScreens={setThreadsOpenForSmallScreens}
         />
 
-        <Sidebar.Main>
-          {isLoading ? (
-            <PlaceholderStack style={{ marginBottom: 'auto' }} />
-          ) : (
-            <>
-              {view === 'output' ? (
-                <>
-                  <IframeWithBlob
-                    html={htmlOutput}
-                    height={currentEntry.details.agent?.html_height}
-                    onPostMessage={onIframePostMessage}
-                    postMessage={iframePostMessage}
+        <div {...dropzone.getRootProps({ className: s.dropzone })}>
+          <Sidebar.Main fileDragIsActive={dropzone.isDragActive}>
+            {isLoading ? (
+              <PlaceholderStack style={{ marginBottom: 'auto' }} />
+            ) : (
+              <>
+                {view === 'output' ? (
+                  <>
+                    <IframeWithBlob
+                      html={htmlOutput}
+                      height={currentEntry.details.agent?.html_height}
+                      onPostMessage={onIframePostMessage}
+                      postMessage={iframePostMessage}
+                    />
+
+                    {latestAssistantMessages.length > 0 &&
+                      currentEntry.details.agent
+                        ?.html_show_latest_messages_below && (
+                        <ThreadMessages
+                          grow={false}
+                          messages={latestAssistantMessages}
+                          scroll={false}
+                          threadId={threadId}
+                        />
+                      )}
+                  </>
+                ) : (
+                  <ThreadMessages
+                    messages={messages}
+                    threadId={threadId}
+                    welcomeMessage={
+                      <AgentWelcome currentEntry={currentEntry} />
+                    }
+                  />
+                )}
+              </>
+            )}
+
+            <Sidebar.MainStickyFooter>
+              <Form onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
+                <Flex direction="column" gap="m">
+                  <InputTextarea
+                    placeholder="Write your message and press enter..."
+                    onKeyDown={onKeyDownContent}
+                    disabled={!auth}
+                    {...form.register('new_message')}
                   />
 
-                  {latestAssistantMessages.length > 0 &&
-                    currentEntry.details.agent
-                      ?.html_show_latest_messages_below && (
-                      <ThreadMessages
-                        grow={false}
-                        messages={latestAssistantMessages}
-                        scroll={false}
-                        threadId={threadId}
-                      />
-                    )}
-                </>
-              ) : (
-                <ThreadMessages
-                  messages={messages}
-                  threadId={threadId}
-                  welcomeMessage={<AgentWelcome currentEntry={currentEntry} />}
-                />
-              )}
-            </>
-          )}
+                  <input
+                    type="file"
+                    name="attachedFiles"
+                    {...dropzone.getInputProps()}
+                    className={s.fileInput}
+                  />
 
-          <Sidebar.MainStickyFooter>
-            <Form onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
-              <Flex direction="column" gap="m">
-                <InputTextarea
-                  placeholder="Write your message and press enter..."
-                  onKeyDown={onKeyDownContent}
-                  disabled={!auth}
-                  {...form.register('new_message', {
-                    required: 'Please enter a message',
-                  })}
-                />
+                  {attachments.length > 0 && (
+                    <Flex gap="s" wrap="wrap">
+                      {attachments.map((file) => (
+                        <Badge
+                          key={file.filename}
+                          label={
+                            <Flex as="span" align="center" gap="s">
+                              {file.filename}
+                              <Button
+                                label="Delete Attachment"
+                                size="x-small"
+                                fill="ghost"
+                                icon={<X />}
+                                variant="secondary"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void deleteAttachment(file.id);
+                                }}
+                              />
+                            </Flex>
+                          }
+                          iconLeft={<Paperclip />}
+                          variant="neutral-alpha"
+                        />
+                      ))}
+                    </Flex>
+                  )}
 
-                {auth ? (
-                  <Flex align="start" gap="m" justify="space-between">
-                    <BreakpointDisplay
-                      show="larger-than-phone"
-                      style={{ marginRight: 'auto' }}
-                    >
-                      <Text size="text-xs">
-                        <b>Shift + Enter</b> to add a new line
-                      </Text>
-                    </BreakpointDisplay>
-
-                    <Flex
-                      align="start"
-                      gap="s"
-                      style={{ paddingRight: '0.15rem' }}
-                    >
-                      <BreakpointDisplay show="sidebar-small-screen">
-                        <Tooltip asChild content="View all threads">
-                          <Button
-                            label="Select Thread"
-                            icon={<List />}
-                            size="small"
-                            variant="secondary"
-                            fill="ghost"
-                            onClick={() => setThreadsOpenForSmallScreens(true)}
-                          />
-                        </Tooltip>
+                  {auth ? (
+                    <Flex align="start" gap="m" justify="space-between">
+                      <BreakpointDisplay
+                        show="larger-than-phone"
+                        style={{ marginRight: 'auto' }}
+                      >
+                        <Text size="text-xs">
+                          <b>Shift + Enter</b> to add a new line
+                        </Text>
                       </BreakpointDisplay>
 
-                      <BreakpointDisplay show="sidebar-small-screen">
+                      <Flex
+                        align="start"
+                        gap="s"
+                        style={{ paddingRight: '0.15rem' }}
+                      >
+                        <BreakpointDisplay show="sidebar-small-screen">
+                          <Tooltip asChild content="View all threads">
+                            <Button
+                              label="Select Thread"
+                              icon={<List />}
+                              size="small"
+                              variant="secondary"
+                              fill="ghost"
+                              onClick={() =>
+                                setThreadsOpenForSmallScreens(true)
+                              }
+                            />
+                          </Tooltip>
+                        </BreakpointDisplay>
+
+                        <BreakpointDisplay show="sidebar-small-screen">
+                          <Tooltip
+                            asChild
+                            content="View output files & agent settings"
+                          >
+                            <Button
+                              label={files.length.toString()}
+                              iconLeft={<Folder />}
+                              size="small"
+                              variant="secondary"
+                              fill="ghost"
+                              style={{ paddingInline: '0.5rem' }}
+                              onClick={() =>
+                                setParametersOpenForSmallScreens(true)
+                              }
+                            />
+                          </Tooltip>
+                        </BreakpointDisplay>
+
+                        {htmlOutput && (
+                          <Tooltip
+                            asChild
+                            content={
+                              view === 'output'
+                                ? 'View conversation'
+                                : 'View rendered output'
+                            }
+                          >
+                            <Button
+                              label="Toggle View"
+                              icon={
+                                <Eye
+                                  weight={
+                                    view === 'output' ? 'fill' : 'regular'
+                                  }
+                                />
+                              }
+                              size="small"
+                              variant="secondary"
+                              fill="ghost"
+                              onClick={() =>
+                                view === 'output'
+                                  ? setView('conversation', true)
+                                  : setView('output', true)
+                              }
+                            />
+                          </Tooltip>
+                        )}
+
                         <Tooltip
                           asChild
-                          content="View output files & agent settings"
+                          content={
+                            showLogs ? 'Hide system logs' : 'Show system logs'
+                          }
                         >
                           <Button
-                            label={files.length.toString()}
-                            iconLeft={<Folder />}
+                            label={logMessages.length.toString()}
+                            iconLeft={
+                              <Info weight={showLogs ? 'fill' : 'regular'} />
+                            }
                             size="small"
                             variant="secondary"
                             fill="ghost"
                             style={{ paddingInline: '0.5rem' }}
                             onClick={() =>
-                              setParametersOpenForSmallScreens(true)
+                              updateQueryPath(
+                                { showLogs: showLogs ? undefined : 'true' },
+                                'replace',
+                                false,
+                              )
                             }
                           />
                         </Tooltip>
-                      </BreakpointDisplay>
 
-                      {htmlOutput && (
-                        <Tooltip
-                          asChild
-                          content={
-                            view === 'output'
-                              ? 'View conversation'
-                              : 'View rendered output'
-                          }
-                        >
-                          <Button
-                            label="Toggle View"
-                            icon={
-                              <Eye
-                                weight={view === 'output' ? 'fill' : 'regular'}
-                              />
-                            }
-                            size="small"
-                            variant="secondary"
-                            fill="ghost"
-                            onClick={() =>
-                              view === 'output'
-                                ? setView('conversation', true)
-                                : setView('output', true)
-                            }
-                          />
-                        </Tooltip>
-                      )}
+                        {consumerModeEnabled && !embedded && (
+                          <Tooltip asChild content="Inspect agent source">
+                            <Button
+                              label="Agent Source"
+                              icon={<CodeBlock />}
+                              size="small"
+                              fill="ghost"
+                              href={`https://app.near.ai${sourceUrlForEntry(currentEntry)}`}
+                            />
+                          </Tooltip>
+                        )}
 
-                      <Tooltip
-                        asChild
-                        content={
-                          showLogs ? 'Hide system logs' : 'Show system logs'
-                        }
-                      >
-                        <Button
-                          label={logMessages.length.toString()}
-                          iconLeft={
-                            <Info weight={showLogs ? 'fill' : 'regular'} />
-                          }
-                          size="small"
-                          variant="secondary"
-                          fill="ghost"
-                          style={{ paddingInline: '0.5rem' }}
-                          onClick={() =>
-                            updateQueryPath(
-                              { showLogs: showLogs ? undefined : 'true' },
-                              'replace',
-                              false,
-                            )
-                          }
-                        />
-                      </Tooltip>
+                        {currentEntry?.details.agent
+                          ?.allow_message_attachments && (
+                          <Tooltip asChild content="Attach files to message">
+                            <Button
+                              label="Attach Files"
+                              icon={<Paperclip />}
+                              size="small"
+                              variant="secondary"
+                              fill="ghost"
+                              onClick={dropzone.open}
+                              loading={isUploadingAttachments}
+                            />
+                          </Tooltip>
+                        )}
+                      </Flex>
 
-                      {consumerModeEnabled && !embedded && (
-                        <Tooltip asChild content="Inspect agent source">
-                          <Button
-                            label="Agent Source"
-                            icon={<CodeBlock />}
-                            size="small"
-                            fill="ghost"
-                            href={`https://app.near.ai${sourceUrlForEntry(currentEntry)}`}
-                          />
-                        </Tooltip>
-                      )}
+                      <Button
+                        label="Send Message"
+                        type="submit"
+                        icon={<ArrowRight weight="bold" />}
+                        size="small"
+                        loading={isRunning}
+                      />
                     </Flex>
-
-                    <Button
-                      label="Send Message"
-                      type="submit"
-                      icon={<ArrowRight weight="bold" />}
-                      size="small"
-                      loading={isRunning}
-                    />
-                  </Flex>
-                ) : (
-                  <SignInPrompt />
-                )}
-              </Flex>
-            </Form>
-          </Sidebar.MainStickyFooter>
-        </Sidebar.Main>
+                  ) : (
+                    <SignInPrompt />
+                  )}
+                </Flex>
+              </Form>
+            </Sidebar.MainStickyFooter>
+          </Sidebar.Main>
+        </div>
 
         <Sidebar.Sidebar
           openForSmallScreens={parametersOpenForSmallScreens}
@@ -653,7 +856,7 @@ export const AgentRunner = ({
                           key={file.id}
                           background="sand-2"
                           onClick={() => {
-                            setOpenedFileName(file.filename);
+                            setOpenedFileId(file.id);
                           }}
                         >
                           <Flex align="center" gap="s">
@@ -702,11 +905,7 @@ export const AgentRunner = ({
         clearRequests={() => setAgentRequestsNeedingPermissions(null)}
       />
 
-      <ThreadFileModal
-        filesByName={thread?.filesByName}
-        openedFileName={openedFileName}
-        setOpenedFileName={setOpenedFileName}
-      />
+      <ThreadFileModal filesById={thread?.filesById} />
     </>
   );
 };

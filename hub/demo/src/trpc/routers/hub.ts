@@ -203,6 +203,14 @@ export const hubRouter = createTRPCRouter({
       return paths;
     }),
 
+  detailsForFileUpload: protectedProcedure.query(({ ctx }) => {
+    // This endpoint gives the frontend the details it needs to upload a file to the Hub API directly
+    return {
+      authorization: ctx.authorization,
+      routerUrl: env.ROUTER_URL,
+    };
+  }),
+
   models: publicProcedure.query(async () => {
     const url = `${env.ROUTER_URL}/models`;
 

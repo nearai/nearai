@@ -120,7 +120,7 @@ async def upload_file_to_storage(content: bytes, object_key: str) -> str:
 @files_router.post("/files")
 async def upload_file(
     file: UploadFile = File(...),
-    purpose: Literal["assistants", "batch", "fine-tune", "vision"] = Form(...),
+    purpose: Literal["assistants", "attachments", "batch", "fine-tune", "vision"] = Form(...),
     auth: AuthToken = Depends(get_auth),
 ) -> FileObject:
     """Upload a file to the system and create a corresponding database record.
@@ -155,7 +155,7 @@ async def upload_file(
     )
 
     # Validate purpose
-    valid_purposes = ["assistants", "batch", "fine-tune", "vision"]
+    valid_purposes = ["assistants", "attachments", "batch", "fine-tune", "vision"]
     if purpose not in valid_purposes:
         raise HTTPException(status_code=400, detail=f"Invalid purpose. Must be one of: {', '.join(valid_purposes)}")
 

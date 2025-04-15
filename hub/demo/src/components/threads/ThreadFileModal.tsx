@@ -12,24 +12,22 @@ import { useState } from 'react';
 import { type z } from 'zod';
 
 import { type threadFileModel } from '@/lib/models';
+import { useThreadsStore } from '@/stores/threads';
 import { filePathIsImage, filePathToCodeLanguage } from '@/utils/file';
 
 import { Code } from '../lib/Code';
 import { Markdown } from '../lib/Markdown';
 
 type Props = {
-  filesByName?: Record<string, z.infer<typeof threadFileModel>>;
-  openedFileName: string | null;
-  setOpenedFileName: (id: string | null) => void;
+  filesById?: Record<string, z.infer<typeof threadFileModel>>;
 };
 
-export const ThreadFileModal = ({
-  filesByName,
-  openedFileName,
-  setOpenedFileName,
-}: Props) => {
+export const ThreadFileModal = ({ filesById }: Props) => {
+  const openedFileId = useThreadsStore((store) => store.openedFileId);
+  const setOpenedFileId = useThreadsStore((store) => store.setOpenedFileId);
+
   const file = useDebouncedValue(
-    filesByName && openedFileName ? filesByName[openedFileName] : undefined,
+    filesById && openedFileId ? filesById[openedFileId] : undefined,
     25,
   );
 
@@ -40,8 +38,8 @@ export const ThreadFileModal = ({
 
   return (
     <Dialog.Root
-      open={openedFileName !== null}
-      onOpenChange={() => setOpenedFileName(null)}
+      open={openedFileId !== null}
+      onOpenChange={() => setOpenedFileId(null)}
     >
       <Dialog.Content
         title={file?.filename ?? '...'}
