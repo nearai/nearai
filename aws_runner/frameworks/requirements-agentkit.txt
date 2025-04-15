@@ -53,7 +53,7 @@ loguru == 0.7.2
 
 # NEAR AI LangChain integration
 # https://github.com/nearai/nearai_langchain
-nearai-langchain >= 0.0.12
+nearai-langchain >= 0.0.13
 
 # Process and system utilities
 # https://github.com/giampaolo/psutil
