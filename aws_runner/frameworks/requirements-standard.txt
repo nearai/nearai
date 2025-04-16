@@ -9,14 +9,14 @@ pydantic >=2.8.2
 typing-extensions >= 4.7.1
 psutil >= 5.9.5
 boto3 >= 1.35.3
-litellm >= 1.60.5
-openai == 1.66.2
+litellm == 1.60.5
+openai == 1.68.2
 chardet
 bs4
 googlesearch-python >= 1.2.5
 PyPDF2
 youtube_transcript_api >= 0.6.2
-py-near >= 1.1.50
+py-near == 1.1.7
 loguru == 0.7.2
 ed25519 == 1.5
 py-multibase==1.0.3
@@ -29,4 +29,5 @@ tenacity == 9.0.0
 web3 >= 7.8.0
 eth-account >= 0.13.5
 numpy >= 1.21.0
+mcp >= 1.0.0
 ddtrace == 2.21.0
