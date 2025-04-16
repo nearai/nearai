@@ -1,13 +1,12 @@
 'use client';
 
-import { Badge, Card, Flex, Text } from '@nearai/ui';
-import { Paperclip } from '@phosphor-icons/react';
+import { Card, Flex, Text } from '@nearai/ui';
 import { type ReactNode } from 'react';
 
 import { useCurrentEntry } from '@/hooks/entries';
-import { useThreadsStore } from '@/stores/threads';
 
 import { useThreadMessageContent } from '../ThreadMessageContentProvider';
+import { Attachment } from './Attachment';
 
 type Props = {
   actions?: ReactNode;
@@ -19,10 +18,6 @@ export const Message = ({ children, actions }: Props) => {
     refetchOnMount: false,
   });
   const { message } = useThreadMessageContent();
-  const threadsById = useThreadsStore((store) => store.threadsById);
-  const setOpenedFileId = useThreadsStore((store) => store.setOpenedFileId);
-  const thread = threadsById[message.thread_id];
-  const filesById = thread?.filesById;
   const showFooter = message.role !== 'user' || actions;
   const assistantRoleLabel =
     currentEntry?.details.agent?.assistant_role_label || 'Assistant';
@@ -38,20 +33,9 @@ export const Message = ({ children, actions }: Props) => {
     >
       {children}
 
-      {filesById && !!message.attachments?.length && (
-        <Flex gap="s" wrap="wrap">
-          {message.attachments?.map((attachment) => (
-            <Badge
-              key={attachment.file_id}
-              label={filesById[attachment.file_id]?.filename}
-              iconLeft={<Paperclip />}
-              onClick={() => {
-                setOpenedFileId(attachment.file_id);
-              }}
-            />
-          ))}
-        </Flex>
-      )}
+      {message.attachments?.map((attachment) => (
+        <Attachment key={attachment.file_id} attachment={attachment} />
+      ))}
 
       {showFooter && (
         <Flex align="center" gap="m">

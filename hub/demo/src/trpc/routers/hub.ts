@@ -511,6 +511,7 @@ export const hubRouter = createTRPCRouter({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            attachments: input.attachments,
             content: input.new_message,
             role: 'user',
           }),

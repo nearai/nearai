@@ -19,10 +19,10 @@ export const chatWithAgentModel = z.object({
   attachments: z
     .object({
       file_id: z.string(),
-      filename: z.string(),
+      tools: z.unknown().array().nullish(),
     })
     .array()
-    .optional(),
+    .nullish(),
   new_message: z.string(),
   thread_id: z.string().nullable().optional(),
   max_iterations: z.number().optional(),
@@ -391,7 +391,7 @@ export const threadMessageModel = z.object({
   attachments: z
     .object({
       file_id: z.string(),
-      tools: z.unknown().array(),
+      tools: z.unknown().array().nullish(),
     })
     .array()
     .nullable(),
@@ -425,5 +425,5 @@ export const threadFileModel = z.object({
   purpose: z.string(),
   status: z.string(),
   status_details: z.string(),
-  content: z.string().default(''),
+  content: z.string().default('').or(z.instanceof(Uint8Array)),
 });

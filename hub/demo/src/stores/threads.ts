@@ -74,7 +74,7 @@ const store: StateCreator<ThreadsStore> = (set, get) => ({
       optimisticMessages.push({
         index: i + messages.length,
         data: {
-          attachments: [], // TODO: Add attachments to the message and determine file_id vs filename
+          attachments: input.attachments || [],
           completed_at: null,
           content: [
             {

@@ -53,6 +53,7 @@ import { useConsumerModeEnabled } from '@/hooks/consumer';
 import { useCurrentEntry, useEntryEnvironmentVariables } from '@/hooks/entries';
 import { useQueryParams } from '@/hooks/url';
 import { rawFileUrlForEntry, sourceUrlForEntry } from '@/lib/entries';
+import type { threadFileModel } from '@/lib/models';
 import {
   apiErrorModel,
   type chatWithAgentModel,
@@ -165,19 +166,18 @@ export const AgentRunner = ({
           user_env_vars: entryEnvironmentVariables.urlVariablesByKey,
           attachments: attachments.map((attachment) => ({
             file_id: attachment.id,
-            filename: attachment.filename,
           })),
           ...data,
         };
 
         form.setValue('new_message', '');
+        setAttachments([]);
+
         addOptimisticMessages(threadId, [input]);
         const response = await _chatMutation.mutateAsync(input);
 
         setThread({
           ...response.thread,
-          files: [],
-          messages: [response.message],
           run: response.run,
         });
 
@@ -232,8 +232,29 @@ export const AgentRunner = ({
   }, [thread, optimisticMessages, showLogs]);
 
   const files = useMemo(() => {
-    return thread ? Object.values(thread.filesById) : [];
-  }, [thread]);
+    const all = thread ? Object.values(thread.filesById) : [];
+    const attachments: z.infer<typeof threadFileModel>[] = [];
+    const outputs: z.infer<typeof threadFileModel>[] = [];
+
+    for (const file of all) {
+      const message = messages.find((message) =>
+        message.attachments?.some(
+          (attachment) => attachment.file_id === file.id,
+        ),
+      );
+      if (message?.role === 'user') {
+        attachments.push(file);
+      } else {
+        outputs.push(file);
+      }
+    }
+
+    return {
+      attachments,
+      outputs,
+      total: all.length,
+    };
+  }, [messages, thread]);
 
   const latestAssistantMessages = useMemo(() => {
     const result: z.infer<typeof threadMessageModel>[] = [];
@@ -333,7 +354,7 @@ export const AgentRunner = ({
 
             if (response.ok && parsed.data) {
               setAttachments((prev) => [...prev, parsed.data]);
-              return;
+              continue;
             }
 
             const error = apiErrorModel.safeParse(data);
@@ -404,8 +425,13 @@ export const AgentRunner = ({
 
   const onSubmit: SubmitHandler<FormSchema> = async (data) => {
     if (!data.new_message && !attachments.length) return;
-    // TODO: Add attachments to the message
-    await chatMutation.mutateAsync(data);
+
+    await chatMutation.mutateAsync({
+      ...data,
+      attachments: attachments.map((attachment) => ({
+        file_id: attachment.id,
+      })),
+    });
   };
 
   const onKeyDownContent: KeyboardEventHandler<HTMLTextAreaElement> = (
@@ -441,6 +467,7 @@ export const AgentRunner = ({
       console.log(
         `Thread polling fetch responded at: ${now.toLocaleTimeString()}`,
         {
+          messages: threadQuery.data?.messages,
           data: threadQuery.data,
           error: threadQuery.error,
           elapsedSecondsSinceRunStart,
@@ -475,7 +502,9 @@ export const AgentRunner = ({
   }, [threadQuery.error, updateQueryPath]);
 
   useEffect(() => {
-    const htmlFile = files.find((file) => file.filename === 'index.html');
+    const htmlFile = files.outputs.find(
+      (file) => file.filename === 'index.html',
+    );
 
     function parseHtmlContent(html: string) {
       html = html.replaceAll('{{%agent_id%}}', agentId);
@@ -500,7 +529,7 @@ export const AgentRunner = ({
       return html;
     }
 
-    if (htmlFile) {
+    if (htmlFile && typeof htmlFile.content === 'string') {
       setHtmlOutput(parseHtmlContent(htmlFile.content));
       setView('output');
     } else {
@@ -659,7 +688,7 @@ export const AgentRunner = ({
                     <Flex gap="s" wrap="wrap">
                       {attachments.map((file) => (
                         <Badge
-                          key={file.filename}
+                          key={file.id}
                           label={
                             <Flex as="span" align="center" gap="s">
                               {file.filename}
@@ -717,10 +746,10 @@ export const AgentRunner = ({
                         <BreakpointDisplay show="sidebar-small-screen">
                           <Tooltip
                             asChild
-                            content="View output files & agent settings"
+                            content="View attached files & agent settings"
                           >
                             <Button
-                              label={files.length.toString()}
+                              label={files.total.toString()}
                               iconLeft={<Folder />}
                               size="small"
                               variant="secondary"
@@ -847,9 +876,9 @@ export const AgentRunner = ({
                 <PlaceholderStack />
               ) : (
                 <>
-                  {files.length ? (
+                  {files.outputs.length ? (
                     <CardList>
-                      {files.map((file) => (
+                      {files.outputs.map((file) => (
                         <Card
                           padding="s"
                           gap="s"
@@ -870,7 +899,11 @@ export const AgentRunner = ({
                               {file.filename}
                             </Text>
 
-                            <Text size="text-xs">
+                            <Text
+                              size="text-xs"
+                              noWrap
+                              style={{ flexShrink: 0 }}
+                            >
                               {formatBytes(file.bytes)}
                             </Text>
                           </Flex>
@@ -879,7 +912,59 @@ export const AgentRunner = ({
                     </CardList>
                   ) : (
                     <Text size="text-s" color="sand-10">
-                      No files generated yet.
+                      No generated files yet.
+                    </Text>
+                  )}
+                </>
+              )}
+            </Flex>
+
+            <Flex direction="column" gap="m">
+              <Text size="text-xs" weight={600} uppercase>
+                Attachments
+              </Text>
+
+              {isLoading ? (
+                <PlaceholderStack />
+              ) : (
+                <>
+                  {files.attachments.length ? (
+                    <CardList>
+                      {files.attachments.map((file) => (
+                        <Card
+                          padding="s"
+                          gap="s"
+                          key={file.id}
+                          background="sand-2"
+                          onClick={() => {
+                            setOpenedFileId(file.id);
+                          }}
+                        >
+                          <Flex align="center" gap="s">
+                            <Text
+                              size="text-s"
+                              color="sand-12"
+                              weight={500}
+                              clampLines={1}
+                              style={{ marginRight: 'auto' }}
+                            >
+                              {file.filename}
+                            </Text>
+
+                            <Text
+                              size="text-xs"
+                              noWrap
+                              style={{ flexShrink: 0 }}
+                            >
+                              {formatBytes(file.bytes)}
+                            </Text>
+                          </Flex>
+                        </Card>
+                      ))}
+                    </CardList>
+                  ) : (
+                    <Text size="text-s" color="sand-10">
+                      You haven't attached any files yet.
                     </Text>
                   )}
                 </>
