@@ -339,7 +339,7 @@ export const AgentRunner = ({
           try {
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('purpose', 'attachments');
+            formData.append('purpose', 'assistants');
 
             const response = await fetch(`${routerUrl}/files`, {
               method: 'POST',
