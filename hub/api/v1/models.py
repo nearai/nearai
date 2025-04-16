@@ -308,7 +308,8 @@ class Message(SQLModel, table=True):
             if isinstance(self.content, Iterator):
                 self.content = [
                     TextContentBlock(text=Text(value=content["text"], annotations=[]), type="text")
-                    if content["type"] == "text" else content
+                    if content["type"] == "text"
+                    else content
                     for content in self.content
                 ]
 
