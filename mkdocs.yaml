@@ -161,6 +161,8 @@ nav:
       - Using Multiple Agents:
         - Orchestrating Multiple Agents: 'agents/patterns/orchestration.md'
         - Agent to Agent Communication: 'agents/patterns/agent_to_agent.md'
+    - Examples:
+      - Overview: 'agents/examples/overview.md'
     - Tutorials:
       - Documentation Agent (RAG):
         - Introduction: 'tutorials/rag/introduction.md'
