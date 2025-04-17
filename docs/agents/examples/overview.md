@@ -23,7 +23,7 @@ Ready-to-use Agent Templates to quickly get started.
 
 ## Agent Examples
 
-Community created agent examples to help you understand how to build on NEAR AI and showcase whats possible.
+Community created agent examples to help you understand how to build on NEAR AI and showcase what's possible.
 
 ### General Purpose Agents
 
