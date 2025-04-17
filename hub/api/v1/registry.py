@@ -142,6 +142,7 @@ def latest_version(entry_location: EntryLocation = Body()) -> RegistryEntry:
             .where(
                 RegistryEntry.namespace == entry_location.namespace,
                 RegistryEntry.name == entry_location.name,
+                RegistryEntry.show_entry,
             )
             .order_by(col(RegistryEntry.id).desc())
             .limit(1)
@@ -444,8 +445,8 @@ def list_entries_inner(
             query_text = f"""WITH
             CountedStars AS (
                 SELECT namespace, name, COUNT(account_id) as num_stars,
-                CASE WHEN MAX(account_id = :star_point_of_view) THEN 1 ELSE 0 END as starred_by_pov,
-                CASE WHEN MAX(account_id = :starred_by) THEN 1 ELSE 0 END as starred_by_target
+                CASE WHEN bool_or(account_id = :star_point_of_view) THEN 1 ELSE 0 END as starred_by_pov,
+                CASE WHEN bool_or(account_id = :starred_by) THEN 1 ELSE 0 END as starred_by_target
                 FROM stars
                 GROUP BY namespace, name
             ),
@@ -484,7 +485,7 @@ def list_entries_inner(
                     AND registry.namespace = Fork.fork_to_namespace
                     AND registry.name = Fork.fork_to_name
             {latest_version_condition}
-            WHERE show_entry >= :show_entry
+            WHERE CASE WHEN :show_entry > 0 THEN show_entry = TRUE ELSE TRUE END
                 {category_condition}
                 {namespace_condition}
                 {starred_by_condition}
@@ -504,8 +505,8 @@ def list_entries_inner(
             query_text = f"""WITH
                     CountedStars AS (
                         SELECT namespace, name, COUNT(account_id) as num_stars,
-                        CASE WHEN MAX(account_id = :star_point_of_view) THEN 1 ELSE 0 END as starred_by_pov,
-                        CASE WHEN MAX(account_id = :starred_by) THEN 1 ELSE 0 END as starred_by_target
+                        CASE WHEN bool_or(account_id = :star_point_of_view) THEN 1 ELSE 0 END as starred_by_pov,
+                        CASE WHEN bool_or(account_id = :starred_by) THEN 1 ELSE 0 END as starred_by_target
                         FROM stars
                         GROUP BY namespace, name
                     ),
@@ -545,7 +546,7 @@ def list_entries_inner(
                             ON registry.category = Fork.fork_category
                                 AND registry.namespace = Fork.fork_to_namespace
                                 AND registry.name = Fork.fork_to_name
-                        WHERE show_entry >= :show_entry
+                        WHERE CASE WHEN :show_entry > 0 THEN show_entry = TRUE ELSE TRUE END
                             AND entry_tags.tag IN :tags
                             {category_condition}
                             {namespace_condition}
