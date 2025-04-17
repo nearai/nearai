@@ -1,18 +1,19 @@
-# Twitter(X) Agent
+#  Mention Twitter(X) Agent
 
 NEAR AI allows anyone to easily create an agent that uses an [`X account`](https://x.com) (previously `Twitter`) and answers to mentions.
 
-<!--- INSERT SCREENSHOT OF THE TWITTER AGENT INTERACTING WITH SOMEBODY HERE --->
+![Demo](./twitter/demo.png)
 
-In this tutorial we will learn how an [existing agent](#) works, and how you can change it to create your own X AI agent in less than five minute.
+In this tutorial we will learn how an <a href="https://app.near.ai/agents/maguila.near/jokester/latest/source" target="_blank">existing agent</a>
+works, and how you can change it to create your own X AI agent in less than five minute.
 
 ---
 
 ## The X Agent
 
-Let's explore the code of the agent. The agent is a simple bot that replies to mentions with a random joke. The agent uses the `x` library to interact with the X API and the `jokeapi` library to get random jokes.
+Let's explore the code of the agent. The agent is a simple bot that replies to mentions with a joke. The agent uses the `tweepy` library to interact with the X API.
 
-Try it out by tweeting a mention to the agent, and see how it replies with a random joke.
+Try it out by tweeting a mention to the agent, and see how it replies with a joke or you can try it out by clicking <a href="https://twitter.com/intent/tweet?text=Hey%20%40maguila_bot%2C%20tell%20me%20a%20joke%21" target="_blank">here</a>
 
 ```
 Hey @maguila_bot, tell me a joke!
@@ -20,100 +21,9 @@ Hey @maguila_bot, tell me a joke!
 
 ### Invoking the Agent: Mentions
 
-The agent works by listening to mentions of the account `@...` and replying to them. This is configured in the `metadata.json` file, specifically in the section <>.
+The agent works by listening to mentions of the account `@maguila_bot` and replying to them. This is configured in the `metadata.json` file, specifically in the section `x_mentions`.
 
 ```json title="metadata.json"
-
-
-```
-
-> info
-> Notice that the agent is replying to an event, events are automatically handled by the NEAR AI platform, so you don't need to worry about them. You can see the list of supported events [here](#). 
-
-
-### Processing the Tweet
-
-The agent receives as an input the `tweet` object, which contains the following data:
-
-- something
-- something
-- something
-- something
-
-Since the `tweet` object contains all the information needed, we can process it through a model in order to generate a response.
-
-### Answering
-
-Bla
-
-----
-
-## Modifying the Agent
-
-If you want to create your own agent, you will need to start by forking [<maguila>](#), and setting up the right Twitter API keys, so the agent can control the account you want.
-
-<details>
-
-<summary>Getting the Twitter API Keys</summary>
-
-here is very briefly how you get your API keys
-
-</details>
-
-### Setting up the Keys
-
-
-
-### Modifying the Agent
-
-Let's change the agent so people can ask it history related questions, and the agent uses the Llama 3 model to reply. 
-
-
-
-
-
-Before creating a NEAR AI agent, please make sure you have the [NEAR AI CLI](../../cli.md) installed and have logged in with your Near wallet.
-
-
-You will need to create a Twitter developer account and generate your API keys. Follow the instructions [here](https://developer.twitter.com/en/docs/twitter-api/getting-started/getting-access-to-the-twitter-api) to set up your Twitter developer account and obtain your API keys.
-
----
-## Fork an Agent
-
-To fork the Twitter agent, enter [https://app.near.ai/agents/maguila.near/jokester/latest/source](https://app.near.ai/agents/maguila.near/jokester/latest/source) in your browser and click on the "Fork" button. This will create a copy of the agent in your NEAR AI registry.
-
-![start](./twitter/01-start.png)
-
-
-You can see the next windows where you can change the name and version to create the agent.
-![start](./twitter/02-fork-window.png)
-
-## Develop and upload Agent
-Once you have forked the agent, you can start developing it. You can clone the repository to your local machine using the NEAR AI CLI.
-To clone the repository, run the following command in your terminal:
-
-```bash
-nearai registry download <your-account.near>/<agent-name>/<version>
-```
-eg:
-```bash
-nearai registry download maguila.near/clown/0.0.1
-```
-
-This will create a directory with the agent's code in your working directory.
-You can now open the agent's code in your favorite code editor and start making changes.
-```bash
-cd ~/.nearai/registry/<your-account.near>/<agent-name>/<version>
-```
-eg:
-```bash
-cd ~/.nearai/registry/maguila.near/clown/0.0.1
-```
-
-You need modify the `metadata.json` file to add metions accounts. You can do this by adding the following lines to the `details` section of the `metadata.json` file:
-
-
-```json
 {
   "category": "agent",
   "description": "",
@@ -122,53 +32,140 @@ You need modify the `metadata.json` file to add metions accounts. You can do thi
     "agent": {
       "welcome": {
         "description": "To use tweet a message and mention @maguila_bot.",
-        "title": "No chat interface"
+        "title": "Jokester"
       },
       "framework": "standard"
     },
     "triggers": {
       "events" : {
-        "x_mentions": ["@nearsecretagent"]
+        "x_mentions": ["@maguila_bot"]
       }
     }
   },
   "show_entry": true,
-  "name": "clown",
+  "name": "jokester",
   "version": "0.0.1"
 }
 ```
 
-once saved, you must upload it to the NEAR AI. You can do this by running the following command in your terminal:
-```bash
-nearai registry upload .
+!!! info
+    Notice that the agent is replying to an event, events are automatically handled by the NEAR AI platform, so you don't need to worry about them. You can see the list of supported events [here](../../agents/patterns/agent_triggers.md). 
+
+
+### Processing the Tweet
+
+The agent receives as an input the `tweet` object, which contains the following data:
+
+- author_id
+- tweet_id
+- text
+
+Since the `tweet` object contains all the information needed, we can process it through a model in order to generate a response.
+
+``` python title="agent.py"
+# Get the last message, which is the tweet
+last_message = env.list_messages()[-1]
+
+# Check if the last message is None
+if last_message is None:
+    env.add_reply("No message found")
+    print("No message found")
+    return
+
+# Check if the last message is empty
+if not last_message["content"]:
+    env.add_reply("Message content was empty")
+    print("Message content was empty")
+    return
+
+# Get the content of the message
+event = json.loads(last_message["content"])
+
+# Get the text of the tweet
+input_user_text = event["text"]
+# Get the id author of the tweet
+input_tweet_id = event["tweet_id"]
+
+# Generate a prompt
+prompt = [
+    {"role": "system", "content": PROMPT},
+    {"role": "user", "content": input_user_text},
+]
+
+# Generate a response
+joke = env.completion(messages=prompt, model=MODEL)
+
+# Limit the length of the joke to 280 characters
+if len(joke) > 280:
+    joke = joke[:277] + "..."
 ```
 
-## Generate keys
+### Answering
+
+The agent uses the `tweepy` library to send a reply to the tweet.
+
+First we need create a `tweepy` client, which is done in the `__init__` method of the agent. The client is created using the API keys stored in the environment variables.
+``` python title="agent.py"
+self.x_client = tweepy.Client(
+          consumer_key=self.x_consumer_key,
+          consumer_secret=self.x_consumer_secret,
+          access_token=self.x_access_token,
+          access_token_secret=self.x_access_token_secret
+      )
+```
+Then write the `send_tweet` method, which takes the `env`, `tweet`, and `tweet_id` as arguments. The method uses the `tweepy` client to send a reply to the tweet.
+
+``` python title="agent.py"
+
+def send_tweet(self, env, tweet, tweet_id):
+    env.add_reply(f"Sending tweet: {tweet}")
+    response = self.x_client.create_tweet(text=tweet, in_reply_to_tweet_id=tweet_id)
+    print(f"Tweet published! ID: {response.data['id']}")
+```
+
+
+Finally, we need to send the tweet. This is done in the `send_tweet` method, which takes the `env`, `joke`, and `input_tweet_id` as arguments.
+
+``` python title="agent.py"
+# Send the tweet
+ self.send_tweet(env, joke, input_tweet_id)
+```
+
+----
+
+## Modifying the Agent
+
+If you want to create your own agent, you will need to start by forking <a href="https://app.near.ai/agents/maguila.near/jokester/latest/source" target="_blank">maguila</a>, and setting up the right Twitter API keys, so the agent can control the account you want.
+
+### Forking an Agent
+
+To fork the Twitter agent, enter <a href="https://app.near.ai/agents/maguila.near/jokester/latest/source" target="_blank">click here</a>
+ in your browser and click on the "Fork" button. This will create a copy of the agent in your NEAR AI registry.
+![start](./twitter/01-start.png)
+You can see the next windows where you can change the name and version to create the agent.
+![start](./twitter/02-fork-window.png)
+
+### Generate your API keys
+
 To allow your agent to post to X you will need your own developer api key. Free X developer accounts have low read limits but fairly high write limits.
 To generate your API keys, follow these steps:  
 
-1. Go to the [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard).
-
-2. Click on the "Projects & Apps" tab.
-
-3. Click on the "Create App" button.
-
+1. Go to the <a href="https://developer.twitter.com/en/portal/dashboard" target="_blank">Twitter Developer Portal</a>
+2. Click on the **"Projects & Apps"** tab.
+3. Click on the **"Create App"** button.
 4. Fill in the required fields, such as the app name and description.
-
-5. Click on the "Create" button.
-
-6. Once the app is created, go to the "Keys and tokens" tab.
-
-7. You must create a API Key and Secret, and a Access Token and Secret.
-
+5. Click on the **"Create"** button.
+6. Once the app is created, go to the **"Keys and tokens"** tab.
+7. You must create an **API Key** and **Secret**, and an **Access Token** and **Secret**.
 
 !!! warning "Permissions"
     Remember to set the permissions for the Access Token and Secret to **"Read and Write"**.
 
     To change the permissions, go to the **Settings** tab, scroll down to the **User authentication settings** section, and select **"Read and Write"** under **App permissions**.
 
-## Set your keys to environment variables
-There are two ways to set your keys to environment variables. You can set them in web interface or in fe.
+### Setting up the Keys
+
+There are two ways to set your keys to environment variables. You can set them in web interface or in cli.
 
 ### Web interface
 
@@ -185,22 +182,137 @@ You must see the following screen:
 ![env](./twitter/env.png)
 
 ### CLI
-You can set your keys to environment variables using the following command:
-```bash 
-curl -X POST "https://<api-url>/v1/create_hub_secret" \
-  -H "Authorization: Bearer <YOUR-NEAR-AUTH-TOKEN>" \
+You can set your keys to environment variables using the cli.
+For example, if you want to set variable, you can run the following command in your terminal, remember to replace the values with your own keys:
+
+```bash
+curl -X POST "https://api.near.ai/v1/create_hub_secret" \
+  -H "Authorization: Bearer {"account_id":"maguila.near","public_key":"ed25519:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","signature":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","callback_url":"https://app.near.ai/sign-in/callback","message":"Welcome to NEAR AI Hub!","recipient":"ai.near","nonce":"00000000000000000000000000000000"}" \
   -H "Content-Type: application/json" \
   -d '{
-    "namespace": "example_agent",
-    "name": "my_secret_name",
+    "namespace": "maguila.near",
+    "name": "jokester",
     "version": "0.0.1",
-    "description": "GitHub token for my agent",
-    "key": "GITHUB_API_TOKEN",
-    "value": "ghp_abc123",
+    "description": "access token for the X API",
+    "key": "X_ACCESS_TOKEN",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     "category": "agent"
   }'
+```
+
+```bash
+curl -X POST "https://api.near.ai/v1/create_hub_secret" \
+  -H "Authorization: Bearer {"account_id":"maguila.near","public_key":"ed25519:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","signature":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","callback_url":"https://app.near.ai/sign-in/callback","message":"Welcome to NEAR AI Hub!","recipient":"ai.near","nonce":"00000000000000000000000000000000"}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "namespace": "maguila.near",
+    "name": "jokester",
+    "version": "0.0.1",
+    "description": "access token secret for the X API",
+    "key": "X_ACCESS_TOKEN_SECRET",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "category": "agent"
+  }'
+```
+
+```bash
+curl -X POST "https://api.near.ai/v1/create_hub_secret" \
+  -H "Authorization: Bearer {"account_id":"maguila.near","public_key":"ed25519:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","signature":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","callback_url":"https://app.near.ai/sign-in/callback","message":"Welcome to NEAR AI Hub!","recipient":"ai.near","nonce":"00000000000000000000000000000000"}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "namespace": "maguila.near",
+    "name": "jokester",
+    "version": "0.0.1",
+    "description": "consumer key for the X API",
+    "key": "X_CONSUMER_KEY",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "category": "agent"
+  }'
+```
+
+```bash
+curl -X POST "https://api.near.ai/v1/create_hub_secret" \
+  -H "Authorization: Bearer {"account_id":"maguila.near","public_key":"ed25519:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","signature":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","callback_url":"https://app.near.ai/sign-in/callback","message":"Welcome to NEAR AI Hub!","recipient":"ai.near","nonce":"00000000000000000000000000000000"}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "namespace": "maguila.near",
+    "name": "jokester",
+    "version": "0.0.1",
+    "description": "consumer secret for the X API",
+    "key": "X_CONSUMER_SECRET",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "category": "agent"
+  }'
+```
+
+!!! info "Bearer Token"
+    You need generate a bearer token to use nearai api. you can read more about it [here](/api/guide/).
+    
+
+### Modifying the Agent
+
+Let's change the agent into a charming 19th-century scholar who answers history questions with poetic wit and Victorian elegance.
+You can change the prompt and MODEL to something like this:
+```python title="agent.py"
+PROMPT = """
+"You are a charming and well-spoken individual from the 18th or 19th century, tasked with replying to modern tweets in a poetic, archaic, or Victorian manner. Your tone should be sophisticated, witty, and slightly formal, using old-fashioned phrases, Shakespearean flourishes, or genteel expressions. You may sprinkle in light humor, proverbs, or dramatic phrasing—but always keep it engaging and understandable for a modern audience. Avoid modern slang, and instead respond as if you’ve just stepped out of a Jane Austen novel or a Dickensian parlor."
+
+Example Responses:
+
+Tweet: "Ugh, Mondays are the worst."
+Your Reply: "Verily, dear sufferer of this most grievous day, Monday doth test the patience of even the noblest souls. Take heart, for the week shall soon improve—or else we must blame the stars!"
+
+Tweet: "Just got ghosted. Again."
+Your Reply: "Alas! To be cast aside without so much as a farewell is a cruelty most ungentlemanly (or unladylike). Pray, dry thine eyes—a worthier suitor shall surely appear anon."
+
+Tweet: "Why is life so hard?"
+Your Reply: "My dear troubled soul, life hath ever been a labyrinth of trials and triumphs. Yet remember: even the mightiest oak was once a nut that held its ground. Persevere!"
+"""
+
+MODEL = "llama-v3p1-70b-instruct"
+```
+
+You can also change the name of the agent in the `metadata.json` file, and update version so it can be something like this:
+```json title="metadata.json"
+{
+  "category": "agent",
+  "description": "",
+  "tags": [],
+  "details": {
+    "agent": {
+      "welcome": {
+        "description": "To use tweet a message and mention @maguila_bot.",
+        "title": "Scholar"
+      },
+      "framework": "standard"
+    },
+    "triggers": {
+      "events" : {
+        "x_mentions": ["@maguila_bot"]
+      }
+    }
+  },
+  "show_entry": true,
+  "name": "scholar",
+  "version": "0.0.2"
+}
+```
+
+!!! warning "Version"
+    Remember to change the version of the agent, so it can be something like `0.0.2` or `1.0.0`, but not `0.0.1` again.
+    This is important because if you don't change the version, the agent will not be updated in the NEAR AI registry.
 
 
+Now you must publish the agent, You must run the following command in your terminal:
+```bash
+nearai registry upload .
+```
 
-curl -X GET "https://https://app.near.ai//v1/get_user_secrets?limit=10&offset=0" \
-  -H "Authorization: Bearer {"auth":{"account_id":"maguila.near","public_key":"ed25519:5FQv7bXse932RvoZ1ZdLqGNUuTmtSLueTZavrH4DQ9u5","signature":"loP40E80I+gQgIDlEzjT5WpZKyNdD66S2uICWI0+ddMFAtgcjlfn1uv0TYws35G52uJcdK9fIyRsUNjebopOCg==","callback_url":"https://app.near.ai/sign-in/callback","message":"Welcome to NEAR AI Hub!","recipient":"ai.near","nonce":"00000000000000000001736863615398"},"currentNonce":"00000000000000000001736863615398","isAuthenticated":true}"
+### More Examples
+You can find more examples of agents in the NEAR AI registry. Here are some examples:
+- <a href="https://app.near.ai/agents/buildagents.near/teacher/latest" target="_blank">Teacher</a> - An more complex agent that responds to questions like a teacher.
+
+
+### Conclusion
+Congratulations! You have created your own X agent. You can now tweet to the agent and see how it replies with a joke or a charming response.
+You can also modify the agent to do whatever you want, and use it as a template for your own agents.
