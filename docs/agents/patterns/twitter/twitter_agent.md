@@ -1,17 +1,16 @@
 #  Mention Twitter(X) Agent
 
-NEAR AI allows anyone to easily create an agent that uses an [`X account`](https://x.com) (previously `Twitter`) and answers to mentions.
+NEAR AI allows anyone to easily create an [`X`](https://x.com) (Previously `Twitter`) agent that controls and account and answers to mentions.
 
-![Demo](./twitter/demo.png)
+![Demo](./images/demo.png)
 
-In this tutorial we will learn how an <a href="https://app.near.ai/agents/maguila.near/jokester/latest/source" target="_blank">existing agent</a>
-works, and how you can change it to create your own X AI agent in less than five minute.
+In this tutorial we will learn how the [twitter jokester agent](https://app.near.ai/agents/maguila.near/jokester/latest/source) works, and how you can change it to create your own X AI agent in less than five minute.
 
 ---
 
 ## The X Agent
 
-Let's explore the code of the agent. The agent is a simple bot that replies to mentions with a joke. The agent uses the `tweepy` library to interact with the X API.
+Let's start by exploring the code of the agent. The agent is a simple bot that replies to mentions with a joke, using the `tweepy` library to interact with the X API.
 
 Try it out by tweeting a mention to the agent, and see how it replies with a joke or you can try it out by clicking <a href="https://twitter.com/intent/tweet?text=Hey%20%40maguila_bot%2C%20tell%20me%20a%20joke%21" target="_blank">here</a>
 
@@ -21,7 +20,7 @@ Hey @maguila_bot, tell me a joke!
 
 ### Invoking the Agent: Mentions
 
-The agent works by listening to mentions of the account `@maguila_bot` and replying to them. This is configured in the `metadata.json` file, specifically in the section `x_mentions`.
+The agent works by listening to mentions of the account `@maguila_bot` and replying to them. The account that the agent listens to is configured in the `metadata.json` file, specifically in the section `x_mentions`.
 
 ```json title="metadata.json"
 {
@@ -49,12 +48,14 @@ The agent works by listening to mentions of the account `@maguila_bot` and reply
 ```
 
 !!! info
-    Notice that the agent is replying to an event, events are automatically handled by the NEAR AI platform, so you don't need to worry about them. You can see the list of supported events [here](../../agents/patterns/agent_triggers.md). 
+    Technically speaking, the agent is not listening for mentions, but being executed when a specific event happens. In this case, when the account `@maguila_bot` is mentioned in `X` (denoted by the `event` `x_mentions`)
+    
+    Events are automatically handled by the NEAR AI platform, so you don't need to worry about them. You can see the list of supported events [TODO](#) 
 
 
 ### Processing the Tweet
 
-The agent receives as an input the `tweet` object, which contains the following data:
+The agent receives the `tweet` that mentions it as an input object, which contains the following data:
 
 - author_id
 - tweet_id
@@ -104,7 +105,8 @@ if len(joke) > 280:
 
 The agent uses the `tweepy` library to send a reply to the tweet.
 
-First we need create a `tweepy` client, which is done in the `__init__` method of the agent. The client is created using the API keys stored in the environment variables.
+First it creates a `tweepy` client, which is done in the `__init__` method of the agent. The client is created using the API keys stored in the environment variables.
+
 ``` python title="agent.py"
 self.x_client = tweepy.Client(
           consumer_key=self.x_consumer_key,
@@ -113,7 +115,8 @@ self.x_client = tweepy.Client(
           access_token_secret=self.x_access_token_secret
       )
 ```
-Then write the `send_tweet` method, which takes the `env`, `tweet`, and `tweet_id` as arguments. The method uses the `tweepy` client to send a reply to the tweet.
+
+Then, it uses the `send_tweet` method - which takes the `env`, `tweet`, and `tweet_id` - to send a reply to the tweet.
 
 ``` python title="agent.py"
 
@@ -121,14 +124,9 @@ def send_tweet(self, env, tweet, tweet_id):
     env.add_reply(f"Sending tweet: {tweet}")
     response = self.x_client.create_tweet(text=tweet, in_reply_to_tweet_id=tweet_id)
     print(f"Tweet published! ID: {response.data['id']}")
-```
 
-
-Finally, we need to send the tweet. This is done in the `send_tweet` method, which takes the `env`, `joke`, and `input_tweet_id` as arguments.
-
-``` python title="agent.py"
-# Send the tweet
- self.send_tweet(env, joke, input_tweet_id)
+    # Send the tweet
+    self.send_tweet(env, joke, input_tweet_id)
 ```
 
 ----
@@ -139,16 +137,17 @@ If you want to create your own agent, you will need to start by forking <a href=
 
 ### Forking an Agent
 
-To fork the Twitter agent, enter <a href="https://app.near.ai/agents/maguila.near/jokester/latest/source" target="_blank">click here</a>
- in your browser and click on the "Fork" button. This will create a copy of the agent in your NEAR AI registry.
-![start](./twitter/01-start.png)
+To fork the Twitter agent, enter <a href="https://app.near.ai/agents/maguila.near/jokester/latest/source" target="_blank">click here</a> in your browser and click on the "Fork" button. This will create a copy of the agent in your NEAR AI registry.
+
+![start](./images/01-start.png)
+
 You can see the next windows where you can change the name and version to create the agent.
-![start](./twitter/02-fork-window.png)
+
+![start](./images/02-fork-window.png)
 
 ### Generate your API keys
 
-To allow your agent to post to X you will need your own developer api key. Free X developer accounts have low read limits but fairly high write limits.
-To generate your API keys, follow these steps:  
+To allow your agent to post to X you will need to get API keys from X and setup them in the agent. To generate your API keys, follow these steps:  
 
 1. Go to the <a href="https://developer.twitter.com/en/portal/dashboard" target="_blank">Twitter Developer Portal</a>
 2. Click on the **"Projects & Apps"** tab.
@@ -158,10 +157,15 @@ To generate your API keys, follow these steps:
 6. Once the app is created, go to the **"Keys and tokens"** tab.
 7. You must create an **API Key** and **Secret**, and an **Access Token** and **Secret**.
 
+!!! info "Free X Developer Account"
+    Please know that free X developer accounts are limited on the amount of tweets they can produce.
+
 !!! warning "Permissions"
     Remember to set the permissions for the Access Token and Secret to **"Read and Write"**.
 
     To change the permissions, go to the **Settings** tab, scroll down to the **User authentication settings** section, and select **"Read and Write"** under **App permissions**.
+
+<hr class="subsection" />
 
 ### Setting up the Keys
 
@@ -173,13 +177,14 @@ There are two ways to set your keys to environment variables. You can set them i
 2. Click on the "Run" tab.
 3. On the left side, click on the "Add" Button next to "Environment Variables".
 4. Add the following variables:
-   - `X_ACCESS_TOKEN`
-   - `X_ACCESS_TOKEN_SECRET`
-   - `X_CONSUMER_KEY`
-   - `X_CONSUMER_SECRET`
+    - `X_ACCESS_TOKEN`
+    - `X_ACCESS_TOKEN_SECRET`
+    - `X_CONSUMER_KEY`
+    - `X_CONSUMER_SECRET`
 
-You must see the following screen:
-![env](./twitter/env.png)
+Here is how it would look like:
+
+![env](./images/env.png)
 
 ### CLI
 You can set your keys to environment variables using the cli.
@@ -251,8 +256,8 @@ curl -X POST "https://api.near.ai/v1/create_hub_secret" \
 
 ### Modifying the Agent
 
-Let's change the agent into a charming 19th-century scholar who answers history questions with poetic wit and Victorian elegance.
-You can change the prompt and MODEL to something like this:
+Let's change the agent into a charming 19th-century scholar who answers history questions with poetic wit and Victorian elegance. You can change the prompt and MODEL to something like this:
+
 ```python title="agent.py"
 PROMPT = """
 "You are a charming and well-spoken individual from the 18th or 19th century, tasked with replying to modern tweets in a poetic, archaic, or Victorian manner. Your tone should be sophisticated, witty, and slightly formal, using old-fashioned phrases, Shakespearean flourishes, or genteel expressions. You may sprinkle in light humor, proverbs, or dramatic phrasing—but always keep it engaging and understandable for a modern audience. Avoid modern slang, and instead respond as if you’ve just stepped out of a Jane Austen novel or a Dickensian parlor."
