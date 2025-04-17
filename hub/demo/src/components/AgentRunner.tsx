@@ -53,11 +53,10 @@ import { useConsumerModeEnabled } from '@/hooks/consumer';
 import { useCurrentEntry, useEntryEnvironmentVariables } from '@/hooks/entries';
 import { useQueryParams } from '@/hooks/url';
 import { rawFileUrlForEntry, sourceUrlForEntry } from '@/lib/entries';
-import type { threadFileModel } from '@/lib/models';
+import { threadFileModel } from '@/lib/models';
 import {
   apiErrorModel,
   type chatWithAgentModel,
-  fileModel,
   type threadMessageModel,
 } from '@/lib/models';
 import { useAuthStore } from '@/stores/auth';
@@ -130,9 +129,9 @@ export const AgentRunner = ({
   const [threadsOpenForSmallScreens, setThreadsOpenForSmallScreens] =
     useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
-  const [attachments, setAttachments] = useState<z.infer<typeof fileModel>[]>(
-    [],
-  );
+  const [attachments, setAttachments] = useState<
+    z.infer<typeof threadFileModel>[]
+  >([]);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
 
   const clearOptimisticMessages = useThreadsStore(
@@ -350,7 +349,7 @@ export const AgentRunner = ({
             });
 
             const data = await response.json();
-            const parsed = fileModel.safeParse(data);
+            const parsed = threadFileModel.safeParse(data);
 
             if (response.ok && parsed.data) {
               setAttachments((prev) => [...prev, parsed.data]);

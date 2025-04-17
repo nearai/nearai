@@ -162,25 +162,11 @@ export const entryModel = z
 
 export const entriesModel = z.array(entryModel);
 
-export const fileModel = z.object({
-  bytes: z.number(),
-  created_at: z.number(),
-  expires_at: z.number().nullable(),
-  filename: z.string(),
-  id: z.string(),
-  object: z.string(),
-  purpose: z.enum([
-    'assistants',
-    'attachments',
-    'batch',
-    'fine-tune',
-    'vision',
-  ]),
-  status: z.enum(['uploaded', 'processed', 'error']),
-  status_details: z.string(),
-});
-
-export const filesModel = fileModel.array();
+export const entryFilesModel = z
+  .object({
+    filename: z.string(),
+  })
+  .array();
 
 export const evaluationTableRowModel = z.intersection(
   z.object({

@@ -10,10 +10,10 @@ import { rawFileUrlForEntry } from '@/lib/entries';
 import {
   chatWithAgentModel,
   entryCategory,
+  entryFilesModel,
   entryModel,
   entrySecretModel,
   evaluationsTableModel,
-  filesModel,
   modelsModel,
   noncesModel,
   optionalVersion,
@@ -179,7 +179,7 @@ export const hubRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const files = await fetchWithZod(
-        filesModel,
+        entryFilesModel,
         `${env.ROUTER_URL}/registry/list_files`,
         {
           method: 'POST',
