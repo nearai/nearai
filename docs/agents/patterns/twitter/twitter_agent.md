@@ -12,11 +12,13 @@ In this tutorial we will learn how the [twitter jokester agent](https://app.near
 
 Let's start by exploring the code of the agent. The agent is a simple bot that replies to mentions with a joke, using the `tweepy` library to interact with the X API.
 
-Try it out by tweeting a mention to the agent, and see how it replies with a joke or you can try it out by clicking <a href="https://twitter.com/intent/tweet?text=Hey%20%40maguila_bot%2C%20tell%20me%20a%20joke%21" target="_blank">here</a>
+Try it out by tweeting a mention to the agent, and see how it replies with a joke or you can try it out by clicking [here](https://twitter.com/intent/tweet?text=Hey%20%40maguila_bot%2C%20tell%20me%20a%20joke%21)
 
 ```
 Hey @maguila_bot, tell me a joke!
 ```
+
+<hr class="subsection" />
 
 ### Invoking the Agent: Mentions
 
@@ -50,8 +52,9 @@ The agent works by listening to mentions of the account `@maguila_bot` and reply
 !!! info
     Technically speaking, the agent is not listening for mentions, but being executed when a specific event happens. In this case, when the account `@maguila_bot` is mentioned in `X` (denoted by the `event` `x_mentions`)
     
-    Events are automatically handled by the NEAR AI platform, so you don't need to worry about them. You can see the list of supported events [TODO](#) 
+    Events are automatically handled by the NEAR AI platform, so you don't need to worry about them.
 
+<hr class="subsection" />
 
 ### Processing the Tweet
 
@@ -101,6 +104,8 @@ if len(joke) > 280:
     joke = joke[:277] + "..."
 ```
 
+<hr class="subsection" />
+
 ### Answering
 
 The agent uses the `tweepy` library to send a reply to the tweet.
@@ -133,11 +138,13 @@ def send_tweet(self, env, tweet, tweet_id):
 
 ## Modifying the Agent
 
-If you want to create your own agent, you will need to start by forking <a href="https://app.near.ai/agents/maguila.near/jokester/latest/source" target="_blank">maguila</a>, and setting up the right Twitter API keys, so the agent can control the account you want.
+If you want to create your own agent, you will need to start by forking [maguila](https://app.near.ai/agents/maguila.near/jokester/latest/source), and setting up the right Twitter API keys, so the agent can control the account you want.
+
+<hr class="subsection" />
 
 ### Forking an Agent
 
-To fork the Twitter agent, enter <a href="https://app.near.ai/agents/maguila.near/jokester/latest/source" target="_blank">click here</a> in your browser and click on the "Fork" button. This will create a copy of the agent in your NEAR AI registry.
+To fork the Twitter agent, enter [click here](https://app.near.ai/agents/maguila.near/jokester/latest/source) in your browser and click on the "Fork" button. This will create a copy of the agent in your NEAR AI registry.
 
 ![start](./images/01-start.png)
 
@@ -145,11 +152,13 @@ You can see the next windows where you can change the name and version to create
 
 ![start](./images/02-fork-window.png)
 
+<hr class="subsection" />
+
 ### Generate your API keys
 
 To allow your agent to post to X you will need to get API keys from X and setup them in the agent. To generate your API keys, follow these steps:  
 
-1. Go to the <a href="https://developer.twitter.com/en/portal/dashboard" target="_blank">Twitter Developer Portal</a>
+1. Go to the [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
 2. Click on the **"Projects & Apps"** tab.
 3. Click on the **"Create App"** button.
 4. Fill in the required fields, such as the app name and description.
@@ -165,13 +174,16 @@ To allow your agent to post to X you will need to get API keys from X and setup 
 
     To change the permissions, go to the **Settings** tab, scroll down to the **User authentication settings** section, and select **"Read and Write"** under **App permissions**.
 
+
 <hr class="subsection" />
 
 ### Setting up the Keys
 
 There are two ways to set your keys to environment variables. You can set them in web interface or in cli.
 
-### Web interface
+<hr class="subsection" />
+
+#### Web interface
 
 1. Go to the agent.
 2. Click on the "Run" tab.
@@ -186,7 +198,9 @@ Here is how it would look like:
 
 ![env](./images/env.png)
 
-### CLI
+<hr class="subsection" />
+
+#### CLI
 You can set your keys to environment variables using the cli.
 For example, if you want to set variable, you can run the following command in your terminal, remember to replace the values with your own keys:
 
@@ -253,6 +267,7 @@ curl -X POST "https://api.near.ai/v1/create_hub_secret" \
 !!! info "Bearer Token"
     You need generate a bearer token to use nearai api. you can read more about it [here](/api/guide/).
     
+<hr class="subsection" />
 
 ### Modifying the Agent
 
@@ -312,12 +327,15 @@ Now you must publish the agent, You must run the following command in your termi
 ```bash
 nearai registry upload .
 ```
+---
 
-### More Examples
-You can find more examples of agents in the NEAR AI registry. Here are some examples:
-- <a href="https://app.near.ai/agents/buildagents.near/teacher/latest" target="_blank">Teacher</a> - An more complex agent that responds to questions like a teacher.
+## Other Examples
+Check out more examples, including an advanced one that answers questions like a teacher:
 
+- [Teacher](https://app.near.ai/agents/buildagents.near/teacher/latest)
 
-### Conclusion
+---
+
+## Conclusion
 Congratulations! You have created your own X agent. You can now tweet to the agent and see how it replies with a joke or a charming response.
 You can also modify the agent to do whatever you want, and use it as a template for your own agents.
