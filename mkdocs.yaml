@@ -179,8 +179,8 @@ nav:
   - APIs:
     - Agent SDK API: 'api.md'
     - Web API Guide: 'api/guide.md'
-    - Web API Docs: 'https://api.near.ai/docs/hub/reference'
-    - Interactive API: 'https://api.near.ai/docs/hub/interactive'
+    - Web API Docs: 'https://api.near.ai/redoc'
+    - Interactive API: 'https://api.near.ai/docs'
     - OpenAPI Specs: 'https://api.near.ai/openapi.json'
 
 plugins:
