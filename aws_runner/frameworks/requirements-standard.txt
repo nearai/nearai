@@ -25,6 +25,10 @@ bs4
 # https://github.com/chardet/chardet
 chardet
 
+# Cryptography library for secure encryption
+# https://github.com/pyca/cryptography
+cryptography==44.0.2
+
 # Datadog tracing library
 # https://github.com/DataDog/dd-trace-py
 ddtrace == 2.21.0
@@ -49,6 +53,10 @@ litellm >= 1.60.5
 # https://github.com/Delgan/loguru
 loguru == 0.7.2
 
+# Mutagen for audio/video metadata extraction
+# https://github.com/quodlibet/mutagen
+mutagen==1.47.0
+
 # NumPy for numerical computing
 # https://github.com/numpy/numpy
 numpy >= 1.21.0
@@ -56,6 +64,10 @@ numpy >= 1.21.0
 # OpenAI Python client
 # https://github.com/openai/openai-python
 openai == 1.66.2
+
+# Pillow for image processing
+# https://github.com/python-pillow/Pillow
+Pillow==11.2.1
 
 # Process and system utilities
 # https://github.com/giampaolo/psutil

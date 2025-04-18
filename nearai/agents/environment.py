@@ -920,6 +920,7 @@ class Environment(object):
                 "id": m.id,
                 "content": "\n".join([c.text.value for c in m.content]),  # type: ignore
                 "role": m.role,
+                "attachments": m.attachments,
             }
             for m in messages
         ]

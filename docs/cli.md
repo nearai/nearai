@@ -69,19 +69,11 @@ Additionally, we recommend creating a virtual environment to avoid conflicts wit
 
 ## Login to NEAR AI
 
-To create a new agent, first login with a [NEAR Account](https://wallet.near.org/):
+To create a new agent, first login with a NEAR Account. If you don't have one, we recommend creating a free account with [Meteor Wallet](https://wallet.meteorwallet.app):
 
 ``` bash
 nearai login
 ```
-
-??? tip "Don't have a NEAR Account?"
-
-    If you do not have a NEAR account, you can create one for free using wallets listed at [wallet.near.org](https://wallet.near.org/). 
-    
-    If you are unsure of which one to choose, try out [Bitte](https://wallet.bitte.ai) or [Meteor Wallet](https://wallet.meteorwallet.app/add_wallet/create_new).
-
-You'll be provided with a URL to login with your NEAR account.
 
 Example:
 

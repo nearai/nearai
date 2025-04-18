@@ -55,10 +55,14 @@ export const TextMessage = (props: Props) => {
         </Dropdown.Root>
       }
     >
-      {viewSource ? (
-        <Code bleed language="markdown" source={text} />
-      ) : (
-        <Markdown content={text} />
+      {text.trim() && (
+        <>
+          {viewSource ? (
+            <Code bleed language="markdown" source={text} />
+          ) : (
+            <Markdown content={text} />
+          )}
+        </>
       )}
     </Message>
   );

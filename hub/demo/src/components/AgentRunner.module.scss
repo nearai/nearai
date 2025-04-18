@@ -1,0 +1,11 @@
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.fileInput {
+  opacity: 0;
+  position: absolute;
+  pointer-events: none;
+}
