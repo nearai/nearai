@@ -556,9 +556,9 @@ class Environment(object):
 
         self.query_user_memory = query_user_memory
 
-        def generate_image(prompt: str):
-            """Generate an image."""
-            return client.generate_image(prompt)
+        def generate_image(prompt: str, model: Optional[str] = None):
+            """Generate an image using the specified model or the default if none is provided."""
+            return client.generate_image(prompt=prompt, model=model)
 
         self.generate_image = generate_image
 
