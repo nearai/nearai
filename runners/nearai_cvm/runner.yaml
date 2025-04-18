@@ -1,0 +1,8 @@
+# app.yaml
+services:
+    nearai_runner:
+      image: plgnai/nearai_runner
+      ports:
+        - "8000:80"
+      volumes:
+        - /var/run/tappd.sock:/var/run/tappd.sock

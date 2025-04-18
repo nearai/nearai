@@ -74,7 +74,8 @@ class Configuration:
                  ssl_ca_cert=None,
                  retries=None,
                  *,
-                 debug: Optional[bool] = None
+                 debug: Optional[bool] = None,
+                 verify_ssl: Optional[bool] = True
                  ) -> None:
         """Constructor
         """
@@ -142,7 +143,7 @@ class Configuration:
         """Debug switch
         """
 
-        self.verify_ssl = True
+        self.verify_ssl = verify_ssl
         """SSL/TLS verification
            Set this to false to skip verifying SSL certificate when calling API
            from https server.

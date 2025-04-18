@@ -19,7 +19,7 @@ class PartialNearClient:
     """Wrap NEAR AI api registry methods, uses generated NEAR AI client."""
 
     def __init__(self, base_url: str, auth: AuthData):  # noqa: D107
-        configuration = Configuration(access_token=f"Bearer {auth.model_dump_json()}", host=base_url)
+        configuration = Configuration(access_token=f"Bearer {auth.model_dump_json()}", host=base_url, verify_ssl=False)
         client = ApiClient(configuration)
 
         self._client = client

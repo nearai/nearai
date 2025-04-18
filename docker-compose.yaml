@@ -14,7 +14,7 @@ services:
       - "9009:8080"
     volumes:
       - ~/.nearai/registry:/root/.nearai/registry
-    command: ["nearai/aws_runner/service.handler"]
+    command: [ "nearai/aws_runner/service.handler" ]
     env_file:
       - .env
     environment:
@@ -27,7 +27,7 @@ services:
       - DD_SERVICE=runner-local
       - DD_LOGS_ENABLED=false
       - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=false
-      - DD_SITE=${DD_SITE} 
+      - DD_SITE=${DD_SITE}
       - DD_TRACE_ENABLED=false
 
   db:
@@ -39,7 +39,7 @@ services:
       - "3306:3306"
       - "8080:8080"
       - "9000:9000"
- 
+
   datadog-agent:
     image: gcr.io/datadoghq/agent:latest
     env_file:
