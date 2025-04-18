@@ -3,7 +3,7 @@ site_author: NEAR AI
 site_description: NEAR AI Docs - Quickly build and deploy robust AI agents, models, benchmarks, and more.
 repo_name: nearai
 repo_url: https://github.com/nearai/nearai/
-site_url: https://docs.near.ai/ 
+site_url: https://docs.near.ai/
 edit_uri: edit/main/docs/
 validation:
   omitted_files: warn
@@ -17,7 +17,7 @@ theme:
   favicon: assets/images/favicon.ico
   icon:
     repo: fontawesome/brands/github
-    edit: material/pencil 
+    edit: material/pencil
     view: material/eye
     theme:
     admonition:
@@ -63,7 +63,7 @@ theme:
     # - toc.integrate
   palette:
       - scheme: default
-        primary: black 
+        primary: black
         accent: indigo
         toggle:
           icon: material/brightness-7
@@ -130,7 +130,7 @@ extra_css:
   - https://unpkg.com/katex@0/dist/katex.min.css
   - docs.css
 nav:
-  - Home: 
+  - Home:
     - Welcome To NEAR AI Docs: 'index.md'
     - 'cli.md'
     - Contributing: 'contributing.md'
@@ -177,8 +177,11 @@ nav:
     - Overview: 'integration/overview.md'
     - Quickstart: 'integration/quickstart.md'
   - APIs:
-    - Library API: 'api.md'
-    - Web API: 'https://api.near.ai/openapi.json'
+    - Agent SDK API: 'api.md'
+    - Web API Guide: 'api/guide.md'
+    - Web API Docs: 'https://api.near.ai/docs/hub/reference'
+    - Interactive API: 'https://api.near.ai/docs/hub/interactive'
+    - OpenAPI Specs: 'https://api.near.ai/openapi.json'
 
 plugins:
   - social
