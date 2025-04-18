@@ -154,6 +154,8 @@ nav:
         - Vector Stores: 'agents/vector-stores.md'
         - Inference (OpenAI): 'inference.md'
         - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
+      - Templates:
+        - CDP AgentKit: 'agents/templates/coinbase.md'
     - Agent Patterns:
       - Event-Driven Agents:
         - NEAR Event-Triggered Agents: 'agents/patterns/near_events.md'
