@@ -205,27 +205,60 @@ class Agent(object):
             with open("/var/task/build-info.txt", "r") as file:
                 print("BUILD ID: ", file.read())
 
+        # @TODO - Copy the user’s agent from self.temp_dir/agent.ts into /var/task/ts_runner_exp/agents/agent.ts
+        # so we keep the exact old structure where "agents/agent.ts" is the main entry file
+        user_agent_path = agent_filename  # e.g. /tmp/agent_xxxx/agent.ts
+        ts_runner_exp_folder = "/var/task/ts_runner_exp"
+        agents_folder = os.path.join(ts_runner_exp_folder, "agents")
+        if not os.path.exists(agents_folder):
+            os.makedirs(agents_folder, exist_ok=True)
+
+        # @TODO - Copy the user’s agent code to the agents folder
+        # The user’s agent code -> /var/task/ts_runner_exp/agents/agent.ts
+        dest_agent_path = os.path.join(agents_folder, "agent.ts")
+        shutil.copyfile(user_agent_path, dest_agent_path)
+
         if env_vars.get("DEBUG"):
-            print("Directory structure:", os.listdir("/tmp/ts_runner"))
-            print("Check package.json:", os.path.exists(os.path.join(self.ts_runner_dir, "package.json")))
-            print("Symlink exists:", os.path.exists("/tmp/ts_runner/node_modules/.bin/tsc"))
-            print("Build files exist:", os.path.exists("/tmp/ts_runner/build/sdk/main.js"))
+            # print("Directory structure:", os.listdir("/tmp/ts_runner"))
+            # print("Check package.json:", os.path.exists(os.path.join(self.ts_runner_dir, "package.json")))
+            # print("Symlink exists:", os.path.exists("/tmp/ts_runner/node_modules/.bin/tsc"))
+            # print("Build files exist:", os.path.exists("/tmp/ts_runner/build/sdk/main.js"))
+            print("Directory structure in /var/task/ts_runner_exp:", os.listdir(ts_runner_exp_folder))
+            print("Check package.json:", os.path.exists(os.path.join(ts_runner_exp_folder, "package.json")))
+            print("Agents folder content:", os.listdir(agents_folder))
 
         # Launching a subprocess to run an npm script with specific configurations
+        # ts_process = subprocess.Popen(
+        #     [
+        #         "npm",  # Command to run Node Package Manager
+        #         "--loglevel=error",  # Suppress npm warnings and info logs, only show errors
+        #         "--prefix",
+        #         self.ts_runner_dir,  # Specifies the directory where npm should look for package.json
+        #         "run",
+        #         "start",  # Runs the "start" script defined in package.json, this launches the agent
+        #         "agents/agent.ts",
+        #         json_params,  # Arguments passed to the "start" script to configure the agent
+        #     ],
+        #     stdout=subprocess.PIPE,  # Captures standard output from the process
+        #     stderr=subprocess.PIPE,  # Captures standard error
+        #     cwd=self.ts_runner_dir,  # Sets the current working directory for the process
+        #     env=env_vars,  # Provides custom environment variables to the subprocess
+        # )
+
         ts_process = subprocess.Popen(
             [
-                "npm",  # Command to run Node Package Manager
-                "--loglevel=error",  # Suppress npm warnings and info logs, only show errors
+                "npm",
+                "--loglevel=error",
                 "--prefix",
-                self.ts_runner_dir,  # Specifies the directory where npm should look for package.json
+                ts_runner_exp_folder,
                 "run",
-                "start",  # Runs the "start" script defined in package.json, this launches the agent
+                "start",
                 "agents/agent.ts",
-                json_params,  # Arguments passed to the "start" script to configure the agent
+                json_params
             ],
             stdout=subprocess.PIPE,  # Captures standard output from the process
             stderr=subprocess.PIPE,  # Captures standard error
-            cwd=self.ts_runner_dir,  # Sets the current working directory for the process
+            cwd=ts_runner_exp_folder,  # Sets the current working directory for the process
             env=env_vars,  # Provides custom environment variables to the subprocess
         )
 
@@ -265,10 +298,14 @@ class Agent(object):
                 self.agent_language = "ts"
 
                 # copy files from nearai/ts_runner_sdk to self.temp_dir
-                ts_runner_sdk_dir = "/tmp/ts_runner"
-                ts_runner_agent_dir = os.path.join(ts_runner_sdk_dir, "agents")
+                # ts_runner_sdk_dir = "/tmp/ts_runner"
+                # ts_runner_agent_dir = os.path.join(ts_runner_sdk_dir, "agents")
+                # ts_runner_actual_path = "/var/task/ts_runner"
 
-                ts_runner_actual_path = "/var/task/ts_runner"
+                # @TODO - Copy files from experimental ts_runner to self.temp_dir
+                ts_runner_sdk_dir = "/tmp/ts_runner_exp"
+                ts_runner_agent_dir = os.path.join(ts_runner_sdk_dir, "agents")
+                ts_runner_actual_path = "/var/task/ts_runner_exp"
 
                 shutil.copytree(ts_runner_actual_path, ts_runner_sdk_dir, symlinks=True, dirs_exist_ok=True)
 

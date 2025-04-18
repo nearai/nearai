@@ -4,6 +4,12 @@ RUN yum install -y gcc libffi-devel openssl-devel-1:1.0.2k-24.amzn2.0.14 shadow-
     yum clean all && \
     rm -rf /var/cache/yum
 
+# Use Node.js 16+ from EPEL or Amazon Linux Extras (if available)
+RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash - \
+    && yum install -y nodejs npm \
+    && yum clean all \
+    && rm -rf /var/cache/yum
+
 # pass with --build-arg FRAMEWORK=-langgraph
 ARG FRAMEWORK=""
 
@@ -58,6 +64,15 @@ RUN setfacl -Rdm u:$AGENT_RUNNER_USER:rwx /tmp && \
 RUN mkdir ${LAMBDA_TASK_ROOT}/nearai
 COPY nearai ${LAMBDA_TASK_ROOT}/nearai
 
+# Copy the experimental runner folder
+COPY ts_runner_exp ${LAMBDA_TASK_ROOT}/ts_runner_exp
+
+# @NOTE: For supporting experimental ts runner in local environment
+# Install the experimental runner code
+RUN cd ${LAMBDA_TASK_ROOT}/ts_runner_exp && \
+    npm install && \
+    npm config set loglevel=error
+
 # Save Build Id
 RUN if [ -f aws_runner/build-info.txt ]; then \
         cp aws_runner/build-info.txt ${LAMBDA_TASK_ROOT}/; \
@@ -66,5 +81,7 @@ RUN if [ -f aws_runner/build-info.txt ]; then \
         rm -f ${LAMBDA_TASK_ROOT}/build-info.txt; \
     fi
 
+# @NOTE: Could not get to work in local dev without commenting out the datadog-lambda
 # Invoke the Datadog Lambda Handler that will invoke the main handler
-CMD [ "datadog_lambda.handler.handler" ]
+#CMD [ "datadog_lambda.handler.handler" ]
+CMD [ "nearai/aws_runner/service.handler" ]
