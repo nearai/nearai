@@ -265,7 +265,7 @@ curl -X POST "https://api.near.ai/v1/create_hub_secret" \
 ```
 
 !!! info "Bearer Token"
-    You need generate a bearer token to use nearai api. you can read more about it [here](/api/guide/).
+    You need generate a bearer token to use nearai api. you can read more about it [here](../../../api/guide.md).
     
 <hr class="subsection" />
 
