@@ -271,7 +271,7 @@ curl -X POST "https://api.near.ai/v1/create_hub_secret" \
 
 ### Modifying the Agent
 
-Let's change the agent into a charming 19th-century scholar who answers history questions with poetic wit and Victorian elegance. You can change the prompt and MODEL to something like this:
+Let's change the agent into a charming 19th-century scholar who answers history questions with poetic poetic grace and Victorian elegance. You can also adjust the prompt and model accordingly, for example, like this:
 
 ```python title="agent.py"
 PROMPT = """
