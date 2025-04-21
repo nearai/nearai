@@ -1,0 +1,24 @@
+# Rust artifacts
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Git
+.git/
+.gitignore
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Misc
+*.md
+!README.md 
+
+**/*.env

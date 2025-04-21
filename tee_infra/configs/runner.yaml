@@ -1,0 +1,10 @@
+services:
+    nearai_runner:
+      image: plgnai/nearai_cvm_runner
+      ports:
+        - "80:80"
+        - "443:443"
+        - "2222:22"
+      volumes:
+        - /var/run/tappd.sock:/var/run/tappd.sock
+        - /var/run/docker.sock:/var/run/docker.sock

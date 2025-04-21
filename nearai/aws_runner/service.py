@@ -8,6 +8,7 @@ from typing import Optional, Union
 
 import boto3
 from ddtrace import patch_all, tracer
+
 from nearai.agents.agent import Agent
 from nearai.agents.environment import Environment
 from nearai.aws_runner.partial_near_client import PartialNearClient
@@ -89,8 +90,13 @@ def handler(event, context):
         auth_object.callback_url,
     )
 
-    if verification_result == SignatureVerificationResult.VERIFY_ACCESS_KEY_OWNER_SERVICE_NOT_AVAILABLE:
-        write_metric("AdminNotifications", "SignatureAccessKeyVerificationServiceFailed", "Count")
+    if (
+        verification_result
+        == SignatureVerificationResult.VERIFY_ACCESS_KEY_OWNER_SERVICE_NOT_AVAILABLE
+    ):
+        write_metric(
+            "AdminNotifications", "SignatureAccessKeyVerificationServiceFailed", "Count"
+        )
     elif not verification_result:
         return "Unauthorized: Invalid signature"
     else:
@@ -131,7 +137,10 @@ def write_metric(metric_name, value, unit="Milliseconds", verbose=True):
                         "Value": value,
                         "Unit": unit,
                         "Dimensions": [
-                            {"Name": "FunctionName", "Value": os.environ["AWS_LAMBDA_FUNCTION_NAME"]},
+                            {
+                                "Name": "FunctionName",
+                                "Value": os.environ["AWS_LAMBDA_FUNCTION_NAME"],
+                            },
                         ],
                     }
                 ],
@@ -139,10 +148,14 @@ def write_metric(metric_name, value, unit="Milliseconds", verbose=True):
         except Exception as e:
             print("Caught Error writing metric to CloudWatch: ", e)
     elif verbose:
-        print(f"[DEBUG] • Would have written metric {metric_name} with value {value} to cloudwatch")
+        print(
+            f"[DEBUG] • Would have written metric {metric_name} with value {value} to cloudwatch"
+        )
 
 
-def load_agent(client, agent, params: dict, additional_path: str = "", verbose=True) -> Agent:
+def load_agent(
+    client, agent, params: dict, additional_path: str = "", verbose=True
+) -> Agent:
     agent_metadata = None
 
     if params["data_source"] == "registry":
@@ -167,13 +180,20 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
         start_time = time.perf_counter()
         agent_files = client.get_agent(agent)
         stop_time = time.perf_counter()
-        write_metric("GetAgentFromRegistry_Duration", stop_time - start_time, verbose=verbose)
+        write_metric(
+            "GetAgentFromRegistry_Duration", stop_time - start_time, verbose=verbose
+        )
         start_time = time.perf_counter()
         agent_metadata = client.get_agent_metadata(agent)
         stop_time = time.perf_counter()
-        write_metric("GetMetadataFromRegistry_Duration", stop_time - start_time, verbose=verbose)
+        write_metric(
+            "GetMetadataFromRegistry_Duration", stop_time - start_time, verbose=verbose
+        )
         full_agent = Agent(
-            agent, agent_files, agent_metadata or {}, change_to_temp_dir=params.get("change_to_agent_temp_dir", True)
+            agent,
+            agent_files,
+            agent_metadata or {},
+            change_to_temp_dir=params.get("change_to_agent_temp_dir", True),
         )
         local_agent_cache[full_agent.identifier] = full_agent
         print(f"Saving {full_agent.identifier} from {full_agent.temp_dir} to cache")
@@ -186,12 +206,23 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
             if os.path.basename(file["filename"]) == "metadata.json":
                 agent_metadata = json.loads(file["content"])
                 if verbose:
-                    agent_info = f"""[DEBUG]   • Name: {agent_metadata.get("name", "N/A")}
+                    agent_info = f"""[DEBUG]   • Name: {
+                        agent_metadata.get("name", "N/A")
+                    }
 [DEBUG]   • Version: {agent_metadata.get("version", "N/A")}
 [DEBUG]   • Description: {agent_metadata.get("description", "N/A")}
 [DEBUG]   • Category: {agent_metadata.get("category", "N/A")}
-[DEBUG]   • Tags: {", ".join(agent_metadata.get("tags", [])) if agent_metadata.get("tags") else "None"}
-[DEBUG]   • Model: {agent_metadata.get("details", {}).get("agent", {}).get("defaults", {}).get("model", "N/A")}
+[DEBUG]   • Tags: {
+                        ", ".join(agent_metadata.get("tags", []))
+                        if agent_metadata.get("tags")
+                        else "None"
+                    }
+[DEBUG]   • Model: {
+                        agent_metadata.get("details", {})
+                        .get("agent", {})
+                        .get("defaults", {})
+                        .get("model", "N/A")
+                    }
 [DEBUG]   • Model Provider: {
                         agent_metadata.get("details", {})
                         .get("agent", {})
@@ -221,7 +252,10 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
             print(f"Missing metadata for {agent}")
 
         return Agent(
-            agent, agent_files, agent_metadata or {}, change_to_temp_dir=params.get("change_to_agent_temp_dir", True)
+            agent,
+            agent_files,
+            agent_metadata or {},
+            change_to_temp_dir=params.get("change_to_agent_temp_dir", True),
         )
     else:
         raise ValueError("Invalid data_source")
@@ -264,7 +298,9 @@ class EnvironmentRun:
         start_time = time.perf_counter()
         self.env.run(new_message, self.agents[0].max_iterations)
         stop_time = time.perf_counter()
-        write_metric("ExecuteAgentDuration", stop_time - start_time, verbose=self.verbose)
+        write_metric(
+            "ExecuteAgentDuration", stop_time - start_time, verbose=self.verbose
+        )
         return self.thread_id
 
 
@@ -313,7 +349,9 @@ def start_with_environment(
         agents = agents.split(",")[0]
 
     for agent_name in agents.split(","):
-        agent = load_agent(near_client, agent_name, params, additional_path, verbose=verbose)
+        agent = load_agent(
+            near_client, agent_name, params, additional_path, verbose=verbose
+        )
         # agents secrets has higher priority then agent metadata's env_vars
         agent.env_vars = {**agent.env_vars, **agent_env_vars.get(agent_name, {})}
         loaded_agents.append(agent)
@@ -343,14 +381,18 @@ def start_with_environment(
         base_url=api_url + "/v1",
         auth=auth,
     )
-    inference_client = InferenceClient(client_config, protected_vars.get("RUNNER_API_KEY"), agent.identifier)
+    inference_client = InferenceClient(
+        client_config, protected_vars.get("RUNNER_API_KEY"), agent.identifier
+    )
 
     global provider_models_cache
     global provider_models_cache_time
     # Force a check for new models after an hour if the runner has stayed hot for that long
     # this is a failsafe given usage patterns at the time of writing, if models are uploaded more frequently and
     # runners stay hot, it could be adjusted down or client model caching removed.
-    if not provider_models_cache or (time.time() - (provider_models_cache_time or 0) > 3600):
+    if not provider_models_cache or (
+        time.time() - (provider_models_cache_time or 0) > 3600
+    ):
         if provider_models_cache_time:
             write_metric("InferenceClientCacheCleared", "1", "Count")
         provider_models_cache_time = time.time()
@@ -378,7 +420,14 @@ def start_with_environment(
         fastnear_api_key=protected_vars.get("FASTNEAR_APY_KEY"),
     )
     env.add_agent_start_system_log(agent_idx=0)
-    return EnvironmentRun(near_client, loaded_agents, env, thread_id, params.get("record_run", True), verbose=verbose)
+    return EnvironmentRun(
+        near_client,
+        loaded_agents,
+        env,
+        thread_id,
+        params.get("record_run", True),
+        verbose=verbose,
+    )
 
 
 def run_with_environment(
@@ -392,7 +441,9 @@ def run_with_environment(
     print_system_log: bool = False,
 ) -> Optional[str]:
     """Runs agent against environment fetched from id, optionally passing a new message to the environment."""
-    environment_run = start_with_environment(agents, auth, thread_id, run_id, additional_path, params, print_system_log)
+    environment_run = start_with_environment(
+        agents, auth, thread_id, run_id, additional_path, params, print_system_log
+    )
     return environment_run.run(new_message)
 
 
