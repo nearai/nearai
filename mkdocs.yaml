@@ -139,6 +139,7 @@ nav:
   - Agents:
     - Building Agents:
       - Quickstart: 'agents/quickstart.md'
+      - Integration: 'agents/integration.md'
       - "Environment":
         - 'agents/env/overview.md'
         - 'agents/env/messages_files.md'
@@ -173,9 +174,6 @@ nav:
     - 'models/home.md'
     - Fine-tuning: 'models/fine_tuning.md'
     - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
-  - Integration:
-    - Overview: 'integration/overview.md'
-    - Quickstart: 'integration/quickstart.md'
   - APIs:
     - Agent SDK API: 'api.md'
     - Web API Guide: 'api/guide.md'
@@ -206,3 +204,5 @@ plugins:
         'agents/env/calling_other_agents.md': 'agents/patterns/agent_to_agent.md'
         'near_events.md': 'agents/patterns/near_events.md'
         'agent_triggers.md': 'agents/patterns/agent_triggers.md'
+        'integration/overview.md': 'agents/integration.md'
+        'integration/quickstart.md': 'agents/integration.md'
