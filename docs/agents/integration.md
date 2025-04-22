@@ -83,7 +83,7 @@ NEAR AI Agents are compatible with the [OpenAI Assistants API](https://platform.
 3. Maintain persistent conversation Threads
 4. Process files in several formats (as inputs or outputs)
 
-See [https://docs.near.ai/api/](for the complete NEAR AI OpenAPI specification).
+See [the complete NEAR AI OpenAPI specification](https://docs.near.ai/api/).
 
 !!! info
     While you can orchestrate multiple agents, in many cases you can consolidate multiple roles into a single agent. For best practices, see ["Orchestrating Agents"](https://docs.near.ai/agents/patterns/orchestration/).
