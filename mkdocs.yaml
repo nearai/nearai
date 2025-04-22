@@ -206,4 +206,4 @@ plugins:
         'agent_triggers.md': 'agents/patterns/agent_triggers.md'
         'integration/overview.md': 'agents/integration.md'
         'integration/quickstart.md': 'agents/integration.md'
-        'agents/registry.md/#embedding-an-agent': 'agents/integration.md/#embedding-an-agent'
+        'agents/registry.md/#embedding-an-agent': 'agents/integration/#iframe-agent-embedding'
