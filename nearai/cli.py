@@ -76,7 +76,6 @@ class RegistryCli:
     """Manage items in the NEAR AI Registry including agents, models, datasets, and evaluations.
 
     These commands allow you to upload, download, update, and list available items in the NEAR AI Registry.
-    list available items.
 
     Commands:
       nearai registry upload : Upload an item to the registry
