@@ -680,7 +680,7 @@ class Environment(object):
 
         self.list_files_from_thread = list_files_from_thread
 
-        def read_file_by_id(file_id: str, decode: str | None = "utf-8"):
+        def read_file_by_id(file_id: str, decode: Union[str, None] = "utf-8"):
             """Read a file from the thread."""
             content = hub_client.files.content(file_id).content
 
@@ -694,7 +694,7 @@ class Environment(object):
         def write_file(
             filename: str,
             content: Union[str, bytes],
-            encoding: str | None = "utf-8",
+            encoding: Union[str, None] = "utf-8",
             filetype: str = "text/plain",
             write_to_disk: bool = True,
         ) -> FileObject:
@@ -961,7 +961,7 @@ class Environment(object):
         """Returns temp dir for primary agent where execution happens."""
         return self.get_primary_agent_temp_dir()
 
-    def read_file(self, filename: str, decode: str | None = "utf-8") -> Optional[Union[bytes, str]]:
+    def read_file(self, filename: str, decode: Union[str, None] = "utf-8") -> Optional[Union[bytes, str]]:
         """Reads a file from the environment or thread."""
         file_content: Optional[Union[bytes, str]] = None
         # First try to read from local filesystem
