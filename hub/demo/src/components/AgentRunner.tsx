@@ -295,7 +295,7 @@ export const AgentRunner = ({
     [updateQueryPath],
   );
 
-  const attachmentMaxSizeMegabytes = 1;
+  const attachmentMaxSizeMegabytes = 50;
   const attachmentAcceptMimeTypes =
     currentEntry?.details.agent?.allow_message_attachments_accept_mime_types?.reduce(
       (result, type) => {
