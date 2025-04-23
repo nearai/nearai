@@ -182,7 +182,7 @@ nav:
     - Agent SDK API: 'api.md'
     - Hub (Agent Cloud) API Guide: 'api/guide.md'
     - Hub (Agent Cloud) API: 'https://api.near.ai/docs/hub/reference'
-    - Interactive API: 'https://api.near.ai/docs/hub/interactive'
+    - Hub (Agent Cloud) Interactive API: 'https://api.near.ai/docs/hub/interactive'
     - OpenAPI Specs: 'https://api.near.ai/openapi.json'
 
 plugins:
