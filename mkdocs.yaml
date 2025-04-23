@@ -180,7 +180,7 @@ nav:
     - Quickstart: 'integration/quickstart.md'
   - APIs:
     - Agent SDK API: 'api.md'
-    - Web API Guide: 'api/guide.md'
+    - Hub (Agent Cloud) API Guide: 'api/guide.md'
     - Hub (Agent Cloud) API: 'https://api.near.ai/docs/hub/reference'
     - Interactive API: 'https://api.near.ai/docs/hub/interactive'
     - OpenAPI Specs: 'https://api.near.ai/openapi.json'
