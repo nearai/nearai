@@ -685,7 +685,7 @@ class Environment(object):
             content = hub_client.files.content(file_id).content
 
             if decode:
-                content = content.decode(decode)
+                return content.decode(decode)
 
             return content
 
