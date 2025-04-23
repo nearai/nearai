@@ -680,10 +680,13 @@ class Environment(object):
 
         self.list_files_from_thread = list_files_from_thread
 
-        def read_file_by_id(file_id: str):
+        def read_file_by_id(file_id: str, decode: str | None = "utf-8"):
             """Read a file from the thread."""
-            content = hub_client.files.content(file_id).content.decode("utf-8")
-            print("file content returned by api", content)
+            content = hub_client.files.content(file_id).content
+
+            if decode:
+                content = content.decode(decode)
+
             return content
 
         self.read_file_by_id = read_file_by_id
@@ -691,7 +694,7 @@ class Environment(object):
         def write_file(
             filename: str,
             content: Union[str, bytes],
-            encoding: str = "utf-8",
+            encoding: str | None = "utf-8",
             filetype: str = "text/plain",
             write_to_disk: bool = True,
         ) -> FileObject:
@@ -958,22 +961,19 @@ class Environment(object):
         """Returns temp dir for primary agent where execution happens."""
         return self.get_primary_agent_temp_dir()
 
-    def read_file(self, filename: str) -> Optional[Union[bytes, str]]:
+    def read_file(self, filename: str, decode: str | None = "utf-8") -> Optional[Union[bytes, str]]:
         """Reads a file from the environment or thread."""
         file_content: Optional[Union[bytes, str]] = None
         # First try to read from local filesystem
         local_path = os.path.join(self.get_primary_agent_temp_dir(), filename)
-        print(f"Read file {filename} from local path: {local_path}")
+        print(f"Reading file {filename} from local path: {local_path}")
         if os.path.exists(local_path):
             try:
                 with open(local_path, "rb") as local_path_file:
                     local_file_content = local_path_file.read()
-                    try:
-                        # Try to decode as text
-                        file_content = local_file_content.decode("utf-8")
-                    except UnicodeDecodeError:
-                        # If decoding fails, store as binary
-                        file_content = local_file_content
+                    file_content = local_file_content
+                    if decode:
+                        file_content = file_content.decode(decode)
             except Exception as e:
                 print(f"Error with read_file: {e}")
 
@@ -985,7 +985,7 @@ class Environment(object):
             # Then try to read from thread, starting from the most recent
             for f in thread_files:
                 if f.filename == filename:
-                    file_content = self.read_file_by_id(f.id)
+                    file_content = self.read_file_by_id(f.id, decode)
                     break
 
             if not file_content:
