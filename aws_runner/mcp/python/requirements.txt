@@ -1,0 +1,6 @@
+fastapi>=0.68.0
+uvicorn>=0.15.0
+sse-starlette>=1.6.1
+pydantic>=1.8.2
+mcp>=0.1.0  # Replace with actual MCP package version
+aiohttp>=3.8.1

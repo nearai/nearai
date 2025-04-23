@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  python-mcp:
+    build:
+      context: ./python
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"
+
+  node-mcp:
+    build:
+      context: ./node
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+

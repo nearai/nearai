@@ -42,15 +42,15 @@ class ToolRegistry:
 
         async def tool(**kwargs):
             try:
-                return await call_tool(mcp_tool["name"], kwargs)
+                return await call_tool(mcp_tool.name, kwargs)
             except Exception as e:
-                raise Exception(f"Error calling tool {mcp_tool['name']} with arguments {kwargs}: {e}") from e
+                raise Exception(f"Error calling tool {mcp_tool.name} with arguments {kwargs}: {e}") from e
 
-        tool.__name__ = mcp_tool["name"]
-        tool.__doc__ = mcp_tool["description"]
-        tool.__setattr__("__schema__", mcp_tool["inputSchema"])
+        tool.__name__ = mcp_tool.name
+        tool.__doc__ = mcp_tool.description
+        tool.__setattr__("__schema__", mcp_tool.inputSchema)
 
-        self.tools[mcp_tool["name"]] = tool
+        self.tools[mcp_tool.name] = tool
 
     def get_tool(self, name: str) -> Optional[Callable]:  # noqa: D102
         """Get a tool by name."""

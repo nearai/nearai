@@ -18,6 +18,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
 
+from mcp.client.sse import sse_client
+from mcp import ClientSession
+
 import psutil
 from litellm.types.completion import ChatCompletionMessageParam
 from litellm.types.utils import (
@@ -1519,6 +1522,121 @@ class Environment(object):
         )
 
         await mcp_manager.setup_and_run(mcp_server_configs, tool_registry, add_responses_to_messages)
+
+    async def _register_mcp_servers(self, url, servers, tool_registry):
+        async with sse_client(url) as streams:
+                async with ClientSession(streams[0], streams[1]) as session:
+                    await session.initialize()
+                    self.add_system_log("Connected to python MCP proxy", logging.INFO)
+
+                    self.add_system_log("Listing tools before registering", logging.INFO)
+                    tools_response = await session.list_tools()
+                    tools = tools_response.tools
+                    self.add_system_log(f"{len(tools)} tools found before registering", logging.INFO)
+
+                    if len(servers) > 0:
+                        for config in servers:
+                            # Handle both dict and MCPServerConfig objects
+                            name = config.get("name") if isinstance(config, dict) else config.name
+                            command = config.get("command") if isinstance(config, dict) else config.command
+                            args = config.get("args") if isinstance(config, dict) else config.args
+                            env = config.get("env") if isinstance(config, dict) else config.env
+
+                        await session.call_tool("register_server", {
+                            "settings": {
+                                "name": name,
+                                "command": command,
+                                "args": args or [],
+                                "env": env or {}
+                            }
+                        })
+
+                    self.add_system_log("Listing tools again", logging.INFO)
+                    tools_response = await session.list_tools()
+                    tools = tools_response.tools
+                    self.add_system_log(f"{len(tools)} tools found", logging.INFO)
+                    for tool in tools:
+                        self.add_system_log(f"Registering {tool.name}", logging.INFO)
+                        tool_registry.register_mcp_tool(tool, session.call_tool)
+
+
+    async def add_mcp_servers_dynamic(self, mcp_server_configs: List[MCPServerConfig], add_responses_to_messages: bool = True):
+        """Adds MCP servers to the environment and registers their available tools.
+
+        This function ensures the saved state exactly matches the provided server configs.
+        If there's any mismatch between saved servers and provided configs, it recreates
+        all servers and saves the new state.
+        """
+
+        python_servers = []
+        node_servers = []
+        sse_servers = []
+
+        for config in mcp_server_configs:
+            # Handle both dict and MCPServerConfig objects
+            command = config.get("command") if isinstance(config, dict) else config.command
+            url = config.get("url") if isinstance(config, dict) else config.url
+            name = config.get("name") if isinstance(config, dict) else config.name
+            args = config.get("args") if isinstance(config, dict) else config.args
+            env = config.get("env") if isinstance(config, dict) else config.env
+
+            if command is not None:
+                if command in ["node", "npx"]:
+                    node_servers.append(config)
+                elif command in ["python", "python3", "uvx"]:
+                    python_servers.append(config)
+            elif url is not None:
+                sse_servers.append(config)
+            else:
+                self.add_system_log(f"Warning: Server config {name} has neither command nor url specified", logging.WARNING)
+
+        tool_registry = self.get_tool_registry(new=True)
+
+        if len(python_servers) > 0:
+            await self._register_mcp_servers("https://0754-2804-14c-5bb7-4aea-f599-20b9-2821-311.ngrok-free.app/sse", python_servers, tool_registry)
+
+        if len(node_servers) > 0:
+            await self._register_mcp_servers("https://e93c-2804-14c-5bb7-4aea-f599-20b9-2821-311.ngrok-free.app/sse", node_servers, tool_registry)
+
+        for config in sse_servers:
+            # Handle both dict and MCPServerConfig objects
+            url = config.get("url") if isinstance(config, dict) else config.url
+            name = config.get("name") if isinstance(config, dict) else config.name
+
+            if url is None:
+                self.add_system_log(f"Warning: SSE server config {name} has no URL specified", logging.WARNING)
+                continue
+
+            url = url + "/sse" if not url.endswith("/sse") else url
+            await self._register_mcp_servers(url, [], tool_registry)
+
+        completion = self.completion_and_get_tools_calls(
+            [
+                {
+                    "role": "system",
+                    "content": """
+                    You are an assistant and you can use a list of tools to help answer user questions.
+
+                    Important rules:
+                    1. You should always return a friendly response to the user.
+                    2. If you use a tool, it may return a JSON object. You should then format it as if a human wrote it.
+                    3. Be polite and friendly.
+                    4. If the user asks you what you can do, list the tools and its description in the answer.
+                    """,
+                },
+            ] + self.list_messages(),
+            tools=tool_registry.get_all_tool_definitions(),
+        )
+
+        self.add_system_log(f"COMPLETION: {completion}", logging.INFO)
+
+        if hasattr(completion, "tool_calls") and completion.tool_calls:
+            if len(completion.tool_calls) > 0:
+                self.add_system_log(f"TOOL CALLS FOUND: {completion.tool_calls}", logging.INFO)
+                # await self.handle_tool_calls(completion, tool_server_map, add_responses_to_messages)
+        elif completion.message:
+            self.add_reply(completion.message)
+
 
     def run(
         self,
