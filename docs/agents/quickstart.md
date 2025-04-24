@@ -123,7 +123,7 @@ There are different frameworks for agents that define which Python packages they
 
 See [Supported Packages](./env/frameworks.md) for more information.
 
-#### Message Attachements
+#### Message Attachments
 
 Agents can accept attached files as part of a message during an interactive session by adding `allow_message_attachments` and setting the value to `true`:
 
