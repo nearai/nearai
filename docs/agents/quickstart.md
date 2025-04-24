@@ -125,8 +125,7 @@ See [Supported Packages](./env/frameworks.md) for more information.
 
 #### Message Attachements
 
-Agents can accept attached files during an interactive session by setting `allow_message_attachments` to `true`. 
-You can also specify what types of files your agent will accept.
+Agents can accept attached files as part of a message during an interactive session by adding `allow_message_attachments` and setting the value to `true`:
 
 ```json
 {
@@ -141,6 +140,9 @@ You can also specify what types of files your agent will accept.
   }
 }
 ```
+
+!!! info
+    If `allow_message_attachments_accept_mime_types` is not defined, all file types will be allowed, however the agent cloud may throw an error if an unsupported file type is uploaded. 
 
 
 ### `agent.py`
