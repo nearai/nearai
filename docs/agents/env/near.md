@@ -41,7 +41,7 @@ asyncio.run(run(env))
 
 - `account_id`: The NEAR account ID (e.g., "example.near") that will act as the account for interactions
 - `private_key`: The private key associated with the account_id
-- `rpc_addr`: (Optional) A custom RPC address for connecting to the NEAR network. If not provided, the default NEAR RPC address is used.
+- `rpc_addr`: (Optional) A custom RPC address for connecting to the NEAR network. If not provided, the default NEAR Mainnet RPC address is used.
 
 **Example**:
 ```python
@@ -96,7 +96,7 @@ result = await near.view(
     args={
         "account_id": "user.near"
     }
-))
+)
 
 print(result)
 print("Wrap.NEAR Balance:", result.result)
@@ -153,7 +153,7 @@ result = await env.near.call(
     },
     gas=30000000000000,
     amount=1
-))
+)
 
 if "SuccessValue" in result.status:
     print("tx", result.transaction.hash)
