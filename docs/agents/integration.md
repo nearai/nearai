@@ -41,7 +41,7 @@ To embed an agent, use the following iframe code replacing the `src` with the ag
 
 There are three ways to customize the appearance and behavior of your embedded agent:
 
-1. Basic iframe attributes
+1. Basic `<iframe>` attributes
 2. URL parameters
 3. `metadata.json` file
 
