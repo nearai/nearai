@@ -28,7 +28,7 @@ async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_ca
 
     if run_id is not None:
         with get_session() as session:
-            for idx, chunk in enumerate(resp_stream):
+            for _idx, chunk in enumerate(resp_stream):
                 c = json.dumps(chunk.model_dump())
                 response_chunks.append(c)
 
