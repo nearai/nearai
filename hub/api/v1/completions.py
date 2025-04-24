@@ -24,7 +24,7 @@ class Provider(Enum):
 async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_callback: Callable):
     response_chunks = []
     deltas_to_commit = []
-    commit_every = 10  # Commit every 5 chunks to reduce DB overhead
+    commit_every = 10  # Commit every N chunks to reduce DB overhead
 
     if run_id is not None:
         with get_session() as session:
