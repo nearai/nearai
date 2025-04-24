@@ -305,6 +305,14 @@ class Message(SQLModel, table=True):
             if isinstance(self.content, str):
                 self.content = [TextContentBlock(text=Text(value=self.content, annotations=[]), type="text")]
 
+            if isinstance(self.content, Iterator):
+                self.content = [
+                    TextContentBlock(text=Text(value=content["text"], annotations=[]), type="text")
+                    if content["type"] == "text"
+                    else content
+                    for content in self.content
+                ]
+
             # Handle both Pydantic models and dictionaries
             self.content = [
                 content.model_dump() if hasattr(content, "model_dump") else content for content in self.content

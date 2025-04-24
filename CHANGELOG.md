@@ -1,3 +1,10 @@
+## v0.1.17 (2025-04-09)
+
+### Feat
+
+- upgrade coinbase-agentkit dependency to 0.4.0 (#1097)
+- upgrade coinbase-agentkit-langchain dependency to 0.3.0 (#1097)
+
 ## v0.1.16 (2025-03-13)
 
 ### Feat

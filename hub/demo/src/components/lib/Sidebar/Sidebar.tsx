@@ -41,15 +41,17 @@ export const Root = (props: { children: ReactNode }) => {
 
 export const Main = ({
   children,
+  fileDragIsActive,
   showFooter = true,
   style,
 }: {
   children: ReactNode;
+  fileDragIsActive?: boolean;
   showFooter?: boolean;
   style?: CSSProperties;
 }) => {
   return (
-    <div className={s.main}>
+    <div className={s.main} data-file-drag-is-active={fileDragIsActive}>
       <div className={s.mainContent} style={style}>
         {children}
       </div>
