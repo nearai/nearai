@@ -23,10 +23,12 @@ class Provider(Enum):
 
 async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_callback: Callable):
     response_chunks = []
+    deltas_to_commit = []
+    commit_every = 10  # Commit every 5 chunks to reduce DB overhead
 
     if run_id is not None:
         with get_session() as session:
-            for chunk in resp_stream:
+            for idx, chunk in enumerate(resp_stream):
                 c = json.dumps(chunk.model_dump())
                 response_chunks.append(c)
 
@@ -41,19 +43,22 @@ async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_ca
                         thread_id=thread_id,
                         message_id=message_id,
                     )
-                    session.add(delta)
-                    session.commit()
+                    deltas_to_commit.append(delta)
+
+                    # Commit in batches to reduce DB overhead
+                    if len(deltas_to_commit) >= commit_every:
+                        session.add_all(deltas_to_commit)
+                        session.commit()
+                        deltas_to_commit = []
+
+                # Yield immediately and let the event loop process
                 yield f"data: {c}\n\n"
-                await asyncio.sleep(0)  # lets the event loop yield, otherwise it batches yields
-        delta = Delta(
-            event="thread.run.completed",
-            created_at=datetime.now(),
-            run_id=run_id,
-            thread_id=thread_id,
-            message_id=message_id,
-        )
-        session.add(delta)
-        session.commit()
+                await asyncio.sleep(0)
+
+            # Commit any remaining deltas
+            if deltas_to_commit:
+                session.add_all(deltas_to_commit)
+                session.commit()
 
     else:
         for chunk in resp_stream:

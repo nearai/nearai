@@ -43,6 +43,7 @@ export const ThreadMessages = ({
   streamingText,
   threadId,
   welcomeMessage,
+  streamingTextLatestChunk,
 }: Props) => {
   const auth = useAuthStore((store) => store.auth);
   const scrolledToThreadId = useRef('');
@@ -52,11 +53,17 @@ export const ThreadMessages = ({
   const { groupedMessages } = useGroupedThreadMessages(messages, streamingText);
 
   useEffect(() => {
+    if (streamingTextLatestChunk && scroll) {
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+  }, [streamingTextLatestChunk, scroll]);
+
+  useEffect(() => {
     if (!messagesRef.current) return;
     const children = [...messagesRef.current.children];
     if (!children.length) return;
 
-    function scroll() {
+    function scrollScreen() {
       setTimeout(() => {
         countRef.current = children.length;
 
@@ -84,7 +91,7 @@ export const ThreadMessages = ({
     }
 
     if (scroll) {
-      scroll();
+      scrollScreen();
     }
   }, [groupedMessages, threadId, scroll]);
 

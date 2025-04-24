@@ -156,6 +156,7 @@ export const AgentRunner = ({
   const setOpenedFileId = useThreadsStore((store) => store.setOpenedFileId);
   const thread = threadsById[chatMutationThreadId.current || threadId];
   const [stream, setStream] = useState<EventSource | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
 
   const _chatMutation = trpc.hub.chatWithAgent.useMutation();
   const chatMutation = useMutation({
@@ -478,6 +479,8 @@ export const AgentRunner = ({
     if (!threadId) return;
     if (!runId) return;
 
+    setIsStreaming(true);
+
     const eventSource = new EventSource(
       `/api/v1/threads/${threadId}/stream/${runId}`,
     );
@@ -487,11 +490,15 @@ export const AgentRunner = ({
       const latestChunk = data.data.delta.content[0].text.value;
       setStreamingText((prevText) => prevText + latestChunk);
       setStreamingTextLatestChunk(latestChunk);
+
+      // Force React to rerender immediately rather than batching
+      setTimeout(() => {}, 0);
     });
 
     eventSource.onerror = (error) => {
       console.log('SSE error:', error);
       eventSource.close();
+      setIsStreaming(false);
     };
 
     setStream(eventSource);
@@ -505,6 +512,7 @@ export const AgentRunner = ({
     if (!isRunning) {
       if (stream) {
         stream.close();
+        setIsStreaming(false);
         setStream(null);
         setStreamingText('');
         setStreamingTextLatestChunk('');
@@ -878,7 +886,7 @@ export const AgentRunner = ({
                         type="submit"
                         icon={<ArrowRight weight="bold" />}
                         size="small"
-                        loading={isRunning}
+                        loading={isRunning || isStreaming}
                       />
                     </Flex>
                   ) : (

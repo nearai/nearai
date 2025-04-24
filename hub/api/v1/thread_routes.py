@@ -868,7 +868,7 @@ def _run_agent(
 async def monitor_deltas(run_id: str, delete: bool):
     with get_session() as session:
         start_time = datetime.now(timezone.utc)
-        seen_ids: set[int] = set()
+        last_seen_id = 0  # Track by ID instead of storing all IDs in memory
 
         async def handle_delete():
             if delete:
@@ -878,45 +878,44 @@ async def monitor_deltas(run_id: str, delete: bool):
 
         while True:
             try:
-                # Fetch the oldest Delta for this run_id
+                # Fetch events with ID greater than last_seen_id
                 query = (
                     select(Delta)
-                    .where(Delta.run_id == run_id, Delta.id.notin_(list(seen_ids)))  # type: ignore
+                    .where(Delta.run_id == run_id, Delta.id > last_seen_id)
                     .order_by(asc(Delta.id))
-                    .limit(1)
+                    .limit(10)  # Process in small batches
                 )
-                event = session.exec(query).first()
+                events = session.exec(query).all()
 
                 # Set a maximum run time
                 if datetime.now(timezone.utc) - start_time >= timedelta(minutes=STREAMING_RUN_TIMEOUT_MINUTES):
                     logger.error(f"Timeout reached for monitor_deltas on run_id {run_id}")
                     await run_queues[run_id].put("done")
                     await handle_delete()
-
                     return
-                if not event:
-                    await asyncio.sleep(1)  # Wait before retrying
-                    continue
-                seen_ids.add(event.id)
 
-                if event:
+                if not events:
+                    await asyncio.sleep(0.1)  # Shorter sleep when no events
+                    continue
+
+                for event in events:
+                    last_seen_id = max(last_seen_id, event.id)
+
                     if event.content is None:
                         # Signal completion and stop monitoring
                         await run_queues[run_id].put("done")
                         await handle_delete()
                         return
                     else:
-                        # 4. Event: thread.run.step.created
+                        # Send event
                         payload = {"id": event.message_id, "object": event.object, "delta": event.content}
-                        event_step_created = {
+                        event_data = {
                             "event": event.object,
                             "data": payload,
                         }
-                        await run_queues[run_id].put(event_step_created)
+                        await run_queues[run_id].put(event_data)
 
-                    session.delete(event)
-                    session.commit()
-                await asyncio.sleep(0.1)  # Poll every 0.1s
+                await asyncio.sleep(0.05)  # Poll more frequently
             except Exception as e:
                 logger.error(f"Error in monitor_deltas for run_id {run_id}: {e}")
                 await asyncio.sleep(1)  # Wait before retrying
