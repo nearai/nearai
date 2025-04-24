@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+export const apiErrorModel = z.object({
+  detail: z.string(),
+});
+
 export const authorizationModel = z.object({
   account_id: z.string(),
   public_key: z.string(),
@@ -12,6 +16,13 @@ export const authorizationModel = z.object({
 
 export const chatWithAgentModel = z.object({
   agent_id: z.string(),
+  attachments: z
+    .object({
+      file_id: z.string(),
+      tools: z.unknown().array().nullish(),
+    })
+    .array()
+    .nullish(),
   new_message: z.string(),
   thread_id: z.string().nullable().optional(),
   max_iterations: z.number().optional(),
@@ -95,6 +106,11 @@ export const entryDetailsModel = z.intersection(
           html_height: z.enum(['auto']).or(z.string()).default('auto'),
           html_show_latest_messages_below: z.boolean().default(false),
           initial_user_message: z.string(),
+          allow_message_attachments: z.boolean().default(false),
+          allow_message_attachments_accept_mime_types: z
+            .string()
+            .array()
+            .optional(), // https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/accept
           show_streaming_message: z.boolean().default(false),
           welcome: z
             .object({
@@ -114,10 +130,10 @@ export const entryDetailsModel = z.intersection(
       base_id: z.string().or(z.null()),
       icon: z.string(),
       run_id: z.coerce.string(),
-
       timestamp: z.string(),
     })
-    .partial(),
+    .partial()
+    .default({}),
   z.record(z.string(), z.unknown()),
 );
 
@@ -147,11 +163,11 @@ export const entryModel = z
 
 export const entriesModel = z.array(entryModel);
 
-export const fileModel = z.object({
-  filename: z.string(),
-});
-
-export const filesModel = fileModel.array();
+export const entryFilesModel = z
+  .object({
+    filename: z.string(),
+  })
+  .array();
 
 export const evaluationTableRowModel = z.intersection(
   z.object({
@@ -362,7 +378,7 @@ export const threadMessageModel = z.object({
   attachments: z
     .object({
       file_id: z.string(),
-      tools: z.unknown().array(),
+      tools: z.unknown().array().nullish(),
     })
     .array()
     .nullable(),
@@ -396,5 +412,5 @@ export const threadFileModel = z.object({
   purpose: z.string(),
   status: z.string(),
   status_details: z.string(),
-  content: z.string().default(''),
+  content: z.string().default('').or(z.instanceof(Uint8Array)),
 });

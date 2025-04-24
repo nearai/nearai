@@ -75,9 +75,7 @@ This folder contains two files that define your agent:
 
 ### `metadata.json`
 
-This file contains information about your agent including optional configuration for the model it will use, [Llama 3.1 70B Instruct](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) being the default. To use a different model, select one from [app.near.ai/models](https://app.near.ai/models) and update your JSON file defaults. To use whichever model is the latest default model at app.near.ai, remove the model defaults from your metadata.json.
-
-Additionally, you can fine tune and serve a model to fit your specific needs. (See [Fine Tuning](../models/fine_tuning.md))
+This file contains your agent information and configuration settings.
 
 ```json title="metadata.json"
 
@@ -101,6 +99,30 @@ Additionally, you can fine tune and serve a model to fit your specific needs. (S
 }
 
 ```
+
+
+#### AI Model
+
+[Llama 3.1 70B Instruct](https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct) is currently the default model for agents but you can easily change it by selecting one from [app.near.ai/models](https://app.near.ai/models) and updating your JSON file.
+
+You can also fine tune and serve a model to fit your specific needs. (See [Fine Tuning](../models/fine_tuning.md))
+
+#### Python Package Support
+
+There are different frameworks for agents that define which Python packages they support and is configured in your `metadata.json` file. 
+
+```json
+{
+  "details": {
+    "agent": {
+      "framework": "standard"  // or "minimal", "ts", "agentkit", etc.
+    }
+  }
+}
+```
+
+See [Supported Packages](./env/frameworks.md) for more information.
+
 
 ### `agent.py`
 

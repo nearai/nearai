@@ -10,10 +10,10 @@ import { rawFileUrlForEntry } from '@/lib/entries';
 import {
   chatWithAgentModel,
   entryCategory,
+  entryFilesModel,
   entryModel,
   entrySecretModel,
   evaluationsTableModel,
-  filesModel,
   modelsModel,
   noncesModel,
   optionalVersion,
@@ -179,7 +179,7 @@ export const hubRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const files = await fetchWithZod(
-        filesModel,
+        entryFilesModel,
         `${env.ROUTER_URL}/registry/list_files`,
         {
           method: 'POST',
@@ -202,6 +202,14 @@ export const hubRouter = createTRPCRouter({
 
       return paths;
     }),
+
+  detailsForFileUpload: protectedProcedure.query(({ ctx }) => {
+    // This endpoint gives the frontend the details it needs to upload a file to the Hub API directly
+    return {
+      authorization: ctx.authorization,
+      routerUrl: env.ROUTER_URL,
+    };
+  }),
 
   models: publicProcedure.query(async () => {
     const url = `${env.ROUTER_URL}/models`;
@@ -503,6 +511,7 @@ export const hubRouter = createTRPCRouter({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            attachments: input.attachments,
             content: input.new_message,
             role: 'user',
           }),

@@ -38,7 +38,11 @@ Before starting, ensure you have the following installed:
 
 3. Start the Docker container and mount all your local agents to the agent registry:
     ```sh
+    # Run with datadog support(Must have the datadog environment variables)
     docker run --platform linux/amd64 -p 9009:8080 -v ~/.nearai/registry:/root/.nearai/registry nearai-runner:test
+
+    # Run without datadog support
+    docker run --platform linux/amd64 -p 9009:8080 -v ~/.nearai/registry:/root/.nearai/registry -t nearai-runner:test nearai/aws_runner/service.handler
     ```
     This will start the runner on port `9009`.
 
