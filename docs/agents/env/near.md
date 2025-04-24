@@ -144,7 +144,9 @@ await near.call(
 
 **Example**:
 ```python
-result = await env.near.call(
+near = env.set_near("user.near", "ed25519:3ABCD...XYZ")
+
+result = await near.call(
     contract_id="wrap.near",
     method_name="ft_transfer",
     args={
