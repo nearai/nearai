@@ -17,7 +17,7 @@ import { stringToPotentialJson } from '@/utils/string';
 
 type Thread = z.infer<typeof threadModel> & {
   run?: z.infer<typeof threadRunModel>;
-  filesByName: Record<string, z.infer<typeof threadFileModel>>;
+  filesById: Record<string, z.infer<typeof threadFileModel>>;
   messagesById: Record<string, z.infer<typeof threadMessageModel>>;
   latestMessageId?: string;
   latestRunId?: string;
@@ -30,6 +30,7 @@ type ThreadsStore = {
     AgentChatMutationInput,
     unknown
   >;
+  openedFileId: string | null;
   optimisticMessages: {
     index: number;
     data: z.infer<typeof threadMessageModel>;
@@ -41,6 +42,7 @@ type ThreadsStore = {
   ) => void;
   clearOptimisticMessages: () => void;
   setAddMessage: (addMessage: ThreadsStore['addMessage']) => void;
+  setOpenedFileId: (openedFileId: string | null) => void;
   setThread: (
     thread: Partial<Omit<AppRouterOutputs['hub']['thread'], 'id'>> & {
       id: string;
@@ -50,6 +52,7 @@ type ThreadsStore = {
 
 const store: StateCreator<ThreadsStore> = (set, get) => ({
   addMessage: undefined,
+  openedFileId: null,
   optimisticMessages: [],
   threadsById: {},
 
@@ -71,7 +74,7 @@ const store: StateCreator<ThreadsStore> = (set, get) => ({
       optimisticMessages.push({
         index: i + messages.length,
         data: {
-          attachments: [],
+          attachments: input.attachments || [],
           completed_at: null,
           content: [
             {
@@ -101,6 +104,8 @@ const store: StateCreator<ThreadsStore> = (set, get) => ({
 
   setAddMessage: (addMessage) => set({ addMessage }),
 
+  setOpenedFileId: (openedFileId) => set({ openedFileId }),
+
   setThread: ({ messages, files, run, ...data }) => {
     const threadsById = {
       ...get().threadsById,
@@ -114,14 +119,14 @@ const store: StateCreator<ThreadsStore> = (set, get) => ({
       object: '',
       ...data,
       run: run ?? existingThread?.run,
-      filesByName: existingThread?.filesByName ?? {},
+      filesById: existingThread?.filesById ?? {},
       messagesById: existingThread?.messagesById ?? {},
     };
     messages?.forEach((message) => {
       updatedThread.messagesById[message.id] = message;
     });
     files?.forEach((file) => {
-      updatedThread.filesByName[file.filename] = file;
+      updatedThread.filesById[file.id] = file;
     });
 
     const allMessages = Object.values(updatedThread.messagesById);

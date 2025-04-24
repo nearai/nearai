@@ -44,7 +44,7 @@ from hub.api.v1.thread_routes import threads_router
 from hub.api.v1.vector_stores import vector_stores_router
 
 # No lifespan function - FastAPI will use default behavior
-app = FastAPI()
+app = FastAPI(docs_url="/docs/hub/interactive", redoc_url="/docs/hub/reference")
 
 origins = ["*"]
 
