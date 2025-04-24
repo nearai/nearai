@@ -102,6 +102,12 @@ See [the complete NEAR AI OpenAPI specification](https://docs.near.ai/api/).
 
 NEAR AI provides a powerful Assistant API that you can integrate into your applications by following these steps:
 
+1. [Authentication: Login to NEAR Account](#1-authentication-login-to-near-account)
+2. [Create a Thread](#2-create-a-thread)
+3. [Add Messages to the Thread](#3-add-messages-to-the-thread)
+4. [Run the Assistant on the Thread](#4-run-the-assistant-on-the-thread)
+5. [Process Assistant Responses](#5-process-assistant-responses)
+
 #### 1. Authentication: Login to NEAR Account
 
 === "JavaScript"
