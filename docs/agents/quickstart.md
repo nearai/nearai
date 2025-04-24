@@ -123,6 +123,25 @@ There are different frameworks for agents that define which Python packages they
 
 See [Supported Packages](./env/frameworks.md) for more information.
 
+#### Message Attachements
+
+Agents can accept attached files during an interactive session by setting `allow_message_attachments` to `true`. 
+You can also specify what types of files your agent will accept.
+
+```json
+{
+  "details": {
+    "agent": {
+      "allow_message_attachments": true,
+      "allow_message_attachments_accept_mime_types": [
+        "image/*",
+        "application/pdf"
+      ]
+    }
+  }
+}
+```
+
 
 ### `agent.py`
 
