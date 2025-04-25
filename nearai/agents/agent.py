@@ -205,16 +205,6 @@ class Agent(object):
                 print("EXP runner dir:", ts_root)
                 print("Agents folder content:", os.listdir(dest_agents_dir))
 
-            npm_cmd = [
-                "npm",
-                "--loglevel=error",
-                "--prefix",
-                ts_root,
-                "run",
-                "start",
-                "agents/agent.ts",
-                json_params,
-            ]
             cwd = ts_root
         else:
             # ---------------------------------------------------------
@@ -226,17 +216,19 @@ class Agent(object):
                 print("LEGACY runner dir:", ts_root)
                 print("Agents folder content:", os.listdir(ts_root))
 
-            npm_cmd = [
-                "npm",
-                "--loglevel=error",
-                "--prefix",
-                ts_root,
-                "run",
-                "start",
-                "agents/agent.ts",
-                json_params,
-            ]
             cwd = ts_root
+
+        # prepare command
+        npm_cmd = [
+            "npm",
+            "--loglevel=error",
+            "--prefix",
+            ts_root,
+            "run",
+            "start",
+            "agents/agent.ts",
+            json_params,
+        ]
 
         # shared environment setup
         env = os.environ.copy()
