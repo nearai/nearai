@@ -71,6 +71,8 @@ class Agent(object):
         self.welcome_title: Optional[str] = None
         self.welcome_description: Optional[str] = None
 
+        self.ts_runner_variant = "legacy"
+
         self.set_agent_metadata(metadata)
         self.agent_files = agent_files
         self.original_cwd = os.getcwd()
@@ -151,6 +153,11 @@ class Agent(object):
                 self.model_max_tokens = defaults.get("model_max_tokens", self.model_max_tokens)
                 self.max_iterations = defaults.get("max_iterations", self.max_iterations)
 
+            self.ts_runner_variant = agent_metadata.get("runner", "legacy")
+            if self.ts_runner_variant not in ("legacy", "exp"):
+                print(f"[WARN] unknown runner '{self.ts_runner_variant}', defaulting to 'legacy'")
+                self.ts_runner_variant = "legacy"
+
         if not self.version or not self.name:
             raise ValueError("Both 'version' and 'name' must be non-empty in metadata.")
 
@@ -182,95 +189,82 @@ class Agent(object):
             return str(e), traceback.format_exc()
 
     def run_ts_agent(self, agent_filename, env_vars, json_params):
-        """Launch typescript agent."""
-        print(f"Running typescript agent {agent_filename} from {self.ts_runner_dir}")
+        """Launch the appropriate ts_runner variant."""
+        if self.ts_runner_variant == "exp":
+            # ---------------------------------------------------------
+            # EXPERIMENTAL RUNNER
+            # ---------------------------------------------------------
+            ts_root = "/var/task/ts_runner_exp"
 
-        # Configure npm to use tmp directories
+            # copy user's agent.ts into runner structure expected by exp build
+            dest_agents_dir = os.path.join(ts_root, "agents")
+            os.makedirs(dest_agents_dir, exist_ok=True)
+            shutil.copyfile(agent_filename, os.path.join(dest_agents_dir, "agent.ts"))
+
+            if env_vars.get("DEBUG"):
+                print("EXP runner dir:", ts_root)
+                print("Agents folder content:", os.listdir(dest_agents_dir))
+
+            npm_cmd = [
+                "npm",
+                "--loglevel=error",
+                "--prefix",
+                ts_root,
+                "run",
+                "start",
+                "agents/agent.ts",
+                json_params,
+            ]
+            cwd = ts_root
+        else:
+            # ---------------------------------------------------------
+            # LEGACY RUNNER
+            # ---------------------------------------------------------
+            ts_root = self.ts_runner_dir
+
+            if env_vars.get("DEBUG"):
+                print("LEGACY runner dir:", ts_root)
+                print("Agents folder content:", os.listdir(ts_root))
+
+            npm_cmd = [
+                "npm",
+                "--loglevel=error",
+                "--prefix",
+                ts_root,
+                "run",
+                "start",
+                "agents/agent.ts",
+                json_params,
+            ]
+            cwd = ts_root
+
+        # shared environment setup
         env = os.environ.copy()
         env.update(
             {
                 "NPM_CONFIG_CACHE": "/tmp/npm_cache",
                 "NPM_CONFIG_PREFIX": "/tmp/npm_prefix",
-                "HOME": "/tmp",  # Redirect npm home
-                "NPM_CONFIG_LOGLEVEL": "error",  # Suppress warnings, show only errors
+                "HOME": "/tmp",
+                "NPM_CONFIG_LOGLEVEL": "error",
             }
         )
-
-        # Ensure directory structure exists
         os.makedirs("/tmp/npm_cache", exist_ok=True)
         os.makedirs("/tmp/npm_prefix", exist_ok=True)
 
-        # read file /tmp/build-info.txt if exists
-        if os.path.exists("/var/task/build-info.txt"):
-            with open("/var/task/build-info.txt", "r") as file:
-                print("BUILD ID: ", file.read())
-
-        # @TODO - Copy the user’s agent from self.temp_dir/agent.ts into /var/task/ts_runner_exp/agents/agent.ts
-        # so we keep the exact old structure where "agents/agent.ts" is the main entry file
-        user_agent_path = agent_filename  # e.g. /tmp/agent_xxxx/agent.ts
-        ts_runner_exp_folder = "/var/task/ts_runner_exp"
-        agents_folder = os.path.join(ts_runner_exp_folder, "agents")
-        if not os.path.exists(agents_folder):
-            os.makedirs(agents_folder, exist_ok=True)
-
-        # @TODO - Copy the user’s agent code to the agents folder
-        # The user’s agent code -> /var/task/ts_runner_exp/agents/agent.ts
-        dest_agent_path = os.path.join(agents_folder, "agent.ts")
-        shutil.copyfile(user_agent_path, dest_agent_path)
-
-        if env_vars.get("DEBUG"):
-            # print("Directory structure:", os.listdir("/tmp/ts_runner"))
-            # print("Check package.json:", os.path.exists(os.path.join(self.ts_runner_dir, "package.json")))
-            # print("Symlink exists:", os.path.exists("/tmp/ts_runner/node_modules/.bin/tsc"))
-            # print("Build files exist:", os.path.exists("/tmp/ts_runner/build/sdk/main.js"))
-            print("Directory structure in /var/task/ts_runner_exp:", os.listdir(ts_runner_exp_folder))
-            print("Check package.json:", os.path.exists(os.path.join(ts_runner_exp_folder, "package.json")))
-            print("Agents folder content:", os.listdir(agents_folder))
-
-        # Launching a subprocess to run an npm script with specific configurations
-        # ts_process = subprocess.Popen(
-        #     [
-        #         "npm",  # Command to run Node Package Manager
-        #         "--loglevel=error",  # Suppress npm warnings and info logs, only show errors
-        #         "--prefix",
-        #         self.ts_runner_dir,  # Specifies the directory where npm should look for package.json
-        #         "run",
-        #         "start",  # Runs the "start" script defined in package.json, this launches the agent
-        #         "agents/agent.ts",
-        #         json_params,  # Arguments passed to the "start" script to configure the agent
-        #     ],
-        #     stdout=subprocess.PIPE,  # Captures standard output from the process
-        #     stderr=subprocess.PIPE,  # Captures standard error
-        #     cwd=self.ts_runner_dir,  # Sets the current working directory for the process
-        #     env=env_vars,  # Provides custom environment variables to the subprocess
-        # )
-
-        ts_process = subprocess.Popen(
-            [
-                "npm",
-                "--loglevel=error",
-                "--prefix",
-                ts_runner_exp_folder,
-                "run",
-                "start",
-                "agents/agent.ts",
-                json_params
-            ],
-            stdout=subprocess.PIPE,  # Captures standard output from the process
-            stderr=subprocess.PIPE,  # Captures standard error
-            cwd=ts_runner_exp_folder,  # Sets the current working directory for the process
-            env=env_vars,  # Provides custom environment variables to the subprocess
+        # spawn
+        proc = subprocess.Popen(
+            npm_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=cwd,
+            env=env_vars,
         )
-
-        stdout, stderr = ts_process.communicate()
-
-        stdout = stdout.decode().strip()
-        if stdout and env_vars.get("DEBUG"):
-            print(f"TS AGENT STDOUT: {stdout}")
-
-        stderr = stderr.decode().strip()
+        stdout, stderr = proc.communicate()
+        if env_vars.get("DEBUG") and stdout:
+            print("TS AGENT STDOUT:", stdout.decode().strip())
         if stderr:
-            print(f"TS AGENT STDERR: {stderr}")
+            print("TS AGENT STDERR:", stderr.decode().strip())
+
 
     def run(self, env: Any, task: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
         """Run the agent code. Returns error message and traceback message."""
@@ -298,14 +292,15 @@ class Agent(object):
                 self.agent_language = "ts"
 
                 # copy files from nearai/ts_runner_sdk to self.temp_dir
-                # ts_runner_sdk_dir = "/tmp/ts_runner"
-                # ts_runner_agent_dir = os.path.join(ts_runner_sdk_dir, "agents")
-                # ts_runner_actual_path = "/var/task/ts_runner"
+                # pick correct TS runner (legacy vs experimental)
+                if self.ts_runner_variant == "exp":
+                    ts_runner_sdk_dir  = "/tmp/ts_runner_exp"
+                    ts_runner_actual_path = "/var/task/ts_runner_exp"
+                else:
+                    ts_runner_sdk_dir  = "/tmp/ts_runner"
+                    ts_runner_actual_path = "/var/task/ts_runner"
 
-                # @TODO - Copy files from experimental ts_runner to self.temp_dir
-                ts_runner_sdk_dir = "/tmp/ts_runner_exp"
                 ts_runner_agent_dir = os.path.join(ts_runner_sdk_dir, "agents")
-                ts_runner_actual_path = "/var/task/ts_runner_exp"
 
                 shutil.copytree(ts_runner_actual_path, ts_runner_sdk_dir, symlinks=True, dirs_exist_ok=True)
 

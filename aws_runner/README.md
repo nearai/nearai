@@ -15,6 +15,8 @@ Minimal framework `docker build -f aws_runner/py_runner/Dockerfile --platform li
 
 Typescript framework `docker build -f aws_runner/ts_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-ts -t nearai-runner:test .`
 
+Experimental Typescript framework `docker build -f aws_runner/ts_runner_exp/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-ts -t nearai-runner:test .`
+
 LangGraph framework `docker build -f aws_runner/py_runner/Dockerfile --platform linux/amd64 --build-arg FRAMEWORK=-langgraph-1-4 -t nearai-runner:test .`
 
 Then `docker run --platform linux/amd64 -p 9001:8080 nearai-runner:test` will start the server on port 9000.

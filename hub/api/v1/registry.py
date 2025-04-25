@@ -203,12 +203,11 @@ async def upload_file(
     entry = get(entry_location)
     key = entry.get_key(path)
 
-    # @TODO - Had to disable to get `nearai registry upload` (and API endpoint) to work in local development
-    # if check_file_exists(key):
-    #     raise HTTPException(status_code=400, detail=f"File {key} already exists.")
-    #
-    # assert isinstance(S3_BUCKET, str)
-    # s3.upload_fileobj(file.file, S3_BUCKET, key)
+    if check_file_exists(key):
+        raise HTTPException(status_code=400, detail=f"File {key} already exists.")
+
+    assert isinstance(S3_BUCKET, str)
+    s3.upload_fileobj(file.file, S3_BUCKET, key)
 
     return {"status": "File uploaded", "path": key}
 
