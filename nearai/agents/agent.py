@@ -185,10 +185,6 @@ class Agent(object):
 
     def run_ts_agent(self, agent_filename, env_vars, json_params):
         """Launch the appropriate ts_runner variant."""
-
-        # print all values on self
-        print("Agent values:", self.__dict__)
-
         if self.agent_framework == "ts_jutsu":
             # ---------------------------------------------------------
             # EXPERIMENTAL RUNNER
