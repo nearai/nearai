@@ -71,7 +71,7 @@ class Agent(object):
         self.welcome_title: Optional[str] = None
         self.welcome_description: Optional[str] = None
 
-        self.ts_runner_variant = "legacy"
+        self.framework = metadata.get("framework", "python")
 
         self.set_agent_metadata(metadata)
         self.agent_files = agent_files
@@ -153,10 +153,10 @@ class Agent(object):
                 self.model_max_tokens = defaults.get("model_max_tokens", self.model_max_tokens)
                 self.max_iterations = defaults.get("max_iterations", self.max_iterations)
 
-            self.ts_runner_variant = agent_metadata.get("runner", "legacy")
-            if self.ts_runner_variant not in ("legacy", "exp"):
-                print(f"[WARN] unknown runner '{self.ts_runner_variant}', defaulting to 'legacy'")
-                self.ts_runner_variant = "legacy"
+            self.framework = agent_metadata.get("framework", "python")
+            if self.framework not in ("python", "ts_jutsu"):
+                print(f"[WARN] unknown framework '{self.framework}', defaulting to 'python'")
+                self.framework = "python"
 
         if not self.version or not self.name:
             raise ValueError("Both 'version' and 'name' must be non-empty in metadata.")
@@ -190,7 +190,7 @@ class Agent(object):
 
     def run_ts_agent(self, agent_filename, env_vars, json_params):
         """Launch the appropriate ts_runner variant."""
-        if self.ts_runner_variant == "exp":
+        if self.framework == "ts_jutsu":
             # ---------------------------------------------------------
             # EXPERIMENTAL RUNNER
             # ---------------------------------------------------------
@@ -285,7 +285,7 @@ class Agent(object):
 
                 # copy files from nearai/ts_runner_sdk to self.temp_dir
                 # pick correct TS runner (legacy vs experimental)
-                if self.ts_runner_variant == "exp":
+                if self.framework == "ts_jutsu":
                     ts_runner_sdk_dir  = "/tmp/ts_runner_exp"
                     ts_runner_actual_path = "/var/task/ts_runner_exp"
                 else:
