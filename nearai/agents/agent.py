@@ -71,8 +71,6 @@ class Agent(object):
         self.welcome_title: Optional[str] = None
         self.welcome_description: Optional[str] = None
 
-        self.framework = metadata.get("framework", "python")
-
         self.set_agent_metadata(metadata)
         self.agent_files = agent_files
         self.original_cwd = os.getcwd()
@@ -140,10 +138,12 @@ class Agent(object):
         details = metadata.get("details", {})
         agent = details.get("agent", {})
         welcome = agent.get("welcome", {})
+        framework = agent.get("framework", "")
 
         self.env_vars = details.get("env_vars", {})
         self.welcome_title = welcome.get("title")
         self.welcome_description = welcome.get("description")
+        self.agent_framework = framework
 
         if agent_metadata := details.get("agent", None):
             if defaults := agent_metadata.get("defaults", None):
@@ -152,11 +152,6 @@ class Agent(object):
                 self.model_temperature = defaults.get("model_temperature", self.model_temperature)
                 self.model_max_tokens = defaults.get("model_max_tokens", self.model_max_tokens)
                 self.max_iterations = defaults.get("max_iterations", self.max_iterations)
-
-            self.framework = agent_metadata.get("framework", "python")
-            if self.framework not in ("python", "ts_jutsu"):
-                print(f"[WARN] unknown framework '{self.framework}', defaulting to 'python'")
-                self.framework = "python"
 
         if not self.version or not self.name:
             raise ValueError("Both 'version' and 'name' must be non-empty in metadata.")
@@ -190,7 +185,11 @@ class Agent(object):
 
     def run_ts_agent(self, agent_filename, env_vars, json_params):
         """Launch the appropriate ts_runner variant."""
-        if self.framework == "ts_jutsu":
+
+        # print all values on self
+        print("Agent values:", self.__dict__)
+
+        if self.agent_framework == "ts_jutsu":
             # ---------------------------------------------------------
             # EXPERIMENTAL RUNNER
             # ---------------------------------------------------------
@@ -285,7 +284,7 @@ class Agent(object):
 
                 # copy files from nearai/ts_runner_sdk to self.temp_dir
                 # pick correct TS runner (legacy vs experimental)
-                if self.framework == "ts_jutsu":
+                if self.agent_framework == "ts_jutsu":
                     ts_runner_sdk_dir  = "/tmp/ts_runner_exp"
                     ts_runner_actual_path = "/var/task/ts_runner_exp"
                 else:
