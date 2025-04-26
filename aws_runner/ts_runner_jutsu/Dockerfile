@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # NearAI – Experimental TypeScript Runner (custom Lambda runtime style)
 # Mirrors the structure of aws_runner/ts_runner but swaps in the new
-# ts_runner_exp code.  No changes to deploy.sh or docker-compose are needed.
+# ts_runner_jutsu code.  No changes to deploy.sh or docker-compose are needed.
 # -----------------------------------------------------------------------------
 
 FROM public.ecr.aws/lambda/provided:al2023.2025.01.24.10
@@ -70,8 +70,8 @@ COPY nearai ${LAMBDA_TASK_ROOT}/nearai
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. Copy & build the experimental TS runner
 # ─────────────────────────────────────────────────────────────────────────────
-COPY ts_runner_exp ${LAMBDA_TASK_ROOT}/ts_runner_exp
-RUN cd ${LAMBDA_TASK_ROOT}/ts_runner_exp && \
+COPY ts_runner_jutsu ${LAMBDA_TASK_ROOT}/ts_runner_jutsu
+RUN cd ${LAMBDA_TASK_ROOT}/ts_runner_jutsu && \
     npm install && \
     npm config set loglevel=error
 

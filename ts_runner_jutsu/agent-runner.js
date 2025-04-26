@@ -25,7 +25,7 @@ const __dirname = path.dirname(__filename);
         // Construct the Agent instance
         const agent = new Agent(agentConfig);
 
-        // If your agent code has a default export that you want to call right away:
+        // If agent code has a default export that you want to call right away:
         if (agentModule && typeof agentModule.default === 'function') {
             console.log('Calling agent’s default export...');
             const result = await agentModule.default(agent, agentConfig);

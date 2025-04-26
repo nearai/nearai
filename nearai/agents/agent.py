@@ -189,7 +189,7 @@ class Agent(object):
             # ---------------------------------------------------------
             # EXPERIMENTAL RUNNER
             # ---------------------------------------------------------
-            ts_root = "/var/task/ts_runner_exp"
+            ts_root = "/var/task/ts_runner_jutsu"
 
             # copy user's agent.ts into runner structure expected by exp build
             dest_agents_dir = os.path.join(ts_root, "agents")
@@ -281,8 +281,8 @@ class Agent(object):
                 # copy files from nearai/ts_runner_sdk to self.temp_dir
                 # pick correct TS runner (legacy vs experimental)
                 if self.agent_framework == "ts_jutsu":
-                    ts_runner_sdk_dir  = "/tmp/ts_runner_exp"
-                    ts_runner_actual_path = "/var/task/ts_runner_exp"
+                    ts_runner_sdk_dir  = "/tmp/ts_runner_jutsu"
+                    ts_runner_actual_path = "/var/task/ts_runner_jutsu"
                 else:
                     ts_runner_sdk_dir  = "/tmp/ts_runner"
                     ts_runner_actual_path = "/var/task/ts_runner"
