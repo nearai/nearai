@@ -1141,7 +1141,11 @@ class Environment(object):
             kwargs.setdefault("extra_headers", {}).update(
                 {
                     k: v
-                    for k, v in {"run_id": self._run_id, "thread_id": thread_id, "message_id": message_id}.items()
+                    for k, v in {
+                        "run_id": self._run_id,
+                        "thread_id": thread_id if thread_id else self._thread_id,
+                        "message_id": message_id,
+                    }.items()
                     if v is not None
                 }
             )
