@@ -41,6 +41,13 @@ TWEET_FIELDS = [
     "withheld",
 ]
 
+USER_FIELDS = [
+    "id",
+    "name",
+    "username",
+    "profile_image_url",
+]
+
 
 async def get_latest_mentions(user_name, timestamp, max_results=10, limit_per_run=TWEET_LIMIT_PER_RUN):
     try:
@@ -51,11 +58,21 @@ async def get_latest_mentions(user_name, timestamp, max_results=10, limit_per_ru
             start_time = datetime.utcfromtimestamp(timestamp).isoformat() + "Z"
 
         tweets = []
+        tweet_authors = {}
+
         response = client.search_recent_tweets(
-            query=f"@{user_name}", tweet_fields=TWEET_FIELDS, max_results=max_results, start_time=start_time
+            query=f"@{user_name}",
+            tweet_fields=TWEET_FIELDS,
+            expansions=["author_id"],
+            user_fields=USER_FIELDS,
+            max_results=max_results,
+            start_time=start_time,
         )
 
         if response.data:
+            if "users" in response.includes:
+                tweet_authors.update({user.id: user for user in response.includes["users"]})
+
             tweets.extend(response.data)
 
         while "next_token" in response.meta:
@@ -66,11 +83,16 @@ async def get_latest_mentions(user_name, timestamp, max_results=10, limit_per_ru
                 response = client.search_recent_tweets(
                     query=f"@{user_name}",
                     tweet_fields=TWEET_FIELDS,
+                    expansions=["author_id"],
+                    user_fields=USER_FIELDS,
                     max_results=max_results,
                     start_time=start_time,
                     next_token=response.meta["next_token"],
                 )
                 if response.data:
+                    if "users" in response.includes:
+                        tweet_authors.update({user.id: user for user in response.includes["users"]})
+
                     tweets.extend(response.data)
                 else:
                     break
@@ -78,11 +100,10 @@ async def get_latest_mentions(user_name, timestamp, max_results=10, limit_per_ru
                 logger.error(f"Error fetching tweets during pagination: {e}")
                 break
 
-        data = tweets
-        if data:
-            return data
+        if tweets:
+            return tweets, tweet_authors
         else:
-            return None
+            return None, None
     except tweepy.TooManyRequests as e:
         print("Rate limit exceeded. Headers:")
         for header in e.response.headers:
@@ -94,9 +115,10 @@ async def get_latest_mentions(user_name, timestamp, max_results=10, limit_per_ru
                     )
                 else:
                     print(f"{header}: {e.response.headers[header]}")
+        return None, None
     except Exception as e:
         logger.error(f"Error fetching tweets: {e}")
-        return None
+        return None, None
 
 
 # Example usage
