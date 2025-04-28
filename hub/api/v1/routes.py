@@ -233,7 +233,7 @@ def chat_completions(
         print(f"Signature generation failed: {e}")
 
     if request.stream:
-
+        print(f"Streaming response: run_id: {run_id} thread_id: {thread_id} message_id: {message_id}")
         def add_usage_callback(response_text):
             logger.info("Stream done, adding usage to database")
             db.add_user_usage(

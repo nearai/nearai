@@ -43,6 +43,7 @@ async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_ca
                         thread_id=thread_id,
                         message_id=message_id,
                     )
+                    print("have delta")
                     deltas_to_commit.append(delta)
 
                     # Commit in batches to reduce DB overhead
