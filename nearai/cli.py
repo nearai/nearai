@@ -189,7 +189,7 @@ class RegistryCli:
 
         Args:
           local_path : str
-            Path to the directory where the metadata template will be created (default: current directory)
+            Path to the directory where the metadata template will be created
           category : str
             Category of the item (e.g., 'agent', 'model', 'dataset', 'evaluation')
           description : str
@@ -273,13 +273,12 @@ class RegistryCli:
             Filter items by tags (comma-separated)
           total (int) :
             Maximum number of items to show
-            (default: 32)
           offset (int) :
-            Offset for pagination (default: 0)
+            Offset for pagination
           show_all (bool) :
-            Show all versions of items (default: False)
+            Show all versions of items
           show_latest_version (bool) :
-            Show only the latest version of each item (default: True)
+            Show only the latest version of each item
           star (str) :
             Show items starred by a specific user
 
@@ -287,7 +286,7 @@ class RegistryCli:
           # List all items in the registry
           nearai registry list
 
-          # List agents in the registry (default: 32 items)
+          # List agents in the registry
           nearai registry list --category agent
 
           # List items with specific tags
@@ -352,7 +351,7 @@ class RegistryCli:
 
         Args:
           local_path (str) :
-            Path to the directory containing the item to update (default: current directory)
+            Path to the directory containing the item to update
 
         Examples:
           # Update metadata for the item in the current directory
@@ -396,7 +395,7 @@ class RegistryCli:
 
         Args:
           dry_run (bool) :
-            Perform a dry run without actually uploading (default: True)
+            Perform a dry run without actually uploading
 
         Examples:
           # Perform a dry run to see what would be uploaded
@@ -462,7 +461,7 @@ class RegistryCli:
 
         Args:
           local_path (str) :
-            Path to the agent directory (default: current directory)
+            Path to the agent directory
           bump (bool) :
             Automatically increment patch version if it already exists
           minor_bump (bool) :
@@ -644,7 +643,7 @@ class RegistryCli:
           entry_location (str) :
             Entry location of the item to download (format: namespace/name/version)
           force (bool) :
-            Force download even if the item already exists locally (default: False)
+            Force download even if the item already exists locally
 
         Examples:
           # Download a specific registry item
@@ -680,7 +679,7 @@ class ConfigCli:
       value* (str) :
         The value to assign to the configuration key
       --local (bool) :
-        Store the configuration value in the local config file (default: global)
+        Store the configuration value in the local config file
 
     Examples:
       # View all configuration values
@@ -734,17 +733,17 @@ class BenchmarkCli:
       solver_strategy* (str) :
         Solver strategy to use
       --max-concurrent (int) :
-        Number of concurrent tasks to run (default: 2)
+        Number of concurrent tasks to run
       --force (bool) :
         Force re-run even if cached results exist
       --subset (str) :
         Subset of the dataset to run on
       --check-compatibility (bool) :
-        Check if solver is compatible with dataset (default: True)
+        Check if solver is compatible with dataset
       --record (bool) :
         Record the benchmark results
       --num-inference-retries (int) :
-        Number of retries for inference (default: 10)
+        Number of retries for inference
       --namespace (str) :
         Filter benchmarks by namespace
       --benchmark (str) :
@@ -754,9 +753,9 @@ class BenchmarkCli:
       --args (str) :
         Filter benchmarks by solver arguments
       --total (int) :
-        Total number of results to show (default: 32)
+        Total number of results to show
       --offset (int) :
-        Offset for pagination (default: 0)
+        Offset for pagination
 
     Examples:
       # Run a benchmark on a dataset with a solver strategy
@@ -992,9 +991,9 @@ class EvaluationCli:
       --all-metrics (bool) :
         Show all metrics in the table
       --num-columns (int) :
-        Maximum number of columns to display (default: 6)
+        Maximum number of columns to display
       --metric-name-max-length (int) :
-        Maximum length for metric names in display (default: 30)
+        Maximum length for metric names in display
       --status (bool) :
         Filter solutions by status (true/false)
       --verbose (bool) :
@@ -1035,9 +1034,9 @@ class EvaluationCli:
           all_metrics (bool) :
             Show all available metrics instead of just the default subset. Default is False.
           num_columns (int) :
-            Maximum number of columns to display in the table. (Default is 6.)
+            Maximum number of columns to display in the table.
           metric_name_max_length (int) :
-            Maximum length for metric names in the display. (Default is 30.)
+            Maximum length for metric names in the display.
 
         Examples:
             # Display evaluation table with default settings
@@ -1628,13 +1627,13 @@ class VllmCli:
       --model (str) :
         Path to the model or model name from Hugging Face
       --host (str) :
-        Host to bind the server to (default: localhost)
+        Host to bind the server to
       --port (int) :
-        Port to bind the server to (default: 8000)
+        Port to bind the server to
       --tensor-parallel-size (int) :
-        Number of GPUs to use for tensor parallelism (default: 1)
+        Number of GPUs to use for tensor parallelism
       --gpu-memory-utilization (float) :
-        Fraction of GPU memory to use (default: 0.9)
+        Fraction of GPU memory to use
 
     Examples:
       # Run VLLM server with default settings
@@ -1661,13 +1660,13 @@ class VllmCli:
             model (str):
               Path to the model or model name from Hugging Face
             host (str):
-              Host to bind the server to (default: localhost)
+              Host to bind the server to
             port (int):
-              Port to bind the server to (default: 8000)
+              Port to bind the server to
             tensor_parallel_size (int):
-              Number of GPUs to use for tensor parallelism (default: 1)
+              Number of GPUs to use for tensor parallelism
             gpu_memory_utilization (float):
-              Fraction of GPU memory to use (default: 0.9)
+              Fraction of GPU memory to use
 
         Examples:
             # Run VLLM server with default settings
@@ -1713,7 +1712,7 @@ class HubCLI:
       --query (str) :
         User's query to send to the model
       --model (str) :
-        Name of the model to use (default depends on configuration)
+        Name of the model to use
       --provider (str) :
         Name of the provider (e.g., "fireworks", "hyperbolic")
       --endpoint (str) :
@@ -1746,7 +1745,7 @@ class HubCLI:
                 query (str):
                   User's query to send to the model
                 model (str):
-                  Name of the model to use (default depends on configuration)
+                  Name of the model to use
                 provider (str):
                   Name of the provider (e.g., "fireworks", "hyperbolic")
                 endpoint (str):
@@ -1819,7 +1818,7 @@ class LoginCLI:
       --remote (bool) :
         Enable remote login to sign message with NEAR account on another machine
       --auth_url (str) :
-        URL to the authentication portal (default: https://auth.near.ai)
+        URL to the authentication portal
       --accountId (str) :
         NEAR account ID in .near-credentials folder to sign message
       --privateKey (str) :

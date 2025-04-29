@@ -201,6 +201,9 @@ def format_help(obj, method_name: str = "__class__") -> None:
 
     """
     console = Console()
+    # Store object and method name for parameter default value lookup
+    console._obj = obj
+    console._method_name = method_name
 
     # Special case for CLI main menu
     if method_name == "__class__" and obj.__class__.__name__ == "CLI":
@@ -348,8 +351,17 @@ def _display_param_section(
     # Create table for parameters
     table = Table(title=section_title, show_header=True, header_style="bold magenta")
     table.add_column("Parameter", style="yellow")
-    table.add_column("Type", style="cyan")
+    table.add_column("Type", style="cyan", justify="center")
     table.add_column("Description", style="white")
+    table.add_column("Default", style="green", justify="center")
+
+    # Get the method object for default value lookup
+    method = None
+    if hasattr(console, "_obj") and hasattr(console, "_method_name"):
+        obj = console._obj
+        method_name = console._method_name
+        if method_name != "__class__":
+            method = getattr(obj, method_name, None)
 
     i = 0
     while i < len(section_lines):
@@ -370,7 +382,18 @@ def _display_param_section(
             description, next_index = _parse_param_description(section_lines, i, param_pattern)
             i = next_index  # Update index based on description parsing
 
-            table.add_row(param_name, param_type, description)
+            # Get default value from function signature if available
+            if method:
+                try:
+                    sig = inspect.signature(method)
+                    if param_name in sig.parameters:
+                        param = sig.parameters[param_name]
+                        if param.default != inspect.Parameter.empty:
+                            default_value = str(param.default)
+                except (ValueError, TypeError):
+                    pass
+
+            table.add_row(param_name, param_type, description, default_value)
         else:
             i += 1
 
