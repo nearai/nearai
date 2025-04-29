@@ -396,7 +396,7 @@ class RegistryCli:
 
         Args:
           dry_run (bool) :
-            Perform a dry run without actually uploading (default: True)
+            Perform a dry run without actually uploading (default: False)
 
         Examples:
           # Perform a dry run to see what would be uploaded
