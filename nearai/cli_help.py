@@ -227,10 +227,10 @@ def format_help(obj, method_name: str = "__class__") -> None:
     # Process parameter sections
     param_pattern = r"^\s*(\S+)\s*\((\S+)\)\s*:\s*$"
     if "args" in sections:
-        _display_param_section(console, sections, "args", "Args", param_pattern)
+        _display_param_section(console, sections, "args", "Args", param_pattern, obj, method_name)
 
     if "options" in sections:
-        _display_param_section(console, sections, "options", "Options", param_pattern)
+        _display_param_section(console, sections, "options", "Options", param_pattern, obj, method_name)
 
     if "examples" in sections:
         _display_examples_section(console, sections)
@@ -332,7 +332,13 @@ def _parse_command_options(lines: List[str], current_index: int) -> Tuple[str, i
 
 
 def _display_param_section(
-    console: Console, sections: Dict[str, List[str]], section_name: str, section_title: str, param_pattern: str
+    console: Console,
+    sections: Dict[str, List[str]],
+    section_name: str,
+    section_title: str,
+    param_pattern: str,
+    obj: Any = None,
+    method_name: str = "__class__",
 ) -> None:
     """Display a parameter section (Args or Options) in a table.
 
@@ -342,6 +348,8 @@ def _display_param_section(
         section_name: Name of the section in the sections dict
         section_title: Title to display for the section
         param_pattern: Regex pattern to match parameter definitions
+        obj: The object containing the method to inspect
+        method_name: The name of the method to inspect, or "__class__" for class docstring
 
     """
     section_lines = sections.get(section_name, [])
@@ -357,11 +365,11 @@ def _display_param_section(
 
     # Get the method object for default value lookup
     method = None
-    if hasattr(console, "_obj") and hasattr(console, "_method_name"):
-        obj = console._obj
-        method_name = console._method_name
+    if obj and method_name:
         if method_name != "__class__":
             method = getattr(obj, method_name, None)
+        else:
+            method = obj
 
     i = 0
     while i < len(section_lines):
@@ -383,6 +391,7 @@ def _display_param_section(
             i = next_index  # Update index based on description parsing
 
             # Get default value from function signature if available
+            default_value = "-"
             if method:
                 try:
                     sig = inspect.signature(method)
