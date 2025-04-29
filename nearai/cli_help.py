@@ -201,9 +201,6 @@ def format_help(obj, method_name: str = "__class__") -> None:
 
     """
     console = Console()
-    # Store object and method name for parameter default value lookup
-    console._obj = obj
-    console._method_name = method_name
 
     # Special case for CLI main menu
     if method_name == "__class__" and obj.__class__.__name__ == "CLI":
