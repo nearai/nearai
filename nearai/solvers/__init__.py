@@ -39,7 +39,9 @@ class SolverStrategyMeta(ABCMeta):
 
 
 class SolverInferenceSession:
-    def __init__(self, agent, agent_params, model_full_path, client: InferenceClient, evaluation_name):
+    def __init__(
+        self, agent, agent_params, model_full_path, client: InferenceClient, evaluation_name, metrics_callback
+    ):
         self.agent = agent
         self.agent_params = agent_params
         self.model_full_path = model_full_path
@@ -48,6 +50,7 @@ class SolverInferenceSession:
         self.messages: List[ChatCompletionMessageParam] = []
         self.hub_client = get_hub_client()
         self.env_run: Optional[EnvironmentRun] = None
+        self.metrics_callback = metrics_callback
 
     def start_inference_session(self, task_id: str) -> "SolverInferenceSession":
         if self.agent:
@@ -97,6 +100,37 @@ class SolverInferenceSession:
                 )
                 response_content = str(cast(List[Choices], completion_response.choices)[0].message.content)
                 self.messages.append({"role": "assistant", "content": response_content})
+
+                # Extract metrics
+                metrics = {}
+                metrics["inference_calls"] = 1
+                if hasattr(completion_response, "usage"):
+                    usage = completion_response.usage
+
+                    if hasattr(usage, "prompt_tokens"):
+                        # Open AI naming
+                        metrics["prompt_tokens"] = usage.prompt_tokens
+                    elif hasattr(usage, "input_tokens"):
+                        # Anthropic naming
+                        metrics["prompt_tokens"] = usage.input_tokens
+
+                    if hasattr(usage, "completion_tokens"):
+                        # Open AI naming
+                        metrics["completion_tokens"] = usage.completion_tokens
+                    elif hasattr(usage, "output_tokens"):
+                        # Anthropic naming
+                        metrics["completion_tokens"] = usage.output_tokens
+
+                    if hasattr(usage, "prompt_tokens_details"):
+                        # Open AI additional prompt fields to track
+                        prompt_details = usage.prompt_tokens_details
+                        if hasattr(prompt_details, "cached_tokens"):
+                            metrics["prompt_cached_tokens"] = prompt_details.cached_tokens
+                        if hasattr(prompt_details, "audio_tokens"):
+                            metrics["prompt_audio_tokens"] = prompt_details.audio_tokens
+
+                self.metrics_callback(metrics)
+
                 return response_content
         except Exception as e:
             print(f"Error: {e}")
@@ -214,9 +248,45 @@ class SolverStrategy(ABC, metaclass=SolverStrategyMeta):
         raise NotImplementedError("get_evaluation_metrics not implemented")
 
     def start_inference_session(self, task_id: str) -> SolverInferenceSession:
+        # Define a metrics callback that accumulates metrics in the SolverStrategy instance
+        def record_metrics(metrics: dict):
+            if not hasattr(self, "token_metrics"):
+                # Initialize with just a counter, all other fields determined dynamically
+                self.token_metrics = {"total_tasks": 1}
+
+            # Sum up all metrics dynamically
+            for key, value in metrics.items():
+                if key in self.token_metrics:
+                    self.token_metrics[key] += value
+                else:
+                    # Initialize new metric if we encounter one not seen before
+                    self.token_metrics[key] = value
+
         return SolverInferenceSession(
-            self.agent, self.agent_params, self.model_full_path, self.client, self.evaluation_name()
+            self.agent,
+            self.agent_params,
+            self.model_full_path,
+            self.client,
+            self.evaluation_name(),
+            metrics_callback=record_metrics,
         ).start_inference_session(task_id)
+
+    def consume_usage_metrics(self) -> Dict[str, Any]:
+        """Returns accumulated token usage metrics and clears the accumulator.
+
+        Returns:
+            Dictionary with token usage metrics
+
+        """
+        if not hasattr(self, "token_metrics"):
+            return {}
+
+        usage_metrics = self.token_metrics.copy()
+
+        # Reset for next task
+        self.token_metrics = {"total_tasks": 1}
+
+        return usage_metrics
 
 
 SolverStrategyRegistry: Dict[str, SolverStrategy] = {}

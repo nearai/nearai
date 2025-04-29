@@ -466,3 +466,31 @@ class InferenceClient(object):
             },
             cast_to=List[Any],
         )
+
+    def get_usage_metrics(self) -> Dict[str, Any]:
+        """Returns accumulated token usage metrics.
+
+        Returns:
+            Dictionary with token usage metrics
+
+        """
+        if not hasattr(self, "token_metrics"):
+            return {}
+        return self.token_metrics
+
+    def consume_usage_metrics(self) -> Dict[str, Any]:
+        """Returns accumulated token usage metrics and clears the accumulator.
+
+        Returns:
+            Dictionary with token usage metrics
+
+        """
+        if not hasattr(self, "token_metrics"):
+            return {}
+
+        usage_metrics = self.token_metrics.copy()
+
+        # Reset
+        self.token_metrics = {}
+
+        return usage_metrics
