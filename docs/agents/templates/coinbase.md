@@ -15,7 +15,7 @@ In this page, we will showcase a [NEAR AI agent](https://app.near.ai/agents/anot
 
 Before creating a NEAR AI agent, please make sure you have the met the following requisites:
 
-- You have the [NEAR AI CLI](../cli.md) installed and have logged in with your Near wallet.
+- You have the [NEAR AI CLI](../../cli.md) installed and have logged in with your Near wallet.
 - Obtain a [CDP API Key](https://portal.cdp.coinbase.com/access/api)
 - Install extra dependencies: `pip install coinbase_agentkit coinbase_agentkit_langchain dotenv langgraph nearai_langchain`
 
