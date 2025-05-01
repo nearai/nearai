@@ -1,5 +1,5 @@
 # Agent Streaming
-## Table of Contents
+## Topics
 
 - [Streaming completions in an agent result in agent streaming](#streaming-completions-in-an-agent-result-in-agent-streaming)
 - [UI app.near.ai](#ui-appnearai)
@@ -8,6 +8,7 @@
 - [Agent usage](#agent-usage)
 - [Multiple streaming invocations!](#multiple-streaming-invocations)
 - [API Usage](#api-usage)
+- [FAQ: more complex cases](#faq-more-complex-cases)
 - [Full File examples](#full-file-examples)
   - [Full agent example](#full-agent-example)
   - [Full metadata file with show_streaming_message setting](#full-metadata-file-with-show_streaming_message-setting)
@@ -22,6 +23,9 @@ When an Agent streams completions by passing `stream=True`, those completion chu
 The chunks are also persisted temporarily on the hub and made available to clients through 
 the `/threads/{thread_id}/stream/{run_id}` endpoint.
 
+ * Chunk: One or more tokens streamed from the LLM to the agent.
+ * Delta: An SSE event that contains a chunk, streamed to clients.
+
 ## UI app.near.ai
 Agent streaming is automatically handled by the UI.
 An indicator of chunks received is shown to the user.
@@ -29,8 +33,12 @@ An indicator of chunks received is shown to the user.
 ![Streaming screenshot.png](../assets/Streaming%20screenshot.png)
 
 ### CLI
-Similarly, the CLI shows streaming chunks as they are received. It only has one display mode (show the chunks) and does not use the `show_streaming_message` setting detailed in the next section.
-You can switch between CLI streaming and message modes by using the `--stream` flag. `--stream=False` will show final messages only.
+Similarly, the CLI can show streaming chunks as they are received. It only has one display mode (show the chunks) and does not use the `show_streaming_message` setting detailed in the next section.
+
+You can switch between CLI streaming and message modes by using the `--stream=True` flag. The default is false and will show final messages only.
+
+ * An agent that does not stream chunks that is run in `nearai agent interactive` mode with `--stream=True` will show no output.
+ * An agent that does stream chunks will by default show the final message only. When passed `--stream=True` it will show the chunks as they are received.
 
 ### Agent settings
 To show the tokens as they are received, set the agent metadata `"show_streaming_message": true`
@@ -57,7 +65,9 @@ This can be iterated over or passed to streaming libraries that accept a StreamH
             c = json.dumps(chunk.model_dump())
             print(c)
             # do something with the chunk
-
+            
+            # if part of a chain of async calls you could yield the chunk or evaluate or modify it and yield
+            # yield chunk
     self.env.add_reply(resp_stream) # write the full message to the thread
 ```
 Use of the /thread/
@@ -99,6 +109,7 @@ A React client might handle streaming as follows.
     eventSource.addEventListener('message', (event) => {
       const data = JSON.parse(event.data);
       const eventType = data.event;
+      
       switch (eventType) {
         case 'thread.message.delta':
           if (!data?.data?.delta?.content) return;
@@ -140,6 +151,16 @@ A React client might handle streaming as follows.
   };
 ```
 
+## FAQ: more complex cases
+ * Child threads do not currently support streaming thus invoking another agent on a child thread will not stream.
+ * Agent initiated Deltas
+     * Writing delta events from the agent to the agent stream is not currently supported.
+ * Tools: 
+     * There is not currently any special handling of tool calls.
+     * Tool call responses vary between providers and models, thus some models will have tool calls in the main response
+        and others will not.
+     * Depending on your use case you may want to separate tool calls from the main response rather than requesting 
+        both in the same completion call.
 
 ## Full File examples
 

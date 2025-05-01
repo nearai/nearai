@@ -155,6 +155,7 @@ nav:
         - Vector Stores: 'agents/vector-stores.md'
         - Inference (OpenAI): 'inference.md'
         - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
+        - Streaming: 'agents/streaming.md'
     - Agent Patterns:
       - Event-Driven Agents:
         - NEAR Event-Triggered Agents: 'agents/patterns/near_events.md'

@@ -698,6 +698,7 @@ class AgentCli:
         local: bool = False,
         verbose: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
+        stream: bool = False,
     ) -> None:
         """Runs agent interactively.
 
@@ -709,6 +710,7 @@ class AgentCli:
             local: Whether to run the agent locally (default: False)
             verbose: Whether to show detailed debug information during execution
             env_vars: Optional environment variables to pass to the agent
+            stream: Whether to stream the agent's output, only works with agents that stream completions
 
         """
         assert_user_auth()
@@ -831,6 +833,7 @@ class AgentCli:
                 local_path=agent_path if local else None,
                 verbose=verbose,
                 env_vars=env_vars,
+                streaming=stream,
             )
 
             # Update thread_id for the next iteration
@@ -847,6 +850,7 @@ class AgentCli:
         local: bool = False,
         verbose: bool = False,
         env_vars: Optional[Dict[str, Any]] = None,
+        stream: bool = False,
     ) -> None:
         """CLI wrapper for the _task method."""
         last_message_id = self._task(
@@ -858,6 +862,7 @@ class AgentCli:
             local_path=resolve_local_path(Path(agent)) if local else None,
             verbose=verbose,
             env_vars=env_vars,
+            streaming=stream,
         )
         if last_message_id:
             print(f"Task completed. Thread ID: {self.last_thread_id}")
