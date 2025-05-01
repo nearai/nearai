@@ -769,6 +769,7 @@ class Environment(object):
 
         def request_user_input() -> Run:
             """Must be called to request input from the user."""
+            self._done = True
             return hub_client.beta.threads.runs.update(
                 thread_id=self._thread_id,
                 run_id=self._run_id,
@@ -779,6 +780,7 @@ class Environment(object):
 
         def request_agent_input() -> Run:
             """Mark the run as ready for input from another agent."""
+            self._done = True
             return hub_client.beta.threads.runs.update(
                 thread_id=self._thread_id,
                 run_id=self._run_id,
@@ -1574,7 +1576,7 @@ class Environment(object):
                 self.mark_failed()
                 raise e
 
-        if not self._pending_ext_agent:
+        if not self._pending_ext_agent and not self.is_done():
             # If no external agent was called, mark the whole run as done.
             # Else this environment will stop for now but this run will be continued later.
             self.mark_done()

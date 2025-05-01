@@ -1,3 +1,4 @@
+import asyncio
 import importlib.metadata
 import json
 import os
@@ -5,6 +6,7 @@ import re
 import runpy
 import shutil
 import sys
+import threading
 from collections import OrderedDict
 from dataclasses import asdict
 from datetime import datetime, timedelta
@@ -918,7 +920,20 @@ class AgentCli:
             for event in run:
                 run_id = event.data.id
                 break
+
+            def run_async_loop():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    loop.run_until_complete(self._print_stream_async(run))
+                finally:
+                    loop.close()
+
+            streaming_thread = threading.Thread(target=run_async_loop)
+            streaming_thread.start()
+
             LocalRunner(str(local_path), agent, thread.id, run_id, auth, params)
+            streaming_thread.join()
 
         else:
             run = hub_client.beta.threads.runs.create(
@@ -938,23 +953,56 @@ class AgentCli:
             assert auth is not None
             LocalRunner(str(local_path), agent, thread.id, run.id, auth, params)
 
-        # List new messages
-        messages = hub_client.beta.threads.messages.list(thread_id=thread.id, after=last_message_id, order="asc")
-        message_list = list(messages)
-        if message_list and not streaming:
-            for msg in message_list:
-                if msg.metadata and msg.metadata.get("message_type"):
-                    continue
-                if msg.role == "assistant":
-                    print(f"Assistant: {msg.content[0].text.value}")
-            last_message_id = message_list[-1].id
-        elif not streaming:
-            print("No new messages")
+            # List new messages
+            messages = hub_client.beta.threads.messages.list(thread_id=thread.id, after=last_message_id, order="asc")
+            message_list = list(messages)
+            if message_list:
+                for msg in message_list:
+                    if msg.metadata and msg.metadata.get("message_type"):
+                        continue
+                    if msg.role == "assistant":
+                        print(f"Assistant: {msg.content[0].text.value}")
+                last_message_id = message_list[-1].id
+            else:
+                print("No new messages")
 
         # Store the thread_id for potential use in interactive mode
         self.last_thread_id = thread.id
 
         return last_message_id
+
+    async def _print_stream_async(self, run):
+        """Asynchronously print the stream of messages from the run.
+
+        :param run: The stream to iterate over
+        :return:
+        """
+        try:
+            for event in run:
+                if event and hasattr(event, "event") and event.event == "thread.message.delta":
+                    if hasattr(event.data, "delta") and hasattr(event.data.delta, "content"):
+                        for content in event.data.delta.content:
+                            value = content.text.value
+                            if value:
+                                print(content.text.value, end="")
+                else:
+                    if event and hasattr(event, "event"):
+                        if event.event == "thread.message.completed":
+                            pass
+                        elif event.event == "thread.message.error":
+                            print(f"Error: {event.data.error}")
+                        elif event.event in [
+                            "thread.run.completed",
+                            "thread.run.error",
+                            "thread.run.canceled",
+                            "thread.run.expired",
+                            "thread.run.requires_action",
+                        ]:
+                            print("")
+                            break
+                    await asyncio.sleep(0.01)
+        except Exception as e:
+            print(f"Error in print_stream_async: {e}")
 
     def create(self, name: Optional[str] = None, description: Optional[str] = None, fork: Optional[str] = None) -> None:
         """Create a new agent or fork an existing one.

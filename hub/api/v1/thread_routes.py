@@ -684,32 +684,31 @@ def create_run(
             run_queues[run_model.id] = asyncio.Queue()
 
             # 1. Event: thread.run.created
-            event_created = _streaming_run_event("thread.run.created", run, run_model, thread_id)
+            event_created = _streaming_run_event("thread.run.created", run_model, thread_id)
             asyncio.run(run_queues[run_model.id].put(event_created))
 
             # 2. Event: thread.run.queued
-            event_queued = _streaming_run_event("thread.run.queued", run, run_model, thread_id)
+            event_queued = _streaming_run_event("thread.run.queued", run_model, thread_id)
             asyncio.run(run_queues[run_model.id].put(event_queued))
 
             # 3. Event: thread.run.in_progress
-            event_in_progress = _streaming_run_event("thread.run.in_progress", run, run_model, thread_id)
+            event_in_progress = _streaming_run_event("thread.run.in_progress", run_model, thread_id)
             # Update the payload for in_progress status
             event_in_progress["data"]["status"] = "in_progress"
             event_in_progress["data"]["started_at"] = int(datetime.now(timezone.utc).timestamp())
             asyncio.run(run_queues[run_model.id].put(event_in_progress))
 
             # 4. Event: thread.run.step.created
-            event_step_created, step_payload = _streaming_step_event(
-                "thread.run.step.created", run, run_model, thread_id
-            )
+            event_step_created, step_payload = _streaming_step_event("thread.run.step.created", run_model, thread_id)
             asyncio.run(run_queues[run_model.id].put(event_step_created))
 
             # 5. Event: thread.run.step.in_progress
-            event_step_in_progress = _streaming_step_event("thread.run.step.in_progress", run, run_model, thread_id)
+            event_step_in_progress = _streaming_step_event("thread.run.step.in_progress", run_model, thread_id)
             asyncio.run(run_queues[run_model.id].put(event_step_in_progress))
 
-            thread = threading.Thread(target=_run_agent, args=(thread_id, run_model.id, None, auth))
-            thread.start()
+            if not run.delegate_execution:
+                thread = threading.Thread(target=_run_agent, args=(thread_id, run_model.id, None, auth))
+                thread.start()
 
             return StreamingResponse(stream_run_events(run_model.id, True), media_type="text/event-stream")
 
@@ -876,6 +875,7 @@ async def monitor_deltas(run_id: str, delete: bool):
                 session.query(Delta).filter(Delta.run_id == run_id).delete()
                 session.commit()
 
+        completion = None
         while True:
             try:
                 # Fetch events with ID greater than last_seen_id
@@ -890,29 +890,34 @@ async def monitor_deltas(run_id: str, delete: bool):
                 # Set a maximum run time
                 if datetime.now(timezone.utc) - start_time >= timedelta(minutes=STREAMING_RUN_TIMEOUT_MINUTES):
                     logger.error(f"Timeout reached for monitor_deltas on run_id {run_id}")
-                    await run_queues[run_id].put("done")
+                    run_model = session.get(RunModel, run_id)
+                    event = _streaming_run_event("thread.run.expired", run_model, run_model.thread_id if run_model else "")
+                    await run_queues[run_id].put(event)
                     await handle_delete()
                     return
 
                 if not events:
-                    await asyncio.sleep(0.1)  # Shorter sleep when no events
+                    if completion:
+                        # send completion event last
+                        await run_queues[run_id].put(completion)
+                        await handle_delete()
+                        return
+                    await asyncio.sleep(0.1)  # Longer sleep when no events
                     continue
 
                 for event in events:
                     last_seen_id = max(last_seen_id, event.id)
+                    payload = {"id": event.message_id, "object": event.object, "delta": event.content}
+                    event_data = {
+                        "event": event.object,
+                        "data": payload,
+                    }
 
-                    if event.content is None:
-                        # Signal completion and stop monitoring
-                        await run_queues[run_id].put("done")
-                        await handle_delete()
-                        return
+                    if hasattr(event, "object") and event.object == "thread.run.completed":
+                        # Signal completion but continue processing events
+                        completion = event_data
                     else:
                         # Send event
-                        payload = {"id": event.message_id, "object": event.object, "delta": event.content}
-                        event_data = {
-                            "event": event.object,
-                            "data": payload,
-                        }
                         await run_queues[run_id].put(event_data)
 
                 await asyncio.sleep(0.05)  # Poll more frequently
@@ -923,14 +928,19 @@ async def monitor_deltas(run_id: str, delete: bool):
 
 async def stream_run_events(run_id: str, delete: bool):
     asyncio.create_task(monitor_deltas(run_id, delete))
-    print(f"Started monitor_deltas task for run_id {run_id}")
+    logger.info(f"Started monitor_deltas task for run_id {run_id}")
     queue = run_queues[run_id]
     while True:
         event = await queue.get()
-        if event == "done":
-            break
         yield f"data: {json.dumps(event)}\n\n"
         await asyncio.sleep(0)
+        if (
+            event
+            and hasattr(event, "event")
+            and event.event
+            in ["thread.run.completed", "thread.run.failed", "thread.run.cancelled", "thread.run.expired"]
+        ):
+            break
     del run_queues[run_id]
 
 
@@ -1001,6 +1011,16 @@ def update_run(
 
         session.add(run_model)
         session.commit()
+        if run_queues.get(run_id):
+            # add to deltas instead of run queue so it doesn't skip ahead of in flight deltas
+            delta = Delta(
+                run_id=run_id,
+                object=f"thread.run.{run.status}",
+                content=_streaming_run_event(f"thread.run.{run.status}", run_model, thread_id)["data"],
+            )
+            session.add(delta)
+            session.commit()
+
         return run_model.to_openai()
 
 
@@ -1013,12 +1033,12 @@ def _check_thread_permissions(auth, session, thread_id) -> ThreadModel:
     return thread
 
 
-def _streaming_run_event(event_name, run, run_model, thread_id):
+def _streaming_run_event(event_name, run_model, thread_id):
     base_payload = {
         "id": run_model.id,  # e.g., "run_123"
         "object": "thread.run",
         "created_at": int(datetime.now(timezone.utc).timestamp()),
-        "assistant_id": run.assistant_id,
+        "assistant_id": run_model.assistant_id,
         "thread_id": thread_id,
         "status": "queued",
         "started_at": None,
@@ -1028,20 +1048,20 @@ def _streaming_run_event(event_name, run, run_model, thread_id):
         "completed_at": None,
         "required_action": None,
         "last_error": None,
-        "model": run.model,
-        "instructions": (run.instructions or "") + (run.additional_instructions or ""),
-        "tools": run.tools,
-        "metadata": run.metadata,
-        "temperature": run.temperature,
-        "top_p": run.top_p,
-        "max_completion_tokens": run.max_completion_tokens,
-        "max_prompt_tokens": run.max_prompt_tokens,
-        "truncation_strategy": run.truncation_strategy,
+        "model": run_model.model,
+        "instructions": run_model.instructions,
+        "tools": run_model.tools,
+        "metadata": run_model.meta_data if isinstance(run_model.metadata, dict) else None,
+        "temperature": run_model.temperature,
+        "top_p": run_model.top_p,
+        "max_completion_tokens": run_model.max_completion_tokens,
+        "max_prompt_tokens": run_model.max_prompt_tokens,
+        "truncation_strategy": run_model.truncation_strategy,
         "incomplete_details": None,
         "usage": None,
-        "response_format": run.response_format,
-        "tool_choice": run.tool_choice,
-        "parallel_tool_calls": run.parallel_tool_calls,
+        "response_format": run_model.response_format,
+        "tool_choice": run_model.tool_choice,
+        "parallel_tool_calls": run_model.parallel_tool_calls,
     }
     event = {
         "event": event_name,
@@ -1050,14 +1070,14 @@ def _streaming_run_event(event_name, run, run_model, thread_id):
     return event
 
 
-def _streaming_step_event(event_name, run, run_model, thread_id):
+def _streaming_step_event(event_name, run_model, thread_id):
     expires_at = int((datetime.now(timezone.utc) + timedelta(minutes=STREAMING_RUN_TIMEOUT_MINUTES)).timestamp())
     step_payload = {
         "id": "step_001",  # placeholder step id
         "object": "thread.run.step",
         "created_at": int(datetime.now(timezone.utc).timestamp()),
         "run_id": run_model.id,
-        "assistant_id": run.assistant_id,
+        "assistant_id": run_model.assistant_id,
         "thread_id": thread_id,
         "type": "message_creation",
         "status": "in_progress",

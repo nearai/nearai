@@ -198,7 +198,6 @@ export const AgentRunner = ({
 
   const isRunning =
     _chatMutation.isPending ||
-    thread?.run?.status === 'requires_action' ||
     thread?.run?.status === 'queued' ||
     thread?.run?.status === 'in_progress';
 
@@ -475,6 +474,15 @@ export const AgentRunner = ({
   }, [setThread, threadQuery.data, thread?.metadata.topic, utils]);
 
   // SSE for streaming updates
+
+  const stopStreaming = (stream: EventSource) => {
+    stream.close();
+    setIsStreaming(false);
+    setStream(null);
+    setStreamingText('');
+    setStreamingTextLatestChunk('');
+  };
+
   const startStreaming = (threadId: string, runId: string) => {
     if (!threadId) return;
     if (!runId) return;
@@ -487,12 +495,32 @@ export const AgentRunner = ({
 
     eventSource.addEventListener('message', (event) => {
       const data = JSON.parse(event.data);
-      const latestChunk = data.data.delta.content[0].text.value;
-      setStreamingText((prevText) => prevText + latestChunk);
-      setStreamingTextLatestChunk(latestChunk);
+      const eventType = data.event;
+      switch (eventType) {
+        case 'thread.message.delta':
+          if (!data?.data?.delta?.content) return;
+          const content = data.data.delta.content;
+          if (content.length === 0 || !content[0]?.text?.value) return;
+          const latestChunk = data.data.delta.content[0].text.value;
+          setStreamingText((prevText) => prevText + latestChunk);
+          setStreamingTextLatestChunk(latestChunk);
 
-      // Force React to rerender immediately rather than batching
-      setTimeout(() => {}, 0);
+          // Force React to rerender immediately rather than batching
+          setTimeout(() => {}, 0);
+          break;
+
+        case 'thread.message.completed':
+          setStreamingText('');
+          setStreamingTextLatestChunk('');
+          break;
+        case 'thread.run.completed':
+        case 'thread.run.error':
+        case 'thread.run.canceled':
+        case 'thread.run.expired':
+        case 'thread.run.requires_action':
+          stopStreaming(eventSource);
+          break;
+      }
     });
 
     eventSource.onerror = (error) => {
@@ -511,11 +539,7 @@ export const AgentRunner = ({
   useEffect(() => {
     if (!isRunning) {
       if (stream) {
-        stream.close();
-        setIsStreaming(false);
-        setStream(null);
-        setStreamingText('');
-        setStreamingTextLatestChunk('');
+        stopStreaming(stream);
       }
     }
   }, [isRunning, stream]);

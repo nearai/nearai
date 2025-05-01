@@ -24,7 +24,8 @@ class Provider(Enum):
 async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_callback: Callable):
     response_chunks = []
     deltas_to_commit = []
-    commit_every = 10  # Commit every N chunks to reduce DB overhead
+    commit_every = 5  # Commit every N chunks to reduce DB overhead
+    is_first_chunk = True
 
     if run_id is not None:
         with get_session() as session:
@@ -38,15 +39,16 @@ async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_ca
                     delta = Delta(
                         event="thread.message.delta",
                         content=content,
-                        created_at=datetime.now(timezone.utc),
+                        created_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
                         run_id=run_id,
                         thread_id=thread_id,
                         message_id=message_id,
                     )
                     deltas_to_commit.append(delta)
 
-                    # Commit in batches to reduce DB overhead
-                    if len(deltas_to_commit) >= commit_every:
+                    # Commit in batches to reduce DB overhead but commit the first chunk for responsiveness
+                    if is_first_chunk or len(deltas_to_commit) >= commit_every:
+                        is_first_chunk = False
                         session.add_all(deltas_to_commit)
                         session.commit()
                         deltas_to_commit = []
@@ -55,10 +57,17 @@ async def handle_stream(thread_id, run_id, message_id, resp_stream, add_usage_ca
                 yield f"data: {c}\n\n"
                 await asyncio.sleep(0)
 
-            # Commit any remaining deltas
-            if deltas_to_commit:
-                session.add_all(deltas_to_commit)
-                session.commit()
+            completion_delta = Delta(
+                object="thread.message.completed",
+                content="",
+                created_at=datetime.now(timezone.utc),
+                run_id=run_id,
+                thread_id=thread_id,
+                message_id=message_id,
+            )
+            deltas_to_commit.append(completion_delta)
+            session.add_all(deltas_to_commit)
+            session.commit()
 
     else:
         for chunk in resp_stream:
