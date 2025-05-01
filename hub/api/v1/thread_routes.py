@@ -891,7 +891,9 @@ async def monitor_deltas(run_id: str, delete: bool):
                 if datetime.now(timezone.utc) - start_time >= timedelta(minutes=STREAMING_RUN_TIMEOUT_MINUTES):
                     logger.error(f"Timeout reached for monitor_deltas on run_id {run_id}")
                     run_model = session.get(RunModel, run_id)
-                    event = _streaming_run_event("thread.run.expired", run_model, run_model.thread_id if run_model else "")
+                    event = _streaming_run_event(
+                        "thread.run.expired", run_model, run_model.thread_id if run_model else ""
+                    )
                     await run_queues[run_id].put(event)
                     await handle_delete()
                     return
