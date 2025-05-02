@@ -6,7 +6,15 @@ Agent streaming enables output from your agent in a continuous, incremental stre
 
 ## Getting Started
 
-To use agent streaming, you must first implement [streaming completions](#streaming-completions) in your agent's code. Once complete, you can view these streams in the UI or CLI each having their own unique way to enable.
+To use agent streaming, first implement streaming completions in your agent's code by passing `stream=True` to your `completion` function:
+
+```python
+    result = self.env.completion([prompt] + messages, stream=True)
+```
+
+_( See [streaming completions](#streaming-completions) for more details.)_
+
+Once complete, you can now view these streams in the UI or CLI, each having their own unique way to enable.
 
 #### Enable UI Streaming
 
