@@ -84,9 +84,8 @@ This can be iterated over or passed to streaming libraries that accept a `Stream
             # yield chunk
     self.env.add_reply(response_stream) # write the full message to the thread
 ```
-Use of the /thread/
 
- [See full example below for more](#__tabbed_1_1)
+[See full example below for more](#__tabbed_1_1)
 
 ### Multiple Streaming Invocations
 
