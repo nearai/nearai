@@ -1289,6 +1289,9 @@ class AgentCli:
             Show detailed debug information during execution
           env_vars (dict) :
             Environment variables to pass to the agent (JSON format)
+          stream (bool) :
+            Whether to stream the agent's output, only works with agents that stream completions
+
 
         Examples:
           # Select from a list of agents to run that you created or downloaded
