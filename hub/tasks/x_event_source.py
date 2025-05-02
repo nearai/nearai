@@ -72,7 +72,7 @@ def save_last_tweet_time(tweet_timestamp, user_name=""):
         f.write(str(int(tweet_timestamp)))
 
 
-async def listener_function(auth_token, tweet, agents_entries):
+async def listener_function(auth_token, tweet, tweet_author, agents_entries):
     message = {
         "action": "twitter_mention",
         "author_id": tweet.author_id,
@@ -80,6 +80,13 @@ async def listener_function(auth_token, tweet, agents_entries):
         "tweet": tweet.data,
         "text": tweet.text,
         "replied_to": [],
+        "author": {
+            "username": tweet_author.username if tweet_author else None,
+            "name": tweet_author.name if tweet_author else None,
+            "profile_image_url": tweet_author.profile_image_url if tweet_author else None,
+        }
+        if tweet_author
+        else None,
     }
 
     # add replied_to
@@ -126,7 +133,7 @@ async def x_events_task(auth_token):
         last_tweet_timestamp = max(last_from_file or 0, one_week_ago)
 
         # load latest mentions
-        tweets = await get_latest_mentions(user_name, last_tweet_timestamp)
+        tweets, tweet_authors = await get_latest_mentions(user_name, last_tweet_timestamp)
 
         if tweets:
             # sort tweets by tweet.created_at ascending
@@ -138,7 +145,10 @@ async def x_events_task(auth_token):
                 if not last_tweet_timestamp or tweet_timestamp > int(last_tweet_timestamp):
                     # Ensure the tweet is not already in x_tasks by checking its ID
                     if not any(existing_task.get("tweet").id == tweet.id for existing_task in x_tasks):
-                        x_tasks.append({"tweet": tweet, "agents": x_accounts_to_track[user_name]})
+                        tweet_author = tweet_authors.get(tweet.author_id)
+                        x_tasks.append(
+                            {"tweet": tweet, "tweet_author": tweet_author, "agents": x_accounts_to_track[user_name]}
+                        )
 
                     last_tweet_timestamp = tweet_timestamp
 
@@ -152,7 +162,8 @@ async def x_events_task(auth_token):
 
     for task in x_tasks:
         tweet = task.get("tweet")
-        await listener_function(auth_token, tweet, task.get("agents"))
+        tweet_author = task.get("tweet_author")
+        await listener_function(auth_token, tweet, tweet_author, task.get("agents"))
 
 
 # remove last known tweet timestamp to reset the state on start

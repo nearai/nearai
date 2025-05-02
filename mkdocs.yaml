@@ -139,6 +139,7 @@ nav:
   - Agents:
     - Building Agents:
       - Quickstart: 'agents/quickstart.md'
+      - Integration: 'agents/integration.md'
       - "Environment":
         - 'agents/env/overview.md'
         - 'agents/env/messages_files.md'
@@ -154,6 +155,8 @@ nav:
         - Vector Stores: 'agents/vector-stores.md'
         - Inference (OpenAI): 'inference.md'
         - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
+      - Templates:
+        - CDP AgentKit: 'agents/templates/coinbase.md'
     - Agent Patterns:
       - Event-Driven Agents:
         - NEAR Event-Triggered Agents: 'agents/patterns/near_events.md'
@@ -161,6 +164,8 @@ nav:
       - Using Multiple Agents:
         - Orchestrating Multiple Agents: 'agents/patterns/orchestration.md'
         - Agent to Agent Communication: 'agents/patterns/agent_to_agent.md'
+    - Examples:
+      - Overview: 'agents/examples/overview.md'
     - Tutorials:
       - Documentation Agent (RAG):
         - Introduction: 'tutorials/rag/introduction.md'
@@ -173,14 +178,11 @@ nav:
     - 'models/home.md'
     - Fine-tuning: 'models/fine_tuning.md'
     - Benchmarks and Evaluations: 'models/benchmarks_and_evaluations.md'
-  - Integration:
-    - Overview: 'integration/overview.md'
-    - Quickstart: 'integration/quickstart.md'
   - APIs:
     - Agent SDK API: 'api.md'
-    - Web API Guide: 'api/guide.md'
-    - Web API Docs: 'https://api.near.ai/docs/hub/reference'
-    - Interactive API: 'https://api.near.ai/docs/hub/interactive'
+    - Hub (Agent Cloud) API Guide: 'api/guide.md'
+    - Hub (Agent Cloud) API: 'https://api.near.ai/docs/hub/reference'
+    - Hub (Agent Cloud) Interactive API: 'https://api.near.ai/docs/hub/interactive'
     - OpenAPI Specs: 'https://api.near.ai/openapi.json'
 
 plugins:
@@ -201,8 +203,10 @@ plugins:
   - redirects:
       redirect_maps:
         'agents/secrets.md': 'agents/env/variables.md'
-        'assistants/overview.md': 'integration/overview.md'
-        'assistants/integrate.md': 'integration/quickstart.md'
+        'assistants/overview.md': 'agents/integration.md'
+        'assistants/integrate.md': 'agents/integration.md'
         'agents/env/calling_other_agents.md': 'agents/patterns/agent_to_agent.md'
         'near_events.md': 'agents/patterns/near_events.md'
         'agent_triggers.md': 'agents/patterns/twitter/twitter_agent.md'
+        'integration/overview.md': 'agents/integration.md'
+        'integration/quickstart.md': 'agents/integration.md'

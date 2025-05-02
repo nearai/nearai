@@ -12,12 +12,12 @@ class TestTwitterClientIntegration(unittest.IsolatedAsyncioTestCase):
         max_results = 10
         run_limit = 25
 
-        result = await get_latest_mentions(user_name, timestamp, max_results, run_limit)
+        tweets, _authors = await get_latest_mentions(user_name, timestamp, max_results, run_limit)
 
-        self.assertIsNotNone(result)
-        self.assertTrue(len(result) > 0)
-        self.assertTrue(all("id" in tweet for tweet in result))
-        self.assertTrue(all("text" in tweet for tweet in result))
+        self.assertIsNotNone(tweets)
+        self.assertTrue(len(tweets) > 0)
+        self.assertTrue(all("id" in tweet for tweet in tweets))
+        self.assertTrue(all("text" in tweet for tweet in tweets))
 
 
 if __name__ == "__main__":

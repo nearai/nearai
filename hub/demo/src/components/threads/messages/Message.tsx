@@ -21,10 +21,12 @@ export const Message = ({ children, actions }: Props) => {
   const showFooter = message.role !== 'user' || actions;
   const assistantRoleLabel =
     currentEntry?.details.agent?.assistant_role_label || 'Assistant';
+  const showStreamingMessage =
+    currentEntry?.details.agent?.show_streaming_message;
 
   return (
     <Card
-      animateIn
+      animateIn={!showStreamingMessage || !message.streamed}
       background={message.role === 'user' ? 'sand-2' : undefined}
       style={{
         maxWidth: '100%',
