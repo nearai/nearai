@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# NearAI – Experimental TypeScript Runner (custom Lambda runtime style)
+# NearAI – Jutsu TypeScript Runner (custom Lambda runtime style)
 # Mirrors the structure of aws_runner/ts_runner but swaps in the new
 # ts_runner_jutsu code.  No changes to deploy.sh or docker-compose are needed.
 # -----------------------------------------------------------------------------

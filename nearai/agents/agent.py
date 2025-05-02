@@ -187,28 +187,28 @@ class Agent(object):
         """Launch the appropriate ts_runner variant."""
         if self.agent_framework == "ts_jutsu":
             # ---------------------------------------------------------
-            # EXPERIMENTAL RUNNER
+            # JUTSU TS RUNNER
             # ---------------------------------------------------------
             ts_root = "/var/task/ts_runner_jutsu"
 
-            # copy user's agent.ts into runner structure expected by exp build
+            # copy user's agent.ts into runner structure expected by jutsu ts runner build
             dest_agents_dir = os.path.join(ts_root, "agents")
             os.makedirs(dest_agents_dir, exist_ok=True)
             shutil.copyfile(agent_filename, os.path.join(dest_agents_dir, "agent.ts"))
 
             if env_vars.get("DEBUG"):
-                print("EXP runner dir:", ts_root)
+                print("runner dir:", ts_root)
                 print("Agents folder content:", os.listdir(dest_agents_dir))
 
             cwd = ts_root
         else:
             # ---------------------------------------------------------
-            # LEGACY RUNNER
+            # TS RUNNER
             # ---------------------------------------------------------
             ts_root = self.ts_runner_dir
 
             if env_vars.get("DEBUG"):
-                print("LEGACY runner dir:", ts_root)
+                print("runner dir:", ts_root)
                 print("Agents folder content:", os.listdir(ts_root))
 
             cwd = ts_root
@@ -279,7 +279,7 @@ class Agent(object):
                 self.agent_language = "ts"
 
                 # copy files from nearai/ts_runner_sdk to self.temp_dir
-                # pick correct TS runner (legacy vs experimental)
+                # pick correct TS runner ts_jutsu runner or ts runner)
                 if self.agent_framework == "ts_jutsu":
                     ts_runner_sdk_dir  = "/tmp/ts_runner_jutsu"
                     ts_runner_actual_path = "/var/task/ts_runner_jutsu"
