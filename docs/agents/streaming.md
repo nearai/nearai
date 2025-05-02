@@ -35,24 +35,29 @@ The UI automatically receives the same stream as the agent. A counter of deltas 
 ![Streaming screenshot.png](../assets/Streaming%20screenshot.png)
 
 !!! note
-    If your agent produces intermediate, non-user-facing completions (e.g., during tool calls or complex reasoning steps), you might set `"show_streaming_message": false` to prevent partial or internal messages from being displayed directly to the user in the UI. 
-    
+    If your agent produces intermediate, non-user-facing completions (e.g., during tool calls or complex reasoning steps), you might set `"show_streaming_message": false` to prevent partial or internal messages from being displayed directly to the user in the UI.
+
     It's also important to note that the streaming text is immediately replaced upon the next message, so some applications might still prefer `true` even with intermediate steps.
 
 #### Enable CLI Streaming
 
-To enable agent streaming in the CLI use the `--stream=True` flag when running `nearai agent interactive`. As with UI streaming, you must first implement [streaming completions](#streaming-completions) in your agent's code _before_ using this command.
+To enable agent streaming in the CLI use the `--stream=True` flag when running `nearai agent interactive`.
+
+- This method only has display mode (show each chunk of text) and only shows the final messages.
+- Use this flag each time you run an agent as it does not use the `show_streaming_message` setting from your `metadata.json`
 
 !!! note
-    - This method only has display mode (show each chunk of text) and only shows the final messages.
+    As with UI streaming, you must first implement [streaming completions](#streaming-completions) in your agent's code _before_ using this command. When working with different agent types (streaming & non-streaming) the following behavior is expected:
 
-    - Use this flag each time you run an agent as it does not use the `show_streaming_message` setting from your `metadata.json`
+    * An agent that **does not** stream completions that is run in `nearai agent interactive` mode with `--stream=True` will show **no output**.
+    * An agent that **does** stream completions will by default show the final message only. When passed `--stream=True` it will show the text as it is received.
 
 ## Streaming Completions
 
 To stream completion chunks to your agent, pass `stream=True` when using the `completion` function:
 
 Example:
+
 ```python
     result = self.env.completion([prompt] + messages, stream=True) # stream the completions!
     self.env.add_reply(result) # write the full message to the thread as normal
@@ -61,10 +66,10 @@ Example:
 These chunks are also persisted temporarily on the Agent Cloud (Hub) and made available to clients through 
 the `/threads/{thread_id}/stream/{run_id}` endpoint.
 
- * Chunk: One or more tokens streamed from the LLM to the agent.
- * Delta: An SSE event that contains a chunk, streamed to clients.
+* Chunk: One or more tokens streamed from the LLM to the agent.
+* Delta: An SSE event that contains a chunk, streamed to clients.
 
- [See full example below for more](#__tabbed_1_1)
+[See full example below for more](#__tabbed_1_1)
 
 ### Agent Usage
 
