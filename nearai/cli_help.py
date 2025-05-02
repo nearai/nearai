@@ -20,12 +20,14 @@ def get_docstring_info(
     """Get the docstring, command title, and parsed sections for a class or method.
 
     Args:
+    ----
         obj : Any
             The object containing the docstring (class or method)
         method_name : str
             The name of the method to format, or "__class__" to format the class's docstring
 
     Returns:
+    -------
         Tuple of (docstring, command_title, is_class, sections)
 
     """
@@ -52,11 +54,13 @@ def _extract_basic_metadata(obj: Any, method_name: str, console: Console) -> Tup
     """Extract basic metadata from the object or method.
 
     Args:
+    ----
         obj: The object containing the docstring
         method_name: Name of the method or "__class__" for class docstring
         console: Console for error printing
 
     Returns:
+    -------
         Tuple of (is_class, docstring, display_name)
 
     """
@@ -86,9 +90,11 @@ def _parse_docstring_sections(docstring: str) -> Dict[str, List[str]]:
     """Parse a docstring into sections.
 
     Args:
+    ----
         docstring: The docstring to parse
 
     Returns:
+    -------
         Dictionary mapping section names to content lines
 
     """
@@ -153,9 +159,11 @@ def _extract_description_section(lines: List[str]) -> List[str]:
     section header or double blank line.
 
     Args:
+    ----
         lines: Lines of the docstring
 
     Returns:
+    -------
         List of description lines
 
     """
@@ -194,6 +202,7 @@ def format_help(obj, method_name: str = "__class__") -> None:
     """Format a class or method's docstring as a help message and display it with rich formatting.
 
     Args:
+    ----
         obj : Any
             The object containing the docstring (class or method)
         method_name : str
@@ -240,6 +249,7 @@ def _display_description_section(console: Console, sections: Dict[str, List[str]
     """Display the description section in a panel.
 
     Args:
+    ----
         console: Rich console for display
         sections: Parsed sections dictionary
 
@@ -254,6 +264,7 @@ def _display_commands_section(console: Console, sections: Dict[str, List[str]]) 
     """Display the commands section in a table.
 
     Args:
+    ----
         console: Rich console for display
         sections: Parsed sections dictionary
 
@@ -292,10 +303,12 @@ def _parse_command_options(lines: List[str], current_index: int) -> Tuple[str, i
     """Parse options for a command from the following lines.
 
     Args:
+    ----
         lines: All command lines
         current_index: Current position in the lines
 
     Returns:
+    -------
         Tuple of (options_string, next_index)
 
     """
@@ -340,6 +353,7 @@ def _display_param_section(
     """Display a parameter section (Args or Options) in a table.
 
     Args:
+    ----
         console: Rich console for display
         sections: Parsed sections dictionary
         section_name: Name of the section in the sections dict
@@ -412,11 +426,13 @@ def _parse_param_description(section_lines: List[str], current_index: int, param
     """Parse the description lines for a parameter.
 
     Args:
+    ----
         section_lines: Lines in the current section
         current_index: Current position in the lines
         param_pattern: Pattern to identify parameter definitions
 
     Returns:
+    -------
         Tuple of (description_text, next_index)
 
     """
@@ -448,6 +464,7 @@ def _display_examples_section(console: Console, sections: Dict[str, List[str]]) 
     """Display examples section in a panel.
 
     Args:
+    ----
         console: Rich console for display
         sections: Parsed sections dictionary
 
@@ -489,6 +506,7 @@ def _display_documentation_section(console: Console, sections: Dict[str, List[st
     """Display documentation section.
 
     Args:
+    ----
         console: Rich console for display
         sections: Parsed sections dictionary
 
@@ -501,6 +519,7 @@ def generate_main_cli_help(cli: "CLI") -> None:
     """Format the main CLI menu help display.
 
     Args:
+    ----
         cli: The CLI class instance
 
     """
@@ -596,10 +615,12 @@ def handle_help_request(args: Optional[List[str]] = None) -> bool:
     """Common handler for CLI help requests.
 
     Args:
+    ----
         args (Optional[List[str]]) :
             Command line arguments (uses sys.argv if None)
 
     Returns:
+    -------
         bool : True if help was displayed, False otherwise
 
     """

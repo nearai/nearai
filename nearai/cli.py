@@ -117,7 +117,8 @@ class RegistryCli:
       --star (str) :
         Show items starred by a specific user
 
-    Examples:
+    Examples
+    --------
       # Upload an agent to the registry
       nearai registry upload ./path/to/agent
 
@@ -144,10 +145,12 @@ class RegistryCli:
         Includes metadata and available provider matches for models.
 
         Args:
+        ----
           entry (str) :
             Entry location of the item to display information for (format: namespace/name/version)
 
         Examples:
+        --------
           # Show information about a specific registry item
           nearai registry info example.near/agent-name/0.0.3
 
@@ -190,6 +193,7 @@ class RegistryCli:
         that can be customized for your agent or model.
 
         Args:
+        ----
           local_path : str
             Path to the directory where the metadata template will be created
           category : str
@@ -198,6 +202,7 @@ class RegistryCli:
             Description of the item
 
         Examples:
+        --------
           # Create a metadata template in the current directory
           nearai registry metadata-template
 
@@ -267,6 +272,7 @@ class RegistryCli:
         You can filter the results by namespace, category, tags, and other criteria to find specific items.
 
         Args:
+        ----
           namespace (str) :
             Filter items by namespace/user account (example.near)
           category (str) :
@@ -285,6 +291,7 @@ class RegistryCli:
             Show items starred by a specific user
 
         Examples:
+        --------
           # List all items in the registry
           nearai registry list
 
@@ -352,10 +359,12 @@ class RegistryCli:
         Looks for a metadata.json file in the given directory and updates the remote metadata with the new values.
 
         Args:
+        ----
           local_path (str) :
             Path to the directory containing the item to update
 
         Examples:
+        --------
           # Update metadata for the item in the current directory
           nearai registry update
 
@@ -396,10 +405,12 @@ class RegistryCli:
         This command helps keep the registry up-to-date with the latest models from various providers.
 
         Args:
+        ----
           dry_run (bool) :
             Perform a dry run without actually uploading
 
         Examples:
+        --------
           # Perform a dry run to see what would be uploaded
           nearai registry upload-unregistered-common-provider-models
 
@@ -462,6 +473,7 @@ class RegistryCli:
         """Upload an item to the NEAR AI registry for public use.
 
         Args:
+        ----
           local_path (str) :
             Path to the agent directory
           bump (bool) :
@@ -472,6 +484,7 @@ class RegistryCli:
             Bump with major version increment (1.5.2 → 2.0.0)
 
         Examples:
+        --------
           # Upload an item in the current directory
           nearai registry upload
 
@@ -642,12 +655,14 @@ class RegistryCli:
         This allows you to use or inspect agents, models, datasets, etc. that have been published by others.
 
         Args:
+        ----
           entry_location (str) :
             Entry location of the item to download (format: namespace/name/version)
           force (bool) :
             Force download even if the item already exists locally
 
         Examples:
+        --------
           # Download a specific registry item
           nearai registry download example.near/agent-name/0.0.3
 
@@ -683,7 +698,8 @@ class ConfigCli:
       --local (bool) :
         Store the configuration value in the local config file
 
-    Examples:
+    Examples
+    --------
       # View all configuration values
       nearai config show
 
@@ -759,7 +775,8 @@ class BenchmarkCli:
       --offset (int) :
         Offset for pagination
 
-    Examples:
+    Examples
+    --------
       # Run a benchmark on a dataset with a solver strategy
       nearai benchmark run my-dataset my-solver-strategy --max-concurrent 4 --force
 
@@ -816,6 +833,7 @@ class BenchmarkCli:
         Results are cached in the database for subsequent runs unless --force is used.
 
         Args:
+        ----
           dataset (str) :
             Name of the dataset to benchmark against
           solver_strategy (str) :
@@ -836,6 +854,7 @@ class BenchmarkCli:
             Additional arguments passed to the solver strategy
 
         Examples:
+        --------
             # Run a benchmark with default settings
             nearai benchmark run my-dataset my-solver-strategy
 
@@ -867,9 +886,9 @@ class BenchmarkCli:
         )
 
         solver_strategy_class: Union[SolverStrategy, None] = SolverStrategyRegistry.get(solver_strategy, None)
-        assert solver_strategy_class, (
-            f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
-        )
+        assert (
+            solver_strategy_class
+        ), f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
 
         name = dataset
         if solver_strategy_class.scoring_method == SolverScoringMethod.Custom:
@@ -912,6 +931,7 @@ class BenchmarkCli:
         paginated using limit and offset parameters.
 
         Args:
+        ----
           namespace (str) :
             Filter results by namespace
           benchmark (str) :
@@ -926,6 +946,7 @@ class BenchmarkCli:
             Number of results to skip
 
         Examples:
+        --------
             # List all benchmarks with default pagination
             nearai benchmark list
 
@@ -1001,7 +1022,8 @@ class EvaluationCli:
       --verbose (bool) :
         Show verbose information including detailed logs
 
-    Examples:
+    Examples
+    --------
       # Display evaluation table with default settings
       nearai evaluation table
 
@@ -1031,6 +1053,7 @@ class EvaluationCli:
         The table can be configured to show all key columns and metrics, or a limited subset for better readability.
 
         Args:
+        ----
           all_key_columns (bool) :
             Show all key columns in the table instead of just the important ones. Default is False.
           all_metrics (bool) :
@@ -1041,6 +1064,7 @@ class EvaluationCli:
             Maximum length for metric names in the display.
 
         Examples:
+        --------
             # Display evaluation table with default settings
             nearai evaluation table
 
@@ -1075,6 +1099,7 @@ class EvaluationCli:
           It can filter solutions by status and show either concise or verbose output for each solution.
 
         Args:
+        ----
           entry (str) :
             Evaluation entry to read solutions from (format: namespace/name/version)
           status (Optional[bool]) :
@@ -1083,6 +1108,7 @@ class EvaluationCli:
             Show verbose information including detailed logs
 
         Examples:
+        --------
             # Read all solutions from an evaluation entry
             nearai evaluation read_solutions example.near/benchmark-result/0.1.0
 
@@ -1190,8 +1216,11 @@ class AgentCli:
         Bump with minor version increment (0.1.0 → 0.2.0)
       --major-bump (bool) :
         Bump with major version increment (1.5.0 → 2.0.0)
+      --stream (bool) :
+        Stream the agent's output, only works with agents that stream completions
 
-    Examples:
+    Examples
+    --------
       # Create a new agent interactively (Step-by-step prompts)
       nearai agent create
 
@@ -1223,7 +1252,8 @@ class AgentCli:
 
         This launches a local server for testing and developing agent functionality in a browser-based environment.
 
-        Examples:
+        Examples
+        --------
           # Start the local development server
           nearai agent dev
 
@@ -1244,10 +1274,12 @@ class AgentCli:
         This launches a Streamlit interface showing the agent's structure, code, and metadata.
 
         Args:
+        ----
           path : str
             Path to the agent directory to inspect (required)
 
         Examples:
+        --------
           # Inspect a local agent
           nearai agent inspect ./path/to/agent
 
@@ -1277,6 +1309,7 @@ class AgentCli:
         pass the path to the agent followed by the --local flag. (See examples below.)
 
         Args:
+        ----
           agent (str) :
             Path to the agent directory or agent ID (optional)
           thread_id (str) :
@@ -1294,6 +1327,7 @@ class AgentCli:
 
 
         Examples:
+        --------
           # Select from a list of agents to run that you created or downloaded
           nearai agent interactive
 
@@ -1455,6 +1489,7 @@ class AgentCli:
         This is useful for automation or when you don't need an ongoing conversation.
 
         Args:
+        ----
           agent (str) :
             Path to the agent directory or agent ID (required)
           task (str) :
@@ -1471,8 +1506,11 @@ class AgentCli:
             Show detailed debug information during execution
           env_vars (dict) :
             Environment variables to pass to the agent (JSON format)
+          stream (bool) :
+            Stream the agent's output, only works with agents that stream completions
 
         Examples:
+        --------
           # Send a simple task to an agent
           nearai agent task --agent example.near/agent-name/0.0.3 --task "Summarize this article: https://example.com/article"
 
@@ -1643,6 +1681,7 @@ class AgentCli:
         """Create a new AI agent from scratch or fork existing ones.
 
         Args:
+        ----
           name (str) :
             Name for the new agent (optional).
           description (str) :
@@ -1651,6 +1690,7 @@ class AgentCli:
             Path to an existing agent to fork (format: namespace/agent_name/version).
 
         Examples:
+        --------
           # Create a new agent step-by-step with prompts
           nearai agent create
 
@@ -1715,7 +1755,8 @@ class VllmCli:
       --gpu-memory-utilization (float) :
         Fraction of GPU memory to use
 
-    Examples:
+    Examples
+    --------
       # Run VLLM server with default settings
       nearai vllm run --model mistralai/Mistral-7B-Instruct-v0.1
 
@@ -1735,6 +1776,7 @@ class VllmCli:
         optimizing performance and resource utilization.
 
         Args:
+        ----
           **kwargs : (dict)
             Keyword arguments that can include:
             model (str):
@@ -1749,6 +1791,7 @@ class VllmCli:
               Fraction of GPU memory to use
 
         Examples:
+        --------
             # Run VLLM server with default settings
             nearai vllm run --model mistralai/Mistral-7B-Instruct-v0.1
 
@@ -1800,7 +1843,8 @@ class HubCLI:
       --info (bool) :
         Display system information about the request
 
-    Examples:
+    Examples
+    --------
       # Chat with the default model
       nearai hub chat --query "Explain quantum computing in simple terms"
 
@@ -1820,6 +1864,7 @@ class HubCLI:
         experience with various parameters.
 
         Args:
+        ----
             **kwargs : (dict)
                 Keyword arguments that can include:
                 query (str):
@@ -1835,6 +1880,7 @@ class HubCLI:
                 Additional parameters passed to the model
 
         Examples:
+        --------
             # Chat with the default model
             nearai hub chat --query "Explain quantum computing in simple terms"
 
@@ -1865,7 +1911,8 @@ class LogoutCLI:
     Commands:
       nearai logout : Logout and remove authentication data
 
-    Examples:
+    Examples
+    --------
       # Remove authentication data
       nearai logout
 
@@ -1912,7 +1959,8 @@ class LoginCLI:
       --nonce (str) :
         Nonce value for authentication security
 
-    Examples:
+    Examples
+    --------
       # Login using web-based flow
       nearai login
 
@@ -1953,6 +2001,7 @@ class LoginCLI:
         """Save NEAR account authorization data.
 
         Args:
+        ----
             kwargs (dict) :
                 Keyword arguments that can include:
                 accountId (str) :
@@ -1996,7 +2045,8 @@ class PermissionCli:
       permission (str) :
         The permission to grant or revoke (leave empty on revoke to remove all permissions)
 
-    Examples:
+    Examples
+    --------
       # Grant model access permission to an account
       nearai permission grant alice.near model_access
 
@@ -2022,12 +2072,14 @@ class PermissionCli:
         them to access certain NEAR AI resources or perform specific actions.
 
         Args:
+        ----
            account_id : (str)
                The NEAR account ID to grant the permission to
            permission : (str)
                The permission to grant (e.g., 'model_access', 'agent_creation')
 
         Examples:
+        --------
             # Grant model access permission to an account
             nearai permission grant alice.near model_access
 
@@ -2046,12 +2098,14 @@ class PermissionCli:
         If no permission is specified, all permissions will be revoked from the account.
 
         Args:
+        ----
             account_id : (str)
                 The NEAR account ID to revoke the permission from
             permission : (str)
                 The permission to revoke (optional, if empty all permissions are revoked)
 
         Examples:
+        --------
             # Revoke a specific permission
             nearai permission revoke alice.near model_access
 
