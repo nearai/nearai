@@ -10,6 +10,7 @@ import subprocess
 import tarfile
 import tempfile
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -161,6 +162,8 @@ class Environment(object):
             default_mainnet_rpc = "https://rpc.mainnet.near.org"
 
         class NearAccount(Account):
+            user_rpc_addr: Union[str, None]
+
             async def view(
                 self,
                 contract_id: str,
@@ -197,7 +200,7 @@ class Environment(object):
                     If all retry attempts fail, the exception is propagated.
 
                 """
-                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                acc = Account(self.account_id, self.private_key, self.user_rpc_addr or default_mainnet_rpc)
                 await acc.startup()
                 max_retries = min(max_retries, 10)
 
@@ -258,7 +261,7 @@ class Environment(object):
                     If all retry attempts fail, the exception is propagated.
 
                 """
-                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                acc = Account(self.account_id, self.private_key, self.user_rpc_addr or default_mainnet_rpc)
                 await acc.startup()
                 max_retries = min(max_retries, 10)
 
@@ -297,7 +300,7 @@ class Environment(object):
                     If there is an error retrieving the balance.
 
                 """
-                acc = Account(self.account_id, self.private_key, default_mainnet_rpc)
+                acc = Account(self.account_id, self.private_key, self.user_rpc_addr or default_mainnet_rpc)
                 await acc.startup()
                 return await acc.get_balance(account_id)
 
@@ -307,6 +310,7 @@ class Environment(object):
                 private_key: Optional[Union[List[Union[str, bytes]], str, bytes]] = None,
                 rpc_addr: Optional[str] = None,
             ):
+                self.user_rpc_addr = rpc_addr
                 self.account_id = account_id
                 self.private_key = private_key
                 super().__init__(account_id, private_key, rpc_addr)
@@ -680,10 +684,13 @@ class Environment(object):
 
         self.list_files_from_thread = list_files_from_thread
 
-        def read_file_by_id(file_id: str):
+        def read_file_by_id(file_id: str, decode: Union[str, None] = "utf-8"):
             """Read a file from the thread."""
-            content = hub_client.files.content(file_id).content.decode("utf-8")
-            print("file content returned by api", content)
+            content = hub_client.files.content(file_id).content
+
+            if decode:
+                return content.decode(decode)
+
             return content
 
         self.read_file_by_id = read_file_by_id
@@ -691,7 +698,7 @@ class Environment(object):
         def write_file(
             filename: str,
             content: Union[str, bytes],
-            encoding: str = "utf-8",
+            encoding: Union[str, None] = "utf-8",
             filetype: str = "text/plain",
             write_to_disk: bool = True,
         ) -> FileObject:
@@ -762,6 +769,7 @@ class Environment(object):
 
         def request_user_input() -> Run:
             """Must be called to request input from the user."""
+            self._done = True
             return hub_client.beta.threads.runs.update(
                 thread_id=self._thread_id,
                 run_id=self._run_id,
@@ -772,6 +780,7 @@ class Environment(object):
 
         def request_agent_input() -> Run:
             """Mark the run as ready for input from another agent."""
+            self._done = True
             return hub_client.beta.threads.runs.update(
                 thread_id=self._thread_id,
                 run_id=self._run_id,
@@ -920,6 +929,7 @@ class Environment(object):
                 "id": m.id,
                 "content": "\n".join([c.text.value for c in m.content]),  # type: ignore
                 "role": m.role,
+                "attachments": m.attachments,
             }
             for m in messages
         ]
@@ -957,22 +967,19 @@ class Environment(object):
         """Returns temp dir for primary agent where execution happens."""
         return self.get_primary_agent_temp_dir()
 
-    def read_file(self, filename: str) -> Optional[Union[bytes, str]]:
+    def read_file(self, filename: str, decode: Union[str, None] = "utf-8") -> Optional[Union[bytes, str]]:
         """Reads a file from the environment or thread."""
         file_content: Optional[Union[bytes, str]] = None
         # First try to read from local filesystem
         local_path = os.path.join(self.get_primary_agent_temp_dir(), filename)
-        print(f"Read file {filename} from local path: {local_path}")
+        print(f"Reading file {filename} from local path: {local_path}")
         if os.path.exists(local_path):
             try:
                 with open(local_path, "rb") as local_path_file:
                     local_file_content = local_path_file.read()
-                    try:
-                        # Try to decode as text
-                        file_content = local_file_content.decode("utf-8")
-                    except UnicodeDecodeError:
-                        # If decoding fails, store as binary
-                        file_content = local_file_content
+                    file_content = local_file_content
+                    if decode:
+                        file_content = file_content.decode(decode)
             except Exception as e:
                 print(f"Error with read_file: {e}")
 
@@ -984,7 +991,7 @@ class Environment(object):
             # Then try to read from thread, starting from the most recent
             for f in thread_files:
                 if f.filename == filename:
-                    file_content = self.read_file_by_id(f.id)
+                    file_content = self.read_file_by_id(f.id, decode)
                     break
 
             if not file_content:
@@ -1120,10 +1127,56 @@ class Environment(object):
         messages: Union[Iterable[ChatCompletionMessageParam], str],
         model: Union[Iterable[ChatCompletionMessageParam], str] = "",
         stream: bool = False,
+        thread_id: Optional[str] = None,
+        attachments: Optional[Iterable[Attachment]] = None,
+        message_type: Optional[str] = None,
         **kwargs: Any,
     ) -> Union[ModelResponse, CustomStreamWrapper]:
-        """Returns all completions for given messages using the given model."""
-        return self._run_inference_completions(messages, model, stream, **kwargs)
+        """Returns all completions for given messages using the given model.
+
+        Always returns a ModelResponse object. When stream=True, aggregates the streamed
+        content into a ModelResponse. When stream=False, returns the ModelResponse directly.
+        """
+        params, kwargs = self.get_inference_parameters(messages, model, stream, **kwargs)
+        if stream:
+            message_id = None
+            kwargs.setdefault("extra_headers", {}).update(
+                {
+                    k: v
+                    for k, v in {
+                        "run_id": self._run_id,
+                        "thread_id": thread_id if thread_id else self._thread_id,
+                        "message_id": message_id,
+                    }.items()
+                    if v is not None
+                }
+            )
+
+            # Pass thread_id, attachments, and message_type to the server
+            stream_results = self._run_inference_completions(
+                messages, model, True, thread_id=thread_id, attachments=attachments, message_type=message_type, **kwargs
+            )
+            full_content = ""
+            for chunk in stream_results:
+                if not isinstance(chunk, (tuple, str)) and hasattr(chunk, "choices"):
+                    if chunk.choices and hasattr(chunk.choices[0], "delta"):
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, "content") and delta.content:
+                            full_content += delta.content
+
+            response = ModelResponse(
+                id="streamed_completion",
+                object="chat.completion",
+                created=int(time.time()),
+                model=params.model,
+                choices=[
+                    Choices(index=0, message={"role": "assistant", "content": full_content}, finish_reason="stop")
+                ],
+                usage={"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+            )
+            return response
+        else:
+            return self._run_inference_completions(messages, model, False, **kwargs)
 
     def verify_signed_message(
         self,
@@ -1523,7 +1576,7 @@ class Environment(object):
                 self.mark_failed()
                 raise e
 
-        if not self._pending_ext_agent:
+        if not self._pending_ext_agent and not self.is_done():
             # If no external agent was called, mark the whole run as done.
             # Else this environment will stop for now but this run will be continued later.
             self.mark_done()

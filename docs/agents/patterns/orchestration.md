@@ -28,4 +28,4 @@ For more information on this, see [Agent to Agent Communication](./agent_to_agen
 
 ## API integration
 
-External applications can call one or more NEAR AI Agents using the NEAR AI Assistants API. For more on this, see [Integrating Agents](../../integration/overview.md).
+External applications can call one or more NEAR AI Agents using the NEAR AI Assistants API. For more on this, see [Integrating Agents](../integration.md).

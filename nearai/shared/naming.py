@@ -8,16 +8,20 @@ def get_canonical_name(name: str) -> str:
 
     Applies such transformations:
     1. All letters lowercase.
-    2. Convert '.' between digits to 'p'.
-    3. Convert '<not letter>v<digit>' -> '<not letter><digit>'
-    4. Remove all non-alphanumeric characters except between digits.
+    2. Strips '.near' extensions.
+    3. Convert '.' between digits to 'p'.
+    4. Convert '<not letter>v<digit>' -> '<not letter><digit>'
+    5. Remove all non-alphanumeric characters except between digits.
         Use '_' between digits.
-    5. Convert 'metallama' -> 'llama'.
+    6. Convert 'metallama' -> 'llama'.
 
     e.g. "llama-3.1-70b-instruct" -> "llama3p1_70binstruct"
     """
     # Convert to lowercase
     name = name.lower()
+    # Strip .near extension if present
+    if name.endswith(".near"):
+        name = name[:-5]  # Remove last 5 characters ('.near')
     # Convert '.' between digits to 'p'
     name = re.sub(r"(\d)\.(\d)", r"\1p\2", name)
     # Convert '<digit>v<digit>' -> '<digit>_<digit>'

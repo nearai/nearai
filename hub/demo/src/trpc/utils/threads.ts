@@ -1,3 +1,4 @@
+import mime from 'mime';
 import { type z } from 'zod';
 
 import { env } from '@/env';
@@ -112,6 +113,9 @@ async function fetchFilesAttachedToMessages(
         const contentType = contentResponse.headers.get('content-type');
         const imageBase64 = `data:${contentType};base64,${stringifiedBuffer}`;
         file.content = imageBase64;
+      } else if (mime.getType(file.filename) === 'application/pdf') {
+        const blob = await contentResponse.blob();
+        file.content = await blob.bytes();
       } else {
         const blob = await contentResponse.blob();
         file.content = await blob.text();

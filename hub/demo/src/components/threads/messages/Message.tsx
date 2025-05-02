@@ -6,6 +6,7 @@ import { type ReactNode } from 'react';
 import { useCurrentEntry } from '@/hooks/entries';
 
 import { useThreadMessageContent } from '../ThreadMessageContentProvider';
+import { Attachment } from './Attachment';
 
 type Props = {
   actions?: ReactNode;
@@ -20,10 +21,12 @@ export const Message = ({ children, actions }: Props) => {
   const showFooter = message.role !== 'user' || actions;
   const assistantRoleLabel =
     currentEntry?.details.agent?.assistant_role_label || 'Assistant';
+  const showStreamingMessage =
+    currentEntry?.details.agent?.show_streaming_message;
 
   return (
     <Card
-      animateIn
+      animateIn={!showStreamingMessage || !message.streamed}
       background={message.role === 'user' ? 'sand-2' : undefined}
       style={{
         maxWidth: '100%',
@@ -31,6 +34,10 @@ export const Message = ({ children, actions }: Props) => {
       }}
     >
       {children}
+
+      {message.attachments?.map((attachment) => (
+        <Attachment key={attachment.file_id} attachment={attachment} />
+      ))}
 
       {showFooter && (
         <Flex align="center" gap="m">

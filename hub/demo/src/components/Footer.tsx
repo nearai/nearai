@@ -55,15 +55,6 @@ export const Footer = ({ conditional }: Props) => {
           </Text>
 
           <Text
-            href="https://airtable.com/appc0ZVhbKj8hMLvH/pag4dQKP3KF3qrTFo/form"
-            target="_blank"
-            size="text-xs"
-            color="sand-11"
-          >
-            Contact Us
-          </Text>
-
-          <Text
             href="/terms-and-conditions.pdf"
             target="_blank"
             size="text-xs"

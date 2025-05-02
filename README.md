@@ -99,13 +99,7 @@ nearai version
 
 ### Log In
 
-Login to NEAR AI with your NEAR Account. If you don't have one, you can create one [here](https://wallet.near.org/).
-
-Currently supported NEAR wallets:
-- My NEAR Wallet
-- Sender
-- Meteor
-- Bitte
+Login to NEAR AI with your NEAR Account. If you don't have one, we recommend creating a free account with [Meteor Wallet](https://wallet.meteorwallet.app).
 
 ```bash
 nearai login 
