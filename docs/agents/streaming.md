@@ -19,6 +19,9 @@ To enable agent streaming in the UI, add `"show_streaming_message": true` to the
     }
   }
 ```
+
+See [full example below](#__tabbed_1_2)
+
 The UI automatically receives the same stream as the agent. A counter of deltas received and optionally the stream of text itself are shown to the user.
 
 ![Streaming screenshot.png](../assets/Streaming%20screenshot.png)
@@ -53,6 +56,8 @@ the `/threads/{thread_id}/stream/{run_id}` endpoint.
  * Chunk: One or more tokens streamed from the LLM to the agent.
  * Delta: An SSE event that contains a chunk, streamed to clients.
 
+ [See full example below for more](#__tabbed_1_1)
+
 ### Agent Usage
 
 Within the agent the completion function returns a `StreamHandler` object when `stream=True`. 
@@ -73,7 +78,9 @@ This can be iterated over or passed to streaming libraries that accept a `Stream
 ```
 Use of the /thread/
 
-### Multiple Streaming Invocations!
+ [See full example below for more](#__tabbed_1_1)
+
+### Multiple Streaming Invocations
 
 A single agent run can contain multiple streaming completion calls!
 
@@ -91,13 +98,14 @@ Here is an example where two different personas are passed the same conversation
         self.env.add_reply(result2)
 ```
 
-## API Usage
+ [See full example below for more](#__tabbed_1_1)
+
+## Streaming API
 
 Calls to the `/threads/{thread_id}/stream/{run_id}` endpoint return an SSE EventStream of deltas and thread events.
-These events are compatible with OpenAI Thread streaming events, https://platform.openai.com/docs/api-reference/assistants-streaming/events
+These events are compatible with OpenAI Thread streaming events, https://platform.openai.com/docs/api-reference/assistants-streaming/events.
 
-### Javascript example
-A React client might handle streaming as follows.
+Here is an example of how a React client might use this API endpoint:
 
 ```javascript
   const startStreaming = (threadId: string, runId: string) => {
@@ -155,7 +163,8 @@ A React client might handle streaming as follows.
   };
 ```
 
-## FAQ: more complex cases
+## Advanced Streaming / FAQs
+
  * Child threads do not currently support streaming thus invoking another agent on a child thread will not stream.
  * Agent initiated Deltas
      * Writing delta events from the agent to the agent stream is not currently supported.
@@ -166,64 +175,63 @@ A React client might handle streaming as follows.
      * Depending on your use case you may want to separate tool calls from the main response rather than requesting 
         both in the same completion call.
 
-## Full File examples
+## Full Agent Streaming Example
 
-### Full agent example
-```python
-from nearai.agents.environment import Environment
+=== "agent.py"
 
-class Agent:
-    def __init__(self, env: Environment):
-        self.env = env
+    ```python
+    from nearai.agents.environment import Environment
 
-    def run(self):
-        prompt = {"role": "system", "content": "respond as though you were Socrates"}
-        messages = self.env.list_messages()
+    class Agent:
+        def __init__(self, env: Environment):
+            self.env = env
 
-        # Pass stream=True to enable streaming of deltas
-        # They will then show automatically in the UI or can be fetched at /threads/{thread_id}/stream/{run_id}
-        result = self.env.completion([prompt] + messages, stream=True)
-        self.env.add_reply(result)
+        def run(self):
+            prompt = {"role": "system", "content": "respond as though you were Socrates"}
+            messages = self.env.list_messages()
 
-        prompt2 = {"role": "system", "content": "Now, respond as though you were Plato"}
-        result2 = self.env.completion([prompt2] + messages, stream=True)
-        self.env.add_reply(result2)
+            # Pass stream=True to enable streaming of deltas
+            # They will then show automatically in the UI or can be fetched at /threads/{thread_id}/stream/{run_id}
+            result = self.env.completion([prompt] + messages, stream=True)
+            self.env.add_reply(result)
 
-        self.env.request_user_input()
+            prompt2 = {"role": "system", "content": "Now, respond as though you were Plato"}
+            result2 = self.env.completion([prompt2] + messages, stream=True)
+            self.env.add_reply(result2)
 
-if globals().get('env', None):
-    agent = Agent(globals().get('env'))
-    agent.run()
-```
+            self.env.request_user_input()
 
+    if globals().get('env', None):
+        agent = Agent(globals().get('env'))
+        agent.run()
+    ```
 
+=== "metadata.json"
 
-
-### Full metadata file with show_streaming_message setting
-```
-  "name": "streaming-example",
-  "version": "0.0.3",
-  "category": "agent",
-  "description": "Demonstrates streaming agent runs.",
-  "tags": ["streaming"],
-  "details": {
-    "display_name": "Streaming Example",
-    "icon": "https://static.thenounproject.com/png/1677760-200.png",
-    "agent": {
-      "show_streaming_message": true,
-      "welcome": {
-        "title": "Example of streaming agent runs",
-        "description": "I respond as Socrates then as Plato."
-      },
-      "defaults": {
-        "max_iterations": 1,
-        "model": "llama-v3p3-70b-instruct",
-        "model_max_tokens": 4000,
-        "model_provider": "fireworks"
+      ```json
+        "name": "streaming-example",
+        "version": "0.0.3",
+        "category": "agent",
+        "description": "Demonstrates streaming agent runs.",
+        "tags": ["streaming"],
+        "details": {
+          "display_name": "Streaming Example",
+          "icon": "https://static.thenounproject.com/png/1677760-200.png",
+          "agent": {
+            "show_streaming_message": true,
+            "welcome": {
+              "title": "Example of streaming agent runs",
+              "description": "I respond as Socrates then as Plato."
+            },
+            "defaults": {
+              "max_iterations": 1,
+              "model": "llama-v3p3-70b-instruct",
+              "model_max_tokens": 4000,
+              "model_provider": "fireworks"
+            }
+          },
+          "capabilities": []
+        },
+        "show_entry": true
       }
-    },
-    "capabilities": []
-  },
-  "show_entry": true
-}
-```
+      ```
