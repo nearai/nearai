@@ -2,7 +2,7 @@
 
 ## What is Agent Streaming?
 
-Agent streaming enables delivering output from your agent in a continuous, incremental stream, rather than waiting for a complete one-time response. This improves the user experience by providing immediate feedback and preventing long wait times especially for complex tasks such as multi-step reasoning, data analysis, or tool-based interactions.
+Agent streaming enables output from your agent in a continuous, incremental stream, rather than waiting for a complete one-time response. This improves the user experience by providing immediate feedback and preventing long wait times especially for complex tasks such as multi-step reasoning, data analysis, or tool-based interactions.
 
 ## Getting Started
 
