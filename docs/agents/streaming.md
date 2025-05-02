@@ -1,5 +1,8 @@
 # Agent Streaming
-## Topics
+
+Agent streaming enables delivering output from your AI agent in a continuous, incremental stream, rather than waiting for a complete one-time response. This improves the user experience by providing immediate feedback and preventing long wait times especially for complex tasks such as multi-step reasoning, data analysis, or tool-based interactions.
+
+## Overview
 
 - [Streaming completions in an agent results in agent streaming](#streaming-completions-in-an-agent-results-in-agent-streaming)
 - [UI app.near.ai](#ui-appnearai)
@@ -151,6 +154,12 @@ A React client might handle streaming as follows.
     };
   };
 ```
+
+## Configuration and settings
+
+## Best practices and patterns
+
+## Limitations and considerations
 
 ## FAQ: more complex cases
  * Child threads do not currently support streaming thus invoking another agent on a child thread will not stream.
