@@ -155,12 +155,6 @@ A React client might handle streaming as follows.
   };
 ```
 
-## Configuration and settings
-
-## Best practices and patterns
-
-## Limitations and considerations
-
 ## FAQ: more complex cases
  * Child threads do not currently support streaming thus invoking another agent on a child thread will not stream.
  * Agent initiated Deltas
