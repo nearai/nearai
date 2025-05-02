@@ -19,6 +19,10 @@ To enable agent streaming in the UI, add `"show_streaming_message": true` to the
     }
   }
 ```
+The UI automatically receives the same stream as the agent. A counter of deltas received and optionally the stream of text itself are shown to the user.
+
+![Streaming screenshot.png](../assets/Streaming%20screenshot.png)
+
 !!! note
     If your agent produces intermediate, non-user-facing completions (e.g., during tool calls or complex reasoning steps), you might set `"show_streaming_message": false` to prevent partial or internal messages from being displayed directly to the user in the UI. 
     
@@ -35,8 +39,9 @@ To enable agent streaming in the CLI use the `--stream=True` flag when running `
 
 ## Streaming Completions
 
-To stream completion chunks to your agent, pass `stream=True`:
+To stream completion chunks to your agent, pass `stream=True` when using the `completion` function:
 
+Example:
 ```python
     result = self.env.completion([prompt] + messages, stream=True) # stream the completions!
     self.env.add_reply(result) # write the full message to the thread as normal
@@ -50,28 +55,30 @@ the `/threads/{thread_id}/stream/{run_id}` endpoint.
 
 ### Agent Usage
 
-Within the agent the completion function returns a StreamHandler object when stream=True. 
-This can be iterated over or passed to streaming libraries that accept a StreamHandler.
+Within the agent the completion function returns a `StreamHandler` object when `stream=True`. 
+This can be iterated over or passed to streaming libraries that accept a `StreamHandler`.
 
 ```python
-    resp_stream = self.env.completion([prompt] + messages, stream=True)
+    response_stream = self.env.completion([prompt] + messages, stream=True)
 
-    for event in resp_stream:
-        for _idx, chunk in enumerate(resp_stream):
+    for event in response_stream:
+        for _idx, chunk in enumerate(response_stream):
             c = json.dumps(chunk.model_dump())
             print(c)
             # do something with the chunk
             
             # if part of a chain of async calls you could yield the chunk or evaluate or modify it and yield
             # yield chunk
-    self.env.add_reply(resp_stream) # write the full message to the thread
+    self.env.add_reply(response_stream) # write the full message to the thread
 ```
 Use of the /thread/
 
-## Multiple streaming invocations!
+### Multiple Streaming Invocations!
+
 A single agent run can contain multiple streaming completion calls!
 
-In this example two different personas are passed the same conversation history.
+Here is an example where two different personas are passed the same conversation history:
+
 ```python
         prompt = {"role": "system", "content": "respond as though you were Socrates"}
         messages = self.env.list_messages()
@@ -83,12 +90,6 @@ In this example two different personas are passed the same conversation history.
         result2 = self.env.completion([prompt2] + messages, stream=True)
         self.env.add_reply(result2)
 ```
-
-## UI app.near.ai
-The UI automatically receives the same stream as the agent.
-A counter of deltas received and optionally the stream of text itself are shown to the user.
-
-![Streaming screenshot.png](../assets/Streaming%20screenshot.png)
 
 ## API Usage
 
