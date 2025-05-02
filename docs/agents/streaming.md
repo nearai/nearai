@@ -1,66 +1,58 @@
 # Agent Streaming
 
-Agent streaming enables delivering output from your AI agent in a continuous, incremental stream, rather than waiting for a complete one-time response. This improves the user experience by providing immediate feedback and preventing long wait times especially for complex tasks such as multi-step reasoning, data analysis, or tool-based interactions.
+## What is Agent Streaming?
 
-## Overview
+Agent streaming enables delivering output from your agent in a continuous, incremental stream, rather than waiting for a complete one-time response. This improves the user experience by providing immediate feedback and preventing long wait times especially for complex tasks such as multi-step reasoning, data analysis, or tool-based interactions.
 
-- [Streaming completions in an agent results in agent streaming](#streaming-completions-in-an-agent-results-in-agent-streaming)
-- [UI app.near.ai](#ui-appnearai)
-    - [Agent settings](#agent-settings)
-    - [CLI](#cli)
-- [Agent usage](#agent-usage)
-- [Multiple streaming invocations!](#multiple-streaming-invocations)
-- [API Usage](#api-usage)
-- [FAQ: more complex cases](#faq-more-complex-cases)
-- [Full File examples](#full-file-examples)
-    - [Full agent example](#full-agent-example)
-    - [Full metadata file with show_streaming_message setting](#full-metadata-file-with-show_streaming_message-setting)
+## Getting Started
 
-## Streaming completions in an agent results in agent streaming
-When an Agent streams completions by passing `stream=True`, those completion chunks are streamed back to the agent.
+To use agent streaming, you must first implement [streaming completions](#streaming-completions) in your agent's code. Once complete, you can view these streams in the UI or CLI each having their own unique way to enable.
+
+#### Enable UI Streaming
+
+To enable agent streaming in the UI, add `"show_streaming_message": true` to the `agent` details within your agent's [`metadata.json` file](./quickstart.md/#metadatajson):
+
+```json
+  "details": {
+    "agent": {
+      "show_streaming_message": true
+    }
+  }
+```
+!!! note
+    If your agent produces intermediate, non-user-facing completions (e.g., during tool calls or complex reasoning steps), you might set `"show_streaming_message": false` to prevent partial or internal messages from being displayed directly to the user in the UI. 
+    
+    It's also important to note that the streaming text is immediately replaced upon the next message, so some applications might still prefer `true` even with intermediate steps.
+
+#### Enable CLI Streaming
+
+To enable agent streaming in the CLI use the `--stream=True` flag when running `nearai agent interactive`. As with UI streaming, you must first implement [streaming completions](#streaming-completions) in your agent's code _before_ using this command.
+
+!!! note
+    - This method only has display mode (show each chunk of text) and only shows the final messages.
+
+    - Use this flag each time you run an agent as it does not use the `show_streaming_message` setting from your `metadata.json`
+
+## Streaming Completions
+
+To stream completion chunks to your agent, pass `stream=True`:
 
 ```python
     result = self.env.completion([prompt] + messages, stream=True) # stream the completions!
     self.env.add_reply(result) # write the full message to the thread as normal
 ```
-The chunks are also persisted temporarily on the hub and made available to clients through 
+
+These chunks are also persisted temporarily on the Agent Cloud (Hub) and made available to clients through 
 the `/threads/{thread_id}/stream/{run_id}` endpoint.
 
  * Chunk: One or more tokens streamed from the LLM to the agent.
  * Delta: An SSE event that contains a chunk, streamed to clients.
 
-## UI app.near.ai
-The UI automatically receives the same stream as the agent.
-A counter of deltas received and optionally the stream of text itself are shown to the user.
+### Agent Usage
 
-![Streaming screenshot.png](../assets/Streaming%20screenshot.png)
-
-
-### Agent settings
-To show the text as it is received, set the agent metadata `"show_streaming_message": true`
-inside details->agents. A full file example can be found at the end of this page.
-
-If your agent has tool calls, inter-agent messaging, makes decisions before deciding output, or otherwise produces non-user facing completions,
-you may want to set `"show_streaming_message": false` to avoid showing the user partial messages.
-
-However, this streaming text will be replaced as soon as the next message comes in. For completions that 
-combine user facing text and non-user facing text, some apps may want to briefly show the raw streaming text, quickly replacing 
-it with the final message. This is a design decision for the app to make.
-
-`show_streaming_message` defaults to `true`
-
-### CLI
-Similarly, the CLI can show streaming text as it is received. It only has one display mode (show each chunk of text) and does not use the `show_streaming_message` setting.
-
-You can switch between CLI streaming and message modes by using the `--stream=True` flag. The default is false and will show final messages only.
-
-* An agent that does not stream completions that is run in `nearai agent interactive` mode with `--stream=True` will show no output.
-* An agent that does stream completions will by default show the final message only. When passed `--stream=True` it will show the text as it is received.
-
-
-## Agent usage
 Within the agent the completion function returns a StreamHandler object when stream=True. 
 This can be iterated over or passed to streaming libraries that accept a StreamHandler.
+
 ```python
     resp_stream = self.env.completion([prompt] + messages, stream=True)
 
@@ -92,7 +84,14 @@ In this example two different personas are passed the same conversation history.
         self.env.add_reply(result2)
 ```
 
+## UI app.near.ai
+The UI automatically receives the same stream as the agent.
+A counter of deltas received and optionally the stream of text itself are shown to the user.
+
+![Streaming screenshot.png](../assets/Streaming%20screenshot.png)
+
 ## API Usage
+
 Calls to the `/threads/{thread_id}/stream/{run_id}` endpoint return an SSE EventStream of deltas and thread events.
 These events are compatible with OpenAI Thread streaming events, https://platform.openai.com/docs/api-reference/assistants-streaming/events
 
