@@ -1,19 +1,19 @@
 # Agent Streaming
 ## Topics
 
-- [Streaming completions in an agent result in agent streaming](#streaming-completions-in-an-agent-result-in-agent-streaming)
+- [Streaming completions in an agent results in agent streaming](#streaming-completions-in-an-agent-results-in-agent-streaming)
 - [UI app.near.ai](#ui-appnearai)
-- [CLI](#cli)
-- [Agent settings](#agent-settings)
+    - [Agent settings](#agent-settings)
+    - [CLI](#cli)
 - [Agent usage](#agent-usage)
 - [Multiple streaming invocations!](#multiple-streaming-invocations)
 - [API Usage](#api-usage)
 - [FAQ: more complex cases](#faq-more-complex-cases)
 - [Full File examples](#full-file-examples)
-  - [Full agent example](#full-agent-example)
-  - [Full metadata file with show_streaming_message setting](#full-metadata-file-with-show_streaming_message-setting)
+    - [Full agent example](#full-agent-example)
+    - [Full metadata file with show_streaming_message setting](#full-metadata-file-with-show_streaming_message-setting)
 
-## Streaming completions in an agent result in agent streaming
+## Streaming completions in an agent results in agent streaming
 When an Agent streams completions by passing `stream=True`, those completion chunks are streamed back to the agent.
 
 ```python
@@ -27,21 +27,14 @@ the `/threads/{thread_id}/stream/{run_id}` endpoint.
  * Delta: An SSE event that contains a chunk, streamed to clients.
 
 ## UI app.near.ai
-Agent streaming is automatically handled by the UI.
-An indicator of chunks received is shown to the user.
+The UI automatically receives the same stream as the agent.
+A counter of deltas received and optionally the stream of text itself are shown to the user.
 
 ![Streaming screenshot.png](../assets/Streaming%20screenshot.png)
 
-### CLI
-Similarly, the CLI can show streaming chunks as they are received. It only has one display mode (show the chunks) and does not use the `show_streaming_message` setting detailed in the next section.
-
-You can switch between CLI streaming and message modes by using the `--stream=True` flag. The default is false and will show final messages only.
-
- * An agent that does not stream chunks that is run in `nearai agent interactive` mode with `--stream=True` will show no output.
- * An agent that does stream chunks will by default show the final message only. When passed `--stream=True` it will show the chunks as they are received.
 
 ### Agent settings
-To show the tokens as they are received, set the agent metadata `"show_streaming_message": true`
+To show the text as it is received, set the agent metadata `"show_streaming_message": true`
 inside details->agents. A full file example can be found at the end of this page.
 
 If your agent has tool calls, inter-agent messaging, makes decisions before deciding output, or otherwise produces non-user facing completions,
@@ -52,6 +45,14 @@ combine user facing text and non-user facing text, some apps may want to briefly
 it with the final message. This is a design decision for the app to make.
 
 `show_streaming_message` defaults to `true`
+
+### CLI
+Similarly, the CLI can show streaming text as it is received. It only has one display mode (show each chunk of text) and does not use the `show_streaming_message` setting.
+
+You can switch between CLI streaming and message modes by using the `--stream=True` flag. The default is false and will show final messages only.
+
+* An agent that does not stream completions that is run in `nearai agent interactive` mode with `--stream=True` will show no output.
+* An agent that does stream completions will by default show the final message only. When passed `--stream=True` it will show the text as it is received.
 
 
 ## Agent usage
