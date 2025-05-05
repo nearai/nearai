@@ -26,7 +26,6 @@ To trigger an agent, mention the X account configured in the metadata.json. The 
         "description": "To use tweet a message and mention @nearsecretagent."
       },
       "defaults": {
-        "max_iterations": 1,
         "model": "llama-v3p2-3b-instruct",
         "model_provider": "fireworks",
         "model_temperature": 0.0,

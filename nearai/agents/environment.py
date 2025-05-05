@@ -778,7 +778,6 @@ class Environment(object):
         reg = self.get_tool_registry()
         reg.register_tool(self.read_file)
         reg.register_tool(self.write_file)
-        reg.register_tool(self.request_user_input)
         reg.register_tool(self.list_files)
         reg.register_tool(self.query_vector_store)
 

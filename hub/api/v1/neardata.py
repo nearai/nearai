@@ -100,22 +100,12 @@ async def process_log(log, receipt_execution_outcome, auth_token):
             for data in event["data"]:
                 # Check the event type and call the appropriate save_event function
 
-                max_iterations = data.get("max_iterations", 1)
-                if max_iterations:
-                    if isinstance(max_iterations, (int, float)) and max_iterations > 0:
-                        max_iterations = int(max_iterations)
-                    else:
-                        max_iterations = 1
-                else:
-                    max_iterations = 1
-
                 if event.get("event") == "run_agent":
                     await run_agent(
                         data.get("agent", ""),
                         data.get("message", ""),
                         data.get("signer_id", ""),
                         {
-                            "max_iterations": max_iterations,
                             "env_vars": data.get("env_vars", "{}"),
                             "referral_id": data.get("referral_id", ""),
                             "amount": data.get("amount", ""),
@@ -175,7 +165,6 @@ async def run_agent(agent, message, signer_id, data, auth_token: AuthToken):
         delegate_execution=False,
         parent_run_id=None,
         run_mode=RunMode.SIMPLE,
-        # max_iterations=data.get("max_iterations", 1),
     )
 
     create_run(thread_id=thread.id, run=run_params, auth=auth_token, scheduler=near_scheduler)

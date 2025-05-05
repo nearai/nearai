@@ -330,13 +330,10 @@ def start_with_environment(
         agent.model_temperature = params["temperature"]
     if params.get("max_tokens", ""):
         agent.model_max_tokens = params["max_tokens"]
-    if params.get("max_iterations", ""):
-        agent.max_iterations = params["max_iterations"]
     if verbose:
         print(
             f"[DEBUG] • Agent info: provider: {agent.model_provider} // model: {agent.model} "
-            f"// temperature: {agent.model_temperature} // max_tokens: {agent.model_max_tokens} "
-            f"// max_iterations: {agent.max_iterations}"
+            f"// temperature: {agent.model_temperature} // max_tokens: {agent.model_max_tokens}"
         )
 
     client_config = ClientConfig(

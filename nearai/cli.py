@@ -250,7 +250,6 @@ class RegistryCli:
                     "model_provider": DEFAULT_PROVIDER,
                     "model_temperature": DEFAULT_MODEL_TEMPERATURE,
                     "model_max_tokens": DEFAULT_MODEL_MAX_TOKENS,
-                    "max_iterations": 1,
                 }
                 metadata["details"]["agent"]["framework"] = "minimal"
 

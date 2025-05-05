@@ -62,8 +62,7 @@ curl "https://api.near.ai/v1/threads/runs" \
 -d @- <<'EOF'
   {
     "agent_id": "flatirons.near/xela-agent/5.0.1",
-    "new_message":"Build a backgammon game",
-    "max_iterations": "1"
+    "new_message":"Build a backgammon game"
   }
 EOF
 ```
@@ -78,8 +77,7 @@ curl "https://api.near.ai/v1/threads/runs" \
   {
     "agent_id": "flatirons.near/xela-agent/5.0.1",
     "thread_id": "a_previous_thread_id",
-    "new_message":"Build a backgammon game", 
-    "max_iterations": "2"
+    "new_message":"Build a backgammon game"
   }
 EOF
 ```

@@ -167,9 +167,6 @@ def run(env: Environment):
     # Store the result in the chat history
     env.add_reply(result)
 
-    # Give the prompt back to the user
-    env.request_user_input()
-
 run(env)
 ```
 

@@ -2663,19 +2663,6 @@
             "title": "New Message",
             "description": "A message to add to the thread before running the agents."
           },
-          "max_iterations": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Max Iterations",
-            "description": "Allow an agent to run for up to this number of iterations.",
-            "default": 10
-          },
           "record_run": {
             "anyOf": [
               {

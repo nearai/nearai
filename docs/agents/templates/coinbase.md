@@ -195,7 +195,4 @@ for chunk in executor.stream({"messages": messages}):
     if orchestrator.run_mode == RunMode.LOCAL:
         print(result)
         print("-------------------")
-
-# Run once per user message.
-env.mark_done()
 ```

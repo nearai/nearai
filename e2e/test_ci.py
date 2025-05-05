@@ -168,7 +168,6 @@ def test_spotcheck_benchmark():
 #                 "framework": "base",
 #                 "welcome": {"title": "Your Travel Agent", "description": "Where would you like to go?"},
 #                 "defaults": {
-#                     "max_iterations": 1,
 #                     "model": f"local::{MODEL_NAME}",
 #                     "model_provider": "local",
 #                     "model_temperature": 0.0,
@@ -188,7 +187,6 @@ def test_spotcheck_benchmark():
 
 #     result = env.completion([prompt] + env.list_messages(), model="local::{MODEL_NAME}")
 #     env.add_message("assistant", result)
-#     env.mark_done()
 #     """)
 #     with tempfile.TemporaryDirectory() as tmp_dir:
 #         agent_path = Path(tmp_dir) / "agent"

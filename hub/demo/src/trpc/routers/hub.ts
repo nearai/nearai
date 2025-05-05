@@ -468,10 +468,6 @@ export const hubRouter = createTRPCRouter({
   chatWithAgent: protectedProcedure
     .input(chatWithAgentModel)
     .mutation(async ({ ctx, input }) => {
-      if (typeof input.max_iterations !== 'number') {
-        input.max_iterations = 1;
-      }
-
       const thread = input.thread_id
         ? await fetchWithZod(
             threadModel,
@@ -530,7 +526,6 @@ export const hubRouter = createTRPCRouter({
           body: JSON.stringify({
             agent_env_vars: input.agent_env_vars,
             assistant_id: input.agent_id,
-            max_iterations: input.max_iterations,
             thread_id: thread.id,
             user_env_vars: input.user_env_vars,
           }),
