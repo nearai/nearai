@@ -4,12 +4,9 @@ import json
 import logging
 import os
 import re
-import shlex
 import shutil
-import subprocess
 import tarfile
 import tempfile
-import threading
 import time
 import uuid
 from datetime import datetime, timezone
@@ -17,7 +14,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
 
-import psutil
 from litellm.types.completion import ChatCompletionMessageParam
 from litellm.types.utils import (
     ChatCompletionMessageToolCall,
@@ -138,7 +134,6 @@ class Environment(object):
 
         self._path = path
         self._agents = agents
-        self._done = False
         self._pending_ext_agent = False
         self.env_vars: Dict[str, Any] = env_vars if env_vars else {}
         self._last_used_model = ""
@@ -740,47 +735,26 @@ class Environment(object):
 
         self.write_file = write_file
 
-        def mark_done() -> Run:  # noqa: D102
-            self._done = True
-            res = hub_client.beta.threads.runs.update(
-                thread_id=self._thread_id,
-                run_id=self._run_id,
-                extra_body={
-                    "status": "completed",
-                    "completed_at": datetime.now().isoformat(),
-                },
-            )
-            return res
+        def mark_done() -> None:  # noqa: D102
+            """Deprecated. Do not use."""
+            pass
 
         self.mark_done = mark_done
 
-        def mark_failed() -> Run:
-            """Marks the environment run as failed."""
-            self._done = True
-            self.add_system_log("Environment run failed", logging.ERROR)
-            res = hub_client.beta.threads.runs.update(
-                thread_id=self._thread_id,
-                run_id=self._run_id,
-                extra_body={"status": "failed", "failed_at": datetime.now().isoformat()},
-            )
-            return res
+        def mark_failed() -> None:
+            """Deprecated. Do not use."""
+            pass
 
         self.mark_failed = mark_failed
 
-        def request_user_input() -> Run:
-            """Must be called to request input from the user."""
-            self._done = True
-            return hub_client.beta.threads.runs.update(
-                thread_id=self._thread_id,
-                run_id=self._run_id,
-                extra_body={"status": "requires_action", "required_action": {"type": "user_input"}},
-            )
+        def request_user_input() -> None:
+            """Deprecated. Do not use."""
+            pass
 
         self.request_user_input = request_user_input
 
         def request_agent_input() -> Run:
             """Mark the run as ready for input from another agent."""
-            self._done = True
             return hub_client.beta.threads.runs.update(
                 thread_id=self._thread_id,
                 run_id=self._run_id,
@@ -802,7 +776,6 @@ class Environment(object):
 
     def register_standard_tools(self) -> None:  # noqa: D102
         reg = self.get_tool_registry()
-        reg.register_tool(self.exec_command)
         reg.register_tool(self.read_file)
         reg.register_tool(self.write_file)
         reg.register_tool(self.request_user_input)
@@ -1017,71 +990,6 @@ class Environment(object):
             self.add_system_log(f"Warn: File {filename} not found during read_file operation")
 
         return file_content
-
-    def exec_command(self, command: str) -> Dict[str, Union[str, int]]:
-        """Executes a command in the environment and logs the output.
-
-        The environment does not allow running interactive programs.
-        It will run a program for 1 second then will interrupt it if it is still running
-        or if it is waiting for user input.
-        command: The command to execute, like 'ls -l' or 'python3 tests.py'
-        """
-        approval_function = self._approvals["confirm_execution"] if self._approvals else None
-        if not approval_function:
-            return {
-                "stderr": "Agent runner misconfiguration. No command execution approval function found.",
-            }
-        if not approval_function(command):
-            return {
-                "command": command,
-                "returncode": 999,
-                "stdout": "",
-                "stderr": "Command execution was not approved.",
-            }
-
-        try:
-            process = subprocess.Popen(
-                shlex.split(command),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                bufsize=0,
-                universal_newlines=True,
-                cwd=self._path,
-            )
-        except Exception as e:
-            return {
-                "command": command,
-                "returncode": 999,
-                "stdout": "",
-                "stderr": "Failed to execute: " + str(e),
-            }
-
-        msg = ""
-
-        def kill_process_tree(p: Any) -> None:
-            nonlocal msg
-            msg = "Killing process due to timeout"
-
-            process = psutil.Process(p.pid)
-            for proc in process.children(recursive=True):
-                proc.kill()
-            process.kill()
-
-        timer = threading.Timer(2, kill_process_tree, (process,))
-        timer.start()
-        process.wait()
-        timer.cancel()
-
-        result = {
-            "command": command,
-            "stdout": process.stdout.read() if process.stdout and hasattr(process.stdout, "read") else "",
-            "stderr": process.stderr.read() if process.stderr and hasattr(process.stderr, "read") else "",
-            "returncode": process.returncode,
-            "msg": msg,
-        }
-        with open(os.path.join(self._path, TERMINAL_FILENAME), "a") as f:
-            f.write(json.dumps(result) + DELIMITER)
-        return result
 
     def get_inference_parameters(
         self,
@@ -1451,9 +1359,6 @@ class Environment(object):
         """Returns temp dir for primary agent."""
         return self.get_primary_agent().temp_dir
 
-    def is_done(self) -> bool:  # noqa: D102
-        return self._done
-
     def create_snapshot(self) -> bytes:
         """Create an in memory snapshot."""
         with tempfile.NamedTemporaryFile(suffix=".tar.gz") as f:
@@ -1522,8 +1427,6 @@ class Environment(object):
     def set_next_actor(self, who: str) -> None:
         """Set the next actor / action in the dialogue."""
         next_action_fn = os.path.join(self._path, ".next_action")
-        if who == "agent":
-            self._done = False
 
         with open(next_action_fn, "w") as f:
             f.write(who)
@@ -1538,48 +1441,31 @@ class Environment(object):
             # By default the user starts the conversation.
             return "user"
 
-    def run(
-        self,
-        new_message: Optional[str] = None,
-        max_iterations: int = 10,
-    ) -> None:
+    def run(self, new_message: Optional[str] = None) -> None:
         """Runs agent(s) against a new or previously created environment."""
         if new_message:
             self._add_message("user", new_message)
 
-        iteration = 0
         self.set_next_actor("agent")
 
-        while iteration < max_iterations and not self.is_done() and self.get_next_actor() != "user":
-            iteration += 1
-            if max_iterations > 1:
-                self.add_system_log(
-                    f"Running agent, iteration {iteration}/{max_iterations}",
-                    logging.INFO,
-                )
-            try:
-                error_message, traceback_message = self.get_primary_agent().run(self, task=new_message)
+        try:
+            error_message, traceback_message = self.get_primary_agent().run(self, task=new_message)
+            if self._debug_mode and (error_message or traceback_message):
                 if self._debug_mode and (error_message or traceback_message):
-                    if self._debug_mode and (error_message or traceback_message):
-                        message_parts = []
+                    message_parts = []
 
-                        if error_message:
-                            message_parts.append(f"Error: \n ```\n{error_message}\n```")
+                    if error_message:
+                        message_parts.append(f"Error: \n ```\n{error_message}\n```")
 
-                        if traceback_message:
-                            message_parts.append(f"Error Traceback: \n ```\n{traceback_message}\n```")
+                    if traceback_message:
+                        message_parts.append(f"Error Traceback: \n ```\n{traceback_message}\n```")
 
-                        self.add_reply("\n\n".join(message_parts), message_type="system:debug")
+                    self.add_reply("\n\n".join(message_parts), message_type="system:debug")
 
-            except Exception as e:
-                self.add_system_log(f"Environment run failed: {e}", logging.ERROR)
-                self.mark_failed()
-                raise e
-
-        if not self._pending_ext_agent and not self.is_done():
-            # If no external agent was called, mark the whole run as done.
-            # Else this environment will stop for now but this run will be continued later.
-            self.mark_done()
+        except Exception as e:
+            self.add_system_log(f"Environment run failed: {e}", logging.ERROR)
+            self.mark_failed()
+            raise e
 
     def generate_folder_hash_id(self, path: str) -> str:
         """Returns hash based on files and their contents in path, including subfolders."""  # noqa: E501

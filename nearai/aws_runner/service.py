@@ -262,7 +262,7 @@ class EnvironmentRun:
 
     def run(self, new_message: str = "") -> Optional[str]:  # noqa: D102
         start_time = time.perf_counter()
-        self.env.run(new_message, self.agents[0].max_iterations)
+        self.env.run(new_message)
         stop_time = time.perf_counter()
         write_metric("ExecuteAgentDuration", stop_time - start_time, verbose=self.verbose)
         return self.thread_id
