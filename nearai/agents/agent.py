@@ -138,10 +138,12 @@ class Agent(object):
         details = metadata.get("details", {})
         agent = details.get("agent", {})
         welcome = agent.get("welcome", {})
+        framework = agent.get("framework", "")
 
         self.env_vars = details.get("env_vars", {})
         self.welcome_title = welcome.get("title")
         self.welcome_description = welcome.get("description")
+        self.agent_framework = framework
 
         if agent_metadata := details.get("agent", None):
             if defaults := agent_metadata.get("defaults", None):
@@ -182,62 +184,74 @@ class Agent(object):
             return str(e), traceback.format_exc()
 
     def run_ts_agent(self, agent_filename, env_vars, json_params):
-        """Launch typescript agent."""
-        print(f"Running typescript agent {agent_filename} from {self.ts_runner_dir}")
+        """Launch the appropriate ts_runner variant."""
+        if self.agent_framework == "ts_jutsu":
+            # ---------------------------------------------------------
+            # JUTSU TS RUNNER
+            # ---------------------------------------------------------
+            ts_root = "/var/task/ts_runner_jutsu"
 
-        # Configure npm to use tmp directories
+            # copy user's agent.ts into runner structure expected by jutsu ts runner build
+            dest_agents_dir = os.path.join(ts_root, "agents")
+            os.makedirs(dest_agents_dir, exist_ok=True)
+            shutil.copyfile(agent_filename, os.path.join(dest_agents_dir, "agent.ts"))
+
+            if env_vars.get("DEBUG"):
+                print("runner dir:", ts_root)
+                print("Agents folder content:", os.listdir(dest_agents_dir))
+
+            cwd = ts_root
+        else:
+            # ---------------------------------------------------------
+            # TS RUNNER
+            # ---------------------------------------------------------
+            ts_root = self.ts_runner_dir
+
+            if env_vars.get("DEBUG"):
+                print("runner dir:", ts_root)
+                print("Agents folder content:", os.listdir(ts_root))
+
+            cwd = ts_root
+
+        # prepare command
+        npm_cmd = [
+            "npm",
+            "--loglevel=error",
+            "--prefix",
+            ts_root,
+            "run",
+            "start",
+            "agents/agent.ts",
+            json_params,
+        ]
+
+        # shared environment setup
         env = os.environ.copy()
         env.update(
             {
                 "NPM_CONFIG_CACHE": "/tmp/npm_cache",
                 "NPM_CONFIG_PREFIX": "/tmp/npm_prefix",
-                "HOME": "/tmp",  # Redirect npm home
-                "NPM_CONFIG_LOGLEVEL": "error",  # Suppress warnings, show only errors
+                "HOME": "/tmp",
+                "NPM_CONFIG_LOGLEVEL": "error",
             }
         )
-
-        # Ensure directory structure exists
         os.makedirs("/tmp/npm_cache", exist_ok=True)
         os.makedirs("/tmp/npm_prefix", exist_ok=True)
 
-        # read file /tmp/build-info.txt if exists
-        if os.path.exists("/var/task/build-info.txt"):
-            with open("/var/task/build-info.txt", "r") as file:
-                print("BUILD ID: ", file.read())
-
-        if env_vars.get("DEBUG"):
-            print("Directory structure:", os.listdir("/tmp/ts_runner"))
-            print("Check package.json:", os.path.exists(os.path.join(self.ts_runner_dir, "package.json")))
-            print("Symlink exists:", os.path.exists("/tmp/ts_runner/node_modules/.bin/tsc"))
-            print("Build files exist:", os.path.exists("/tmp/ts_runner/build/sdk/main.js"))
-
-        # Launching a subprocess to run an npm script with specific configurations
-        ts_process = subprocess.Popen(
-            [
-                "npm",  # Command to run Node Package Manager
-                "--loglevel=error",  # Suppress npm warnings and info logs, only show errors
-                "--prefix",
-                self.ts_runner_dir,  # Specifies the directory where npm should look for package.json
-                "run",
-                "start",  # Runs the "start" script defined in package.json, this launches the agent
-                "agents/agent.ts",
-                json_params,  # Arguments passed to the "start" script to configure the agent
-            ],
-            stdout=subprocess.PIPE,  # Captures standard output from the process
-            stderr=subprocess.PIPE,  # Captures standard error
-            cwd=self.ts_runner_dir,  # Sets the current working directory for the process
-            env=env_vars,  # Provides custom environment variables to the subprocess
+        # spawn
+        proc = subprocess.Popen(
+            npm_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=cwd,
+            env=env_vars,
         )
-
-        stdout, stderr = ts_process.communicate()
-
-        stdout = stdout.decode().strip()
-        if stdout and env_vars.get("DEBUG"):
-            print(f"TS AGENT STDOUT: {stdout}")
-
-        stderr = stderr.decode().strip()
+        stdout, stderr = proc.communicate()
+        if env_vars.get("DEBUG") and stdout:
+            print("TS AGENT STDOUT:", stdout.decode().strip())
         if stderr:
-            print(f"TS AGENT STDERR: {stderr}")
+            print("TS AGENT STDERR:", stderr.decode().strip())
+
 
     def run(self, env: Any, task: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
         """Run the agent code. Returns error message and traceback message."""
@@ -265,10 +279,15 @@ class Agent(object):
                 self.agent_language = "ts"
 
                 # copy files from nearai/ts_runner_sdk to self.temp_dir
-                ts_runner_sdk_dir = "/tmp/ts_runner"
-                ts_runner_agent_dir = os.path.join(ts_runner_sdk_dir, "agents")
+                # pick correct TS runner ts_jutsu runner or ts runner)
+                if self.agent_framework == "ts_jutsu":
+                    ts_runner_sdk_dir  = "/tmp/ts_runner_jutsu"
+                    ts_runner_actual_path = "/var/task/ts_runner_jutsu"
+                else:
+                    ts_runner_sdk_dir  = "/tmp/ts_runner"
+                    ts_runner_actual_path = "/var/task/ts_runner"
 
-                ts_runner_actual_path = "/var/task/ts_runner"
+                ts_runner_agent_dir = os.path.join(ts_runner_sdk_dir, "agents")
 
                 shutil.copytree(ts_runner_actual_path, ts_runner_sdk_dir, symlinks=True, dirs_exist_ok=True)
 
