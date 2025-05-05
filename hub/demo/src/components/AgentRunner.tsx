@@ -77,10 +77,7 @@ type Props = {
 
 type RunView = 'conversation' | 'output' | undefined;
 
-type FormSchema = Pick<
-  z.infer<typeof chatWithAgentModel>,
-  'new_message'
->;
+type FormSchema = Pick<z.infer<typeof chatWithAgentModel>, 'new_message'>;
 
 export type AgentChatMutationInput = FormSchema &
   Partial<z.infer<typeof chatWithAgentModel>>;
