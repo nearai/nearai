@@ -118,6 +118,12 @@ Setup complete! You can now proceed to [Agent Quickstart](./agents/quickstart.md
 
 Here is a complete reference guide for all NEAR AI CLI commands, their usage, and examples. Use the right navigation menu to quickly jump to an area of interest.
 
+- [Account Management](#account-management)
+- [Agent Development](#agent-development)
+- [Registry Management](#registry-management)
+- [Model Operations](#model-operations)
+- [Configuration](#configuration)
+
 !!! tip
     At any time you can use the `--help` flag in NEAR AI CLI for more information about a command or group of commands along with example usage.
 
