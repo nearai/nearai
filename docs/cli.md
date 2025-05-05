@@ -4,6 +4,8 @@ NEAR AI CLI allows you to [create and deploy agents](./agents/quickstart.md), [t
 
 ---
 
+## Quickstart
+
 ### Requirements
 
 - Python 3.9 - 3.11 **(3.12 - 3.13 is NOT supported)**
@@ -41,7 +43,7 @@ Additionally, we recommend creating a virtual environment to avoid conflicts wit
 
 ---
 
-## Installing NEAR AI CLI
+### Installing NEAR AI CLI
 
 === "pip"
 
@@ -67,9 +69,11 @@ Additionally, we recommend creating a virtual environment to avoid conflicts wit
 ---
 
 
-## Login to NEAR AI
+### Account Creation & Login
 
-To create a new agent, first login with a NEAR Account. If you don't have one, we recommend creating a free account with [Meteor Wallet](https://wallet.meteorwallet.app):
+To create a new agent, first login with a NEAR Account. If you don't have one, we recommend creating a free account with [Meteor Wallet](https://wallet.meteorwallet.app). 
+
+After you've created an account run:
 
 ``` bash
 nearai login # OR nearai login --remote
@@ -83,12 +87,15 @@ $> nearai login
 Please visit the following URL to complete the login process: https://auth.near.ai?message=Welcome+to+NEAR+AI&nonce=<xyzxyzxyzxyzx>&recipient=ai.near&callbackUrl=http%3A%2F%2Flocalhost%3A63130%2Fcapture
 ```
 
-After successfully logging in, you will see a confirmation screen. Close it and return to your terminal.
-
+After successfully logging in, you will see a confirmation screen: 
 
 ![alt text](./assets/agents/quickstart-login.png)
 
-??? tip "Other Login Methods"
+Close this window and return to your terminal. 
+
+Setup complete! You can now proceed to [Agent Quickstart](./agents/quickstart.md) and create your first AI Agent! 🚀
+
+!!! info "Other Login Methods"
 
     If you have already logged in on `near-cli`, you know your account's private key, or you have the credentials on another device, you can use the following commands to login:
 
@@ -103,7 +110,24 @@ After successfully logging in, you will see a confirmation screen. Close it and 
     nearai login --remote
     ```
 
+    See [reference docs below](#account-management) for more info on account management.
+
 ---
+
+## NEAR AI CLI Reference Docs
+
+Here is a complete reference guide for all NEAR AI CLI commands, their usage, and examples. Use the right navigation menu to quickly jump to an area of interest.
+
+!!! tip
+    At any time you can use the `--help` flag in NEAR AI CLI for more information about a command or group of commands along with example usage.
+
+    Additionally, simply runing `nearai` in your terminal will display a full list of all commands:
+
+    ![CLI Main Menu](./assets/CLI-main-menu.png)
+
+---
+
+## Account Management
 
 ### `login`
 
