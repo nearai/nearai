@@ -133,7 +133,6 @@ nav:
   - Home:
     - Welcome To NEAR AI Docs: 'index.md'
     - 'cli.md'
-    - CLI Reference: 'cli_command_reference.md'
     - Contributing: 'contributing.md'
     - Decentralization: 'decentralization.md'
     - Private & Verifiable AI: 'private-ml-sdk.md'
