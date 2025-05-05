@@ -121,7 +121,7 @@ Here is a complete reference guide for all NEAR AI CLI commands, their usage, an
 !!! tip
     At any time you can use the `--help` flag in NEAR AI CLI for more information about a command or group of commands along with example usage.
 
-    Additionally, simply runing `nearai` in your terminal will display a full list of all commands:
+    Additionally, simply running `nearai` in your terminal will display a full list of all commands:
 
     ![CLI Main Menu](./assets/CLI-main-menu.png)
 
