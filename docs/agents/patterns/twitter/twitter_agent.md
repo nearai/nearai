@@ -4,7 +4,7 @@ NEAR AI allows anyone to easily create an [`X`](https://x.com) (Previously `Twit
 
 ![Demo](./images/demo.png)
 
-In this tutorial we will learn how the [twitter jokester agent](https://app.near.ai/agents/maguila.near/jokester/latest/source) works, and how you can change it to create your own X AI agent in less than five minute.
+In this tutorial, you'll learn how the [Twitter jokester agent](https://app.near.ai/agents/maguila.near/jokester/latest/source) works, and how you can change it to create your own X AI agent in less than five minutes.
 
 ---
 
@@ -50,7 +50,7 @@ The agent works by listening to mentions of the account `@maguila_bot` and reply
 ```
 
 !!! info
-    Technically speaking, the agent is not listening for mentions, but being executed when a specific event happens. In this case, when the account `@maguila_bot` is mentioned in `X` (denoted by the `event` `x_mentions`)
+    Technically speaking, the agent is not listening to mentions, but is executed when a specific event happens. In this case, when the account `@maguila_bot` is mentioned in `X` (denoted by the `event` `x_mentions`)
     
     Events are automatically handled by the NEAR AI platform, so you don't need to worry about them.
 
@@ -73,7 +73,7 @@ The agent receives the `tweet` that mentions it as an input object, which contai
  }
 ```
 
-Since the `tweet` object contains all the information needed, we can process it through a model in order to generate a response.
+Since the `tweet` object contains all the needed information, we can process it through a model to generate a response.
 
 ``` python title="agent.py"
 # Get the last message, which is the tweet
@@ -119,7 +119,7 @@ if len(joke) > 280:
 
 The agent uses the `tweepy` library to send a reply to the tweet.
 
-First it creates a `tweepy` client, which is done in the `__init__` method of the agent. The client is created using the API keys stored in the environment variables.
+First, it creates a `tweepy` client, which is done using the `__init__` method of the agent. The client is created using the API keys stored in the environment variables.
 
 ``` python title="agent.py"
 self.x_client = tweepy.Client(
@@ -147,13 +147,13 @@ def send_tweet(self, env, tweet, tweet_id):
 
 ## Modifying the Agent
 
-If you want to create your own agent, you will need to start by forking [maguila](https://app.near.ai/agents/maguila.near/jokester/latest/source), and setting up the right Twitter API keys, so the agent can control the account you want.
+If you want to create your own agent, you will need to start by forking [Jokester](https://app.near.ai/agents/maguila.near/jokester/latest/source), and setting up the right Twitter API keys, so the agent can control the account you want.
 
 <hr class="subsection" />
 
 ### Forking an Agent
 
-To fork the Twitter agent, enter [click here](https://app.near.ai/agents/maguila.near/jokester/latest/source) in your browser and click on the "Fork" button. This will create a copy of the agent in your NEAR AI registry.
+To fork the Twitter agent, [open this link](https://app.near.ai/agents/maguila.near/jokester/latest/source) in your browser and click the **`Fork`** button. This will create a copy of the agent in your NEAR AI registry.
 
 ![start](./images/01-start.png)
 
@@ -188,15 +188,15 @@ To allow your agent to post to X you will need to get API keys from X and setup 
 
 ### Setting up the Keys
 
-There are two ways to set your keys to environment variables. You can set them in web interface or in cli.
+There are two ways to set your keys to environment variables: through the web interface or through the CLI.
 
 <hr class="subsection" />
 
 #### Web interface
 
 1. Go to the agent.
-2. Click on the "Run" tab.
-3. On the left side, click on the "Add" Button next to "Environment Variables".
+2. Click on the **`Run`** tab.
+3. On the left side, click on the **`Add`** Button next to **`Environment Variables`**.
 4. Add the following variables:
     - `X_ACCESS_TOKEN`
     - `X_ACCESS_TOKEN_SECRET`
@@ -210,8 +210,8 @@ Here is how it would look like:
 <hr class="subsection" />
 
 #### CLI
-You can set your keys to environment variables using the cli.
-For example, if you want to set variable, you can run the following command in your terminal, remember to replace the values with your own keys:
+You can also set your keys to environment variables using the command-line interface (CLI).
+For example, if you want to set a variable, you can run the following command in your terminal (remember to replace the values with your own keys):
 
 ```bash
 curl -X POST "https://api.near.ai/v1/create_hub_secret" \
@@ -274,13 +274,13 @@ curl -X POST "https://api.near.ai/v1/create_hub_secret" \
 ```
 
 !!! info "Bearer Token"
-    You need generate a bearer token to use nearai api. you can read more about it [here](../../../api/guide.md).
+    You need to generate a bearer token to use the NEAR AI API. you can read more about it [here](../../../api/guide.md).
     
 <hr class="subsection" />
 
 ### Modifying the Agent
 
-Let's change the agent into a charming 19th-century scholar who answers history questions with poetic poetic grace and Victorian elegance. You can also adjust the prompt and model accordingly, for example, like this:
+Let's change the agent into a charming 19th-century scholar who answers history questions with poetic grace and Victorian elegance. You can also adjust the prompt and model accordingly, for example, like this:
 
 ```python title="agent.py"
 PROMPT = """
