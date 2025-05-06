@@ -111,6 +111,7 @@ export const entryDetailsModel = z.intersection(
             .string()
             .array()
             .optional(), // https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/accept
+          show_streaming_message: z.boolean().default(true),
           welcome: z
             .object({
               title: z.string(),

@@ -127,3 +127,10 @@ class VectorStoreFileCreate(BaseModel):
 
     file_id: str
     """File ID returned from upload file endpoint."""
+
+
+class Delta(BaseModel):
+    id: Optional[str] = None
+    object: str = "thread.message.delta"
+    content: dict
+    filename: Optional[str] = None

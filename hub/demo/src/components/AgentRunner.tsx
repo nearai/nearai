@@ -66,6 +66,7 @@ import { WALLET_TRANSACTION_CALLBACK_URL_QUERY_PARAMS } from '@/utils/wallet';
 
 import s from './AgentRunner.module.scss';
 import { ThreadFileModal } from './threads/ThreadFileModal';
+import { ThreadThinking } from './threads/ThreadThinking';
 
 type Props = {
   namespace: string;
@@ -124,6 +125,9 @@ export const AgentRunner = ({
   });
 
   const [htmlOutput, setHtmlOutput] = useState('');
+  const [streamingText, setStreamingText] = useState<string>('');
+  const [streamingTextLatestChunk, setStreamingTextLatestChunk] =
+    useState<string>('');
   const [parametersOpenForSmallScreens, setParametersOpenForSmallScreens] =
     useState(false);
   const [threadsOpenForSmallScreens, setThreadsOpenForSmallScreens] =
@@ -151,6 +155,8 @@ export const AgentRunner = ({
   const setAddMessage = useThreadsStore((store) => store.setAddMessage);
   const setOpenedFileId = useThreadsStore((store) => store.setOpenedFileId);
   const thread = threadsById[chatMutationThreadId.current || threadId];
+  const [stream, setStream] = useState<EventSource | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
 
   const _chatMutation = trpc.hub.chatWithAgent.useMutation();
   const chatMutation = useMutation({
@@ -174,11 +180,11 @@ export const AgentRunner = ({
 
         addOptimisticMessages(threadId, [input]);
         const response = await _chatMutation.mutateAsync(input);
-
         setThread({
           ...response.thread,
           run: response.run,
         });
+        startStreaming(response.thread?.id, response.run?.id);
 
         chatMutationThreadId.current = response.thread.id;
         updateQueryPath({ threadId: response.thread.id }, 'replace', false);
@@ -192,7 +198,6 @@ export const AgentRunner = ({
 
   const isRunning =
     _chatMutation.isPending ||
-    thread?.run?.status === 'requires_action' ||
     thread?.run?.status === 'queued' ||
     thread?.run?.status === 'in_progress';
 
@@ -213,21 +218,19 @@ export const AgentRunner = ({
   );
 
   const logMessages = useMemo(() => {
-    const result = (thread ? Object.values(thread.messagesById) : []).filter(
+    return (thread ? Object.values(thread.messagesById) : []).filter(
       (message) => message.metadata?.message_type?.startsWith('system:'),
     );
-    return result;
   }, [thread]);
 
   const messages = useMemo(() => {
-    const result = [
+    return [
       ...(thread ? Object.values(thread.messagesById) : []),
       ...optimisticMessages.map((message) => message.data),
     ].filter(
       (message) =>
         showLogs || !message.metadata?.message_type?.startsWith('system:'),
     );
-    return result;
   }, [thread, optimisticMessages, showLogs]);
 
   const files = useMemo(() => {
@@ -295,7 +298,7 @@ export const AgentRunner = ({
     [updateQueryPath],
   );
 
-  const attachmentMaxSizeMegabytes = 1;
+  const attachmentMaxSizeMegabytes = 50;
   const attachmentAcceptMimeTypes =
     currentEntry?.details.agent?.allow_message_attachments_accept_mime_types?.reduce(
       (result, type) => {
@@ -452,28 +455,9 @@ export const AgentRunner = ({
     clearOptimisticMessages();
     form.setValue('new_message', '');
     form.setFocus('new_message');
+    setStreamingText('');
+    setStreamingTextLatestChunk('');
   };
-
-  useEffect(() => {
-    // This logic simply provides helpful logs for debugging in production
-
-    if (!threadQuery.isFetching && (threadQuery.data || threadQuery.error)) {
-      const now = new Date();
-      const elapsedSecondsSinceRunStart = chatMutationStartedAt.current
-        ? (now.getTime() - chatMutationStartedAt.current.getTime()) / 1000
-        : null;
-
-      console.log(
-        `Thread polling fetch responded at: ${now.toLocaleTimeString()}`,
-        {
-          messages: threadQuery.data?.messages,
-          data: threadQuery.data,
-          error: threadQuery.error,
-          elapsedSecondsSinceRunStart,
-        },
-      );
-    }
-  }, [threadQuery.data, threadQuery.error, threadQuery.isFetching]);
 
   useEffect(() => {
     if (
@@ -488,6 +472,77 @@ export const AgentRunner = ({
       setThread(threadQuery.data);
     }
   }, [setThread, threadQuery.data, thread?.metadata.topic, utils]);
+
+  // SSE for streaming updates
+
+  const stopStreaming = (stream: EventSource) => {
+    stream.close();
+    setIsStreaming(false);
+    setStream(null);
+    setStreamingText('');
+    setStreamingTextLatestChunk('');
+  };
+
+  const startStreaming = (threadId: string, runId: string) => {
+    if (!threadId) return;
+    if (!runId) return;
+
+    setIsStreaming(true);
+
+    const eventSource = new EventSource(
+      `/api/v1/threads/${threadId}/stream/${runId}`,
+    );
+
+    eventSource.addEventListener('message', (event) => {
+      const data = JSON.parse(event.data);
+      const eventType = data.event;
+      switch (eventType) {
+        case 'thread.message.delta':
+          if (!data?.data?.delta?.content) return;
+          const content = data.data.delta.content;
+          if (content.length === 0 || !content[0]?.text?.value) return;
+          const latestChunk = data.data.delta.content[0].text.value;
+          setStreamingText((prevText) => prevText + latestChunk);
+          setStreamingTextLatestChunk(latestChunk);
+
+          // Force React to rerender immediately rather than batching
+          setTimeout(() => {}, 0);
+          break;
+
+        case 'thread.message.completed':
+          setStreamingText('');
+          setStreamingTextLatestChunk('');
+          break;
+        case 'thread.run.completed':
+        case 'thread.run.error':
+        case 'thread.run.canceled':
+        case 'thread.run.expired':
+        case 'thread.run.requires_action':
+          stopStreaming(eventSource);
+          break;
+      }
+    });
+
+    eventSource.onerror = (error) => {
+      console.log('SSE error:', error);
+      eventSource.close();
+      setIsStreaming(false);
+    };
+
+    setStream(eventSource);
+
+    return () => {
+      eventSource.close();
+    };
+  };
+
+  useEffect(() => {
+    if (!isRunning) {
+      if (stream) {
+        stopStreaming(stream);
+      }
+    }
+  }, [isRunning, stream]);
 
   useEffect(() => {
     if (threadQuery.error?.data?.code === 'FORBIDDEN') {
@@ -657,6 +712,8 @@ export const AgentRunner = ({
                 ) : (
                   <ThreadMessages
                     messages={messages}
+                    streamingText={streamingText}
+                    streamingTextLatestChunk={streamingTextLatestChunk}
                     threadId={threadId}
                     welcomeMessage={
                       <AgentWelcome currentEntry={currentEntry} />
@@ -669,6 +726,10 @@ export const AgentRunner = ({
             <Sidebar.MainStickyFooter>
               <Form onSubmit={form.handleSubmit(onSubmit)} ref={formRef}>
                 <Flex direction="column" gap="m">
+                  {isRunning && (
+                    <ThreadThinking length={streamingText.length} />
+                  )}
+
                   <InputTextarea
                     placeholder="Write your message and press enter..."
                     onKeyDown={onKeyDownContent}
@@ -849,7 +910,7 @@ export const AgentRunner = ({
                         type="submit"
                         icon={<ArrowRight weight="bold" />}
                         size="small"
-                        loading={isRunning}
+                        loading={isRunning || isStreaming}
                       />
                     </Flex>
                   ) : (

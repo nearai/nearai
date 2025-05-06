@@ -60,9 +60,18 @@ The agent works by listening to mentions of the account `@maguila_bot` and reply
 
 The agent receives the `tweet` that mentions it as an input object, which contains the following data:
 
-- author_id
-- tweet_id
-- text
+```json
+ {
+   "author_id": "...",
+   "tweet_id": "...",
+   "text": "...",
+   "author": {
+      "username": "...",
+      "name": "...",
+      "profile_image_url": "..."
+    }
+ }
+```
 
 Since the `tweet` object contains all the information needed, we can process it through a model in order to generate a response.
 
