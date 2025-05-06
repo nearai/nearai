@@ -606,12 +606,11 @@ class Environment(object):
             """Assistant adds a message to the environment."""
             # NOTE: message from `user` are not stored in the memory
 
-            role = "assistant"
             if self._debug_mode and not message_type:
-                self.add_chat_log(role, message)
+                self.add_chat_log("assistant", message)
             return hub_client.beta.threads.messages.create(
                 thread_id=thread_id,
-                role=role,
+                role="assistant",
                 content=message,
                 extra_body={
                     "assistant_id": self.get_primary_agent().identifier,
