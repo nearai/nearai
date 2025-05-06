@@ -24,6 +24,7 @@ from rich.text import Text
 from tabulate import tabulate
 
 from nearai.agents.local_runner import LocalRunner
+from nearai.aws_runner.service import EnvironmentRun, start_with_environment
 from nearai.cli_help import handle_help_request
 from nearai.cli_helpers import (
     assert_user_auth,
@@ -1400,6 +1401,18 @@ class AgentCli:
 
         agent_id = get_agent_id(agent_path, local)
 
+        if local:
+            if stream:
+                print("NOTE: streaming in interactive --local is not implemented.")
+            env_run = self._start_local_session(
+                agent=agent_id,
+                thread_id=thread_id,
+                tool_resources=tool_resources,
+                local_path=agent_path,
+                verbose=verbose,
+                env_vars=env_vars,
+            )
+
         last_message_id = None
         print(f"\n=== Starting interactive session with agent: {agent_id} ===")
         print("")
@@ -1455,17 +1468,22 @@ class AgentCli:
 
             new_message = "\n".join(lines)
 
-            last_message_id = self._task(
-                agent=agent_id,
-                task=new_message,
-                thread_id=thread_id,
-                tool_resources=tool_resources,
-                last_message_id=last_message_id,
-                local_path=agent_path if local else None,
-                verbose=verbose,
-                env_vars=env_vars,
-                streaming=stream,
-            )
+            if local:
+                last_message_id = self._run_local_session(
+                    task=new_message, env_run=env_run, last_message_id=last_message_id
+                )
+            else:
+                last_message_id = self._task(
+                    agent=agent_id,
+                    task=new_message,
+                    thread_id=thread_id,
+                    tool_resources=tool_resources,
+                    last_message_id=last_message_id,
+                    local_path=agent_path if local else None,
+                    verbose=verbose,
+                    env_vars=env_vars,
+                    streaming=stream,
+                )
 
             # Update thread_id for the next iteration
             if thread_id is None:
@@ -1535,6 +1553,75 @@ class AgentCli:
         if last_message_id:
             print(f"Task completed. Thread ID: {self.last_thread_id}")
             print(f"Last message ID: {last_message_id}")
+
+    def _start_local_session(
+        self,
+        agent: str,
+        thread_id: Optional[str] = None,
+        tool_resources: Optional[Dict[str, Any]] = None,
+        local_path: Optional[Path] = None,
+        verbose: bool = False,
+        env_vars: Optional[Dict[str, Any]] = None,
+    ) -> EnvironmentRun:
+        """Starts local session, no messages yet from user."""
+        assert_user_auth()
+
+        hub_client = get_hub_client()
+        if thread_id:
+            thread = hub_client.beta.threads.retrieve(thread_id)
+        else:
+            thread = hub_client.beta.threads.create(
+                tool_resources=tool_resources,
+            )
+        thread_id = thread.id
+        print(f"thread_id = {thread_id}")
+
+        run = hub_client.beta.threads.runs.create(
+            thread_id=thread.id,
+            assistant_id=agent,
+            extra_body={"delegate_execution": True},
+        )
+
+        params = {
+            "api_url": CONFIG.api_url,
+            "tool_resources": run.tools,
+            "data_source": "local_files",
+            "user_env_vars": env_vars,
+            "agent_env_vars": {},
+            "verbose": verbose,
+        }
+        auth = CONFIG.auth
+        assert auth is not None
+        return start_with_environment(str(local_path), auth, thread_id, run.id, str(local_path), params)
+
+    def _run_local_session(
+        self,
+        task: str,
+        env_run: EnvironmentRun,
+        last_message_id: Optional[str] = None,
+    ) -> Optional[str]:
+        env_run.run(task)
+
+        # List new messages
+        hub_client = get_hub_client()
+        messages = hub_client.beta.threads.messages.list(
+            thread_id=env_run.thread_id, after=last_message_id, order="asc"
+        )
+        message_list = list(messages)
+        if message_list:
+            for msg in message_list:
+                if msg.metadata and msg.metadata.get("message_type"):
+                    continue
+                if msg.role == "assistant":
+                    print(f"Assistant: {msg.content[0].text.value}")
+            last_message_id = message_list[-1].id
+        else:
+            print("No new messages")
+
+        # Store the thread_id for potential use in interactive mode
+        self.last_thread_id = env_run.thread_id
+
+        return last_message_id
 
     def _task(
         self,

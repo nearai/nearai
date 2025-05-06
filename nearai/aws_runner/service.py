@@ -3,15 +3,16 @@ import json
 import os
 import shutil
 import time
+from pathlib import Path
 from subprocess import call
-from typing import Optional, Union
+from typing import Optional
 
 import boto3
 from ddtrace import patch_all, tracer
-from nearai.agents.agent import Agent
+from nearai.agents.agent import Agent, get_local_agent_files
 from nearai.agents.environment import Environment
 from nearai.aws_runner.partial_near_client import PartialNearClient
-from nearai.registry import get_registry_folder
+from nearai.registry import get_registry_folder, resolve_local_path
 from nearai.shared.auth_data import AuthData
 from nearai.shared.client_config import ClientConfig
 from nearai.shared.inference_client import InferenceClient
@@ -142,7 +143,7 @@ def write_metric(metric_name, value, unit="Milliseconds", verbose=True):
         print(f"[DEBUG] • Would have written metric {metric_name} with value {value} to cloudwatch")
 
 
-def load_agent(client, agent, params: dict, additional_path: str = "", verbose=True) -> Agent:
+def load_agent(client, agent: str, params: dict, additional_path: str = "", verbose=True) -> Agent:
     agent_metadata = None
 
     if params["data_source"] == "registry":
@@ -180,11 +181,13 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
         return full_agent
     elif params["data_source"] == "local_files":
         agent = agent.replace(f"{get_registry_folder()}/", "")
-        agent_files = get_local_agent_files(agent, additional_path)
+        path = resolve_local_path(Path(additional_path if additional_path else agent))
+        agent_files = get_local_agent_files(path)
 
         for file in agent_files:
-            if os.path.basename(file["filename"]) == "metadata.json":
-                agent_metadata = json.loads(file["content"])
+            if os.path.basename(file) == "metadata.json":
+                with open(file) as f:
+                    agent_metadata = json.load(f)
                 if verbose:
                     agent_info = f"""[DEBUG]   • Name: {agent_metadata.get("name", "N/A")}
 [DEBUG]   • Version: {agent_metadata.get("version", "N/A")}
@@ -221,7 +224,11 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
             print(f"Missing metadata for {agent}")
 
         return Agent(
-            agent, agent_files, agent_metadata or {}, change_to_temp_dir=params.get("change_to_agent_temp_dir", True)
+            agent,
+            agent_files,
+            agent_metadata or {},
+            change_to_temp_dir=params.get("change_to_agent_temp_dir", True),
+            local_path=path,
         )
     else:
         raise ValueError("Invalid data_source")
@@ -359,14 +366,8 @@ def start_with_environment(
         inference_client.set_provider_models(provider_models_cache)
 
     hub_client = client_config.get_hub_client()
-    run_path = (
-        additional_path
-        if not params.get("change_to_agent_temp_dir", True) and additional_path
-        else f"{OUTPUT_PATH}/{agent.namespace}/{agent.name}/{agent.version}"
-    )
 
     env = Environment(
-        run_path,
         loaded_agents,
         inference_client,
         hub_client,
@@ -394,44 +395,3 @@ def run_with_environment(
     """Runs agent against environment fetched from id, optionally passing a new message to the environment."""
     environment_run = start_with_environment(agents, auth, thread_id, run_id, additional_path, params, print_system_log)
     return environment_run.run(new_message)
-
-
-def get_local_agent_files(agent_identifier: str, additional_path: str = ""):
-    """Fetches an agent from local filesystem."""
-    base_path = os.path.expanduser(f"~/.nearai/registry/{agent_identifier}")
-
-    if agent_identifier.endswith("latest"):
-        base_path = os.path.dirname(base_path.replace("latest", ""))
-        versions = os.listdir(base_path)
-        versions.sort()
-        base_path = os.path.join(base_path, versions[-1])
-
-    paths = [base_path]
-    if additional_path:
-        paths.append(os.path.join(base_path, additional_path))
-
-    results = []
-    for path in paths:
-        for root, _dirs, files in os.walk(path):
-            for file in files:
-                file_path = os.path.join(root, file)
-                relative_path = os.path.relpath(file_path, path)
-
-                try:
-                    content: Optional[Union[str, bytes]] = None
-
-                    with open(file_path, "rb") as f:
-                        file_content = f.read()
-                        try:
-                            # Try to decode as text
-                            content = file_content.decode("utf-8")
-                        except UnicodeDecodeError:
-                            # If decoding fails, store as binary
-                            content = file_content
-
-                    results.append({"filename": relative_path, "content": content})
-
-                except Exception as e:
-                    print(f"Error with cache creation: {e}")
-
-    return results

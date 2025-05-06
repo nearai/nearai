@@ -4,12 +4,7 @@ import json
 import logging
 import os
 import re
-import shlex
 import shutil
-import subprocess
-import tarfile
-import tempfile
-import threading
 import time
 import uuid
 from datetime import datetime, timezone
@@ -17,7 +12,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
 
-import psutil
 from litellm.types.completion import ChatCompletionMessageParam
 from litellm.types.utils import (
     ChatCompletionMessageToolCall,
@@ -62,7 +56,7 @@ DELIMITER = "\n"
 CHAT_FILENAME = "chat.txt"
 SYSTEM_LOG_FILENAME = "system_log.txt"
 AGENT_LOG_FILENAME = "agent_log.txt"
-TERMINAL_FILENAME = "terminal.txt"
+CHAT_HISTORY_FILENAME = "chat_history_log.txt"
 
 LLAMA_TOOL_FORMAT_PATTERN = re.compile(r"(.*?)<function=(\w+)>(.*?)(</function>|$|\Z)(.*?)", re.DOTALL | re.MULTILINE)
 LLAMA_TOOL_FORMAT_PATTERN2 = re.compile(r"(.*)<tool_call>\n(.*)\n</tool_call>(.*)", re.DOTALL)
@@ -101,13 +95,11 @@ class CustomLogHandler(logging.Handler):
 class Environment(object):
     def __init__(  # noqa: D107
         self,
-        path: str,
         agents: List[Agent],
         client: InferenceClient,
         hub_client: OpenAI,
         thread_id: str,
         run_id: str,
-        create_files: bool = True,
         env_vars: Optional[Dict[str, Any]] = None,
         tool_resources: Optional[Dict[str, Any]] = None,
         print_system_log: bool = False,
@@ -116,6 +108,8 @@ class Environment(object):
         approvals=None,
     ) -> None:
         # Warning: never expose `client` or `_hub_client` to agent's environment
+
+        self._initialized = False
 
         self.base_url = client._config.base_url
 
@@ -136,7 +130,6 @@ class Environment(object):
         # Placeholder for solver
         self.client: Optional[InferenceClient] = None
 
-        self._path = path
         self._agents = agents
         self._done = False
         self._pending_ext_agent = False
@@ -148,11 +141,13 @@ class Environment(object):
         self._approvals = approvals if approvals else default_approvals
         self._thread_id = thread_id
         self._run_id = run_id
-        self._debug_mode: bool = any(
-            str(value).lower() in ("true", "1", "yes", "on")
+        not_debug_mode: bool = any(
+            str(value).lower() not in ("true", "1", "yes", "on")
             for key, value in self.env_vars.items()
             if key.lower() == "debug"
         )
+        self._debug_mode: bool = not not_debug_mode
+
         # Expose the NEAR account_id of a user that signs this request to run an agent.
         self.signer_account_id: str = client._config.auth.account_id if client._config.auth else ""
 
@@ -318,11 +313,6 @@ class Environment(object):
         self.set_near = NearAccount
 
         self._tools = ToolRegistry()
-
-        if create_files:
-            os.makedirs(self._path, exist_ok=True)
-            open(os.path.join(self._path, CHAT_FILENAME), "a").close()
-        os.chdir(self._path)
 
         # Protected client methods
         def query_vector_store(vector_store_id: str, query: str, full_files: bool = False):
@@ -616,9 +606,12 @@ class Environment(object):
             """Assistant adds a message to the environment."""
             # NOTE: message from `user` are not stored in the memory
 
+            role = "assistant"
+            if self._debug_mode and not message_type:
+                self.add_chat_log(role, message)
             return hub_client.beta.threads.messages.create(
                 thread_id=thread_id,
-                role="assistant",
+                role=role,
                 content=message,
                 extra_body={
                     "assistant_id": self.get_primary_agent().identifier,
@@ -642,6 +635,9 @@ class Environment(object):
             attachments: Optional[Iterable[Attachment]] = None,
             **kwargs: Any,
         ):
+            if self._debug_mode:
+                self.add_chat_log(role, message)
+
             return hub_client.beta.threads.messages.create(
                 thread_id=self._thread_id,
                 role=role,  # type: ignore
@@ -674,7 +670,7 @@ class Environment(object):
             order: Literal["asc", "desc"] = "asc", thread_id: Optional[str] = None
         ) -> List[FileObject]:
             """Lists files in the thread."""
-            messages = self._list_messages(order=order)
+            messages = self._list_messages(order=order, thread_id=thread_id)
             # Extract attachments from messages
             attachments = [a for m in messages if m.attachments for a in m.attachments]
             # Extract files from attachments
@@ -701,6 +697,7 @@ class Environment(object):
             encoding: Union[str, None] = "utf-8",
             filetype: str = "text/plain",
             write_to_disk: bool = True,
+            logging: bool = True,
         ) -> FileObject:
             """Writes a file to the environment.
 
@@ -728,14 +725,8 @@ class Environment(object):
 
             # Upload to Hub
             file = hub_client.files.create(file=(filename, file_data, filetype), purpose="assistants")
-            res = self.add_reply(
-                message=f"Successfully wrote {len(content) if content else 0} characters to {filename}",
-                attachments=[{"file_id": file.id, "tools": [{"type": "file_search"}]}],
-                message_type="system:file_write",
-            )
-            self.add_system_log(
-                f"Uploaded file {filename} with {len(content)} characters, id: {file.id}. Added in thread as: {res.id}"
-            )
+            if logging:
+                self.add_system_log(f"Uploaded file {filename} with {len(content)} characters, id: {file.id}")
             return file
 
         self.write_file = write_file
@@ -792,6 +783,14 @@ class Environment(object):
         # Must be placed after method definitions
         self.register_standard_tools()
 
+        if self._debug_mode:
+            # Try to load existing logs from thread if they don't exist locally
+            self._load_log_from_thread(SYSTEM_LOG_FILENAME)
+            self._load_log_from_thread(AGENT_LOG_FILENAME)
+            self._load_log_from_thread(CHAT_HISTORY_FILENAME)
+
+        self._initialized = True
+
     # end of protected client methods
 
     def get_tool_registry(self, new: bool = False) -> ToolRegistry:
@@ -802,7 +801,6 @@ class Environment(object):
 
     def register_standard_tools(self) -> None:  # noqa: D102
         reg = self.get_tool_registry()
-        reg.register_tool(self.exec_command)
         reg.register_tool(self.read_file)
         reg.register_tool(self.write_file)
         reg.register_tool(self.request_user_input)
@@ -832,11 +830,14 @@ class Environment(object):
 
     def add_system_log(self, log: str, level: int = logging.INFO) -> None:
         """Add system log with timestamp and log level."""
+        if not self._initialized:
+            return
+        # NOTE: Do not call prints in this function.
         logger = logging.getLogger("system_logger")
         if not logger.handlers:
             # Configure the logger if it hasn't been set up yet
             logger.setLevel(logging.DEBUG)
-            file_handler = logging.FileHandler(os.path.join(self._path, SYSTEM_LOG_FILENAME))
+            file_handler = logging.FileHandler(os.path.join(self.get_primary_agent_temp_dir(), SYSTEM_LOG_FILENAME))
             formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
@@ -858,13 +859,18 @@ class Environment(object):
         for handler in logger.handlers:
             handler.flush()
 
+        if self._debug_mode:
+            self._save_logs_to_thread(SYSTEM_LOG_FILENAME)
+
     def add_agent_log(self, log: str, level: int = logging.INFO) -> None:
         """Add agent log with timestamp and log level."""
+        if not self._initialized:
+            return
         logger = logging.getLogger("agent_logger")
         if not logger.handlers:
             # Configure the logger if it hasn't been set up yet
             logger.setLevel(logging.DEBUG)
-            file_handler = logging.FileHandler(os.path.join(self._path, AGENT_LOG_FILENAME))
+            file_handler = logging.FileHandler(os.path.join(self.get_primary_agent_temp_dir(), AGENT_LOG_FILENAME))
             formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
@@ -881,6 +887,36 @@ class Environment(object):
         for handler in logger.handlers:
             handler.flush()
 
+        if self._debug_mode:
+            self._save_logs_to_thread(AGENT_LOG_FILENAME)
+
+    def add_chat_log(self, role: str, content: str, level: int = logging.INFO) -> None:
+        """Add chat history to log file when in debug mode."""
+        if not self._initialized:
+            return
+        if not self._debug_mode:
+            return
+        if not isinstance(content, str):
+            content = "content is not str"
+        logger = logging.getLogger("chat_logger")
+        if not logger.handlers:
+            # Configure the logger if it hasn't been set up yet
+            logger.setLevel(logging.DEBUG)
+            file_handler = logging.FileHandler(os.path.join(self.get_primary_agent_temp_dir(), CHAT_HISTORY_FILENAME))
+            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+
+        # Log the message with role prefix
+        message = f"{role.upper()}: {content}"
+        logger.log(level, message)
+        # Force the handler to write to disk
+        for handler in logger.handlers:
+            handler.flush()
+
+        if self._debug_mode:
+            self._save_logs_to_thread(CHAT_HISTORY_FILENAME)
+
     def add_agent_start_system_log(self, agent_idx: int) -> None:
         """Adds agent start system log."""
         agent = self._agents[agent_idx]
@@ -894,16 +930,6 @@ class Environment(object):
             if agent.model_max_tokens:
                 message += f", max_tokens={agent.model_max_tokens}"
         self.add_system_log(message)
-
-    def list_terminal_commands(self, filename: str = TERMINAL_FILENAME) -> List[Any]:
-        """Returns the terminal commands from the terminal file."""
-        path = os.path.join(self._path, filename)
-
-        if not os.path.exists(path):
-            return []
-
-        with open(path, "r") as f:
-            return [json.loads(message) for message in f.read().split(DELIMITER) if message]
 
     def list_messages(
         self,
@@ -959,10 +985,6 @@ class Environment(object):
         """Lists files in the environment."""
         return os.listdir(os.path.join(self.get_primary_agent_temp_dir(), path))
 
-    def get_system_path(self) -> Path:
-        """Returns the system path where chat.txt & system_log are stored."""
-        return Path(self._path)
-
     def get_agent_temp_path(self) -> Path:
         """Returns temp dir for primary agent where execution happens."""
         return self.get_primary_agent_temp_dir()
@@ -972,8 +994,8 @@ class Environment(object):
         file_content: Optional[Union[bytes, str]] = None
         # First try to read from local filesystem
         local_path = os.path.join(self.get_primary_agent_temp_dir(), filename)
-        print(f"Reading file {filename} from local path: {local_path}")
         if os.path.exists(local_path):
+            print(f"Reading file {filename} from local path: {local_path}")
             try:
                 with open(local_path, "rb") as local_path_file:
                     local_file_content = local_path_file.read()
@@ -1017,71 +1039,6 @@ class Environment(object):
             self.add_system_log(f"Warn: File {filename} not found during read_file operation")
 
         return file_content
-
-    def exec_command(self, command: str) -> Dict[str, Union[str, int]]:
-        """Executes a command in the environment and logs the output.
-
-        The environment does not allow running interactive programs.
-        It will run a program for 1 second then will interrupt it if it is still running
-        or if it is waiting for user input.
-        command: The command to execute, like 'ls -l' or 'python3 tests.py'
-        """
-        approval_function = self._approvals["confirm_execution"] if self._approvals else None
-        if not approval_function:
-            return {
-                "stderr": "Agent runner misconfiguration. No command execution approval function found.",
-            }
-        if not approval_function(command):
-            return {
-                "command": command,
-                "returncode": 999,
-                "stdout": "",
-                "stderr": "Command execution was not approved.",
-            }
-
-        try:
-            process = subprocess.Popen(
-                shlex.split(command),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                bufsize=0,
-                universal_newlines=True,
-                cwd=self._path,
-            )
-        except Exception as e:
-            return {
-                "command": command,
-                "returncode": 999,
-                "stdout": "",
-                "stderr": "Failed to execute: " + str(e),
-            }
-
-        msg = ""
-
-        def kill_process_tree(p: Any) -> None:
-            nonlocal msg
-            msg = "Killing process due to timeout"
-
-            process = psutil.Process(p.pid)
-            for proc in process.children(recursive=True):
-                proc.kill()
-            process.kill()
-
-        timer = threading.Timer(2, kill_process_tree, (process,))
-        timer.start()
-        process.wait()
-        timer.cancel()
-
-        result = {
-            "command": command,
-            "stdout": process.stdout.read() if process.stdout and hasattr(process.stdout, "read") else "",
-            "stderr": process.stderr.read() if process.stderr and hasattr(process.stderr, "read") else "",
-            "returncode": process.returncode,
-            "msg": msg,
-        }
-        with open(os.path.join(self._path, TERMINAL_FILENAME), "a") as f:
-            f.write(json.dumps(result) + DELIMITER)
-        return result
 
     def get_inference_parameters(
         self,
@@ -1454,16 +1411,6 @@ class Environment(object):
     def is_done(self) -> bool:  # noqa: D102
         return self._done
 
-    def create_snapshot(self) -> bytes:
-        """Create an in memory snapshot."""
-        with tempfile.NamedTemporaryFile(suffix=".tar.gz") as f:
-            with tarfile.open(fileobj=f, mode="w:gz") as tar:
-                tar.add(self._path, arcname=".")
-            f.flush()
-            f.seek(0)
-            snapshot = f.read()
-        return snapshot
-
     def environment_run_info(self, base_id, run_type) -> dict:
         """Returns the environment run information."""
         if not self._agents or not self.get_primary_agent():
@@ -1496,21 +1443,6 @@ class Environment(object):
             "show_entry": True,
         }
 
-    def load_snapshot(self, snapshot: bytes) -> None:
-        """Load Environment from Snapshot."""
-        shutil.rmtree(self._path, ignore_errors=True)
-
-        with tempfile.NamedTemporaryFile(suffix=".tar.gz") as f:
-            f.write(snapshot)
-            f.flush()
-            f.seek(0)
-
-            with tarfile.open(fileobj=f, mode="r:gz") as tar:
-                tar.extractall(self._path)
-
-    def __str__(self) -> str:  # noqa: D105
-        return f"Environment({self._path})"
-
     def clear_temp_agent_files(self, verbose=True) -> None:
         """Remove temp agent files created to be used in `runpy`."""
         for agent in self._agents:
@@ -1521,7 +1453,7 @@ class Environment(object):
 
     def set_next_actor(self, who: str) -> None:
         """Set the next actor / action in the dialogue."""
-        next_action_fn = os.path.join(self._path, ".next_action")
+        next_action_fn = os.path.join(self.get_primary_agent_temp_dir(), ".next_action")
         if who == "agent":
             self._done = False
 
@@ -1529,7 +1461,7 @@ class Environment(object):
             f.write(who)
 
     def get_next_actor(self) -> str:  # noqa: D102
-        next_action_fn = os.path.join(self._path, ".next_action")
+        next_action_fn = os.path.join(self.get_primary_agent_temp_dir(), ".next_action")
 
         if os.path.exists(next_action_fn):
             with open(next_action_fn) as f:
@@ -1546,6 +1478,11 @@ class Environment(object):
         """Runs agent(s) against a new or previously created environment."""
         if new_message:
             self._add_message("user", new_message)
+        elif self._debug_mode:
+            last_user_message = self.get_last_message(role="user")
+            if last_user_message:
+                content = last_user_message["content"]
+                self.add_chat_log("user", content)
 
         iteration = 0
         self.set_next_actor("agent")
@@ -1558,18 +1495,26 @@ class Environment(object):
                     logging.INFO,
                 )
             try:
-                error_message, traceback_message = self.get_primary_agent().run(self, task=new_message)
+                # Create a logging callback for agent output
+                def agent_output_logger(msg, level=logging.INFO):
+                    self.add_system_log(msg, level)
+
+                error_message, traceback_message = self.get_primary_agent().run(
+                    self,
+                    task=new_message,
+                    log_stdout_callback=agent_output_logger if self._debug_mode else None,
+                    log_stderr_callback=agent_output_logger,
+                )
                 if self._debug_mode and (error_message or traceback_message):
-                    if self._debug_mode and (error_message or traceback_message):
-                        message_parts = []
+                    message_parts = []
 
-                        if error_message:
-                            message_parts.append(f"Error: \n ```\n{error_message}\n```")
+                    if error_message:
+                        message_parts.append(f"Error: \n ```\n{error_message}\n```")
 
-                        if traceback_message:
-                            message_parts.append(f"Error Traceback: \n ```\n{traceback_message}\n```")
+                    if traceback_message:
+                        message_parts.append(f"Error Traceback: \n ```\n{traceback_message}\n```")
 
-                        self.add_reply("\n\n".join(message_parts), message_type="system:debug")
+                    self.add_system_log("\n\n".join(message_parts))
 
             except Exception as e:
                 self.add_system_log(f"Environment run failed: {e}", logging.ERROR)
@@ -1593,3 +1538,34 @@ class Environment(object):
                         hash_obj.update(chunk)
 
         return hash_obj.hexdigest()
+
+    def _load_log_from_thread(self, filename: str) -> Optional[str]:
+        """Load log file from thread if it doesn't exist locally."""
+        local_path = os.path.join(self.get_primary_agent_temp_dir(), filename)
+        print(f"Logging {filename} at: {local_path}")
+        if not os.path.exists(local_path):
+            try:
+                content = self.read_file(filename, decode="utf-8")
+                if content and isinstance(content, str):  # Type guard to ensure it's a string
+                    with open(os.path.join(local_path), "w") as f:
+                        f.write(content)
+                    return content
+            except Exception:
+                pass
+        return None
+
+    def _save_logs_to_thread(self, log_file: str):
+        """Save log file to thread."""
+        if not self._debug_mode:
+            return
+        log_path = os.path.join(self.get_primary_agent_temp_dir(), log_file)
+        if os.path.exists(log_path):
+            try:
+                with open(log_path, "r") as f:
+                    content = f.read()
+                # Only upload if there's content
+                if content:
+                    # Force the filetype to text/plain for .log files
+                    self.write_file(log_file, content, filetype="text/plain", write_to_disk=True, logging=False)
+            except Exception as e:
+                print(f"Failed to save {log_file} to thread: {e}")
