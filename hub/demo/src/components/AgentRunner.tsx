@@ -189,10 +189,7 @@ export const AgentRunner = ({
     },
   });
 
-  const isRunning =
-    _chatMutation.isPending ||
-    thread?.run?.status === 'queued' ||
-    thread?.run?.status === 'in_progress';
+  const isRunning = _chatMutation.isPending;
 
   const isLoading = !!auth && !!threadId && !thread && !isRunning;
 
