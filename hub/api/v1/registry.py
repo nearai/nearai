@@ -125,6 +125,17 @@ def get(entry_location: EntryLocation = Body()) -> RegistryEntry:
         return entry
 
 
+def obfuscate_encryption_key(data: dict):
+    """Obfuscate encryption key in data structure."""
+    result = {}
+    for k, v in data.items():
+        if k == "encryption_key":
+            result[k] = "<secret>"
+        else:
+            result[k] = v
+    return result
+
+
 def get_read_access(
     entry: RegistryEntry = Depends(get),
     auth: Optional[AuthToken] = Depends(get_optional_auth),
@@ -132,6 +143,8 @@ def get_read_access(
     current_account_id = auth.account_id if auth else None
     if entry.is_private() and entry.namespace != current_account_id:
         raise HTTPException(status_code=403, detail="Unauthorized")
+    if entry.namespace != current_account_id:
+        entry.details = obfuscate_encryption_key(entry.details)
     return entry
 
 
