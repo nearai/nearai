@@ -76,11 +76,6 @@ const resourcesNavItems = env.NEXT_PUBLIC_CONSUMER_MODE
         icon: ENTRY_CATEGORY_LABELS.evaluation.icon,
       },
       {
-        label: 'Models',
-        path: '/models',
-        icon: ENTRY_CATEGORY_LABELS.model.icon,
-      },
-      {
         label: 'Documentation',
         path: 'https://docs.near.ai',
         target: '_blank',
