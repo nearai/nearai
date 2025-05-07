@@ -28,8 +28,6 @@ async def run(env: Environment):
     env.add_reply(f"The NEAR balance of example.near is: {balance}")
     env.add_reply(result)
 
-    env.request_user_input()
-
 asyncio.run(run(env))
 ```
 

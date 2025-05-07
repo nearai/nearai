@@ -185,7 +185,6 @@ def run(env: Environment):
     prompt = {{"role": "system", "content": "{init_instructions}"}}
     result = env.completion([prompt] + env.list_messages())
     env.add_reply(result)
-    env.request_user_input()
 
 run(env)
 

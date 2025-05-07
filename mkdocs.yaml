@@ -161,7 +161,7 @@ nav:
     - Agent Patterns:
       - Event-Driven Agents:
         - NEAR Event-Triggered Agents: 'agents/patterns/near_events.md'
-        - Twitter (X) Triggered Agents: 'agents/patterns/agent_triggers.md'
+        - Twitter (X) Triggered Agents: 'agents/patterns/twitter/twitter_agent.md'
       - Using Multiple Agents:
         - Orchestrating Multiple Agents: 'agents/patterns/orchestration.md'
         - Agent to Agent Communication: 'agents/patterns/agent_to_agent.md'
@@ -208,6 +208,6 @@ plugins:
         'assistants/integrate.md': 'agents/integration.md'
         'agents/env/calling_other_agents.md': 'agents/patterns/agent_to_agent.md'
         'near_events.md': 'agents/patterns/near_events.md'
-        'agent_triggers.md': 'agents/patterns/agent_triggers.md'
+        'agent_triggers.md': 'agents/patterns/twitter/twitter_agent.md'
         'integration/overview.md': 'agents/integration.md'
         'integration/quickstart.md': 'agents/integration.md'

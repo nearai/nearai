@@ -25,7 +25,6 @@ export const chatWithAgentModel = z.object({
     .nullish(),
   new_message: z.string(),
   thread_id: z.string().nullable().optional(),
-  max_iterations: z.number().optional(),
   user_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
   agent_env_vars: z.record(z.string(), z.unknown()).nullable().optional(),
 });
@@ -93,11 +92,6 @@ export const entryDetailsModel = z.intersection(
       agent: z
         .object({
           assistant_role_label: z.string(),
-          defaults: z
-            .object({
-              max_iterations: z.number(),
-            })
-            .partial(),
           embed: z
             .object({
               logo: z.string().or(z.literal(false)),

@@ -131,7 +131,6 @@ class Environment(object):
         self.client: Optional[InferenceClient] = None
 
         self._agents = agents
-        self._done = False
         self._pending_ext_agent = False
         self.env_vars: Dict[str, Any] = env_vars if env_vars else {}
         self._last_used_model = ""
@@ -730,47 +729,26 @@ class Environment(object):
 
         self.write_file = write_file
 
-        def mark_done() -> Run:  # noqa: D102
-            self._done = True
-            res = hub_client.beta.threads.runs.update(
-                thread_id=self._thread_id,
-                run_id=self._run_id,
-                extra_body={
-                    "status": "completed",
-                    "completed_at": datetime.now().isoformat(),
-                },
-            )
-            return res
+        def mark_done() -> None:  # noqa: D102
+            """Deprecated. Do not use."""
+            pass
 
         self.mark_done = mark_done
 
-        def mark_failed() -> Run:
-            """Marks the environment run as failed."""
-            self._done = True
-            self.add_system_log("Environment run failed", logging.ERROR)
-            res = hub_client.beta.threads.runs.update(
-                thread_id=self._thread_id,
-                run_id=self._run_id,
-                extra_body={"status": "failed", "failed_at": datetime.now().isoformat()},
-            )
-            return res
+        def mark_failed() -> None:
+            """Deprecated. Do not use."""
+            pass
 
         self.mark_failed = mark_failed
 
-        def request_user_input() -> Run:
-            """Must be called to request input from the user."""
-            self._done = True
-            return hub_client.beta.threads.runs.update(
-                thread_id=self._thread_id,
-                run_id=self._run_id,
-                extra_body={"status": "requires_action", "required_action": {"type": "user_input"}},
-            )
+        def request_user_input() -> None:
+            """Deprecated. Do not use."""
+            pass
 
         self.request_user_input = request_user_input
 
         def request_agent_input() -> Run:
             """Mark the run as ready for input from another agent."""
-            self._done = True
             return hub_client.beta.threads.runs.update(
                 thread_id=self._thread_id,
                 run_id=self._run_id,
@@ -802,7 +780,6 @@ class Environment(object):
         reg = self.get_tool_registry()
         reg.register_tool(self.read_file)
         reg.register_tool(self.write_file)
-        reg.register_tool(self.request_user_input)
         reg.register_tool(self.list_files)
         reg.register_tool(self.query_vector_store)
 
@@ -1407,9 +1384,6 @@ class Environment(object):
         """Returns temp dir for primary agent."""
         return self.get_primary_agent().temp_dir
 
-    def is_done(self) -> bool:  # noqa: D102
-        return self._done
-
     def environment_run_info(self, base_id, run_type) -> dict:
         """Returns the environment run information."""
         if not self._agents or not self.get_primary_agent():
@@ -1453,8 +1427,6 @@ class Environment(object):
     def set_next_actor(self, who: str) -> None:
         """Set the next actor / action in the dialogue."""
         next_action_fn = os.path.join(self.get_primary_agent_temp_dir(), ".next_action")
-        if who == "agent":
-            self._done = False
 
         with open(next_action_fn, "w") as f:
             f.write(who)
@@ -1469,11 +1441,7 @@ class Environment(object):
             # By default the user starts the conversation.
             return "user"
 
-    def run(
-        self,
-        new_message: Optional[str] = None,
-        max_iterations: int = 10,
-    ) -> None:
+    def run(self, new_message: Optional[str] = None) -> None:
         """Runs agent(s) against a new or previously created environment."""
         if new_message:
             self._add_message("user", new_message)
@@ -1483,47 +1451,34 @@ class Environment(object):
                 content = last_user_message["content"]
                 self.add_chat_log("user", content)
 
-        iteration = 0
         self.set_next_actor("agent")
 
-        while iteration < max_iterations and not self.is_done() and self.get_next_actor() != "user":
-            iteration += 1
-            if max_iterations > 1:
-                self.add_system_log(
-                    f"Running agent, iteration {iteration}/{max_iterations}",
-                    logging.INFO,
-                )
-            try:
-                # Create a logging callback for agent output
-                def agent_output_logger(msg, level=logging.INFO):
-                    self.add_system_log(msg, level)
+        try:
+            # Create a logging callback for agent output
+            def agent_output_logger(msg, level=logging.INFO):
+                self.add_system_log(msg, level)
 
-                error_message, traceback_message = self.get_primary_agent().run(
-                    self,
-                    task=new_message,
-                    log_stdout_callback=agent_output_logger if self._debug_mode else None,
-                    log_stderr_callback=agent_output_logger,
-                )
-                if self._debug_mode and (error_message or traceback_message):
-                    message_parts = []
+            error_message, traceback_message = self.get_primary_agent().run(
+                self,
+                task=new_message,
+                log_stdout_callback=agent_output_logger if self._debug_mode else None,
+                log_stderr_callback=agent_output_logger,
+            )
+            if self._debug_mode and (error_message or traceback_message):
+                message_parts = []
 
-                    if error_message:
-                        message_parts.append(f"Error: \n ```\n{error_message}\n```")
+                if error_message:
+                    message_parts.append(f"Error: \n ```\n{error_message}\n```")
 
-                    if traceback_message:
-                        message_parts.append(f"Error Traceback: \n ```\n{traceback_message}\n```")
+                if traceback_message:
+                    message_parts.append(f"Error Traceback: \n ```\n{traceback_message}\n```")
 
-                    self.add_system_log("\n\n".join(message_parts))
+                self.add_system_log("\n\n".join(message_parts))
 
-            except Exception as e:
-                self.add_system_log(f"Environment run failed: {e}", logging.ERROR)
-                self.mark_failed()
-                raise e
-
-        if not self._pending_ext_agent and not self.is_done():
-            # If no external agent was called, mark the whole run as done.
-            # Else this environment will stop for now but this run will be continued later.
-            self.mark_done()
+        except Exception as e:
+            self.add_system_log(f"Environment run failed: {e}", logging.ERROR)
+            self.mark_failed()
+            raise e
 
     def generate_folder_hash_id(self, path: str) -> str:
         """Returns hash based on files and their contents in path, including subfolders."""  # noqa: E501

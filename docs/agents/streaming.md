@@ -211,8 +211,6 @@ Here is an example of how a React client might use this API endpoint:
             result2 = self.env.completion([prompt2] + messages, stream=True)
             self.env.add_reply(result2)
 
-            self.env.request_user_input()
-
     if globals().get('env', None):
         agent = Agent(globals().get('env'))
         agent.run()
@@ -236,7 +234,6 @@ Here is an example of how a React client might use this API endpoint:
               "description": "I respond as Socrates then as Plato."
             },
             "defaults": {
-              "max_iterations": 1,
               "model": "llama-v3p3-70b-instruct",
               "model_max_tokens": 4000,
               "model_provider": "fireworks"

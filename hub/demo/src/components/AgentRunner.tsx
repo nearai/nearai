@@ -77,10 +77,7 @@ type Props = {
 
 type RunView = 'conversation' | 'output' | undefined;
 
-type FormSchema = Pick<
-  z.infer<typeof chatWithAgentModel>,
-  'max_iterations' | 'new_message'
->;
+type FormSchema = Pick<z.infer<typeof chatWithAgentModel>, 'new_message'>;
 
 export type AgentChatMutationInput = FormSchema &
   Partial<z.infer<typeof chatWithAgentModel>>;
@@ -118,11 +115,7 @@ export const AgentRunner = ({
   const threadId = queryParams.threadId ?? '';
   const showLogs = queryParams.showLogs === 'true';
 
-  const form = useForm<FormSchema>({
-    defaultValues: {
-      max_iterations: 1,
-    },
-  });
+  const form = useForm<FormSchema>();
 
   const [htmlOutput, setHtmlOutput] = useState('');
   const [streamingText, setStreamingText] = useState<string>('');
@@ -612,14 +605,6 @@ export const AgentRunner = ({
   }, [agentId, form]);
 
   useEffect(() => {
-    if (currentEntry && !form.formState.isDirty) {
-      const maxIterations =
-        currentEntry.details.agent?.defaults?.max_iterations ?? 1;
-      form.setValue('max_iterations', maxIterations);
-    }
-  }, [currentEntry, form]);
-
-  useEffect(() => {
     setThreadsOpenForSmallScreens(false);
   }, [threadId]);
 
@@ -627,7 +612,6 @@ export const AgentRunner = ({
     const agentDetails = currentEntry?.details.agent;
     const initialUserMessage =
       queryParams.initialUserMessage || agentDetails?.initial_user_message;
-    const maxIterations = agentDetails?.defaults?.max_iterations ?? 1;
 
     if (
       currentEntry &&
@@ -640,7 +624,6 @@ export const AgentRunner = ({
         {
           action: 'initial_user_message',
           input: {
-            max_iterations: maxIterations,
             new_message: initialUserMessage,
           },
         },

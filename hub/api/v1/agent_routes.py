@@ -54,10 +54,6 @@ class CreateThreadAndRunRequest(BaseModel):
         None,
         description="A message to add to the thread before running the agents.",
     )
-    max_iterations: Optional[int] = Field(
-        10,
-        description="Allow an agent to run for up to this number of iterations.",
-    )
     record_run: Optional[bool] = Field(
         True,
         description="Whether to record the run in the registry.",
@@ -193,7 +189,6 @@ def run_agent(body: CreateThreadAndRunRequest, auth: AuthToken = Depends(get_aut
             user_env_vars = {**user_secrets, **user_env_vars}
 
     params = {
-        "max_iterations": body.max_iterations,
         "record_run": body.record_run,
         "api_url": agent_api_url,
         "tool_resources": body.tool_resources,

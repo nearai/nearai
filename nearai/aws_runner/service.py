@@ -269,7 +269,7 @@ class EnvironmentRun:
 
     def run(self, new_message: str = "") -> Optional[str]:  # noqa: D102
         start_time = time.perf_counter()
-        self.env.run(new_message, self.agents[0].max_iterations)
+        self.env.run(new_message)
         stop_time = time.perf_counter()
         write_metric("ExecuteAgentDuration", stop_time - start_time, verbose=self.verbose)
         return self.thread_id
@@ -337,13 +337,10 @@ def start_with_environment(
         agent.model_temperature = params["temperature"]
     if params.get("max_tokens", ""):
         agent.model_max_tokens = params["max_tokens"]
-    if params.get("max_iterations", ""):
-        agent.max_iterations = params["max_iterations"]
     if verbose:
         print(
             f"[DEBUG] • Agent info: provider: {agent.model_provider} // model: {agent.model} "
-            f"// temperature: {agent.model_temperature} // max_tokens: {agent.model_max_tokens} "
-            f"// max_iterations: {agent.max_iterations}"
+            f"// temperature: {agent.model_temperature} // max_tokens: {agent.model_max_tokens}"
         )
 
     client_config = ClientConfig(
