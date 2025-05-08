@@ -375,7 +375,7 @@ class RegistryCli:
         with open(metadata_path) as f:
             metadata: Dict[str, Any] = json.load(f)
 
-        namespace = CONFIG.auth.namespace
+        namespace = get_namespace(path)
 
         entry_location = EntryLocation.model_validate(
             dict(
