@@ -723,6 +723,11 @@ class Environment(object):
 
             # Upload to Hub
             file = hub_client.files.create(file=(filename, file_data, filetype), purpose="assistants")
+            self.add_reply(
+                message=f"Output file: {filename}",
+                attachments=[{"file_id": file.id}],
+                message_type="system:output_file",
+            )
             if logging:
                 self.add_system_log(f"Uploaded file {filename} with {len(content)} characters, id: {file.id}")
             return file
@@ -730,8 +735,14 @@ class Environment(object):
         self.write_file = write_file
 
         def mark_done() -> None:  # noqa: D102
-            """Deprecated. Do not use."""
-            pass
+            hub_client.beta.threads.runs.update(
+                thread_id=self._thread_id,
+                run_id=self._run_id,
+                extra_body={
+                    "status": "completed",
+                    "completed_at": datetime.now().isoformat(),
+                },
+            )
 
         self.mark_done = mark_done
 
@@ -765,6 +776,12 @@ class Environment(object):
             self._load_log_from_thread(SYSTEM_LOG_FILENAME)
             self._load_log_from_thread(AGENT_LOG_FILENAME)
             self._load_log_from_thread(CHAT_HISTORY_FILENAME)
+        logger = logging.getLogger("system_logger")
+        logger.handlers = []
+        logger = logging.getLogger("agent_logger")
+        logger.handlers = []
+        logger = logging.getLogger("chat_logger")
+        logger.handlers = []
 
         self._initialized = True
 
@@ -1480,6 +1497,11 @@ class Environment(object):
             self.mark_failed()
             raise e
 
+        if not self._pending_ext_agent:
+            # If no external agent was called, mark the whole run as done.
+            # Else this environment will stop for now but this run will be continued later.
+            self.mark_done()
+
     def generate_folder_hash_id(self, path: str) -> str:
         """Returns hash based on files and their contents in path, including subfolders."""  # noqa: E501
         hash_obj = hashlib.md5()
@@ -1519,7 +1541,6 @@ class Environment(object):
                     content = f.read()
                 # Only upload if there's content
                 if content:
-                    # Force the filetype to text/plain for .log files
-                    self.write_file(log_file, content, filetype="text/plain", write_to_disk=True, logging=False)
+                    self.write_file(log_file, content, write_to_disk=False, logging=False)
             except Exception as e:
                 print(f"Failed to save {log_file} to thread: {e}")
