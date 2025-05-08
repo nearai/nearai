@@ -8,7 +8,7 @@ import { EntriesTable } from '@/components/EntriesTable';
 export default function AgentsListPage() {
   return (
     <>
-      <Section background="sand-1" padding="l">
+      <Section background="sand-1" padding="standard">
         <Flex direction="column" gap="m">
           <Text as="h2" size="text-xl" weight="600">
             Agent Examples
@@ -27,7 +27,7 @@ export default function AgentsListPage() {
         </Flex>
       </Section>
 
-      <Section background="sand-2" padding="l">
+      <Section background="sand-2" padding="standard">
         <Flex direction="column" gap="m">
           <Text as="h2" size="text-xl" weight="600">
             Featured Agents
@@ -51,7 +51,7 @@ export default function AgentsListPage() {
         bleed
       />
 
-      <Section background="sand-1" padding="l">
+      <Section background="sand-1" padding="standard">
         <Flex direction="column" gap="m">
           <Text as="h2" size="text-xl" weight="600">
             Agents (Dev)
