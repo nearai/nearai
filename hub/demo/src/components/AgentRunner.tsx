@@ -212,7 +212,9 @@ export const AgentRunner = ({
 
   const logMessages = useMemo(() => {
     return (thread ? Object.values(thread.messagesById) : []).filter(
-      (message) => message.metadata?.message_type?.startsWith('system:'),
+      (message) =>
+        message.metadata?.message_type?.startsWith('system:') ||
+        message.metadata?.message_type?.startsWith('agent:log'),
     );
   }, [thread]);
 
@@ -222,7 +224,11 @@ export const AgentRunner = ({
       ...optimisticMessages.map((message) => message.data),
     ].filter(
       (message) =>
-        showLogs || !message.metadata?.message_type?.startsWith('system:'),
+        showLogs ||
+        !(
+          message.metadata?.message_type?.startsWith('system:') ||
+          message.metadata?.message_type?.startsWith('agent:log')
+        ),
     );
   }, [thread, optimisticMessages, showLogs]);
 

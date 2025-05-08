@@ -44,7 +44,6 @@ export default function AgentsListPage() {
           </Flex>
         }
         title="Featured Agents"
-        bleed
       />
 
       <EntriesTable
@@ -62,7 +61,6 @@ export default function AgentsListPage() {
           </Flex>
         }
         title="Agents"
-        bleed
       />
     </>
   );
