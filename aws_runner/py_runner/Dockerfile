@@ -23,21 +23,21 @@ ENV DD_TRACE_ENABLED=true \
     DD_ENHANCED_METRICS=true
 
 
-RUN pip install -r requirements${FRAMEWORK}.txt
+# RUN pip install -r requirements${FRAMEWORK}.txt
 # Alternatively, this will build a smaller container, but takes much longer time to run. Use --no-cache flag in `docker build`.
-# RUN pip install --no-cache-dir -r requirements${FRAMEWORK}.txt && \
-#     echo "Package sizes:" && \
-#     pip list --format=freeze | while read package; do \
-#         package_name=$(echo "$package" | cut -d= -f1); \
-#         size=$(du -sh $(pip show "$package_name" | grep Location | cut -d' ' -f2)"/$package_name" 2>/dev/null | cut -f1); \
-#         echo "$size $package_name"; \
-#     done | sort -hr && \
-#     # Cleanup
-#     find /usr/local -type d -name __pycache__ -exec rm -rf {} + && \
-#     find /usr/local -type f -name '*.pyc' -delete && \
-#     find /usr/local -type d -name "tests" -exec rm -rf {} + && \
-#     find /usr/local -type d -name "docs" -exec rm -rf {} + && \
-#     rm -rf /root/.cache/* /tmp/*
+RUN pip install --no-cache-dir -r requirements${FRAMEWORK}.txt && \
+    echo "Package sizes:" && \
+    pip list --format=freeze | while read package; do \
+        package_name=$(echo "$package" | cut -d= -f1); \
+        size=$(du -sh $(pip show "$package_name" | grep Location | cut -d' ' -f2)"/$package_name" 2>/dev/null | cut -f1); \
+        echo "$size $package_name"; \
+    done | sort -hr && \
+    # Cleanup
+    find /usr/local -type d -name __pycache__ -exec rm -rf {} + && \
+    find /usr/local -type f -name '*.pyc' -delete && \
+    find /usr/local -type d -name "tests" -exec rm -rf {} + && \
+    find /usr/local -type d -name "docs" -exec rm -rf {} + && \
+    rm -rf /root/.cache/* /tmp/*
 
 ARG AGENT_RUNNER_USER="agent_runner"
 RUN /bin/sh -c "echo Setting agent runner user as $AGENT_RUNNER_USER"

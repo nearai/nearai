@@ -61,6 +61,8 @@ CHAT_HISTORY_FILENAME = "chat_history_log.txt"
 LLAMA_TOOL_FORMAT_PATTERN = re.compile(r"(.*?)<function=(\w+)>(.*?)(</function>|$|\Z)(.*?)", re.DOTALL | re.MULTILINE)
 LLAMA_TOOL_FORMAT_PATTERN2 = re.compile(r"(.*)<tool_call>\n(.*)\n</tool_call>(.*)", re.DOTALL)
 
+LIST_MESSAGES_LIMIT = 10000
+
 
 default_approvals: Dict[str, Any] = {"confirm_execution": lambda _: True}
 
@@ -651,7 +653,7 @@ class Environment(object):
         self._add_message = _add_message
 
         def _list_messages(
-            limit: Union[int, NotGiven] = NOT_GIVEN,
+            limit: Union[int, NotGiven] = LIST_MESSAGES_LIMIT,
             order: Literal["asc", "desc"] = "asc",
             thread_id: Optional[str] = None,
         ) -> List[Message]:
@@ -927,7 +929,7 @@ class Environment(object):
     def list_messages(
         self,
         thread_id: Optional[str] = None,
-        limit: Union[int, NotGiven] = 200,  # api defaults to 20
+        limit: Union[int, NotGiven] = LIST_MESSAGES_LIMIT,
         order: Literal["asc", "desc"] = "asc",
     ):
         """Backwards compatibility for chat_completions messages."""
