@@ -36,18 +36,27 @@ type Props = {
   bleed?: boolean;
   category: EntryCategory;
   header?: ReactNode;
+  forkOf?: {
+    name: string;
+    namespace: string;
+  };
   title: string;
-  tags?: string;
+  tags?: string[];
+  defaultSortColumn?: string;
+  defaultSortOrder?: 'ASCENDING' | 'DESCENDING';
 };
 
 export const EntriesTable = ({
   bleed,
   category,
+  forkOf,
   header,
   title,
   tags,
+  defaultSortColumn = 'updated',
+  defaultSortOrder = 'DESCENDING',
 }: Props) => {
-  const entriesQuery = trpc.hub.entries.useQuery({ category, tags });
+  const entriesQuery = trpc.hub.entries.useQuery({ category, forkOf, tags });
 
   const { searched, searchQuery, setSearchQuery } = useEntriesSearch(
     entriesQuery.data,
@@ -55,6 +64,8 @@ export const EntriesTable = ({
 
   const { sorted, ...tableProps } = useTable({
     data: searched,
+    sortColumn: defaultSortColumn,
+    sortOrder: defaultSortOrder,
   });
 
   const { pageItems, totalPages, setPage, ...paginationProps } =
