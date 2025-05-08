@@ -27,44 +27,41 @@ export default function AgentsListPage() {
         </Flex>
       </Section>
 
-      <Section background="sand-2" padding="standard">
-        <Flex direction="column" gap="m">
-          <Text as="h2" size="text-xl" weight="600">
-            Featured Agents
-          </Text>
-          <Text>
-            These agents showcase the capabilities of the NEAR AI platform.
-            <br />
-            <Text as="span" size="text-s" color="sand-10">
-              (Add your agent here by adding the tag &apos;featured&apos;)
-            </Text>
-          </Text>
-        </Flex>
-      </Section>
-
       <EntriesTable
         category="agent"
-        title="Featured Agents"
         tags={['featured']}
         defaultSortColumn="updated"
         defaultSortOrder="DESCENDING"
+        header={
+          <Flex direction="column" gap="xs">
+            <Text as="h2" size="text-xl" weight="600">
+              Featured Agents
+            </Text>
+            <Text size="text-s" color="sand-10">
+              These agents showcase the capabilities of the NEAR AI platform.
+              (Add your agent here by adding the tag 'featured')
+            </Text>
+          </Flex>
+        }
+        title="Featured Agents"
         bleed
       />
 
-      <Section background="sand-1" padding="standard">
-        <Flex direction="column" gap="m">
-          <Text as="h2" size="text-xl" weight="600">
-            Agents (Dev)
-          </Text>
-          <Text>All agents in the registry.</Text>
-        </Flex>
-      </Section>
-
       <EntriesTable
         category="agent"
-        title="Agents"
         defaultSortColumn="updated"
         defaultSortOrder="DESCENDING"
+        header={
+          <Flex direction="column" gap="xs">
+            <Text as="h2" size="text-xl" weight="600">
+              Agents (Dev)
+            </Text>
+            <Text size="text-s" color="sand-10">
+              All agents in the registry.
+            </Text>
+          </Flex>
+        }
+        title="Agents"
         bleed
       />
     </>
