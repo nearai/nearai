@@ -45,9 +45,7 @@ export default function AgentsListPage() {
       <EntriesTable
         category="agent"
         title="Featured Agents"
-        tags={['featured']}
-        defaultSortColumn="updated"
-        defaultSortOrder="DESCENDING"
+        tags="featured"
         bleed
       />
 
@@ -60,13 +58,7 @@ export default function AgentsListPage() {
         </Flex>
       </Section>
 
-      <EntriesTable
-        category="agent"
-        title="Agents"
-        defaultSortColumn="updated"
-        defaultSortOrder="DESCENDING"
-        bleed
-      />
+      <EntriesTable category="agent" title="Agents" bleed />
     </>
   );
 }
