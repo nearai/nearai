@@ -316,16 +316,27 @@ class Agent(object):
 
             # Create a custom writer that logs and writes to buffer
             class LoggingWriter:
+                # Static class variable to prevent recursion
+                _in_write_operation = False
+
                 def __init__(self, buffer, log_func, stream_name):
                     self.buffer = buffer
                     self.log_func = log_func
                     self.stream_name = stream_name
 
                 def write(self, msg):
+                    # Write to buffer regardless of recursion state
                     self.buffer.write(msg)
-                    # Log non-empty messages
-                    if msg.strip():
-                        self.log_func(f"[AGENT {self.stream_name}] {msg.strip()}")
+
+                    # Only log if not already in a write operation and message is not empty
+                    if not LoggingWriter._in_write_operation and msg.strip():
+                        try:
+                            # Set recursion flag before logging
+                            LoggingWriter._in_write_operation = True
+                            self.log_func(f"[AGENT {self.stream_name}] {msg.strip()}")
+                        finally:
+                            # Always reset the flag, even if an exception occurs
+                            LoggingWriter._in_write_operation = False
 
                 def flush(self):
                     self.buffer.flush()
@@ -335,7 +346,7 @@ class Agent(object):
                 sys.stdout = LoggingWriter(stdout_buffer, log_stdout_callback, "STDOUT")
             if log_stderr_callback:
                 stderr_buffer = io.StringIO()
-                sys.stdout = LoggingWriter(stderr_buffer, log_stderr_callback, "STDERR")
+                sys.stderr = LoggingWriter(stderr_buffer, log_stderr_callback, "STDERR")
 
             # Run the code
             # NOTE: runpy.run_path does not work in a multithreaded environment when running benchmark.

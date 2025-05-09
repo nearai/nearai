@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+import io
 import json
+import logging
 import os
 import shutil
+import sys
 import time
 from pathlib import Path
 from subprocess import call
@@ -25,6 +28,8 @@ if os.environ.get("DD_API_KEY"):
 
 OUTPUT_PATH = "/tmp/nearai-agent-runner"
 DEFAULT_API_URL = "https://api.near.ai"
+RUNNER_LOG_PATH = "/tmp/nearai-agent-runner/runner_log.txt"
+RUNNER_LOG_FILENAME = "runner_log.txt"
 
 # Local caches
 provider_models_cache = None
@@ -103,6 +108,89 @@ def handler(event, context):
     run_id = event.get("run_id")
 
     params = event.get("params", {})
+
+    api_url = str(params.get("api_url", DEFAULT_API_URL))
+    client_config = ClientConfig(
+        base_url=api_url + "/v1",
+        auth=auth,
+    )
+    hub_client = client_config.get_hub_client()
+
+    logger = logging.getLogger("runner_logger")
+    logger.handlers = []
+
+    def logger(log: str, level=logging.INFO):
+        # NOTE: Do not call prints in this function.
+        logger = logging.getLogger("runner_logger")
+        if not logger.handlers:
+            # Configure the logger if it hasn't been set up yet
+            logger.setLevel(logging.DEBUG)
+            log_dir = os.path.dirname(RUNNER_LOG_PATH)
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir, exist_ok=True)
+            file_handler = logging.FileHandler(RUNNER_LOG_PATH)
+            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+
+        # Log the message
+        logger.log(level, log)
+        # Force the handler to write to disk
+        for handler in logger.handlers:
+            handler.flush()
+
+        log_path = RUNNER_LOG_PATH
+        if os.path.exists(log_path):
+            try:
+                with open(log_path, "r") as f:
+                    content = f.read()
+                # Only upload if there's content
+                if content:
+                    file = hub_client.files.create(
+                        file=(RUNNER_LOG_FILENAME, content, "text/plain"), purpose="assistants"
+                    )
+                    hub_client.beta.threads.messages.create(
+                        thread_id=thread_id,
+                        role="assistant",
+                        content=f"Output file: {RUNNER_LOG_FILENAME}",
+                        attachments=[{"file_id": file.id}],
+                        metadata={"message_type": "system:output_file"},
+                    )
+            except Exception:
+                pass
+
+    # Create a custom writer that logs and writes to buffer
+    class LoggingWriter:
+        # Static class variable to prevent recursion
+        _in_write_operation = False
+
+        def __init__(self, buffer, log_func, stream_name):
+            self.buffer = buffer
+            self.log_func = log_func
+            self.stream_name = stream_name
+
+        def write(self, msg):
+            # Write to buffer regardless of recursion state
+            self.buffer.write(msg)
+
+            # Only log if not already in a write operation and message is not empty
+            if not LoggingWriter._in_write_operation and msg.strip():
+                try:
+                    # Set recursion flag before logging
+                    LoggingWriter._in_write_operation = True
+                    self.log_func(f"[RUNNER {self.stream_name}] {msg.strip()}")
+                finally:
+                    # Always reset the flag, even if an exception occurs
+                    LoggingWriter._in_write_operation = False
+
+        def flush(self):
+            self.buffer.flush()
+
+    if params["data_source"] == "registry":
+        stdout_buffer = io.StringIO()
+        sys.stdout = LoggingWriter(stdout_buffer, logger, "STDOUT")
+        stderr_buffer = io.StringIO()
+        sys.stderr = LoggingWriter(stderr_buffer, logger, "STDERR")
 
     new_thread_id = run_with_environment(
         agents,
