@@ -37,7 +37,6 @@ import { type EntryCategory } from '@/lib/models';
 
 import { DevelopButton } from './DevelopButton';
 import { EmbedAgentModal } from './EmbedAgentModal';
-import { ForkButton } from './ForkButton';
 
 type Props = {
   category: EntryCategory;
@@ -243,7 +242,6 @@ export const EntryDetailsLayout = ({
             <Flex align="center" gap="s" wrap="wrap">
               <DevelopButton entry={currentEntry} />
               <StarButton entry={currentEntry} variant="detailed" />
-              <ForkButton entry={currentEntry} variant="detailed" />
 
               {category === 'agent' ? (
                 <Dropdown.Root>
