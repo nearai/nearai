@@ -250,10 +250,21 @@ export const AgentRunner = ({
       }
     }
 
+    // Group outputs by filename and keep only the latest version
+    const latestOutputsByFilename = outputs.reduce((acc, file) => {
+      const existing = acc.get(file.filename);
+      // Assuming files have a created_at or similar timestamp field
+      // If not available, we'll use the order in the array (latest files typically come last)
+      if (!existing || (file as any).created_at > (existing as any).created_at) {
+        acc.set(file.filename, file);
+      }
+      return acc;
+    }, new Map<string, z.infer<typeof threadFileModel>>());
+
     return {
       attachments,
-      outputs,
-      total: all.length,
+      outputs: Array.from(latestOutputsByFilename.values()),
+      total: attachments.length + latestOutputsByFilename.size,
     };
   }, [messages, thread]);
 
@@ -937,24 +948,34 @@ export const AgentRunner = ({
                             setOpenedFileId(file.id);
                           }}
                         >
-                          <Flex align="center" gap="s">
-                            <Text
-                              size="text-s"
-                              color="sand-12"
-                              weight={500}
-                              clampLines={1}
-                              style={{ marginRight: 'auto' }}
-                            >
-                              {file.filename}
-                            </Text>
+                          <Flex direction="column" gap="xs">
+                            <Flex align="center" gap="s">
+                              <Text
+                                size="text-s"
+                                color="sand-12"
+                                weight={500}
+                                clampLines={1}
+                                style={{ marginRight: 'auto' }}
+                              >
+                                {file.filename}
+                              </Text>
 
-                            <Text
-                              size="text-xs"
-                              noWrap
-                              style={{ flexShrink: 0 }}
-                            >
-                              {formatBytes(file.bytes)}
-                            </Text>
+                              <Text
+                                size="text-xs"
+                                noWrap
+                                style={{ flexShrink: 0 }}
+                              >
+                                {formatBytes(file.bytes)}
+                              </Text>
+                            </Flex>
+                            
+                            {(file as any).created_at && (
+                              <Text size="text-xs" color="sand-10">
+                                {formatDistanceToNow(new Date((file as any).created_at), {
+                                  addSuffix: true,
+                                })}
+                              </Text>
+                            )}
                           </Flex>
                         </Card>
                       ))}
