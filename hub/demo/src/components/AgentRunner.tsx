@@ -27,6 +27,7 @@ import {
 } from '@phosphor-icons/react';
 import { Paperclip, X } from '@phosphor-icons/react/dist/ssr';
 import { useMutation } from '@tanstack/react-query';
+import { formatDistanceToNow } from 'date-fns';
 import {
   type KeyboardEventHandler,
   useCallback,
@@ -253,11 +254,20 @@ export const AgentRunner = ({
     // Group outputs by filename and keep only the latest version
     const latestOutputsByFilename = outputs.reduce((acc, file) => {
       const existing = acc.get(file.filename);
-      // Assuming files have a created_at or similar timestamp field
+      // Type guard to check if the file has created_at property
+      const fileWithDate = file as z.infer<typeof threadFileModel> & {
+        created_at?: string;
+      };
+      const existingWithDate = existing as z.infer<typeof threadFileModel> & {
+        created_at?: string;
+      };
+
       // If not available, we'll use the order in the array (latest files typically come last)
       if (
         !existing ||
-        (file as any).created_at > (existing as any).created_at
+        (fileWithDate.created_at &&
+          existingWithDate.created_at &&
+          fileWithDate.created_at > existingWithDate.created_at)
       ) {
         acc.set(file.filename, file);
       }
@@ -972,10 +982,10 @@ export const AgentRunner = ({
                               </Text>
                             </Flex>
 
-                            {(file as any).created_at && (
+                            {'created_at' in file && file.created_at && (
                               <Text size="text-xs" color="sand-10">
                                 {formatDistanceToNow(
-                                  new Date((file as any).created_at),
+                                  new Date(file.created_at as string),
                                   {
                                     addSuffix: true,
                                   },
