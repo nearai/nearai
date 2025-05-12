@@ -255,7 +255,10 @@ export const AgentRunner = ({
       const existing = acc.get(file.filename);
       // Assuming files have a created_at or similar timestamp field
       // If not available, we'll use the order in the array (latest files typically come last)
-      if (!existing || (file as any).created_at > (existing as any).created_at) {
+      if (
+        !existing ||
+        (file as any).created_at > (existing as any).created_at
+      ) {
         acc.set(file.filename, file);
       }
       return acc;
@@ -968,12 +971,15 @@ export const AgentRunner = ({
                                 {formatBytes(file.bytes)}
                               </Text>
                             </Flex>
-                            
+
                             {(file as any).created_at && (
                               <Text size="text-xs" color="sand-10">
-                                {formatDistanceToNow(new Date((file as any).created_at), {
-                                  addSuffix: true,
-                                })}
+                                {formatDistanceToNow(
+                                  new Date((file as any).created_at),
+                                  {
+                                    addSuffix: true,
+                                  },
+                                )}
                               </Text>
                             )}
                           </Flex>
