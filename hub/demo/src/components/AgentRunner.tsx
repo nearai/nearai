@@ -985,10 +985,15 @@ export const AgentRunner = ({
                             {'created_at' in file && file.created_at && (
                               <Text size="text-xs" color="sand-10">
                                 {formatDistanceToNow(
-                                  new Date(file.created_at as string),
-                                  {
-                                    addSuffix: true,
-                                  },
+                                  new Date(
+                                    typeof file.created_at === 'string'
+                                      ? file.created_at
+                                      : file.created_at *
+                                        (file.created_at < 10000000000
+                                          ? 1000
+                                          : 1),
+                                  ),
+                                  { addSuffix: true },
                                 )}
                               </Text>
                             )}
