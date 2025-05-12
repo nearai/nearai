@@ -1151,8 +1151,8 @@ class AgentCli:
     Agent commands allow you to create and interact with agents by running them locally or via NEAR AI Cloud.
 
     Commands:
-      nearai agent create : Create a new agent or fork an existing one
-        (--name, --description, --fork)
+      nearai agent create : Create a new agent
+        (--name, --description)
       nearai agent interactive : Run an agent interactively
         (--agent, --thread-id, --tool-resources, --local, --verbose, --env-vars)
       nearai agent task : Run a single task with an agent
@@ -1170,8 +1170,6 @@ class AgentCli:
         Name for the new agent
       --description (str) :
         Description of the new agent
-      --fork (str) :
-        Path to an existing agent to fork (format: namespace/name/version)
       --agent (str) :
         Path to the agent directory or agent ID
       --thread-id (str) :
@@ -1733,16 +1731,14 @@ class AgentCli:
         except Exception as e:
             print(f"Error in print_stream_async: {e}")
 
-    def create(self, name: Optional[str] = None, description: Optional[str] = None, fork: Optional[str] = None) -> None:
-        """Create a new AI agent from scratch or fork existing ones.
+    def create(self, name: Optional[str] = None, description: Optional[str] = None) -> None:
+        """Create a new AI agent from scratch.
 
         Args:
           name (str) :
             Name for the new agent (optional).
           description (str) :
             Description of the new agent (optional).
-          fork (str) :
-            Path to an existing agent to fork (format: namespace/agent_name/version).
 
         Examples:
           # Create a new agent step-by-step with prompts
@@ -1750,9 +1746,6 @@ class AgentCli:
 
           # Create with specific name and description
           nearai agent create --name my_agent --description "My new agent"
-
-          # Fork an existing agent and give it a new name
-          nearai agent create --fork example.near/agent-name/0.0.3 --name new_agent_name
 
         Documentation:
           https://docs.near.ai/agents/quickstart
@@ -1766,14 +1759,10 @@ class AgentCli:
         namespace = CONFIG.auth.namespace
 
         # Import the agent creator functions
-        from nearai.agent_creator import create_new_agent, fork_agent
+        from nearai.agent_creator import create_new_agent
 
-        if fork:
-            # Fork an existing agent
-            fork_agent(fork, namespace, name)
-        else:
-            # Create a new agent from scratch
-            create_new_agent(namespace, name, description)
+        # Create a new agent from scratch
+        create_new_agent(namespace, name, description)
 
     def upload(
         self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
@@ -2182,7 +2171,7 @@ class CLI:
 
     Agent Development:
       nearai agent              AGENT HELP MENU
-      nearai agent create       Create a new agent or fork an existing one
+      nearai agent create       Create a new agent
       nearai agent upload       Upload an agent to the NEAR AI agent registry
       nearai agent interactive  Run an agent interactively
       nearai agent task         Run a single task with an agent
