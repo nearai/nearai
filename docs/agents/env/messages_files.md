@@ -107,11 +107,23 @@ def run(env: Environment):
 
 ## Logging
 
-You can turn on agent logging by passing an environment variable of `DEBUG` with a value of true. 
-In the UI this is set on the Run page of an agent while logged in as the agent author. Once this is set, 
-logs from either of the methods below will be written to the thread. The 'show logs' button (next to send message)
-toggles whether the logs show in the thread.
+Logging is enabled by default. When running locally, a `.threads` folder is created inside an agent directory, 
+containing any files an agent creates, including logs.
 
+Example:
+```
+Temp run folder created: /Users/antonlomonos/.nearai/registry/alomonos.near/example-logging-agent/0.0.1/.threads/agent_5782e02da54c4365a3c9ee27a64fc81c
+Logging system_log.txt at: /Users/antonlomonos/.nearai/registry/alomonos.near/example-logging-agent/0.0.1/.threads/agent_5782e02da54c4365a3c9ee27a64fc81c/system_log.txt
+Logging agent_log.txt at: /Users/antonlomonos/.nearai/registry/alomonos.near/example-logging-agent/0.0.1/.threads/agent_5782e02da54c4365a3c9ee27a64fc81c/agent_log.txt
+Logging chat_history_log.txt at: /Users/antonlomonos/.nearai/registry/alomonos.near/example-logging-agent/0.0.1/.threads/agent_5782e02da54c4365a3c9ee27a64fc81c/chat_history_log.txt
+```
+These are temporary files and are deleted when exiting an interactive agent session. To keep these files, copy them
+into another folder before exiting the interactive session.
+Here are some options for adding more logs:
 
 * [`add_system_log`](../../api.md#nearai.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".
 * [`add_agent_log`](../../api.md#nearai.agents.environment.Environment.add_system_log): any agent logs may go here. Saved into "agent_log.txt".
+
+In the Agent Cloud (hub), every log file update appears at the bottom of the OUTPUT section.
+You can turn off agent logging by passing an environment variable of `DEBUG` with a value of `false`. 
+The 'show logs' button (next to send message) toggles all logs to be shown in the thread.
