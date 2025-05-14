@@ -288,6 +288,14 @@ async def upload_metadata(
                 RegistryEntry.version == entry_location.version,
             )
         ).first()
+        if entry is None:
+            entry = RegistryEntry(
+                namespace=entry_location.namespace,
+                name=entry_location.name,
+                version=entry_location.version,
+            )
+            session.add(entry)
+            session.commit()
         assert entry is not None
 
         full_metadata = EntryMetadata(name=entry.name, version=entry.version, **metadata.model_dump())
