@@ -119,7 +119,7 @@ Logging chat_history_log.txt at: /Users/antonlomonos/.nearai/registry/alomonos.n
 ```
 These are temporary files and are deleted when exiting an interactive agent session. To keep these files, copy them
 into another folder before exiting the interactive session.
-To add more logs:
+Here are some options for adding more logs:
 
 * [`add_system_log`](../../api.md#nearai.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".
 * [`add_agent_log`](../../api.md#nearai.agents.environment.Environment.add_system_log): any agent logs may go here. Saved into "agent_log.txt".
