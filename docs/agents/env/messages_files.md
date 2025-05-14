@@ -117,8 +117,8 @@ Logging system_log.txt at: /Users/antonlomonos/.nearai/registry/alomonos.near/ex
 Logging agent_log.txt at: /Users/antonlomonos/.nearai/registry/alomonos.near/example-logging-agent/0.0.1/.threads/agent_5782e02da54c4365a3c9ee27a64fc81c/agent_log.txt
 Logging chat_history_log.txt at: /Users/antonlomonos/.nearai/registry/alomonos.near/example-logging-agent/0.0.1/.threads/agent_5782e02da54c4365a3c9ee27a64fc81c/chat_history_log.txt
 ```
-These are temporary files and are deleted when exiting interactive session. To keep these files, copy them into 
-another folder before exiting interactive session.
+These are temporary files and are deleted when exiting an interactive agent session. To keep these files, copy them
+into another folder before exiting the interactive session.
 To add more logs:
 
 * [`add_system_log`](../../api.md#nearai.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".
