@@ -5,8 +5,6 @@ import { type z } from 'zod';
 
 import { type entryModel } from '@/lib/models';
 
-import { EntriesTable } from './EntriesTable';
-import { ForkButton } from './ForkButton';
 import { Markdown } from './lib/Markdown';
 
 type Props = {
@@ -34,21 +32,6 @@ export const EntryOverview = ({ entry }: Props) => {
           </Flex>
         )}
       </Section>
-
-      <EntriesTable
-        category={entry.category}
-        header={
-          <Flex align="center" gap="s">
-            <Text size="text-l">Forks</Text>
-            <ForkButton entry={entry} variant="simple" />
-          </Flex>
-        }
-        forkOf={{
-          name: entry.name,
-          namespace: entry.namespace,
-        }}
-        title="Forks"
-      />
     </>
   );
 };

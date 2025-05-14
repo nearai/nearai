@@ -14,7 +14,6 @@
         "description": "Where would you like to go?"
       },
       "defaults": {
-        "max_iterations": 1,
         "models": [
           {
             "model": "qwen2p5-72b-instruct",

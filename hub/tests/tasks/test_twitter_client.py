@@ -30,10 +30,10 @@ class TestTwitterClient(unittest.IsolatedAsyncioTestCase):
         user_name = "NearSecretAgent"
         timestamp = None
 
-        result = await get_latest_mentions(user_name, timestamp, max_results)
+        tweets, _authors = await get_latest_mentions(user_name, timestamp, max_results)
 
-        self.assertIsNotNone(result)
-        self.assertEqual(len(result), 20)
+        self.assertIsNotNone(tweets)
+        self.assertEqual(len(tweets), 20)
         mock_search_recent_tweets.assert_called()
 
 
@@ -62,10 +62,10 @@ class TestTwitterClient(unittest.IsolatedAsyncioTestCase):
         timestamp = None
         limit_per_run = 20  # Set a low limit to test the parameter
 
-        result = await get_latest_mentions(user_name, timestamp, max_results, limit_per_run)
+        tweets, _authors = await get_latest_mentions(user_name, timestamp, max_results, limit_per_run)
 
-        self.assertIsNotNone(result)
-        self.assertEqual(len(result), limit_per_run)
+        self.assertIsNotNone(tweets)
+        self.assertEqual(len(tweets), limit_per_run)
         mock_search_recent_tweets.assert_called()
 
 if __name__ == '__main__':

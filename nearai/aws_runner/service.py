@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
+import io
 import json
+import logging
 import os
 import shutil
+import sys
 import time
+from pathlib import Path
 from subprocess import call
-from typing import Optional, Union
+from typing import Optional
 
 import boto3
 from ddtrace import patch_all, tracer
-from nearai.agents.agent import Agent
+from nearai.agents.agent import Agent, get_local_agent_files
 from nearai.agents.environment import Environment
 from nearai.aws_runner.partial_near_client import PartialNearClient
-from nearai.registry import get_registry_folder
+from nearai.registry import get_registry_folder, resolve_local_path
 from nearai.shared.auth_data import AuthData
 from nearai.shared.client_config import ClientConfig
 from nearai.shared.inference_client import InferenceClient
@@ -24,6 +28,8 @@ if os.environ.get("DD_API_KEY"):
 
 OUTPUT_PATH = "/tmp/nearai-agent-runner"
 DEFAULT_API_URL = "https://api.near.ai"
+RUNNER_LOG_PATH = "/tmp/nearai-agent-runner/runner_log.txt"
+RUNNER_LOG_FILENAME = "runner_log.txt"
 
 # Local caches
 provider_models_cache = None
@@ -103,6 +109,89 @@ def handler(event, context):
 
     params = event.get("params", {})
 
+    api_url = str(params.get("api_url", DEFAULT_API_URL))
+    client_config = ClientConfig(
+        base_url=api_url + "/v1",
+        auth=auth,
+    )
+    hub_client = client_config.get_hub_client()
+
+    logger = logging.getLogger("runner_logger")
+    logger.handlers = []
+
+    def logger(log: str, level=logging.INFO):
+        # NOTE: Do not call prints in this function.
+        logger = logging.getLogger("runner_logger")
+        if not logger.handlers:
+            # Configure the logger if it hasn't been set up yet
+            logger.setLevel(logging.DEBUG)
+            log_dir = os.path.dirname(RUNNER_LOG_PATH)
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir, exist_ok=True)
+            file_handler = logging.FileHandler(RUNNER_LOG_PATH)
+            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+
+        # Log the message
+        logger.log(level, log)
+        # Force the handler to write to disk
+        for handler in logger.handlers:
+            handler.flush()
+
+        log_path = RUNNER_LOG_PATH
+        if os.path.exists(log_path):
+            try:
+                with open(log_path, "r") as f:
+                    content = f.read()
+                # Only upload if there's content
+                if content:
+                    file = hub_client.files.create(
+                        file=(RUNNER_LOG_FILENAME, content, "text/plain"), purpose="assistants"
+                    )
+                    hub_client.beta.threads.messages.create(
+                        thread_id=thread_id,
+                        role="assistant",
+                        content=f"Output file: {RUNNER_LOG_FILENAME}",
+                        attachments=[{"file_id": file.id}],
+                        metadata={"message_type": "system:output_file"},
+                    )
+            except Exception:
+                pass
+
+    # Create a custom writer that logs and writes to buffer
+    class LoggingWriter:
+        # Static class variable to prevent recursion
+        _in_write_operation = False
+
+        def __init__(self, buffer, log_func, stream_name):
+            self.buffer = buffer
+            self.log_func = log_func
+            self.stream_name = stream_name
+
+        def write(self, msg):
+            # Write to buffer regardless of recursion state
+            self.buffer.write(msg)
+
+            # Only log if not already in a write operation and message is not empty
+            if not LoggingWriter._in_write_operation and msg.strip():
+                try:
+                    # Set recursion flag before logging
+                    LoggingWriter._in_write_operation = True
+                    self.log_func(f"[RUNNER {self.stream_name}] {msg.strip()}")
+                finally:
+                    # Always reset the flag, even if an exception occurs
+                    LoggingWriter._in_write_operation = False
+
+        def flush(self):
+            self.buffer.flush()
+
+    if params["data_source"] == "registry":
+        stdout_buffer = io.StringIO()
+        sys.stdout = LoggingWriter(stdout_buffer, logger, "STDOUT")
+        stderr_buffer = io.StringIO()
+        sys.stderr = LoggingWriter(stderr_buffer, logger, "STDERR")
+
     new_thread_id = run_with_environment(
         agents,
         auth_object,
@@ -142,7 +231,7 @@ def write_metric(metric_name, value, unit="Milliseconds", verbose=True):
         print(f"[DEBUG] • Would have written metric {metric_name} with value {value} to cloudwatch")
 
 
-def load_agent(client, agent, params: dict, additional_path: str = "", verbose=True) -> Agent:
+def load_agent(client, agent: str, params: dict, additional_path: str = "", verbose=True) -> Agent:
     agent_metadata = None
 
     if params["data_source"] == "registry":
@@ -180,11 +269,13 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
         return full_agent
     elif params["data_source"] == "local_files":
         agent = agent.replace(f"{get_registry_folder()}/", "")
-        agent_files = get_local_agent_files(agent, additional_path)
+        path = resolve_local_path(Path(additional_path if additional_path else agent))
+        agent_files = get_local_agent_files(path)
 
         for file in agent_files:
-            if os.path.basename(file["filename"]) == "metadata.json":
-                agent_metadata = json.loads(file["content"])
+            if os.path.basename(file) == "metadata.json":
+                with open(file) as f:
+                    agent_metadata = json.load(f)
                 if verbose:
                     agent_info = f"""[DEBUG]   • Name: {agent_metadata.get("name", "N/A")}
 [DEBUG]   • Version: {agent_metadata.get("version", "N/A")}
@@ -221,7 +312,11 @@ def load_agent(client, agent, params: dict, additional_path: str = "", verbose=T
             print(f"Missing metadata for {agent}")
 
         return Agent(
-            agent, agent_files, agent_metadata or {}, change_to_temp_dir=params.get("change_to_agent_temp_dir", True)
+            agent,
+            agent_files,
+            agent_metadata or {},
+            change_to_temp_dir=params.get("change_to_agent_temp_dir", True),
+            local_path=path,
         )
     else:
         raise ValueError("Invalid data_source")
@@ -262,7 +357,7 @@ class EnvironmentRun:
 
     def run(self, new_message: str = "") -> Optional[str]:  # noqa: D102
         start_time = time.perf_counter()
-        self.env.run(new_message, self.agents[0].max_iterations)
+        self.env.run(new_message)
         stop_time = time.perf_counter()
         write_metric("ExecuteAgentDuration", stop_time - start_time, verbose=self.verbose)
         return self.thread_id
@@ -330,13 +425,10 @@ def start_with_environment(
         agent.model_temperature = params["temperature"]
     if params.get("max_tokens", ""):
         agent.model_max_tokens = params["max_tokens"]
-    if params.get("max_iterations", ""):
-        agent.max_iterations = params["max_iterations"]
     if verbose:
         print(
             f"[DEBUG] • Agent info: provider: {agent.model_provider} // model: {agent.model} "
-            f"// temperature: {agent.model_temperature} // max_tokens: {agent.model_max_tokens} "
-            f"// max_iterations: {agent.max_iterations}"
+            f"// temperature: {agent.model_temperature} // max_tokens: {agent.model_max_tokens}"
         )
 
     client_config = ClientConfig(
@@ -359,14 +451,8 @@ def start_with_environment(
         inference_client.set_provider_models(provider_models_cache)
 
     hub_client = client_config.get_hub_client()
-    run_path = (
-        additional_path
-        if not params.get("change_to_agent_temp_dir", True) and additional_path
-        else f"{OUTPUT_PATH}/{agent.namespace}/{agent.name}/{agent.version}"
-    )
 
     env = Environment(
-        run_path,
         loaded_agents,
         inference_client,
         hub_client,
@@ -394,44 +480,3 @@ def run_with_environment(
     """Runs agent against environment fetched from id, optionally passing a new message to the environment."""
     environment_run = start_with_environment(agents, auth, thread_id, run_id, additional_path, params, print_system_log)
     return environment_run.run(new_message)
-
-
-def get_local_agent_files(agent_identifier: str, additional_path: str = ""):
-    """Fetches an agent from local filesystem."""
-    base_path = os.path.expanduser(f"~/.nearai/registry/{agent_identifier}")
-
-    if agent_identifier.endswith("latest"):
-        base_path = os.path.dirname(base_path.replace("latest", ""))
-        versions = os.listdir(base_path)
-        versions.sort()
-        base_path = os.path.join(base_path, versions[-1])
-
-    paths = [base_path]
-    if additional_path:
-        paths.append(os.path.join(base_path, additional_path))
-
-    results = []
-    for path in paths:
-        for root, _dirs, files in os.walk(path):
-            for file in files:
-                file_path = os.path.join(root, file)
-                relative_path = os.path.relpath(file_path, path)
-
-                try:
-                    content: Optional[Union[str, bytes]] = None
-
-                    with open(file_path, "rb") as f:
-                        file_content = f.read()
-                        try:
-                            # Try to decode as text
-                            content = file_content.decode("utf-8")
-                        except UnicodeDecodeError:
-                            # If decoding fails, store as binary
-                            content = file_content
-
-                    results.append({"filename": relative_path, "content": content})
-
-                except Exception as e:
-                    print(f"Error with cache creation: {e}")
-
-    return results

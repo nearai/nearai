@@ -1,0 +1,36 @@
+.container {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--gap-s);
+  cursor: pointer;
+  min-width: 8rem;
+  outline: none;
+
+  &:hover,
+  &:focus-visible {
+    .preview {
+      background: var(--sand-4);
+    }
+  }
+}
+
+.preview {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  background: var(--sand-3);
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transitions);
+
+  img {
+    object-fit: cover;
+    object-position: center;
+    width: 100%;
+    height: 100%;
+  }
+}

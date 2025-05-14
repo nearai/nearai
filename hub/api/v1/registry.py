@@ -81,6 +81,26 @@ def with_write_access(use_forms=False):
     return fn_with_write_access
 
 
+def with_metadata_write_access(use_forms=False):
+    default = Depends(EntryLocation.as_form) if use_forms else Body()
+
+    def fn_with_metadata_write_access(
+        entry_location: EntryLocation = default,
+        auth: AuthToken = Depends(get_auth),
+    ) -> EntryLocation:
+        """Check the user has write access to the entry."""
+        if auth.account_id == entry_location.namespace:
+            return entry_location
+        if auth.account_id in DEFAULT_NAMESPACE_WRITE_ACCESS_LIST:
+            return entry_location
+        raise HTTPException(
+            status_code=403,
+            detail=f"Unauthorized. Namespace: {entry_location.namespace} != Account: {auth.account_id}",
+        )
+
+    return fn_with_metadata_write_access
+
+
 def get_or_create(entry_location: EntryLocation = Depends(with_write_access())) -> int:
     with get_session() as session:
         entry = session.exec(
@@ -125,6 +145,17 @@ def get(entry_location: EntryLocation = Body()) -> RegistryEntry:
         return entry
 
 
+def obfuscate_encryption_key(data: dict):
+    """Obfuscate encryption key in data structure."""
+    result = {}
+    for k, v in data.items():
+        if k == "encryption_key":
+            result[k] = "<secret>"
+        else:
+            result[k] = v
+    return result
+
+
 def get_read_access(
     entry: RegistryEntry = Depends(get),
     auth: Optional[AuthToken] = Depends(get_optional_auth),
@@ -132,6 +163,8 @@ def get_read_access(
     current_account_id = auth.account_id if auth else None
     if entry.is_private() and entry.namespace != current_account_id:
         raise HTTPException(status_code=403, detail="Unauthorized")
+    if entry.namespace != current_account_id:
+        entry.details = obfuscate_encryption_key(entry.details)
     return entry
 
 
@@ -244,9 +277,17 @@ def download_file_inner(
 
 
 @v1_router.post("/upload_metadata")
-async def upload_metadata(registry_entry_id: int = Depends(get_or_create), metadata: EntryMetadataInput = Body()):
+async def upload_metadata(
+    entry_location: EntryLocation = Depends(with_metadata_write_access()), metadata: EntryMetadataInput = Body()
+):
     with get_session() as session:
-        entry = session.get(RegistryEntry, registry_entry_id)
+        entry = session.exec(
+            select(RegistryEntry).where(
+                RegistryEntry.namespace == entry_location.namespace,
+                RegistryEntry.name == entry_location.name,
+                RegistryEntry.version == entry_location.version,
+            )
+        ).first()
         assert entry is not None
 
         full_metadata = EntryMetadata(name=entry.name, version=entry.version, **metadata.model_dump())

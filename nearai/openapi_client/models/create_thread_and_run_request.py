@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt, StrictStr
+from pydantic import BaseModel, ConfigDict, StrictBool, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 from typing import Optional, Set
 from typing_extensions import Self
@@ -30,11 +30,10 @@ class CreateThreadAndRunRequest(BaseModel):
     assistant_id: Optional[StrictStr] = None
     thread_id: Optional[StrictStr] = None
     new_message: Optional[StrictStr] = None
-    max_iterations: Optional[StrictInt] = None
     record_run: Optional[StrictBool] = None
     tool_resources: Optional[Dict[str, Any]] = None
     user_env_vars: Optional[Dict[str, Any]] = None
-    __properties: ClassVar[List[str]] = ["agent_id", "assistant_id", "thread_id", "new_message", "max_iterations", "record_run", "tool_resources", "user_env_vars"]
+    __properties: ClassVar[List[str]] = ["agent_id", "assistant_id", "thread_id", "new_message", "record_run", "tool_resources", "user_env_vars"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -95,11 +94,6 @@ class CreateThreadAndRunRequest(BaseModel):
         if self.new_message is None and "new_message" in self.model_fields_set:
             _dict['new_message'] = None
 
-        # set to None if max_iterations (nullable) is None
-        # and model_fields_set contains the field
-        if self.max_iterations is None and "max_iterations" in self.model_fields_set:
-            _dict['max_iterations'] = None
-
         # set to None if record_run (nullable) is None
         # and model_fields_set contains the field
         if self.record_run is None and "record_run" in self.model_fields_set:
@@ -131,7 +125,6 @@ class CreateThreadAndRunRequest(BaseModel):
             "assistant_id": obj.get("assistant_id"),
             "thread_id": obj.get("thread_id"),
             "new_message": obj.get("new_message"),
-            "max_iterations": obj.get("max_iterations"),
             "record_run": obj.get("record_run"),
             "tool_resources": obj.get("tool_resources"),
             "user_env_vars": obj.get("user_env_vars")

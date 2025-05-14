@@ -9,6 +9,7 @@ from tqdm import tqdm
 # Note: We should import nearai.config on this file to make sure the method setup_api_client is called at least once
 #       before creating RegistryApi object. This is because setup_api_client sets the default configuration for the
 #       API client that is used by Registry API.
+from nearai.agents.agent import get_local_agent_files
 from nearai.config import CONFIG, DATA_FOLDER
 from nearai.lib import check_metadata_present, parse_location
 from nearai.openapi_client import EntryInformation, EntryLocation, EntryMetadata, EntryMetadataInput
@@ -265,138 +266,24 @@ class Registry:
 
         registry.update(entry_location, entry_metadata)
 
-        # Initialize gitignore matcher
-        gitignore_spec = None
-        try:
-            import pathspec
-
-            gitignore_path = path / ".gitignore"
-            if gitignore_path.exists() and gitignore_path.is_file():
-                with open(gitignore_path, "r") as f:
-                    print(".gitignore file detected. Will filter out git ignore files.\n")
-                    # Start with Git's default ignore patterns
-                    default_ignore_patterns = [
-                        # Git internal directories
-                        ".git/",
-                        ".gitignore",
-                        ".gitmodules",
-                        ".gitattributes",
-                        # Python specific
-                        "__pycache__/",
-                        "*.py[cod]",
-                        "*$py.class",
-                        "*.so",
-                        ".Python",
-                        "build/",
-                        "develop-eggs/",
-                        "dist/",
-                        "downloads/",
-                        "eggs/",
-                        ".eggs/",
-                        "lib/",
-                        "lib64/",
-                        "parts/",
-                        "sdist/",
-                        "var/",
-                        "wheels/",
-                        "*.egg-info/",
-                        ".installed.cfg",
-                        "*.egg",
-                        # Common cache directories
-                        ".ruff_cache/",
-                        ".pytest_cache/",
-                        ".mypy_cache/",
-                        ".hypothesis/",
-                        ".coverage",
-                        "htmlcov/",
-                        ".tox/",
-                        ".nox/",
-                        # Virtual environments
-                        "venv/",
-                        "env/",
-                        ".env/",
-                        ".venv/",
-                        "ENV/",
-                        # Jupyter Notebook
-                        ".ipynb_checkpoints",
-                        # IDE specific
-                        ".idea/",
-                        ".vscode/",
-                        "*.swp",
-                        "*.swo",
-                        # macOS specific
-                        ".DS_Store",
-                        ".AppleDouble",
-                        ".LSOverride",
-                        # Windows specific
-                        "Thumbs.db",
-                        "ehthumbs.db",
-                        "Desktop.ini",
-                    ]
-                    custom_patterns = f.readlines()
-                    gitignore_spec = pathspec.PathSpec.from_lines(
-                        "gitwildmatch", default_ignore_patterns + custom_patterns
-                    )
-        except ImportError:
-            print("Error: pathspec library not found. .gitignore patterns will not be applied.")
-            exit(1)
-        except Exception as e:
-            print(f"Error: Failed to parse .gitignore file: {str(e)}")
-            exit(1)
-
-        all_files = []
+        agent_files = get_local_agent_files(path)
+        files_to_upload = []
         total_size = 0
-        num_files_ignored = 0
 
-        # Traverse all files in the directory `path`
-        for file in path.rglob("*"):
-            if not file.is_file():
-                continue
-
+        for file in agent_files:
             relative = file.relative_to(path)
-            ignore_file = False
 
             # Don't upload metadata file.
             if file == metadata_path:
-                ignore_file = True
-
-            # Don't upload backup files.
-            if not ignore_file and file.name.endswith("~"):
-                ignore_file = True
-
-            # Don't upload configuration files.
-            if not ignore_file and relative.parts[0] == ".nearai":
-                ignore_file = True
-
-            # Don't upload files in __pycache__
-            if not ignore_file and "__pycache__" in relative.parts:
-                ignore_file = True
-
-            # Check if file matches gitignore patterns
-            if not ignore_file and gitignore_spec is not None:
-                rel_str = str(relative).replace("\\", "/")
-                if gitignore_spec.match_file(rel_str):
-                    ignore_file = True
-
-            if ignore_file:
-                num_files_ignored += 1
                 continue
 
             size = file.stat().st_size
             total_size += size
 
-            all_files.append((file, relative, size))
-
-        if num_files_ignored > 0:
-            print(f"{num_files_ignored} files are filtered out and will not be uploaded.\n")
-
-        print("Files to be uploaded:")
-        for _file, relative, _size in all_files:
-            print(f"U   {relative}")
-        print("")
+            files_to_upload.append((file, relative, size))
 
         pbar = tqdm(total=total_size, unit="B", unit_scale=True, disable=not show_progress)
-        for file, relative, size in all_files:
+        for file, relative, size in files_to_upload:
             registry.upload_file(entry_location, file, relative)
             pbar.update(size)
 

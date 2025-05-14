@@ -256,7 +256,6 @@ export function useAgentRequestsWithIframe(
         }
       } else if (action === 'remote_agent_run') {
         const input = chatWithAgentModel.passthrough().parse(event.data.data);
-        input.max_iterations = Number(input.max_iterations) || 1;
         input.thread_id = input.thread_id ?? threadId;
         void conditionallyProcessAgentRequests([
           {

@@ -19,8 +19,6 @@ import { ENTRY_CATEGORY_LABELS } from '@/lib/categories';
 import { primaryUrlForEntry, rawFileUrlForEntry } from '@/lib/entries';
 import { type entryModel } from '@/lib/models';
 
-import { ForkButton } from './ForkButton';
-
 type Props = {
   entry: z.infer<typeof entryModel>;
   linksOpenNewTab?: boolean;
@@ -85,7 +83,6 @@ export const EntryCard = ({ entry, linksOpenNewTab, footer }: Props) => {
         </Tooltip>
 
         <StarButton entry={entry} variant="simple" />
-        <ForkButton entry={entry} variant="simple" />
 
         {entry.category === 'agent' && (
           <>

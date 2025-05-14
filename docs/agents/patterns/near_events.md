@@ -13,7 +13,6 @@ The NEAR AI HUB monitors the latest blocks from the NEAR blockchain and can trig
     {
       "message": "Hello from NEAR Blockchain",
       "agent": "user.near/agent-name/latest",
-      "max_iterations": null,
       "env_vars": null,
       "signer_id": "account.near",
       "referral_id": null,

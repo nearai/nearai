@@ -19,6 +19,7 @@ from nearai.shared.client_config import ClientConfig
 
 AGENT_FILENAME_PY = "agent.py"
 AGENT_FILENAME_TS = "agent.ts"
+THREADS_DIR = ".threads"
 
 load_dotenv()
 
@@ -48,9 +49,142 @@ def clear_module_cache(module_names, namespace):
     exec(cleanup_code, namespace)
 
 
+def get_local_agent_files(path: Path) -> List[Path]:
+    """List of local agent files.
+
+    Files matching patterns in .gitignore (if present) are excluded.
+    """
+    # Initialize gitignore matcher
+    gitignore_spec = None
+    try:
+        import pathspec
+
+        gitignore_path = path / ".gitignore"
+        if gitignore_path.exists() and gitignore_path.is_file():
+            with open(gitignore_path, "r") as f:
+                print(".gitignore file detected. Will filter out git ignore files.\n")
+                # Start with Git's default ignore patterns
+                default_ignore_patterns = [
+                    # Git internal directories
+                    ".git/",
+                    ".gitignore",
+                    ".gitmodules",
+                    ".gitattributes",
+                    # Python specific
+                    "__pycache__/",
+                    "*.py[cod]",
+                    "*$py.class",
+                    "*.so",
+                    ".Python",
+                    "build/",
+                    "develop-eggs/",
+                    "dist/",
+                    "downloads/",
+                    "eggs/",
+                    ".eggs/",
+                    "lib/",
+                    "lib64/",
+                    "parts/",
+                    "sdist/",
+                    "var/",
+                    "wheels/",
+                    "*.egg-info/",
+                    ".installed.cfg",
+                    "*.egg",
+                    # Common cache directories
+                    ".ruff_cache/",
+                    ".pytest_cache/",
+                    ".mypy_cache/",
+                    ".hypothesis/",
+                    ".coverage",
+                    "htmlcov/",
+                    ".tox/",
+                    ".nox/",
+                    # Virtual environments
+                    "venv/",
+                    "env/",
+                    ".env/",
+                    ".venv/",
+                    "ENV/",
+                    # Jupyter Notebook
+                    ".ipynb_checkpoints",
+                    # IDE specific
+                    ".idea/",
+                    ".vscode/",
+                    "*.swp",
+                    "*.swo",
+                    # macOS specific
+                    ".DS_Store",
+                    ".AppleDouble",
+                    ".LSOverride",
+                    # Windows specific
+                    "Thumbs.db",
+                    "ehthumbs.db",
+                    "Desktop.ini",
+                ]
+                custom_patterns = f.readlines()
+                gitignore_spec = pathspec.PathSpec.from_lines("gitwildmatch", default_ignore_patterns + custom_patterns)
+    except ImportError:
+        print("Error: pathspec library not found. .gitignore patterns will not be applied.")
+        exit(1)
+    except Exception as e:
+        print(f"Error: Failed to parse .gitignore file: {str(e)}")
+        exit(1)
+
+    all_files = []
+
+    # Traverse all files in the directory `path`
+    for file in path.rglob("*"):
+        if not file.is_file():
+            continue
+
+        relative = file.relative_to(path)
+        ignore_file = False
+
+        # Filter out backup files.
+        if not ignore_file and file.name.endswith("~"):
+            ignore_file = True
+
+        # Filter out configuration files.
+        if not ignore_file and relative.parts[0] == ".nearai":
+            ignore_file = True
+
+        # Filter out thread files.
+        if not ignore_file and relative.parts[0] == THREADS_DIR:
+            ignore_file = True
+
+        # Filter out __pycache__
+        if not ignore_file and "__pycache__" in relative.parts:
+            ignore_file = True
+
+        # Check if file matches gitignore patterns
+        if not ignore_file and gitignore_spec is not None:
+            rel_str = str(relative).replace("\\", "/")
+            if gitignore_spec.match_file(rel_str):
+                ignore_file = True
+
+        if ignore_file:
+            continue
+
+        all_files.append(file)
+
+    print("Agent files:")
+    for file in all_files:
+        relative = file.relative_to(path)
+        print(f"-   {relative}")
+    print("")
+
+    return all_files
+
+
 class Agent(object):
     def __init__(  # noqa: D107
-        self, identifier: str, agent_files: Union[List, Path], metadata: Dict, change_to_temp_dir: bool = True
+        self,
+        identifier: str,
+        agent_files: Union[List, Path],
+        metadata: Dict,
+        change_to_temp_dir: bool = True,
+        local_path: Optional[Path] = None,
     ):  # noqa: D107
         self.code: Optional[CodeType] = None
         self.file_cache: dict[str, Union[str, bytes]] = {}
@@ -67,7 +201,6 @@ class Agent(object):
         self.model_provider = ""
         self.model_temperature: Optional[float] = None
         self.model_max_tokens: Optional[int] = None
-        self.max_iterations = 1
         self.welcome_title: Optional[str] = None
         self.welcome_description: Optional[str] = None
 
@@ -75,7 +208,7 @@ class Agent(object):
         self.agent_files = agent_files
         self.original_cwd = os.getcwd()
 
-        self.temp_dir = self.write_agent_files_to_temp(agent_files)
+        self.temp_dir = self.write_agent_files_to_temp(agent_files, local_path)
         self.ts_runner_dir = ""
         self.change_to_temp_dir = change_to_temp_dir
         self.agent_filename = ""
@@ -86,22 +219,34 @@ class Agent(object):
         return f"{self.namespace}/{self.name}/{self.version}"
 
     @staticmethod
-    def write_agent_files_to_temp(agent_files):
+    def write_agent_files_to_temp(agent_files, local_path: Optional[Path] = None):
         """Write agent files to a temporary directory."""
         unique_id = uuid.uuid4().hex
-        temp_dir = os.path.join(tempfile.gettempdir(), f"agent_{unique_id}")
+        if local_path:
+            temp_dir = os.path.join(local_path, f"{THREADS_DIR}/agent_{unique_id}")
+            print(f"Temp run folder created: {temp_dir}")
+        else:
+            temp_dir = os.path.join(tempfile.gettempdir(), f"agent_{unique_id}")
 
         if isinstance(agent_files, List):
             os.makedirs(temp_dir, exist_ok=True)
 
-            for file_obj in agent_files:
-                file_path = os.path.join(temp_dir, file_obj["filename"])
+            for agent_file in agent_files:
+                if isinstance(agent_file, dict):
+                    filename = agent_file["filename"]
+                    content = agent_file["content"]
+                else:
+                    assert isinstance(agent_file, Path)
+                    assert local_path
+                    filename = os.path.relpath(agent_file, local_path)
+                    with open(agent_file, "rb") as f:
+                        content = f.read()
+
+                file_path = os.path.join(temp_dir, filename)
 
                 try:
                     if not os.path.exists(os.path.dirname(file_path)):
                         os.makedirs(os.path.dirname(file_path))
-
-                    content = file_obj["content"]
 
                     if isinstance(content, dict) or isinstance(content, list):
                         try:
@@ -149,13 +294,17 @@ class Agent(object):
                 self.model_provider = defaults.get("model_provider", self.model_provider)
                 self.model_temperature = defaults.get("model_temperature", self.model_temperature)
                 self.model_max_tokens = defaults.get("model_max_tokens", self.model_max_tokens)
-                self.max_iterations = defaults.get("max_iterations", self.max_iterations)
 
         if not self.version or not self.name:
             raise ValueError("Both 'version' and 'name' must be non-empty in metadata.")
 
     def run_python_code(
-        self, agent_namespace, agent_runner_user, agent_py_modules_import
+        self,
+        agent_namespace,
+        agent_runner_user,
+        agent_py_modules_import,
+        log_stdout_callback=None,
+        log_stderr_callback=None,
     ) -> Tuple[Optional[str], Optional[str]]:
         """Launch python agent."""
         try:
@@ -165,14 +314,52 @@ class Agent(object):
                 os.setgid(user_info.pw_gid)
                 os.setuid(user_info.pw_uid)
 
+            # Create a custom writer that logs and writes to buffer
+            class LoggingWriter:
+                # Static class variable to prevent recursion
+                _in_write_operation = False
+
+                def __init__(self, buffer, log_func, stream_name):
+                    self.buffer = buffer
+                    self.log_func = log_func
+                    self.stream_name = stream_name
+
+                def write(self, msg):
+                    # Write to buffer regardless of recursion state
+                    self.buffer.write(msg)
+
+                    # Only log if not already in a write operation and message is not empty
+                    if not LoggingWriter._in_write_operation and msg.strip():
+                        try:
+                            # Set recursion flag before logging
+                            LoggingWriter._in_write_operation = True
+                            self.log_func(f"[AGENT {self.stream_name}] {msg.strip()}")
+                        finally:
+                            # Always reset the flag, even if an exception occurs
+                            LoggingWriter._in_write_operation = False
+
+                def flush(self):
+                    self.buffer.flush()
+
+            if log_stdout_callback:
+                stdout_buffer = io.StringIO()
+                sys.stdout = LoggingWriter(stdout_buffer, log_stdout_callback, "STDOUT")
+            if log_stderr_callback:
+                stderr_buffer = io.StringIO()
+                sys.stderr = LoggingWriter(stderr_buffer, log_stderr_callback, "STDERR")
+
             # Run the code
             # NOTE: runpy.run_path does not work in a multithreaded environment when running benchmark.
             #       The performance of runpy.run_path may also change depending on a system, e.g. it may
             #       work on Linux but not work on Mac.
             #       `compile` and `exec` have been tested to work properly in a multithreaded environment.
-            if self.code:
-                clear_module_cache(agent_py_modules_import, agent_namespace)
-                exec(self.code, agent_namespace)
+            try:
+                if self.code:
+                    clear_module_cache(agent_py_modules_import, agent_namespace)
+                    exec(self.code, agent_namespace)
+            finally:
+                sys.stdout = sys.__stdout__
+                sys.stderr = sys.__stderr__
 
             # If no errors occur, return None
             return None, None
@@ -181,7 +368,7 @@ class Agent(object):
             # Return error message and full traceback as strings
             return str(e), traceback.format_exc()
 
-    def run_ts_agent(self, agent_filename, env_vars, json_params):
+    def run_ts_agent(self, agent_filename, env_vars, json_params, log_stdout_callback=None, log_stderr_callback=None):
         """Launch typescript agent."""
         print(f"Running typescript agent {agent_filename} from {self.ts_runner_dir}")
 
@@ -232,14 +419,16 @@ class Agent(object):
         stdout, stderr = ts_process.communicate()
 
         stdout = stdout.decode().strip()
-        if stdout and env_vars.get("DEBUG"):
-            print(f"TS AGENT STDOUT: {stdout}")
+        if stdout and log_stdout_callback:
+            log_stdout_callback(f"[AGENT STDOUT] {stdout}")
 
         stderr = stderr.decode().strip()
-        if stderr:
-            print(f"TS AGENT STDERR: {stderr}")
+        if stderr and log_stderr_callback:
+            log_stderr_callback(f"[AGENT STDERR] {stderr}")
 
-    def run(self, env: Any, task: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+    def run(
+        self, env: Any, task: Optional[str] = None, log_stdout_callback=None, log_stderr_callback=None
+    ) -> Tuple[Optional[str], Optional[str]]:
         """Run the agent code. Returns error message and traceback message."""
         # combine agent.env_vars and env.env_vars
         total_env_vars = {**self.env_vars, **env.env_vars}
@@ -353,26 +542,33 @@ class Agent(object):
                 )
 
                 process = multiprocessing.Process(
-                    target=self.run_ts_agent, args=[self.agent_filename, env.env_vars, agent_json_params]
+                    target=self.run_ts_agent,
+                    args=[
+                        self.agent_filename,
+                        env.env_vars,
+                        agent_json_params,
+                        log_stdout_callback,
+                        log_stderr_callback,
+                    ],
                 )
                 process.start()
                 process.join()
             else:
                 if env.agent_runner_user:
                     process = multiprocessing.Process(
-                        target=self.run_python_code, args=[namespace, env.agent_runner_user]
+                        target=self.run_python_code,
+                        args=[namespace, env.agent_runner_user, log_stdout_callback, log_stderr_callback],
                     )
                     process.start()
                     process.join()
                 else:
                     error_message, traceback_message = self.run_python_code(
-                        namespace, env.agent_runner_user, agent_py_modules_import
+                        namespace,
+                        env.agent_runner_user,
+                        agent_py_modules_import,
+                        log_stdout_callback,
+                        log_stderr_callback,
                     )
-
-                    if error_message:
-                        print(f"[ERROR PYTHON]: {error_message}")
-                    if traceback_message:
-                        print(f"[ERROR PYTHON TRACEBACK]: {traceback_message}")
         finally:
             if os.path.exists(self.temp_dir):
                 sys.path.remove(self.temp_dir)
