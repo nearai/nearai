@@ -30,6 +30,27 @@ deploy() {
     exit 1
   fi
 
+  COMPRESSED_SIZE=$(docker images nearai-runner${FRAMEWORK}:${VERSION} --format "{{.Size}}")
+  COMPRESSED_SIZE_MB=$(echo $COMPRESSED_SIZE | sed 's/GB//' | awk '{print int($1*1000)}')
+    
+  echo "==================================="
+  echo "Image size information:"
+  echo "Compressed size: $COMPRESSED_SIZE"
+  echo "AWS Lambda limit: 10GB uncompressed"
+  echo "==================================="
+    
+  if [ $COMPRESSED_SIZE_MB -gt 9000 ]; then
+    echo "WARNING: Image may exceed AWS Lambda's 10GB uncompressed size limit!"
+    echo "Deployment might fail."
+    read -p "Do you want to proceed with deployment? (y/n): " CONFIRM
+    if [ "$CONFIRM" != "y" ] && [ "$CONFIRM" != "Y" ]; then
+      echo "Deployment cancelled."
+      exit 0
+    fi
+  fi
+  
+  echo "Proceeding with deployment..."
+
   # Tag with version and latest
   docker tag nearai-runner${FRAMEWORK}:${VERSION} 543900120763.dkr.ecr.us-east-2.amazonaws.com/nearai-runner${FRAMEWORK}:${VERSION}
   docker tag nearai-runner${FRAMEWORK}:${VERSION} 543900120763.dkr.ecr.us-east-2.amazonaws.com/nearai-runner${FRAMEWORK}:latest

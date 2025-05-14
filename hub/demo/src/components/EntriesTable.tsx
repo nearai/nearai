@@ -28,7 +28,6 @@ import {
 import { type EntryCategory } from '@/lib/models';
 import { trpc } from '@/trpc/TRPCProvider';
 
-import { ForkButton } from './ForkButton';
 import { NewAgentButton } from './NewAgentButton';
 import { Pagination } from './Pagination';
 import { StarButton } from './StarButton';
@@ -42,6 +41,9 @@ type Props = {
     namespace: string;
   };
   title: string;
+  tags?: string[];
+  defaultSortColumn?: string;
+  defaultSortOrder?: 'ASCENDING' | 'DESCENDING';
 };
 
 export const EntriesTable = ({
@@ -50,8 +52,11 @@ export const EntriesTable = ({
   forkOf,
   header,
   title,
+  tags,
+  defaultSortColumn = 'updated',
+  defaultSortOrder = 'DESCENDING',
 }: Props) => {
-  const entriesQuery = trpc.hub.entries.useQuery({ category, forkOf });
+  const entriesQuery = trpc.hub.entries.useQuery({ category, forkOf, tags });
 
   const { searched, searchQuery, setSearchQuery } = useEntriesSearch(
     entriesQuery.data,
@@ -59,8 +64,8 @@ export const EntriesTable = ({
 
   const { sorted, ...tableProps } = useTable({
     data: searched,
-    sortColumn: 'num_stars',
-    sortOrder: 'DESCENDING',
+    sortColumn: defaultSortColumn,
+    sortOrder: defaultSortOrder,
   });
 
   const { pageItems, totalPages, setPage, ...paginationProps } =
@@ -141,13 +146,6 @@ export const EntriesTable = ({
               >
                 Stars
               </Table.HeadCell>
-              <Table.HeadCell
-                column="num_forks"
-                sortable
-                style={{ paddingLeft: '1rem' }}
-              >
-                Forks
-              </Table.HeadCell>
               <Table.HeadCell />
             </Table.Row>
           </Table.Head>
@@ -206,10 +204,6 @@ export const EntriesTable = ({
 
                 <Table.Cell style={{ width: '1px' }}>
                   <StarButton entry={entry} variant="simple" />
-                </Table.Cell>
-
-                <Table.Cell style={{ width: '1px' }}>
-                  <ForkButton entry={entry} variant="simple" />
                 </Table.Cell>
 
                 <Table.Cell style={{ width: '1px' }}>

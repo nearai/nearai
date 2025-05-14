@@ -24,8 +24,7 @@ ENV DD_TRACE_ENABLED=true \
 
 
 RUN pip install -r requirements${FRAMEWORK}.txt
-
-# This will build a smaller container, but takes much longer time to run.
+# Alternatively, this will build a smaller container, but takes much longer time to run. Use --no-cache flag in `docker build`.
 # RUN pip install --no-cache-dir -r requirements${FRAMEWORK}.txt && \
 #     echo "Package sizes:" && \
 #     pip list --format=freeze | while read package; do \
