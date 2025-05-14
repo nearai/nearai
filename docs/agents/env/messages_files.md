@@ -107,8 +107,10 @@ def run(env: Environment):
 
 ## Logging
 
-Logging is enabled by default. When running locally, `.threads` folder is created inside an agent directory, 
-containing any files an agent creates including logs:
+Logging is enabled by default. When running locally, a `.threads` folder is created inside an agent directory, 
+containing any files an agent creates, including logs.
+
+Example:
 ```
 Temp run folder created: /Users/antonlomonos/.nearai/registry/alomonos.near/example-logging-agent/0.0.1/.threads/agent_5782e02da54c4365a3c9ee27a64fc81c
 Logging system_log.txt at: /Users/antonlomonos/.nearai/registry/alomonos.near/example-logging-agent/0.0.1/.threads/agent_5782e02da54c4365a3c9ee27a64fc81c/system_log.txt
