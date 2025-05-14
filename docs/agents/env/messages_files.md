@@ -124,6 +124,6 @@ To add more logs:
 * [`add_system_log`](../../api.md#nearai.agents.environment.Environment.add_system_log): adds a system or environment log that is then saved into "system_log.txt".
 * [`add_agent_log`](../../api.md#nearai.agents.environment.Environment.add_system_log): any agent logs may go here. Saved into "agent_log.txt".
 
-In hub, every time the log file is updated, it appears on the bottom of OUTPUT section.
-You can turn off agent logging by passing an environment variable of `DEBUG` with a value of false. 
+In the Agent Cloud (hub), every log file update appears at the bottom of the OUTPUT section.
+You can turn off agent logging by passing an environment variable of `DEBUG` with a value of `false`. 
 The 'show logs' button (next to send message) toggles all logs to be shown in the thread.
