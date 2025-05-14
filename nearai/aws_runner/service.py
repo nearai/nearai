@@ -113,7 +113,7 @@ def handler(event, context):
     debug_mode = is_debug_mode(user_env_vars if user_env_vars else {})
 
     if debug_mode:
-        start_runner_log(params, auth_object)
+        start_runner_log(params, auth_object, thread_id)
 
     new_thread_id = run_with_environment(
         agents,
