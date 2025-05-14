@@ -30,8 +30,7 @@ export const EnvironmentVariables = () => {
           Global Environment Variables
         </Text>
         <Text size="text-s" color="sand-11">
-          These variables are available globally for this agent. You can
-          override them with secrets or URL parameters.
+          These variables are available globally for this agent.
         </Text>
         <EntryEnvironmentVariables
           entry={currentEntry}
