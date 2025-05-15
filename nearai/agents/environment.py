@@ -142,12 +142,7 @@ class Environment(object):
         self._approvals = approvals if approvals else default_approvals
         self._thread_id = thread_id
         self._run_id = run_id
-        not_debug_mode: bool = any(
-            str(value).lower() not in ("true", "1", "yes", "on")
-            for key, value in self.env_vars.items()
-            if key.lower() == "debug"
-        )
-        self._debug_mode: bool = not not_debug_mode
+        self._debug_mode: bool = True
 
         # Expose the NEAR account_id of a user that signs this request to run an agent.
         self.signer_account_id: str = client._config.auth.account_id if client._config.auth else ""
