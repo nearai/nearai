@@ -417,9 +417,9 @@ class InferenceClient(object):
             cast_to=str,
         )
 
-    def generate_image(self, prompt: str):
-        """Generate an image."""
-        return self.client.images.generate(prompt=prompt)
+    def generate_image(self, prompt: str, model: Optional[str] = None):
+        """Generate an image using the specified model or the default if none is provided."""
+        return self.client.images.generate(prompt=prompt, model=model)
 
     def save_agent_data(self, key: str, agent_data: Dict[str, Any]):
         """Save agent data for the agent this client was initialized with."""
