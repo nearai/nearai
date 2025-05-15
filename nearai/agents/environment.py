@@ -142,7 +142,6 @@ class Environment(object):
         self._approvals = approvals if approvals else default_approvals
         self._thread_id = thread_id
         self._run_id = run_id
-        self._debug_mode: bool = True
 
         # Expose the NEAR account_id of a user that signs this request to run an agent.
         self.signer_account_id: str = client._config.auth.account_id if client._config.auth else ""
@@ -602,7 +601,7 @@ class Environment(object):
             """Assistant adds a message to the environment."""
             # NOTE: message from `user` are not stored in the memory
 
-            if self._debug_mode and not message_type:
+            if not message_type:
                 self.add_chat_log("assistant", message)
             return hub_client.beta.threads.messages.create(
                 thread_id=thread_id,
@@ -630,8 +629,7 @@ class Environment(object):
             attachments: Optional[Iterable[Attachment]] = None,
             **kwargs: Any,
         ):
-            if self._debug_mode:
-                self.add_chat_log(role, message)
+            self.add_chat_log(role, message)
 
             return hub_client.beta.threads.messages.create(
                 thread_id=self._thread_id,
@@ -768,11 +766,10 @@ class Environment(object):
         # Must be placed after method definitions
         self.register_standard_tools()
 
-        if self._debug_mode:
-            # Try to load existing logs from thread if they don't exist locally
-            self._load_log_from_thread(SYSTEM_LOG_FILENAME)
-            self._load_log_from_thread(AGENT_LOG_FILENAME)
-            self._load_log_from_thread(CHAT_HISTORY_FILENAME)
+        # Try to load existing logs from thread if they don't exist locally
+        self._load_log_from_thread(SYSTEM_LOG_FILENAME)
+        self._load_log_from_thread(AGENT_LOG_FILENAME)
+        self._load_log_from_thread(CHAT_HISTORY_FILENAME)
         logger = logging.getLogger("system_logger")
         logger.handlers = []
         logger = logging.getLogger("agent_logger")
@@ -838,10 +835,10 @@ class Environment(object):
                 logger.addHandler(console_handler)
 
             # Add Thread log handler
-            if self._debug_mode:
-                custom_handler = CustomLogHandler(self.add_reply, "system")
-                custom_handler.setFormatter(formatter)
-                logger.addHandler(custom_handler)
+
+            custom_handler = CustomLogHandler(self.add_reply, "system")
+            custom_handler.setFormatter(formatter)
+            logger.addHandler(custom_handler)
 
         # Log the message
         logger.log(level, log)
@@ -849,8 +846,7 @@ class Environment(object):
         for handler in logger.handlers:
             handler.flush()
 
-        if self._debug_mode:
-            self._save_logs_to_thread(SYSTEM_LOG_FILENAME)
+        self._save_logs_to_thread(SYSTEM_LOG_FILENAME)
 
     def add_agent_log(self, log: str, level: int = logging.INFO) -> None:
         """Add agent log with timestamp and log level."""
@@ -866,10 +862,9 @@ class Environment(object):
             logger.addHandler(file_handler)
 
             # Add Thread log handler
-            if self._debug_mode:
-                custom_handler = CustomLogHandler(self.add_reply, "agent")
-                custom_handler.setFormatter(formatter)
-                logger.addHandler(custom_handler)
+            custom_handler = CustomLogHandler(self.add_reply, "agent")
+            custom_handler.setFormatter(formatter)
+            logger.addHandler(custom_handler)
 
         # Log the message
         logger.log(level, log)
@@ -877,14 +872,11 @@ class Environment(object):
         for handler in logger.handlers:
             handler.flush()
 
-        if self._debug_mode:
-            self._save_logs_to_thread(AGENT_LOG_FILENAME)
+        self._save_logs_to_thread(AGENT_LOG_FILENAME)
 
     def add_chat_log(self, role: str, content: str, level: int = logging.INFO) -> None:
         """Add chat history to log file when in debug mode."""
         if not self._initialized:
-            return
-        if not self._debug_mode:
             return
         if not isinstance(content, str):
             content = "content is not str"
@@ -904,8 +896,7 @@ class Environment(object):
         for handler in logger.handlers:
             handler.flush()
 
-        if self._debug_mode:
-            self._save_logs_to_thread(CHAT_HISTORY_FILENAME)
+        self._save_logs_to_thread(CHAT_HISTORY_FILENAME)
 
     def add_agent_start_system_log(self, agent_idx: int) -> None:
         """Adds agent start system log."""
@@ -1459,7 +1450,7 @@ class Environment(object):
         """Runs agent(s) against a new or previously created environment."""
         if new_message:
             self._add_message("user", new_message)
-        elif self._debug_mode:
+        else:
             last_user_message = self.get_last_message(role="user")
             if last_user_message:
                 content = last_user_message["content"]
@@ -1475,10 +1466,10 @@ class Environment(object):
             error_message, traceback_message = self.get_primary_agent().run(
                 self,
                 task=new_message,
-                log_stdout_callback=agent_output_logger if self._debug_mode else None,
+                log_stdout_callback=agent_output_logger,
                 log_stderr_callback=agent_output_logger,
             )
-            if self._debug_mode and (error_message or traceback_message):
+            if (error_message or traceback_message):
                 message_parts = []
 
                 if error_message:
@@ -1529,8 +1520,6 @@ class Environment(object):
 
     def _save_logs_to_thread(self, log_file: str):
         """Save log file to thread."""
-        if not self._debug_mode:
-            return
         log_path = os.path.join(self.get_primary_agent_temp_dir(), log_file)
         if os.path.exists(log_path):
             try:
