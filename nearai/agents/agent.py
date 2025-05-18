@@ -2,7 +2,6 @@ import io
 import json
 import multiprocessing
 import os
-import pwd
 import shutil
 import subprocess
 import sys
@@ -308,8 +307,9 @@ class Agent(object):
     ) -> Tuple[Optional[str], Optional[str]]:
         """Launch python agent."""
         try:
-            # switch to user env.agent_runner_user
+            # switch to user env.agent_runner_user (Unix-only)
             if agent_runner_user:
+                import pwd
                 user_info = pwd.getpwnam(agent_runner_user)
                 os.setgid(user_info.pw_gid)
                 os.setuid(user_info.pw_uid)
