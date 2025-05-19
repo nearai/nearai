@@ -310,6 +310,7 @@ class Agent(object):
             # switch to user env.agent_runner_user (Unix-only)
             if agent_runner_user:
                 import pwd
+
                 user_info = pwd.getpwnam(agent_runner_user)
                 os.setgid(user_info.pw_gid)
                 os.setuid(user_info.pw_uid)

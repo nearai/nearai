@@ -70,6 +70,7 @@ from nearai.shared.client_config import (
 from nearai.shared.client_config import (
     IDENTIFIER_PATTERN as PATTERN,
 )
+from nearai.shared.file_encryption import FileEncryption
 from nearai.shared.naming import NamespacedName, create_registry_name
 from nearai.shared.provider_models import ProviderModels, get_provider_namespaced_model
 from nearai.tensorboard_feed import TensorboardCli
@@ -457,7 +458,12 @@ class RegistryCli:
                 self.upload(str(path))
 
     def upload(
-        self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
+        self,
+        local_path: str,
+        bump: bool = False,
+        minor_bump: bool = False,
+        major_bump: bool = False,
+        encrypt: bool = False,
     ) -> Optional[EntryLocation]:
         """Upload an item to the NEAR AI registry for public use.
 
@@ -470,6 +476,8 @@ class RegistryCli:
             Bump with minor version increment (0.1.0 → 0.2.0)
           major_bump (bool) :
             Bump with major version increment (1.5.2 → 2.0.0)
+          encrypt (bool) :
+            Encrypt all uploaded files using a generated encryption key
 
         Examples:
           # Upload an item in the current directory
@@ -483,6 +491,9 @@ class RegistryCli:
 
           # Upload with minor version bump
           nearai registry upload ./path/to/item --minor-bump
+
+          # Upload with encryption enabled
+          nearai registry upload --encrypt
 
         """
         console = Console()
@@ -502,6 +513,33 @@ class RegistryCli:
 
         name = metadata["name"]
         version = metadata["version"]
+
+        # Handle encryption key generation if --encrypt flag is used
+        if encrypt:
+            # Initialize details if not present
+            if "details" not in metadata:
+                metadata["details"] = {}
+
+            # Generate encryption key if not present
+            if "encryption_key" not in metadata["details"]:
+                encryption_key = FileEncryption.generate_encryption_key()
+                metadata["details"]["encryption_key"] = encryption_key
+
+                # Update metadata.json file with the new encryption key
+                with open(metadata_path, "w") as f:
+                    json.dump(metadata, f, indent=2)
+
+                console.print(
+                    Panel(
+                        Text.assemble(
+                            ("🔐 Encryption enabled\n\n", "bold green"),
+                            (f"Encryption key {encryption_key} generated and stored in metadata.json\n", "dim"),
+                        ),
+                        title="Encryption",
+                        border_style="green",
+                        padding=(1, 2),
+                    )
+                )
 
         # Get namespace using the function from registry.py
         try:
@@ -636,7 +674,7 @@ class RegistryCli:
             )
             return None
 
-    def download(self, entry_location: str, force: bool = False) -> None:
+    def download(self, entry_location: str, force: bool = False, encryption_key: Optional[str] = None) -> None:
         """Download an item from the NEAR AI registry to your local machine.
 
         This allows you to use or inspect agents, models, datasets, etc. that have been published by others.
@@ -646,6 +684,8 @@ class RegistryCli:
             Entry location of the item to download (format: namespace/name/version)
           force (bool) :
             Force download even if the item already exists locally
+          encryption_key (str) :
+            Decrypt files with this encryption key
 
         Examples:
           # Download a specific registry item
@@ -655,7 +695,7 @@ class RegistryCli:
           nearai registry download example.near/model-name/1.0.0 --force
 
         """
-        registry.download(entry_location, force=force, show_progress=True)
+        registry.download(entry_location, force=force, show_progress=True, encryption_key=encryption_key)
 
     def __call__(self):
         """Show help when 'nearai registry' is called without subcommands."""
@@ -1765,13 +1805,18 @@ class AgentCli:
         create_new_agent(namespace, name, description)
 
     def upload(
-        self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
+        self,
+        local_path: str = ".",
+        bump: bool = False,
+        minor_bump: bool = False,
+        major_bump: bool = False,
+        encrypt: bool = False,
     ) -> Optional[EntryLocation]:
         """Alias for 'nearai registry upload'."""
         assert_user_auth()
         # Create an instance of RegistryCli and call its upload method
         registry_cli = RegistryCli()
-        return registry_cli.upload(local_path, bump, minor_bump, major_bump)
+        return registry_cli.upload(local_path, bump, minor_bump, major_bump, encrypt)
 
     def __call__(self) -> None:
         """Show help when 'nearai agent' is called without subcommands."""

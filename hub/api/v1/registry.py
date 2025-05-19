@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from nearai.shared.client_config import DEFAULT_NAMESPACE
+from nearai.shared.file_encryption import OBFUSCATED_SECRET
 from pydantic import BaseModel, field_validator, model_validator
 from sqlmodel import col, delete, select, text
 
@@ -150,7 +151,7 @@ def obfuscate_encryption_key(data: dict):
     result = {}
     for k, v in data.items():
         if k == "encryption_key":
-            result[k] = "<secret>"
+            result[k] = OBFUSCATED_SECRET
         else:
             result[k] = v
     return result
@@ -656,7 +657,7 @@ def list_entries_inner(
                     updated=timestamp.replace(tzinfo=datetime.timezone.utc),
                     category=category_,
                     description=description,
-                    details=json.loads(details),
+                    details=obfuscate_encryption_key(json.loads(details)),
                     tags=[],
                     num_forks=num_forks or 0,
                     num_stars=num_stars or 0,

@@ -16,6 +16,7 @@ DEFAULT_PROVIDER_MODEL = f"fireworks::accounts/fireworks/models/{DEFAULT_MODEL}"
 DEFAULT_NAMESPACE = "near.ai"
 
 IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z0-9_\-.]+$")
+OBFUSCATED_SECRET = "<secret>"
 
 
 class ClientConfig(BaseModel):
