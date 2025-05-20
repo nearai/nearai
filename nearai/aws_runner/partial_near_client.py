@@ -1,3 +1,4 @@
+import json
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Optional
@@ -28,13 +29,18 @@ def _decrypt_file(data, encryption_key: str):
 class PartialNearClient:
     """Wrap NEAR AI api registry methods, uses generated NEAR AI client."""
 
-    def __init__(self, base_url: str, auth: AuthData):  # noqa: D107
-        configuration = Configuration(access_token=f"Bearer {auth.model_dump_json()}", host=base_url)
-        client = ApiClient(configuration)
-
-        self._client = client
+    def __init__(self, base_url: str, auth: AuthData, runner_api_key: str = ""):  # noqa: D107
+        self.runner_api_key = runner_api_key
         self.entry_location_pattern = re.compile("^(?P<namespace>[^/]+)/(?P<name>[^/]+)/(?P<version>[^/]+)$")
-        self.auth = auth
+
+        auth_bearer_token = auth.generate_bearer_token()
+        new_token = json.loads(auth_bearer_token)
+        new_token["runner_data"] = json.dumps({"runner_api_key": self.runner_api_key})
+        auth_bearer_token = json.dumps(new_token)
+
+        configuration = Configuration(access_token=f"Bearer {auth_bearer_token}", host=base_url)
+        client = ApiClient(configuration)
+        self._client = client
 
     def parse_location(self, entry_location: str) -> dict:
         """Create a EntryLocation from a string in the format namespace/name/version."""
@@ -60,9 +66,9 @@ class PartialNearClient:
                 path=path,
             )
         )
-        assert body is not None, (
-            f"Unable to create request body for file download. Entry location: {entry_location}, Path: {path}"
-        )
+        assert (
+            body is not None
+        ), f"Unable to create request body for file download. Entry location: {entry_location}, Path: {path}"
         result = api_instance.download_file_v1_registry_download_file_post(body)
         if encryption_key:
             result = _decrypt_file(result, encryption_key)

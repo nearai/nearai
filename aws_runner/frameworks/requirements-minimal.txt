@@ -9,6 +9,10 @@ boto3 >= 1.35.3
 # https://github.com/keis/base58
 base58 == 2.1.1
 
+# Cryptography library for secure encryption
+# https://github.com/pyca/cryptography
+cryptography==44.0.2
+
 # Datadog tracing library
 # https://github.com/DataDog/dd-trace-py
 ddtrace == 2.21.0
@@ -76,6 +80,3 @@ typing-extensions >= 4.7.1
 # HTTP client
 # https://github.com/urllib3/urllib3
 urllib3 >= 1.25.3, < 2.1.0
-
-# cryptography.fernet support
-cryptography >= 43.0.0
