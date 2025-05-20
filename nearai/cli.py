@@ -492,7 +492,7 @@ class RegistryCli:
           # Upload with minor version bump
           nearai registry upload ./path/to/item --minor-bump
 
-          # Upload with encryption enabled
+          # Upload with encryption enabled (private entries)
           nearai registry upload ./path/to/item --encrypt
 
         """
