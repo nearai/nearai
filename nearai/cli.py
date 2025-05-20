@@ -481,19 +481,19 @@ class RegistryCli:
 
         Examples:
           # Upload an item in the current directory
-          nearai registry upload
+          nearai registry upload .
 
           # Upload a specific agent directory
-          nearai registry upload --local-path ./path/to/item
+          nearai registry upload ./path/to/item
 
           # Upload with automatic version bumping
-          nearai registry upload --bump
+          nearai registry upload ./path/to/item --bump
 
           # Upload with minor version bump
           nearai registry upload ./path/to/item --minor-bump
 
           # Upload with encryption enabled
-          nearai registry upload --encrypt
+          nearai registry upload ./path/to/item --encrypt
 
         """
         console = Console()
