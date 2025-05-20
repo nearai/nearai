@@ -165,8 +165,10 @@ def get_read_access(
     current_account_id = auth.account_id if auth else None
     if entry.is_private() and entry.namespace != current_account_id:
         raise HTTPException(status_code=403, detail="Unauthorized")
-    runner_data = json.loads(auth.runner_data or "{}")
-    runner_api_key = runner_data.get("runner_api_key", None)
+    runner_api_key = None
+    if auth:
+        runner_data = json.loads(auth.runner_data or "{}")
+        runner_api_key = runner_data.get("runner_api_key", None)
     if entry.namespace != current_account_id and not is_trusted_runner_api_key(runner_api_key):
         entry.details = obfuscate_encryption_key(entry.details)
     return entry
