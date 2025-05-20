@@ -1,6 +1,6 @@
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List
+from typing import List, Optional
 
 from nearai.openapi_client import (
     BodyDownloadFileV1RegistryDownloadFilePost,
@@ -11,8 +11,18 @@ from nearai.openapi_client.api.registry_api import RegistryApi
 from nearai.openapi_client.api_client import ApiClient
 from nearai.openapi_client.configuration import Configuration
 from nearai.shared.auth_data import AuthData
+from nearai.shared.file_encryption import FileEncryption
 
 ENVIRONMENT_FILENAME = "environment.tar.gz"
+
+
+def _decrypt_file(data, encryption_key: str):
+    try:
+        return FileEncryption.decrypt_data(data, encryption_key)
+    except Exception:
+        # Failed to decrypt, maybe not encrypted or wrong key
+        # Just return the original data
+        return data
 
 
 class PartialNearClient:
@@ -41,7 +51,7 @@ class PartialNearClient:
             "version": match.group("version"),
         }
 
-    def get_file_from_registry(self, entry_location: dict, path: str):
+    def get_file_from_registry(self, entry_location: dict, path: str, encryption_key: Optional[str]):
         """Fetches a file from NEAR AI registry."""
         api_instance = RegistryApi(self._client)
         body = BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
@@ -54,6 +64,8 @@ class PartialNearClient:
             f"Unable to create request body for file download. Entry location: {entry_location}, Path: {path}"
         )
         result = api_instance.download_file_v1_registry_download_file_post(body)
+        if encryption_key:
+            result = _decrypt_file(result, encryption_key)
         return result
 
     def list_files(self, entry_location: dict) -> List[str]:
@@ -67,7 +79,7 @@ class PartialNearClient:
         result = api_instance.list_files_v1_registry_list_files_post(body)
         return [file.filename for file in result]
 
-    def get_files_from_registry(self, entry_location: dict):
+    def get_files_from_registry(self, entry_location: dict, encryption_key: Optional[str]):
         """Fetches all files from NEAR AI registry."""
         api_instance = RegistryApi(self._client)
 
@@ -93,6 +105,8 @@ class PartialNearClient:
             for future in as_completed(tasks):
                 path = tasks[future]
                 result = future.result()
+                if encryption_key:
+                    result = _decrypt_file(result, encryption_key)
                 results.append({"filename": path, "content": result})
             return results
 
@@ -108,8 +122,10 @@ class PartialNearClient:
     def get_agent(self, identifier):
         """Fetches an agent from NEAR AI registry."""
         entry_location = self.parse_location(identifier)
+        metadata = self.get_agent_metadata(identifier)
+        encryption_key = metadata.get("details", {}).get("encryption_key", None)
         # download all agent files
-        files = self.get_files_from_registry(entry_location)
+        files = self.get_files_from_registry(entry_location, encryption_key=encryption_key)
         # Add metadata as a file
-        files.append({"filename": "metadata.json", "content": self.get_agent_metadata(identifier)})
+        files.append({"filename": "metadata.json", "content": metadata})
         return files

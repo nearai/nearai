@@ -20,6 +20,7 @@ from sqlmodel import col, delete, select, text
 from hub.api.v1.auth import AuthToken, get_auth, get_optional_auth
 from hub.api.v1.entry_location import EntryLocation, valid_identifier
 from hub.api.v1.models import Fork, RegistryEntry, Tags, get_session, sanitize
+from hub.api.v1.sign import is_trusted_runner_api_key
 
 DEFAULT_NAMESPACE_WRITE_ACCESS_LIST = [
     "spensa2.near",
@@ -164,7 +165,9 @@ def get_read_access(
     current_account_id = auth.account_id if auth else None
     if entry.is_private() and entry.namespace != current_account_id:
         raise HTTPException(status_code=403, detail="Unauthorized")
-    if entry.namespace != current_account_id:
+    runner_data = json.loads(auth.runner_data or "{}")
+    runner_api_key = runner_data.get("runner_api_key", None)
+    if entry.namespace != current_account_id and not is_trusted_runner_api_key(runner_api_key):
         entry.details = obfuscate_encryption_key(entry.details)
     return entry
 
