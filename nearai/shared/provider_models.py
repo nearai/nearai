@@ -166,6 +166,8 @@ def fetch_models_from_provider(provider: str) -> List[Dict]:
         return fetch_models_from_endpoint(
             "https://bridge.crynux.ai/v1/models",
             provider=provider,
+            # This is a Crynux API key for public demonstration only, the rate limit is very low.
+            # Please use your own API key for production.
             api_key="wo19nkaeWy4ly34iexE7DKtNIY6fZWErCAU8l--735U=",
         )
     print(f"Unrecognized provider: {provider}")
