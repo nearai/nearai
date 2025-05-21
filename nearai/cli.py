@@ -313,7 +313,6 @@ class RegistryCli:
             print(
                 "- crynux          : List available Crynux models (framework support, public API key, low rate limit)"
             )
-            print("- nearai          : List models from nearai endpoint (should be the same as fireworks)")
             print("(May require api keys or correct moon phase)")
             print("")
 
