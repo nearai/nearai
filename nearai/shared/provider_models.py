@@ -172,7 +172,7 @@ def fetch_models_from_provider(provider: str) -> List[Dict]:
     exit(1)
 
 
-def fetch_models_from_endpoint(endpoint: str, provider: str, api_key: str | None = None) -> List[Dict]:
+def fetch_models_from_endpoint(endpoint: str, provider: str, api_key: Optional[str] = None) -> List[Dict]:
     try:
         headers = {}
         if api_key:
