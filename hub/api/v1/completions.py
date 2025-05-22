@@ -18,6 +18,7 @@ load_dotenv()
 class Provider(Enum):
     HYPERBOLIC = "hyperbolic"
     FIREWORKS = "fireworks"
+    CRYNUX = "crynux"
     LOCAL = "local"
 
 
@@ -93,6 +94,13 @@ def get_llm_ai(provider: str) -> OpenAI:
         return OpenAI(
             base_url="https://api.fireworks.ai/inference/v1",
             api_key=getenv("FIREWORKS_API_KEY"),
+            timeout=DEFAULT_TIMEOUT,
+            max_retries=DEFAULT_MAX_RETRIES,
+        )
+    elif provider == "crynux":
+        return OpenAI(
+            base_url="https://bridge.crynux.ai/v1/llm",
+            api_key=getenv("CRYNUX_API_KEY"),
             timeout=DEFAULT_TIMEOUT,
             max_retries=DEFAULT_MAX_RETRIES,
         )
