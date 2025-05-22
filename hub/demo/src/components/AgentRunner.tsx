@@ -13,6 +13,7 @@ import {
   openToast,
   PlaceholderSection,
   PlaceholderStack,
+  Switch,
   Text,
   Tooltip,
 } from '@nearai/ui';
@@ -126,6 +127,8 @@ export const AgentRunner = ({
     useState(false);
   const [threadsOpenForSmallScreens, setThreadsOpenForSmallScreens] =
     useState(false);
+
+  const [debug, setDebug] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
   const [attachments, setAttachments] = useState<
     z.infer<typeof threadFileModel>[]
@@ -682,11 +685,14 @@ export const AgentRunner = ({
     };
   }, [chatMutation.mutateAsync, setAddMessage]);
 
+  const onDebugChange = (value: boolean) => {
+    setDebug(value);
+  };
+
   if (!currentEntry) {
     if (showLoadingPlaceholder) return <PlaceholderSection />;
     return null;
   }
-
   return (
     <>
       <Sidebar.Root>
@@ -944,12 +950,19 @@ export const AgentRunner = ({
               <Text size="text-xs" weight={600} uppercase>
                 Output
               </Text>
+              <Flex align="center" gap="s">
+                <Text size="text-xs" weight={600} uppercase>
+                  Debug Mode
+                </Text>
+
+                <Switch checked={debug} onCheckedChange={onDebugChange} />
+              </Flex>
 
               {isLoading ? (
                 <PlaceholderStack />
               ) : (
                 <>
-                  {files.outputs.length ? (
+                  {debug && files.outputs.length ? (
                     <CardList>
                       {files.outputs.map((file) => (
                         <Card
