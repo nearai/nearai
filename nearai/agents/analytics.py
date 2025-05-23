@@ -1,5 +1,6 @@
 import functools
 import json
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -69,28 +70,60 @@ class RunnerMetrics:
 
     def __init__(self):  # noqa: D107
         self.start_time = time.time()
+        self.latency_ms = None
+
+    def ongoing(self) -> bool:  # noqa: D102
+        return self.latency_ms is None
+
+    def notify_of_next_step(self, cur_time: Optional[float] = None):  # noqa: D102
+        if self.ongoing():
+            if not cur_time:
+                cur_time = time.time()
+            self.latency_ms = (cur_time - self.start_time) * 1000
+
+
+class EnvInitMetrics:
+    """Environment Init Metrics."""
+
+    def __init__(self):  # noqa: D107
+        self.start_time = time.time()
+        self.latency_ms = None
+        self.num_api_calls = 0
+
+    def ongoing(self) -> bool:  # noqa: D102
+        return self.latency_ms is None
+
+    def notify_of_next_step(self, cur_time: Optional[float] = None):  # noqa: D102
+        if self.ongoing():
+            if not cur_time:
+                cur_time = time.time()
+            self.latency_ms = (cur_time - self.start_time) * 1000
 
 
 class AnalyticsCollector:
     """Collects and manages analytics data for agent runs."""
 
-    def __init__(self, agent: Agent, debug_mode: bool, upload_entry_fn=None):  # noqa: D107
+    def __init__(self, agent: Agent, debug_mode: bool, env_init_metrics: EnvInitMetrics, upload_entry_fn=None):  # noqa: D107
         self._agent = agent
         self._debug_mode = debug_mode
         self._upload_entry_fn = upload_entry_fn
-
-    def init_metrics(self, runner_metrics: Optional[RunnerMetrics]):  # noqa: D102
-        self.start_time = time.time()
-        self.start_time_utc = datetime.now(timezone.utc)
-        self.start_time_local = datetime.now()
+        self.env_init_metrics = env_init_metrics
 
         # Track API calls: {method_name: [call_data, ...]}
         self.api_calls: Dict[str, List[Dict[str, Any]]] = {}
-
-        self.runner_metrics = runner_metrics
-
         # Track other metrics
         self.custom_metrics: Dict[str, Any] = {}
+
+    def init_env_run_metrics(self, runner_metrics: Optional[RunnerMetrics]):  # noqa: D102
+        self.start_time = time.time()
+        self.start_time_utc = datetime.now(timezone.utc)
+        self.start_time_local = datetime.now()
+        self.api_calls = {}
+        self.custom_metrics = {}
+        self.runner_metrics = runner_metrics
+        if self.runner_metrics:
+            self.runner_metrics.notify_of_next_step(self.start_time)
+        self.env_init_metrics.notify_of_next_step(self.start_time)
 
     def record_api_call(self, method_name: str, latency_ms: float, success: bool, error: Optional[str] = None):
         """Record an API call with its metrics."""
@@ -100,6 +133,8 @@ class AnalyticsCollector:
         self.api_calls[method_name].append(
             {"timestamp": time.time(), "latency_ms": latency_ms, "success": success, "error": error}
         )
+        if self.env_init_metrics.ongoing():
+            self.env_init_metrics.num_api_calls += 1
 
     def add_custom_metric(self, key: str, value: Any, description: str):
         """Add a custom metric."""
@@ -130,11 +165,6 @@ class AnalyticsCollector:
         end_time_utc = datetime.now(timezone.utc)
         end_time_local = datetime.now()
 
-        total_env_run_time_ms = (end_time - self.start_time) * 1000
-        total_runner_and_env_run_time_ms = None
-        if self.runner_metrics:
-            total_runner_and_env_run_time_ms = (end_time - self.runner_metrics.start_time) * 1000
-
         # Build metadata
         metadata = {
             # Time information
@@ -146,28 +176,48 @@ class AnalyticsCollector:
         }
         metadata.update(self._get_agent_metadata())
 
+        total_env_run_time_ms = (end_time - self.start_time) * 1000
         # Build metrics
         metrics = {
             "performance/latency/total_env_run_ms": {
                 "value": total_env_run_time_ms,
-                "description": "Total agent run time in milliseconds, not including runner start",
+                "description": "Total agent run time in milliseconds, not including any initialization",
             }
         }
-        if total_runner_and_env_run_time_ms:
-            metrics["performance/latency/total_runner_and_env_run_ms"] = {
-                "value": total_runner_and_env_run_time_ms,
-                "description": "Total agent run time in milliseconds, including runner start",
-            }
-            runner_latency_ms = total_runner_and_env_run_time_ms - total_env_run_time_ms
+
+        env_init_latency_ms = self.env_init_metrics.latency_ms
+        metrics["performance/latency/env_init_latency_ms"] = {
+            "value": env_init_latency_ms,
+            "description": "Environment initialization time",
+        }
+        env_init_percentage = (env_init_latency_ms / (env_init_latency_ms + total_env_run_time_ms)) * 100
+        metrics["performance/env_init_time_percentage"] = {
+            "value": round(env_init_percentage, 2),
+            "description": "env_init_latency/(env_init_latency+env_run_time)",
+        }
+
+        if self.runner_metrics:
+            runner_latency_ms = self.runner_metrics.latency_ms
             metrics["performance/latency/runner_latency_ms"] = {
                 "value": runner_latency_ms,
-                "description": "Runner start time",
+                "description": "Runner start time.",
             }
-            runner_overhead_percentage = (runner_latency_ms / total_runner_and_env_run_time_ms) * 100
-            metrics["performance/runner_overhead_percentage"] = {
-                "value": round(runner_overhead_percentage, 2),
-                "description": "Percentage of runner start time",
+            runner_percentage = (runner_latency_ms / (runner_latency_ms + total_env_run_time_ms)) * 100
+            metrics["performance/runner_time_percentage"] = {
+                "value": round(runner_percentage, 2),
+                "description": "runner_latency/(runner_latency+env_run_time)",
             }
+
+        total_init_and_env_run_time_ms = total_env_run_time_ms
+        if self.runner_metrics:
+            # Environment init time is included in runner time.
+            total_init_and_env_run_time_ms += runner_latency_ms
+        else:
+            total_init_and_env_run_time_ms += env_init_latency_ms
+        metrics["performance/latency/total_init_and_env_run_ms"] = {
+            "value": total_init_and_env_run_time_ms,
+            "description": "Total agent init and run time in milliseconds, including runner start time",
+        }
 
         # Add API call metrics
         total_api_calls = 0
@@ -177,6 +227,11 @@ class AnalyticsCollector:
         total_failed_calls = 0
         all_errors = []
         error_summary: dict[str, Any] = {}
+
+        if self.env_init_metrics.num_api_calls > 0:
+            self.add_custom_metric(
+                "api_calls/env_init/count", self.env_init_metrics.num_api_calls, "Num api calls during Environment init"
+            )
 
         for method_name, calls in self.api_calls.items():
             call_count = len(calls)
@@ -194,7 +249,13 @@ class AnalyticsCollector:
             # Count error types for this method
             method_error_counts: dict[str, Any] = {}
             for error in method_errors:
-                error_type = type(error).__name__ if hasattr(error, "__class__") else str(error).split(":")[0]
+                error_type = (
+                    type(error).__name__
+                    if hasattr(error, "__class__")
+                    else str(error).split(":")[0]
+                    if ":" in str(error)
+                    else "UnknownError"
+                )
                 method_error_counts[error_type] = method_error_counts.get(error_type, 0) + 1
                 error_summary[error_type] = error_summary.get(error_type, 0) + 1
 
@@ -347,17 +408,17 @@ class AnalyticsCollector:
                 "description": "Total number of errors across all API calls",
             }
 
-        # Calculate API overhead percentage
+        # Calculate API percentage
         if total_env_run_time_ms > 0:
-            api_overhead_percentage = (total_api_latency / total_env_run_time_ms) * 100
-            metrics["performance/api_overhead_percentage"] = {
-                "value": round(api_overhead_percentage, 2),
-                "description": "Percentage of total run time spent on API calls",
+            api_percentage = (total_api_latency / total_env_run_time_ms) * 100
+            metrics["performance/api_time_percentage"] = {
+                "value": round(api_percentage, 2),
+                "description": "total_api_latency/total_env_run_time",
             }
-            completion_api_overhead_percentage = (total_completion_api_latency / total_env_run_time_ms) * 100
-            metrics["performance/completion_api_overhead_percentage"] = {
-                "value": round(completion_api_overhead_percentage, 2),
-                "description": "Percentage of total run time spent on env.completion calls",
+            completion_api_percentage = (total_completion_api_latency / total_env_run_time_ms) * 100
+            metrics["performance/completion_api_time_percentage"] = {
+                "value": round(completion_api_percentage, 2),
+                "description": "total_completion_api_latency/total_env_run_time",
             }
 
         # Add custom metrics
@@ -383,7 +444,13 @@ class AnalyticsCollector:
 
     def upload(self, thread_dir: Path):
         """Upload analytics to registry."""
+        import shutil
+
         log_dir = thread_dir / "logs"
+        try:
+            shutil.rmtree(log_dir)
+        except Exception:
+            pass
         self.flush_to_file(log_dir)
 
         if not self._upload_entry_fn:
@@ -396,8 +463,6 @@ class AnalyticsCollector:
                 source_path = thread_dir / log_filename
                 dest_path = log_dir / log_filename
                 try:
-                    import shutil
-
                     shutil.copy2(source_path, dest_path)
                 except Exception as e:
                     print(f"Failed to copy {log_filename}: {e}")
@@ -408,6 +473,7 @@ class AnalyticsCollector:
         # Create a clean name for the logs entry
         # Format: logs_{agent_name}_{timestamp}
         logs_name = f"logs_{agent_name}_{timestamp}"
+        logs_name = re.sub(r"[^a-zA-Z0-9_\-.]", "_", logs_name)
         logs_description = f"Analytics and logs for {agent_name} run at {self.start_time_utc.isoformat()}"
 
         metadata_path = log_dir / "metadata.json"

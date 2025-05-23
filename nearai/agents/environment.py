@@ -33,7 +33,7 @@ from py_near.constants import DEFAULT_ATTACHED_GAS
 import nearai.shared.near.sign as near
 from nearai.agents import tool_json_helper
 from nearai.agents.agent import Agent
-from nearai.agents.analytics import AnalyticsCollector, RunnerMetrics, create_analytics_wrapper
+from nearai.agents.analytics import AnalyticsCollector, EnvInitMetrics, RunnerMetrics, create_analytics_wrapper
 from nearai.agents.tool_registry import ToolRegistry
 from nearai.shared.client_config import DEFAULT_PROVIDER_MODEL
 from nearai.shared.inference_client import InferenceClient
@@ -167,10 +167,15 @@ class Environment(object):
 
         # Initialize analytics collection if enabled
         self.logs_collection_mode = is_logs_collection_mode(self.env_vars)
+        env_init_metrics = EnvInitMetrics()
+        print(f"logs_collection_mode: {self.logs_collection_mode}")
         self.analytics_collector: Optional[AnalyticsCollector] = None
         if self.logs_collection_mode:
             self.analytics_collector = AnalyticsCollector(
-                agent=agents[0], debug_mode=self._debug_mode, upload_entry_fn=upload_entry_fn
+                agent=agents[0],
+                debug_mode=self._debug_mode,
+                upload_entry_fn=upload_entry_fn,
+                env_init_metrics=env_init_metrics,
             )
             # Wrap clients with analytics
             client = create_analytics_wrapper(client, "inference_client", self.analytics_collector)
@@ -817,6 +822,7 @@ class Environment(object):
         logger.handlers = []
 
         self._initialized = True
+        env_init_metrics.notify_of_next_step()
 
     # end of protected client methods
 
@@ -1432,7 +1438,7 @@ class Environment(object):
 
     def get_primary_agent_temp_dir(self) -> Path:
         """Returns temp dir for primary agent."""
-        return self.get_primary_agent().temp_dir
+        return Path(self.get_primary_agent().temp_dir)
 
     def environment_run_info(self, base_id, run_type) -> dict:
         """Returns the environment run information."""
@@ -1494,7 +1500,7 @@ class Environment(object):
     def run(self, new_message: Optional[str] = None, runner_metrics: Optional[RunnerMetrics] = None) -> None:
         """Runs agent(s) against a new or previously created environment."""
         if self.logs_collection_mode and self.analytics_collector:
-            self.analytics_collector.init_metrics(runner_metrics=runner_metrics)
+            self.analytics_collector.init_env_run_metrics(runner_metrics=runner_metrics)
         if new_message:
             self._add_message("user", new_message)
         elif self._debug_mode:

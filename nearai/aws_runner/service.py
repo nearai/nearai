@@ -403,7 +403,7 @@ def start_with_environment(
         print(debug_info)
 
     api_url = str(params.get("api_url", DEFAULT_API_URL))
-    user_env_vars: dict = params.get("user_env_vars", {})
+    user_env_vars: dict = params.get("user_env_vars", {}) or {}
     agent_env_vars: dict = params.get("agent_env_vars", {})
 
     if api_url != DEFAULT_API_URL and verbose:
@@ -426,6 +426,14 @@ def start_with_environment(
 
     # TODO: Handle the case when multiple agents are provided (comma-separated)
     agent = loaded_agents[0]
+    # combine agent.env_vars and user_env_vars
+    agent_and_user_env_vars = {**agent.env_vars, **user_env_vars}
+    # save os env vars
+    os.environ.update(agent_and_user_env_vars)
+    # save env_vars
+    agent.env_vars = agent_and_user_env_vars
+    user_env_vars = agent_and_user_env_vars
+
     if params.get("provider", ""):
         agent.model_provider = params["provider"]
     if params.get("model", ""):

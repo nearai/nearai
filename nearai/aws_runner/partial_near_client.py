@@ -39,6 +39,7 @@ class PartialNearClient:
         self.runner_api_key = runner_api_key
         self.entry_location_pattern = re.compile("^(?P<namespace>[^/]+)/(?P<name>[^/]+)/(?P<version>[^/]+)$")
 
+        self.auth = auth
         auth_bearer_token = auth.generate_bearer_token()
         new_token = json.loads(auth_bearer_token)
         new_token["runner_data"] = json.dumps({"runner_api_key": self.runner_api_key})
