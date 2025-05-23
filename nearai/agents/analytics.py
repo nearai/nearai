@@ -75,7 +75,6 @@ class AnalyticsCollector:
     """Collects and manages analytics data for agent runs."""
 
     def __init__(self, agent: Agent, debug_mode: bool, upload_entry_fn=None):  # noqa: D107
-        # TODO: receive a function to upload entry.
         self._agent = agent
         self._debug_mode = debug_mode
         self._upload_entry_fn = upload_entry_fn
@@ -167,7 +166,7 @@ class AnalyticsCollector:
             runner_overhead_percentage = (runner_latency_ms / total_runner_and_env_run_time_ms) * 100
             metrics["performance/runner_overhead_percentage"] = {
                 "value": round(runner_overhead_percentage, 2),
-                "description": "Percentage of total run time spent on API calls",
+                "description": "Percentage of runner start time",
             }
 
         # Add API call metrics
