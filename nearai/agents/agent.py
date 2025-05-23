@@ -206,6 +206,7 @@ class Agent(object):
         self.set_agent_metadata(metadata)
         self.agent_files = agent_files
         self.original_cwd = os.getcwd()
+        self.is_local = local_path is not None
 
         self.temp_dir = self.write_agent_files_to_temp(agent_files, local_path)
         self.ts_runner_dir = ""
@@ -431,14 +432,6 @@ class Agent(object):
         self, env: Any, task: Optional[str] = None, log_stdout_callback=None, log_stderr_callback=None
     ) -> Tuple[Optional[str], Optional[str]]:
         """Run the agent code. Returns error message and traceback message."""
-        # combine agent.env_vars and env.env_vars
-        total_env_vars = {**self.env_vars, **env.env_vars}
-
-        # save os env vars
-        os.environ.update(total_env_vars)
-        # save env.env_vars
-        env.env_vars = total_env_vars
-
         agent_ts_files_to_transpile = []
         agent_py_modules_import = []
 

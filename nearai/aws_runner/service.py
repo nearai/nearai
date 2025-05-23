@@ -13,6 +13,7 @@ from typing import Optional
 import boto3
 from ddtrace import patch_all, tracer
 from nearai.agents.agent import Agent, get_local_agent_files
+from nearai.agents.analytics import RunnerMetrics
 from nearai.agents.environment import Environment, is_debug_mode
 from nearai.aws_runner.partial_near_client import PartialNearClient
 from nearai.registry import get_registry_folder, resolve_local_path
@@ -75,6 +76,7 @@ protected_vars = load_protected_variables()
 
 @tracer.wrap(service="aws-runner", resource="lambda_handler")
 def handler(event, context):
+    runner_metrics = RunnerMetrics()
     start_time = time.perf_counter()
     required_params = ["agents", "auth"]
     agents = event.get("agents")
@@ -121,6 +123,7 @@ def handler(event, context):
         thread_id,
         run_id,
         params=params,
+        runner_metrics=runner_metrics,
     )
     if not new_thread_id:
         return f"Run not recorded. Ran {agents} agent(s)."
@@ -363,9 +366,9 @@ class EnvironmentRun:
     def __del__(self) -> None:  # noqa: D105
         clear_temp_agent_files(self.agents, verbose=self.verbose)
 
-    def run(self, new_message: str = "") -> Optional[str]:  # noqa: D102
+    def run(self, new_message: str = "", runner_metrics: Optional[RunnerMetrics] = None) -> Optional[str]:  # noqa: D102
         start_time = time.perf_counter()
-        self.env.run(new_message)
+        self.env.run(new_message, runner_metrics)
         stop_time = time.perf_counter()
         write_metric("ExecuteAgentDuration", stop_time - start_time, verbose=self.verbose)
         return self.thread_id
@@ -400,7 +403,7 @@ def start_with_environment(
         print(debug_info)
 
     api_url = str(params.get("api_url", DEFAULT_API_URL))
-    user_env_vars: dict = params.get("user_env_vars", {})
+    user_env_vars: dict = params.get("user_env_vars", {}) or {}
     agent_env_vars: dict = params.get("agent_env_vars", {})
 
     if api_url != DEFAULT_API_URL and verbose:
@@ -423,6 +426,14 @@ def start_with_environment(
 
     # TODO: Handle the case when multiple agents are provided (comma-separated)
     agent = loaded_agents[0]
+    # combine agent.env_vars and user_env_vars
+    agent_and_user_env_vars = {**agent.env_vars, **user_env_vars}
+    # save os env vars
+    os.environ.update(agent_and_user_env_vars)
+    # save env_vars
+    agent.env_vars = agent_and_user_env_vars
+    user_env_vars = agent_and_user_env_vars
+
     if params.get("provider", ""):
         agent.model_provider = params["provider"]
     if params.get("model", ""):
@@ -470,6 +481,7 @@ def start_with_environment(
         print_system_log=print_system_log,
         agent_runner_user=protected_vars.get("AGENT_RUNNER_USER"),
         fastnear_api_key=protected_vars.get("FASTNEAR_APY_KEY"),
+        upload_entry_fn=near_client.upload_new_entry,
     )
     env.add_agent_start_system_log(agent_idx=0)
     return EnvironmentRun(near_client, loaded_agents, env, thread_id, params.get("record_run", True), verbose=verbose)
@@ -484,7 +496,8 @@ def run_with_environment(
     new_message: str = "",
     params: Optional[dict] = None,
     print_system_log: bool = False,
+    runner_metrics: Optional[RunnerMetrics] = None,
 ) -> Optional[str]:
     """Runs agent against environment fetched from id, optionally passing a new message to the environment."""
     environment_run = start_with_environment(agents, auth, thread_id, run_id, additional_path, params, print_system_log)
-    return environment_run.run(new_message)
+    return environment_run.run(new_message, runner_metrics=runner_metrics)

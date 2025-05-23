@@ -1,7 +1,8 @@
 import json
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from nearai.openapi_client import (
     BodyDownloadFileV1RegistryDownloadFilePost,
@@ -11,6 +12,11 @@ from nearai.openapi_client import (
 from nearai.openapi_client.api.registry_api import RegistryApi
 from nearai.openapi_client.api_client import ApiClient
 from nearai.openapi_client.configuration import Configuration
+from nearai.openapi_client.models.body_upload_metadata_v1_registry_upload_metadata_post import (
+    BodyUploadMetadataV1RegistryUploadMetadataPost,
+)
+from nearai.openapi_client.models.entry_location import EntryLocation
+from nearai.openapi_client.models.entry_metadata_input import EntryMetadataInput
 from nearai.shared.auth_data import AuthData
 from nearai.shared.file_encryption import FileEncryption
 
@@ -33,6 +39,7 @@ class PartialNearClient:
         self.runner_api_key = runner_api_key
         self.entry_location_pattern = re.compile("^(?P<namespace>[^/]+)/(?P<name>[^/]+)/(?P<version>[^/]+)$")
 
+        self.auth = auth
         auth_bearer_token = auth.generate_bearer_token()
         new_token = json.loads(auth_bearer_token)
         new_token["runner_data"] = json.dumps({"runner_api_key": self.runner_api_key})
@@ -135,3 +142,56 @@ class PartialNearClient:
         # Add metadata as a file
         files.append({"filename": "metadata.json", "content": metadata})
         return files
+
+    def upload_new_entry(self, local_path: Path):
+        """Uploads new entry (e.g. analytics entry) to NEAR AI registry."""
+        path = Path(local_path).absolute()
+        metadata_path = path / "metadata.json"
+        with open(metadata_path) as f:
+            plain_metadata: Dict[str, Any] = json.load(f)
+
+        namespace = self.auth.namespace
+        name = plain_metadata.pop("name")
+        assert " " not in name
+
+        entry_location = EntryLocation.model_validate(
+            dict(
+                namespace=namespace,
+                name=name,
+                version=plain_metadata.pop("version"),
+            )
+        )
+
+        entry_metadata = EntryMetadataInput.model_validate(plain_metadata)
+        api_instance = RegistryApi(self._client)
+
+        # Upload metadata first
+        api_instance.upload_metadata_v1_registry_upload_metadata_post(
+            BodyUploadMetadataV1RegistryUploadMetadataPost(metadata=entry_metadata, entry_location=entry_location)
+        )
+
+        # Get all files in path
+        entry_files = []
+        for file_path in path.rglob("*"):
+            if file_path.is_file():
+                entry_files.append(file_path)
+
+        for entry_file in entry_files:
+            try:
+                with open(entry_file, "rb") as file:
+                    data = file.read()
+
+                    # Get relative path from the base directory
+                    relative_path = entry_file.relative_to(path)
+
+                    api_instance.upload_file_v1_registry_upload_file_post(
+                        path=str(relative_path),  # Use relative path
+                        file=data,
+                        namespace=entry_location.namespace,
+                        name=entry_location.name,
+                        version=entry_location.version,
+                    )
+            except Exception as e:
+                print(f"Error uploading file {entry_file}: {e}")
+                # Continue with other files instead of failing the entire upload
+                continue

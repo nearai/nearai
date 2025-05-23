@@ -33,6 +33,7 @@ from py_near.constants import DEFAULT_ATTACHED_GAS
 import nearai.shared.near.sign as near
 from nearai.agents import tool_json_helper
 from nearai.agents.agent import Agent
+from nearai.agents.analytics import AnalyticsCollector, EnvInitMetrics, RunnerMetrics, create_analytics_wrapper
 from nearai.agents.tool_registry import ToolRegistry
 from nearai.shared.client_config import DEFAULT_PROVIDER_MODEL
 from nearai.shared.inference_client import InferenceClient
@@ -103,6 +104,16 @@ def is_debug_mode(env_vars: Dict[str, Any]) -> bool:
     return not not_debug_mode
 
 
+def is_logs_collection_mode(env_vars: Dict[str, Any]) -> bool:
+    for key, value in env_vars.items():
+        if key.lower() == "logs_collection":
+            # Convert value to string and check for truthy values
+            str_value = str(value).lower()
+            return str_value in ("true", "1", "yes", "on")
+    # If flag is not present, return debug mode.
+    return is_debug_mode(env_vars)
+
+
 class Environment(object):
     def __init__(  # noqa: D107
         self,
@@ -117,6 +128,7 @@ class Environment(object):
         agent_runner_user: Optional[str] = None,
         fastnear_api_key: Optional[str] = None,
         approvals=None,
+        upload_entry_fn=None,
     ) -> None:
         # Warning: never expose `client` or `_hub_client` to agent's environment
 
@@ -152,6 +164,26 @@ class Environment(object):
         self._thread_id = thread_id
         self._run_id = run_id
         self._debug_mode = is_debug_mode(self.env_vars)
+
+        # Initialize analytics collection if enabled
+        self.logs_collection_mode = is_logs_collection_mode(self.env_vars)
+        env_init_metrics = EnvInitMetrics()
+        print(f"logs_collection_mode: {self.logs_collection_mode}")
+        self.analytics_collector: Optional[AnalyticsCollector] = None
+        if self.logs_collection_mode:
+            self.analytics_collector = AnalyticsCollector(
+                agent=agents[0],
+                debug_mode=self._debug_mode,
+                upload_entry_fn=upload_entry_fn,
+                env_init_metrics=env_init_metrics,
+            )
+            # Wrap clients with analytics
+            client = create_analytics_wrapper(client, "inference_client", self.analytics_collector)
+            hub_client = create_analytics_wrapper(hub_client, "hub_client", self.analytics_collector)
+            self.openai = create_analytics_wrapper(self.openai, "openai_client", self.analytics_collector)
+            self.async_openai = create_analytics_wrapper(
+                self.async_openai, "async_openai_client", self.analytics_collector
+            )
 
         # Expose the NEAR account_id of a user that signs this request to run an agent.
         self.signer_account_id: str = client._config.auth.account_id if client._config.auth else ""
@@ -790,6 +822,7 @@ class Environment(object):
         logger.handlers = []
 
         self._initialized = True
+        env_init_metrics.notify_of_next_step()
 
     # end of protected client methods
 
@@ -1405,7 +1438,7 @@ class Environment(object):
 
     def get_primary_agent_temp_dir(self) -> Path:
         """Returns temp dir for primary agent."""
-        return self.get_primary_agent().temp_dir
+        return Path(self.get_primary_agent().temp_dir)
 
     def environment_run_info(self, base_id, run_type) -> dict:
         """Returns the environment run information."""
@@ -1464,8 +1497,10 @@ class Environment(object):
             # By default the user starts the conversation.
             return "user"
 
-    def run(self, new_message: Optional[str] = None) -> None:
+    def run(self, new_message: Optional[str] = None, runner_metrics: Optional[RunnerMetrics] = None) -> None:
         """Runs agent(s) against a new or previously created environment."""
+        if self.logs_collection_mode and self.analytics_collector:
+            self.analytics_collector.init_env_run_metrics(runner_metrics=runner_metrics)
         if new_message:
             self._add_message("user", new_message)
         elif self._debug_mode:
@@ -1502,6 +1537,13 @@ class Environment(object):
             self.add_system_log(f"Environment run failed: {e}", logging.ERROR)
             self.mark_failed()
             raise e
+        finally:
+            # Upload analytics data if collection is enabled
+            if self.logs_collection_mode and self.analytics_collector:
+                try:
+                    self.analytics_collector.upload(thread_dir=self.get_primary_agent_temp_dir())
+                except Exception as e:
+                    print(f"Failed to upload analytics data: {e}")
 
         if not self._pending_ext_agent:
             # If no external agent was called, mark the whole run as done.

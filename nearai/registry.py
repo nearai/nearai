@@ -317,11 +317,11 @@ class Registry:
                     print(f"A registry item with a similar name already exists: {entry.namespace}/{entry.name}")
                     exit(1)
 
-        agent_files = get_local_agent_files(path)
+        entry_files = get_local_agent_files(path)
         files_to_upload = []
         total_size = 0
 
-        for file in agent_files:
+        for file in entry_files:
             relative = file.relative_to(path)
 
             # Don't upload metadata file.
