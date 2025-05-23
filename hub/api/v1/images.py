@@ -37,6 +37,9 @@ class FireworksImageGenerator:
             dict: The response from the Fireworks API.
 
         """
+        if kwargs.get("model"):
+            self.inference_client = ImageInference(model=kwargs.get("model"))
+
         fireworks_params = {
             "prompt": kwargs.get("prompt"),
             "init_image": kwargs.get("init_image"),
