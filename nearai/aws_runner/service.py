@@ -406,7 +406,7 @@ def start_with_environment(
     if api_url != DEFAULT_API_URL and verbose:
         print(f"WARNING: Using custom API URL: {api_url}")
 
-    near_client = PartialNearClient(api_url, auth)
+    near_client = PartialNearClient(api_url, auth, runner_api_key=protected_vars.get("RUNNER_API_KEY"))
 
     loaded_agents: list[Agent] = []
 

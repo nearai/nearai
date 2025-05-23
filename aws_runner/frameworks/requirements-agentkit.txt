@@ -21,6 +21,10 @@ coinbase-agentkit >= 0.4.0
 # https://github.com/coinbase/agentkit
 coinbase-agentkit-langchain >= 0.3.0
 
+# Cryptography library for secure encryption
+# https://github.com/pyca/cryptography
+cryptography==44.0.2
+
 # Datadog tracing library
 # https://github.com/DataDog/dd-trace-py
 ddtrace == 2.21.0
