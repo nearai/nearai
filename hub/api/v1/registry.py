@@ -20,7 +20,7 @@ from hub.api.v1.auth import AuthToken, get_auth, get_optional_auth
 from hub.api.v1.entry_location import EntryLocation, valid_identifier
 from hub.api.v1.models import Fork, RegistryEntry, Tags, get_session, sanitize
 
-DEFAULT_NAMESPACE_WRITE_ACCESS_LIST = [
+ADMIN_LIST = [
     "spensa2.near",
     "marcelo.near",
     "vadim.near",
@@ -29,7 +29,6 @@ DEFAULT_NAMESPACE_WRITE_ACCESS_LIST = [
     "pierre-dev.near",
     "alomonos.near",
     "flatirons.near",
-    "calebjacob.near",
 ]
 
 load_dotenv()
@@ -71,7 +70,7 @@ def with_write_access(use_forms=False):
         if auth.account_id == entry_location.namespace:
             return entry_location
         if entry_location.namespace == DEFAULT_NAMESPACE:
-            if auth.account_id in DEFAULT_NAMESPACE_WRITE_ACCESS_LIST:
+            if auth.account_id in ADMIN_LIST:
                 return entry_location
         raise HTTPException(
             status_code=403,
@@ -91,7 +90,7 @@ def with_metadata_write_access(use_forms=False):
         """Check the user has write access to the entry."""
         if auth.account_id == entry_location.namespace:
             return entry_location
-        if auth.account_id in DEFAULT_NAMESPACE_WRITE_ACCESS_LIST:
+        if auth.account_id in ADMIN_LIST:
             return entry_location
         raise HTTPException(
             status_code=403,
@@ -162,7 +161,8 @@ def get_read_access(
 ) -> RegistryEntry:
     current_account_id = auth.account_id if auth else None
     if entry.is_private() and entry.namespace != current_account_id:
-        raise HTTPException(status_code=403, detail="Unauthorized")
+        if current_account_id not in ADMIN_LIST:
+            raise HTTPException(status_code=403, detail="Unauthorized")
     if entry.namespace != current_account_id:
         entry.details = obfuscate_encryption_key(entry.details)
     return entry

@@ -266,11 +266,11 @@ class Registry:
 
         registry.update(entry_location, entry_metadata)
 
-        agent_files = get_local_agent_files(path)
+        entry_files = get_local_agent_files(path)
         files_to_upload = []
         total_size = 0
 
-        for file in agent_files:
+        for file in entry_files:
             relative = file.relative_to(path)
 
             # Don't upload metadata file.

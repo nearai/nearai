@@ -206,6 +206,7 @@ class Agent(object):
         self.set_agent_metadata(metadata)
         self.agent_files = agent_files
         self.original_cwd = os.getcwd()
+        self.is_local = local_path is not None
 
         self.temp_dir = self.write_agent_files_to_temp(agent_files, local_path)
         self.ts_runner_dir = ""
