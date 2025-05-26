@@ -117,6 +117,8 @@ class ImageGenerationRequest(BaseModel):
     @field_validator("model")
     @classmethod
     def validate_model(cls, value: str):  # noqa: D102
+        if not value:
+            value = DEFAULT_IMAGE_GENERATION_MODEL
         if PROVIDER_MODEL_SEP not in value:
             value = f"fireworks{PROVIDER_MODEL_SEP}accounts/fireworks/models/{value}"
         return value
@@ -127,8 +129,6 @@ class ImageGenerationRequest(BaseModel):
 def convert_request(
     request: Union[ChatCompletionsRequest, CompletionsRequest, EmbeddingsRequest, ImageGenerationRequest],
 ):
-    if isinstance(request, ImageGenerationRequest) and not request.model:
-        request.model = DEFAULT_IMAGE_GENERATION_MODEL
     provider, model = get_provider_model(request.provider, request.model if request.model else "")
     request.model = model
     request.provider = provider
