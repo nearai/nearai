@@ -92,12 +92,17 @@ class EmbeddingsRequest(BaseModel):
     provider: Optional[str] = None
 
 
+DEFAULT_IMAGE_GENERATION_MODEL = (
+    f"fireworks{PROVIDER_MODEL_SEP}accounts/fireworks/models/playground-v2-5-1024px-aesthetic"
+)
+
+
 class ImageGenerationRequest(BaseModel):
     """Request for image generation."""
 
     prompt: str
     """A text description of the desired image(s)."""
-    model: str = f"fireworks{PROVIDER_MODEL_SEP}accounts/fireworks/models/playground-v2-5-1024px-aesthetic"
+    model: Optional[str] = DEFAULT_IMAGE_GENERATION_MODEL
     provider: Optional[str] = None
     init_image: Optional[str] = None
     image_strength: Optional[float] = None
@@ -122,7 +127,9 @@ class ImageGenerationRequest(BaseModel):
 def convert_request(
     request: Union[ChatCompletionsRequest, CompletionsRequest, EmbeddingsRequest, ImageGenerationRequest],
 ):
-    provider, model = get_provider_model(request.provider, request.model)
+    if isinstance(request, ImageGenerationRequest) and not request.model:
+        request.model = DEFAULT_IMAGE_GENERATION_MODEL
+    provider, model = get_provider_model(request.provider, request.model if request.model else "")
     request.model = model
     request.provider = provider
     if request.model is None or request.provider is None:
