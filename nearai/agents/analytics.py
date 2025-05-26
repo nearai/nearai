@@ -30,9 +30,13 @@ class AnalyticsWrapper:
             # Wrap callable methods
             return self._wrap_method(attr, name)
         else:
-            # For non-callable attributes, return the original unwrapped attribute
-            # This ensures that nested objects get the correct parent references
-            return attr
+            # For non-callable attributes that are objects, wrap them but give them access to root client
+            if hasattr(attr, "__dict__") and not isinstance(attr, (str, int, float, bool, type(None))):
+                nested_client_name = f"{self._client_name}.{name}"
+                return AnalyticsWrapper(attr, nested_client_name, self._analytics_collector)
+            else:
+                # Return simple attributes unwrapped
+                return attr
 
     def _wrap_method(self, method: Any, method_name: str):
         """Wrap a method to track calls and latency."""
