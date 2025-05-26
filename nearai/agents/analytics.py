@@ -22,24 +22,16 @@ class AnalyticsWrapper:
         self.__dict__["_client_name"] = client_name
         self.__dict__["_analytics_collector"] = analytics_collector
 
-    def __getattribute__(self, name: str) -> Any:
-        """Intercept all attribute access to unwrap wrapped objects."""
-        # For our internal attributes, return them directly
-        if name in ("_client", "_client_name", "_analytics_collector", "_wrap_method"):
-            return object.__getattribute__(self, name)
-
-        # Get the attribute from the wrapped client
-        attr = getattr(object.__getattribute__(self, "_client"), name)
+    def __getattr__(self, name: str) -> Any:
+        """Intercept attribute access to wrap methods or return original attributes."""
+        attr = getattr(self._client, name)
 
         if callable(attr):
             # Wrap callable methods
             return self._wrap_method(attr, name)
-        elif hasattr(attr, "__dict__") and not isinstance(attr, (str, int, float, bool, type(None))):
-            # For complex objects, wrap them but they'll auto-unwrap on access
-            nested_client_name = f"{object.__getattribute__(self, '_client_name')}.{name}"
-            return AnalyticsWrapper(attr, nested_client_name, object.__getattribute__(self, "_analytics_collector"))
         else:
-            # For simple values, return as-is (unwrapped)
+            # For non-callable attributes, return the original unwrapped attribute
+            # This ensures that nested objects get the correct parent references
             return attr
 
     def _wrap_method(self, method: Any, method_name: str):
