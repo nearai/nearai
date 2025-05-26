@@ -18,7 +18,7 @@ class FireworksImageGenerator:
         api_key = os.environ.get("FIREWORKS_API_KEY")
         if not api_key:
             raise ValueError("FIREWORKS_API_KEY environment variable is not set")
-        self.inference_client = ImageInference(model="playground-v2-1024px-aesthetic")
+        self.inference_client = ImageInference(model="flux-1-schnell-fp8")
 
     def _decode_image(self, base64_image: str) -> io.BytesIO:
         image_buffer = io.BytesIO(base64.b64decode(base64_image))
@@ -38,7 +38,9 @@ class FireworksImageGenerator:
 
         """
         if kwargs.get("model"):
-            self.inference_client = ImageInference(model=kwargs.get("model"))
+            model = kwargs.get("model")
+            model = model.split("/")[-1]
+            self.inference_client = ImageInference(model=model)
 
         fireworks_params = {
             "prompt": kwargs.get("prompt"),
