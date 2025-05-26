@@ -93,7 +93,7 @@ class EmbeddingsRequest(BaseModel):
 
 
 DEFAULT_IMAGE_GENERATION_MODEL = (
-    f"fireworks{PROVIDER_MODEL_SEP}accounts/fireworks/models/playground-v2-5-1024px-aesthetic"
+    f"fireworks{PROVIDER_MODEL_SEP}accounts/fireworks/models/flux-1-schnell-fp8"
 )
 
 
