@@ -7,7 +7,7 @@ from typing import Any, List, Tuple, Union
 from nearai.config import CONFIG
 from nearai.openapi_client.models.entry_location import EntryLocation
 
-entry_location_pattern = re.compile("^(?P<namespace>[^/]+)/(?P<name>[^/]+)/(?P<version>[^/]+)$")
+entry_location_pattern = re.compile("^(?P<namespace>[^\\/]+)[\\/](?P<name>[^\\/]+)[\\/](?P<version>[^\\/]+)$")
 
 
 def parse_location(entry_location: str) -> EntryLocation:

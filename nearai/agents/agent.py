@@ -2,7 +2,6 @@ import io
 import json
 import multiprocessing
 import os
-import pwd
 import shutil
 import subprocess
 import sys
@@ -16,6 +15,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from dotenv import load_dotenv
 
 from nearai.shared.client_config import ClientConfig
+
+import platform
 
 AGENT_FILENAME_PY = "agent.py"
 AGENT_FILENAME_TS = "agent.ts"
@@ -189,7 +190,10 @@ class Agent(object):
         self.code: Optional[CodeType] = None
         self.file_cache: dict[str, Union[str, bytes]] = {}
         self.identifier = identifier
-        name_parts = identifier.split("/")
+        if platform.system() == "Windows":
+            name_parts = identifier.split("\\")
+        else:
+            name_parts = identifier.split("/")
         self.namespace = name_parts[0]
         self.name = name_parts[1]
         self.version = name_parts[2]
@@ -308,11 +312,14 @@ class Agent(object):
     ) -> Tuple[Optional[str], Optional[str]]:
         """Launch python agent."""
         try:
-            # switch to user env.agent_runner_user
+            # Switch to user env.agent_runner_user (Unix-only, skip on Windows)
             if agent_runner_user:
-                user_info = pwd.getpwnam(agent_runner_user)
-                os.setgid(user_info.pw_gid)
-                os.setuid(user_info.pw_uid)
+                import platform
+                if platform.system() != "Windows":
+                    import pwd
+                    user_info = pwd.getpwnam(agent_runner_user)
+                    os.setgid(user_info.pw_gid)
+                    os.setuid(user_info.pw_uid)
 
             # Create a custom writer that logs and writes to buffer
             class LoggingWriter:
