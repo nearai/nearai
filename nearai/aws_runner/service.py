@@ -13,7 +13,7 @@ from typing import Optional
 import boto3
 from ddtrace import patch_all, tracer
 from nearai.agents.agent import Agent, get_local_agent_files
-from nearai.agents.environment import Environment
+from nearai.agents.environment import Environment, is_debug_mode
 from nearai.aws_runner.partial_near_client import PartialNearClient
 from nearai.registry import get_registry_folder, resolve_local_path
 from nearai.shared.auth_data import AuthData
@@ -109,6 +109,30 @@ def handler(event, context):
 
     params = event.get("params", {})
 
+    user_env_vars = params.get("user_env_vars", {})
+    debug_mode = is_debug_mode(user_env_vars if user_env_vars else {})
+
+    if debug_mode:
+        start_runner_log(params, auth_object, thread_id)
+
+    new_thread_id = run_with_environment(
+        agents,
+        auth_object,
+        thread_id,
+        run_id,
+        params=params,
+    )
+    if not new_thread_id:
+        return f"Run not recorded. Ran {agents} agent(s)."
+    stop_time = time.perf_counter()
+    write_metric("RunnerExecutionFinishedDuration", stop_time - start_time)
+    call("rm -rf /tmp/..?* /tmp/.[!.]* /tmp/*", shell=True)
+    stop_time = time.perf_counter()
+    write_metric("TotalRunnerDuration", stop_time - start_time)
+    return new_thread_id
+
+
+def start_runner_log(params: dict, auth: AuthData, thread_id):
     api_url = str(params.get("api_url", DEFAULT_API_URL))
     client_config = ClientConfig(
         base_url=api_url + "/v1",
@@ -116,8 +140,8 @@ def handler(event, context):
     )
     hub_client = client_config.get_hub_client()
 
-    logger = logging.getLogger("runner_logger")
-    logger.handlers = []
+    existing_logger = logging.getLogger("runner_logger")
+    existing_logger.handlers = []
 
     def logger(log: str, level=logging.INFO):
         # NOTE: Do not call prints in this function.
@@ -191,22 +215,6 @@ def handler(event, context):
         sys.stdout = LoggingWriter(stdout_buffer, logger, "STDOUT")
         stderr_buffer = io.StringIO()
         sys.stderr = LoggingWriter(stderr_buffer, logger, "STDERR")
-
-    new_thread_id = run_with_environment(
-        agents,
-        auth_object,
-        thread_id,
-        run_id,
-        params=params,
-    )
-    if not new_thread_id:
-        return f"Run not recorded. Ran {agents} agent(s)."
-    stop_time = time.perf_counter()
-    write_metric("RunnerExecutionFinishedDuration", stop_time - start_time)
-    call("rm -rf /tmp/..?* /tmp/.[!.]* /tmp/*", shell=True)
-    stop_time = time.perf_counter()
-    write_metric("TotalRunnerDuration", stop_time - start_time)
-    return new_thread_id
 
 
 def write_metric(metric_name, value, unit="Milliseconds", verbose=True):

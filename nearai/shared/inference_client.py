@@ -92,6 +92,14 @@ class InferenceClient(object):
         except requests.RequestException as e:
             raise ValueError(f"Failed to get agent public key: {e}") from None
 
+    def _match_provider_model(self, model: str) -> tuple[str, str]:
+        """Returns provider and model for given `model` and `_config`."""
+        if self._config.base_url != self._config.default_provider:
+            provider, model = self.provider_models.match_provider_model(model)
+        else:
+            provider = self._config.default_provider
+        return provider, model
+
     def completions(
         self,
         model: str,
@@ -107,10 +115,7 @@ class InferenceClient(object):
         1. full path `provider::model_full_path`.
         2. `model_short_name`. Default provider will be used.
         """
-        if self._config.base_url != self._config.default_provider:
-            provider, model = self.provider_models.match_provider_model(model)
-        else:
-            provider = self._config.default_provider
+        provider, model = self._match_provider_model(model)
 
         if temperature is None:
             temperature = DEFAULT_MODEL_TEMPERATURE
@@ -417,9 +422,11 @@ class InferenceClient(object):
             cast_to=str,
         )
 
-    def generate_image(self, prompt: str):
-        """Generate an image."""
-        return self.client.images.generate(prompt=prompt)
+    def generate_image(self, prompt: str, model: Optional[str] = None):
+        """Generate an image using the specified model or the default if none is provided."""
+        if model:
+            _provider, model = self._match_provider_model(model)
+        return self.client.images.generate(prompt=prompt, model=model)
 
     def save_agent_data(self, key: str, agent_data: Dict[str, Any]):
         """Save agent data for the agent this client was initialized with."""

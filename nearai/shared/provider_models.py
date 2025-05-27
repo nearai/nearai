@@ -1,3 +1,4 @@
+import os
 import re
 from functools import cached_property
 from typing import Dict, List, Optional, Tuple, cast
@@ -128,3 +129,64 @@ class ProviderModels:
                 continue
             result.append(available_matches)
         return result
+
+
+def fetch_models_from_provider(provider: str) -> List[Dict]:
+    """Fetch models from a specific provider.
+
+    Args:
+        provider: The provider name ("nearai", "fireworks", "openai", "anthropic", "crynux")
+
+    Returns:
+        List of model dictionaries
+
+    The user is responsible for setting the appropriate API key in environment variables:
+    - FIREWORKS_API_KEY for Fireworks
+    - OPENAI_API_KEY for OpenAI
+    - ANTHROPIC_API_KEY for Anthropic
+
+    """
+    if provider == "nearai":
+        return fetch_models_from_endpoint("https://api.near.ai/v1/models", provider=provider)
+    if provider == "fireworks":
+        return fetch_models_from_endpoint(
+            "https://api.fireworks.ai/inference/v1/models",
+            provider=provider,
+            api_key=os.environ.get("FIREWORKS_API_KEY"),
+        )
+    if provider == "openai":
+        return fetch_models_from_endpoint(
+            "https://api.openai.com/v1/models", provider=provider, api_key=os.environ.get("OPENAI_API_KEY")
+        )
+    if provider == "anthropic":
+        return fetch_models_from_endpoint(
+            "https://api.anthropic.com/v1/models", provider=provider, api_key=os.environ.get("ANTHROPIC_API_KEY")
+        )
+    if provider == "crynux":
+        return fetch_models_from_endpoint(
+            "https://bridge.crynux.ai/v1/models",
+            provider=provider,
+            # This is a Crynux API key for public demonstration only, the rate limit is very low.
+            # Please use your own API key for production.
+            api_key="wo19nkaeWy4ly34iexE7DKtNIY6fZWErCAU8l--735U=",
+        )
+    print(f"Unrecognized provider: {provider}")
+    exit(1)
+
+
+def fetch_models_from_endpoint(endpoint: str, provider: str, api_key: Optional[str] = None) -> List[Dict]:
+    try:
+        headers = {}
+        if api_key:
+            # Different providers may use different auth header formats
+            if provider in ["openai", "fireworks", "crynux"]:
+                headers["Authorization"] = f"Bearer {api_key}"
+            elif provider == "anthropic":
+                headers["x-api-key"] = api_key
+        # Make the API request
+        response = requests.get(endpoint, headers=headers)
+        response.raise_for_status()
+        return response.json()["data"]
+    except Exception as e:
+        print(f"Error fetching models: {str(e)}")
+        exit(1)

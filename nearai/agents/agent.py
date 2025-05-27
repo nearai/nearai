@@ -314,7 +314,7 @@ class Agent(object):
         try:
             # Switch to user env.agent_runner_user (Unix-only, skip on Windows)
             if agent_runner_user:
-                import platform
+
                 if platform.system() != "Windows":
                     import pwd
                     user_info = pwd.getpwnam(agent_runner_user)

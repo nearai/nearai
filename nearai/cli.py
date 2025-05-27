@@ -71,7 +71,7 @@ from nearai.shared.client_config import (
     IDENTIFIER_PATTERN as PATTERN,
 )
 from nearai.shared.naming import NamespacedName, create_registry_name
-from nearai.shared.provider_models import ProviderModels, get_provider_namespaced_model
+from nearai.shared.provider_models import ProviderModels, fetch_models_from_provider, get_provider_namespaced_model
 from nearai.tensorboard_feed import TensorboardCli
 
 
@@ -301,6 +301,29 @@ class RegistryCli:
           nearai registry list --show-all
 
         """
+        # Check if we're listing models specifically and provide alternative options
+        if category.lower() == "model":
+            print("\n⚠️  The category=model entries in the registry are deprecated.")
+            print("We recommend using Fireworks, OpenAI, Anthropic, Crynux, or other provider models instead.")
+            print("\nEnter one of the following options:")
+            print("- registry        : See the registry models anyway")
+            print("- nearai          : List models from NEAR AI endpoint (Fireworks models, free inference)")
+            print("- openai          : List available OpenAI models. Requires OPENAI_API_KEY.")
+            print("- anthropic       : List available Anthropic models. Requires ANTHROPIC_API_KEY.")
+            print(
+                "- crynux          : List available Crynux models (framework support, public API key, low rate limit)"
+            )
+            print("(May require api keys or correct moon phase)")
+            print("")
+
+            choice = input("\nYour choice: ").strip().lower()
+
+            if choice != "registry":
+                models = fetch_models_from_provider(choice)
+                for model in models:
+                    print(f"{model}")
+                return
+
         # Make sure tags is a comma-separated list of tags
         tags_l = parse_tags(tags)
         tags = ",".join(tags_l)
