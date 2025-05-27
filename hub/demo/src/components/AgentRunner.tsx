@@ -80,12 +80,6 @@ type RunView = 'conversation' | 'output' | undefined;
 
 type FormSchema = Pick<z.infer<typeof chatWithAgentModel>, 'new_message'>;
 
-const DEBUG_FILES = [
-  'runner_log.txt',
-  'system_log.txt',
-  'chat_history_log.txt',
-];
-
 export type AgentChatMutationInput = FormSchema &
   Partial<z.infer<typeof chatWithAgentModel>>;
 
@@ -692,9 +686,6 @@ export const AgentRunner = ({
     if (showLoadingPlaceholder) return <PlaceholderSection />;
     return null;
   }
-  const outputFiles = showLogs
-    ? files.outputs
-    : files.outputs.filter((file) => !DEBUG_FILES.includes(file.filename));
 
   return (
     <>
@@ -958,9 +949,9 @@ export const AgentRunner = ({
                 <PlaceholderStack />
               ) : (
                 <>
-                  {outputFiles.length ? (
+                  {files.outputs.length ? (
                     <CardList>
-                      {outputFiles.map((file) => (
+                      {files.outputs.map((file) => (
                         <Card
                           padding="s"
                           gap="s"
