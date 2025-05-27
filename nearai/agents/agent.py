@@ -2,6 +2,7 @@ import io
 import json
 import multiprocessing
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -15,8 +16,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from dotenv import load_dotenv
 
 from nearai.shared.client_config import ClientConfig
-
-import platform
 
 AGENT_FILENAME_PY = "agent.py"
 AGENT_FILENAME_TS = "agent.ts"
