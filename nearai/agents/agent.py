@@ -312,13 +312,12 @@ class Agent(object):
         """Launch python agent."""
         try:
             # Switch to user env.agent_runner_user (Unix-only, skip on Windows)
-            if agent_runner_user:
-                if platform.system() != "Windows":  # noqa: D203,D211,D212,D213
-                    import pwd
+            if agent_runner_user and platform.system() != "Windows":  # noqa: D203,D211,D212,D213
+                import pwd
 
-                    user_info = pwd.getpwnam(agent_runner_user)
-                    os.setgid(user_info.pw_gid)
-                    os.setuid(user_info.pw_uid)
+                user_info = pwd.getpwnam(agent_runner_user)
+                os.setgid(user_info.pw_gid)
+                os.setuid(user_info.pw_uid)
 
             # Create a custom writer that logs and writes to buffer
             class LoggingWriter:
