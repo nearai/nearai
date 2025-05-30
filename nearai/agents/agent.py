@@ -189,10 +189,7 @@ class Agent(object):
         self.code: Optional[CodeType] = None
         self.file_cache: dict[str, Union[str, bytes]] = {}
         self.identifier = identifier
-        if platform.system() == "Windows":
-            name_parts = identifier.split("\\")
-        else:
-            name_parts = identifier.split("/")
+        name_parts = identifier.split(os.sep)
         self.namespace = name_parts[0]
         self.name = name_parts[1]
         self.version = name_parts[2]
