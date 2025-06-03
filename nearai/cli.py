@@ -70,7 +70,6 @@ from nearai.shared.client_config import (
 from nearai.shared.client_config import (
     IDENTIFIER_PATTERN as PATTERN,
 )
-from nearai.shared.file_encryption import FileEncryption
 from nearai.shared.naming import NamespacedName, create_registry_name
 from nearai.shared.provider_models import ProviderModels, fetch_models_from_provider, get_provider_namespaced_model
 from nearai.tensorboard_feed import TensorboardCli
@@ -537,33 +536,6 @@ class RegistryCli:
         name = metadata["name"]
         version = metadata["version"]
 
-        # Handle encryption key generation if --encrypt flag is used
-        if encrypt:
-            # Initialize details if not present
-            if "details" not in metadata:
-                metadata["details"] = {}
-
-            # Generate encryption key if not present
-            if "encryption_key" not in metadata["details"]:
-                encryption_key = FileEncryption.generate_encryption_key()
-                metadata["details"]["encryption_key"] = encryption_key
-
-                # Update metadata.json file with the new encryption key
-                with open(metadata_path, "w") as f:
-                    json.dump(metadata, f, indent=2)
-
-                console.print(
-                    Panel(
-                        Text.assemble(
-                            ("🔐 Encryption enabled\n\n", "bold green"),
-                            (f"Encryption key {encryption_key} generated and stored in metadata.json\n", "dim"),
-                        ),
-                        title="Encryption",
-                        border_style="green",
-                        padding=(1, 2),
-                    )
-                )
-
         # Get namespace using the function from registry.py
         try:
             namespace = get_namespace(path)
@@ -656,7 +628,7 @@ class RegistryCli:
         )
 
         try:
-            result = registry.upload(path, show_progress=True)
+            result = registry.upload(path, show_progress=True, encrypt=encrypt)
 
             if result:
                 success_panel = Panel(

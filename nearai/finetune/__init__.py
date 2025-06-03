@@ -133,28 +133,32 @@ class FinetuneCli:
         BACKGROUND_PROCESS = False
 
         if upload_checkpoint:
+            metadata = EntryMetadata.from_dict(
+                {
+                    "name": f"finetune-{job_id}",
+                    "version": "0.0.1",
+                    "description": f"Finetuned checkpoint from base mode {model} using dataset {dataset}",
+                    "category": "finetune",
+                    "tags": ["finetune", f"base-model-{model}", f"base-dataset-{dataset}"],
+                    "details": dict(
+                        model=model,
+                        tokenizer=tokenizer,
+                        dataset=dataset,
+                        num_procs=num_procs,
+                        format=format,
+                        num_nodes=num_nodes,
+                        checkpoint=checkpoint,
+                        **dataset_kwargs,
+                    ),
+                    "show_entry": True,
+                }
+            )
+            assert metadata
+            metadata_path = job_folder / "metadata.json"
+            with open(metadata_path, "w") as f:
+                f.write(metadata.model_dump_json(indent=2))
             registry.upload(
                 job_folder,
-                EntryMetadata.from_dict(
-                    {
-                        "name": f"finetune-{job_id}",
-                        "version": "0.0.1",
-                        "description": f"Finetuned checkpoint from base mode {model} using dataset {dataset}",
-                        "category": "finetune",
-                        "tags": ["finetune", f"base-model-{model}", f"base-dataset-{dataset}"],
-                        "details": dict(
-                            model=model,
-                            tokenizer=tokenizer,
-                            dataset=dataset,
-                            num_procs=num_procs,
-                            format=format,
-                            num_nodes=num_nodes,
-                            checkpoint=checkpoint,
-                            **dataset_kwargs,
-                        ),
-                        "show_entry": True,
-                    }
-                ),
                 show_progress=True,
             )
 
