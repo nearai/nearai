@@ -1329,7 +1329,7 @@ class Environment(object):
         messages: Union[Iterable[ChatCompletionMessageParam], str],
         model: Union[Iterable[ChatCompletionMessageParam], str] = "",
         **kwargs: Any,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         """Returns a completion for the given messages using the given model with the agent signature."""
         # TODO Return signed completions for non-latest versions only?
         agent_name = self.get_primary_agent().get_full_name()
