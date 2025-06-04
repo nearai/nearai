@@ -76,6 +76,7 @@ def get_public_key(extended_private_key):
 
     return f"ed25519:{base58_public_key}"
 
+
 def derive_new_extended_private_key(extended_private_key: str, addition: str) -> str:
     private_key_base58 = extended_private_key.replace("ed25519:", "")
 
