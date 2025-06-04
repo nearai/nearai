@@ -5,7 +5,7 @@ from os import getenv
 from typing import Dict
 
 import base58
-import ed25519
+import ed25519  # type: ignore
 from dotenv import load_dotenv
 from nearai.shared.near.sign import (
     CompletionSignaturePayload,
