@@ -2840,7 +2840,6 @@ dependencies = [
     { name = "pandas-stubs", version = "2.2.2.240807", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pandas-stubs", version = "2.2.3.250527", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "pathspec" },
-    { name = "peft" },
     { name = "psutil" },
     { name = "py-near" },
     { name = "py-near-primitives" },
@@ -2854,7 +2853,6 @@ dependencies = [
     { name = "tabulate" },
     { name = "tenacity" },
     { name = "tqdm" },
-    { name = "transformers" },
     { name = "tweepy" },
     { name = "typer" },
     { name = "types-cffi" },
@@ -2896,6 +2894,10 @@ explatform = [
     { name = "flask" },
     { name = "gunicorn" },
     { name = "shortuuid" },
+]
+finetune = [
+    { name = "peft" },
+    { name = "transformers" },
 ]
 hub = [
     { name = "apscheduler" },
@@ -2969,7 +2971,7 @@ requires-dist = [
     { name = "openpyxl", marker = "extra == 'hub'", specifier = ">=3.1.5,<4.0.0" },
     { name = "pandas-stubs", specifier = ">=2.2.2.240603,<3.0.0" },
     { name = "pathspec", specifier = ">=0.11.0" },
-    { name = "peft", specifier = ">=0.10.0,<0.11.0" },
+    { name = "peft", marker = "extra == 'finetune'", specifier = ">=0.10.0,<0.11.0" },
     { name = "pillow", marker = "extra == 'docs'", specifier = ">=10.4.0" },
     { name = "psutil", specifier = ">=5.9.5,<6.0.0" },
     { name = "py-near", git = "https://github.com/pvolnov/py-near.git?rev=ba898795a049a38ea600e5c510cf922201568227" },
@@ -2998,7 +3000,7 @@ requires-dist = [
     { name = "torchao", marker = "extra == 'torch'", specifier = ">=0.3.1,<0.4.0" },
     { name = "torchtune", marker = "extra == 'torch'", specifier = ">=0.2.0,<0.3.0" },
     { name = "tqdm", specifier = ">=4.66.4,<5.0.0" },
-    { name = "transformers", specifier = ">=4.40.2,<5.0.0" },
+    { name = "transformers", marker = "extra == 'finetune'", specifier = ">=4.40.2,<5.0.0" },
     { name = "tweepy", specifier = ">=4.14.0,<5.0.0" },
     { name = "typer", specifier = ">=0.12.5,<0.13.0" },
     { name = "types-cffi", specifier = ">=1.16.0.20240331,<2.0.0" },
@@ -3017,7 +3019,7 @@ requires-dist = [
     { name = "vllm", marker = "extra == 'vllm'", specifier = ">=0.5.3,<0.6.0" },
     { name = "wheel", specifier = ">=0.45.1" },
 ]
-provides-extras = ["explatform", "hub", "torch", "vllm", "lean", "docs", "dev", "test"]
+provides-extras = ["explatform", "finetune", "hub", "torch", "vllm", "lean", "docs", "dev", "test"]
 
 [[package]]
 name = "nest-asyncio"

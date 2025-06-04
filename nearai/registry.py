@@ -1,9 +1,11 @@
 import json
 from pathlib import Path
-from shutil import copyfileobj
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from packaging.version import InvalidVersion, Version
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
 from tqdm import tqdm
 
 # Note: We should import nearai.config on this file to make sure the method setup_api_client is called at least once
@@ -21,6 +23,7 @@ from nearai.openapi_client.api.registry_api import (
     RegistryApi,
 )
 from nearai.openapi_client.exceptions import BadRequestException, NotFoundException
+from nearai.shared.file_encryption import OBFUSCATED_SECRET, FileEncryption
 from nearai.shared.naming import NamespacedName, get_canonical_name
 
 REGISTRY_FOLDER = "registry"
@@ -124,10 +127,16 @@ class Registry:
         except NotFoundException:
             return None
 
-    def upload_file(self, entry_location: EntryLocation, local_path: Path, path: Path) -> bool:
+    def upload_file(
+        self, entry_location: EntryLocation, local_path: Path, path: Path, encryption_key: Optional[str] = None
+    ) -> bool:
         """Upload a file to the registry."""
         with open(local_path, "rb") as file:
             data = file.read()
+
+            # Encrypt data if encryption is enabled
+            if encryption_key:
+                data = FileEncryption.encrypt_data(data, encryption_key)
 
             try:
                 self.api.upload_file_v1_registry_upload_file_post(
@@ -144,7 +153,9 @@ class Registry:
 
                 raise e
 
-    def download_file(self, entry_location: EntryLocation, path: Path, local_path: Path):
+    def download_file(
+        self, entry_location: EntryLocation, path: Path, local_path: Path, encryption_key: Optional[str] = None
+    ):
         """Download a file from the registry."""
         result = self.api.download_file_v1_registry_download_file_post_without_preload_content(
             BodyDownloadFileV1RegistryDownloadFilePost.from_dict(
@@ -157,8 +168,19 @@ class Registry:
 
         local_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # Read all data first
+        data = result.read()
+
+        # Decrypt if necessary
+        if encryption_key:
+            try:
+                data = FileEncryption.decrypt_data(data, encryption_key)
+            except Exception as e:
+                print(f"Error: Failed to decrypt file {path}: {str(e)}")
+                # Continue with encrypted data - user might want to decrypt manually
+
         with open(local_path, "wb") as f:
-            copyfileobj(result, f)
+            f.write(data)
 
     def download(
         self,
@@ -166,6 +188,7 @@ class Registry:
         force: bool = False,
         show_progress: bool = False,
         verbose: bool = True,
+        encryption_key: Optional[str] = None,
     ) -> Path:
         """Download entry from the registry locally."""
         if isinstance(entry_location, str):
@@ -180,37 +203,63 @@ class Registry:
                         f"Entry {entry_location} already exists at {download_path}. Use --force to overwrite the entry."
                     )
                 return download_path
+            if not encryption_key:
+                metadata_on_disk = get_metadata(download_path, local=True)
+                if metadata_on_disk:
+                    encryption_key_from_metadata_on_disk = metadata_on_disk.get("details", {}).get(
+                        "encryption_key", None
+                    )
+                    if encryption_key_from_metadata_on_disk != OBFUSCATED_SECRET:
+                        encryption_key = encryption_key_from_metadata_on_disk
 
         files = registry.list_files(entry_location)
-
-        download_path.mkdir(parents=True, exist_ok=True)
 
         metadata = registry.info(entry_location)
 
         if metadata is None:
             raise ValueError(f"Entry {entry_location} not found.")
 
+        encryption_key_from_registry = metadata.details.get("encryption_key", None)
+        if encryption_key_from_registry is None and encryption_key:
+            print("This registry entry is not encrypted, but encryption_key has been provided. Aborting.")
+            exit(1)
+        if not encryption_key:
+            encryption_key = encryption_key_from_registry
+        if encryption_key == OBFUSCATED_SECRET:
+            print(
+                "This registry entry is encrypted. You must provide encryption_key (nearai registry download --encryption_key <secret>). Aborting."  # noqa: E501
+            )
+            exit(1)
+        if encryption_key:
+            metadata.details["encryption_key"] = encryption_key
+
+        download_path.mkdir(parents=True, exist_ok=True)
+
         metadata_path = download_path / "metadata.json"
         with open(metadata_path, "w") as f:
             f.write(metadata.model_dump_json(indent=2))
 
+        if encryption_key:
+            print(f"Downloading encrypted registry entry and decrypting with encryption_key={encryption_key}")
+
         for file in (pbar := tqdm(files, disable=not show_progress)):
             pbar.set_description(file)
-            registry.download_file(entry_location, file, download_path / file)
+            registry.download_file(entry_location, file, download_path / file, encryption_key)
 
         return download_path
 
     def upload(
         self,
         local_path: Path,
-        metadata: Optional[EntryMetadata] = None,
         show_progress: bool = False,
+        encrypt: bool = False,
     ) -> EntryLocation:
         """Upload entry to the registry.
 
-        If metadata is provided it will overwrite the metadata in the directory,
-        otherwise it will use the metadata.json found on the root of the directory.
+        `local_path` should have metadata.json present.
         Files matching patterns in .gitignore (if present) will be excluded from upload.
+        If encryption_key is present in metadata.json, uploaded files will be encrypted.
+        If encrypt == True, will generate an encryption_key, if encryption_key is nor present.
         """
         path = Path(local_path).absolute()
 
@@ -220,32 +269,52 @@ class Registry:
 
         metadata_path = path / "metadata.json"
 
-        if metadata is not None:
-            with open(metadata_path, "w") as f:
-                f.write(metadata.model_dump_json(indent=2))
-
         check_metadata_present(metadata_path)
 
         with open(metadata_path) as f:
-            plain_metadata: Dict[str, Any] = json.load(f)
+            metadata: Dict[str, Any] = json.load(f)
+
+        # Handle encryption key generation if --encrypt flag is used
+        if encrypt:
+            # Initialize details if not present
+            if "details" not in metadata:
+                metadata["details"] = {}
+
+            if "encryption_key" in metadata["details"]:
+                encryption_key = metadata["details"]["encryption_key"]
+            else:
+                # Generate encryption key if not present
+                encryption_key = FileEncryption.generate_encryption_key()
+                metadata["details"]["encryption_key"] = encryption_key
+
+                # Update metadata.json file with the new encryption key
+                with open(metadata_path, "w") as f:
+                    json.dump(metadata, f, indent=2)
 
         namespace = get_namespace(local_path)
-        name = plain_metadata.pop("name")
+        name = metadata.pop("name")
         assert " " not in name
 
         entry_location = EntryLocation.model_validate(
             dict(
                 namespace=namespace,
                 name=name,
-                version=plain_metadata.pop("version"),
+                version=metadata.pop("version"),
             )
         )
 
-        entry_metadata = EntryMetadataInput.model_validate(plain_metadata)
+        entry_metadata = EntryMetadataInput.model_validate(metadata)
         source = entry_metadata.details.get("_source", None)
 
         if source is not None:
             print(f"Only default source is allowed, found: {source}. Remove details._source from metadata.")
+            exit(1)
+
+        encryption_key = entry_metadata.details.get("encryption_key", None)
+        if encryption_key == OBFUSCATED_SECRET:
+            print(
+                f"metadata/details/encryption_key is obfuscated: {encryption_key}. Can't upload without knowing encryption key."  # noqa: E501
+            )
             exit(1)
 
         if self.info(entry_location) is None:
@@ -264,8 +333,6 @@ class Registry:
                     print(f"A registry item with a similar name already exists: {entry.namespace}/{entry.name}")
                     exit(1)
 
-        registry.update(entry_location, entry_metadata)
-
         agent_files = get_local_agent_files(path)
         files_to_upload = []
         total_size = 0
@@ -282,10 +349,40 @@ class Registry:
 
             files_to_upload.append((file, relative, size))
 
+        print("")
+        print("UPLOAD CONFIRMATION")
+        print("")
+        print(f"📍 Entry Location: {entry_location.namespace}/{entry_location.name}/{entry_location.version}")
+        print(f"📁 Local Path: {path}")
+        if encryption_key:
+            encryption_status = "🔐 Private (encrypted)"
+        else:
+            encryption_status = "🌐 Open source (public)"
+        print(f"🔒 Visibility: {encryption_status}")
+        print("")
+        response = input("Do you want to proceed with the upload? (y/N): ").strip().lower()
+        if response not in ["y", "yes", "Y"]:
+            exit(0)
+
+        registry.update(entry_location, entry_metadata)
         pbar = tqdm(total=total_size, unit="B", unit_scale=True, disable=not show_progress)
         for file, relative, size in files_to_upload:
-            registry.upload_file(entry_location, file, relative)
+            registry.upload_file(entry_location, file, relative, encryption_key=encryption_key)
             pbar.update(size)
+
+        if encrypt:
+            console = Console()
+            console.print(
+                Panel(
+                    Text.assemble(
+                        ("🔐 Encryption enabled\n\n", "bold green"),
+                        (f"Encryption key {encryption_key} generated and stored in metadata.json\n", "dim"),
+                    ),
+                    title="Encryption",
+                    border_style="green",
+                    padding=(1, 2),
+                )
+            )
 
         return entry_location
 

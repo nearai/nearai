@@ -38,7 +38,6 @@ from nearai.config import (
     get_hub_client,
     update_config,
 )
-from nearai.finetune import FinetuneCli
 from nearai.lib import check_metadata_present, parse_location, parse_tags
 from nearai.log import LogCLI
 from nearai.openapi_client import EntryLocation, EntryMetadataInput
@@ -480,7 +479,12 @@ class RegistryCli:
                 self.upload(str(path))
 
     def upload(
-        self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
+        self,
+        local_path: str,
+        bump: bool = False,
+        minor_bump: bool = False,
+        major_bump: bool = False,
+        encrypt: bool = False,
     ) -> Optional[EntryLocation]:
         """Upload an item to the NEAR AI registry for public use.
 
@@ -493,19 +497,24 @@ class RegistryCli:
             Bump with minor version increment (0.1.0 → 0.2.0)
           major_bump (bool) :
             Bump with major version increment (1.5.2 → 2.0.0)
+          encrypt (bool) :
+            Encrypt all uploaded files using a generated encryption key
 
         Examples:
           # Upload an item in the current directory
-          nearai registry upload
+          nearai registry upload .
 
           # Upload a specific agent directory
-          nearai registry upload --local-path ./path/to/item
+          nearai registry upload ./path/to/item
 
           # Upload with automatic version bumping
-          nearai registry upload --bump
+          nearai registry upload ./path/to/item --bump
 
           # Upload with minor version bump
           nearai registry upload ./path/to/item --minor-bump
+
+          # Upload with encryption enabled (private entries)
+          nearai registry upload ./path/to/item --encrypt
 
         """
         console = Console()
@@ -618,7 +627,7 @@ class RegistryCli:
         )
 
         try:
-            result = registry.upload(path, show_progress=True)
+            result = registry.upload(path, show_progress=True, encrypt=encrypt)
 
             if result:
                 success_panel = Panel(
@@ -659,7 +668,7 @@ class RegistryCli:
             )
             return None
 
-    def download(self, entry_location: str, force: bool = False) -> None:
+    def download(self, entry_location: str, force: bool = False, encryption_key: Optional[str] = None) -> None:
         """Download an item from the NEAR AI registry to your local machine.
 
         This allows you to use or inspect agents, models, datasets, etc. that have been published by others.
@@ -669,6 +678,8 @@ class RegistryCli:
             Entry location of the item to download (format: namespace/name/version)
           force (bool) :
             Force download even if the item already exists locally
+          encryption_key (str) :
+            Decrypt files with this encryption key
 
         Examples:
           # Download a specific registry item
@@ -678,7 +689,7 @@ class RegistryCli:
           nearai registry download example.near/model-name/1.0.0 --force
 
         """
-        registry.download(entry_location, force=force, show_progress=True)
+        registry.download(entry_location, force=force, show_progress=True, encryption_key=encryption_key)
 
     def __call__(self):
         """Show help when 'nearai registry' is called without subcommands."""
@@ -1788,13 +1799,18 @@ class AgentCli:
         create_new_agent(namespace, name, description)
 
     def upload(
-        self, local_path: str = ".", bump: bool = False, minor_bump: bool = False, major_bump: bool = False
+        self,
+        local_path: str = ".",
+        bump: bool = False,
+        minor_bump: bool = False,
+        major_bump: bool = False,
+        encrypt: bool = False,
     ) -> Optional[EntryLocation]:
         """Alias for 'nearai registry upload'."""
         assert_user_auth()
         # Create an instance of RegistryCli and call its upload method
         registry_cli = RegistryCli()
-        return registry_cli.upload(local_path, bump, minor_bump, major_bump)
+        return registry_cli.upload(local_path, bump, minor_bump, major_bump, encrypt)
 
     def __call__(self) -> None:
         """Show help when 'nearai agent' is called without subcommands."""
@@ -2239,7 +2255,6 @@ class CLI:
         self.benchmark = BenchmarkCli()
         self.evaluation = EvaluationCli()
         self.agent = AgentCli()
-        self.finetune = FinetuneCli()
         self.tensorboard = TensorboardCli()
         self.vllm = VllmCli()
         self.permission = PermissionCli()
