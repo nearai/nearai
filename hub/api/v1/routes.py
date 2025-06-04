@@ -16,7 +16,13 @@ from pydantic import BaseModel, field_validator
 from hub.api.v1.auth import AuthToken, get_auth, validate_signature
 from hub.api.v1.completions import Message, Provider, get_llm_ai, handle_stream
 from hub.api.v1.images import get_images_ai
-from hub.api.v1.sign import get_hub_key, get_signed_completion, is_trusted_runner_api_key, get_public_key, derive_new_extended_private_key
+from hub.api.v1.sign import (
+    derive_new_extended_private_key,
+    get_hub_key,
+    get_public_key,
+    get_signed_completion,
+    is_trusted_runner_api_key,
+)
 from hub.api.v1.sql import SqlClient
 
 v1_router = APIRouter()

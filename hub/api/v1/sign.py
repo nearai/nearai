@@ -1,12 +1,11 @@
+import hashlib
 import json
 import os
 from os import getenv
 from typing import Dict
 
-import ed25519
 import base58
-import hashlib
-
+import ed25519
 from dotenv import load_dotenv
 from nearai.shared.near.sign import (
     CompletionSignaturePayload,
