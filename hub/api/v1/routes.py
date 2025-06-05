@@ -9,7 +9,6 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from nearai.shared.cache import mem_cache_with_timeout
 from nearai.shared.client_config import DEFAULT_TIMEOUT
-from nearai.shared.near.sign import derive_new_extended_private_key, get_public_key
 from nearai.shared.provider_models import PROVIDER_MODEL_SEP, get_provider_model
 from openai.types.beta.assistant_response_format_option import AssistantResponseFormatOption
 from pydantic import BaseModel, field_validator
@@ -17,7 +16,13 @@ from pydantic import BaseModel, field_validator
 from hub.api.v1.auth import AuthToken, get_auth, validate_signature
 from hub.api.v1.completions import Message, Provider, get_llm_ai, handle_stream
 from hub.api.v1.images import get_images_ai
-from hub.api.v1.sign import get_hub_key, get_signed_completion, is_trusted_runner_api_key
+from hub.api.v1.sign import (
+    derive_new_extended_private_key,
+    get_hub_key,
+    get_public_key,
+    get_signed_completion,
+    is_trusted_runner_api_key,
+)
 from hub.api.v1.sql import SqlClient
 
 v1_router = APIRouter()

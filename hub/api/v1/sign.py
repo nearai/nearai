@@ -1,13 +1,15 @@
+import hashlib
 import json
 import os
 from os import getenv
 from typing import Dict
 
+import base58
+import ed25519  # type: ignore
 from dotenv import load_dotenv
 from nearai.shared.near.sign import (
     CompletionSignaturePayload,
     create_inference_signature,
-    derive_new_extended_private_key,
 )
 
 ED_PREFIX = "ed25519:"  # noqa: N806
@@ -61,5 +63,33 @@ def get_signed_completion(
     return {"response": response_message_text, "signature": signature[0], "public_key": signature[1]}
 
 
-def derive_private_key_from_string(original_pk: str, addition: str = "") -> str:
-    return derive_new_extended_private_key(original_pk, addition)
+def get_public_key(extended_private_key):
+    private_key_base58 = extended_private_key.replace("ed25519:", "")
+
+    decoded = base58.b58decode(private_key_base58)
+    secret_key = decoded[:32]
+
+    signing_key = ed25519.SigningKey(secret_key)
+    verifying_key = signing_key.get_verifying_key()
+
+    base58_public_key = base58.b58encode(verifying_key.to_bytes()).decode()
+
+    return f"ed25519:{base58_public_key}"
+
+
+def derive_new_extended_private_key(extended_private_key: str, addition: str) -> str:
+    private_key_base58 = extended_private_key.replace("ed25519:", "")
+
+    decoded = base58.b58decode(private_key_base58)
+    secret_key = decoded[:32]
+
+    combined = secret_key + addition.encode()
+    derived_secret_key = hashlib.sha256(combined).digest()[:32]  # 32 bytes
+
+    new_signing_key = ed25519.SigningKey(derived_secret_key)
+
+    new_secret_key_bytes = new_signing_key.to_bytes() + new_signing_key.get_verifying_key().to_bytes()
+
+    new_private_key_base58 = base58.b58encode(new_secret_key_bytes[:64]).decode()
+
+    return f"ed25519:{new_private_key_base58}"

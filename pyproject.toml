@@ -6,7 +6,7 @@ authors = [
     { name = "Support", email = "support@near.ai" }
 ]
 readme = "README.md"
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.9,<3.14"
 dependencies = [
     "backoff>=2.2.1,<3.0.0",
     "base58==2.1.1",
@@ -15,9 +15,8 @@ dependencies = [
     "cryptography>=43.0.0",
     "datasets>=2.20.0,<3.0.0",
     "ddtrace==2.21.0",
-    "ed25519>=1.5,<2.0",
     "fastapi>=0.111.0,<0.112.0",
-    "fire>=0.6.0,<0.7.0",
+    "fire>=0.7.0",
     "jinja2>=3.1.4,<4.0.0",
     "litellm>=1.60.5,<2.0.0",
     "mypy-boto3>=1.34.147,<2.0.0",
@@ -25,7 +24,6 @@ dependencies = [
     "openai>=1.66.2,<2.0.0",
     "pandas-stubs>=2.2.2.240603,<3.0.0",
     "pathspec>=0.11.0",
-    "peft>=0.10.0,<0.11.0",
     "psutil>=5.9.5,<6.0.0",
     "pydantic>=2.7.1,<3.0.0",
     "pydantic-core>=2.18.4,<3.0.0",
@@ -36,7 +34,6 @@ dependencies = [
     "tabulate>=0.9.0,<0.10.0",
     "tenacity>=8.2.3,<9.0.0",
     "tqdm>=4.66.4,<5.0.0",
-    "transformers>=4.40.2,<5.0.0",
     "types-cffi>=1.16.0.20240331,<2.0.0",
     "types-colorama>=0.4.15.20240311,<0.5.0",
     "types-psutil>=6.0.0.20240621,<7.0.0",
@@ -52,11 +49,12 @@ dependencies = [
     "uvicorn>=0.32.0,<0.33.0",
     "tweepy>=4.14.0,<5.0.0",
     "rich>=13.7.0",
-    "py-near>=1.1.50,<2.0.0",
+    "py_near_primitives>= 0.2.3",
     "loguru>=0.7.2,<0.8.0",
     "ftfy>=6.3.1",
     "types-python-dateutil>=2.9.0.20241206",
     "wheel>=0.45.1",
+    "py-near @ git+https://github.com/pvolnov/py-near.git@ba898795a049a38ea600e5c510cf922201568227"
 ]
 
 [project.optional-dependencies]
@@ -66,7 +64,12 @@ explatform = [
     "gunicorn>=22.0.0,<23.0.0",
     "shortuuid>=1.0.0,<2.0.0"
 ]
+finetune = [
+    "transformers>=4.40.2,<5.0.0",
+    "peft>=0.10.0,<0.11.0"
+]
 hub = [
+    "ed25519>=1.5,<2.0",
     "fastapi-cli>=0.0.4,<1.0.0",
     "python-dotenv>=1.0.1,<2.0.0",
     "sqlmodel>=0.0.21,<1.0.0",
@@ -117,6 +120,9 @@ test = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.setuptools]
 packages = ["nearai"]
@@ -235,7 +241,6 @@ module = [
     "torchao.*",
     "fireworks.*",
     "apscheduler.*",
-    "ed25519.*",
     "numpy.*",
     "nacl.*",
     "nacl.signing.*",
