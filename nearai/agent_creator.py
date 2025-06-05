@@ -236,16 +236,23 @@ def display_success_and_options(agent_path: Path) -> None:
     console.print("\n")
 
     # Create next steps options with proper markup
-    options = ["Upload agent to NEAR AI registry 🚀", "Run agent 💬", "Open agent code in editor 🧑‍💻", "Exit 👋"]
+    options = [
+        "Upload open source (public) agent to NEAR AI registry 🌐🚀",
+        "Upload encrypted (private) agent to NEAR AI registry 🔐🚀",
+        "Run agent 💬",
+        "Open agent code in editor 🧑‍💻",
+        "Exit 👋",
+    ]
 
     # Create the panel with direct markup
     next_steps_panel = Panel(
         f"""[bold blue]What would you like to do next?[/bold blue]
 
 [bold blue]1.[/bold blue] {options[0]}
-[bold blue]2.[/bold blue] {options[1]}
-[bold blue]3.[/bold blue] {options[2]}
-[bold blue]4.[/bold blue] {options[3]}""",
+[bold blue]1.[/bold blue] {options[1]}
+[bold blue]2.[/bold blue] {options[2]}
+[bold blue]3.[/bold blue] {options[3]}
+[bold blue]4.[/bold blue] {options[4]}""",
         title="[bold blue]Next Steps[/bold blue]",
         border_style="blue",
     )
@@ -255,7 +262,7 @@ def display_success_and_options(agent_path: Path) -> None:
     # Main options loop
     while True:
         try:
-            choice = int(Prompt.ask("[bold]Choose an option", default="4")) - 1
+            choice = int(Prompt.ask("[bold]Choose an option", default="5")) - 1
             if not (0 <= choice < len(options)):
                 console.print("[red]Invalid choice. Please try again.")
                 continue
@@ -264,14 +271,14 @@ def display_success_and_options(agent_path: Path) -> None:
             continue
 
         # Exit option
-        if choice == 3:  # Exit
+        if choice == 4:  # Exit
             break
 
         # Handle user choice
-        if choice == 0:  # Upload agent
+        if choice == 0 or choice == 1:  # Upload agent
             console.print("\n[green]Uploading agent to registry...[/green]")
             try:
-                registry.upload(agent_path, show_progress=True)
+                registry.upload(agent_path, show_progress=True, encrypt=(choice == 1))
                 console.print("[green bold]✓ Agent uploaded successfully![/green bold]\n")
 
                 # Extract namespace and name from agent_path
@@ -287,7 +294,7 @@ def display_success_and_options(agent_path: Path) -> None:
             except Exception as e:
                 console.print(f"[red bold]✗ Error uploading agent: {str(e)}[/red bold]\n")
 
-        elif choice == 1:  # Run agent
+        elif choice == 2:  # Run agent
             console.print("\n[green]Running agent...[/green]")
             try:
                 from nearai.cli import AgentCli
@@ -298,7 +305,7 @@ def display_success_and_options(agent_path: Path) -> None:
             except Exception as e:
                 console.print(f"[red bold]✗ Error running agent: {str(e)}[/red bold]\n")
 
-        elif choice == 2:  # Code agent
+        elif choice == 3:  # Code agent
             console.print("\n[green]Attempting to open agent in a code editor...[/green]")
             try:
                 # Check for common editors

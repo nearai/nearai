@@ -3,6 +3,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from packaging.version import InvalidVersion, Version
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
 from tqdm import tqdm
 
 # Note: We should import nearai.config on this file to make sure the method setup_api_client is called at least once
@@ -248,15 +251,15 @@ class Registry:
     def upload(
         self,
         local_path: Path,
-        metadata: Optional[EntryMetadata] = None,
         show_progress: bool = False,
+        encrypt: bool = False,
     ) -> EntryLocation:
         """Upload entry to the registry.
 
-        If metadata is provided it will overwrite the metadata in the directory,
-        otherwise it will use the metadata.json found on the root of the directory.
+        `local_path` should have metadata.json present.
         Files matching patterns in .gitignore (if present) will be excluded from upload.
-        if encryption_key is present in metadata.json, uploaded files will be encrypted.
+        If encryption_key is present in metadata.json, uploaded files will be encrypted.
+        If encrypt == True, will generate an encryption_key, if encryption_key is not present.
         """
         path = Path(local_path).absolute()
 
@@ -266,28 +269,41 @@ class Registry:
 
         metadata_path = path / "metadata.json"
 
-        if metadata is not None:
-            with open(metadata_path, "w") as f:
-                f.write(metadata.model_dump_json(indent=2))
-
         check_metadata_present(metadata_path)
 
         with open(metadata_path) as f:
-            plain_metadata: Dict[str, Any] = json.load(f)
+            metadata: Dict[str, Any] = json.load(f)
+
+        # Handle encryption key generation if --encrypt flag is used
+        if encrypt:
+            # Initialize details if not present
+            if "details" not in metadata:
+                metadata["details"] = {}
+
+            if "encryption_key" in metadata["details"]:
+                encryption_key = metadata["details"]["encryption_key"]
+            else:
+                # Generate encryption key if not present
+                encryption_key = FileEncryption.generate_encryption_key()
+                metadata["details"]["encryption_key"] = encryption_key
+
+                # Update metadata.json file with the new encryption key
+                with open(metadata_path, "w") as f:
+                    json.dump(metadata, f, indent=2)
 
         namespace = get_namespace(local_path)
-        name = plain_metadata.pop("name")
+        name = metadata.pop("name")
         assert " " not in name
 
         entry_location = EntryLocation.model_validate(
             dict(
                 namespace=namespace,
                 name=name,
-                version=plain_metadata.pop("version"),
+                version=metadata.pop("version"),
             )
         )
 
-        entry_metadata = EntryMetadataInput.model_validate(plain_metadata)
+        entry_metadata = EntryMetadataInput.model_validate(metadata)
         source = entry_metadata.details.get("_source", None)
 
         if source is not None:
@@ -353,6 +369,20 @@ class Registry:
         for file, relative, size in files_to_upload:
             registry.upload_file(entry_location, file, relative, encryption_key=encryption_key)
             pbar.update(size)
+
+        if encrypt:
+            console = Console()
+            console.print(
+                Panel(
+                    Text.assemble(
+                        ("🔐 Encryption enabled\n\n", "bold green"),
+                        (f"Encryption key {encryption_key} generated and stored in metadata.json\n", "dim"),
+                    ),
+                    title="Encryption",
+                    border_style="green",
+                    padding=(1, 2),
+                )
+            )
 
         return entry_location
 

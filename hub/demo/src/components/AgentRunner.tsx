@@ -43,7 +43,6 @@ import { type z } from 'zod';
 
 import { AgentPermissionsModal } from '@/components/AgentPermissionsModal';
 import { AgentWelcome } from '@/components/AgentWelcome';
-import { EntryEnvironmentVariables } from '@/components/EntryEnvironmentVariables';
 import { IframeWithBlob } from '@/components/lib/IframeWithBlob';
 import { Sidebar } from '@/components/lib/Sidebar';
 import { SignInPrompt } from '@/components/SignInPrompt';
@@ -1061,13 +1060,6 @@ export const AgentRunner = ({
                 </>
               )}
             </Flex>
-
-            {!consumerModeEnabled && (
-              <EntryEnvironmentVariables
-                entry={currentEntry}
-                excludeQueryParamKeys={Object.keys(queryParams)}
-              />
-            )}
           </Flex>
         </Sidebar.Sidebar>
       </Sidebar.Root>

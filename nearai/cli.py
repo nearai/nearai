@@ -38,7 +38,6 @@ from nearai.config import (
     get_hub_client,
     update_config,
 )
-from nearai.finetune import FinetuneCli
 from nearai.lib import check_metadata_present, parse_location, parse_tags
 from nearai.log import LogCLI
 from nearai.openapi_client import EntryLocation, EntryMetadataInput
@@ -656,7 +655,7 @@ class RegistryCli:
         )
 
         try:
-            result = registry.upload(path, show_progress=True)
+            result = registry.upload(path, show_progress=True, encrypt=encrypt)
 
             if result:
                 success_panel = Panel(
@@ -2284,7 +2283,6 @@ class CLI:
         self.benchmark = BenchmarkCli()
         self.evaluation = EvaluationCli()
         self.agent = AgentCli()
-        self.finetune = FinetuneCli()
         self.tensorboard = TensorboardCli()
         self.vllm = VllmCli()
         self.permission = PermissionCli()

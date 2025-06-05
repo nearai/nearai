@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpenText, CodeBlock, Play } from '@phosphor-icons/react';
+import { BookOpenText, CodeBlock, GearSix, Play } from '@phosphor-icons/react';
 import { type ReactNode } from 'react';
 
 import { EntryDetailsLayout } from '@/components/EntryDetailsLayout';
@@ -31,6 +31,11 @@ export default function EntryLayout({ children }: { children: ReactNode }) {
           path: '/evaluations',
           label: 'Evaluations',
           icon: ENTRY_CATEGORY_LABELS.evaluation.icon,
+        },
+        {
+          path: '/environment-variables',
+          label: 'Environment Variables',
+          icon: <GearSix fill="bold" />,
         },
       ]}
     >
