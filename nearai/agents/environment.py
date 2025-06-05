@@ -165,6 +165,10 @@ class Environment(object):
         self._run_id = run_id
         self._debug_mode = is_debug_mode(self.env_vars)
 
+        # Initialize message cache
+        self._messages_cache: Optional[List[Message]] = None
+        self._messages_cache_initialized = False
+
         # Initialize analytics collection if enabled
         self.logs_collection_mode = is_logs_collection_mode(self.env_vars)
         env_init_metrics = EnvInitMetrics()
@@ -645,7 +649,8 @@ class Environment(object):
 
             if self._debug_mode and not message_type:
                 self.add_chat_log("assistant", message)
-            return hub_client.beta.threads.messages.create(
+            
+            new_message = hub_client.beta.threads.messages.create(
                 thread_id=thread_id,
                 role="assistant",
                 content=message,
@@ -656,6 +661,15 @@ class Environment(object):
                 attachments=attachments,
                 metadata={"message_type": message_type} if message_type else None,
             )
+            
+            # Update cache if this message is added to the main thread
+            if (thread_id == self._thread_id and 
+                self._messages_cache_initialized and 
+                self._messages_cache is not None):
+                # Add new message to the end of the cache (most recent)
+                self._messages_cache.append(new_message)
+            
+            return new_message
 
         self.add_reply = add_reply
 
@@ -674,7 +688,7 @@ class Environment(object):
             if self._debug_mode:
                 self.add_chat_log(role, message)
 
-            return hub_client.beta.threads.messages.create(
+            new_message = hub_client.beta.threads.messages.create(
                 thread_id=self._thread_id,
                 role=role,  # type: ignore
                 content=message,
@@ -685,6 +699,14 @@ class Environment(object):
                 metadata=kwargs,
                 attachments=attachments,
             )
+            
+            # Update cache when adding messages to the main thread
+            if (self._messages_cache_initialized and 
+                self._messages_cache is not None):
+                # Add new message to the end of the cache (most recent)
+                self._messages_cache.append(new_message)
+            
+            return new_message
 
         self._add_message = _add_message
 
@@ -694,10 +716,35 @@ class Environment(object):
             thread_id: Optional[str] = None,
         ) -> List[Message]:
             """Returns messages from the environment."""
+            # Use cache if available and we're querying the same thread
+            target_thread_id = thread_id or self._thread_id
+            if (self._messages_cache_initialized and 
+                self._messages_cache is not None and 
+                target_thread_id == self._thread_id):
+                # Return cached messages, applying limit and order
+                cached_messages = self._messages_cache.copy()
+                if order == "desc":
+                    cached_messages.reverse()
+                if isinstance(limit, int):
+                    cached_messages = cached_messages[:limit]
+                self.add_system_log(f"Retrieved {len(cached_messages)} messages from cache")
+                return cached_messages
+            
+            # Fetch from API
             messages = hub_client.beta.threads.messages.list(
-                thread_id=thread_id or self._thread_id, limit=limit, order=order
+                thread_id=target_thread_id, limit=limit, order=order
             )
             self.add_system_log(f"Retrieved {len(messages.data)} messages from NEAR AI Hub")
+            
+            # Cache messages if this is for the main thread
+            if target_thread_id == self._thread_id:
+                # Store in ascending order for consistency
+                if order == "desc":
+                    self._messages_cache = list(reversed(messages.data))
+                else:
+                    self._messages_cache = messages.data.copy()
+                self._messages_cache_initialized = True
+            
             return messages.data
 
         self._list_messages = _list_messages
@@ -784,6 +831,11 @@ class Environment(object):
 
         self.mark_done = mark_done
 
+        def _invalidate_message_cache() -> None:
+            """Invalidate the message cache."""
+            self._messages_cache = None
+            self._messages_cache_initialized = False
+
         def mark_failed() -> None:
             """Deprecated. Do not use."""
             pass
@@ -805,6 +857,8 @@ class Environment(object):
             )
 
         self.request_agent_input = request_agent_input
+
+        self._invalidate_message_cache = _invalidate_message_cache
 
         # Must be placed after method definitions
         self.register_standard_tools()
@@ -1544,6 +1598,9 @@ class Environment(object):
                     self.analytics_collector.upload(thread_dir=self.get_primary_agent_temp_dir())
                 except Exception as e:
                     print(f"Failed to upload analytics data: {e}")
+            
+            # Invalidate message cache when run ends (whether successful or failed)
+            self._invalidate_message_cache()
 
         if not self._pending_ext_agent:
             # If no external agent was called, mark the whole run as done.
