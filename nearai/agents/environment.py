@@ -642,18 +642,47 @@ class Environment(object):
 
         def _execute_sync_or_async(callback_func):
             """Helper to execute callback with sync or async API based on configuration."""
-            if self._async_api_calls:
+            if not self._async_api_calls:
+                callback_func()
+                return
 
-                async def async_execute():
-                    loop = asyncio.get_event_loop()
-                    with ThreadPoolExecutor() as executor:
-                        return await loop.run_in_executor(executor, lambda: callback_func())
-
-                return async_execute()
-            else:
+            # Execute in thread pool to avoid event loop conflicts
+            def run_in_thread():
                 return callback_func()
 
+            # Use a thread pool to avoid event loop issues
+            if not hasattr(self, "_thread_pool"):
+                self._thread_pool = ThreadPoolExecutor(max_workers=4)
+
+            future = self._thread_pool.submit(run_in_thread)
+
+            # Track the future instead of async tasks
+            if not hasattr(self, "_pending_futures"):
+                self._pending_futures = set()
+
+            self._pending_futures.add(future)
+
+            # Remove future when done
+            def remove_future(f):
+                self._pending_futures.discard(f)
+
+            future.add_done_callback(remove_future)
+
+            # Don't return anything - the future runs in background
+
         self._execute_sync_or_async = _execute_sync_or_async
+
+        async def _await_pending_async_tasks():
+            """Await all pending async tasks."""
+            if not hasattr(self, "_pending_futures"):
+                return
+            try:
+                for future in list(self._pending_futures):
+                    future.result(timeout=10)  # Wait max 10 seconds per task
+            except Exception as e:
+                self.add_system_log(f"Error waiting for async tasks: {e}", logging.ERROR)
+
+        self._await_pending_async_tasks = _await_pending_async_tasks
 
         # HubClient methods
         def add_reply(
@@ -690,7 +719,7 @@ class Environment(object):
             if self._debug_mode and not message_type:
                 self.add_chat_log("assistant", message)
 
-            return self._execute_sync_or_async(create_and_cache_message)
+            self._execute_sync_or_async(create_and_cache_message)
 
         self.add_reply = add_reply
 
@@ -732,7 +761,7 @@ class Environment(object):
             if self._debug_mode:
                 self.add_chat_log(role, message)
 
-            return self._execute_sync_or_async(create_and_cache_message)
+            self._execute_sync_or_async(create_and_cache_message)
 
         self._add_message = _add_message
 
@@ -807,7 +836,7 @@ class Environment(object):
             filetype: str = "text/plain",
             write_to_disk: bool = True,
             logging: bool = True,
-        ) -> FileObject:
+        ) -> None:
             """Writes a file to the environment.
 
             filename: The name of the file to write to
@@ -849,7 +878,7 @@ class Environment(object):
 
                 return file
 
-            return self._execute_sync_or_async(create_and_upload_file)
+            self._execute_sync_or_async(create_and_upload_file)
 
         self.write_file = write_file
 
@@ -1591,6 +1620,12 @@ class Environment(object):
             self.analytics_collector.init_env_run_metrics(runner_metrics=runner_metrics)
         if new_message:
             self._add_message("user", new_message)
+            # Await any pending async tasks before proceeding
+            if self._async_api_calls:
+                try:
+                    asyncio.run(self._await_pending_async_tasks())
+                except Exception as e:
+                    self.add_system_log(f"Error awaiting pending async tasks: {e}", logging.ERROR)
         elif self._debug_mode:
             last_user_message = self.get_last_message(role="user")
             if last_user_message:
@@ -1626,6 +1661,13 @@ class Environment(object):
             self.mark_failed()
             raise e
         finally:
+            # Await any pending async tasks before cleanup
+            if self._async_api_calls:
+                try:
+                    asyncio.run(self._await_pending_async_tasks())
+                except Exception as e:
+                    self.add_system_log(f"Error awaiting pending async tasks: {e}", logging.ERROR)
+
             # Upload analytics data if collection is enabled
             if self.logs_collection_mode and self.analytics_collector:
                 try:
