@@ -8,10 +8,11 @@ import re
 import shutil
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Awaitable, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
+from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union, cast
 
 from litellm.types.completion import ChatCompletionMessageParam
 from litellm.types.utils import (
@@ -639,6 +640,21 @@ class Environment(object):
 
         self.get_agent_data_by_key = get_agent_data_by_key
 
+        def _execute_sync_or_async(callback_func):
+            """Helper to execute callback with sync or async API based on configuration."""
+            if self._async_api_calls:
+
+                async def async_execute():
+                    loop = asyncio.get_event_loop()
+                    with ThreadPoolExecutor() as executor:
+                        return await loop.run_in_executor(executor, lambda: callback_func())
+
+                return async_execute()
+            else:
+                return callback_func()
+
+        self._execute_sync_or_async = _execute_sync_or_async
+
         # HubClient methods
         def add_reply(
             message: str,
@@ -649,56 +665,34 @@ class Environment(object):
             """Assistant adds a message to the environment."""
             # NOTE: message from `user` are not stored in the memory
 
+            def create_and_cache_message():
+                """Create message and update cache."""
+                new_message = hub_client.beta.threads.messages.create(
+                    thread_id=thread_id,
+                    role="assistant",
+                    content=message,
+                    extra_body={
+                        "assistant_id": self.get_primary_agent().identifier,
+                        "run_id": self._run_id,
+                    },
+                    attachments=attachments,
+                    metadata={"message_type": message_type} if message_type else None,
+                )
+                # Update cache for main thread
+                if (
+                    thread_id == self._thread_id
+                    and self._messages_cache_initialized
+                    and self._messages_cache is not None
+                ):
+                    self._messages_cache.append(new_message)
+                return new_message
+
             if self._debug_mode and not message_type:
                 self.add_chat_log("assistant", message)
-            
-            new_message = hub_client.beta.threads.messages.create(
-                thread_id=thread_id,
-                role="assistant",
-                content=message,
-                extra_body={
-                    "assistant_id": self.get_primary_agent().identifier,
-                    "run_id": self._run_id,
-                },
-                attachments=attachments,
-                metadata={"message_type": message_type} if message_type else None,
-            )
-            
-            # Update cache if this message is added to the main thread
-            if (thread_id == self._thread_id and 
-                self._messages_cache_initialized and 
-                self._messages_cache is not None):
-                # Add new message to the end of the cache (most recent)
-                self._messages_cache.append(new_message)
-            
-            return new_message
+
+            return self._execute_sync_or_async(create_and_cache_message)
 
         self.add_reply = add_reply
-
-        async def add_reply_async(
-            message: str,
-            attachments: Optional[Iterable[Attachment]] = None,
-            message_type: Optional[str] = None,
-            thread_id: str = self._thread_id,
-        ):
-            """Assistant adds a message to the environment asynchronously."""
-            # NOTE: message from `user` are not stored in the memory
-
-            if self._debug_mode and not message_type:
-                self.add_chat_log("assistant", message)
-            return await self.async_openai.beta.threads.messages.create(
-                thread_id=thread_id,
-                role="assistant",
-                content=message,
-                extra_body={
-                    "assistant_id": self.get_primary_agent().identifier,
-                    "run_id": self._run_id,
-                },
-                attachments=attachments,
-                metadata={"message_type": message_type} if message_type else None,
-            )
-
-        self.add_reply_async = add_reply_async
 
         def get_thread(thread_id=self._thread_id):
             """Returns the current Thread object or the requested Thread."""
@@ -712,53 +706,35 @@ class Environment(object):
             attachments: Optional[Iterable[Attachment]] = None,
             **kwargs: Any,
         ):
+            """Add a message to the thread."""
+
+            def create_and_cache_message():
+                """Create message and update cache."""
+                new_message = hub_client.beta.threads.messages.create(
+                    thread_id=self._thread_id,
+                    role=role,  # type: ignore
+                    content=message,
+                    extra_body={
+                        "assistant_id": self.get_primary_agent().identifier,
+                        "run_id": self._run_id,
+                    },
+                    metadata=kwargs,
+                    attachments=attachments,
+                )
+
+                # Update cache when adding messages to the main thread
+                if self._messages_cache_initialized and self._messages_cache is not None:
+                    # Add new message to the end of the cache (most recent)
+                    self._messages_cache.append(new_message)
+
+                return new_message
+
             if self._debug_mode:
                 self.add_chat_log(role, message)
 
-            new_message = hub_client.beta.threads.messages.create(
-                thread_id=self._thread_id,
-                role=role,  # type: ignore
-                content=message,
-                extra_body={
-                    "assistant_id": self.get_primary_agent().identifier,
-                    "run_id": self._run_id,
-                },
-                metadata=kwargs,
-                attachments=attachments,
-            )
-            
-            # Update cache when adding messages to the main thread
-            if (self._messages_cache_initialized and 
-                self._messages_cache is not None):
-                # Add new message to the end of the cache (most recent)
-                self._messages_cache.append(new_message)
-            
-            return new_message
+            return self._execute_sync_or_async(create_and_cache_message)
 
         self._add_message = _add_message
-
-        async def _add_message_async(
-            role: str,
-            message: str,
-            attachments: Optional[Iterable[Attachment]] = None,
-            **kwargs: Any,
-        ):
-            if self._debug_mode:
-                self.add_chat_log(role, message)
-
-            return await self.async_openai.beta.threads.messages.create(
-                thread_id=self._thread_id,
-                role=role,  # type: ignore
-                content=message,
-                extra_body={
-                    "assistant_id": self.get_primary_agent().identifier,
-                    "run_id": self._run_id,
-                },
-                metadata=kwargs,
-                attachments=attachments,
-            )
-
-        self._add_message_async = _add_message_async
 
         def _list_messages(
             limit: Union[int, NotGiven] = LIST_MESSAGES_LIMIT,
@@ -768,9 +744,11 @@ class Environment(object):
             """Returns messages from the environment."""
             # Use cache if available and we're querying the same thread
             target_thread_id = thread_id or self._thread_id
-            if (self._messages_cache_initialized and 
-                self._messages_cache is not None and 
-                target_thread_id == self._thread_id):
+            if (
+                self._messages_cache_initialized
+                and self._messages_cache is not None
+                and target_thread_id == self._thread_id
+            ):
                 # Return cached messages, applying limit and order
                 cached_messages = self._messages_cache.copy()
                 if order == "desc":
@@ -779,13 +757,11 @@ class Environment(object):
                     cached_messages = cached_messages[:limit]
                 self.add_system_log(f"Retrieved {len(cached_messages)} messages from cache")
                 return cached_messages
-            
+
             # Fetch from API
-            messages = hub_client.beta.threads.messages.list(
-                thread_id=target_thread_id, limit=limit, order=order
-            )
+            messages = hub_client.beta.threads.messages.list(thread_id=target_thread_id, limit=limit, order=order)
             self.add_system_log(f"Retrieved {len(messages.data)} messages from NEAR AI Hub")
-            
+
             # Cache messages if this is for the main thread
             if target_thread_id == self._thread_id:
                 # Store in ascending order for consistency
@@ -794,7 +770,7 @@ class Environment(object):
                 else:
                     self._messages_cache = messages.data.copy()
                 self._messages_cache_initialized = True
-            
+
             return messages.data
 
         self._list_messages = _list_messages
@@ -840,98 +816,11 @@ class Environment(object):
             filetype: The MIME type of the file (default is text/plain)
             write_to_disk: If True, write locally to disk (default is True)
             """
-            if write_to_disk:
-                # Write locally
-                path = Path(self.get_primary_agent_temp_dir()) / filename
-                path.parent.mkdir(parents=True, exist_ok=True)
-                if isinstance(content, bytes):
-                    with open(path, "wb") as f:
-                        f.write(content)
-                else:
-                    with open(path, "w", encoding=encoding) as f:
-                        f.write(content)
 
-            if isinstance(content, bytes):
-                file_data = content
-            else:
-                file_data = io.BytesIO(content.encode(encoding))  # type:ignore
-
-            # Upload to Hub
-            file = hub_client.files.create(file=(filename, file_data, filetype), purpose="assistants")
-            self.add_reply(
-                message=f"Output file: {filename}",
-                attachments=[{"file_id": file.id}],
-                message_type="system:output_file",
-            )
-            if logging:
-                self.add_system_log(f"Uploaded file {filename} with {len(content)} characters, id: {file.id}")
-            return file
-
-        self.write_file = write_file
-
-        async def write_file_async(
-            filename: str,
-            content: Union[str, bytes],
-            encoding: Union[str, None] = "utf-8",
-            filetype: str = "text/plain",
-            write_to_disk: bool = True,
-            logging: bool = True,
-        ) -> FileObject:
-            """Writes a file to the environment asynchronously.
-
-            filename: The name of the file to write to
-            content: The content to write to the file
-            encoding: The encoding to use when writing the file (default is utf-8)
-            filetype: The MIME type of the file (default is text/plain)
-            write_to_disk: If True, write locally to disk (default is True)
-            """
-            if write_to_disk:
-                # Write locally
-                path = Path(self.get_primary_agent_temp_dir()) / filename
-                path.parent.mkdir(parents=True, exist_ok=True)
-                if isinstance(content, bytes):
-                    with open(path, "wb") as f:
-                        f.write(content)
-                else:
-                    with open(path, "w", encoding=encoding) as f:
-                        f.write(content)
-
-            if isinstance(content, bytes):
-                file_data = content
-            else:
-                file_data = io.BytesIO(content.encode(encoding))  # type:ignore
-
-            # Upload to Hub asynchronously
-            file = await self.async_openai.files.create(file=(filename, file_data, filetype), purpose="assistants")
-            await self.add_reply_async(
-                message=f"Output file: {filename}",
-                attachments=[{"file_id": file.id}],
-                message_type="system:output_file",
-            )
-            if logging:
-                self.add_system_log(f"Uploaded file {filename} with {len(content)} characters, id: {file.id}")
-            return file
-
-        self.write_file_async = write_file_async
-
-        async def write_files_async(
-            files: List[Tuple[str, Union[str, bytes], str, str]],  # [(filename, content, encoding, filetype)]
-            write_to_disk: bool = True,
-            logging: bool = True,
-        ) -> List[FileObject]:
-            """Write multiple files asynchronously for better performance.
-            
-            Args:
-                files: List of tuples containing (filename, content, encoding, filetype)
-                write_to_disk: If True, write locally to disk (default is True)
-                logging: If True, log file uploads (default is True)
-                
-            Returns:
-                List of FileObject instances
-            """
-            # Write all files to disk first (synchronous, fast operation)
-            if write_to_disk:
-                for filename, content, encoding, _ in files:
+            def create_and_upload_file():
+                """Create file locally and upload to Hub."""
+                if write_to_disk:
+                    # Write locally
                     path = Path(self.get_primary_agent_temp_dir()) / filename
                     path.parent.mkdir(parents=True, exist_ok=True)
                     if isinstance(content, bytes):
@@ -941,82 +830,28 @@ class Environment(object):
                         with open(path, "w", encoding=encoding) as f:
                             f.write(content)
 
-            # Prepare async tasks for file uploads and message creation
-            upload_tasks = []
-            for filename, content, encoding, filetype in files:
                 if isinstance(content, bytes):
                     file_data = content
                 else:
                     file_data = io.BytesIO(content.encode(encoding))  # type:ignore
-                
-                upload_tasks.append(
-                    self.async_openai.files.create(file=(filename, file_data, filetype), purpose="assistants")
+
+                # Upload to Hub
+                file = hub_client.files.create(file=(filename, file_data, filetype), purpose="assistants")
+
+                self.add_reply(
+                    message=f"Output file: {filename}",
+                    attachments=[{"file_id": file.id}],
+                    message_type="system:output_file",
                 )
-            
-            # Execute all file uploads concurrently
-            uploaded_files = await asyncio.gather(*upload_tasks)
-            
-            # Create messages for all uploaded files concurrently
-            message_tasks = []
-            for file in uploaded_files:
-                message_tasks.append(
-                    self.add_reply_async(
-                        message=f"Output file: {file.filename}",
-                        attachments=[{"file_id": file.id}],
-                        message_type="system:output_file",
-                    )
-                )
-            
-            # Execute all message creation concurrently
-            await asyncio.gather(*message_tasks)
-            
-            # Log all uploads
-            if logging:
-                for file, (filename, content, _, _) in zip(uploaded_files, files):
+
+                if logging:
                     self.add_system_log(f"Uploaded file {filename} with {len(content)} characters, id: {file.id}")
-            
-            return uploaded_files
 
-        self.write_files_async = write_files_async
+                return file
 
-        def write_files(
-            files: List[Tuple[str, Union[str, bytes], str, str]],  # [(filename, content, encoding, filetype)]
-            write_to_disk: bool = True,
-            logging: bool = True,
-            use_async: Optional[bool] = None,
-        ) -> List[FileObject]:
-            """Write multiple files with optional async execution for better performance.
-            
-            Args:
-                files: List of tuples containing (filename, content, encoding, filetype)
-                write_to_disk: If True, write locally to disk (default is True)
-                logging: If True, log file uploads (default is True)
-                use_async: If True, use async execution; if None, use environment setting
-                
-            Returns:
-                List of FileObject instances
-            """
-            if use_async is None:
-                use_async = self._async_api_calls
-                
-            if use_async and len(files) > 1:  # Only use async for multiple files
-                try:
-                    result = self._run_async_safely(
-                        self.write_files_async(files, write_to_disk, logging)
-                    )
-                    if result is not None:
-                        return result
-                except Exception as e:
-                    self.add_system_log(f"Async file writing failed, falling back to sync: {e}", logging.WARNING)
-            
-            # Fall back to synchronous implementation
-            uploaded_files = []
-            for filename, content, encoding, filetype in files:
-                file = self.write_file(filename, content, encoding, filetype, write_to_disk, logging)
-                uploaded_files.append(file)
-            return uploaded_files
+            return self._execute_sync_or_async(create_and_upload_file)
 
-        self.write_files = write_files
+        self.write_file = write_file
 
         def mark_done() -> None:  # noqa: D102
             hub_client.beta.threads.runs.update(
@@ -1112,19 +947,6 @@ class Environment(object):
         role = "assistant"
 
         return self._add_message(role, message, attachments, **kwargs)
-
-    async def add_message_async(
-        self,
-        role: str,
-        message: str,
-        attachments: Optional[Iterable[Attachment]] = None,
-        **kwargs: Any,
-    ):
-        """Deprecated. Please use `add_reply_async` instead. Assistant adds a message to the environment asynchronously."""
-        # Prevent agent to save messages on behalf of `user` to avoid adding false memory
-        role = "assistant"
-
-        return await self._add_message_async(role, message, attachments, **kwargs)
 
     def add_system_log(self, log: str, level: int = logging.INFO) -> None:
         """Add system log with timestamp and log level."""
@@ -1538,133 +1360,6 @@ class Environment(object):
                             name=function_name,
                         )
 
-    async def _handle_tool_calls_async(
-        self,
-        response_message,
-        add_responses_to_messages,
-        agent_role_name,
-        tool_role_name,
-    ):
-        """Handle tool calls asynchronously, processing message creation concurrently."""
-        (message_without_tool_call, tool_calls) = self._parse_tool_call(response_message)
-        
-        # Handle initial message
-        initial_message_task = None
-        if add_responses_to_messages and response_message.content:
-            initial_message_task = self.add_message_async(agent_role_name, message_without_tool_call)
-        
-        if tool_calls:
-            # Collect all async tasks for tool call message creation
-            message_creation_tasks = []
-            
-            for tool_call in tool_calls:
-                function_name = tool_call.function.name
-                try:
-                    assert function_name, "Tool call must have a function name"
-                    function_signature = self.get_tool_registry().get_tool_definition(function_name)
-                    assert function_signature, f"Tool {function_name} not found"
-                    args = tool_call.function.arguments
-                    function_args = tool_json_helper.parse_json_args(function_signature, args)
-                    self.add_system_log(f"Calling tool {function_name} with args {function_args}")
-                    function_response = self._tools.call_tool(function_name, **function_args if function_args else {})
-
-                    if function_response:
-                        try:
-                            function_response_json = json.dumps(function_response) if function_response else ""
-                            if add_responses_to_messages:
-                                # Add to list of tasks to run concurrently
-                                message_creation_tasks.append(
-                                    self.add_message_async(
-                                        tool_role_name,
-                                        function_response_json,
-                                        tool_call_id=tool_call.id,
-                                        name=function_name,
-                                    )
-                                )
-                        except Exception as e:
-                            # some tool responses may not be serializable
-                            error_message = f"Unable to add tool output as a message {function_name}: {e}"
-                            self.add_system_log(error_message, level=logging.INFO)
-                except Exception as e:
-                    error_message = f"Error calling tool {function_name}: {e}"
-                    self.add_system_log(error_message, level=logging.ERROR)
-                    if add_responses_to_messages:
-                        # Add error message task
-                        message_creation_tasks.append(
-                            self.add_message_async(
-                                tool_role_name,
-                                error_message,
-                                tool_call_id=tool_call.id,
-                                name=function_name,
-                            )
-                        )
-            
-            # Execute all message creation tasks concurrently
-            all_tasks = []
-            if initial_message_task:
-                all_tasks.append(initial_message_task)
-            all_tasks.extend(message_creation_tasks)
-            
-            if all_tasks:
-                await asyncio.gather(*all_tasks, return_exceptions=True)
-
-    def _run_async_safely(self, coro: Awaitable) -> Any:
-        """Run an async coroutine safely, handling event loop creation if needed."""
-        try:
-            # Try to get the current event loop
-            loop = asyncio.get_running_loop()
-            # If we're already in an event loop, we can't use asyncio.run()
-            # We need to create a task and wait for it
-            import concurrent.futures
-            import threading
-            
-            def run_in_thread():
-                # Create a new event loop in a separate thread
-                new_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(new_loop)
-                try:
-                    return new_loop.run_until_complete(coro)
-                finally:
-                    new_loop.close()
-            
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(run_in_thread)
-                return future.result(timeout=30)  # 30 second timeout
-                
-        except RuntimeError:
-            # No event loop running, create a new one
-            return asyncio.run(coro)
-        except Exception as e:
-            self.add_system_log(f"Failed to run async operation: {e}", logging.ERROR)
-            return None
-
-    def _handle_tool_calls_with_async_option(
-        self,
-        response_message,
-        add_responses_to_messages,
-        agent_role_name,
-        tool_role_name,
-        use_async: Optional[bool] = None,
-    ):
-        """Handle tool calls with optional async execution for better performance."""
-        if use_async is None:
-            use_async = self._async_api_calls
-            
-        if use_async:
-            try:
-                result = self._run_async_safely(
-                    self._handle_tool_calls_async(
-                        response_message, add_responses_to_messages, agent_role_name, tool_role_name
-                    )
-                )
-                if result is not None:
-                    return result
-            except Exception as e:
-                self.add_system_log(f"Async tool handling failed, falling back to sync: {e}", logging.WARNING)
-        
-        # Fall back to original synchronous implementation
-        return self._handle_tool_calls(response_message, add_responses_to_messages, agent_role_name, tool_role_name)
-
     @staticmethod
     def _parse_tool_call(
         response_message,
@@ -1937,7 +1632,7 @@ class Environment(object):
                     self.analytics_collector.upload(thread_dir=self.get_primary_agent_temp_dir())
                 except Exception as e:
                     print(f"Failed to upload analytics data: {e}")
-            
+
             # Invalidate message cache when run ends (whether successful or failed)
             self._invalidate_message_cache()
 
