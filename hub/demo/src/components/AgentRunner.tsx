@@ -79,6 +79,12 @@ type RunView = 'conversation' | 'output' | undefined;
 
 type FormSchema = Pick<z.infer<typeof chatWithAgentModel>, 'new_message'>;
 
+const DEBUG_FILES = [
+  'runner_log.txt',
+  'system_log.txt',
+  'chat_history_log.txt',
+];
+
 export type AgentChatMutationInput = FormSchema &
   Partial<z.infer<typeof chatWithAgentModel>>;
 
@@ -681,6 +687,15 @@ export const AgentRunner = ({
     };
   }, [chatMutation.mutateAsync, setAddMessage]);
 
+  const outputFiles = useMemo(
+    () =>
+      showLogs
+        ? files.outputs
+        : files.outputs.filter((file) => !DEBUG_FILES.includes(file.filename)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [showLogs, files.outputs.length],
+  );
+
   if (!currentEntry) {
     if (showLoadingPlaceholder) return <PlaceholderSection />;
     return null;
@@ -948,9 +963,9 @@ export const AgentRunner = ({
                 <PlaceholderStack />
               ) : (
                 <>
-                  {files.outputs.length ? (
+                  {outputFiles.length ? (
                     <CardList>
-                      {files.outputs.map((file) => (
+                      {outputFiles.map((file) => (
                         <Card
                           padding="s"
                           gap="s"
