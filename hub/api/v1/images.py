@@ -38,7 +38,7 @@ class FireworksImageGenerator:
 
         """
         if kwargs.get("model"):
-            model = kwargs.get("model")
+            model = kwargs.get("model", "")
             model = model.split("/")[-1]
             self.inference_client = ImageInference(model=model)
 
