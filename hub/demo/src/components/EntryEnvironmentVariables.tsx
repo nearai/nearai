@@ -110,188 +110,192 @@ export const EntryEnvironmentVariables = ({
       {variables.length > 0 ? (
         <Sidebar.SidebarContentBleed>
           <CardList>
-            {variables.map((variable) => (
-              <Card
-                padding="s"
-                paddingInline="m"
-                gap="s"
-                background="sand-2"
-                key={variable.key}
-              >
-                <Flex align="baseline" gap="s">
-                  <Tooltip content="Copy to clipboard">
-                    <Text
-                      size="text-s"
-                      weight={500}
-                      color="sand-12"
-                      forceWordBreak
-                      indicateParentClickable
-                      onClick={() => copyTextToClipboard(variable.key)}
-                    >
-                      {variable.key}
-                    </Text>
-                  </Tooltip>
+            {variables
+              .filter((variable) => variable.key !== 'DEBUG')
+              .map((variable) => (
+                <Card
+                  padding="s"
+                  paddingInline="m"
+                  gap="s"
+                  background="sand-2"
+                  key={variable.key}
+                >
+                  <Flex align="baseline" gap="s">
+                    <Tooltip content="Copy to clipboard">
+                      <Text
+                        size="text-s"
+                        weight={500}
+                        color="sand-12"
+                        forceWordBreak
+                        indicateParentClickable
+                        onClick={() => copyTextToClipboard(variable.key)}
+                      >
+                        {variable.key}
+                      </Text>
+                    </Tooltip>
 
-                  <Flex
-                    gap="xs"
-                    style={{
-                      position: 'relative',
-                      top: '0.15rem',
-                      marginLeft: 'auto',
-                    }}
-                  >
-                    {variable.secret && (
+                    <Flex
+                      gap="xs"
+                      style={{
+                        position: 'relative',
+                        top: '0.15rem',
+                        marginLeft: 'auto',
+                      }}
+                    >
+                      {variable.secret && (
+                        <Tooltip
+                          asChild
+                          content={`${revealedSecretKeys.includes(variable.key) ? 'Hide' : 'Show'} secret`}
+                        >
+                          <Button
+                            label="Show/Hide Secret"
+                            icon={
+                              revealedSecretKeys.includes(variable.key) ? (
+                                <EyeSlash />
+                              ) : (
+                                <Eye />
+                              )
+                            }
+                            size="x-small"
+                            fill="ghost"
+                            variant="primary"
+                            onClick={() => {
+                              toggleRevealSecret(variable.key);
+                            }}
+                          />
+                        </Tooltip>
+                      )}
+
                       <Tooltip
                         asChild
-                        content={`${revealedSecretKeys.includes(variable.key) ? 'Hide' : 'Show'} secret`}
+                        content={
+                          variable.secret
+                            ? 'Edit secret'
+                            : 'Configure as secret'
+                        }
                       >
                         <Button
-                          label="Show/Hide Secret"
-                          icon={
-                            revealedSecretKeys.includes(variable.key) ? (
-                              <EyeSlash />
-                            ) : (
-                              <Eye />
-                            )
-                          }
+                          label="Configure Secret"
+                          icon={<Pencil />}
                           size="x-small"
                           fill="ghost"
                           variant="primary"
                           onClick={() => {
-                            toggleRevealSecret(variable.key);
+                            setSelectedVariable(variable);
+                            setSecretModalIsOpen(true);
                           }}
                         />
                       </Tooltip>
-                    )}
-
-                    <Tooltip
-                      asChild
-                      content={
-                        variable.secret ? 'Edit secret' : 'Configure as secret'
-                      }
-                    >
-                      <Button
-                        label="Configure Secret"
-                        icon={<Pencil />}
-                        size="x-small"
-                        fill="ghost"
-                        variant="primary"
-                        onClick={() => {
-                          setSelectedVariable(variable);
-                          setSecretModalIsOpen(true);
-                        }}
-                      />
-                    </Tooltip>
+                    </Flex>
                   </Flex>
-                </Flex>
 
-                {variable.metadataValue && (
-                  <Flex align="baseline" gap="s">
-                    <Tooltip content={descriptionForMetadataValue(variable)}>
-                      <SvgIcon
-                        style={{
-                          position: 'relative',
-                          top: '0.15rem',
-                          cursor: 'help',
-                        }}
-                        icon={<CodeBlock />}
-                        color="sand-10"
-                        size="xs"
-                      />
-                    </Tooltip>
+                  {variable.metadataValue && (
+                    <Flex align="baseline" gap="s">
+                      <Tooltip content={descriptionForMetadataValue(variable)}>
+                        <SvgIcon
+                          style={{
+                            position: 'relative',
+                            top: '0.15rem',
+                            cursor: 'help',
+                          }}
+                          icon={<CodeBlock />}
+                          color="sand-10"
+                          size="xs"
+                        />
+                      </Tooltip>
 
-                    <Tooltip content="Copy to clipboard">
-                      <Text
-                        size="text-xs"
-                        family="monospace"
-                        forceWordBreak
-                        indicateParentClickable
-                        onClick={() =>
-                          copyTextToClipboard(variable?.metadataValue ?? '')
-                        }
-                        style={{
-                          textDecoration:
-                            (variable.urlValue ?? variable.secret)
+                      <Tooltip content="Copy to clipboard">
+                        <Text
+                          size="text-xs"
+                          family="monospace"
+                          forceWordBreak
+                          indicateParentClickable
+                          onClick={() =>
+                            copyTextToClipboard(variable?.metadataValue ?? '')
+                          }
+                          style={{
+                            textDecoration:
+                              (variable.urlValue ?? variable.secret)
+                                ? 'line-through'
+                                : undefined,
+                          }}
+                        >
+                          {variable.metadataValue}
+                        </Text>
+                      </Tooltip>
+                    </Flex>
+                  )}
+
+                  {variable.urlValue && (
+                    <Flex align="baseline" gap="s">
+                      <Tooltip content={descriptionForUrlValue(variable)}>
+                        <SvgIcon
+                          style={{
+                            position: 'relative',
+                            top: '0.15rem',
+                            cursor: 'help',
+                          }}
+                          icon={<LinkSimple />}
+                          color="sand-10"
+                          size="xs"
+                        />
+                      </Tooltip>
+
+                      <Tooltip content="Copy to clipboard">
+                        <Text
+                          size="text-xs"
+                          family="monospace"
+                          forceWordBreak
+                          indicateParentClickable
+                          onClick={() =>
+                            copyTextToClipboard(variable?.urlValue ?? '')
+                          }
+                          style={{
+                            textDecoration: variable.secret
                               ? 'line-through'
                               : undefined,
-                        }}
-                      >
-                        {variable.metadataValue}
-                      </Text>
-                    </Tooltip>
-                  </Flex>
-                )}
+                          }}
+                        >
+                          {variable.urlValue}
+                        </Text>
+                      </Tooltip>
+                    </Flex>
+                  )}
 
-                {variable.urlValue && (
-                  <Flex align="baseline" gap="s">
-                    <Tooltip content={descriptionForUrlValue(variable)}>
-                      <SvgIcon
-                        style={{
-                          position: 'relative',
-                          top: '0.15rem',
-                          cursor: 'help',
-                        }}
-                        icon={<LinkSimple />}
-                        color="sand-10"
-                        size="xs"
-                      />
-                    </Tooltip>
+                  {variable.secret && (
+                    <Flex align="baseline" gap="s">
+                      <Tooltip content="Value you've configured as a secret.">
+                        <SvgIcon
+                          style={{
+                            position: 'relative',
+                            top: '0.15rem',
+                            cursor: 'help',
+                          }}
+                          icon={<LockKey />}
+                          color="sand-10"
+                          size="xs"
+                        />
+                      </Tooltip>
 
-                    <Tooltip content="Copy to clipboard">
-                      <Text
-                        size="text-xs"
-                        family="monospace"
-                        forceWordBreak
-                        indicateParentClickable
-                        onClick={() =>
-                          copyTextToClipboard(variable?.urlValue ?? '')
-                        }
-                        style={{
-                          textDecoration: variable.secret
-                            ? 'line-through'
-                            : undefined,
-                        }}
-                      >
-                        {variable.urlValue}
-                      </Text>
-                    </Tooltip>
-                  </Flex>
-                )}
-
-                {variable.secret && (
-                  <Flex align="baseline" gap="s">
-                    <Tooltip content="Value you've configured as a secret.">
-                      <SvgIcon
-                        style={{
-                          position: 'relative',
-                          top: '0.15rem',
-                          cursor: 'help',
-                        }}
-                        icon={<LockKey />}
-                        color="sand-10"
-                        size="xs"
-                      />
-                    </Tooltip>
-
-                    <Tooltip content="Copy to clipboard">
-                      <Text
-                        size="text-xs"
-                        family="monospace"
-                        forceWordBreak
-                        indicateParentClickable
-                        onClick={() =>
-                          copyTextToClipboard(variable.secret?.value ?? '')
-                        }
-                      >
-                        {revealedSecretKeys.includes(variable.key)
-                          ? variable.secret.value
-                          : '*****'}
-                      </Text>
-                    </Tooltip>
-                  </Flex>
-                )}
-              </Card>
-            ))}
+                      <Tooltip content="Copy to clipboard">
+                        <Text
+                          size="text-xs"
+                          family="monospace"
+                          forceWordBreak
+                          indicateParentClickable
+                          onClick={() =>
+                            copyTextToClipboard(variable.secret?.value ?? '')
+                          }
+                        >
+                          {revealedSecretKeys.includes(variable.key)
+                            ? variable.secret.value
+                            : '*****'}
+                        </Text>
+                      </Tooltip>
+                    </Flex>
+                  )}
+                </Card>
+              ))}
           </CardList>
         </Sidebar.SidebarContentBleed>
       ) : (

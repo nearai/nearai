@@ -13,6 +13,7 @@ import {
   openToast,
   PlaceholderSection,
   PlaceholderStack,
+  Switch,
   Text,
   Tooltip,
 } from '@nearai/ui';
@@ -22,7 +23,6 @@ import {
   CodeBlock,
   Eye,
   Folder,
-  Info,
   List,
 } from '@phosphor-icons/react';
 import { Paperclip, X } from '@phosphor-icons/react/dist/ssr';
@@ -50,7 +50,11 @@ import { ThreadMessages } from '@/components/threads/ThreadMessages';
 import { ThreadsSidebar } from '@/components/threads/ThreadsSidebar';
 import { useAgentRequestsWithIframe } from '@/hooks/agent-iframe-requests';
 import { useConsumerModeEnabled } from '@/hooks/consumer';
-import { useCurrentEntry, useEntryEnvironmentVariables } from '@/hooks/entries';
+import {
+  useCurrentEntry,
+  useCurrentEntryParams,
+  useEntryEnvironmentVariables,
+} from '@/hooks/entries';
 import { useQueryParams } from '@/hooks/url';
 import { rawFileUrlForEntry, sourceUrlForEntry } from '@/lib/entries';
 import { threadFileModel } from '@/lib/models';
@@ -99,7 +103,6 @@ export const AgentRunner = ({
 
   const auth = useAuthStore((store) => store.auth);
   const { queryParams, updateQueryPath } = useQueryParams([
-    'showLogs',
     'threadId',
     'theme',
     'view',
@@ -113,7 +116,6 @@ export const AgentRunner = ({
   );
   const utils = trpc.useUtils();
   const threadId = queryParams.threadId ?? '';
-  const showLogs = queryParams.showLogs === 'true';
 
   const form = useForm<FormSchema>();
 
@@ -143,6 +145,7 @@ export const AgentRunner = ({
   const initialUserMessageSent = useRef(false);
   const chatMutationThreadId = useRef('');
   const chatMutationStartedAt = useRef<Date | null>(null);
+  const debugInitialized = useRef(false);
   const setThread = useThreadsStore((store) => store.setThread);
   const threadsById = useThreadsStore((store) => store.threadsById);
   const setAddMessage = useThreadsStore((store) => store.setAddMessage);
@@ -150,6 +153,15 @@ export const AgentRunner = ({
   const thread = threadsById[chatMutationThreadId.current || threadId];
   const [stream, setStream] = useState<EventSource | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [debug, setDebug] = useState(true);
+  const [isSavingSecret, setIsSavingSecret] = useState(false);
+  const addMutation = trpc.hub.addSecret.useMutation();
+  const params = useCurrentEntryParams();
+
+  const { variables } = useEntryEnvironmentVariables(
+    currentEntry,
+    Object.keys(queryParams),
+  );
 
   const _chatMutation = trpc.hub.chatWithAgent.useMutation();
   const chatMutation = useMutation({
@@ -224,13 +236,13 @@ export const AgentRunner = ({
       ...optimisticMessages.map((message) => message.data),
     ].filter(
       (message) =>
-        showLogs ||
+        debug ||
         !(
           message.metadata?.message_type?.startsWith('system:') ||
           message.metadata?.message_type?.startsWith('agent:log')
         ),
     );
-  }, [thread, optimisticMessages, showLogs]);
+  }, [thread, optimisticMessages, debug]);
 
   const files = useMemo(() => {
     const all = thread ? Object.values(thread.filesById) : [];
@@ -471,7 +483,6 @@ export const AgentRunner = ({
     updateQueryPath({
       threadId: null,
       view: null,
-      showLogs: null,
       initialUserMessage: null,
     });
     clearOptimisticMessages();
@@ -681,6 +692,81 @@ export const AgentRunner = ({
     };
   }, [chatMutation.mutateAsync, setAddMessage]);
 
+  const saveSecretAndRefetch = useCallback(
+    async (data: { key: string; value: string }) => {
+      if (!currentEntry || isSavingSecret) return;
+
+      try {
+        setIsSavingSecret(true);
+
+        await addMutation.mutateAsync({
+          category: currentEntry.category,
+          key: data.key,
+          name: currentEntry.name,
+          namespace: currentEntry.namespace,
+          value: data.value,
+          version: params.version || currentEntry.version,
+        });
+
+        await utils.hub.secrets.invalidate();
+
+        openToast({
+          type: 'success',
+          title: 'Setting saved',
+          description: `${data.key} has been updated successfully`,
+        });
+      } catch (error) {
+        handleClientError({
+          error,
+          title: 'Failed to save setting',
+          description: `Could not update ${data.key}`,
+        });
+      } finally {
+        setIsSavingSecret(false);
+      }
+    },
+    [
+      currentEntry,
+      params.version,
+      addMutation,
+      utils.hub.secrets,
+      isSavingSecret,
+    ],
+  );
+
+  useEffect(() => {
+    const initializeDebugMode = async () => {
+      if (!currentEntry || debugInitialized.current) return;
+
+      debugInitialized.current = true;
+
+      const debugVariable = variables.find(
+        (variable) => variable.key === 'DEBUG',
+      );
+
+      if (debugVariable && debugVariable.secret) {
+        const debug = debugVariable.secret.value === 'true';
+        setDebug(debug);
+        console.log(`Debug mode is ${debug ? 'enabled' : 'disabled'}`);
+      } else {
+        await saveSecretAndRefetch({
+          key: 'DEBUG',
+          value: 'true',
+        });
+      }
+    };
+
+    void initializeDebugMode();
+  }, [currentEntry, variables, saveSecretAndRefetch]);
+
+  const onDebugChange = async (checked: boolean) => {
+    setDebug(checked);
+    await saveSecretAndRefetch({
+      key: 'DEBUG',
+      value: checked ? 'true' : 'false',
+    });
+  };
+
   if (!currentEntry) {
     if (showLoadingPlaceholder) return <PlaceholderSection />;
     return null;
@@ -864,31 +950,6 @@ export const AgentRunner = ({
                           </Tooltip>
                         )}
 
-                        <Tooltip
-                          asChild
-                          content={
-                            showLogs ? 'Hide system logs' : 'Show system logs'
-                          }
-                        >
-                          <Button
-                            label={logMessages.length.toString()}
-                            iconLeft={
-                              <Info weight={showLogs ? 'fill' : 'regular'} />
-                            }
-                            size="small"
-                            variant="secondary"
-                            fill="ghost"
-                            style={{ paddingInline: '0.5rem' }}
-                            onClick={() =>
-                              updateQueryPath(
-                                { showLogs: showLogs ? undefined : 'true' },
-                                'replace',
-                                false,
-                              )
-                            }
-                          />
-                        </Tooltip>
-
                         {consumerModeEnabled && !embedded && (
                           <Tooltip asChild content="Inspect agent source">
                             <Button
@@ -940,6 +1001,21 @@ export const AgentRunner = ({
         >
           <Flex direction="column" gap="l">
             <Flex direction="column" gap="m">
+              <Text size="text-xs" weight={600} uppercase>
+                Debug Mode
+              </Text>
+
+              <Switch
+                checked={debug}
+                onCheckedChange={onDebugChange}
+                disabled={isSavingSecret}
+              />
+
+              <Text size="text-s" color="sand-10">
+                {debug
+                  ? `Showing ${logMessages.length} debug messages and files`
+                  : 'Debug logs hidden'}
+              </Text>
               <Text size="text-xs" weight={600} uppercase>
                 Output
               </Text>
