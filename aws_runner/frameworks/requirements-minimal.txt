@@ -61,6 +61,10 @@ python_dateutil >= 2.5.3
 # https://github.com/stub42/pytz
 pytz == 2024.2
 
+# Rich library for rich text and beautiful formatting in the terminal
+# https://github.com/Textualize/rich
+rich >= 13.7.1
+
 # Package development tools
 # https://github.com/pypa/setuptools
 setuptools >= 21.0.0
