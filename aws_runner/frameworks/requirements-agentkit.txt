@@ -79,6 +79,10 @@ python_dateutil >= 2.5.3
 # https://github.com/stub42/pytz
 pytz == 2024.2
 
+# Rich library for rich text and beautiful formatting in the terminal
+# https://github.com/Textualize/rich
+rich >= 13.7.1
+
 # NEAR Protocol Python SDK
 # https://github.com/pvolnov/py-near
 py-near >= 1.1.50

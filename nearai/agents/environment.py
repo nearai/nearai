@@ -168,9 +168,9 @@ class Environment(object):
         self._debug_mode = is_debug_mode(self.env_vars)
         self._async_api_calls = self.env_vars.get("ASYNC_API_CALLS", "true").lower() in ("true", "1", "yes", "on")
 
-        # Initialize message cache
+        # Initialize caches
         self._messages_cache: Optional[List[Message]] = None
-        self._messages_cache_initialized = False
+        self._files_from_thread_cache: Optional[List[FileObject]] = None
 
         # Initialize analytics collection if enabled
         self.logs_collection_mode = is_logs_collection_mode(self.env_vars)
@@ -708,11 +708,7 @@ class Environment(object):
                     metadata={"message_type": message_type} if message_type else None,
                 )
                 # Update cache for main thread
-                if (
-                    thread_id == self._thread_id
-                    and self._messages_cache_initialized
-                    and self._messages_cache is not None
-                ):
+                if thread_id == self._thread_id and self._messages_cache is not None:
                     self._messages_cache.append(new_message)
                 return new_message
 
@@ -752,7 +748,7 @@ class Environment(object):
                 )
 
                 # Update cache when adding messages to the main thread
-                if self._messages_cache_initialized and self._messages_cache is not None:
+                if self._messages_cache is not None:
                     # Add new message to the end of the cache (most recent)
                     self._messages_cache.append(new_message)
 
@@ -773,11 +769,7 @@ class Environment(object):
             """Returns messages from the environment."""
             # Use cache if available and we're querying the same thread
             target_thread_id = thread_id or self._thread_id
-            if (
-                self._messages_cache_initialized
-                and self._messages_cache is not None
-                and target_thread_id == self._thread_id
-            ):
+            if self._messages_cache is not None and target_thread_id == self._thread_id:
                 # Return cached messages, applying limit and order
                 cached_messages = self._messages_cache.copy()
                 if order == "desc":
@@ -798,22 +790,39 @@ class Environment(object):
                     self._messages_cache = list(reversed(messages.data))
                 else:
                     self._messages_cache = messages.data.copy()
-                self._messages_cache_initialized = True
 
             return messages.data
 
         self._list_messages = _list_messages
 
         def list_files_from_thread(
-            order: Literal["asc", "desc"] = "asc", thread_id: Optional[str] = None
+            order: Literal["asc", "desc"] = "desc", thread_id: Optional[str] = None
         ) -> List[FileObject]:
             """Lists files in the thread."""
-            messages = self._list_messages(order=order, thread_id=thread_id)
+            target_thread_id = thread_id or self._thread_id
+            if self._files_from_thread_cache is not None and target_thread_id == self._thread_id:
+                # Return cached files, applying order
+                files_from_thread_cache = self._files_from_thread_cache.copy()
+                if order == "asc":
+                    files_from_thread_cache.reverse()
+                self.add_system_log(f"Retrieved {len(files_from_thread_cache)} files from cache")
+                return files_from_thread_cache
+
+            messages = self._list_messages(order=order, thread_id=target_thread_id)
             # Extract attachments from messages
             attachments = [a for m in messages if m.attachments for a in m.attachments]
             # Extract files from attachments
             file_ids = [a.file_id for a in attachments]
             files = [hub_client.files.retrieve(f) for f in file_ids if f]
+
+            # Cache files if this is for the main thread
+            if target_thread_id == self._thread_id:
+                # Store in descending order by default
+                if order == "asc":
+                    self._files_from_thread_cache = list(reversed(files))
+                else:
+                    self._files_from_thread_cache = files.copy()
+
             return files
 
         self.list_files_from_thread = list_files_from_thread
@@ -894,10 +903,10 @@ class Environment(object):
 
         self.mark_done = mark_done
 
-        def _invalidate_message_cache() -> None:
-            """Invalidate the message cache."""
+        def _invalidate_caches() -> None:
+            """Invalidate caches."""
             self._messages_cache = None
-            self._messages_cache_initialized = False
+            self._files_from_thread_cache = None
 
         def mark_failed() -> None:
             """Deprecated. Do not use."""
@@ -921,7 +930,7 @@ class Environment(object):
 
         self.request_agent_input = request_agent_input
 
-        self._invalidate_message_cache = _invalidate_message_cache
+        self._invalidate_caches = _invalidate_caches
 
         # Must be placed after method definitions
         self.register_standard_tools()
@@ -1675,8 +1684,8 @@ class Environment(object):
                 except Exception as e:
                     print(f"Failed to upload analytics data: {e}")
 
-            # Invalidate message cache when run ends (whether successful or failed)
-            self._invalidate_message_cache()
+            # Invalidate caches when run ends (whether successful or failed)
+            self._invalidate_caches()
 
         if not self._pending_ext_agent:
             # If no external agent was called, mark the whole run as done.

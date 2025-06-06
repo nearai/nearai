@@ -6,6 +6,7 @@ import os
 import shutil
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from subprocess import call
 from typing import Optional
@@ -22,6 +23,7 @@ from nearai.shared.client_config import ClientConfig
 from nearai.shared.inference_client import InferenceClient
 from nearai.shared.near.sign import SignatureVerificationResult, verify_signed_message
 from nearai.shared.provider_models import PROVIDER_MODEL_SEP
+from openai import OpenAI
 
 # Initialize Datadog tracing
 if os.environ.get("DD_API_KEY"):
@@ -114,16 +116,18 @@ def handler(event, context):
     user_env_vars = params.get("user_env_vars", {})
     debug_mode = is_debug_mode(user_env_vars if user_env_vars else {})
 
+    api_url = str(params.get("api_url", DEFAULT_API_URL))
+    client_config = ClientConfig(
+        base_url=api_url + "/v1",
+        auth=auth,
+    )
+    hub_client = client_config.get_hub_client()
+
     if debug_mode:
-        start_runner_log(params, auth_object, thread_id)
+        start_runner_log(params, hub_client, thread_id)
 
     new_thread_id = run_with_environment(
-        agents,
-        auth_object,
-        thread_id,
-        run_id,
-        params=params,
-        runner_metrics=runner_metrics,
+        agents, auth_object, thread_id, run_id, params=params, runner_metrics=runner_metrics, hub_client=hub_client
     )
     if not new_thread_id:
         return f"Run not recorded. Ran {agents} agent(s)."
@@ -135,16 +139,12 @@ def handler(event, context):
     return new_thread_id
 
 
-def start_runner_log(params: dict, auth: AuthData, thread_id):
-    api_url = str(params.get("api_url", DEFAULT_API_URL))
-    client_config = ClientConfig(
-        base_url=api_url + "/v1",
-        auth=auth,
-    )
-    hub_client = client_config.get_hub_client()
-
+def start_runner_log(params: dict, hub_client: OpenAI, thread_id):
     existing_logger = logging.getLogger("runner_logger")
     existing_logger.handlers = []
+
+    # Thread pool for async operations
+    thread_pool = ThreadPoolExecutor(max_workers=2)
 
     def logger(log: str, level=logging.INFO):
         # NOTE: Do not call prints in this function.
@@ -166,25 +166,31 @@ def start_runner_log(params: dict, auth: AuthData, thread_id):
         for handler in logger.handlers:
             handler.flush()
 
-        log_path = RUNNER_LOG_PATH
-        if os.path.exists(log_path):
-            try:
-                with open(log_path, "r") as f:
-                    content = f.read()
-                # Only upload if there's content
-                if content:
-                    file = hub_client.files.create(
-                        file=(RUNNER_LOG_FILENAME, content, "text/plain"), purpose="assistants"
-                    )
-                    hub_client.beta.threads.messages.create(
-                        thread_id=thread_id,
-                        role="assistant",
-                        content=f"Output file: {RUNNER_LOG_FILENAME}",
-                        attachments=[{"file_id": file.id}],
-                        metadata={"message_type": "system:output_file"},
-                    )
-            except Exception:
-                pass
+        # Upload to hub asynchronously
+        def upload_log_async():
+            log_path = RUNNER_LOG_PATH
+            if os.path.exists(log_path):
+                try:
+                    with open(log_path, "r") as f:
+                        content = f.read()
+                    # Only upload if there's content
+                    if content:
+                        file = hub_client.files.create(
+                            file=(RUNNER_LOG_FILENAME, content, "text/plain"), purpose="assistants"
+                        )
+                        hub_client.beta.threads.messages.create(
+                            thread_id=thread_id,
+                            role="assistant",
+                            content=f"Output file: {RUNNER_LOG_FILENAME}",
+                            attachments=[{"file_id": file.id}],
+                            metadata={"message_type": "system:output_file"},
+                        )
+                except Exception:
+                    # Silently handle exceptions to avoid breaking the logger
+                    pass
+
+        # Submit the upload task to thread pool (fire and forget)
+        thread_pool.submit(upload_log_async)
 
     # Create a custom writer that logs and writes to buffer
     class LoggingWriter:
@@ -382,6 +388,7 @@ def start_with_environment(
     additional_path: str = "",
     params: Optional[dict] = None,
     print_system_log: bool = False,
+    hub_client: Optional[OpenAI] = None,
 ) -> EnvironmentRun:
     """Initializes environment for agent runs."""
     params = params or {}
@@ -469,7 +476,9 @@ def start_with_environment(
     else:
         inference_client.set_provider_models(provider_models_cache)
 
-    hub_client = client_config.get_hub_client()
+    if not hub_client:
+        hub_client = client_config.get_hub_client()
+    assert hub_client
 
     env = Environment(
         loaded_agents,
@@ -497,7 +506,10 @@ def run_with_environment(
     params: Optional[dict] = None,
     print_system_log: bool = False,
     runner_metrics: Optional[RunnerMetrics] = None,
+    hub_client: Optional[OpenAI] = None,
 ) -> Optional[str]:
     """Runs agent against environment fetched from id, optionally passing a new message to the environment."""
-    environment_run = start_with_environment(agents, auth, thread_id, run_id, additional_path, params, print_system_log)
+    environment_run = start_with_environment(
+        agents, auth, thread_id, run_id, additional_path, params, print_system_log, hub_client=hub_client
+    )
     return environment_run.run(new_message, runner_metrics=runner_metrics)
