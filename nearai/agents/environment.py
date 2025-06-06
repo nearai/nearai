@@ -1433,7 +1433,7 @@ class Environment(object):
         choices: List[Choices] = response.choices  # type: ignore
         response_message = choices[0].message
 
-        self._handle_tool_calls_with_async_option(response_message, add_responses_to_messages, agent_role_name, tool_role_name)
+        self._handle_tool_calls(response_message, add_responses_to_messages, agent_role_name, tool_role_name)
 
         return response
 
