@@ -531,7 +531,7 @@ def list_messages(
         # Determine if there are more messages
         has_more = len(messages) == limit
 
-        messages = _deduplicate_file_messages(messages)
+        messages = _deduplicate_file_messages(list(messages))
 
         if messages:
             first_id = messages[0].id
