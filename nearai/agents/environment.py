@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import io
 import json
@@ -7,6 +8,7 @@ import re
 import shutil
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -164,6 +166,11 @@ class Environment(object):
         self._thread_id = thread_id
         self._run_id = run_id
         self._debug_mode = is_debug_mode(self.env_vars)
+        self._async_api_calls = self.env_vars.get("ASYNC_API_CALLS", "true").lower() in ("true", "1", "yes", "on")
+
+        # Initialize caches
+        self._messages_cache: Optional[List[Message]] = None
+        self._files_from_thread_cache: Optional[List[FileObject]] = None
 
         # Initialize analytics collection if enabled
         self.logs_collection_mode = is_logs_collection_mode(self.env_vars)
@@ -633,6 +640,50 @@ class Environment(object):
 
         self.get_agent_data_by_key = get_agent_data_by_key
 
+        def _execute_sync_or_async(callback_func):
+            """Helper to execute callback with sync or async API based on configuration."""
+            if not self._async_api_calls:
+                callback_func()
+                return
+
+            # Execute in thread pool to avoid event loop conflicts
+            def run_in_thread():
+                return callback_func()
+
+            # Use a thread pool to avoid event loop issues
+            if not hasattr(self, "_thread_pool"):
+                self._thread_pool = ThreadPoolExecutor(max_workers=4)
+
+            future = self._thread_pool.submit(run_in_thread)
+
+            # Track the future instead of async tasks
+            if not hasattr(self, "_pending_futures"):
+                self._pending_futures = set()
+
+            self._pending_futures.add(future)
+
+            # Remove future when done
+            def remove_future(f):
+                self._pending_futures.discard(f)
+
+            future.add_done_callback(remove_future)
+
+            # Don't return anything - the future runs in background
+
+        self._execute_sync_or_async = _execute_sync_or_async
+
+        async def _await_pending_async_tasks():
+            """Await all pending async tasks."""
+            if not hasattr(self, "_pending_futures"):
+                return
+            try:
+                for future in list(self._pending_futures):
+                    future.result(timeout=10)  # Wait max 10 seconds per task
+            except Exception as e:
+                self.add_system_log(f"Error waiting for async tasks: {e}", logging.ERROR)
+
+        self._await_pending_async_tasks = _await_pending_async_tasks
+
         # HubClient methods
         def add_reply(
             message: str,
@@ -643,19 +694,28 @@ class Environment(object):
             """Assistant adds a message to the environment."""
             # NOTE: message from `user` are not stored in the memory
 
+            def create_and_cache_message():
+                """Create message and update cache."""
+                new_message = hub_client.beta.threads.messages.create(
+                    thread_id=thread_id,
+                    role="assistant",
+                    content=message,
+                    extra_body={
+                        "assistant_id": self.get_primary_agent().identifier,
+                        "run_id": self._run_id,
+                    },
+                    attachments=attachments,
+                    metadata={"message_type": message_type} if message_type else None,
+                )
+                # Update cache for main thread
+                if thread_id == self._thread_id and self._messages_cache is not None:
+                    self._messages_cache.append(new_message)
+                return new_message
+
             if self._debug_mode and not message_type:
                 self.add_chat_log("assistant", message)
-            return hub_client.beta.threads.messages.create(
-                thread_id=thread_id,
-                role="assistant",
-                content=message,
-                extra_body={
-                    "assistant_id": self.get_primary_agent().identifier,
-                    "run_id": self._run_id,
-                },
-                attachments=attachments,
-                metadata={"message_type": message_type} if message_type else None,
-            )
+
+            self._execute_sync_or_async(create_and_cache_message)
 
         self.add_reply = add_reply
 
@@ -671,20 +731,33 @@ class Environment(object):
             attachments: Optional[Iterable[Attachment]] = None,
             **kwargs: Any,
         ):
+            """Add a message to the thread."""
+
+            def create_and_cache_message():
+                """Create message and update cache."""
+                new_message = hub_client.beta.threads.messages.create(
+                    thread_id=self._thread_id,
+                    role=role,  # type: ignore
+                    content=message,
+                    extra_body={
+                        "assistant_id": self.get_primary_agent().identifier,
+                        "run_id": self._run_id,
+                    },
+                    metadata=kwargs,
+                    attachments=attachments,
+                )
+
+                # Update cache when adding messages to the main thread
+                if self._messages_cache is not None:
+                    # Add new message to the end of the cache (most recent)
+                    self._messages_cache.append(new_message)
+
+                return new_message
+
             if self._debug_mode:
                 self.add_chat_log(role, message)
 
-            return hub_client.beta.threads.messages.create(
-                thread_id=self._thread_id,
-                role=role,  # type: ignore
-                content=message,
-                extra_body={
-                    "assistant_id": self.get_primary_agent().identifier,
-                    "run_id": self._run_id,
-                },
-                metadata=kwargs,
-                attachments=attachments,
-            )
+            self._execute_sync_or_async(create_and_cache_message)
 
         self._add_message = _add_message
 
@@ -694,24 +767,62 @@ class Environment(object):
             thread_id: Optional[str] = None,
         ) -> List[Message]:
             """Returns messages from the environment."""
-            messages = hub_client.beta.threads.messages.list(
-                thread_id=thread_id or self._thread_id, limit=limit, order=order
-            )
+            # Use cache if available and we're querying the same thread
+            target_thread_id = thread_id or self._thread_id
+            if self._messages_cache is not None and target_thread_id == self._thread_id:
+                # Return cached messages, applying limit and order
+                cached_messages = self._messages_cache.copy()
+                if order == "desc":
+                    cached_messages.reverse()
+                if isinstance(limit, int):
+                    cached_messages = cached_messages[:limit]
+                self.add_system_log(f"Retrieved {len(cached_messages)} messages from cache")
+                return cached_messages
+
+            # Fetch from API
+            messages = hub_client.beta.threads.messages.list(thread_id=target_thread_id, limit=limit, order=order)
             self.add_system_log(f"Retrieved {len(messages.data)} messages from NEAR AI Hub")
+
+            # Cache messages if this is for the main thread
+            if target_thread_id == self._thread_id:
+                # Store in ascending order for consistency
+                if order == "desc":
+                    self._messages_cache = list(reversed(messages.data))
+                else:
+                    self._messages_cache = messages.data.copy()
+
             return messages.data
 
         self._list_messages = _list_messages
 
         def list_files_from_thread(
-            order: Literal["asc", "desc"] = "asc", thread_id: Optional[str] = None
+            order: Literal["asc", "desc"] = "desc", thread_id: Optional[str] = None
         ) -> List[FileObject]:
             """Lists files in the thread."""
-            messages = self._list_messages(order=order, thread_id=thread_id)
+            target_thread_id = thread_id or self._thread_id
+            if self._files_from_thread_cache is not None and target_thread_id == self._thread_id:
+                # Return cached files, applying order
+                files_from_thread_cache = self._files_from_thread_cache.copy()
+                if order == "asc":
+                    files_from_thread_cache.reverse()
+                self.add_system_log(f"Retrieved {len(files_from_thread_cache)} files from cache")
+                return files_from_thread_cache
+
+            messages = self._list_messages(order=order, thread_id=target_thread_id)
             # Extract attachments from messages
             attachments = [a for m in messages if m.attachments for a in m.attachments]
             # Extract files from attachments
             file_ids = [a.file_id for a in attachments]
             files = [hub_client.files.retrieve(f) for f in file_ids if f]
+
+            # Cache files if this is for the main thread
+            if target_thread_id == self._thread_id:
+                # Store in descending order by default
+                if order == "asc":
+                    self._files_from_thread_cache = list(reversed(files))
+                else:
+                    self._files_from_thread_cache = files.copy()
+
             return files
 
         self.list_files_from_thread = list_files_from_thread
@@ -734,7 +845,7 @@ class Environment(object):
             filetype: str = "text/plain",
             write_to_disk: bool = True,
             logging: bool = True,
-        ) -> FileObject:
+        ) -> None:
             """Writes a file to the environment.
 
             filename: The name of the file to write to
@@ -743,32 +854,40 @@ class Environment(object):
             filetype: The MIME type of the file (default is text/plain)
             write_to_disk: If True, write locally to disk (default is True)
             """
-            if write_to_disk:
-                # Write locally
-                path = Path(self.get_primary_agent_temp_dir()) / filename
-                path.parent.mkdir(parents=True, exist_ok=True)
+
+            def create_and_upload_file():
+                """Create file locally and upload to Hub."""
+                if write_to_disk:
+                    # Write locally
+                    path = Path(self.get_primary_agent_temp_dir()) / filename
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    if isinstance(content, bytes):
+                        with open(path, "wb") as f:
+                            f.write(content)
+                    else:
+                        with open(path, "w", encoding=encoding) as f:
+                            f.write(content)
+
                 if isinstance(content, bytes):
-                    with open(path, "wb") as f:
-                        f.write(content)
+                    file_data = content
                 else:
-                    with open(path, "w", encoding=encoding) as f:
-                        f.write(content)
+                    file_data = io.BytesIO(content.encode(encoding))  # type:ignore
 
-            if isinstance(content, bytes):
-                file_data = content
-            else:
-                file_data = io.BytesIO(content.encode(encoding))  # type:ignore
+                # Upload to Hub
+                file = hub_client.files.create(file=(filename, file_data, filetype), purpose="assistants")
 
-            # Upload to Hub
-            file = hub_client.files.create(file=(filename, file_data, filetype), purpose="assistants")
-            self.add_reply(
-                message=f"Output file: {filename}",
-                attachments=[{"file_id": file.id}],
-                message_type="system:output_file",
-            )
-            if logging:
-                self.add_system_log(f"Uploaded file {filename} with {len(content)} characters, id: {file.id}")
-            return file
+                self.add_reply(
+                    message=f"Output file: {filename}",
+                    attachments=[{"file_id": file.id}],
+                    message_type="system:output_file",
+                )
+
+                if logging:
+                    self.add_system_log(f"Uploaded file {filename} with {len(content)} characters, id: {file.id}")
+
+                return file
+
+            self._execute_sync_or_async(create_and_upload_file)
 
         self.write_file = write_file
 
@@ -783,6 +902,11 @@ class Environment(object):
             )
 
         self.mark_done = mark_done
+
+        def _invalidate_caches() -> None:
+            """Invalidate caches."""
+            self._messages_cache = None
+            self._files_from_thread_cache = None
 
         def mark_failed() -> None:
             """Deprecated. Do not use."""
@@ -805,6 +929,8 @@ class Environment(object):
             )
 
         self.request_agent_input = request_agent_input
+
+        self._invalidate_caches = _invalidate_caches
 
         # Must be placed after method definitions
         self.register_standard_tools()
@@ -1503,6 +1629,12 @@ class Environment(object):
             self.analytics_collector.init_env_run_metrics(runner_metrics=runner_metrics)
         if new_message:
             self._add_message("user", new_message)
+            # Await any pending async tasks before proceeding
+            if self._async_api_calls:
+                try:
+                    asyncio.run(self._await_pending_async_tasks())
+                except Exception as e:
+                    self.add_system_log(f"Error awaiting pending async tasks: {e}", logging.ERROR)
         elif self._debug_mode:
             last_user_message = self.get_last_message(role="user")
             if last_user_message:
@@ -1538,12 +1670,22 @@ class Environment(object):
             self.mark_failed()
             raise e
         finally:
+            # Await any pending async tasks before cleanup
+            if self._async_api_calls:
+                try:
+                    asyncio.run(self._await_pending_async_tasks())
+                except Exception as e:
+                    self.add_system_log(f"Error awaiting pending async tasks: {e}", logging.ERROR)
+
             # Upload analytics data if collection is enabled
             if self.logs_collection_mode and self.analytics_collector:
                 try:
                     self.analytics_collector.upload(thread_dir=self.get_primary_agent_temp_dir())
                 except Exception as e:
                     print(f"Failed to upload analytics data: {e}")
+
+            # Invalidate caches when run ends (whether successful or failed)
+            self._invalidate_caches()
 
         if not self._pending_ext_agent:
             # If no external agent was called, mark the whole run as done.

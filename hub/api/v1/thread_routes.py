@@ -34,7 +34,7 @@ from hub.api.v1.agent_routes import (
 )
 from hub.api.v1.auth import AuthToken, get_auth
 from hub.api.v1.completions import Provider
-from hub.api.v1.models import Delta, get_session
+from hub.api.v1.models import Delta, MessageContent, get_session
 from hub.api.v1.models import Message as MessageModel
 from hub.api.v1.models import Run as RunModel
 from hub.api.v1.models import Thread as ThreadModel
@@ -531,6 +531,8 @@ def list_messages(
         # Determine if there are more messages
         has_more = len(messages) == limit
 
+        messages = _deduplicate_file_messages(list(messages))
+
         if messages:
             first_id = messages[0].id
             last_id = messages[-1].id
@@ -544,6 +546,55 @@ def list_messages(
             first_id=first_id or "",
             last_id=last_id or "",
         )
+
+
+def _deduplicate_file_messages(messages: list[MessageModel]) -> list[MessageModel]:
+    """Keep only the latest version of each file."""
+
+    def extract_text_content(content: List[MessageContent]) -> str:
+        """Extract text content from message content blocks."""
+        if not content:
+            return ""
+
+        text_parts = []
+        for block in content:
+            if hasattr(block, "text") and hasattr(block.text, "value"):
+                text_parts.append(block.text.value)
+            elif isinstance(block, dict) and block.get("type") == "text":
+                text_parts.append(block.get("text", {}).get("value", ""))
+
+        return "".join(text_parts)
+
+    file_messages: Dict[str, MessageModel] = {}
+
+    for message in messages:
+        # Extract text content from the message
+        text_content = extract_text_content(message.content)
+
+        # Check if this is a file output message
+        if text_content.startswith("Output file: ") and message.attachments:
+            filename = text_content.replace("Output file: ", "")
+            # Keep the most recent message for each filename
+            if filename not in file_messages or message.created_at > file_messages[filename].created_at:
+                file_messages[filename] = message
+
+    deduplicated: list[MessageModel] = []
+
+    for message in messages:
+        # Extract text content from the message
+        text_content = extract_text_content(message.content)
+
+        # Check if this is a file output message
+        if text_content.startswith("Output file: ") and message.attachments:
+            filename = text_content.replace("Output file: ", "")
+            # Only include if this is the latest version of the file
+            if message.created_at == file_messages[filename].created_at:
+                deduplicated.append(message)
+        else:
+            # Include all non-file messages
+            deduplicated.append(message)
+
+    return deduplicated
 
 
 @threads_router.patch("/threads/{thread_id}/messages/{message_id}")

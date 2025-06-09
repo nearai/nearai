@@ -1,6 +1,6 @@
 [project]
 name = "nearai"
-version = "0.1.17"
+version = "0.1.18"
 description = "Near AI CLI"
 authors = [
     { name = "Support", email = "support@near.ai" }
