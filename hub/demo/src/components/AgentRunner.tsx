@@ -747,7 +747,6 @@ export const AgentRunner = ({
       if (debugVariable && debugVariable.secret) {
         const debug = debugVariable.secret.value === 'true';
         setDebug(debug);
-        console.log(`Debug mode is ${debug ? 'enabled' : 'disabled'}`);
       } else {
         await saveSecretAndRefetch({
           key: 'DEBUG',
