@@ -54,7 +54,7 @@ dependencies = [
     "ftfy>=6.3.1",
     "types-python-dateutil>=2.9.0.20241206",
     "wheel>=0.45.1",
-    "py-near @ git+https://github.com/pvolnov/py-near.git@ba898795a049a38ea600e5c510cf922201568227"
+    "py-near>=1.1.50",
 ]
 
 [project.optional-dependencies]
