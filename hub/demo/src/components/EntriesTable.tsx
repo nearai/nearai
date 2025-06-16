@@ -44,6 +44,7 @@ type Props = {
   tags?: string[];
   defaultSortColumn?: string;
   defaultSortOrder?: 'ASCENDING' | 'DESCENDING';
+  pageParamName?: string;
 };
 
 export const EntriesTable = ({
@@ -55,6 +56,7 @@ export const EntriesTable = ({
   tags,
   defaultSortColumn = 'updated',
   defaultSortOrder = 'DESCENDING',
+  pageParamName = 'page',
 }: Props) => {
   const entriesQuery = trpc.hub.entries.useQuery({ category, forkOf, tags });
 
@@ -72,6 +74,7 @@ export const EntriesTable = ({
     useClientPagination({
       data: sorted,
       itemsPerPage: 30,
+      pageParamName,
     });
 
   return (
