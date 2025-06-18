@@ -32,6 +32,7 @@ export default function AgentsListPage() {
         tags={['featured']}
         defaultSortColumn="updated"
         defaultSortOrder="DESCENDING"
+        pageParamName="featuredPage"
         header={
           <Flex direction="column" gap="xs">
             <Text as="h2" size="text-xl" weight="600">
@@ -50,6 +51,7 @@ export default function AgentsListPage() {
         category="agent"
         defaultSortColumn="updated"
         defaultSortOrder="DESCENDING"
+        pageParamName="page"
         header={
           <Flex direction="column" gap="xs">
             <Text as="h2" size="text-xl" weight="600">

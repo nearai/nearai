@@ -1631,17 +1631,18 @@ wheels = [
 
 [[package]]
 name = "httpx"
-version = "0.28.1"
+version = "0.26.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
     { name = "certifi" },
     { name = "httpcore" },
     { name = "idna" },
+    { name = "sniffio" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b1/df/48c586a5fe32a0f01324ee087459e112ebb7224f646c0b5023f5e79e9956/httpx-0.28.1.tar.gz", hash = "sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc", size = 141406, upload-time = "2024-12-06T15:37:23.222Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bd/26/2dc654950920f499bd062a211071925533f821ccdca04fa0c2fd914d5d06/httpx-0.26.0.tar.gz", hash = "sha256:451b55c30d5185ea6b23c2c793abf9bb237d2a7dfb901ced6ff69ad37ec1dfaf", size = 125671, upload-time = "2023-12-20T11:02:58.032Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad", size = 73517, upload-time = "2024-12-06T15:37:21.509Z" },
+    { url = "https://files.pythonhosted.org/packages/39/9b/4937d841aee9c2c8102d9a4eeb800c7dad25386caabb4a1bf5010df81a57/httpx-0.26.0-py3-none-any.whl", hash = "sha256:8915f5a3627c4d47b73e8202457cb28f1266982d1159bd5779d86a80c0eab1cd", size = 75862, upload-time = "2023-12-20T11:02:55.395Z" },
 ]
 
 [[package]]
@@ -2816,7 +2817,7 @@ wheels = [
 
 [[package]]
 name = "nearai"
-version = "0.1.18"
+version = "0.1.19"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
@@ -2974,7 +2975,7 @@ requires-dist = [
     { name = "peft", marker = "extra == 'finetune'", specifier = ">=0.10.0,<0.11.0" },
     { name = "pillow", marker = "extra == 'docs'", specifier = ">=10.4.0" },
     { name = "psutil", specifier = ">=5.9.5,<6.0.0" },
-    { name = "py-near", git = "https://github.com/pvolnov/py-near.git?rev=ba898795a049a38ea600e5c510cf922201568227" },
+    { name = "py-near", specifier = ">=1.1.50" },
     { name = "py-near-primitives", specifier = ">=0.2.3" },
     { name = "pydantic", specifier = ">=2.7.1,<3.0.0" },
     { name = "pydantic-core", specifier = ">=2.18.4,<3.0.0" },
@@ -3893,7 +3894,16 @@ wheels = [
 [[package]]
 name = "py-near"
 version = "1.1.50"
-source = { git = "https://github.com/pvolnov/py-near.git?rev=ba898795a049a38ea600e5c510cf922201568227#ba898795a049a38ea600e5c510cf922201568227" }
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "ed25519" },
+    { name = "httpx" },
+    { name = "py-near-primitives" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e1/c1/0381eb36ff98f36264a3fed644754c1193e71ed78d4fe3fec287f4a6054d/py_near-1.1.50.tar.gz", hash = "sha256:0af21713131193037cf8ffeddd0c600013f7fb04f7be0d0e51830233349654fc", size = 35928, upload-time = "2024-11-14T03:34:59.045Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2b/8c/39eeb7d3a34ba5d0ffd147d5722d6d4f29ae4fc1871df34547beee3206d2/py_near-1.1.50-py3-none-any.whl", hash = "sha256:15c645df231c854097bb181d971c2206d17f7fd0fdecd977d85c3392617083b9", size = 26158, upload-time = "2024-11-14T03:34:57.36Z" },
+]
 
 [[package]]
 name = "py-near-primitives"

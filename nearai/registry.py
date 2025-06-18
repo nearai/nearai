@@ -421,7 +421,7 @@ class Registry:
 
     def list_all_visible(self, category: str = "") -> List[EntryInformation]:
         """List all visible entries."""
-        total = 10000
+        total = 1000000
         entries = self.list(
             namespace="",
             category=category,

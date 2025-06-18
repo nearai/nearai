@@ -7,13 +7,18 @@ type UseClientPaginationOptions<
 > = {
   data: T;
   itemsPerPage: number;
+  pageParamName?: string;
 };
 
 export function useClientPagination<
   T extends Record<string, unknown>[] | undefined,
->({ data, itemsPerPage }: UseClientPaginationOptions<T>) {
+>({
+  data,
+  itemsPerPage,
+  pageParamName = 'page',
+}: UseClientPaginationOptions<T>) {
   const { createQueryPath, updateQueryPath, queryParams } = useQueryParams([
-    'page',
+    pageParamName,
   ]);
   const [page, _setPage] = useState(1);
   const totalItems = data?.length ?? 0;
@@ -45,15 +50,15 @@ export function useClientPagination<
   const setPage = useCallback(
     (value: number | undefined) => {
       updateQueryPath({
-        page: typeof value === 'number' ? value.toString() : value,
+        [pageParamName]: typeof value === 'number' ? value.toString() : value,
       });
     },
-    [updateQueryPath],
+    [updateQueryPath, pageParamName],
   );
 
   useEffect(() => {
-    _setPage(() => parseInt(queryParams.page ?? '1') || 1);
-  }, [queryParams.page]);
+    _setPage(() => parseInt(queryParams[pageParamName] ?? '1') || 1);
+  }, [queryParams, pageParamName]);
 
   const pageItems = useMemo(() => {
     const startIndex = Math.max(0, (page - 1) * itemsPerPage);
