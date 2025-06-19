@@ -83,4 +83,4 @@ typing-extensions >= 4.7.1
 
 # HTTP client
 # https://github.com/urllib3/urllib3
-urllib3 >= 1.25.3, < 2.1.0
+urllib3 >= 1.25.3, < 2.6.0
