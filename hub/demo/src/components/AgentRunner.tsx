@@ -321,14 +321,31 @@ export const AgentRunner = ({
   );
 
   const attachmentMaxSizeMegabytes = 50;
-  const attachmentAcceptMimeTypes =
-    currentEntry?.details.agent?.allow_message_attachments_accept_mime_types?.reduce(
-      (result, type) => {
-        result[type] = [];
-        return result;
-      },
-      {} as Record<string, string[]>,
-    );
+  const defaultMimeTypes = [
+    'image/jpeg',
+    'image/png',
+    'application/pdf',
+    'audio/mp3',
+    'audio/wav',
+    'video/mp4',
+    'video/mpeg',
+  ];
+  const attachmentAcceptMimeTypes = currentEntry?.details.agent
+    ?.allow_message_attachments_accept_mime_types?.length
+    ? currentEntry?.details.agent?.allow_message_attachments_accept_mime_types.reduce(
+        (result, type) => {
+          result[type] = [];
+          return result;
+        },
+        {} as Record<string, string[]>,
+      )
+    : defaultMimeTypes.reduce(
+        (result, type) => {
+          result[type] = [];
+          return result;
+        },
+        {} as Record<string, string[]>,
+      );
 
   const deleteAttachment = useCallback(
     async (fileId: string) => {
@@ -382,11 +399,7 @@ export const AgentRunner = ({
             }
 
             const error = apiErrorModel.safeParse(data);
-            if (error.data) {
-              throw new Error(error.data.detail);
-            }
-
-            throw new Error('Unknown error. Please try again later.');
+            throw new Error(error.data?.detail || 'Unknown error');
           } catch (error) {
             handleClientError({
               error,

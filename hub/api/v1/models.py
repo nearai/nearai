@@ -553,6 +553,9 @@ SUPPORTED_MIME_TYPES = {
     "image/png": [".png"],
     "image/jpeg": [".jpg"],
     "image/gif": [".gif"],
+    "audio/mp3": [".mp3"],
+    "audio/wav": [".wav"],
+    "video/mp4": [".mp4"],
 }
 
 SUPPORTED_TEXT_ENCODINGS = ["utf-8", "utf-16", "ascii"]

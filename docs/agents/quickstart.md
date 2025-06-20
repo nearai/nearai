@@ -134,7 +134,10 @@ Agents can accept attached files as part of a message during an interactive sess
       "allow_message_attachments": true,
       "allow_message_attachments_accept_mime_types": [
         "image/*",
-        "application/pdf"
+        "application/pdf",
+        "audio/mp3",
+        "audio/wav",
+        "video/mp4"
       ]
     }
   }
