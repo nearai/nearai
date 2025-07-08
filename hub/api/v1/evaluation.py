@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Set, Tuple
 
 from dotenv import load_dotenv
 from fastapi import APIRouter
-from nearai.evaluation import EVALUATED_ENTRY_METADATA
+from nearai.evaluation import EVALUATED_ENTRY_METADATA, USAGE
 from nearai.registry import get_registry_folder
 from pydantic import BaseModel
 
@@ -85,6 +85,8 @@ def evaluation_table() -> Tuple[Dict[tuple[tuple[str, Any], ...], Dict[str, str]
             # Add all other metrics that are not EVALUATED_ENTRY_METADATA
             for metric_name, metric_value in metrics.items():
                 if metric_name == EVALUATED_ENTRY_METADATA:
+                    continue
+                if metric_name == USAGE:
                     continue
                 if _is_important_metric(metric_name, metrics):
                     important_metric_names.add(metric_name)
