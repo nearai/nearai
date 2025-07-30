@@ -86,6 +86,12 @@ type FormSchema = Pick<z.infer<typeof chatWithAgentModel>, 'new_message'>;
 export type AgentChatMutationInput = FormSchema &
   Partial<z.infer<typeof chatWithAgentModel>>;
 
+const excludedFiles = [
+  'runner_log.txt',
+  'system_log.txt',
+  'chat_history_log.txt',
+];
+
 export const AgentRunner = ({
   namespace,
   name,
@@ -222,27 +228,18 @@ export const AgentRunner = ({
     },
   );
 
-  const logMessages = useMemo(() => {
-    return (thread ? Object.values(thread.messagesById) : []).filter(
-      (message) =>
-        message.metadata?.message_type?.startsWith('system:') ||
-        message.metadata?.message_type?.startsWith('agent:log'),
-    );
-  }, [thread]);
-
   const messages = useMemo(() => {
     return [
       ...(thread ? Object.values(thread.messagesById) : []),
       ...optimisticMessages.map((message) => message.data),
     ].filter(
       (message) =>
-        debug ||
         !(
           message.metadata?.message_type?.startsWith('system:') ||
           message.metadata?.message_type?.startsWith('agent:log')
         ),
     );
-  }, [thread, optimisticMessages, debug]);
+  }, [thread, optimisticMessages]);
 
   const files = useMemo(() => {
     const all = thread ? Object.values(thread.filesById) : [];
@@ -258,7 +255,7 @@ export const AgentRunner = ({
       if (message?.role === 'user') {
         attachments.push(file);
       } else {
-        outputs.push(file);
+        if (debug || !excludedFiles.includes(file.filename)) outputs.push(file);
       }
     }
 
@@ -290,7 +287,7 @@ export const AgentRunner = ({
       outputs: Array.from(latestOutputsByFilename.values()),
       total: attachments.length + latestOutputsByFilename.size,
     };
-  }, [messages, thread]);
+  }, [messages, thread, debug]);
 
   const latestAssistantMessages = useMemo(() => {
     const result: z.infer<typeof threadMessageModel>[] = [];
@@ -736,6 +733,7 @@ export const AgentRunner = ({
 
   useEffect(() => {
     const initializeDebugMode = async () => {
+      if (!auth) return;
       if (!currentEntry || debugInitialized.current) return;
 
       debugInitialized.current = true;
@@ -748,15 +746,15 @@ export const AgentRunner = ({
         const debug = debugVariable.secret.value === 'true';
         setDebug(debug);
       } else {
-        await saveSecretAndRefetch({
+        saveSecretAndRefetch({
           key: 'DEBUG',
           value: 'true',
         });
       }
     };
 
-    void initializeDebugMode();
-  }, [currentEntry, variables, saveSecretAndRefetch]);
+    initializeDebugMode();
+  }, [currentEntry, auth, variables, saveSecretAndRefetch]);
 
   const onDebugChange = async (checked: boolean) => {
     setDebug(checked);
@@ -1011,9 +1009,7 @@ export const AgentRunner = ({
               />
 
               <Text size="text-s" color="sand-10">
-                {debug
-                  ? `Showing ${logMessages.length} debug messages and files`
-                  : 'Debug logs hidden'}
+                {debug ? `Showing debug files` : 'Debug files hidden'}
               </Text>
               <Text size="text-xs" weight={600} uppercase>
                 Output
