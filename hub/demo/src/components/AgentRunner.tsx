@@ -151,6 +151,7 @@ export const AgentRunner = ({
   const initialUserMessageSent = useRef(false);
   const chatMutationThreadId = useRef('');
   const chatMutationStartedAt = useRef<Date | null>(null);
+  const debugInitialized = useRef(false);
   const setThread = useThreadsStore((store) => store.setThread);
   const threadsById = useThreadsStore((store) => store.threadsById);
   const setAddMessage = useThreadsStore((store) => store.setAddMessage);
@@ -158,7 +159,7 @@ export const AgentRunner = ({
   const thread = threadsById[chatMutationThreadId.current || threadId];
   const [stream, setStream] = useState<EventSource | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [debug, setDebug] = useState<boolean | null>(null);
+  const [debug, setDebug] = useState(true);
   const addMutation = trpc.hub.addSecret.useMutation();
   const params = useCurrentEntryParams();
 
@@ -702,18 +703,8 @@ export const AgentRunner = ({
         });
 
         await utils.hub.secrets.invalidate();
-
-        openToast({
-          type: 'success',
-          title: 'Setting saved',
-          description: `${data.key} has been updated successfully`,
-        });
       } catch (error) {
-        handleClientError({
-          error,
-          title: 'Failed to save setting',
-          description: `Could not update ${data.key}`,
-        });
+        console.log('Failed to save secret:', error);
       }
     },
     [currentEntry, params.version, addMutation, utils.hub.secrets],
@@ -721,8 +712,9 @@ export const AgentRunner = ({
 
   useEffect(() => {
     const initializeDebugMode = async () => {
-      if (!auth || !currentEntry) return;
-      if (debug !== null) return; // Already initialized
+      if (!auth || !currentEntry || debugInitialized.current) return;
+
+      debugInitialized.current = true;
 
       const debugVariable = variables.find(
         (variable) => variable.key === 'DEBUG',
@@ -739,8 +731,7 @@ export const AgentRunner = ({
     };
 
     initializeDebugMode();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentEntry, debug, auth, variables]);
+  }, [currentEntry, auth, variables, saveSecretAndRefetch]);
 
   const onDebugChange = async (checked: boolean) => {
     setDebug(checked);
@@ -988,10 +979,7 @@ export const AgentRunner = ({
                 Debug Mode
               </Text>
 
-              <Switch
-                checked={debug ?? false}
-                onCheckedChange={onDebugChange}
-              />
+              <Switch checked={debug} onCheckedChange={onDebugChange} />
 
               <Text size="text-s" color="sand-10">
                 {debug ? `Showing debug files` : 'Debug files hidden'}
