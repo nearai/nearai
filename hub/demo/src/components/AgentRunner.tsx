@@ -151,7 +151,6 @@ export const AgentRunner = ({
   const initialUserMessageSent = useRef(false);
   const chatMutationThreadId = useRef('');
   const chatMutationStartedAt = useRef<Date | null>(null);
-  const debugInitialized = useRef(false);
   const setThread = useThreadsStore((store) => store.setThread);
   const threadsById = useThreadsStore((store) => store.threadsById);
   const setAddMessage = useThreadsStore((store) => store.setAddMessage);
@@ -159,8 +158,7 @@ export const AgentRunner = ({
   const thread = threadsById[chatMutationThreadId.current || threadId];
   const [stream, setStream] = useState<EventSource | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [debug, setDebug] = useState(true);
-  const [isSavingSecret, setIsSavingSecret] = useState(false);
+  const [debug, setDebug] = useState<boolean | null>(null);
   const addMutation = trpc.hub.addSecret.useMutation();
   const params = useCurrentEntryParams();
 
@@ -691,11 +689,9 @@ export const AgentRunner = ({
 
   const saveSecretAndRefetch = useCallback(
     async (data: { key: string; value: string }) => {
-      if (!currentEntry || isSavingSecret) return;
+      if (!currentEntry) return;
 
       try {
-        setIsSavingSecret(true);
-
         await addMutation.mutateAsync({
           category: currentEntry.category,
           key: data.key,
@@ -718,33 +714,22 @@ export const AgentRunner = ({
           title: 'Failed to save setting',
           description: `Could not update ${data.key}`,
         });
-      } finally {
-        setIsSavingSecret(false);
       }
     },
-    [
-      currentEntry,
-      params.version,
-      addMutation,
-      utils.hub.secrets,
-      isSavingSecret,
-    ],
+    [currentEntry, params.version, addMutation, utils.hub.secrets],
   );
 
   useEffect(() => {
     const initializeDebugMode = async () => {
-      if (!auth) return;
-      if (!currentEntry || debugInitialized.current) return;
-
-      debugInitialized.current = true;
+      if (!auth || !currentEntry) return;
+      if (debug !== null) return; // Already initialized
 
       const debugVariable = variables.find(
         (variable) => variable.key === 'DEBUG',
       );
 
       if (debugVariable && debugVariable.secret) {
-        const debug = debugVariable.secret.value === 'true';
-        setDebug(debug);
+        setDebug(debugVariable.secret.value === 'true');
       } else {
         saveSecretAndRefetch({
           key: 'DEBUG',
@@ -754,7 +739,8 @@ export const AgentRunner = ({
     };
 
     initializeDebugMode();
-  }, [currentEntry, auth, variables, saveSecretAndRefetch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEntry, debug, auth, variables]);
 
   const onDebugChange = async (checked: boolean) => {
     setDebug(checked);
@@ -1003,9 +989,8 @@ export const AgentRunner = ({
               </Text>
 
               <Switch
-                checked={debug}
+                checked={debug ?? false}
                 onCheckedChange={onDebugChange}
-                disabled={isSavingSecret}
               />
 
               <Text size="text-s" color="sand-10">
