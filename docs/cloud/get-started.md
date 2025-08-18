@@ -107,5 +107,5 @@ You can find the model list from [https://cloud.near.ai/models](https://cloud.ne
 
 Now that you're set up with NEAR AI Cloud, explore these resources:
 
-- [:material-cog: Private Inference Deep Dive](./private-inference.md) - Learn about TEE technology and privacy features
-- [:material-check-decagram: Verification Guide](./verification.md) - Understand how to verify AI responses
+- [:material-cog: Private Inference Deep Dive](./private-inference.md) - Learn about private inference
+- [:material-check-decagram: Verification Guide](./verification.md) - Understand how to verify private AI responses

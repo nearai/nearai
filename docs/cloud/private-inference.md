@@ -1,4 +1,4 @@
-# Private Inference with NEAR AI Cloud
+# Private Inference
 
 NEAR AI Cloud's private inference capabilities leverage Trusted Execution Environments (TEEs) to provide cryptographically verifiable AI computations while ensuring complete data privacy. This guide explains how private inference works, its architecture, and security guarantees.
 
