@@ -128,10 +128,10 @@ By default, you can query another API with the value of `id` in the response in 
 
 > **Implementation**: This endpoint is defined in the [NEAR AI Private ML SDK](https://github.com/nearai/private-ml-sdk/blob/a23fa797dfd7e676fba08cba68471b51ac9a13d9/vllm-proxy/src/app/api/v1/openai.py#L257).
 
-For example, the response in the previous section, the `id` is `chatcmpl-3a9833b8cbdb4720a1cba7eeaae25450`:
+For example, the response in the previous section, the `id` is `chatcmpl-717412b4a37f4e739146fdafdb682b68`:
 
 ```bash
-curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-3a9833b8cbdb4720a1cba7eeaae25450?model=llama-3.3-70b-instruct&signing_algo=ecdsa' \
+curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-717412b4a37f4e739146fdafdb682b68?model=phala/llama-3.3-70b-instruct&signing_algo=ecdsa' \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer sk--fFMcfOKpBSCH57mb7sTWw"
 ```
@@ -167,87 +167,3 @@ Verify ECDSA signature in the response is signed by the signing address. This ca
 * Address: You can get the address from the attestation API. The address should be same if the service did not restarted.
 * Message: The sha256 hash of the request and response. You can also calculate the sha256 by yourselves.
 * Signature Hash: See the Signature section.
-
----
-
-## Examples
-
-=== "python"
-
-    ```python
-    import openai
-
-    client = openai.OpenAI(
-        base_url="https://cloud-api.near.ai/v1",
-        api_key="your-api-key"
-    )
-
-    # Get attestation
-    attestation_response = client.get("/attestation/report", params={"model": "deepseek-chat-v3-0324"})
-    attestation = attestation_response.json()
-
-    print(f"Signing Address: {attestation['signing_address']}")
-
-    # Make chat request
-    response = client.chat.completions.create(
-        model="deepseek-chat-v3-0324",
-        messages=[{"role": "user", "content": "What is your model name?"}],
-        stream=True
-    )
-
-    # Get signature
-    request_id = response.id
-    signature_response = client.get(f"/signature/{request_id}", params={
-        "model": "deepseek-chat-v3-0324",
-        "signing_algo": "ecdsa"
-    })
-    signature_data = signature_response.json()
-
-    print(f"Text to verify: {signature_data['text']}")
-    print(f"Signature: {signature_data['signature']}")
-    ```
-
-=== "javascript"
-
-    ```javascript
-    import OpenAI from 'openai';
-
-    const client = new OpenAI({
-        baseURL: 'https://cloud-api.near.ai/v1',
-        apiKey: 'your-api-key'
-    });
-
-    // Get attestation
-    const attestationResponse = await fetch(
-        'https://cloud-api.near.ai/v1/attestation/report?model=deepseek-chat-v3-0324',
-        {
-            headers: {
-                'Authorization': 'Bearer your-api-key'
-            }
-        }
-    );
-    const attestation = await attestationResponse.json();
-
-    console.log('Signing Address:', attestation.signing_address);
-
-    // Make chat request
-    const response = await client.chat.completions.create({
-        model: 'deepseek-chat-v3-0324',
-        messages: [{ role: 'user', content: 'What is your model name?' }],
-        stream: true
-    });
-
-    // Get signature
-    const signatureResponse = await fetch(
-        `https://cloud-api.near.ai/v1/signature/${response.id}?model=deepseek-chat-v3-0324&signing_algo=ecdsa`,
-        {
-            headers: {
-                'Authorization': 'Bearer your-api-key'
-            }
-        }
-    );
-    const signatureData = await signatureResponse.json();
-
-    console.log('Text to verify:', signatureData.text);
-    console.log('Signature:', signatureData.signature);
-    ```
