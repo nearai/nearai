@@ -166,4 +166,4 @@ Verify ECDSA signature in the response is signed by the signing address. This ca
 
 * Address: You can get the address from the attestation API. The address should be same if the service did not restarted.
 * Message: The sha256 hash of the request and response. You can also calculate the sha256 by yourselves.
-* Signature Hash: See the Signature section.
+* Signature Hash: The signature you have got in "Get Signature" section.
