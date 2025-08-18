@@ -156,7 +156,7 @@ Exactly match the value we calculated in the sample in previous section.
 
 #### Limitation
 
-Since the resource limitation, the signature will be kept in the memory for **5 minutes** since the response is generated.
+Since the resource limitation, the signature will be kept in the memory for **5 minutes** since the response is generated. But the signature will be kept persistent in LLM gateway once it's queried within 5 minutes.
 
 ---
 
