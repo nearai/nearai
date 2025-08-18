@@ -37,7 +37,7 @@ graph TD
     C --> D[Cryptographic Signature]
     D --> E[Verifiable Response]
     
-    C --> E[Attestation Report]
+    C --> F[Attestation Report]
 ```
 
 1. **Request Initiation**: Users send chat completion requests to the LLM Gateway, which operates within a secure TEE environment

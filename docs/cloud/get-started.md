@@ -16,23 +16,9 @@ NEAR AI Cloud provides:
 
 ## Quick Setup
 
-### 1. Create Your Account
-
-1. Visit [NEAR AI Cloud](https://cloud.near.ai/) and click "Sign In"
-2. Connect your GitHub or Google account
-
-### 2. Get Credits
-
-1. Navigate to the **Credits** section in your dashboard
-2. Select the amount of credits you want to purchase
-3. Complete the transaction
-
-### 3. Create Your First API Key
-
-1. Go to the **API Keys** section in your dashboard
-2. Click **"Create New API Key"**
-3. Set usage limits (optional)
-4. Click **"Create"** to generate your API key
+1. Visit [NEAR AI Cloud](https://cloud.near.ai/) and Connect your GitHub or Google account
+2. Navigate to the **Credits** section in your dashboard and purchase the amount of credits you need
+3. Go to the **API Keys** section in your dashboard. Create New API Key with name and usage limits (optional).
 
 !!! note "API Key Security"
     Keep your API key secure and never share it publicly. You can regenerate keys at any time from your dashboard.
@@ -43,69 +29,69 @@ NEAR AI Cloud provides:
 
 ### Basic Chat Completion
 
-Here's a simple example using Python:
+=== "python"
 
-```python
-import openai
+    ```python
+    import openai
 
-# Initialize the client
-client = openai.OpenAI(
-    base_url="https://cloud-api.near.ai/v1",
-    api_key="your-api-key-here"
-)
+    # Initialize the client
+    client = openai.OpenAI(
+        base_url="https://cloud-api.near.ai/v1",
+        api_key="your-api-key-here"
+    )
 
-# Create a chat completion
-response = client.chat.completions.create(
-    model="deepseek-chat-v3-0324",
-    messages=[
-        {"role": "system", "content": "You are a helpful coding assistant."},
-        {"role": "user", "content": "Write a Python function to calculate fibonacci numbers."}
-    ],
-    temperature=0.7,
-    max_tokens=500
-)
+    # Create a chat completion
+    response = client.chat.completions.create(
+        model="deepseek-chat-v3-0324",
+        messages=[
+            {"role": "system", "content": "You are a helpful coding assistant."},
+            {"role": "user", "content": "Write a Python function to calculate fibonacci numbers."}
+        ],
+        temperature=0.7,
+        max_tokens=500
+    )
 
-print(response.choices[0].message.content)
-```
+    print(response.choices[0].message.content)
+    ```
 
-### Using cURL
+=== "javascript"
 
-```bash
-curl https://cloud-api.near.ai/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key-here" \
-  -d '{
-    "model": "deepseek-chat-v3-0324",
-    "messages": [
-      {
-        "role": "user",
-        "content": "Hello, how are you?"
-      }
-    ],
-    "temperature": 0.7
-  }'
-```
+    ```javascript
+    import OpenAI from 'openai';
 
-### Using JavaScript/Node.js
+    const openai = new OpenAI({
+        baseURL: 'https://cloud-api.near.ai/v1',
+        apiKey: 'your-api-key-here',
+    });
 
-```javascript
-import OpenAI from 'openai';
+    const completion = await openai.chat.completions.create({
+        model: 'deepseek-chat-v3-0324',
+        messages: [
+            { role: 'user', content: 'Hello, how are you?' }
+        ],
+        temperature: 0.7,
+    });
 
-const openai = new OpenAI({
-  baseURL: 'https://cloud-api.near.ai/v1',
-  apiKey: 'your-api-key-here',
-});
+    console.log(completion.choices[0].message.content);
+    ```
 
-const completion = await openai.chat.completions.create({
-  model: 'deepseek-chat-v3-0324',
-  messages: [
-    { role: 'user', content: 'Hello, how are you?' }
-  ],
-  temperature: 0.7,
-});
+=== "curl"
 
-console.log(completion.choices[0].message.content);
-```
+    ```bash
+    curl https://cloud-api.near.ai/v1/chat/completions \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer your-api-key-here" \
+    -d '{
+        "model": "deepseek-chat-v3-0324",
+        "messages": [
+        {
+            "role": "user",
+            "content": "Hello, how are you?"
+        }
+        ],
+        "temperature": 0.7
+    }'
+    ```
 
 ---
 
