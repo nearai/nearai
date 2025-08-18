@@ -136,11 +136,6 @@ nav:
     - Contributing: 'contributing.md'
     - Decentralization: 'decentralization.md'
     - Private & Verifiable AI: 'private-ml-sdk.md'
-  - Cloud:
-    - Overview: 'cloud/index.md'
-    - Get Started: 'cloud/get-started.md'
-    - Private Inference: 'cloud/private-inference.md'
-    - Verification: 'cloud/verification.md'
   - Agents:
     - Building Agents:
       - Quickstart: 'agents/quickstart.md'
@@ -190,6 +185,11 @@ nav:
     - Hub (Agent Cloud) API: 'https://api.near.ai/docs/hub/reference'
     - Hub (Agent Cloud) Interactive API: 'https://api.near.ai/docs/hub/interactive'
     - OpenAPI Specs: 'https://api.near.ai/openapi.json'
+  - Cloud:
+    - Overview: 'cloud/index.md'
+    - Get Started: 'cloud/get-started.md'
+    - Private Inference: 'cloud/private-inference.md'
+    - Verification: 'cloud/verification.md'
 
 plugins:
   - social
