@@ -16,9 +16,9 @@ NEAR AI Cloud provides:
 
 ## Quick Setup
 
-1. Visit [NEAR AI Cloud](https://cloud.near.ai/) and Connect your GitHub or Google account
-2. Navigate to the **Credits** section in your dashboard and purchase the amount of credits you need
-3. Go to the **API Keys** section in your dashboard. Create New API Key with name and usage limits (optional).
+1. Visit [NEAR AI Cloud](https://cloud.near.ai/), and connect your GitHub or Google account
+2. Navigate to the **Credits** section in your dashboard, and purchase the amount of credits you need
+3. Go to the **API Keys** section in your dashboard, and create a new API key.
 
 !!! note "API Key Security"
     Keep your API key secure and never share it publicly. You can regenerate keys at any time from your dashboard.
@@ -97,7 +97,7 @@ NEAR AI Cloud provides:
 
 ## Available Models
 
-NEAR AI Cloud supports a wide range of open source, private and verifiable models.
+NEAR AI Cloud supports a few open source, private and verifiable models.
 
 You can find the model list from [https://cloud.near.ai/models](https://cloud.near.ai/models)
 
