@@ -7,7 +7,7 @@ NEAR AI Cloud provides cryptographic verification for all private inference resu
 ## Overview
 
 1. When the service starts, it generates a signing key in TEE.
-2. You can get the CPU and GPU attestation to verify the service is running in Confidential VM with NVIDIA H100 in TEE mode.
+2. You can get the CPU and GPU attestation to verify the service is running in Confidential VM with NVIDIA H100/H200/B100 in TEE mode.
 3. The attestation includes the public key of the signing key to prove the key is generated in TEE.
 4. All the inference results contain signature with the signing key.
 5. You can use the public key to verify all the inference results is generated in TEE.
