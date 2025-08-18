@@ -20,6 +20,6 @@ To learn how to verify the authenticity of AI responses:
 
 ---
 
-!!! warning "Alpha Release"
+!!! warning "Beta Release"
 
-    NEAR AI Cloud is currently in alpha - we're rapidly building and shipping new features! Join our community to help shape the future of private, verifiable AI.
+    NEAR AI Cloud is currently in beta - we're rapidly building and shipping new features! Join our community to help shape the future of private, verifiable AI.

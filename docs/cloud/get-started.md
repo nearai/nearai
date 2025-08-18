@@ -111,7 +111,7 @@ console.log(completion.choices[0].message.content);
 
 ## Available Models
 
-NEAR AI Cloud supports a wide range of open source verifiable models.
+NEAR AI Cloud supports a wide range of open source, private and verifiable models.
 
 You can find the model list from [https://cloud.near.ai/models](https://cloud.near.ai/models)
 
