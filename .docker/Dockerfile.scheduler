@@ -7,7 +7,7 @@ ARG NEARAISCHEDULER_NONCE
 RUN mkdir -p ~/.nearai && \
     cat <<EOF > ~/.nearai/config.json
 {
-    "api_url": "https://redacted.api.near.ai",
+    "api_url": "https://api.near.ai",
     "auth": {
         "account_id": "${NEARAISCHEDULER_ACCOUNT_ID}",
         "signature": "${NEARAISCHEDULER_SIGNATURE}",
