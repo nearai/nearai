@@ -9,8 +9,8 @@
 NEAR AI Cloud provides:
 
 - **Unified API for AI Models**: Access leading AI models like DeepSeek, Llama, OpenAI, Qwen and more through a single API
-- **Private Inference**: All AI computations run in Trusted Execution Environments (TEEs) ensuring complete privacy and verifiability
-- **Flexible Payments**: Top up or pay as you go using fiat
+- **Private Inference**: All AI computations run in Trusted Execution Environments (TEEs) ensuring end-to-end privacy and verifiability
+- **Flexible Payments**: Top up or pay as you go
 
 ---
 
@@ -27,28 +27,23 @@ NEAR AI Cloud provides:
 
 ## Making Your First Request
 
-### Basic Chat Completion
+Let's chat with one open source model, with privacy protected. Please replace the API key with the one you have created.
 
 === "python"
 
     ```python
     import openai
 
-    # Initialize the client
     client = openai.OpenAI(
         base_url="https://cloud-api.near.ai/v1",
         api_key="your-api-key-here"
     )
 
-    # Create a chat completion
     response = client.chat.completions.create(
         model="deepseek-chat-v3-0324",
-        messages=[
-            {"role": "system", "content": "You are a helpful coding assistant."},
-            {"role": "user", "content": "Write a Python function to calculate fibonacci numbers."}
-        ],
-        temperature=0.7,
-        max_tokens=500
+        messages=[{
+            "role": "user", "content": "Hello, how are you?"
+        }]
     )
 
     print(response.choices[0].message.content)
@@ -66,10 +61,9 @@ NEAR AI Cloud provides:
 
     const completion = await openai.chat.completions.create({
         model: 'deepseek-chat-v3-0324',
-        messages: [
-            { role: 'user', content: 'Hello, how are you?' }
-        ],
-        temperature: 0.7,
+        messages: [{
+            role: 'user', content: 'Hello, how are you?'
+        }]
     });
 
     console.log(completion.choices[0].message.content);
@@ -83,13 +77,10 @@ NEAR AI Cloud provides:
     -H "Authorization: Bearer your-api-key-here" \
     -d '{
         "model": "deepseek-chat-v3-0324",
-        "messages": [
-        {
+        "messages": [{
             "role": "user",
             "content": "Hello, how are you?"
-        }
-        ],
-        "temperature": 0.7
+        }]
     }'
     ```
 
@@ -97,7 +88,7 @@ NEAR AI Cloud provides:
 
 ## Available Models
 
-NEAR AI Cloud supports a few open source, private and verifiable models.
+NEAR AI Cloud now supports a few open source, private and verifiable models. We'll add more models soon.
 
 You can find the model list from [https://cloud.near.ai/models](https://cloud.near.ai/models)
 

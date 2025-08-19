@@ -133,7 +133,7 @@ For example, the response in the previous section, the `id` is `chatcmpl-717412b
 ```bash
 curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-717412b4a37f4e739146fdafdb682b68?model=phala/llama-3.3-70b-instruct&signing_algo=ecdsa' \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer sk--fFMcfOKpBSCH57mb7sTWw"
+    -H "Authorization: Bearer your-api-key"
 ```
 
 #### Response

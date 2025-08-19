@@ -1,6 +1,6 @@
 # Introduction to NEAR AI Cloud
 
-[NEAR AI Cloud](https://cloud.near.ai) is the platform where AI runs on your terms — fully private, verifiable, and user-owned. Deploy and scale powerful language models on privacy-focused GPUs, protected by Trusted Execution Environments (TEEs) and backed by on-chain guarantees. Built for the age of agentic AI, NEAR AI Cloud gives your models the power to act, reason, and transact — while you retain complete control over the stack.
+[NEAR AI Cloud](https://cloud.near.ai) is the platform where AI runs on your terms — fully private, verifiable, and user-owned. Deploy and scale powerful language models on TEE-enabled GPUs with on-chain guarantees. Built for the age of agentic AI, NEAR AI Cloud gives your models the power to act, reason, and transact — while you retain complete control over the stack.
 
 ---
 
