@@ -2,17 +2,27 @@
 
 [NEAR AI Cloud](https://cloud.near.ai) operates in Trusted Execution Environments (TEEs) which use cryptographic proofs to verify that your private AI conversations actually happened in secure, isolated environments - not on compromised systems or with unauthorized access.
 
-This section will show you step-by-step processes for checking these proofs, validating digital signatures, and confirm your AI interactions haven't been tampered with.
+This section will show you step-by-step processes for checking these proofs, validating digital signatures, and confirming that your AI interactions haven't been tampered with.
 
 ---
 
 ## Overview
 
-1. **Key Generation:** When the service initializes, it generates a cryptographic signing key pair within the Trusted Execution Environment (TEE).
-2. **Attestation Retrieval:** You can obtain CPU and GPU attestation reports that cryptographically verify the service is running on genuine NVIDIA H100/H200/B100 hardware in TEE mode within a Confidential VM.
-3. **Key Binding Attestation Reports:** The attestation reports include the public key corresponding to the TEE-generated signing key, establishing a cryptographic link between the hardware environment and the signing capability.
-4. **Response Signing:** All AI inference responses are digitally signed using the private key that was generated and remains secured within the TEE.
-5. **Verification Process:** You can use the attested public key to verify that all inference results were genuinely generated within the verified TEE environment and haven't been tampered with.
+### How NEAR AI Cloud Verification Works:
+
+1. **Secure Key Generation:** When NEAR AI Cloud initializes, it generates a unique cryptographic signing key pair inside the Trusted Execution Environment (TEE). The private key never leaves the secure hardware.
+
+2. **Hardware Attestation:** The system generates attestation reports that cryptographically prove it's running on genuine NVIDIA H100/H200/B100 hardware in TEE mode within a Confidential VM.
+
+3. **Key Binding:** These attestation reports include the public key from step 1, creating a verifiable link between the secure hardware and the signing capability.
+
+4. **Message Signing:** Every AI inference request and response is digitally signed using the private key that remains secured within the TEE.
+
+5. **End-to-End Verification:** You can verify that your AI interactions were genuinely processed in the secure environment by:
+   
+    - Checking the hardware attestation reports
+    - Validating the digital signatures on your messages
+    - Confirming the signing key matches the attested hardware
 
 ---
 
@@ -38,7 +48,7 @@ https://cloud-api.near.ai/v1/attestation/report?model={model_name}
 === "curl"
 
     ```bash
-    curl https://cloud-api.near.ai/v1/attestatuib/report?model=deepseek-chat-v3-0324 \
+    curl https://cloud-api.near.ai/v1/attestation/report?model=deepseek-chat-v3-0324 \
       -H 'accept: application/json' \
       -H 'Content-Type: application/json' \
       -H 'Authorization: Bearer <YOUR_NEAR_AI_CLOUD_API_KEY>'
@@ -107,11 +117,11 @@ This endpoint requires [NEAR AI Cloud Account & API Key](./get-started.md#quick-
 
 ### Verifying Model Attestation
 
-Once you have [requested a model attestation](#request-model-attestation) from NEAR AI Cloud, you can use the returned payload to verify its authenticity for both GPU & CPU chips. (TEE runs )
+Once you have [requested a model attestation](#request-model-attestation) from NEAR AI Cloud, you can use the returned payload to verify its authenticity for both GPU & CPU chips.
 
 #### Verify GPU Attestation
 
-NVIDIA offers a [Remote Attestation Service](https:// docs.nvidia.com/attestation/technical-docs-nras/latest/nras_introduction.html) that allows you to verify that you are using a trusted environment with one of their GPUs. To verify this they require:
+NVIDIA offers a [Remote Attestation Service](https://docs.nvidia.com/attestation/technical-docs-nras/latest/nras_introduction.html) that allows you to verify that you are using a trusted environment with one of their GPUs. To verify this they require:
 
 - `nonce` - A randomly generated 64 character hexadecimal string
 - `arch` - Architecture of the GPU _(HOPPER or BLACKWELL)_
@@ -124,9 +134,9 @@ The `evidence_list` contains Base64 encoded data that lists the GPU's:
 - Security configuration state
 - Endorsement certificates (Signed measurements from the GPU's unique key)
 
-The private key of this GPU is how we can securely verify the authenticity. NVIDIA burns the key in the GPU during manufacturing process and only retains the public key which is used to verify the signature of attestations provided to them.
+The private key of this GPU is how we can securely verify the authenticity. NVIDIA burns this unique private key into each GPU during the manufacturing process and only retains the corresponding public key, which is used to verify the signature of attestations provided to them.
 
-All of this data is provided to you from the [Model Attestation response](#response) as `nvidia_payload`.
+All of this data is provided to you from the [Model Attestation response](#request-model-attestation) as `nvidia_payload`.
 
 Simply use this JSON Object with your API call:
 
@@ -134,7 +144,7 @@ Simply use this JSON Object with your API call:
 curl -X POST https://nras.attestation.nvidia.com/v3/attest/gpu \
  -H "accept: application/json" \
  -H "content-type: application/json" \
- -d "<NVIDIA_PAYLOAD_FROM_NEARAI_MODEL_ATTESATION>"
+ -d "<NVIDIA_PAYLOAD_FROM_NEARAI_MODEL_ATTESTATION>"
 ```
 
 See official documentation: https://docs.api.nvidia.com/attestation/reference/attestmultigpu_1
@@ -154,7 +164,7 @@ See official documentation: https://docs.api.nvidia.com/attestation/reference/at
 ```
 
 !!! tip
-NVIDIA's attestation verification response returns a "Entity Attestation Token" (EAT) encoded as a JSON Web Token (JWT)
+    NVIDIA's attestation verification response returns a "Entity Attestation Token" (EAT) encoded as a JSON Web Token (JWT)
 
     To decode these values, you can use an online tool such as [jwt.io](https://www.jwt.io) or a library such as [Jose](https://www.npmjs.com/package/jose).
 
@@ -332,14 +342,14 @@ Here is an example of how to get the sha256 hash of your message response body:
 
 ### Chat Message Signature
 
-From the Chat Message Response you will get a unique chat `id` that is used to fetch the Chat Message Signature from NEAR AI Confidential Cloud. T
+From the Chat Message Response you will get a unique chat `id` that is used to fetch the Chat Message Signature from NEAR AI Confidential Cloud.
 
 By default, you can query another API with the value of `id` in the response in 5 minutes after chat completion. The signature will be persistent in the LLM gateway once it's queried.
 
 Use the following endpoint to get this signature:
 
 ```bash
-GET https://cloud-api.near.ai/v1/signature/{chat_id}?model={model_id}&signing_algo=ecdsa`
+GET https://cloud-api.near.ai/v1/signature/{chat_id}?model={model_id}&signing_algo=ecdsa
 ```
 
 > **Implementation**: This endpoint is defined in the [NEAR AI Private ML SDK](https://github.com/nearai/private-ml-sdk/blob/a23fa797dfd7e676fba08cba68471b51ac9a13d9/vllm-proxy/src/app/api/v1/openai.py#L257).
@@ -358,7 +368,7 @@ curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-13edbcd23c9e4139b796fa
 
 ```json
 {
-  "text": "0353202f04c8a24a484c8e4b7ea0b186ea510e2ae0f1808875fd8a96a8059e39:479be7c96bb9b21ca927fe23f2f092abe2eb2fff7e3ad368ea96505e04673cdc",
+  "text": "31f46232b8ae6154e75a68256523851c1ce84f9ad53a1f8290c9d0576b95929f:5d679ec62b9d8e9681085814391bfef9e837b8cc08757f479302311b828284b2",
   "signature": "0x5ed3ac0642bceb8cdd5b222cd2db36b92af2a4d427f11cd1bec0e5b732b94628015f32f2cec91865148bf9d6f56ab673645f6bc500421cd28ff120339ea7e1a01b",
   "signing_address": "0x1d58EE32e9eB327c074294A2b8320C47E33b9316",
   "signing_algo": "ecdsa"
@@ -368,26 +378,28 @@ curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-13edbcd23c9e4139b796fa
 The above response gives us all of the crucial information we need to verify that the message was executed in our trusted environment:
 
 - `text` - This is the [Chat Message REQUEST Hash](#chat-message-request-hash) & [Chat Message RESPONSE Hash](#chat-message-response-hash) concatenated with a `:` separator.
-- `signature` - This is a signed message 
+- `signature` - This is the cryptographic signature of the `text` field, generated using the TEE's private key 
 - `signing_address` - Public key of the TEE unique to the model we used
 - `signing_algo` - Cryptography curve used to sign
 
 You can see that `text` is:
 
-`0353202f04c8a24a484c8e4b7ea0b186ea510e2ae0f1808875fd8a96a8059e39:479be7c96bb9b21ca927fe23f2f092abe2eb2fff7e3ad368ea96505e04673cdc`
+`31f46232b8ae6154e75a68256523851c1ce84f9ad53a1f8290c9d0576b95929f:5d679ec62b9d8e9681085814391bfef9e837b8cc08757f479302311b828284b2`
 
-Exactly match the value we calculated in the sample in previous section.
+This exactly matches the concatenated values we calculated in the previous sections:
 
-#### Limitation
+- Request hash: `31f46232b8ae6154e75a68256523851c1ce84f9ad53a1f8290c9d0576b95929f`
+- Response hash: `5d679ec62b9d8e9681085814391bfef9e837b8cc08757f479302311b828284b2`
 
-Since the resource limitation, the signature will be kept in the memory for **5 minutes** since the response is generated. But the signature will be kept persistent in LLM gateway once it's queried within 5 minutes.
+!!! Note
+    Due to resource limitations, signatures are kept in memory for **5 minutes** after the response is generated. However, once queried within this 5-minute window, the signature becomes persistent in the LLM gateway for future verification.
 
 ---
 
 #### Verify Signature
 
-Verify ECDSA signature in the response is signed by the signing address. This can be verified with any ECDSA verification tool.
+Verify that the ECDSA signature in the response was actually signed by the claimed signing address. This can be verified using any standard ECDSA verification tool or library.
 
-- Address: You can get the address from the attestation API. The address should be same if the service did not restarted.
+- Address: You can get the address from the attestation API. The address should be the same if the service has not restarted.
 - Message: The sha256 hash of the request and response. You can also calculate the sha256 by yourselves.
 - Signature Hash: The signature you have got in "Get Signature" section.
