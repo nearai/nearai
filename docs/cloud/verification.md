@@ -33,7 +33,7 @@ To request a model attestation from NEAR AI cloud, use the following `GET` API e
 https://cloud-api.near.ai/v1/attestation/report?model={model_name}
 ```
 
-***Example Requests:***
+**_Example Requests:_**
 
 === "curl"
 
@@ -78,14 +78,11 @@ https://cloud-api.near.ai/v1/attestation/report?model={model_name}
     ```
 
 !!! note
-    This endpoint requires [NEAR AI Cloud Account & API Key](./get-started.md#quick-setup)
-    
+This endpoint requires [NEAR AI Cloud Account & API Key](./get-started.md#quick-setup)
+
     **Implementation**: This endpoint is defined in the [NEAR AI Private ML SDK](https://github.com/nearai/private-ml-sdk/blob/a23fa797dfd7e676fba08cba68471b51ac9a13d9/vllm-proxy/src/app/api/v1/openai.py#L170).
 
-
->
-
-##### Example Model Attestation Response
+**_Example Response:_**
 
 ```json
 {
@@ -107,8 +104,6 @@ https://cloud-api.near.ai/v1/attestation/report?model={model_name}
 - `nvidia_payload` and `intel_quote`: Attestation report formatted for NVIDIA TEE and Intel TEE respectively. You can use them to verify the integrity of the TEE. See [Verify the Attestation](#verify-the-attestation) for more details.
 
 - `all_attestations`: List attestations from all GPU nodes as multiple TEE nodes may be used to serve inference requests. You can utilize the `signing_address` from `all_attestations` to select the appropriate TEE node for verifying its integrity.
-
----
 
 ### Verifying Model Attestation
 
@@ -144,7 +139,7 @@ curl -X POST https://nras.attestation.nvidia.com/v3/attest/gpu \
 
 See official documentation: https://docs.api.nvidia.com/attestation/reference/attestmultigpu_1
 
-#### GPU Attestation Response
+**_Example GPU Attestation Response:_**
 
 ```json
 [
@@ -159,10 +154,9 @@ See official documentation: https://docs.api.nvidia.com/attestation/reference/at
 ```
 
 !!! tip
-    NVIDIA's attestation verification response returns a "Entity Attestation Token" (EAT) encoded as a JSON Web Token (JWT)
-    
-    To decode these values, you can use an online tool such as [jwt.io](https://www.jwt.io) or a library such as [Jose](https://www.npmjs.com/package/jose).
+NVIDIA's attestation verification response returns a "Entity Attestation Token" (EAT) encoded as a JSON Web Token (JWT)
 
+    To decode these values, you can use an online tool such as [jwt.io](https://www.jwt.io) or a library such as [Jose](https://www.npmjs.com/package/jose).
 
 Example Formatted Result:
 
@@ -227,7 +221,6 @@ Example Formatted Result:
 
 ```
 
-
 #### Verify TDX Quote
 
 You can verify the Intel TDX quote with the value of `intel_quote` at [TEE Attestation Explorer](https://proof.t16z.com/).
@@ -236,71 +229,132 @@ You can verify the Intel TDX quote with the value of `intel_quote` at [TEE Attes
 
 ## Chat Message Verification
 
-### Chat Message
+You can verify each chat message with NEAR AI Confidential Cloud. For this you will need:
 
-#### Request
+1. [Chat Message **REQUEST** Hash](#chat-request-hash)
+2. [Chat Message **RESPONSE** Hash](#chat-response-hash)
+3. [Chat Message Signature](#chat-message-signature)
 
-```bash
-curl -X POST 'https://cloud-api.near.ai/v1/chat/completions' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer <YOUR-NEARAI-CLOUD-API-KEY>' \
-  -d '{
+---
+
+### Chat Message Request Hash
+
+The value is calculated from the **exact JSON request body string**.
+
+**_Example:_**
+
+```json
+{
   "messages": [
     {
-      "content": "What is your name? Please answer in less than 2 words",
+      "content": "Respond with only two words.",
       "role": "user"
     }
   ],
   "stream": true,
   "model": "llama-3.3-70b-instruct"
-}'
+}
 ```
 
-That sha256 hash of the request body is `0353202f04c8a24a484c8e4b7ea0b186ea510e2ae0f1808875fd8a96a8059e39`
+Which hashes to:
 
-(note: in this example, there is no new line at the end of request)
-
-#### Response
-
-```
-data: {"id":"chatcmpl-717412b4a37f4e739146fdafdb682b68","created":1755541518,"model":"phala/llama-3.3-70b-instruct","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"Assistant","role":"assistant"}}]}
-
-data: {"id":"chatcmpl-717412b4a37f4e739146fdafdb682b68","created":1755541518,"model":"phala/llama-3.3-70b-instruct","object":"chat.completion.chunk","choices":[{"finish_reason":"stop","index":0,"delta":{}}]}
-
-data: [DONE]
-
-
+```bash
+31f46232b8ae6154e75a68256523851c1ce84f9ad53a1f8290c9d0576b95929f
 ```
 
-The sha256 hash of the response body is `479be7c96bb9b21ca927fe23f2f092abe2eb2fff7e3ad368ea96505e04673cdc`
+Here is an example of how to get the sha256 hash of your message request body:
 
-(note: in this example, there are two new line at the end of response)
+=== "JavaScript"
+
+    ```js
+    import crypto from 'crypto';
+
+    const requestBody = JSON.stringify({
+      "messages": [
+        {
+          "content": "Respond with only two words.",
+          "role": "user"
+        }
+      ],
+      "stream": true,
+      "model": "llama-3.3-70b-instruct"
+    });
+
+    const hash = crypto.createHash('sha256').update(requestBody).digest('hex');
+    console.log(hash); //31f46232b8ae6154e75a68256523851c1ce84f9ad53a1f8290c9d0576b95929f
+    ```
 
 ---
 
-### Get Signature
+### Chat Message Response Hash
+
+This value is calculated from the **exact response body string**.
+
+**_Example Response Body:_**
+
+```bash
+data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"phala/llama-3.3-70b-instruct","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"I","role":"assistant"}}]}
+
+data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"phala/llama-3.3-70b-instruct","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":" agree"}}]}
+
+data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"phala/llama-3.3-70b-instruct","object":"chat.completion.chunk","choices":[{"finish_reason":"stop","index":0,"delta":{}}]}
+
+data: [DONE]
+```
+
+Which hashes to:
+
+```bash
+5d679ec62b9d8e9681085814391bfef9e837b8cc08757f479302311b828284b2
+```
+
+Here is an example of how to get the sha256 hash of your message response body:
+
+=== "JavaScript"
+
+    ```js
+    const response = await fetch('https://cloud-api.near.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.NEARAI_CLOUD_API_KEY}`
+      },
+      body: requestBody
+    });
+
+    const responseBody = await response.text();
+    const hash = crypto.createHash('sha256').update(responseBody).digest('hex');
+    console.log(hash); // 5d679ec62b9d8e9681085814391bfef9e837b8cc08757f479302311b828284b2
+    ```
+
+---
+
+### Chat Message Signature
+
+From the Chat Message Response you will get a unique chat `id` that is used to fetch the Chat Message Signature from NEAR AI Confidential Cloud. T
 
 By default, you can query another API with the value of `id` in the response in 5 minutes after chat completion. The signature will be persistent in the LLM gateway once it's queried.
 
-#### Request
+Use the following endpoint to get this signature:
 
-`GET https://cloud-api.near.ai/v1/signature/{chat_id}?model={model_id}&signing_algo=ecdsa`
+```bash
+GET https://cloud-api.near.ai/v1/signature/{chat_id}?model={model_id}&signing_algo=ecdsa`
+```
 
 > **Implementation**: This endpoint is defined in the [NEAR AI Private ML SDK](https://github.com/nearai/private-ml-sdk/blob/a23fa797dfd7e676fba08cba68471b51ac9a13d9/vllm-proxy/src/app/api/v1/openai.py#L257).
 
-For example, the response in the previous section, the `id` is `chatcmpl-717412b4a37f4e739146fdafdb682b68`:
+For example, the response in the previous section, the `id` is:
+
+ `chatcmpl-13edbcd23c9e4139b796fa988a88451b`
 
 ```bash
-curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-717412b4a37f4e739146fdafdb682b68?model=phala/llama-3.3-70b-instruct&signing_algo=ecdsa' \
+curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-13edbcd23c9e4139b796fa988a88451b?model=llama-3.3-70b-instruct&signing_algo=ecdsa' \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer your-api-key"
+    -H "Authorization: Bearer <YOUR-NEARAI-CLOUD-API-KEY>"
 ```
 
-#### Response
-
-- Text: the message you may want to verify. It is joined by the sha256 of the HTTP request body, and of the HTTP response body, separated by a colon `:`
-- Signature: the signature of the text signed by the signing key generated inside TEE
+***Example Response:***
 
 ```json
 {
@@ -311,7 +365,16 @@ curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-717412b4a37f4e739146fd
 }
 ```
 
-We can see that the `text` is `0353202f04c8a24a484c8e4b7ea0b186ea510e2ae0f1808875fd8a96a8059e39:479be7c96bb9b21ca927fe23f2f092abe2eb2fff7e3ad368ea96505e04673cdc`
+The above response gives us all of the crucial information we need to verify that the message was executed in our trusted environment:
+
+- `text` - This is the [Chat Message REQUEST Hash](#chat-message-request-hash) & [Chat Message RESPONSE Hash](#chat-message-response-hash) concatenated with a `:` separator.
+- `signature` - This is a signed message 
+- `signing_address` - Public key of the TEE unique to the model we used
+- `signing_algo` - Cryptography curve used to sign
+
+You can see that `text` is:
+
+`0353202f04c8a24a484c8e4b7ea0b186ea510e2ae0f1808875fd8a96a8059e39:479be7c96bb9b21ca927fe23f2f092abe2eb2fff7e3ad368ea96505e04673cdc`
 
 Exactly match the value we calculated in the sample in previous section.
 
@@ -321,7 +384,7 @@ Since the resource limitation, the signature will be kept in the memory for **5 
 
 ---
 
-### Verify Signature
+#### Verify Signature
 
 Verify ECDSA signature in the response is signed by the signing address. This can be verified with any ECDSA verification tool.
 
