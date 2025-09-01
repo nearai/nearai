@@ -1,6 +1,6 @@
 # Verification
 
-[NEAR AI Cloud](https://cloud.near.ai) operates in Trusted Execution Enviornments (TEEs) that uses cryptographic proof to verify that your private AI conversations actually happened in secure, isolated environments - not on compromised systems or with unauthorized access.
+[NEAR AI Cloud](https://cloud.near.ai) operates in Trusted Execution Environments (TEEs) which use cryptographic proofs to verify that your private AI conversations actually happened in secure, isolated environments - not on compromised systems or with unauthorized access.
 
 This section will show you step-by-step processes for checking these proofs, validating digital signatures, and confirm your AI interactions haven't been tampered with.
 
@@ -21,7 +21,7 @@ This section will show you step-by-step processes for checking these proofs, val
 To verify a NEAR AI model is operating in a secure trusted environment, there are two main steps:
 
 - [Request Model Attestation](#request-model-attestation) report from NEAR AI Cloud
-- [Verify Model Attestation](#verify-model-attestation) report using NVIDIA & Intel attestation authenticators
+- [Verify Model Attestation](#verifying-model-attestation) report using NVIDIA & Intel attestation authenticators
 
 ---
 
@@ -48,16 +48,33 @@ https://cloud-api.near.ai/v1/attestation/report?model={model_name}
 === "JavaScript"
 
     ```js
-      const MODEL_NAME = 'deepseek-chat-v3-0324'
-      const response = await fetch(
-        `https://cloud-api.near.ai/v1/attestation/report?model=${MODEL_NAME}`,
-        {
-          headers: {
-            Authorization: `Bearer ${YOUR_NEARAI_CLOUD_API_KEY}`,
+    const MODEL_NAME = 'deepseek-chat-v3-0324'
+
+    const response = await fetch(
+      `https://cloud-api.near.ai/v1/attestation/report?model=${MODEL_NAME}`,
+      {
+        headers: {
+          Authorization: `Bearer ${YOUR_NEARAI_CLOUD_API_KEY}`,
+          'Content-Type': 'application/json',
+          },
+      }
+    );
+    ```
+
+=== "Python"
+
+    ```py
+    import requests
+
+    MODEL_NAME = 'deepseek-chat-v3-0324'
+
+    response = requests.get(
+        f'https://cloud-api.near.ai/v1/attestation/report?model={MODEL_NAME}',
+        headers={
+            'Authorization': f'Bearer {YOUR_NEARAI_CLOUD_API_KEY}',
             'Content-Type': 'application/json',
-            },
         }
-      );
+    )
     ```
 
 !!! note
@@ -68,7 +85,7 @@ https://cloud-api.near.ai/v1/attestation/report?model={model_name}
 
 >
 
-***Example Model Attestation Response:***
+##### Example Model Attestation Response
 
 ```json
 {
@@ -93,7 +110,7 @@ https://cloud-api.near.ai/v1/attestation/report?model={model_name}
 
 ---
 
-### Verify Model Attestation
+### Verifying Model Attestation
 
 Once you have [requested a model attestation](#request-model-attestation) from NEAR AI Cloud, you can use the returned payload to verify its authenticity for both GPU & CPU chips. (TEE runs )
 
@@ -109,7 +126,7 @@ The `evidence_list` contains Base64 encoded data that lists the GPU's:
 
 - Hardware Identity
 - Firmware & Software measurements
-- Security confiuguration state
+- Security configuration state
 - Endorsement certificates (Signed measurements from the GPU's unique key)
 
 The private key of this GPU is how we can securely verify the authenticity. NVIDIA burns the key in the GPU during manufacturing process and only retains the public key which is used to verify the signature of attestations provided to them.
@@ -129,8 +146,7 @@ See official documentation: https://docs.api.nvidia.com/attestation/reference/at
 
 #### GPU Attestation Response
 
-```bash
-
+```json
 [
   [
     "JWT",
@@ -142,7 +158,75 @@ See official documentation: https://docs.api.nvidia.com/attestation/reference/at
 ]
 ```
 
-The example response is encoded in
+!!! tip
+    NVIDIA's attestation verification response returns a "Entity Attestation Token" (EAT) encoded as a JSON Web Token (JWT)
+    
+    To decode these values, you can use an online tool such as [jwt.io](https://www.jwt.io) or a library such as [Jose](https://www.npmjs.com/package/jose).
+
+
+Example Formatted Result:
+
+```json
+
+"JWT":
+{
+  "sub": "NVIDIA-PLATFORM-ATTESTATION",
+  "x-nvidia-ver": "2.0",
+  "nbf": 1756168926,
+  "iss": "https://nras.attestation.nvidia.com",
+  "x-nvidia-overall-att-result": true,
+  "submods": {
+    "GPU-0": [
+      "DIGEST",
+      [
+        "SHA-256",
+        "02fc2f1873bdf89cee4f3e43c57e17c248518702d8dfc3706a7b7fe8036e93d0"
+      ]
+    ]
+  },
+  "eat_nonce": "4d6e0c49321d22daa9bd7fc2205e381f9506c20e77dd5082ecf5e124ec0f4618",
+  "exp": 1756172526,
+  "iat": 1756168926,
+  "jti": "c1a3cdc9-ee22-42ad-9cd1-44a1199f2dee"
+}
+
+"GPU-0":
+{
+  "x-nvidia-gpu-driver-rim-schema-validated": true,
+  "iss": "https://nras.attestation.nvidia.com",
+  "x-nvidia-gpu-attestation-report-cert-chain-validated": true,
+  "eat_nonce": "4d6e0c49321d22daa9bd7fc2205e381f9506c20e77dd5082ecf5e124ec0f4618",
+  "x-nvidia-gpu-vbios-rim-signature-verified": true,
+  "x-nvidia-gpu-vbios-rim-fetched": true,
+  "exp": 1756172526,
+  "iat": 1756168926,
+  "ueid": "642960189298007511250958030500749152730221142468",
+  "jti": "1a38c103-c280-4422-ad75-4d1079920b63",
+  "x-nvidia-gpu-attestation-report-nonce-match": true,
+  "x-nvidia-gpu-vbios-index-no-conflict": true,
+  "x-nvidia-gpu-vbios-rim-cert-validated": true,
+  "secboot": true,
+  "x-nvidia-gpu-attestation-report-parsed": true,
+  "x-nvidia-gpu-driver-rim-signature-verified": true,
+  "x-nvidia-gpu-arch-check": true,
+  "x-nvidia-attestation-warning": null,
+  "nbf": 1756168926,
+  "x-nvidia-gpu-driver-version": "570.133.20",
+  "x-nvidia-gpu-driver-rim-measurements-available": true,
+  "x-nvidia-gpu-attestation-report-signature-verified": true,
+  "hwmodel": "GH100 A01 GSP BROM",
+  "dbgstat": "disabled",
+  "x-nvidia-gpu-driver-rim-fetched": true,
+  "oemid": "5703",
+  "x-nvidia-gpu-vbios-rim-schema-validated": true,
+  "measres": "success",
+  "x-nvidia-gpu-driver-rim-cert-validated": true,
+  "x-nvidia-gpu-vbios-version": "96.00.CF.00.02",
+  "x-nvidia-gpu-vbios-rim-measurements-available": true
+}
+
+```
+
 
 #### Verify TDX Quote
 
@@ -160,7 +244,7 @@ You can verify the Intel TDX quote with the value of `intel_quote` at [TEE Attes
 curl -X POST 'https://cloud-api.near.ai/v1/chat/completions' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer your-api-key' \
+  -H 'Authorization: Bearer <YOUR-NEARAI-CLOUD-API-KEY>' \
   -d '{
   "messages": [
     {
@@ -169,7 +253,7 @@ curl -X POST 'https://cloud-api.near.ai/v1/chat/completions' \
     }
   ],
   "stream": true,
-  "model": "phala/llama-3.3-70b-instruct"
+  "model": "llama-3.3-70b-instruct"
 }'
 ```
 
