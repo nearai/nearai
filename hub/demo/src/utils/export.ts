@@ -75,7 +75,7 @@ export async function exportAgentAsTar(
   // Add a README file with export information
   const readmeContent = `# ${entry.name}
 
-Exported from NEAR AI Hub
+Exported from NEAR AI Hub (Service Discontinued)
 Namespace: ${entry.namespace}
 Version: ${entry.version}
 Category: ${entry.category}
@@ -87,13 +87,45 @@ ${entry.description || 'No description available'}
 ## Tags
 ${entry.tags.join(', ') || 'No tags'}
 
-## How to Use
-This agent was exported from the NEAR AI Hub. To use it:
-1. Extract this archive to your desired location
-2. Follow the agent's specific setup instructions in its documentation
-3. Install any required dependencies
+## ⚠️ Important: NEAR AI Hub Has Been Discontinued
 
-For more information, visit: https://near.ai
+The NEAR AI Hub service has been permanently shut down. This export contains all your agent's code and configuration files, but you will need to migrate to alternative AI platforms to continue using your agent.
+
+## Migration Options
+
+### 1. Alternative AI Providers
+- **OpenAI:** https://platform.openai.com (GPT-4, GPT-3.5)
+- **Anthropic:** https://www.anthropic.com (Claude)
+- **Google AI:** https://ai.google.dev (Gemini)
+- **Hugging Face:** https://huggingface.co
+
+### 2. Open Source Frameworks
+- **LangChain:** https://langchain.com - Multi-provider agent framework
+- **AutoGen:** https://github.com/microsoft/autogen - Multi-agent conversations
+- **CrewAI:** https://www.crewai.com - Agent orchestration
+
+### 3. Local LLMs
+- **Ollama:** https://ollama.ai - Run models locally
+- **LM Studio:** https://lmstudio.ai - Desktop LLM app
+- **Text Generation WebUI:** https://github.com/oobabooga/text-generation-webui
+
+## How to Migrate Your Agent
+
+1. **Extract this archive** to your desired location
+2. **Review the agent code** in the extracted files
+3. **Choose a new provider** from the options above
+4. **Update API calls** to use the new provider's SDK
+5. **Replace NEAR AI imports** with equivalent libraries
+6. **Set up authentication** for your chosen provider
+7. **Test your migrated agent** thoroughly
+
+## What's Included
+- All agent source code files
+- Configuration and metadata
+- Custom prompts and templates
+- Any additional resources
+
+Note: This agent was exported from NEAR AI Hub before the complete service shutdown. You will need to adapt the code to work with your chosen alternative platform.
 `;
 
   const encoder = new TextEncoder();

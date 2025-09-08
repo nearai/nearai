@@ -283,9 +283,64 @@ export default function ExportGuidePage() {
                 </Card>
                 <Text>
                   5. The extracted folder will contain all agent files and a
-                  README with metadata
+                  README with migration instructions
                 </Text>
               </Flex>
+            </Flex>
+          </Card>
+
+          {/* Migration Guide */}
+          <Card padding="l" background="sand-2">
+            <Flex direction="column" gap="m">
+              <Flex align="center" gap="s">
+                <SvgIcon icon={<Info />} color="sand-11" size="l" />
+                <Text size="text-l" weight={600}>
+                  After Export: Migration Guide
+                </Text>
+              </Flex>
+
+              <Text size="text-s" color="sand-11">
+                Since the NEAR AI Hub is being completely shut down, you'll need
+                to migrate your agent to an alternative platform:
+              </Text>
+
+              <Flex direction="column" gap="xs">
+                <Text size="text-s" weight={600}>
+                  Popular AI Provider Options:
+                </Text>
+                <Text size="text-xs" color="sand-11">
+                  • <strong>OpenAI</strong> - GPT-4, GPT-3.5 models
+                </Text>
+                <Text size="text-xs" color="sand-11">
+                  • <strong>Anthropic</strong> - Claude models
+                </Text>
+                <Text size="text-xs" color="sand-11">
+                  • <strong>Google AI</strong> - Gemini models
+                </Text>
+                <Text size="text-xs" color="sand-11">
+                  • <strong>Hugging Face</strong> - Open source models
+                </Text>
+              </Flex>
+
+              <Flex direction="column" gap="xs">
+                <Text size="text-s" weight={600}>
+                  Local/Self-Hosted Options:
+                </Text>
+                <Text size="text-xs" color="sand-11">
+                  • <strong>Ollama</strong> - Run LLMs locally
+                </Text>
+                <Text size="text-xs" color="sand-11">
+                  • <strong>LM Studio</strong> - Desktop LLM application
+                </Text>
+                <Text size="text-xs" color="sand-11">
+                  • <strong>LangChain</strong> - Multi-provider framework
+                </Text>
+              </Flex>
+
+              <Text size="text-xs" color="sand-11" style={{ marginTop: '8px' }}>
+                The exported README file contains detailed migration
+                instructions specific to your agent.
+              </Text>
             </Flex>
           </Card>
 
@@ -295,13 +350,31 @@ export default function ExportGuidePage() {
               <SvgIcon icon={<Warning />} color="amber-11" size="l" />
               <Flex direction="column" gap="s">
                 <Text weight={600} color="amber-12">
-                  Important: Export Your Agents
+                  ⚠️ Critical: Export Your Agents Now
                 </Text>
                 <Text size="text-s" color="amber-11">
-                  As NEAR AI transitions to focus on DCML, please ensure you
-                  export all your important agents before the shutdown date.
-                  This export contains all necessary files to preserve and
-                  potentially migrate your agent elsewhere.
+                  The NEAR AI Hub service is being{' '}
+                  <strong>permanently shut down</strong>. Please export all your
+                  agents immediately to preserve your work.
+                </Text>
+                <Text
+                  size="text-xs"
+                  color="amber-11"
+                  style={{ marginTop: '8px' }}
+                >
+                  After the shutdown:
+                </Text>
+                <Text size="text-xs" color="amber-11">
+                  • The NEAR AI CLI will no longer function
+                </Text>
+                <Text size="text-xs" color="amber-11">
+                  • Agent registry and storage will be unavailable
+                </Text>
+                <Text size="text-xs" color="amber-11">
+                  • You will need to migrate to alternative AI providers
+                </Text>
+                <Text size="text-xs" color="amber-11">
+                  • This export contains everything needed for migration
                 </Text>
               </Flex>
             </Flex>
@@ -311,4 +384,3 @@ export default function ExportGuidePage() {
     </Section>
   );
 }
-

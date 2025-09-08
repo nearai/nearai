@@ -847,43 +847,92 @@ Exported on: {datetime.datetime.now().isoformat()}
 ## Description
 {metadata_dict.get('description', 'No description available')}
 
-## How to Use This Agent
+## ⚠️ Important: NEAR AI Hub Has Been Discontinued
 
-### Option 1: Run Locally with NEAR AI CLI
+The NEAR AI Hub service has been permanently shut down. This agent export contains all your code and configuration files, but you will need to migrate to alternative AI platforms to continue using your agent.
 
-1. Install NEAR AI CLI:
+## How to Use This Agent After NEAR AI Shutdown
+
+### Option 1: Migrate to OpenAI, Anthropic, or Other AI Providers
+
+Since the NEAR AI Hub is no longer available, you'll need to:
+
+1. **Choose an alternative AI provider:**
+   - OpenAI (GPT-4, GPT-3.5): https://platform.openai.com
+   - Anthropic (Claude): https://www.anthropic.com
+   - Google AI (Gemini): https://ai.google.dev
+   - Hugging Face: https://huggingface.co
+   - Local LLMs (Ollama, LM Studio, etc.)
+
+2. **Adapt your agent code:**
+   - Review the agent code in this archive
+   - Update API calls to use your chosen provider's SDK
+   - Modify authentication to use your new API keys
+   - Adjust any NEAR AI-specific features to work with the new platform
+
+3. **Set up your environment:**
    ```bash
-   pip install nearai
+   # Example for OpenAI
+   pip install openai
+   export OPENAI_API_KEY="your-api-key"
+   
+   # Example for Anthropic
+   pip install anthropic
+   export ANTHROPIC_API_KEY="your-api-key"
    ```
 
-2. Extract this archive to a local directory
+### Option 2: Run with Open Source Frameworks
 
-3. Run the agent:
-   ```bash
-   nearai agent interactive /path/to/extracted/agent --local
-   ```
+You can adapt your agent to work with open source AI frameworks:
 
-### Option 2: Re-upload to Your Own Registry
+1. **LangChain:** https://langchain.com
+   - Supports multiple LLM providers
+   - Easy migration path for agent logic
 
-If you have your own NEAR AI registry instance:
+2. **AutoGen:** https://github.com/microsoft/autogen
+   - Multi-agent conversation framework
+   - Works with various LLM backends
 
-1. Update the metadata.json with your namespace
-2. Upload using:
-   ```bash
-   nearai registry upload /path/to/extracted/agent
-   ```
+3. **CrewAI:** https://www.crewai.com
+   - Agent orchestration platform
+   - Compatible with multiple AI models
+
+### Option 3: Self-Host with Local LLMs
+
+For complete independence from cloud services:
+
+1. **Ollama:** https://ollama.ai
+   - Run LLMs locally
+   - No API costs
+
+2. **LM Studio:** https://lmstudio.ai
+   - Desktop app for local LLMs
+   - User-friendly interface
+
+3. **Text Generation WebUI:** https://github.com/oobabooga/text-generation-webui
+   - Comprehensive local LLM solution
 
 ## Files Included
 
-This archive contains all the agent's source code and configuration files.
+This archive contains:
+- All agent source code files
+- Configuration files (metadata.json)
+- Any custom prompts or templates
+- Dependencies and requirements
 
-## Support
+## Migration Tips
 
-For more information about running NEAR AI agents locally, visit:
-https://docs.near.ai/agents/running
+1. **Preserve your prompts:** The prompts and logic in your agent are provider-agnostic and can be reused
+2. **Check dependencies:** Review any NEAR AI-specific imports and replace with equivalent libraries
+3. **Test thoroughly:** Different AI providers may have different response formats and capabilities
+4. **Consider costs:** Compare pricing across providers for your usage patterns
+
+## Legacy Documentation
+
+The NEAR AI documentation is no longer available online. This export represents your complete agent implementation as it existed on the NEAR AI platform.
 
 ---
-Note: This agent was exported from NEAR AI Hub before the service wind-down.
+Note: This agent was exported from NEAR AI Hub before the complete service shutdown. The NEAR AI Hub is no longer operational, and you will need to migrate to alternative AI platforms.
 """
         zip_file.writestr("README.md", readme_content)
 
