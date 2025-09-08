@@ -1,7 +1,9 @@
 import datetime
+import io
 import json
 import logging
 import re
+import zipfile
 from collections import defaultdict
 from os import getenv
 from typing import Any, Dict, List, Optional
@@ -21,6 +23,7 @@ from hub.api.v1.auth import AuthToken, get_auth, get_optional_auth
 from hub.api.v1.entry_location import EntryLocation, valid_identifier
 from hub.api.v1.models import Fork, RegistryEntry, Tags, get_session, sanitize
 from hub.api.v1.sign import is_trusted_runner_api_key
+from hub.api.v1.wind_down_config import wind_down_config
 
 ADMIN_LIST = [
     "spensa2.near",
@@ -240,6 +243,12 @@ async def upload_file(
     path: str = Form(...),
     file: UploadFile = File(...),
 ):
+    # Check if wind-down mode is active
+    if wind_down_config.is_wind_down_active:
+        raise HTTPException(
+            status_code=403, detail=f"File uploads are disabled. {wind_down_config.announcement_message}"
+        )
+
     entry = get(entry_location)
     key = entry.get_key(path)
 
@@ -287,6 +296,12 @@ def download_file_inner(
 async def upload_metadata(
     entry_location: EntryLocation = Depends(with_metadata_write_access()), metadata: EntryMetadataInput = Body()
 ):
+    # Check if wind-down mode is active
+    if wind_down_config.is_wind_down_active:
+        raise HTTPException(
+            status_code=403, detail=f"Agent uploads are disabled. {wind_down_config.announcement_message}"
+        )
+
     with get_session() as session:
         entry = session.exec(
             select(RegistryEntry).where(
@@ -708,6 +723,12 @@ def fork_entry(
     auth: AuthToken = Depends(get_auth),
 ) -> ForkResult:
     """Fork an existing registry entry to the current user's namespace."""
+    # Check if wind-down mode is active
+    if wind_down_config.is_wind_down_active:
+        raise HTTPException(
+            status_code=403, detail=f"Agent forking is disabled. {wind_down_config.announcement_message}"
+        )
+
     with get_session() as session:
         new_entry = RegistryEntry(
             namespace=auth.account_id,
@@ -776,3 +797,102 @@ def fork_entry(
         )
 
         return result
+
+
+@v1_router.post("/export_agent")
+def export_agent(
+    entry: RegistryEntry = Depends(get_read_access),
+) -> StreamingResponse:
+    """Export an agent as a downloadable ZIP archive containing all its files."""
+
+    # Get all files for the agent
+    files = list_files_inner(entry)
+
+    # Get metadata
+    metadata = download_metadata_inner(entry)
+
+    # Create a ZIP file in memory
+    zip_buffer = io.BytesIO()
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        # Add metadata.json
+        metadata_dict = metadata.model_dump()
+        metadata_json = json.dumps(metadata_dict, indent=2)
+        zip_file.writestr("metadata.json", metadata_json)
+
+        # Add all agent files
+        for file in files:
+            if file.filename and file.filename != "metadata.json":  # Skip metadata as we've already added it
+                try:
+                    # Download file content from S3
+                    file_content = download_file_inner(entry, file.filename)
+
+                    # Read the content from the streaming response
+                    content_bytes = b""
+                    for chunk in file_content.iter_chunks():
+                        content_bytes += chunk
+
+                    # Add to ZIP
+                    zip_file.writestr(file.filename, content_bytes)
+                except Exception as e:
+                    logger.warning(f"Failed to add file {file.filename} to archive: {e}")
+                    continue
+
+        # Add README with export information
+        readme_content = f"""# {entry.namespace}/{entry.name} Agent Export
+
+This is an export of the NEAR AI agent: {entry.namespace}/{entry.name}/{entry.version}
+Exported on: {datetime.datetime.now().isoformat()}
+
+## Description
+{metadata_dict.get('description', 'No description available')}
+
+## How to Use This Agent
+
+### Option 1: Run Locally with NEAR AI CLI
+
+1. Install NEAR AI CLI:
+   ```bash
+   pip install nearai
+   ```
+
+2. Extract this archive to a local directory
+
+3. Run the agent:
+   ```bash
+   nearai agent interactive /path/to/extracted/agent --local
+   ```
+
+### Option 2: Re-upload to Your Own Registry
+
+If you have your own NEAR AI registry instance:
+
+1. Update the metadata.json with your namespace
+2. Upload using:
+   ```bash
+   nearai registry upload /path/to/extracted/agent
+   ```
+
+## Files Included
+
+This archive contains all the agent's source code and configuration files.
+
+## Support
+
+For more information about running NEAR AI agents locally, visit:
+https://docs.near.ai/agents/running
+
+---
+Note: This agent was exported from NEAR AI Hub before the service wind-down.
+"""
+        zip_file.writestr("README.md", readme_content)
+
+    # Prepare the ZIP file for download
+    zip_buffer.seek(0)
+
+    # Create filename for the download
+    filename = f"{entry.namespace}_{entry.name}_{entry.version}_export.zip"
+
+    return StreamingResponse(
+        zip_buffer, media_type="application/zip", headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )

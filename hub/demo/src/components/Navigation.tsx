@@ -1,20 +1,23 @@
 'use client';
 
-import { ImageIcon, useTheme } from '@nearai/ui';
 import {
   BreakpointDisplay,
   Button,
   Dropdown,
   Flex,
+  ImageIcon,
   SvgIcon,
   Text,
   Tooltip,
+  useTheme,
 } from '@nearai/ui';
 import {
+  ArrowSquareOut,
   BookOpenText,
   CaretDown,
   ChatCircleDots,
   Cube,
+  DownloadSimple,
   Gear,
   GithubLogo,
   List,
@@ -25,12 +28,13 @@ import {
   Sun,
   User,
   Wallet,
+  Warning,
   X,
 } from '@phosphor-icons/react';
 import * as NavigationMenu from '@radix-ui/react-navigation-menu';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { APP_TITLE } from '@/constants';
 import { env } from '@/env';
@@ -115,12 +119,27 @@ export const Navigation = () => {
   const walletAccount = useWalletStore((store) => store.account);
   const path = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const { resolvedTheme, setTheme } = useTheme();
   const { embedded } = useEmbeddedWithinIframe();
   const hidden = path === SIGN_IN_CALLBACK_PATH;
   const { currentEntry, currentEntryId } = useCurrentEntry('agent', {
     enabled: embedded,
   });
+
+  // Determine if we're on an agent page and extract agent ID for export
+  const exportHref = useMemo(() => {
+    const agentMatch = path.match(
+      /^\/agents\/([^\/]+)\/([^\/]+)(?:\/([^\/]+))?/,
+    );
+    if (agentMatch) {
+      const namespace = agentMatch[1];
+      const name = agentMatch[2];
+      const version = agentMatch[3] || 'latest';
+      return `/export-guide?agent=${namespace}/${name}/${version}`;
+    }
+    return '/export-guide';
+  }, [path]);
 
   useEffect(() => {
     if (hidden) {
@@ -131,6 +150,30 @@ export const Navigation = () => {
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!env.NEXT_PUBLIC_WIND_DOWN_MODE) return;
+
+    const calculateDaysRemaining = () => {
+      const shutdownDate = new Date(env.NEXT_PUBLIC_WIND_DOWN_DATE);
+      const today = new Date();
+      const diffTime = shutdownDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return Math.max(0, diffDays);
+    };
+
+    setDaysRemaining(calculateDaysRemaining());
+
+    // Update daily
+    const interval = setInterval(
+      () => {
+        setDaysRemaining(calculateDaysRemaining());
+      },
+      1000 * 60 * 60 * 24,
+    ); // 24 hours
+
+    return () => clearInterval(interval);
   }, []);
 
   const signOut = () => {
@@ -149,324 +192,386 @@ export const Navigation = () => {
 
   if (hidden) return null;
 
+  const shutdownDate = env.NEXT_PUBLIC_WIND_DOWN_MODE
+    ? new Date(env.NEXT_PUBLIC_WIND_DOWN_DATE).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : null;
+
   return (
-    <header className={s.navigation}>
-      {embedded ? (
-        <>
-          {currentEntry &&
-            currentEntry.details.agent?.embed?.logo !== false && (
-              <div className={s.embeddedLogo}>
-                {currentEntry.details.agent?.embed?.logo ? (
-                  <img
-                    src={rawFileUrlForEntry(
-                      currentEntry,
-                      currentEntry.details.agent.embed.logo,
-                    )}
-                    alt={currentEntry.name}
-                  />
-                ) : (
-                  <span className={s.logoTitle}>{currentEntry.name}</span>
-                )}
-              </div>
-            )}
-        </>
-      ) : (
-        <Link className={s.logo} href="/">
-          <NearAiLogo className={s.logoNearAi} />
-          <span className={s.logoTitle}>{APP_TITLE}</span>
-        </Link>
-      )}
-
-      {!embedded && (
-        <BreakpointDisplay show="larger-than-tablet" className={s.breakpoint}>
-          <NavigationMenu.Root className={s.menu} delayDuration={0}>
-            <NavigationMenu.List>
-              {navItems?.map((item) => (
-                <NavigationMenu.Item key={item.path}>
-                  <NavigationMenu.Link
-                    asChild
-                    active={path.startsWith(item.path)}
-                  >
-                    <Link href={item.path} key={item.path}>
-                      {item.label}
-                    </Link>
-                  </NavigationMenu.Link>
-                </NavigationMenu.Item>
-              ))}
-
-              {resourcesNavItems && (
-                <NavigationMenu.Item>
-                  <NavigationMenu.Trigger>
-                    Resources
-                    <SvgIcon size="xs" icon={<CaretDown />} />
-                  </NavigationMenu.Trigger>
-
-                  <NavigationMenu.Content className={s.menuDropdown}>
-                    {resourcesNavItems.map((item) => (
-                      <NavigationMenu.Link
-                        key={item.path}
-                        asChild
-                        active={path.startsWith(item.path)}
-                      >
-                        <Link
-                          href={item.path}
-                          target={item.target}
-                          key={item.path}
-                        >
-                          <SvgIcon icon={item.icon} />
-                          {item.label}
-                        </Link>
-                      </NavigationMenu.Link>
-                    ))}
-                  </NavigationMenu.Content>
-                </NavigationMenu.Item>
-              )}
-            </NavigationMenu.List>
-          </NavigationMenu.Root>
-        </BreakpointDisplay>
-      )}
-
-      <Flex
-        align="center"
-        gap="m"
-        phone={{ gap: 's' }}
-        style={{ marginLeft: 'auto' }}
-      >
+    <header
+      className={`${s.navigation} ${env.NEXT_PUBLIC_WIND_DOWN_MODE ? s.withWindDown : ''}`}
+    >
+      <div className={s.navigationMain}>
         {embedded ? (
-          <a
-            href={`https://app.near.ai/agents/${currentEntryId}`}
-            target="_blank"
-            className={s.poweredByNearAiLogo}
-          >
-            <Text size="text-2xs">Powered by</Text>
-            <NearAiLogo />
-          </a>
-        ) : (
           <>
-            <Flex align="center" gap="xs">
-              {mounted && resolvedTheme === 'dark' ? (
-                <Tooltip asChild content="Switch to light mode">
-                  <Button
-                    label="Switch to light mode"
-                    size="small"
-                    icon={<Moon weight="duotone" />}
-                    fill="ghost"
-                    onClick={() => setTheme('light')}
-                  />
-                </Tooltip>
-              ) : (
-                <Tooltip asChild content="Switch to dark mode">
-                  <Button
-                    label="Switch to dark mode"
-                    size="small"
-                    icon={<Sun weight="duotone" />}
-                    fill="ghost"
-                    onClick={() => setTheme('dark')}
-                  />
-                </Tooltip>
-              )}
-
-              {!env.NEXT_PUBLIC_CONSUMER_MODE && (
-                <>
-                  <BreakpointDisplay
-                    show="larger-than-phone"
-                    className={s.breakpoint}
-                  >
-                    <Tooltip asChild content="View Documentation">
-                      <Button
-                        label="View Documentation"
-                        size="small"
-                        icon={<BookOpenText weight="duotone" />}
-                        fill="ghost"
-                        href="https://docs.near.ai"
-                        target="_blank"
-                      />
-                    </Tooltip>
-                  </BreakpointDisplay>
-
-                  <NewAgentButton
-                    customButton={
-                      <Button
-                        label="New Agent"
-                        size="small"
-                        icon={<Plus weight="bold" />}
-                        variant="affirmative"
-                        fill="ghost"
-                      />
-                    }
-                  />
-                </>
-              )}
-            </Flex>
-
-            {(navItems || resourcesNavItems) && (
-              <BreakpointDisplay
-                show="smaller-than-desktop"
-                className={s.breakpoint}
-              >
-                <Dropdown.Root>
-                  <Dropdown.Trigger asChild>
-                    <Button
-                      label="Navigation"
-                      size="small"
-                      fill="outline"
-                      variant="secondary"
-                      icon={<List weight="bold" />}
+            {currentEntry &&
+              currentEntry.details.agent?.embed?.logo !== false && (
+                <div className={s.embeddedLogo}>
+                  {currentEntry.details.agent?.embed?.logo ? (
+                    <img
+                      src={rawFileUrlForEntry(
+                        currentEntry,
+                        currentEntry.details.agent.embed.logo,
+                      )}
+                      alt={currentEntry.name}
                     />
-                  </Dropdown.Trigger>
+                  ) : (
+                    <span className={s.logoTitle}>{currentEntry.name}</span>
+                  )}
+                </div>
+              )}
+          </>
+        ) : (
+          <Link className={s.logo} href="/">
+            <NearAiLogo className={s.logoNearAi} />
+            <span className={s.logoTitle}>{APP_TITLE}</span>
+          </Link>
+        )}
 
-                  <Dropdown.Content maxHeight="80svh">
-                    <Dropdown.Section>
-                      {navItems?.map((item) => (
-                        <Dropdown.Item href={item.path} key={item.path}>
-                          <SvgIcon icon={item.icon} />
-                          {item.label}
-                        </Dropdown.Item>
+        {!embedded && (
+          <BreakpointDisplay show="larger-than-tablet" className={s.breakpoint}>
+            <NavigationMenu.Root className={s.menu} delayDuration={0}>
+              <NavigationMenu.List>
+                {navItems?.map((item) => (
+                  <NavigationMenu.Item key={item.path}>
+                    <NavigationMenu.Link
+                      asChild
+                      active={path.startsWith(item.path)}
+                    >
+                      <Link href={item.path} key={item.path}>
+                        {item.label}
+                      </Link>
+                    </NavigationMenu.Link>
+                  </NavigationMenu.Item>
+                ))}
+
+                {resourcesNavItems && (
+                  <NavigationMenu.Item>
+                    <NavigationMenu.Trigger>
+                      Resources
+                      <SvgIcon size="xs" icon={<CaretDown />} />
+                    </NavigationMenu.Trigger>
+
+                    <NavigationMenu.Content className={s.menuDropdown}>
+                      {resourcesNavItems.map((item) => (
+                        <NavigationMenu.Link
+                          key={item.path}
+                          asChild
+                          active={path.startsWith(item.path)}
+                        >
+                          <Link
+                            href={item.path}
+                            target={item.target}
+                            key={item.path}
+                          >
+                            <SvgIcon icon={item.icon} />
+                            {item.label}
+                          </Link>
+                        </NavigationMenu.Link>
                       ))}
-                    </Dropdown.Section>
+                    </NavigationMenu.Content>
+                  </NavigationMenu.Item>
+                )}
+              </NavigationMenu.List>
+            </NavigationMenu.Root>
+          </BreakpointDisplay>
+        )}
 
-                    {resourcesNavItems && (
+        <Flex
+          align="center"
+          gap="m"
+          phone={{ gap: 's' }}
+          style={{ marginLeft: 'auto' }}
+        >
+          {embedded ? (
+            <a
+              href={`https://app.near.ai/agents/${currentEntryId}`}
+              target="_blank"
+              className={s.poweredByNearAiLogo}
+            >
+              <Text size="text-2xs">Powered by</Text>
+              <NearAiLogo />
+            </a>
+          ) : (
+            <>
+              <Flex align="center" gap="xs">
+                {mounted && resolvedTheme === 'dark' ? (
+                  <Tooltip asChild content="Switch to light mode">
+                    <Button
+                      label="Switch to light mode"
+                      size="small"
+                      icon={<Moon weight="duotone" />}
+                      fill="ghost"
+                      onClick={() => setTheme('light')}
+                    />
+                  </Tooltip>
+                ) : (
+                  <Tooltip asChild content="Switch to dark mode">
+                    <Button
+                      label="Switch to dark mode"
+                      size="small"
+                      icon={<Sun weight="duotone" />}
+                      fill="ghost"
+                      onClick={() => setTheme('dark')}
+                    />
+                  </Tooltip>
+                )}
+
+                {!env.NEXT_PUBLIC_CONSUMER_MODE && (
+                  <>
+                    <BreakpointDisplay
+                      show="larger-than-phone"
+                      className={s.breakpoint}
+                    >
+                      <Tooltip asChild content="View Documentation">
+                        <Button
+                          label="View Documentation"
+                          size="small"
+                          icon={<BookOpenText weight="duotone" />}
+                          fill="ghost"
+                          href="https://docs.near.ai"
+                          target="_blank"
+                        />
+                      </Tooltip>
+                    </BreakpointDisplay>
+
+                    <NewAgentButton
+                      customButton={
+                        <Button
+                          label="New Agent"
+                          size="small"
+                          icon={<Plus weight="bold" />}
+                          variant="affirmative"
+                          fill="ghost"
+                        />
+                      }
+                    />
+                  </>
+                )}
+              </Flex>
+
+              {(navItems || resourcesNavItems) && (
+                <BreakpointDisplay
+                  show="smaller-than-desktop"
+                  className={s.breakpoint}
+                >
+                  <Dropdown.Root>
+                    <Dropdown.Trigger asChild>
+                      <Button
+                        label="Navigation"
+                        size="small"
+                        fill="outline"
+                        variant="secondary"
+                        icon={<List weight="bold" />}
+                      />
+                    </Dropdown.Trigger>
+
+                    <Dropdown.Content maxHeight="80svh">
                       <Dropdown.Section>
-                        {resourcesNavItems.map((item) => (
+                        {navItems?.map((item) => (
                           <Dropdown.Item href={item.path} key={item.path}>
                             <SvgIcon icon={item.icon} />
                             {item.label}
                           </Dropdown.Item>
                         ))}
                       </Dropdown.Section>
-                    )}
-                  </Dropdown.Content>
-                </Dropdown.Root>
-              </BreakpointDisplay>
-            )}
-          </>
-        )}
 
-        {auth ? (
-          <Dropdown.Root>
-            <Dropdown.Trigger asChild>
-              <Button
-                label="User Settings"
-                size="small"
-                icon={<User weight="bold" />}
-              />
-            </Dropdown.Trigger>
+                      {resourcesNavItems && (
+                        <Dropdown.Section>
+                          {resourcesNavItems.map((item) => (
+                            <Dropdown.Item href={item.path} key={item.path}>
+                              <SvgIcon icon={item.icon} />
+                              {item.label}
+                            </Dropdown.Item>
+                          ))}
+                        </Dropdown.Section>
+                      )}
+                    </Dropdown.Content>
+                  </Dropdown.Root>
+                </BreakpointDisplay>
+              )}
+            </>
+          )}
 
-            <Dropdown.Content style={{ width: '14rem' }} maxHeight="80svh">
-              <Dropdown.Section>
-                <Dropdown.SectionContent>
-                  <Flex direction="column" gap="m">
-                    <Text size="text-xs" weight={600} uppercase>
-                      Account
-                    </Text>
+          {auth ? (
+            <Dropdown.Root>
+              <Dropdown.Trigger asChild>
+                <Button
+                  label="User Settings"
+                  size="small"
+                  icon={<User weight="bold" />}
+                />
+              </Dropdown.Trigger>
 
-                    <Text
-                      size="text-s"
-                      weight={600}
-                      color="sand-12"
-                      clampLines={1}
-                    >
-                      {auth.accountId}
-                    </Text>
-                  </Flex>
-                </Dropdown.SectionContent>
+              <Dropdown.Content style={{ width: '14rem' }} maxHeight="80svh">
+                <Dropdown.Section>
+                  <Dropdown.SectionContent>
+                    <Flex direction="column" gap="m">
+                      <Text size="text-xs" weight={600} uppercase>
+                        Account
+                      </Text>
 
-                {!env.NEXT_PUBLIC_CONSUMER_MODE && !embedded && (
-                  <>
-                    <Dropdown.Item href={`/profiles/${auth.accountId}`}>
-                      <SvgIcon icon={<Cube />} />
-                      Your Work
+                      <Text
+                        size="text-s"
+                        weight={600}
+                        color="sand-12"
+                        clampLines={1}
+                      >
+                        {auth.accountId}
+                      </Text>
+                    </Flex>
+                  </Dropdown.SectionContent>
+
+                  {!env.NEXT_PUBLIC_CONSUMER_MODE && !embedded && (
+                    <>
+                      <Dropdown.Item href={`/profiles/${auth.accountId}`}>
+                        <SvgIcon icon={<Cube />} />
+                        Your Work
+                      </Dropdown.Item>
+
+                      <Dropdown.Item
+                        href={`/profiles/${auth.accountId}/starred`}
+                      >
+                        <SvgIcon icon={<Star />} />
+                        Your Stars
+                      </Dropdown.Item>
+                    </>
+                  )}
+
+                  {!embedded && (
+                    <Dropdown.Item href="/settings">
+                      <SvgIcon icon={<Gear />} />
+                      Settings
                     </Dropdown.Item>
+                  )}
 
-                    <Dropdown.Item href={`/profiles/${auth.accountId}/starred`}>
-                      <SvgIcon icon={<Star />} />
-                      Your Stars
-                    </Dropdown.Item>
-                  </>
-                )}
+                  <Dropdown.Item onSelect={signOut}>
+                    <SvgIcon icon={<SignOut />} />
+                    Sign Out
+                  </Dropdown.Item>
+                </Dropdown.Section>
 
                 {!embedded && (
-                  <Dropdown.Item href="/settings">
-                    <SvgIcon icon={<Gear />} />
-                    Settings
-                  </Dropdown.Item>
-                )}
+                  <>
+                    {/* https://github.com/nearai/nearai/issues/952 */}
 
-                <Dropdown.Item onSelect={signOut}>
-                  <SvgIcon icon={<SignOut />} />
-                  Sign Out
-                </Dropdown.Item>
-              </Dropdown.Section>
+                    {wallet && walletAccount ? (
+                      <Dropdown.Section>
+                        <Dropdown.SectionContent>
+                          <Flex direction="column" gap="m">
+                            <Text size="text-xs" weight={600} uppercase>
+                              Payment Method
+                            </Text>
 
-              {!embedded && (
-                <>
-                  {/* https://github.com/nearai/nearai/issues/952 */}
+                            <Flex align="center" gap="s">
+                              <ImageIcon
+                                src={wallet.metadata.iconUrl}
+                                alt={wallet.metadata.name}
+                              />
 
-                  {wallet && walletAccount ? (
-                    <Dropdown.Section>
-                      <Dropdown.SectionContent>
-                        <Flex direction="column" gap="m">
-                          <Text size="text-xs" weight={600} uppercase>
-                            Payment Method
-                          </Text>
-
-                          <Flex align="center" gap="s">
-                            <ImageIcon
-                              src={wallet.metadata.iconUrl}
-                              alt={wallet.metadata.name}
-                            />
-
-                            <Flex direction="column">
-                              <Text
-                                size="text-s"
-                                weight={600}
-                                color="sand-12"
-                                clampLines={1}
-                              >
-                                {walletAccount.accountId}
-                              </Text>
-                              <Text size="text-xs" clampLines={1}>
-                                {wallet.metadata.name}
-                              </Text>
+                              <Flex direction="column">
+                                <Text
+                                  size="text-s"
+                                  weight={600}
+                                  color="sand-12"
+                                  clampLines={1}
+                                >
+                                  {walletAccount.accountId}
+                                </Text>
+                                <Text size="text-xs" clampLines={1}>
+                                  {wallet.metadata.name}
+                                </Text>
+                              </Flex>
                             </Flex>
                           </Flex>
-                        </Flex>
-                      </Dropdown.SectionContent>
+                        </Dropdown.SectionContent>
 
-                      <Dropdown.Item onSelect={disconnectWallet}>
-                        <SvgIcon icon={<X />} />
-                        Disconnect
-                      </Dropdown.Item>
-                    </Dropdown.Section>
-                  ) : (
-                    <Dropdown.Section>
-                      <Dropdown.SectionContent>
-                        <Flex direction="column" gap="m">
-                          <Text size="text-xs" weight={600} uppercase>
-                            Payment Method
-                          </Text>
+                        <Dropdown.Item onSelect={disconnectWallet}>
+                          <SvgIcon icon={<X />} />
+                          Disconnect
+                        </Dropdown.Item>
+                      </Dropdown.Section>
+                    ) : (
+                      <Dropdown.Section>
+                        <Dropdown.SectionContent>
+                          <Flex direction="column" gap="m">
+                            <Text size="text-xs" weight={600} uppercase>
+                              Payment Method
+                            </Text>
 
-                          <Text size="text-xs">
-                            Certain agent interactions require a connected
-                            wallet.
-                          </Text>
-                        </Flex>
-                      </Dropdown.SectionContent>
+                            <Text size="text-xs">
+                              Certain agent interactions require a connected
+                              wallet.
+                            </Text>
+                          </Flex>
+                        </Dropdown.SectionContent>
 
-                      <Dropdown.Item onSelect={() => walletModal?.show()}>
-                        <SvgIcon icon={<Wallet />} />
-                        Add Payment Method
-                      </Dropdown.Item>
-                    </Dropdown.Section>
+                        <Dropdown.Item onSelect={() => walletModal?.show()}>
+                          <SvgIcon icon={<Wallet />} />
+                          Add Payment Method
+                        </Dropdown.Item>
+                      </Dropdown.Section>
+                    )}
+                  </>
+                )}
+              </Dropdown.Content>
+            </Dropdown.Root>
+          ) : (
+            <Button size="small" label="Sign In" onClick={signIn} />
+          )}
+        </Flex>
+      </div>
+
+      {env.NEXT_PUBLIC_WIND_DOWN_MODE && (
+        <div className={s.windDownBanner}>
+          <div className={s.windDownContainer}>
+            <Flex align="center" gap="m" wrap="wrap" justify="space-between">
+              <Flex align="center" gap="m" wrap="wrap" style={{ flex: 1 }}>
+                <Flex align="center" gap="s">
+                  <Warning size={18} weight="fill" className={s.windDownIcon} />
+                  <Text weight={700} size="text-s">
+                    Important Service Update
+                  </Text>
+                </Flex>
+
+                <Text size="text-xs" className={s.windDownMessage}>
+                  As NEAR AI&apos;s focus shifts towards DCML, the NEAR AI Hub
+                  will be closing on <strong>{shutdownDate}</strong>
+                  {daysRemaining !== null && daysRemaining > 0 && (
+                    <>
+                      {' '}
+                      ({daysRemaining} day{daysRemaining !== 1 ? 's' : ''}{' '}
+                      remaining)
+                    </>
                   )}
-                </>
-              )}
-            </Dropdown.Content>
-          </Dropdown.Root>
-        ) : (
-          <Button size="small" label="Sign In" onClick={signIn} />
-        )}
-      </Flex>
+                  . Please export your agents before this date.
+                </Text>
+              </Flex>
+
+              <Flex align="center" gap="s" className={s.windDownActions}>
+                <Button
+                  size="x-small"
+                  variant="secondary"
+                  label="Learn More"
+                  iconRight={<ArrowSquareOut size={12} />}
+                  href="https://near.ai/blog/wind-down"
+                  target="_blank"
+                />
+                <Button
+                  size="x-small"
+                  variant="primary"
+                  label="Export Guide"
+                  iconLeft={<DownloadSimple size={12} />}
+                  href={exportHref}
+                />
+              </Flex>
+            </Flex>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

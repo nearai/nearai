@@ -49,6 +49,51 @@ export default function HomePage() {
 
   return (
     <>
+      {env.NEXT_PUBLIC_WIND_DOWN_MODE && (
+        <Section background="amber-3" padding="standard">
+          <Flex direction="column" gap="m" align="center">
+            <Flex align="center" gap="s">
+              <SvgIcon
+                icon={<Lightning weight="duotone" />}
+                color="amber-10"
+                size="m"
+              />
+              <Text size="text-l" weight={600} color="amber-12">
+                Important Service Update
+              </Text>
+            </Flex>
+            <Text color="amber-11" style={{ textAlign: 'center' }}>
+              As NEAR AI's focus shifts towards DCML, the NEAR AI Hub will be
+              closing on{' '}
+              {new Date(env.NEXT_PUBLIC_WIND_DOWN_DATE).toLocaleDateString(
+                'en-US',
+                {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                },
+              )}
+              .
+            </Text>
+            <Flex gap="m" align="center" wrap="wrap">
+              <Button
+                label="Export Your Agents"
+                iconLeft={<DownloadSimple />}
+                variant="primary"
+                href="/agents"
+              />
+              <Button
+                label="Learn More"
+                iconRight={<ArrowSquareUpRight />}
+                variant="secondary"
+                href="https://near.ai/blog/wind-down"
+                target="_blank"
+              />
+            </Flex>
+          </Flex>
+        </Section>
+      )}
+
       <Section background="sand-0" padding="hero">
         <Flex direction="column" gap="xl" align="center">
           <Flex

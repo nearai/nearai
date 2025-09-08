@@ -19,6 +19,7 @@ import {
   ChatCircleDots,
   Code,
   CodeBlock,
+  DownloadSimple,
   GitFork,
   LockKey,
   ShareFat,
@@ -244,53 +245,71 @@ export const EntryDetailsLayout = ({
               <StarButton entry={currentEntry} variant="detailed" />
 
               {category === 'agent' ? (
-                <Dropdown.Root>
-                  <Tooltip asChild content={`Share or embed this ${category}`}>
-                    <Dropdown.Trigger asChild>
+                <>
+                  {env.NEXT_PUBLIC_WIND_DOWN_MODE && (
+                    <Tooltip asChild content="Export this agent for local use">
                       <Button
-                        label="Share"
-                        icon={<SvgIcon size="xs" icon={<ShareFat />} />}
+                        label="Export Agent"
+                        icon={<SvgIcon size="xs" icon={<DownloadSimple />} />}
                         size="small"
                         fill="outline"
+                        variant="affirmative"
+                        href={`/export-guide?agent=${currentEntry?.namespace}/${currentEntry?.name}/${currentEntry?.version}`}
                       />
-                    </Dropdown.Trigger>
-                  </Tooltip>
+                    </Tooltip>
+                  )}
 
-                  <Dropdown.Content>
-                    <Dropdown.Section>
-                      <Dropdown.Item
-                        onSelect={() =>
-                          currentEntry &&
-                          copyTextToClipboard(
-                            `https://app.near.ai${primaryUrlForEntry(currentEntry)}`,
-                          )
-                        }
-                      >
-                        <SvgIcon icon={<CodeBlock />} />
-                        Copy Developer URL
-                      </Dropdown.Item>
+                  <Dropdown.Root>
+                    <Tooltip
+                      asChild
+                      content={`Share or embed this ${category}`}
+                    >
+                      <Dropdown.Trigger asChild>
+                        <Button
+                          label="Share"
+                          icon={<SvgIcon size="xs" icon={<ShareFat />} />}
+                          size="small"
+                          fill="outline"
+                        />
+                      </Dropdown.Trigger>
+                    </Tooltip>
 
-                      <Dropdown.Item
-                        onSelect={() =>
-                          currentEntry &&
-                          copyTextToClipboard(
-                            `https://chat.near.ai${primaryUrlForEntry(currentEntry)}`,
-                          )
-                        }
-                      >
-                        <SvgIcon icon={<ChatCircleDots />} />
-                        Copy Chat URL
-                      </Dropdown.Item>
+                    <Dropdown.Content>
+                      <Dropdown.Section>
+                        <Dropdown.Item
+                          onSelect={() =>
+                            currentEntry &&
+                            copyTextToClipboard(
+                              `https://app.near.ai${primaryUrlForEntry(currentEntry)}`,
+                            )
+                          }
+                        >
+                          <SvgIcon icon={<CodeBlock />} />
+                          Copy Developer URL
+                        </Dropdown.Item>
 
-                      <Dropdown.Item
-                        onSelect={() => setShowEmbedAgentModal(true)}
-                      >
-                        <SvgIcon icon={<Code />} />
-                        Embed Agent
-                      </Dropdown.Item>
-                    </Dropdown.Section>
-                  </Dropdown.Content>
-                </Dropdown.Root>
+                        <Dropdown.Item
+                          onSelect={() =>
+                            currentEntry &&
+                            copyTextToClipboard(
+                              `https://chat.near.ai${primaryUrlForEntry(currentEntry)}`,
+                            )
+                          }
+                        >
+                          <SvgIcon icon={<ChatCircleDots />} />
+                          Copy Chat URL
+                        </Dropdown.Item>
+
+                        <Dropdown.Item
+                          onSelect={() => setShowEmbedAgentModal(true)}
+                        >
+                          <SvgIcon icon={<Code />} />
+                          Embed Agent
+                        </Dropdown.Item>
+                      </Dropdown.Section>
+                    </Dropdown.Content>
+                  </Dropdown.Root>
+                </>
               ) : (
                 <Tooltip asChild content={`Share this ${category}`}>
                   <Button

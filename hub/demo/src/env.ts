@@ -26,6 +26,10 @@ export const env = createEnv({
       (val) => (val === 'true' ? true : false),
       z.boolean(),
     ),
+    NEXT_PUBLIC_WIND_DOWN_MODE: z
+      .preprocess((val) => (val === 'true' ? true : false), z.boolean())
+      .default(false),
+    NEXT_PUBLIC_WIND_DOWN_DATE: z.string().default('2025-10-01'),
     NEXT_PUBLIC_CHAT_AGENT_ID: z
       .string()
       .regex(/.+\/.+\/.+/)
@@ -66,6 +70,8 @@ export const env = createEnv({
     DATA_SOURCE: process.env.DATA_SOURCE,
     HOME: process.env.HOME,
     NEXT_PUBLIC_CONSUMER_MODE: process.env.NEXT_PUBLIC_CONSUMER_MODE,
+    NEXT_PUBLIC_WIND_DOWN_MODE: process.env.NEXT_PUBLIC_WIND_DOWN_MODE,
+    NEXT_PUBLIC_WIND_DOWN_DATE: process.env.NEXT_PUBLIC_WIND_DOWN_DATE,
     NEXT_PUBLIC_CHAT_AGENT_ID:
       process.env.NEXT_PUBLIC_CHAT_AGENT_ID ||
       process.env.NEXT_PUBLIC_CONSUMER_CHAT_AGENT_ID,

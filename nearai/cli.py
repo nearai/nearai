@@ -85,6 +85,8 @@ class RegistryCli:
         (<path>*)
       nearai registry download : Download an item from the registry
         (<entry-location>*, --force)
+      nearai registry export : Export an agent as a ZIP archive
+        (<entry-location>*, --output)
       nearai registry info : Show information about a registry item
         (<entry-location>*)
       nearai registry list : List available items in the registry
@@ -124,6 +126,10 @@ class RegistryCli:
 
       # Download an agent from the registry
       nearai registry download example.near/agent-name/0.0.3
+
+      # Export an agent as a ZIP archive
+      nearai registry export example.near/agent-name/0.0.3
+      nearai registry export example.near/agent-name/0.0.3 --output my-agent.zip
 
       # Show information about a registry item
       nearai registry info example.near/agent-name/0.0.3
@@ -518,6 +524,12 @@ class RegistryCli:
           nearai registry upload ./path/to/item --encrypt
 
         """
+        # Check for wind-down mode
+        from nearai.wind_down_check import check_upload_allowed
+
+        if not check_upload_allowed():
+            return None
+
         console = Console()
         path = resolve_local_path(Path(local_path))
         metadata_path = path / "metadata.json"
@@ -718,6 +730,129 @@ class RegistryCli:
 
         """
         registry.download(entry_location, force=force, show_progress=True, encryption_key=encryption_key)
+
+    def export(self, entry_location: str, output: Optional[str] = None) -> None:
+        """Export an agent as a ZIP archive for backup or migration.
+
+        This command creates a downloadable archive containing all agent files, metadata, and documentation
+        for easy backup or migration to other platforms.
+
+        Args:
+          entry_location (str) :
+            Entry location of the agent to export (format: namespace/name/version)
+          output (str) :
+            Output filename for the ZIP archive (defaults to agent_name_version.zip)
+
+        Examples:
+          # Export an agent with default filename
+          nearai registry export example.near/agent-name/0.0.3
+
+          # Export an agent with custom output filename
+          nearai registry export example.near/agent-name/0.0.3 --output my-backup.zip
+
+        """
+        import io
+        import json
+        import zipfile
+        from datetime import datetime
+        from pathlib import Path
+
+        from rich.console import Console
+        from rich.progress import Progress, SpinnerColumn, TextColumn
+
+        console = Console()
+
+        # Parse the entry location
+        parts = entry_location.split("/")
+        if len(parts) != 3:
+            console.print("[red]Invalid entry location format. Expected: namespace/name/version[/red]")
+            return
+
+        namespace, name, version = parts
+
+        # Determine output filename
+        if not output:
+            output = f"{namespace}_{name}_{version}_export.zip"
+
+        # Ensure output has .zip extension
+        if not output.endswith(".zip"):
+            output += ".zip"
+
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task(f"Exporting {entry_location}...", total=None)
+
+            try:
+                # Download the agent to a temporary location
+                temp_path = registry.download(entry_location, force=True, show_progress=False, verbose=False)
+
+                # Create ZIP archive
+                progress.update(task, description=f"Creating archive {output}...")
+
+                with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as zip_file:
+                    # Add all files from the downloaded agent
+                    for file_path in temp_path.rglob("*"):
+                        if file_path.is_file():
+                            relative_path = file_path.relative_to(temp_path)
+                            zip_file.write(file_path, relative_path)
+
+                    # Add export README
+                    readme_content = f"""# {namespace}/{name} Agent Export
+
+This is an export of the NEAR AI agent: {namespace}/{name}/{version}
+Exported on: {datetime.now().isoformat()}
+
+## How to Use This Agent
+
+### Option 1: Run Locally with NEAR AI CLI
+
+1. Install NEAR AI CLI:
+   ```bash
+   pip install nearai
+   ```
+
+2. Extract this archive to a local directory
+
+3. Run the agent:
+   ```bash
+   nearai agent interactive /path/to/extracted/agent --local
+   ```
+
+### Option 2: Re-upload to Your Own Registry
+
+If you have your own NEAR AI registry instance:
+
+1. Update the metadata.json with your namespace
+2. Upload using:
+   ```bash
+   nearai registry upload /path/to/extracted/agent
+   ```
+
+## Support
+
+For more information about running NEAR AI agents locally, visit:
+https://docs.near.ai/agents/running
+
+---
+Note: This agent was exported from NEAR AI Hub before the service wind-down.
+"""
+                    zip_file.writestr("EXPORT_README.md", readme_content)
+
+                progress.update(task, description="Export complete!")
+                console.print(f"[green]✓ Agent exported successfully to: {output}[/green]")
+
+                # Clean up temporary download
+                import shutil
+
+                if temp_path.exists():
+                    shutil.rmtree(temp_path)
+
+            except Exception as e:
+                console.print(f"[red]✗ Export failed: {str(e)}[/red]")
+                return
 
     def __call__(self):
         """Show help when 'nearai registry' is called without subcommands."""
@@ -929,9 +1064,9 @@ class BenchmarkCli:
         )
 
         solver_strategy_class: Union[SolverStrategy, None] = SolverStrategyRegistry.get(solver_strategy, None)
-        assert solver_strategy_class, (
-            f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
-        )
+        assert (
+            solver_strategy_class
+        ), f"Solver strategy {solver_strategy} not found. Available strategies: {list(SolverStrategyRegistry.keys())}"
 
         name = dataset
         if solver_strategy_class.scoring_method == SolverScoringMethod.Custom:
@@ -1813,6 +1948,12 @@ class AgentCli:
           https://docs.near.ai/agents/quickstart
 
         """
+        # Check for wind-down mode
+        from nearai.wind_down_check import check_create_allowed
+
+        if not check_create_allowed():
+            return
+
         # Check if the user is authenticated
         if CONFIG.auth is None or CONFIG.auth.namespace is None:
             print("Please login with `nearai login` before creating an agent.")

@@ -261,6 +261,12 @@ class Registry:
         If encryption_key is present in metadata.json, uploaded files will be encrypted.
         If encrypt == True, will generate an encryption_key, if encryption_key is not present.
         """
+        # Check for wind-down mode
+        from nearai.wind_down_check import check_upload_allowed
+
+        if not check_upload_allowed():
+            exit(1)
+
         path = Path(local_path).absolute()
 
         if CONFIG.auth is None:

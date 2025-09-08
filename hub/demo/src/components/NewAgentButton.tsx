@@ -23,12 +23,14 @@ import {
   Plus,
   TerminalWindow,
   Wallet,
+  Warning,
   XLogo,
 } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 
+import { env } from '@/env';
 import { idForEntry, parseEntryId, primaryUrlForEntry } from '@/lib/entries';
 import { useAuthStore } from '@/stores/auth';
 import NearLogoIcon from '@/svgs/near-logo-icon-padding.svg';
@@ -50,6 +52,23 @@ type Props = {
 
 export const NewAgentButton = ({ customButton }: Props) => {
   const [modalIsOpen, setModalIsOpen] = useState(false);
+  const isWindDownMode = env.NEXT_PUBLIC_WIND_DOWN_MODE;
+
+  // If in wind-down mode, show a disabled button with explanation
+  if (isWindDownMode) {
+    return (
+      <Tooltip content="New agent creation is disabled as NEAR AI Hub will be closing soon. Please export your existing agents.">
+        <div>
+          <Button
+            label="New Agent"
+            iconLeft={<Warning />}
+            variant="secondary"
+            disabled
+          />
+        </div>
+      </Tooltip>
+    );
+  }
 
   return (
     <>

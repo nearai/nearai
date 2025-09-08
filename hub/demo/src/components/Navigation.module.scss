@@ -3,14 +3,23 @@
   z-index: 500;
   top: 0;
   width: 100%;
-  height: var(--header-height);
   background: var(--sand-0);
   display: flex;
-  align-items: stretch;
-  padding: 0 var(--gap-m);
+  flex-direction: column;
   box-shadow:
     0 0 1rem rgba(0, 0, 0, 0.1),
     0 1px 0 var(--sand-4);
+  
+  &.withWindDown {
+    height: auto;
+  }
+}
+
+.navigationMain {
+  height: var(--header-height);
+  display: flex;
+  align-items: stretch;
+  padding: 0 var(--gap-m);
 }
 
 .logo {
@@ -218,6 +227,64 @@
     &[data-active] {
       [data-icon] {
         color: var(--violet-10) !important;
+      }
+    }
+  }
+}
+
+// Wind-down banner styles
+.windDownBanner {
+  background: #FFF8E1;
+  border-top: 1px solid var(--sand-4);
+  padding: 8px 0;
+}
+
+.windDownContainer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--gap-m);
+  width: 100%;
+}
+
+.windDownIcon {
+  color: #F9A825;
+  flex-shrink: 0;
+}
+
+.windDownMessage {
+  color: #616161;
+  line-height: 1.4;
+  
+  strong {
+    color: #D84315;
+    font-weight: 600;
+  }
+}
+
+.windDownActions {
+  flex-shrink: 0;
+}
+
+// Responsive design for wind-down banner
+@media (max-width: 768px) {
+  .windDownBanner {
+    padding: 10px 0;
+  }
+  
+  .windDownContainer {
+    padding: 0 var(--gap-s);
+    
+    & > div {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      
+      & > div:last-child {
+        width: 100%;
+        
+        & > * {
+          flex: 1;
+        }
       }
     }
   }
