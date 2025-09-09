@@ -88,7 +88,7 @@ https://cloud-api.near.ai/v1/attestation/report?model={model_name}
     ```
 
 !!! note
-This endpoint requires [NEAR AI Cloud Account & API Key](./get-started.md#quick-setup)
+    This endpoint requires [NEAR AI Cloud Account & API Key](./get-started.md#quick-setup)
 
     **Implementation**: This endpoint is defined in the [NEAR AI Private ML SDK](https://github.com/nearai/private-ml-sdk/blob/a23fa797dfd7e676fba08cba68471b51ac9a13d9/vllm-proxy/src/app/api/v1/openai.py#L170).
 
@@ -398,8 +398,31 @@ This exactly matches the concatenated values we calculated in the previous secti
 
 #### Verify Signature
 
-Verify that the ECDSA signature in the response was actually signed by the claimed signing address. This can be verified using any standard ECDSA verification tool or library.
+Signature verification can be easily done with any standard ECDSA verification library such as [ethers](https://www.npmjs.com/package/ethers) or even an online tool such as [etherscan's VerifySignatures](https://etherscan.io/verifiedSignatures).
 
-- Address: You can get the address from the attestation API. The address should be the same if the service has not restarted.
-- Message: The sha256 hash of the request and response. You can also calculate the sha256 by yourselves.
-- Signature Hash: The signature you have got in "Get Signature" section.
+These tools will require:
+
+- `Address`: What the expected address is for the signature. In our case it will be the one retrieved from your[attestation API query](#request-model-attestation). 
+- `Message`: The original message before signing. In our case it will be the sha256 hash of the request and response (`text` field from [Get Chat Message Signature](#chat-message-signature))
+- `Signature`: The signed message from above
+
+Here is an example of how to verify the Chat Message signature using `ethers`:
+
+```js
+  import { ethers } from 'ethers';
+
+  const text = "65b0adb47d0450971803dfb18d0ce4af4a64d27420a43d5aad4066ebf10b81b5:e508d818744d175a62aae1a9fb3f373c075460cbe50bf962a88ac008c843dff1";
+  const signature = "0xf28f537325c337fd96ae6e156783c904ca708dcd38fb8a476d1280dfc72dc88e4fcb5c3941bdd4f8fe5238a2253b975c6b02ea6a0a450b5b0f9296ab54cf24181b";
+  const expectedAddress = "0xc51268C9b46140619CBC066A34441a6ca51F85f9";
+
+  // Recover the address from the signature
+  const recoveredAddress = ethers.verifyMessage(text, signature);
+  
+  // Compare with expected address (case-insensitive)
+  const isValid = recoveredAddress.toLowerCase() === expectedAddress.toLowerCase();
+  
+  console.log("Text:", text);
+  console.log("Expected address:", expectedAddress);
+  console.log("Recovered address:", recoveredAddress);
+  console.log("Signature valid:", isValid);
+```
