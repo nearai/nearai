@@ -37,8 +37,8 @@ class FireworksImageGenerator:
         allowlist = (
             "accounts/fireworks/models/flux-1-dev-fp8",
             "accounts/fireworks/models/flux-kontext-max",
-            "accounts/fireworks/models/flux-1-schnell-fp8",
             "accounts/fireworks/models/flux-kontext-pro",
+            "accounts/fireworks/models/flux-1-schnell-fp8",
         )
         return model in allowlist or ("flux" in model or "kontext" in model)
 
@@ -85,12 +85,7 @@ class FireworksImageGenerator:
             if status in {"ready", "complete", "finished", "succeeded", "success"}:
                 # Fireworks may return a direct sample (base64 or URL) in various shapes
                 out = result.get("result") or {}
-                sample = (
-                    out.get("sample")
-                    or out.get("image")
-                    or (out.get("samples") or [None])[0]
-                    or out.get("output")
-                )
+                sample = out.get("sample") or out.get("image") or (out.get("samples") or [None])[0] or out.get("output")
 
                 if isinstance(sample, str):
                     if sample.startswith("http"):
