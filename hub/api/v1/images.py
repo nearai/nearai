@@ -59,18 +59,20 @@ class FireworksImageGenerator:
         """Submit a workflow request and return (base_url, request_id)."""
         # Base model workflow URL (used for polling)
         base_url = f"https://api.fireworks.ai/inference/v1/workflows/{model}"
+
+        custom_headers = {}
         # Some Flux variants require sub-routes for submission
         if "flux-1-schnell" in model or "flux-1-dev-fp8" in model:
             submit_url = base_url + ("/image_to_image" if is_i2i else "/text_to_image")
+            custom_headers["Accept"] = "image/jpeg"
         else:
             submit_url = base_url
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}",
+            "Accept": "application/json",
+            **custom_headers,
         }
-        # For most workflow models (e.g., kontext), request JSON; for special flux endpoints, omit Accept
-        if not ("flux-1-schnell" in model or "flux-1-dev-fp8" in model):
-            headers["Accept"] = "application/json"
         resp = requests.post(submit_url, headers=headers, json=payload, timeout=60)
         resp.raise_for_status()
         data = resp.json()
