@@ -29,22 +29,18 @@ class FireworksImageGenerator:
         return image_buffer
 
     def _is_workflow_model(self, model: str) -> bool:
-      """Detect whether the model should use Fireworks workflows (polling) API.
+        """Detect whether the model should use Fireworks workflows (polling) API.
 
-      Currently supports Flux family and Kontext variants that require polling.
-      """
-      # Explicit allowlist from TODO with a broader guard for future variants
-      allowlist = (
+        Currently supports Flux family and Kontext variants that require polling.
+        """
+        # Explicit allowlist from TODO with a broader guard for future variants
+        allowlist = (
             # "accounts/fireworks/models/flux-1-dev-fp8",  # FIXME: not found
             "accounts/fireworks/models/flux-kontext-max",
             "accounts/fireworks/models/flux-1-schnell-fp8",
             "accounts/fireworks/models/flux-kontext-pro",
-      )
-      return model in allowlist or ("flux" in model or "kontext" in model)
-
-    def _get_workflow_base_url(self, model: str) -> str:
-        """Deprecated: Use _get_workflow_url with is_i2i flag."""
-        return f"https://api.fireworks.ai/inference/v1/workflows/{model}"
+        )
+        return model in allowlist or ("flux" in model or "kontext" in model)
 
     def _get_workflow_url(self, model: str, is_i2i: bool) -> str:
         """Return the correct workflow URL for a given model and mode.
@@ -61,26 +57,34 @@ class FireworksImageGenerator:
 
     def _submit_workflow(self, model: str, payload: dict, is_i2i: bool) -> tuple[str, str]:
         """Submit a workflow request and return (base_url, request_id)."""
-        url = self._get_workflow_url(model, is_i2i)
+        # Base model workflow URL (used for polling)
+        base_url = f"https://api.fireworks.ai/inference/v1/workflows/{model}"
+        # Some Flux variants require sub-routes for submission
+        if "flux-1-schnell" in model or "flux-1-dev-fp8" in model:
+            submit_url = base_url + ("/image_to_image" if is_i2i else "/text_to_image")
+        else:
+            submit_url = base_url
         headers = {
             "Content-Type": "application/json",
-            "Accept": "application/json",
             "Authorization": f"Bearer {self.api_key}",
         }
-        resp = requests.post(url, headers=headers, json=payload, timeout=60)
+        # For most workflow models (e.g., kontext), request JSON; for special flux endpoints, omit Accept
+        if not ("flux-1-schnell" in model or "flux-1-dev-fp8" in model):
+            headers["Accept"] = "application/json"
+        resp = requests.post(submit_url, headers=headers, json=payload, timeout=60)
         resp.raise_for_status()
         data = resp.json()
         request_id = data.get("request_id") or data.get("id")
         if not request_id:
             raise RuntimeError(f"No request_id in workflow submission response: {data}")
-        return url, request_id
+        # Return base model URL for polling
+        return base_url, request_id
 
     def _poll_workflow(self, base_url: str, request_id: str, timeout_seconds: int = 60) -> bytes:
         """Poll a workflow result endpoint until completion or timeout. Returns JPEG bytes."""
         result_endpoint = f"{base_url}/get_result"
         headers = {
             "Content-Type": "application/json",
-            "Accept": "application/json",
             "Authorization": f"Bearer {self.api_key}",
         }
 
@@ -150,24 +154,39 @@ class FireworksImageGenerator:
             model = kwargs.get("model", "")
             # For playground models, use the SDK client; for flux/kontext, use workflows with polling
             if self._is_workflow_model(model):
-                # Build payload for workflow submission
-                payload: dict = {"prompt": kwargs.get("prompt")}
-
-                # Handle optional images as data URLs
+                # Build payload strictly from user-specified fields (no defaults)
                 def to_data_url(img_b64: Optional[str]) -> Optional[str]:
                     if not img_b64:
                         return None
                     return img_b64 if img_b64.startswith("data:image") else f"data:image/jpeg;base64,{img_b64}"
 
-                input_image = to_data_url(kwargs.get("init_image"))
-                control_image = to_data_url(kwargs.get("control_image"))
-                if input_image:
-                    payload["input_image"] = input_image
-                if control_image:
-                    payload["control_image"] = control_image
+                payload: dict = {}
+                for k, v in kwargs.items():
+                    if v is None:
+                        continue
+                    if k in ("model", "provider", "timeout"):
+                        # handled elsewhere or internal-only
+                        continue
+                    if k == "init_image":
+                        data_url = to_data_url(str(v))
+                        if data_url:
+                            payload["input_image"] = data_url
+                        continue
+                    if k == "control_image":
+                        data_url = to_data_url(str(v))
+                        if data_url:
+                            payload["control_image"] = data_url
+                        continue
+                    # pass-through all other fields as-is (e.g., prompt, steps, cfg_scale, etc.)
+                    payload[k] = v
+
+                # For certain Flux endpoints, only allow prompt and optional images
+                if ("flux-1-dev-fp8" in model) or ("flux-1-schnell" in model):
+                    allowed_keys = {"prompt", "input_image", "control_image"}
+                    payload = {k: v for k, v in payload.items() if k in allowed_keys}
 
                 try:
-                    is_i2i = bool(input_image or control_image)
+                    is_i2i = bool(payload.get("input_image") or payload.get("control_image"))
                     base_url, request_id = self._submit_workflow(model, payload, is_i2i)
                     img_bytes = self._poll_workflow(base_url, request_id, timeout_seconds=kwargs.get("timeout", 60))
                     img_str = base64.b64encode(img_bytes).decode()
@@ -187,41 +206,54 @@ class FireworksImageGenerator:
             playground_model = model.split("/")[-1]
             self.inference_client = ImageInference(model=playground_model)
 
-        fireworks_params = {
-            "prompt": kwargs.get("prompt"),
-            "init_image": kwargs.get("init_image"),
-            "image_strength": kwargs.get("image_strength"),
-            "cfg_scale": kwargs.get("cfg_scale", 7.0),
-            "height": kwargs.get("height", 1024),
-            "width": kwargs.get("width", 1024),
-            "sampler": kwargs.get("sampler"),
-            "steps": kwargs.get("steps", 30),
-            "seed": kwargs.get("seed"),
-            "safety_check": kwargs.get("safety_check", False),
-            "output_image_format": "JPG",
-            "control_image": kwargs.get("control_image"),
-            "control_net_name": kwargs.get("control_net_name"),
-            "conditioning_scale": kwargs.get("conditioning_scale"),
-        }
+        # Build SDK params from only user-specified fields by default.
+        whitelisted_keys = [
+            "prompt",
+            "init_image",
+            "image_strength",
+            "cfg_scale",
+            "height",
+            "width",
+            "sampler",
+            "steps",
+            "seed",
+            "safety_check",
+            "output_image_format",
+            "control_image",
+            "control_net_name",
+            "conditioning_scale",
+        ]
+        fireworks_params = {k: kwargs[k] for k in whitelisted_keys if k in kwargs and kwargs[k] is not None}
 
-        fireworks_params = {k: v for k, v in fireworks_params.items() if v is not None}
+        # Only for the default playground aesthetic models, fill in defaults when not provided.
+        default_playground_models = {
+            "playground-v2-1024px-aesthetic",
+            "playground-v2-5-1024px-aesthetic",
+        }
+        if playground_model in default_playground_models:
+            fireworks_params.setdefault("cfg_scale", 7.0)
+            fireworks_params.setdefault("height", 1024)
+            fireworks_params.setdefault("width", 1024)
+            fireworks_params.setdefault("steps", 30)
+            fireworks_params.setdefault("safety_check", False)
+            fireworks_params.setdefault("output_image_format", "JPG")
 
         try:
             answer: Answer
-            if kwargs.get("init_image"):
+            if fireworks_params.get("init_image") is not None:
                 # run image to image if init_image is found
                 # decode the init_image (fireworks expects bytes, PIL or a file -- not base64)
-                base64_image = str(kwargs.get("init_image"))
+                base64_image = str(fireworks_params.get("init_image"))
                 init_image = self._decode_image(base64_image)
                 fireworks_params.update({"init_image": init_image})
 
-                # set the image strength to 0.7 if it is not provided
-                if kwargs.get("image_strength") is None:
+                # For default playground models only, set a sensible default image_strength for i2i
+                if playground_model in default_playground_models and fireworks_params.get("image_strength") is None:
                     fireworks_params.update({"image_strength": 0.7})
 
                 # also check if control_image is received
-                if kwargs.get("control_image"):
-                    base64_image = str(kwargs.get("control_image"))
+                if fireworks_params.get("control_image") is not None:
+                    base64_image = str(fireworks_params.get("control_image"))
                     control_image = self._decode_image(base64_image)
                     fireworks_params.update({"control_image": control_image})
 
