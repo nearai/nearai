@@ -2,7 +2,7 @@ import base64
 import io
 import os
 import time
-from typing import Protocol
+from typing import Optional, Protocol
 
 import requests
 from fireworks.client.image import Answer, ImageInference
@@ -29,22 +29,39 @@ class FireworksImageGenerator:
         return image_buffer
 
     def _is_workflow_model(self, model: str) -> bool:
-        """Detect whether the model should use Fireworks workflows (polling) API.
+      """Detect whether the model should use Fireworks workflows (polling) API.
 
-        Currently supports Flux family and Kontext variants that require polling.
-        """
-        # Explicit allowlist from TODO with a broader guard for future variants
-        allowlist = (
-            "accounts/fireworks/models/flux-1-dev-fp8",
+      Currently supports Flux family and Kontext variants that require polling.
+      """
+      # Explicit allowlist from TODO with a broader guard for future variants
+      allowlist = (
+            # "accounts/fireworks/models/flux-1-dev-fp8",  # FIXME: not found
             "accounts/fireworks/models/flux-kontext-max",
-            "accounts/fireworks/models/flux-kontext-pro",
             "accounts/fireworks/models/flux-1-schnell-fp8",
-        )
-        return model in allowlist or ("flux" in model or "kontext" in model)
+            "accounts/fireworks/models/flux-kontext-pro",
+      )
+      return model in allowlist or ("flux" in model or "kontext" in model)
 
-    def _submit_workflow(self, model: str, payload: dict) -> str:
-        """Submit a workflow request and return request_id."""
-        url = f"https://api.fireworks.ai/inference/v1/workflows/{model}"
+    def _get_workflow_base_url(self, model: str) -> str:
+        """Deprecated: Use _get_workflow_url with is_i2i flag."""
+        return f"https://api.fireworks.ai/inference/v1/workflows/{model}"
+
+    def _get_workflow_url(self, model: str, is_i2i: bool) -> str:
+        """Return the correct workflow URL for a given model and mode.
+
+        Some Flux variants require a sub-route:
+        - text-only:   /text_to_image
+        - image-to-image (init/control): /image_to_image
+        Kontext models use the base workflow path.
+        """
+        base = f"https://api.fireworks.ai/inference/v1/workflows/{model}"
+        if "flux-1-schnell" in model or "flux-1-dev-fp8" in model:
+            return base + ("/image_to_image" if is_i2i else "/text_to_image")
+        return base
+
+    def _submit_workflow(self, model: str, payload: dict, is_i2i: bool) -> tuple[str, str]:
+        """Submit a workflow request and return (base_url, request_id)."""
+        url = self._get_workflow_url(model, is_i2i)
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -137,7 +154,7 @@ class FireworksImageGenerator:
                 payload: dict = {"prompt": kwargs.get("prompt")}
 
                 # Handle optional images as data URLs
-                def to_data_url(img_b64: str | None) -> str | None:
+                def to_data_url(img_b64: Optional[str]) -> Optional[str]:
                     if not img_b64:
                         return None
                     return img_b64 if img_b64.startswith("data:image") else f"data:image/jpeg;base64,{img_b64}"
@@ -150,7 +167,8 @@ class FireworksImageGenerator:
                     payload["control_image"] = control_image
 
                 try:
-                    base_url, request_id = self._submit_workflow(model, payload)
+                    is_i2i = bool(input_image or control_image)
+                    base_url, request_id = self._submit_workflow(model, payload, is_i2i)
                     img_bytes = self._poll_workflow(base_url, request_id, timeout_seconds=kwargs.get("timeout", 60))
                     img_str = base64.b64encode(img_bytes).decode()
                     return {
