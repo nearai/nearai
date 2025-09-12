@@ -35,7 +35,7 @@ class FireworksImageGenerator:
         """
         # Explicit allowlist from TODO with a broader guard for future variants
         allowlist = (
-            # "accounts/fireworks/models/flux-1-dev-fp8",  # FIXME: not found
+            "accounts/fireworks/models/flux-1-dev-fp8",
             "accounts/fireworks/models/flux-kontext-max",
             "accounts/fireworks/models/flux-1-schnell-fp8",
             "accounts/fireworks/models/flux-kontext-pro",
@@ -234,9 +234,7 @@ class FireworksImageGenerator:
                     is_i2i = bool(payload.get("input_image") or payload.get("control_image"))
                     base_url, request_id, direct_bytes = self._submit_workflow(model, payload, is_i2i)
                     if request_id:
-                        img_bytes = self._poll_workflow(
-                            base_url, request_id, timeout_seconds=kwargs.get("timeout", 60)
-                        )
+                        img_bytes = self._poll_workflow(base_url, request_id, timeout_seconds=kwargs.get("timeout", 60))
                     elif direct_bytes is not None:
                         img_bytes = direct_bytes
                     else:
