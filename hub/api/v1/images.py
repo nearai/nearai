@@ -1,8 +1,10 @@
 import base64
 import io
 import os
+import time
 from typing import Protocol
 
+import requests
 from fireworks.client.image import Answer, ImageInference
 
 
@@ -19,11 +21,105 @@ class FireworksImageGenerator:
         if not api_key:
             raise ValueError("FIREWORKS_API_KEY environment variable is not set")
         self.inference_client = ImageInference(model="playground-v2-1024px-aesthetic")
+        self.api_key = api_key
 
     def _decode_image(self, base64_image: str) -> io.BytesIO:
         image_buffer = io.BytesIO(base64.b64decode(base64_image))
         image_buffer.seek(0)
         return image_buffer
+
+    def _is_workflow_model(self, model: str) -> bool:
+        """Detect whether the model should use Fireworks workflows (polling) API.
+
+        Currently supports Flux family and Kontext variants that require polling.
+        """
+        # Explicit allowlist from TODO with a broader guard for future variants
+        allowlist = (
+            "accounts/fireworks/models/flux-1-dev-fp8",
+            "accounts/fireworks/models/flux-kontext-max",
+            "accounts/fireworks/models/flux-1-schnell-fp8",
+            "accounts/fireworks/models/flux-kontext-pro",
+        )
+        return model in allowlist or ("flux" in model or "kontext" in model)
+
+    def _submit_workflow(self, model: str, payload: dict) -> str:
+        """Submit a workflow request and return request_id."""
+        url = f"https://api.fireworks.ai/inference/v1/workflows/{model}"
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+        resp = requests.post(url, headers=headers, json=payload, timeout=60)
+        resp.raise_for_status()
+        data = resp.json()
+        request_id = data.get("request_id") or data.get("id")
+        if not request_id:
+            raise RuntimeError(f"No request_id in workflow submission response: {data}")
+        return url, request_id
+
+    def _poll_workflow(self, base_url: str, request_id: str, timeout_seconds: int = 60) -> bytes:
+        """Poll a workflow result endpoint until completion or timeout. Returns JPEG bytes."""
+        result_endpoint = f"{base_url}/get_result"
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+
+        deadline = time.time() + timeout_seconds
+        attempt = 0
+        while time.time() < deadline:
+            attempt += 1
+            time.sleep(1)
+            r = requests.post(result_endpoint, headers=headers, json={"id": request_id}, timeout=60)
+            # Allow non-2xx to propagate meaningfully
+            r.raise_for_status()
+            try:
+                result = r.json()
+            except Exception:
+                # If server returned raw bytes (e.g., image/jpeg), just use them
+                return r.content
+
+            status = (result.get("status") or result.get("state") or "").lower()
+            if status in {"ready", "complete", "finished", "succeeded", "success"}:
+                # Fireworks may return a direct sample (base64 or URL) in various shapes
+                out = result.get("result") or {}
+                sample = (
+                    out.get("sample")
+                    or out.get("image")
+                    or (out.get("samples") or [None])[0]
+                    or out.get("output")
+                )
+
+                if isinstance(sample, str):
+                    if sample.startswith("http"):
+                        img_resp = requests.get(sample, timeout=60)
+                        img_resp.raise_for_status()
+                        return img_resp.content
+                    if sample.startswith("data:image") and "," in sample:
+                        b64 = sample.split(",", 1)[1]
+                        return base64.b64decode(b64)
+                    # Assume base64
+                    try:
+                        return base64.b64decode(sample)
+                    except Exception:
+                        # Some APIs may return JSON with bytes field; fallback
+                        pass
+
+                # If still no luck, try known keys for raw bytes
+                if isinstance(out, dict):
+                    maybe_b64 = out.get("b64") or out.get("b64_json")
+                    if isinstance(maybe_b64, str):
+                        return base64.b64decode(maybe_b64)
+
+                raise RuntimeError(f"Workflow completed but no image found in response: {result}")
+
+            if status in {"failed", "error"}:
+                details = result.get("details") or result
+                raise RuntimeError(f"Image generation failed: {details}")
+
+        raise TimeoutError("Timed out waiting for image generation result")
 
     def generate(self, **kwargs) -> dict:
         """Generate images using the Fireworks API.
@@ -38,9 +134,45 @@ class FireworksImageGenerator:
 
         """
         if kwargs.get("model"):
+            # model arrives without provider prefix, e.g. "accounts/fireworks/models/<model_name>"
             model = kwargs.get("model", "")
-            model = model.split("/")[-1]
-            self.inference_client = ImageInference(model=model)
+            # For playground models, use the SDK client; for flux/kontext, use workflows with polling
+            if self._is_workflow_model(model):
+                # Build payload for workflow submission
+                payload: dict = {"prompt": kwargs.get("prompt")}
+
+                # Handle optional images as data URLs
+                def to_data_url(img_b64: str | None) -> str | None:
+                    if not img_b64:
+                        return None
+                    return img_b64 if img_b64.startswith("data:image") else f"data:image/jpeg;base64,{img_b64}"
+
+                input_image = to_data_url(kwargs.get("init_image"))
+                control_image = to_data_url(kwargs.get("control_image"))
+                if input_image:
+                    payload["input_image"] = input_image
+                if control_image:
+                    payload["control_image"] = control_image
+
+                try:
+                    base_url, request_id = self._submit_workflow(model, payload)
+                    img_bytes = self._poll_workflow(base_url, request_id, timeout_seconds=kwargs.get("timeout", 60))
+                    img_str = base64.b64encode(img_bytes).decode()
+                    return {
+                        "data": [
+                            {
+                                "b64_json": img_str,
+                                "url": None,
+                                "revised_prompt": None,
+                            }
+                        ]
+                    }
+                except Exception as e:
+                    raise RuntimeError(f"Image generation failed: {str(e)}") from e
+
+            # Otherwise, fall back to non-workflow image inference (playground family)
+            playground_model = model.split("/")[-1]
+            self.inference_client = ImageInference(model=playground_model)
 
         fireworks_params = {
             "prompt": kwargs.get("prompt"),
