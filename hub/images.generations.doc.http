@@ -1,0 +1,30 @@
+POST {{n}}/images/generations
+Authorization: Bearer {{NEARAI_API_KEY}}
+Content-Type: application/json
+
+{
+    "prompt": "a futuristic city floating in the clouds, painted in pastel tones",
+    "model": "fireworks::accounts/fireworks/models/playground-v2-5-1024px-aesthetic",
+    "seed": 3,
+    "steps": 100
+}
+###
+POST {{n}}/images/generations
+Authorization: Bearer {{NEARAI_API_KEY}}
+Content-Type: application/json
+
+{
+    "prompt": "a futuristic city floating in the clouds, painted in pastel tones",
+    "model": "fireworks::accounts/fireworks/models/flux-1-dev-fp8"
+}
+###
+POST {{n}}/images/generations
+Authorization: Bearer {{NEARAI_API_KEY}}
+Content-Type: application/json
+
+{
+    "prompt": "a futuristic city floating in the clouds, painted in pastel tones",
+    "model": "fireworks::accounts/fireworks/models/flux-kontext-pro",
+    "seed": 3,
+    "steps": 1
+}
