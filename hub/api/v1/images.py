@@ -2,7 +2,7 @@ import base64
 import io
 import os
 import time
-from typing import Optional, Protocol
+from typing import Optional, Protocol, Tuple
 
 import requests
 from fireworks.client.image import Answer, ImageInference
@@ -55,8 +55,13 @@ class FireworksImageGenerator:
             return base + ("/image_to_image" if is_i2i else "/text_to_image")
         return base
 
-    def _submit_workflow(self, model: str, payload: dict, is_i2i: bool) -> tuple[str, str]:
-        """Submit a workflow request and return (base_url, request_id)."""
+    def _submit_workflow(self, model: str, payload: dict, is_i2i: bool) -> Tuple[str, Optional[str], Optional[bytes]]:
+        """Submit a workflow request and return (base_url, maybe_request_id, maybe_image_bytes).
+
+        - If the response includes a request_id (or id), the caller should poll.
+        - If the response is an image (e.g., image/jpeg), return bytes and do not poll.
+        - If the response is JSON without request_id but contains a direct sample, return bytes.
+        """
         # Base model workflow URL (used for polling)
         base_url = f"https://api.fireworks.ai/inference/v1/workflows/{model}"
 
@@ -75,12 +80,50 @@ class FireworksImageGenerator:
         }
         resp = requests.post(submit_url, headers=headers, json=payload, timeout=60)
         resp.raise_for_status()
-        data = resp.json()
+
+        # Handle immediate binary responses (e.g., image/jpeg)
+        content_type = resp.headers.get("Content-Type", "").lower()
+        if "image/" in content_type:
+            return base_url, None, resp.content
+
+        # Otherwise try JSON
+        try:
+            data = resp.json()
+        except Exception:
+            # Unknown non-JSON but not labeled as image: return raw bytes
+            return base_url, None, resp.content
+
         request_id = data.get("request_id") or data.get("id")
-        if not request_id:
-            raise RuntimeError(f"No request_id in workflow submission response: {data}")
-        # Return base model URL for polling
-        return base_url, request_id
+        if request_id:
+            return base_url, request_id, None
+
+        # Some workflows may return a completed result in JSON without request_id
+        out = data.get("result") or data
+        sample = (
+            (out.get("sample") if isinstance(out, dict) else None)
+            or (out.get("image") if isinstance(out, dict) else None)
+            or ((out.get("samples") or [None])[0] if isinstance(out, dict) else None)
+            or (out.get("output") if isinstance(out, dict) else None)
+        )
+        if isinstance(sample, str):
+            if sample.startswith("http"):
+                img_resp = requests.get(sample, timeout=60)
+                img_resp.raise_for_status()
+                return base_url, None, img_resp.content
+            if sample.startswith("data:image") and "," in sample:
+                b64 = sample.split(",", 1)[1]
+                return base_url, None, base64.b64decode(b64)
+            try:
+                return base_url, None, base64.b64decode(sample)
+            except Exception:
+                pass
+        if isinstance(out, dict):
+            maybe_b64 = out.get("b64") or out.get("b64_json")
+            if isinstance(maybe_b64, str):
+                return base_url, None, base64.b64decode(maybe_b64)
+
+        # No request_id and no immediate image found
+        return base_url, None, None
 
     def _poll_workflow(self, base_url: str, request_id: str, timeout_seconds: int = 60) -> bytes:
         """Poll a workflow result endpoint until completion or timeout. Returns JPEG bytes."""
@@ -189,8 +232,15 @@ class FireworksImageGenerator:
 
                 try:
                     is_i2i = bool(payload.get("input_image") or payload.get("control_image"))
-                    base_url, request_id = self._submit_workflow(model, payload, is_i2i)
-                    img_bytes = self._poll_workflow(base_url, request_id, timeout_seconds=kwargs.get("timeout", 60))
+                    base_url, request_id, direct_bytes = self._submit_workflow(model, payload, is_i2i)
+                    if request_id:
+                        img_bytes = self._poll_workflow(
+                            base_url, request_id, timeout_seconds=kwargs.get("timeout", 60)
+                        )
+                    elif direct_bytes is not None:
+                        img_bytes = direct_bytes
+                    else:
+                        raise RuntimeError("Workflow submission returned neither request_id nor image content")
                     img_str = base64.b64encode(img_bytes).decode()
                     return {
                         "data": [
