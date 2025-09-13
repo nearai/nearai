@@ -15,8 +15,8 @@ DB_HOST = getenv("DATABASE_HOST")
 DB_USER = getenv("DATABASE_USER")
 DB_PASSWORD = getenv("DATABASE_PASSWORD")
 DB_NAME = getenv("DATABASE_NAME")
-PORT = getenv("DATABASE_PORT", "3306")
-config.set_main_option("sqlalchemy.url", f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{PORT}/{DB_NAME}")
+DB_PORT = getenv("DATABASE_PORT", "3306")
+config.set_main_option("sqlalchemy.url", f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 
 # Interpret the config file for Python logging.
 # This line sets up loggers.
