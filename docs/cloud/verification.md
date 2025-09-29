@@ -402,7 +402,7 @@ Signature verification can be easily done with any standard ECDSA verification l
 
 These tools will require:
 
-- `Address`: What the expected address is for the signature. In our case it will be the one retrieved from your[attestation API query](#request-model-attestation). 
+- `Address`: What the expected address is for the signature. In our case it will be the one retrieved from your [attestation API query](#request-model-attestation). 
 - `Message`: The original message before signing. In our case it will be the sha256 hash of the request and response (`text` field from [Get Chat Message Signature](#chat-message-signature))
 - `Signature`: The signed message from above
 
