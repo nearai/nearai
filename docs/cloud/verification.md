@@ -262,7 +262,7 @@ The value is calculated from the **exact JSON request body string**.
     }
   ],
   "stream": true,
-  "model": "llama-3.3-70b-instruct"
+  "model": "deepseek-v3.1"
 }
 ```
 
@@ -287,7 +287,7 @@ Here is an example of how to get the sha256 hash of your message request body:
         }
       ],
       "stream": true,
-      "model": "llama-3.3-70b-instruct"
+      "model": "deepseek-v3.1"
     });
 
     const hash = crypto.createHash('sha256').update(requestBody).digest('hex');
@@ -303,11 +303,11 @@ This value is calculated from the **exact response body string**.
 **_Example Response Body:_**
 
 ```bash
-data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"phala/llama-3.3-70b-instruct","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"I","role":"assistant"}}]}
+data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"phala/deepseek-v3.1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"I","role":"assistant"}}]}
 
-data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"phala/llama-3.3-70b-instruct","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":" agree"}}]}
+data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"phala/deepseek-v3.1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":" agree"}}]}
 
-data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"phala/llama-3.3-70b-instruct","object":"chat.completion.chunk","choices":[{"finish_reason":"stop","index":0,"delta":{}}]}
+data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"phala/deepseek-v3.1","object":"chat.completion.chunk","choices":[{"finish_reason":"stop","index":0,"delta":{}}]}
 
 data: [DONE]
 ```
@@ -359,7 +359,7 @@ For example, the response in the previous section, the `id` is:
  `chatcmpl-13edbcd23c9e4139b796fa988a88451b`
 
 ```bash
-curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-13edbcd23c9e4139b796fa988a88451b?model=llama-3.3-70b-instruct&signing_algo=ecdsa' \
+curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-13edbcd23c9e4139b796fa988a88451b?model=deepseek-v3.1&signing_algo=ecdsa' \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer <YOUR-NEARAI-CLOUD-API-KEY>"
 ```
