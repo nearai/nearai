@@ -300,16 +300,21 @@ Here is an example of how to get the sha256 hash of your message request body:
 
 This value is calculated from the **exact response body string**.
 
+!!! info
+    Please note the streaming response contains two new lines at the end and should not be omitted when copying response as the hash value will change.
+
 **_Example Response Body:_**
 
 ```bash
-data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"phala/deepseek-v3.1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"I","role":"assistant"}}]}
+data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"deepseek-ai/DeepSeek-V3.1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"I","role":"assistant"}}]}
 
-data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"phala/deepseek-v3.1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":" agree"}}]}
+data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"deepseek-ai/DeepSeek-V3.1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":" agree"}}]}
 
-data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"phala/deepseek-v3.1","object":"chat.completion.chunk","choices":[{"finish_reason":"stop","index":0,"delta":{}}]}
+data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"deepseek-ai/DeepSeek-V3.1","object":"chat.completion.chunk","choices":[{"finish_reason":"stop","index":0,"delta":{}}]}
 
 data: [DONE]
+
+
 ```
 
 Which hashes to:
