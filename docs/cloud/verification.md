@@ -269,7 +269,7 @@ The value is calculated from the **exact JSON request body string**.
 Which hashes to:
 
 ```bash
-31f46232b8ae6154e75a68256523851c1ce84f9ad53a1f8290c9d0576b95929f
+2ec65b4a042f68d7d4520e21a7135505a5154d52aa87dbd19e9d08021ffe5c4d
 ```
 
 Here is an example of how to get the sha256 hash of your message request body:
@@ -291,7 +291,7 @@ Here is an example of how to get the sha256 hash of your message request body:
     });
 
     const hash = crypto.createHash('sha256').update(requestBody).digest('hex');
-    console.log(hash); //31f46232b8ae6154e75a68256523851c1ce84f9ad53a1f8290c9d0576b95929f
+    console.log(hash); //2ec65b4a042f68d7d4520e21a7135505a5154d52aa87dbd19e9d08021ffe5c4d
     ```
 
 ---
@@ -306,21 +306,26 @@ This value is calculated from the **exact response body string**.
 **_Example Response Body:_**
 
 ```bash
-data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"deepseek-ai/DeepSeek-V3.1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"I","role":"assistant"}}]}
+data: {"id":"chatcmpl-f42e8ae7ddb346e1adfba47e3d710b46","object":"chat.completion.chunk","created":1760031300,"model":"deepseek-ai/DeepSeek-V3.1","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"prompt_token_ids":null}
 
-data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"deepseek-ai/DeepSeek-V3.1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":" agree"}}]}
+data: {"id":"chatcmpl-f42e8ae7ddb346e1adfba47e3d710b46","object":"chat.completion.chunk","created":1760031300,"model":"deepseek-ai/DeepSeek-V3.1","choices":[{"index":0,"delta":{"content":"Okay"},"logprobs":null,"finish_reason":null,"token_ids":null}]}
 
-data: {"id":"chatcmpl-13edbcd23c9e4139b796fa988a88451b","created":1756693844,"model":"deepseek-ai/DeepSeek-V3.1","object":"chat.completion.chunk","choices":[{"finish_reason":"stop","index":0,"delta":{}}]}
+data: {"id":"chatcmpl-f42e8ae7ddb346e1adfba47e3d710b46","object":"chat.completion.chunk","created":1760031300,"model":"deepseek-ai/DeepSeek-V3.1","choices":[{"index":0,"delta":{"content":"."},"logprobs":null,"finish_reason":null,"token_ids":null}]}
+
+data: {"id":"chatcmpl-f42e8ae7ddb346e1adfba47e3d710b46","object":"chat.completion.chunk","created":1760031300,"model":"deepseek-ai/DeepSeek-V3.1","choices":[{"index":0,"delta":{"content":" Sure"},"logprobs":null,"finish_reason":null,"token_ids":null}]}
+
+data: {"id":"chatcmpl-f42e8ae7ddb346e1adfba47e3d710b46","object":"chat.completion.chunk","created":1760031300,"model":"deepseek-ai/DeepSeek-V3.1","choices":[{"index":0,"delta":{"content":"."},"logprobs":null,"finish_reason":null,"token_ids":null}]}
+
+data: {"id":"chatcmpl-f42e8ae7ddb346e1adfba47e3d710b46","object":"chat.completion.chunk","created":1760031300,"model":"deepseek-ai/DeepSeek-V3.1","choices":[{"index":0,"delta":{"content":""},"logprobs":null,"finish_reason":"stop","stop_reason":null,"token_ids":null}]}
 
 data: [DONE]
-
 
 ```
 
 Which hashes to:
 
 ```bash
-5d679ec62b9d8e9681085814391bfef9e837b8cc08757f479302311b828284b2
+bdcfaa70301ea760ad215a2de31e80b7a69ee920c02a4b97ae05d0798b75fe79
 ```
 
 Here is an example of how to get the sha256 hash of your message response body:
@@ -340,7 +345,7 @@ Here is an example of how to get the sha256 hash of your message response body:
 
     const responseBody = await response.text();
     const hash = crypto.createHash('sha256').update(responseBody).digest('hex');
-    console.log(hash); // 5d679ec62b9d8e9681085814391bfef9e837b8cc08757f479302311b828284b2
+    console.log(hash); // bdcfaa70301ea760ad215a2de31e80b7a69ee920c02a4b97ae05d0798b75fe79
     ```
 
 ---
@@ -361,10 +366,10 @@ GET https://cloud-api.near.ai/v1/signature/{chat_id}?model={model_id}&signing_al
 
 For example, the response in the previous section, the `id` is:
 
- `chatcmpl-13edbcd23c9e4139b796fa988a88451b`
+ `chatcmpl-f42e8ae7ddb346e1adfba47e3d710b46`
 
 ```bash
-curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-13edbcd23c9e4139b796fa988a88451b?model=deepseek-v3.1&signing_algo=ecdsa' \
+curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-f42e8ae7ddb346e1adfba47e3d710b46?model=deepseek-v3.1&signing_algo=ecdsa' \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer <YOUR-NEARAI-CLOUD-API-KEY>"
 ```
@@ -373,10 +378,8 @@ curl -X GET 'https://cloud-api.near.ai/signature/chatcmpl-13edbcd23c9e4139b796fa
 
 ```json
 {
-  "text": "31f46232b8ae6154e75a68256523851c1ce84f9ad53a1f8290c9d0576b95929f:5d679ec62b9d8e9681085814391bfef9e837b8cc08757f479302311b828284b2",
-  "signature": "0x5ed3ac0642bceb8cdd5b222cd2db36b92af2a4d427f11cd1bec0e5b732b94628015f32f2cec91865148bf9d6f56ab673645f6bc500421cd28ff120339ea7e1a01b",
-  "signing_address": "0x1d58EE32e9eB327c074294A2b8320C47E33b9316",
-  "signing_algo": "ecdsa"
+  "text":"2ec65b4a042f68d7d4520e21a7135505a5154d52aa87dbd19e9d08021ffe5c4d:bdcfaa70301ea760ad215a2de31e80b7a69ee920c02a4b97ae05d0798b75fe79","signature":"0xb6bed282118266c5bc157bc7a88185dd017826da13c7aeb2aeebb9be88c7c7400047b88528d29f82792df1f2288a1b84e11ffddfe32517d46d5f7056e9082b941c","signing_address":"0xCaAA4842758658A85785Ad15367a700C601ffEA5",
+  "signing_algo":"ecdsa"
 }
 ```
 
@@ -389,12 +392,12 @@ The above response gives us all of the crucial information we need to verify tha
 
 You can see that `text` is:
 
-`31f46232b8ae6154e75a68256523851c1ce84f9ad53a1f8290c9d0576b95929f:5d679ec62b9d8e9681085814391bfef9e837b8cc08757f479302311b828284b2`
+`2ec65b4a042f68d7d4520e21a7135505a5154d52aa87dbd19e9d08021ffe5c4d:bdcfaa70301ea760ad215a2de31e80b7a69ee920c02a4b97ae05d0798b75fe79`
 
 This exactly matches the concatenated values we calculated in the previous sections:
 
-- Request hash: `31f46232b8ae6154e75a68256523851c1ce84f9ad53a1f8290c9d0576b95929f`
-- Response hash: `5d679ec62b9d8e9681085814391bfef9e837b8cc08757f479302311b828284b2`
+- Request hash: `2ec65b4a042f68d7d4520e21a7135505a5154d52aa87dbd19e9d08021ffe5c4d`
+- Response hash: `bdcfaa70301ea760ad215a2de31e80b7a69ee920c02a4b97ae05d0798b75fe79`
 
 !!! Note
     Due to resource limitations, signatures are kept in memory for **5 minutes** after the response is generated. However, once queried within this 5-minute window, the signature becomes persistent in the LLM gateway for future verification.
