@@ -76,7 +76,10 @@ jobs:
     - name: check lock file for inconsistencies
       run: uv lock --check
 
-    - name: Install dependencies
+    - name: Install dependencies base
+      run: uv sync
+
+    - name: Install dependencies extras
       run: uv pip install ".[dev,docs]" --system
 
     - name: Lint Check
