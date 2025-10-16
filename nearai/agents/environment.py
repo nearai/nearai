@@ -22,7 +22,7 @@ from litellm.types.utils import (
     ModelResponse,
 )
 from litellm.utils import CustomStreamWrapper
-from openai import OpenAI, Omit
+from openai import NOT_GIVEN, NotGiven, OpenAI
 from openai.types.beta.threads.message import Message
 from openai.types.beta.threads.message_create_params import Attachment
 from openai.types.beta.threads.run import Run
@@ -447,10 +447,10 @@ class Environment(object):
         def create_vector_store(
             name: str,
             file_ids: list,
-            expires_after: Union[ExpiresAfter, Omit] = Omit,
+            expires_after: Union[ExpiresAfter, NotGiven] = NOT_GIVEN,
             chunking_strategy: Union[
-                AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, Omit
-            ] = Omit,
+                AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, NotGiven
+            ] = NOT_GIVEN,
             metadata: Optional[Dict[str, str]] = None,
         ) -> VectorStore:
             """Creates a vector store.
@@ -762,7 +762,7 @@ class Environment(object):
         self._add_message = _add_message
 
         def _list_messages(
-            limit: Union[int, Omit] = LIST_MESSAGES_LIMIT,
+            limit: Union[int, NotGiven] = LIST_MESSAGES_LIMIT,
             order: Literal["asc", "desc"] = "asc",
             thread_id: Optional[str] = None,
         ) -> List[Message]:
@@ -1092,7 +1092,7 @@ class Environment(object):
     def list_messages(
         self,
         thread_id: Optional[str] = None,
-        limit: Union[int, Omit] = LIST_MESSAGES_LIMIT,
+        limit: Union[int, NotGiven] = LIST_MESSAGES_LIMIT,
         order: Literal["asc", "desc"] = "asc",
     ):
         """Backwards compatibility for chat_completions messages."""

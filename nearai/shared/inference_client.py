@@ -10,7 +10,7 @@ import requests
 from litellm import CustomStreamWrapper, ModelResponse
 from litellm import completion as litellm_completion
 from litellm.types.completion import ChatCompletionMessageParam
-from openai import Omit
+from openai import NOT_GIVEN, NotGiven
 from openai.types.beta.thread import Thread
 from openai.types.file_object import FileObject
 from openai.types.vector_store import VectorStore
@@ -272,10 +272,10 @@ class InferenceClient(object):
         self,
         name: str,
         file_ids: List[str],
-        expires_after: Union[ExpiresAfter, Omit] = Omit,
+        expires_after: Union[ExpiresAfter, NotGiven] = NOT_GIVEN,
         chunking_strategy: Union[
-            AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, Omit
-        ] = Omit,
+            AutoFileChunkingStrategyParam, StaticFileChunkingStrategyObjectParam, NotGiven
+        ] = NOT_GIVEN,
         metadata: Optional[Dict[str, str]] = None,
     ) -> VectorStore:
         """Creates Vector Store.
