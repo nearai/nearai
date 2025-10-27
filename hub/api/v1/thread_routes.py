@@ -435,7 +435,7 @@ def generate_thread_topic(thread_id: str):
 
         llm = get_llm_ai(Provider.FIREWORKS.value)
         resp = llm.chat.completions.create(
-            messages=messages, model="accounts/fireworks/models/qwen2p5-72b-instruct", timeout=DEFAULT_TIMEOUT
+            messages=messages, model="accounts/fireworks/models/qwen3-30b-a3b-instruct-2507", timeout=DEFAULT_TIMEOUT
         )
 
     with get_session() as session:

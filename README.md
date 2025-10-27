@@ -1,4 +1,53 @@
-# NEAR AI
+# ⚠️ DEPRECATED - NEAR AI Agent Framework
+
+> [!WARNING]
+> This project is **deprecated**.  Server components will be shut down on **October 31, 2025**.
+
+## Deprecation FAQ
+
+### Why deprecate NEAR AI Agent Framework and Developer Hub?
+
+As AI agents have become more popular and more advanced, they've also become more integrated into 'regular' software. There's not that much need (or demand) anymore for a special hosted framework for chat-based AI agents. More often, we're seeing agentic workflows integrated into new or existing applications. For that, existing frameworks like LangChain, AutoGen, and many others are more than sufficient.
+
+### What's NEAR AI doing?
+
+[NEAR AI](https://near.ai/) has built a new platform for private & confidential AI, consisting of:
+
+* NEAR AI Private Chat (https://private.near.ai/)
+* NEAR AI Cloud (https://cloud.near.ai/)
+
+These new products are in active development and as of October 2025 they have not been publicly launched yet; we are disclosing them to the NEAR AI community to maintain service continuity and show you what's coming soon.
+
+### What will happen to the NEAR AI Developer Hub?
+
+The NEAR AI Developer Hub at https://app.near.ai/ will shut down on October 31, 2025 and replaced with this notice. After that date, all agents, threads, models, vector stores, datasets, and evaluations will be unavailable. We will delete all user-specific data pertaining to threads, logins, environment variables, secrets, vector stores, and evaluations shortly after the website shuts down. Most agent code and datasets have always been public on NEAR AI; as such, we will keep paying for the S3 bucket that stores that information for the foreseeable future, and can serve individual requests for that data at our discretion upon request.
+
+### What will happen to my NEAR AI agents?
+
+When the NEAR AI Hub goes offline on October 31, 2025, you'll lose access to your agents. Please use the `nearai registry download` command or the "Export" button to download a copy of your agent code. From there, we recommend adapting it into the AI framework of your choice and hosting it using the infrastructure of your choice. Please reach out on [the NEAR AI Telegram group](https://t.me/nearaialpha) if you'd like migration advice, as we've been working with many users to help migrate their agents to other frameworks.
+
+### What will happen to NEAR AI inference/completions API?
+
+The old NEAR AI completions APIs will go offline on October 31, 2025. We recommend [NEAR AI Cloud](https://cloud.near.ai/), our new, fully private & confidential AI API, with a similar OpenAI-compatible API. NEAR AI Cloud is in active alpha development and as of October 2025 has not been publicly launched yet; we are disclosing it to the NEAR AI community to maintain service continuity and show you what's coming soon.
+
+If you urgently need production-ready AI services in advance of the NEAR AI Cloud launch, we also like:
+
+* [Fireworks AI](https://fireworks.ai/), which was powering NEAR AI Hub
+* [RedPill](https://redpill.ai/), another confidential AI API
+
+### What will happen to NEAR AI Chat and NEAR AI Assistant?
+
+The NEAR AI Assistant at https://chat.near.ai has been redirected to our new private, confidential AI chat interface.
+
+### Who can I contact for more information or complaints?
+
+We're available on [the NEAR AI Telegram group](https://t.me/nearaialpha).
+
+---
+
+![Status: Deprecated](https://img.shields.io/badge/status-deprecated-critical)
+
+The NEAR AI hub & agent framework has been deprecated, and the server components will be shut off on October 31, 2025.  
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://github.com/nearai/nearai/workflows/CI/badge.svg)](https://github.com/nearai/nearai/actions)
@@ -6,7 +55,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://docs.near.ai/contributing)
 [![Telegram](https://img.shields.io/badge/Dev_Support-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/nearaialpha)
 
-NEAR AI is a distributed system for building, deploying, and managing AI agents with the goal of making open source and user-owned AGI.
+NEAR AI ~is~ was a distributed system for building, deploying, and managing AI agents with the goal of making open source and user-owned AGI.
 
 ## NEAR AI Components
 
