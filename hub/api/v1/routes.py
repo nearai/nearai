@@ -1,6 +1,7 @@
 import importlib.metadata
 import json
 import logging
+import random
 import time
 from typing import Annotated, Iterable, List, Optional, Union
 
@@ -193,6 +194,16 @@ def chat_completions(
     request: ChatCompletionsRequest = Depends(convert_request),
     auth: AuthToken = Depends(get_auth),
 ):
+    # Intermittently return 410 Gone to signal API deprecation
+    if random.random() < 0.2:
+        raise HTTPException(
+            status_code=410,
+            detail=(
+                "The NEAR AI Completions API will be shut down on October 31, 2025. "
+                "We recommend switching to our new private, confidential completions API at https://cloud.near.ai."
+            ),
+        )
+
     headers = dict(req.headers)
     run_id = headers.get("run_id")
     thread_id = headers.get("thread_id")

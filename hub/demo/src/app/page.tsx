@@ -49,6 +49,24 @@ export default function HomePage() {
 
   return (
     <>
+      <Section background="red-3" padding="standard">
+        <Flex align="center" justify="center" gap="s">
+          <SvgIcon icon={<ShieldCheck weight="fill" />} color="red-11" />
+          <Text weight="500" color="red-11">
+            NEAR AI Developer Hub will shut down on October 31, 2025.{' '}
+            <Text
+              href="https://docs.near.ai/hub/"
+              target="_blank"
+              color="red-11"
+              weight="500"
+            >
+              Learn more
+            </Text>
+            .
+          </Text>
+        </Flex>
+      </Section>
+
       <Section background="sand-0" padding="hero">
         <Flex direction="column" gap="xl" align="center">
           <Flex
