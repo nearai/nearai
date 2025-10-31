@@ -8,7 +8,12 @@ from typing import Any, Callable, Dict, Optional, Tuple, Union
 from datasets import Dataset, DatasetDict  # type: ignore[attr-defined]
 from tqdm import tqdm
 
-from nearai.evaluation import load_benchmark_entry_info, record_evaluation_metrics, record_single_score_evaluation
+from nearai.evaluation import (
+    USAGE,
+    load_benchmark_entry_info,
+    record_evaluation_metrics,
+    record_single_score_evaluation,
+)
 from nearai.openapi_client.api.benchmark_api import BenchmarkApi
 from nearai.solvers import SolverScoringMethod, SolverStrategy
 
@@ -80,6 +85,7 @@ class BenchmarkExecutor:
                 benchmark_id=self.benchmark_id,
                 cache=cache,
                 solve_fn=self.solver_strategy.solve,
+                consume_usage_metrics_fn=self.solver_strategy.consume_usage_metrics,
             )
             tasks = iter(executor.submit(task_ctor, index=index, datum=datum) for index, datum in enumerate(data_tasks))
 
@@ -131,6 +137,7 @@ def solve_task(
     benchmark_id: int,
     cache: Dict[int, Tuple[bool, str]],
     solve_fn: Callable[[Any], Union[bool, Tuple[bool, Any]]],
+    consume_usage_metrics_fn: Callable[[], Dict[str, Any]],
     index: int,
     datum: Any,
 ) -> Tuple[bool, Any]:
@@ -139,11 +146,15 @@ def solve_task(
 
     result = solve_fn(datum)
     status = False
-    info = ""
+    info = {}
     if isinstance(result, tuple):
         status, info = result
     else:
         status = result
+
+    usage_metrics = consume_usage_metrics_fn()
+    if usage_metrics:
+        info[USAGE] = usage_metrics
 
     client = BenchmarkApi()
     client.add_benchmark_result_v1_benchmark_add_result_get(

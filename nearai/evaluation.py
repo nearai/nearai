@@ -12,6 +12,7 @@ from nearai.registry import get_registry_folder, registry
 from nearai.solvers import SolverStrategy
 
 EVALUATED_ENTRY_METADATA = "evaluated_entry_metadata"
+USAGE = "usage"
 
 
 def load_benchmark_entry_info(info: str) -> Any:
@@ -58,6 +59,59 @@ def record_evaluation_metrics(
     model = solver_strategy.model_name
     agent = solver_strategy.agent_name()
     version = solver_strategy.agent_version()
+
+    # Get cached solutions to extract usage metrics
+    cache = BenchmarkApi().get_benchmark_result_v1_benchmark_get_result_get(benchmark_id)
+
+    # Aggregate usage metrics from all solutions
+    aggregated_usage = {}
+    for result in cache:
+        try:
+            info = load_benchmark_entry_info(result.info) if result.info else {}
+            if isinstance(info, dict) and USAGE in info:
+                usage_data = info[USAGE]
+                for key, value in usage_data.items():
+                    aggregated_usage[key] = aggregated_usage.get(key, 0) + value
+        except Exception as e:
+            print(f"Error processing usage data: {e}")
+
+    # Add aggregated usage metrics to the evaluation metrics
+    if aggregated_usage:
+        metrics[USAGE] = aggregated_usage
+
+        # Copy all token metrics to usage
+        for key, value in aggregated_usage.items():
+            metrics[USAGE][key] = value
+
+        prompt_tokens = aggregated_usage.get("prompt_tokens", 0)
+        prompt_cached_tokens = aggregated_usage.get("prompt_cached_tokens", 0)
+        completion_tokens = aggregated_usage.get("completion_tokens", 0)
+
+        # Calculate non-cached tokens
+        non_cached_prompt_tokens = prompt_tokens - prompt_cached_tokens
+        metrics[USAGE]["non_cached_prompt_tokens"] = non_cached_prompt_tokens
+
+        # Get the costs per 1M tokens from user
+        if non_cached_prompt_tokens > 0:
+            regular_input_cost_per_1m = float(input("Enter cost per 1M of regular prompt tokens: "))
+            metrics[USAGE]["regular_input_cost"] = non_cached_prompt_tokens * regular_input_cost_per_1m / 1000000
+
+        if prompt_cached_tokens > 0:
+            cached_input_cost_per_1m = float(input("Enter cost per 1M of cached prompt tokens: "))
+            metrics[USAGE]["cached_input_cost"] = prompt_cached_tokens * cached_input_cost_per_1m / 1000000
+
+        if completion_tokens > 0:
+            output_cost_per_1m = float(input("Enter cost per 1M of completion tokens: "))
+            metrics[USAGE]["output_cost"] = completion_tokens * output_cost_per_1m / 1000000
+
+        # Calculate total cost
+        total_cost = 0
+        for key in ["regular_input_cost", "cached_input_cost", "output_cost"]:
+            if key in metrics[USAGE]:
+                total_cost += metrics[USAGE][key]
+
+        print(f"Total cost calculated: {total_cost}")
+        metrics[USAGE]["total_cost"] = total_cost
 
     upload_evaluation(
         evaluation_name,
