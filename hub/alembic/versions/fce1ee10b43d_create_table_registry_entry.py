@@ -24,12 +24,14 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer, primary_key=True),
         sa.Column("namespace", sa.String(255), nullable=False),
         sa.Column("name", sa.String(255), nullable=False),
-        sa.Column("version", sa.String(255), nullable=False),
+        sa.Column("version", sa.String(255, collation="utf8mb4_unicode_ci"), nullable=False),
         sa.Column("time", sa.DateTime, nullable=False),
-        sa.Column("description", sa.String(255), nullable=False),
         sa.Column("category", sa.String(255), nullable=False),
-        sa.Column("details", sa.JSON, nullable=True),
+        sa.Column("description", sa.String(255, collation="utf8mb4_unicode_ci"), nullable=False),
+        sa.Column("details", sa.Text(collation="utf8mb4_unicode_ci"), nullable=True),
         sa.Column("show_entry", sa.Boolean, nullable=False),
+        mysql_charset="utf8mb4",
+        mysql_collate="utf8mb4_unicode_ci",
     )
 
 
