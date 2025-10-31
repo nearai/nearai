@@ -3,7 +3,7 @@
 
 # Asynchronous HTTP client/server framework
 # https://github.com/aio-libs/aiohttp
-aiohttp==3.11.0b0
+aiohttp==3.12.14
 
 # Base58 encoding/decoding library
 # https://github.com/keis/base58
@@ -67,7 +67,7 @@ openai == 1.66.2
 
 # Pillow for image processing
 # https://github.com/python-pillow/Pillow
-Pillow==11.2.1
+Pillow==11.3.0
 
 # Process and system utilities
 # https://github.com/giampaolo/psutil
